@@ -138,22 +138,11 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
         return uint32(block.timestamp); // truncation is desired
     }
 
-    /// @dev Get the pool's balance of token0
+    /// @dev Get the pool's balance of a given token
     /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
     /// check
-    function balance0() private view returns (uint256) {
-        (bool success, bytes memory data) = this.token0().staticcall(
-            abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this))
-        );
-        require(success && data.length >= 32);
-        return abi.decode(data, (uint256));
-    }
-
-    /// @dev Get the pool's balance of token1
-    /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
-    /// check
-    function balance1() private view returns (uint256) {
-        (bool success, bytes memory data) = this.token1().staticcall(
+    function balanceOf(address token) private view returns (uint256) {
+        (bool success, bytes memory data) = token.staticcall(
             abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this))
         );
         require(success && data.length >= 32);
@@ -484,11 +473,11 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
 
         uint256 balance0Before;
         uint256 balance1Before;
-        if (amount0 > 0) balance0Before = balance0();
-        if (amount1 > 0) balance1Before = balance1();
+        if (amount0 > 0) balance0Before = balanceOf(this.token0());
+        if (amount1 > 0) balance1Before = balanceOf(this.token1());
         IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(amount0, amount1, data);
-        if (amount0 > 0) require(balance0Before + amount0 <= balance0(), 'M0');
-        if (amount1 > 0) require(balance1Before + amount1 <= balance1(), 'M1');
+        if (amount0 > 0) require(balance0Before + amount0 <= balanceOf(this.token0()), 'M0');
+        if (amount1 > 0) require(balance1Before + amount1 <= balanceOf(this.token1()), 'M1');
 
         emit Mint(msg.sender, recipient, tickLower, tickUpper, amount, amount0, amount1);
     }
@@ -602,10 +591,7 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
     }
 
     /// @inheritdoc IUniswapV3PoolActions
-    function swap(SwapParameters memory params)
-        external override
-        returns (int256 amount0, int256 amount1)
-    {
+    function swap(SwapParameters memory params) external override returns (int256 amount0, int256 amount1) {
         require(params.amountSpecified != 0, 'AS');
 
         Slot0 memory slot0Start = slot0;
@@ -643,6 +629,9 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
             liquidity: cache.liquidityStart
         });
 
+        uint24 _fee = this.fee();
+        int24 _tickSpacing = this.tickSpacing();
+
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             StepComputations memory step;
@@ -651,7 +640,7 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
 
             (step.tickNext, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(
                 state.tick,
-                this.tickSpacing(),
+                _tickSpacing,
                 params.zeroForOne
             );
 
@@ -677,7 +666,7 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
                     : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                this.fee()
+                _fee
             );
 
             if (exactInput) {
@@ -798,23 +787,24 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
         }
 
+        (address _token0, address _token1) = (this.token0(), this.token1());
         // do the transfers and collect payment
         if (params.zeroForOne) {
             unchecked {
-                if (amount1 < 0) TransferHelper.safeTransfer(this.token1(), params.recipient, uint256(-amount1));
+                if (amount1 < 0) TransferHelper.safeTransfer(_token1, params.recipient, uint256(-amount1));
             }
 
-            uint256 balance0Before = balance0();
+            uint256 balance0Before = balanceOf(_token0);
             IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, params.data);
-            require(balance0Before + uint256(amount0) <= balance0(), 'IIA');
+            require(balance0Before + uint256(amount0) <= balanceOf(_token0), 'IIA');
         } else {
             unchecked {
-                if (amount0 < 0) TransferHelper.safeTransfer(this.token0(), params.recipient, uint256(-amount0));
+                if (amount0 < 0) TransferHelper.safeTransfer(_token0, params.recipient, uint256(-amount0));
             }
 
-            uint256 balance1Before = balance1();
+            uint256 balance1Before = balanceOf(_token1);
             IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, params.data);
-            require(balance1Before + uint256(amount1) <= balance1(), 'IIA');
+            require(balance1Before + uint256(amount1) <= balanceOf(_token1), 'IIA');
         }
 
         emit Swap(msg.sender, params.recipient, amount0, amount1, state.sqrtPriceX96, state.liquidity, state.tick);
@@ -833,16 +823,16 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
 
         uint256 fee0 = FullMath.mulDivRoundingUp(amount0, this.fee(), 1e6);
         uint256 fee1 = FullMath.mulDivRoundingUp(amount1, this.fee(), 1e6);
-        uint256 balance0Before = balance0();
-        uint256 balance1Before = balance1();
+        uint256 balance0Before = balanceOf(this.token0());
+        uint256 balance1Before = balanceOf(this.token1());
 
         if (amount0 > 0) TransferHelper.safeTransfer(this.token0(), recipient, amount0);
         if (amount1 > 0) TransferHelper.safeTransfer(this.token1(), recipient, amount1);
 
         IUniswapV3FlashCallback(msg.sender).uniswapV3FlashCallback(fee0, fee1, data);
 
-        uint256 balance0After = balance0();
-        uint256 balance1After = balance1();
+        uint256 balance0After = balanceOf(this.token0());
+        uint256 balance1After = balanceOf(this.token1());
 
         require(balance0Before + fee0 <= balance0After, 'F0');
         require(balance1Before + fee1 <= balance1After, 'F1');
