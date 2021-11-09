@@ -6,7 +6,7 @@ import {TickMath} from '../libraries/TickMath.sol';
 
 import {IERC20Minimal} from '../interfaces/IERC20Minimal.sol';
 import {IUniswapV3SwapCallback} from '../interfaces/callback/IUniswapV3SwapCallback.sol';
-import {IUniswapV3Pool} from '../interfaces/IUniswapV3Pool.sol';
+import {IUniswapV3Pool, IUniswapV3PoolActions} from '../interfaces/IUniswapV3Pool.sol';
 
 contract TestUniswapV3Router is IUniswapV3SwapCallback {
     using SafeCast for uint256;
@@ -21,11 +21,13 @@ contract TestUniswapV3Router is IUniswapV3SwapCallback {
         address[] memory pools = new address[](1);
         pools[0] = poolInput;
         IUniswapV3Pool(poolOutput).swap(
-            recipient,
-            false,
-            -amount0Out.toInt256(),
-            TickMath.MAX_SQRT_RATIO - 1,
-            abi.encode(pools, msg.sender)
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: recipient,
+                zeroForOne: false,
+                amountSpecified: -amount0Out.toInt256(),
+                sqrtPriceLimitX96: TickMath.MAX_SQRT_RATIO - 1,
+                data: abi.encode(pools, msg.sender)
+            })
         );
     }
 
@@ -39,11 +41,13 @@ contract TestUniswapV3Router is IUniswapV3SwapCallback {
         address[] memory pools = new address[](1);
         pools[0] = poolInput;
         IUniswapV3Pool(poolOutput).swap(
-            recipient,
-            true,
-            -amount1Out.toInt256(),
-            TickMath.MIN_SQRT_RATIO + 1,
-            abi.encode(pools, msg.sender)
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: recipient,
+                zeroForOne: true,
+                amountSpecified: -amount1Out.toInt256(),
+                sqrtPriceLimitX96: TickMath.MIN_SQRT_RATIO + 1,
+                data: abi.encode(pools, msg.sender)
+            })
         );
     }
 
@@ -67,11 +71,13 @@ contract TestUniswapV3Router is IUniswapV3SwapCallback {
 
             bool zeroForOne = tokenToBePaid == IUniswapV3Pool(pools[0]).token1();
             IUniswapV3Pool(pools[0]).swap(
-                msg.sender,
-                zeroForOne,
-                -amountToBePaid,
-                zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1,
-                abi.encode(new address[](0), payer)
+                IUniswapV3PoolActions.SwapParameters({
+                    recipient: msg.sender,
+                    zeroForOne: zeroForOne,
+                    amountSpecified: -amountToBePaid,
+                    sqrtPriceLimitX96: zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1,
+                    data: abi.encode(new address[](0), payer)
+                })
             );
         } else {
             if (amount0Delta > 0) {

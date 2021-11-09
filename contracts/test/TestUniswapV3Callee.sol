@@ -10,7 +10,7 @@ import {IUniswapV3MintCallback} from '../interfaces/callback/IUniswapV3MintCallb
 import {IUniswapV3SwapCallback} from '../interfaces/callback/IUniswapV3SwapCallback.sol';
 import {IUniswapV3FlashCallback} from '../interfaces/callback/IUniswapV3FlashCallback.sol';
 
-import {IUniswapV3Pool} from '../interfaces/IUniswapV3Pool.sol';
+import {IUniswapV3Pool, IUniswapV3PoolActions} from '../interfaces/IUniswapV3Pool.sol';
 
 contract TestUniswapV3Callee is IUniswapV3MintCallback, IUniswapV3SwapCallback, IUniswapV3FlashCallback {
     using SafeCast for uint256;
@@ -21,7 +21,15 @@ contract TestUniswapV3Callee is IUniswapV3MintCallback, IUniswapV3SwapCallback, 
         address recipient,
         uint160 sqrtPriceLimitX96
     ) external {
-        IUniswapV3Pool(pool).swap(recipient, true, amount0In.toInt256(), sqrtPriceLimitX96, abi.encode(msg.sender));
+        IUniswapV3Pool(pool).swap(
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: recipient,
+                zeroForOne: true,
+                amountSpecified: amount0In.toInt256(),
+                sqrtPriceLimitX96: sqrtPriceLimitX96,
+                data: abi.encode(msg.sender)
+            })
+        );
     }
 
     function swap0ForExact1(
@@ -30,7 +38,15 @@ contract TestUniswapV3Callee is IUniswapV3MintCallback, IUniswapV3SwapCallback, 
         address recipient,
         uint160 sqrtPriceLimitX96
     ) external {
-        IUniswapV3Pool(pool).swap(recipient, true, -amount1Out.toInt256(), sqrtPriceLimitX96, abi.encode(msg.sender));
+        IUniswapV3Pool(pool).swap(
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: recipient,
+                zeroForOne: true,
+                amountSpecified: -amount1Out.toInt256(),
+                sqrtPriceLimitX96: sqrtPriceLimitX96,
+                data: abi.encode(msg.sender)
+            })
+        );
     }
 
     function swapExact1For0(
@@ -39,7 +55,15 @@ contract TestUniswapV3Callee is IUniswapV3MintCallback, IUniswapV3SwapCallback, 
         address recipient,
         uint160 sqrtPriceLimitX96
     ) external {
-        IUniswapV3Pool(pool).swap(recipient, false, amount1In.toInt256(), sqrtPriceLimitX96, abi.encode(msg.sender));
+        IUniswapV3Pool(pool).swap(
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: recipient,
+                zeroForOne: false,
+                amountSpecified: amount1In.toInt256(),
+                sqrtPriceLimitX96: sqrtPriceLimitX96,
+                data: abi.encode(msg.sender)
+            })
+        );
     }
 
     function swap1ForExact0(
@@ -48,23 +72,47 @@ contract TestUniswapV3Callee is IUniswapV3MintCallback, IUniswapV3SwapCallback, 
         address recipient,
         uint160 sqrtPriceLimitX96
     ) external {
-        IUniswapV3Pool(pool).swap(recipient, false, -amount0Out.toInt256(), sqrtPriceLimitX96, abi.encode(msg.sender));
+        IUniswapV3Pool(pool).swap(
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: recipient,
+                zeroForOne: false,
+                amountSpecified: -amount0Out.toInt256(),
+                sqrtPriceLimitX96: sqrtPriceLimitX96,
+                data: abi.encode(msg.sender)
+            })
+        );
     }
 
     function swapToLowerSqrtPrice(
         address pool,
-        uint160 sqrtPriceX96,
+        uint160 sqrtPriceLimitX96,
         address recipient
     ) external {
-        IUniswapV3Pool(pool).swap(recipient, true, type(int256).max, sqrtPriceX96, abi.encode(msg.sender));
+        IUniswapV3Pool(pool).swap(
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: recipient,
+                zeroForOne: true,
+                amountSpecified: type(int256).max,
+                sqrtPriceLimitX96: sqrtPriceLimitX96,
+                data: abi.encode(msg.sender)
+            })
+        );
     }
 
     function swapToHigherSqrtPrice(
         address pool,
-        uint160 sqrtPriceX96,
+        uint160 sqrtPriceLimitX96,
         address recipient
     ) external {
-        IUniswapV3Pool(pool).swap(recipient, false, type(int256).max, sqrtPriceX96, abi.encode(msg.sender));
+        IUniswapV3Pool(pool).swap(
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: recipient,
+                zeroForOne: false,
+                amountSpecified: type(int256).max,
+                sqrtPriceLimitX96: sqrtPriceLimitX96,
+                data: abi.encode(msg.sender)
+            })
+        );
     }
 
     event SwapCallback(int256 amount0Delta, int256 amount1Delta);

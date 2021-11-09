@@ -4,24 +4,26 @@ pragma solidity =0.8.9;
 import {IERC20Minimal} from '../interfaces/IERC20Minimal.sol';
 
 import {IUniswapV3SwapCallback} from '../interfaces/callback/IUniswapV3SwapCallback.sol';
-import {IUniswapV3Pool} from '../interfaces/IUniswapV3Pool.sol';
+import {IUniswapV3Pool, IUniswapV3PoolActions} from '../interfaces/IUniswapV3Pool.sol';
 
 contract TestUniswapV3SwapPay is IUniswapV3SwapCallback {
     function swap(
         address pool,
         address recipient,
         bool zeroForOne,
-        uint160 sqrtPriceX96,
+        uint160 sqrtPriceLimitX96,
         int256 amountSpecified,
         uint256 pay0,
         uint256 pay1
     ) external {
         IUniswapV3Pool(pool).swap(
-            recipient,
-            zeroForOne,
-            amountSpecified,
-            sqrtPriceX96,
-            abi.encode(msg.sender, pay0, pay1)
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: recipient,
+                zeroForOne: zeroForOne,
+                amountSpecified: amountSpecified,
+                sqrtPriceLimitX96: sqrtPriceLimitX96,
+                data: abi.encode(msg.sender, pay0, pay1)
+            })
         );
     }
 
