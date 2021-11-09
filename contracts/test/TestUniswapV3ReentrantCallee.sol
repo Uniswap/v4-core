@@ -5,13 +5,21 @@ import {TickMath} from '../libraries/TickMath.sol';
 
 import {IUniswapV3SwapCallback} from '../interfaces/callback/IUniswapV3SwapCallback.sol';
 
-import {IUniswapV3Pool} from '../interfaces/IUniswapV3Pool.sol';
+import {IUniswapV3Pool, IUniswapV3PoolActions} from '../interfaces/IUniswapV3Pool.sol';
 
 contract TestUniswapV3ReentrantCallee is IUniswapV3SwapCallback {
     string private constant expectedReason = 'LOK';
 
     function swapToReenter(address pool) external {
-        IUniswapV3Pool(pool).swap(address(0), false, 1, TickMath.MAX_SQRT_RATIO - 1, new bytes(0));
+        IUniswapV3Pool(pool).swap(
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: address(0),
+                zeroForOne: false,
+                amountSpecified: 1,
+                sqrtPriceLimitX96: TickMath.MAX_SQRT_RATIO - 1,
+                data: ''
+            })
+        );
     }
 
     function uniswapV3SwapCallback(
@@ -20,9 +28,17 @@ contract TestUniswapV3ReentrantCallee is IUniswapV3SwapCallback {
         bytes calldata
     ) external override {
         // try to reenter swap
-        try IUniswapV3Pool(msg.sender).swap(address(0), false, 1, 0, new bytes(0)) {} catch Error(
-            string memory reason
-        ) {
+        try
+            IUniswapV3Pool(msg.sender).swap(
+                IUniswapV3PoolActions.SwapParameters({
+                    recipient: address(0),
+                    zeroForOne: false,
+                    amountSpecified: 1,
+                    sqrtPriceLimitX96: TickMath.MAX_SQRT_RATIO - 1,
+                    data: ''
+                })
+            )
+        {} catch Error(string memory reason) {
             require(keccak256(abi.encode(reason)) == keccak256(abi.encode(expectedReason)));
         }
 

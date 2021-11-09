@@ -4,7 +4,7 @@ pragma solidity =0.8.9;
 import {IERC20Minimal} from '../interfaces/IERC20Minimal.sol';
 
 import {IUniswapV3SwapCallback} from '../interfaces/callback/IUniswapV3SwapCallback.sol';
-import {IUniswapV3Pool} from '../interfaces/IUniswapV3Pool.sol';
+import {IUniswapV3Pool, IUniswapV3PoolActions} from '../interfaces/IUniswapV3Pool.sol';
 
 contract UniswapV3PoolSwapTest is IUniswapV3SwapCallback {
     int256 private _amount0Delta;
@@ -24,11 +24,13 @@ contract UniswapV3PoolSwapTest is IUniswapV3SwapCallback {
         )
     {
         (amount0Delta, amount1Delta) = IUniswapV3Pool(pool).swap(
-            address(0),
-            zeroForOne,
-            amountSpecified,
-            sqrtPriceLimitX96,
-            abi.encode(msg.sender)
+            IUniswapV3PoolActions.SwapParameters({
+                recipient: address(0),
+                zeroForOne: zeroForOne,
+                amountSpecified: amountSpecified,
+                sqrtPriceLimitX96: sqrtPriceLimitX96,
+                data: abi.encode(msg.sender)
+            })
         );
 
         (nextSqrtRatio, , , , , , ) = IUniswapV3Pool(pool).slot0();
