@@ -32,4 +32,15 @@ interface IUniswapV3PoolImmutables {
     /// also prevents out-of-range liquidity from being used to prevent adding in-range liquidity to a pool
     /// @return The max amount of liquidity per tick
     function maxLiquidityPerTick() external view returns (uint128);
+
+    /// @dev Returns the immutables that are used for every swap
+    function swapImmutables()
+        external
+        view
+        returns (
+            address token0,
+            address token1,
+            uint24 fee,
+            int24 tickSpacing
+        );
 }

@@ -24,39 +24,54 @@ import {IUniswapV3SwapCallback} from './interfaces/callback/IUniswapV3SwapCallba
 import {IUniswapV3FlashCallback} from './interfaces/callback/IUniswapV3FlashCallback.sol';
 
 /// @dev All these values are implemented by the proxy and retrieved by calls to self that are intercepted by the proxy
-abstract contract EmptyImmutables is IUniswapV3PoolImmutables {
+abstract contract ProxySuppliedImmutables is IUniswapV3PoolImmutables {
     /// @dev Implemented by the proxy
-    function factory() external pure override returns (address) {
+    function factory() public pure override returns (address) {
         revert();
     }
 
     /// @dev Implemented by the proxy
-    function token0() external pure override returns (address) {
+    function token0() public pure override returns (address) {
         revert();
     }
 
     /// @dev Implemented by the proxy
-    function token1() external pure override returns (address) {
+    function token1() public pure override returns (address) {
         revert();
     }
 
     /// @dev Implemented by the proxy
-    function fee() external pure override returns (uint24) {
+    function fee() public pure override returns (uint24) {
         revert();
     }
 
     /// @dev Implemented by the proxy
-    function tickSpacing() external pure override returns (int24) {
+    function tickSpacing() public pure override returns (int24) {
         revert();
     }
 
     /// @dev Implemented by the proxy
-    function maxLiquidityPerTick() external pure override returns (uint128) {
+    function maxLiquidityPerTick() public pure override returns (uint128) {
+        revert();
+    }
+
+    /// @dev Implemented by the proxy
+    function swapImmutables()
+        public
+        pure
+        override
+        returns (
+            address,
+            address,
+            uint24,
+            int24
+        )
+    {
         revert();
     }
 }
 
-contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
+contract UniswapV3Pool is IUniswapV3Pool, ProxySuppliedImmutables {
     using SafeCast for uint256;
     using SafeCast for int256;
     using Tick for mapping(int24 => Tick.Info);
@@ -629,8 +644,7 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
             liquidity: cache.liquidityStart
         });
 
-        uint24 _fee = this.fee();
-        int24 _tickSpacing = this.tickSpacing();
+        (address _token0, address _token1, uint24 _fee, int24 _tickSpacing) = this.swapImmutables();
 
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
@@ -787,7 +801,6 @@ contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
         }
 
-        (address _token0, address _token1) = (this.token0(), this.token1());
         // do the transfers and collect payment
         if (params.zeroForOne) {
             unchecked {

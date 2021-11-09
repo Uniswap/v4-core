@@ -26,6 +26,21 @@ contract UniswapV3PoolProxy is IUniswapV3PoolImmutables {
     /// @inheritdoc IUniswapV3PoolImmutables
     uint128 public immutable override maxLiquidityPerTick;
 
+    /// @inheritdoc IUniswapV3PoolImmutables
+    function swapImmutables()
+        external
+        view
+        override
+        returns (
+            address,
+            address,
+            uint24,
+            int24
+        )
+    {
+        return (token0, token1, fee, tickSpacing);
+    }
+
     address private immutable _implementation;
 
     constructor() {
