@@ -604,7 +604,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     }
 
     /// @inheritdoc IUniswapV3PoolActions
-    function swap(SwapParameters calldata params)
+    function swap(SwapParameters memory params)
         external
         override
         noDelegateCall

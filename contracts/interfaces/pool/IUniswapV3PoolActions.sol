@@ -73,7 +73,7 @@ interface IUniswapV3PoolActions {
     /// @notice Swap token0 for token1, or token1 for token0
     /// @dev The caller of this method receives a callback in the form of IUniswapV3SwapCallback#uniswapV3SwapCallback
     /// @param params The parameters required for every swap
-    function swap(SwapParameters calldata params) external returns (int256 amount0, int256 amount1);
+    function swap(SwapParameters memory params) external returns (int256 amount0, int256 amount1);
 
     /// @notice Receive token0 and/or token1 and pay it back, plus a fee, in the callback
     /// @dev The caller of this method receives a callback in the form of IUniswapV3FlashCallback#uniswapV3FlashCallback
