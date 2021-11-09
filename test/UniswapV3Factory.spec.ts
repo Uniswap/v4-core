@@ -2,6 +2,7 @@ import { Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
 import { UniswapV3Factory } from '../typechain/UniswapV3Factory'
 import { expect } from './shared/expect'
+import { factoryFixture } from './shared/fixtures'
 import snapshotGasCost from './shared/snapshotGasCost'
 
 import { FeeAmount, getCreate2Address, TICK_SPACINGS } from './shared/utilities'
@@ -20,10 +21,6 @@ describe('UniswapV3Factory', () => {
 
   let factory: UniswapV3Factory
   let poolBytecode: string
-  const fixture = async () => {
-    const factoryFactory = await ethers.getContractFactory('UniswapV3Factory')
-    return (await factoryFactory.deploy()) as UniswapV3Factory
-  }
 
   let loadFixture: ReturnType<typeof createFixtureLoader>
   before('create fixture loader', async () => {
@@ -33,11 +30,11 @@ describe('UniswapV3Factory', () => {
   })
 
   before('load pool bytecode', async () => {
-    poolBytecode = (await ethers.getContractFactory('UniswapV3Pool')).bytecode
+    poolBytecode = (await ethers.getContractFactory('UniswapV3PoolProxy')).bytecode
   })
 
   beforeEach('deploy factory', async () => {
-    factory = await loadFixture(fixture)
+    ;({ factory } = await loadFixture(factoryFixture))
   })
 
   it('owner is deployer', async () => {

@@ -2,10 +2,16 @@
 pragma solidity =0.8.9;
 
 import {IUniswapV3PoolDeployer} from './interfaces/IUniswapV3PoolDeployer.sol';
-
-import {UniswapV3Pool} from './UniswapV3Pool.sol';
+import {UniswapV3PoolProxy} from './UniswapV3PoolProxy.sol';
 
 contract UniswapV3PoolDeployer is IUniswapV3PoolDeployer {
+    /// @inheritdoc IUniswapV3PoolDeployer
+    address public immutable override poolImplementation;
+
+    constructor(address _poolImplementation) {
+        poolImplementation = _poolImplementation;
+    }
+
     struct Parameters {
         address factory;
         address token0;
@@ -32,7 +38,7 @@ contract UniswapV3PoolDeployer is IUniswapV3PoolDeployer {
         int24 tickSpacing
     ) internal returns (address pool) {
         parameters = Parameters({factory: factory, token0: token0, token1: token1, fee: fee, tickSpacing: tickSpacing});
-        pool = address(new UniswapV3Pool{salt: keccak256(abi.encode(token0, token1, fee))}());
+        pool = address(new UniswapV3PoolProxy{salt: keccak256(abi.encode(token0, token1, fee))}());
         delete parameters;
     }
 }

@@ -23,4 +23,7 @@ interface IUniswapV3PoolDeployer {
             uint24 fee,
             int24 tickSpacing
         );
+
+    /// @notice Returns the address of the pool implementation
+    function poolImplementation() external view returns (address);
 }

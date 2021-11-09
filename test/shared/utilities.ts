@@ -41,15 +41,12 @@ export function getCreate2Address(
   bytecode: string
 ): string {
   const [token0, token1] = tokenA.toLowerCase() < tokenB.toLowerCase() ? [tokenA, tokenB] : [tokenB, tokenA]
-  const constructorArgumentsEncoded = utils.defaultAbiCoder.encode(
-    ['address', 'address', 'uint24'],
-    [token0, token1, fee]
-  )
+  const saltPartsEncoded = utils.defaultAbiCoder.encode(['address', 'address', 'uint24'], [token0, token1, fee])
   const create2Inputs = [
     '0xff',
     factoryAddress,
     // salt
-    utils.keccak256(constructorArgumentsEncoded),
+    utils.keccak256(saltPartsEncoded),
     // init code. bytecode + constructor arguments
     utils.keccak256(bytecode),
   ]

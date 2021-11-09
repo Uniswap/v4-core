@@ -3,8 +3,6 @@ pragma solidity =0.8.9;
 
 import {IUniswapV3PoolImmutables, IUniswapV3PoolState, IUniswapV3PoolActions, IUniswapV3PoolEvents, IUniswapV3PoolDerivedState, IUniswapV3PoolOwnerActions, IUniswapV3Pool} from './interfaces/IUniswapV3Pool.sol';
 
-import {NoDelegateCall} from './NoDelegateCall.sol';
-
 import {SafeCast} from './libraries/SafeCast.sol';
 import {Tick} from './libraries/Tick.sol';
 import {TickBitmap} from './libraries/TickBitmap.sol';
@@ -25,7 +23,40 @@ import {IUniswapV3MintCallback} from './interfaces/callback/IUniswapV3MintCallba
 import {IUniswapV3SwapCallback} from './interfaces/callback/IUniswapV3SwapCallback.sol';
 import {IUniswapV3FlashCallback} from './interfaces/callback/IUniswapV3FlashCallback.sol';
 
-contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
+/// @dev All these values are implemented by the proxy and retrieved by calls to self that are intercepted by the proxy
+abstract contract EmptyImmutables is IUniswapV3PoolImmutables {
+    /// @dev Implemented by the proxy
+    function factory() external pure override returns (address) {
+        revert();
+    }
+
+    /// @dev Implemented by the proxy
+    function token0() external pure override returns (address) {
+        revert();
+    }
+
+    /// @dev Implemented by the proxy
+    function token1() external pure override returns (address) {
+        revert();
+    }
+
+    /// @dev Implemented by the proxy
+    function fee() external pure override returns (uint24) {
+        revert();
+    }
+
+    /// @dev Implemented by the proxy
+    function tickSpacing() external pure override returns (int24) {
+        revert();
+    }
+
+    /// @dev Implemented by the proxy
+    function maxLiquidityPerTick() external pure override returns (uint128) {
+        revert();
+    }
+}
+
+contract UniswapV3Pool is IUniswapV3Pool, EmptyImmutables {
     using SafeCast for uint256;
     using SafeCast for int256;
     using Tick for mapping(int24 => Tick.Info);
@@ -33,21 +64,6 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
-
-    /// @inheritdoc IUniswapV3PoolImmutables
-    address public immutable override factory;
-    /// @inheritdoc IUniswapV3PoolImmutables
-    address public immutable override token0;
-    /// @inheritdoc IUniswapV3PoolImmutables
-    address public immutable override token1;
-    /// @inheritdoc IUniswapV3PoolImmutables
-    uint24 public immutable override fee;
-
-    /// @inheritdoc IUniswapV3PoolImmutables
-    int24 public immutable override tickSpacing;
-
-    /// @inheritdoc IUniswapV3PoolImmutables
-    uint128 public immutable override maxLiquidityPerTick;
 
     struct Slot0 {
         // the current price
@@ -106,16 +122,8 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
 
     /// @dev Prevents calling a function from anyone except the address returned by IUniswapV3Factory#owner()
     modifier onlyFactoryOwner() {
-        require(msg.sender == IUniswapV3Factory(factory).owner());
+        require(msg.sender == IUniswapV3Factory(this.factory()).owner());
         _;
-    }
-
-    constructor() {
-        int24 _tickSpacing;
-        (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
-        tickSpacing = _tickSpacing;
-
-        maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -134,7 +142,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
     /// check
     function balance0() private view returns (uint256) {
-        (bool success, bytes memory data) = token0.staticcall(
+        (bool success, bytes memory data) = this.token0().staticcall(
             abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this))
         );
         require(success && data.length >= 32);
@@ -145,7 +153,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
     /// check
     function balance1() private view returns (uint256) {
-        (bool success, bytes memory data) = token1.staticcall(
+        (bool success, bytes memory data) = this.token1().staticcall(
             abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this))
         );
         require(success && data.length >= 32);
@@ -157,7 +165,6 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         external
         view
         override
-        noDelegateCall
         returns (
             int56 tickCumulativeInside,
             uint160 secondsPerLiquidityInsideX128,
@@ -236,7 +243,6 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         external
         view
         override
-        noDelegateCall
         returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
     {
         return
@@ -251,12 +257,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     }
 
     /// @inheritdoc IUniswapV3PoolActions
-    function increaseObservationCardinalityNext(uint16 observationCardinalityNext)
-        external
-        override
-        lock
-        noDelegateCall
-    {
+    function increaseObservationCardinalityNext(uint16 observationCardinalityNext) external override lock {
         uint16 observationCardinalityNextOld = slot0.observationCardinalityNext; // for the event
         uint16 observationCardinalityNextNew = observations.grow(
             observationCardinalityNextOld,
@@ -306,7 +307,6 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     /// @return amount1 the amount of token1 owed to the pool, negative if the pool should pay the recipient
     function _modifyPosition(ModifyPositionParams memory params)
         private
-        noDelegateCall
         returns (
             Position.Info storage position,
             int256 amount0,
@@ -416,7 +416,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
                     tickCumulative,
                     time,
                     false,
-                    maxLiquidityPerTick
+                    this.maxLiquidityPerTick()
                 );
                 flippedUpper = ticks.update(
                     tickUpper,
@@ -428,14 +428,14 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
                     tickCumulative,
                     time,
                     true,
-                    maxLiquidityPerTick
+                    this.maxLiquidityPerTick()
                 );
 
                 if (flippedLower) {
-                    tickBitmap.flipTick(tickLower, tickSpacing);
+                    tickBitmap.flipTick(tickLower, this.tickSpacing());
                 }
                 if (flippedUpper) {
-                    tickBitmap.flipTick(tickUpper, tickSpacing);
+                    tickBitmap.flipTick(tickUpper, this.tickSpacing());
                 }
             }
 
@@ -462,7 +462,6 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     }
 
     /// @inheritdoc IUniswapV3PoolActions
-    /// @dev noDelegateCall is applied indirectly via _modifyPosition
     function mint(
         address recipient,
         int24 tickLower,
@@ -511,11 +510,11 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
 
             if (amount0 > 0) {
                 position.tokensOwed0 -= amount0;
-                TransferHelper.safeTransfer(token0, recipient, amount0);
+                TransferHelper.safeTransfer(this.token0(), recipient, amount0);
             }
             if (amount1 > 0) {
                 position.tokensOwed1 -= amount1;
-                TransferHelper.safeTransfer(token1, recipient, amount1);
+                TransferHelper.safeTransfer(this.token1(), recipient, amount1);
             }
 
             emit Collect(msg.sender, recipient, tickLower, tickUpper, amount0, amount1);
@@ -523,7 +522,6 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     }
 
     /// @inheritdoc IUniswapV3PoolActions
-    /// @dev noDelegateCall is applied indirectly via _modifyPosition
     function burn(
         int24 tickLower,
         int24 tickUpper,
@@ -610,7 +608,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         int256 amountSpecified,
         uint160 sqrtPriceLimitX96,
         bytes calldata data
-    ) external override noDelegateCall returns (int256 amount0, int256 amount1) {
+    ) external override returns (int256 amount0, int256 amount1) {
         require(amountSpecified != 0, 'AS');
 
         Slot0 memory slot0Start = slot0;
@@ -654,7 +652,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
 
             (step.tickNext, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(
                 state.tick,
-                tickSpacing,
+                this.tickSpacing(),
                 zeroForOne
             );
 
@@ -676,7 +674,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
                     : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                fee
+                this.fee()
             );
 
             if (exactInput) {
@@ -800,7 +798,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         // do the transfers and collect payment
         if (zeroForOne) {
             unchecked {
-                if (amount1 < 0) TransferHelper.safeTransfer(token1, recipient, uint256(-amount1));
+                if (amount1 < 0) TransferHelper.safeTransfer(this.token1(), recipient, uint256(-amount1));
             }
 
             uint256 balance0Before = balance0();
@@ -808,7 +806,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
             require(balance0Before + uint256(amount0) <= balance0(), 'IIA');
         } else {
             unchecked {
-                if (amount0 < 0) TransferHelper.safeTransfer(token0, recipient, uint256(-amount0));
+                if (amount0 < 0) TransferHelper.safeTransfer(this.token0(), recipient, uint256(-amount0));
             }
 
             uint256 balance1Before = balance1();
@@ -826,17 +824,17 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         uint256 amount0,
         uint256 amount1,
         bytes calldata data
-    ) external override lock noDelegateCall {
+    ) external override lock {
         uint128 _liquidity = liquidity;
         require(_liquidity > 0, 'L');
 
-        uint256 fee0 = FullMath.mulDivRoundingUp(amount0, fee, 1e6);
-        uint256 fee1 = FullMath.mulDivRoundingUp(amount1, fee, 1e6);
+        uint256 fee0 = FullMath.mulDivRoundingUp(amount0, this.fee(), 1e6);
+        uint256 fee1 = FullMath.mulDivRoundingUp(amount1, this.fee(), 1e6);
         uint256 balance0Before = balance0();
         uint256 balance1Before = balance1();
 
-        if (amount0 > 0) TransferHelper.safeTransfer(token0, recipient, amount0);
-        if (amount1 > 0) TransferHelper.safeTransfer(token1, recipient, amount1);
+        if (amount0 > 0) TransferHelper.safeTransfer(this.token0(), recipient, amount0);
+        if (amount1 > 0) TransferHelper.safeTransfer(this.token1(), recipient, amount1);
 
         IUniswapV3FlashCallback(msg.sender).uniswapV3FlashCallback(fee0, fee1, data);
 
@@ -898,12 +896,12 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
             if (amount0 > 0) {
                 if (amount0 == protocolFees.token0) amount0--; // ensure that the slot is not cleared, for gas savings
                 protocolFees.token0 -= amount0;
-                TransferHelper.safeTransfer(token0, recipient, amount0);
+                TransferHelper.safeTransfer(this.token0(), recipient, amount0);
             }
             if (amount1 > 0) {
                 if (amount1 == protocolFees.token1) amount1--; // ensure that the slot is not cleared, for gas savings
                 protocolFees.token1 -= amount1;
-                TransferHelper.safeTransfer(token1, recipient, amount1);
+                TransferHelper.safeTransfer(this.token1(), recipient, amount1);
             }
 
             emit CollectProtocol(msg.sender, recipient, amount0, amount1);
