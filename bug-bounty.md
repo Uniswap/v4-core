@@ -2,7 +2,7 @@
 
 ## Overview
 
-Starting on March 23rd, 2021, the [uniswap-v3-core](https://github.com/Uniswap/uniswap-v3-core) repository is subject to the Uniswap V3 Bug Bounty (the “Program”) to incentivize responsible bug disclosure.
+Starting on March 23rd, 2021, the [v3-core](https://github.com/Uniswap/v3-core) repository is subject to the Uniswap V3 Bug Bounty (the “Program”) to incentivize responsible bug disclosure.
 
 We are limiting the scope of the Program to critical and high severity bugs, and are offering a reward of up to $500,000. Happy hunting!
 

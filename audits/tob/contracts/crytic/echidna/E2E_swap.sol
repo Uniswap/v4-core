@@ -4,7 +4,7 @@ pragma abicoder v2;
 import './Setup.sol';
 import '../../../../../contracts/test/TestERC20.sol';
 import '../../../../../contracts/libraries/TickMath.sol';
-import '../../../../../contracts/UniswapV3Pool.sol';
+import '../../../../../contracts/Pool.sol';
 
 // import 'hardhat/console.sol';
 
@@ -12,7 +12,7 @@ contract E2E_swap {
     SetupTokens tokens;
     SetupUniswap uniswap;
 
-    UniswapV3Pool pool;
+    Pool pool;
 
     TestERC20 token0;
     TestERC20 token1;

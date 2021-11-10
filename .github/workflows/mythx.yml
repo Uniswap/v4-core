@@ -49,7 +49,7 @@ jobs:
             --mode deep \
             --async \
             --create-group \
-            --group-name "@uniswap/v3-core@${{ github.sha }}" \
+            --group-name "@uniswap/core-experiments@${{ github.sha }}" \
             --solc-version 0.8.9 \
             --check-properties \
             contracts/test/TickBitmapEchidnaTest.sol --include TickBitmapEchidnaTest \
