@@ -67,7 +67,7 @@ contract SwapTarget is IMintCallback, ISwapCallback, IFlashCallback {
         IPool(pool).swap(recipient, false, type(int256).max, sqrtPriceX96, abi.encode(msg.sender));
     }
 
-    event ISwapCallback(int256 amount0Delta, int256 amount1Delta);
+    event SwapCallback(int256 amount0Delta, int256 amount1Delta);
 
     function swapCallback(
         int256 amount0Delta,
@@ -76,7 +76,7 @@ contract SwapTarget is IMintCallback, ISwapCallback, IFlashCallback {
     ) external override {
         address sender = abi.decode(data, (address));
 
-        emit ISwapCallback(amount0Delta, amount1Delta);
+        emit SwapCallback(amount0Delta, amount1Delta);
 
         if (amount0Delta > 0) {
             IERC20Minimal(IPool(msg.sender).token0()).transferFrom(sender, msg.sender, uint256(amount0Delta));

@@ -47,14 +47,14 @@ contract MultihopTester is ISwapCallback {
         );
     }
 
-    event ISwapCallback(int256 amount0Delta, int256 amount1Delta);
+    event SwapCallback(int256 amount0Delta, int256 amount1Delta);
 
     function swapCallback(
         int256 amount0Delta,
         int256 amount1Delta,
         bytes calldata data
     ) public override {
-        emit ISwapCallback(amount0Delta, amount1Delta);
+        emit SwapCallback(amount0Delta, amount1Delta);
 
         (address[] memory pools, address payer) = abi.decode(data, (address[], address));
 
