@@ -13,7 +13,7 @@ import {
   createPoolFunctions,
   PoolFunctions,
   createMultiPoolFunctions,
-  encodePriceSqrt,
+  encodeSqrtPriceX96,
   getMinTick,
   getMaxTick,
   expandTo18Decimals,
@@ -101,8 +101,8 @@ describe('Pool', () => {
       inputToken = token0
       outputToken = token2
 
-      await pool0.initialize(encodePriceSqrt(1, 1))
-      await pool1.initialize(encodePriceSqrt(1, 1))
+      await pool0.initialize(encodeSqrtPriceX96(1, 1))
+      await pool1.initialize(encodeSqrtPriceX96(1, 1))
 
       await pool0Functions.mint(wallet.address, minTick, maxTick, expandTo18Decimals(1))
       await pool1Functions.mint(wallet.address, minTick, maxTick, expandTo18Decimals(1))

@@ -10,7 +10,7 @@ import {
   expandTo18Decimals,
   FeeAmount,
   getMinTick,
-  encodePriceSqrt,
+  encodeSqrtPriceX96,
   TICK_SPACINGS,
   createPoolFunctions,
   SwapFunction,
@@ -36,7 +36,7 @@ describe('Pool gas tests', () => {
 
   for (const feeProtocol of [0, 6]) {
     describe(feeProtocol > 0 ? 'fee is on' : 'fee is off', () => {
-      const startingPrice = encodePriceSqrt(100001, 100000)
+      const startingPrice = encodeSqrtPriceX96(100001, 100000)
       const startingTick = 0
       const feeAmount = FeeAmount.MEDIUM
       const tickSpacing = TICK_SPACINGS[feeAmount]
@@ -55,7 +55,7 @@ describe('Pool gas tests', () => {
           pool,
         })
 
-        await pool.initialize(encodePriceSqrt(1, 1))
+        await pool.initialize(encodeSqrtPriceX96(1, 1))
         await pool.setFeeProtocol(feeProtocol, feeProtocol)
         await pool.increaseObservationCardinalityNext(4)
         await pool.advanceTime(1)

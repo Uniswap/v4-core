@@ -15,7 +15,7 @@ import {
   getPositionKey,
   getMaxTick,
   getMinTick,
-  encodePriceSqrt,
+  encodeSqrtPriceX96,
   TICK_SPACINGS,
   createPoolFunctions,
   SwapFunction,
@@ -113,8 +113,8 @@ describe('Pool', () => {
 
   describe('#initialize', () => {
     it('fails if already initialized', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
-      await expect(pool.initialize(encodePriceSqrt(1, 1))).to.be.reverted
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
+      await expect(pool.initialize(encodeSqrtPriceX96(1, 1))).to.be.reverted
     })
     it('fails if starting price is too low', async () => {
       await expect(pool.initialize(1)).to.be.revertedWith('R')
@@ -133,7 +133,7 @@ describe('Pool', () => {
       expect((await pool.slot0()).tick).to.eq(getMaxTick(1) - 1)
     })
     it('sets initial variables', async () => {
-      const price = encodePriceSqrt(1, 2)
+      const price = encodeSqrtPriceX96(1, 2)
       await pool.initialize(price)
 
       const { sqrtPriceX96, observationIndex } = await pool.slot0()
@@ -142,7 +142,7 @@ describe('Pool', () => {
       expect((await pool.slot0()).tick).to.eq(-6932)
     })
     it('initializes the first observations slot', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       checkObservationEquals(await pool.observations(0), {
         secondsPerLiquidityCumulativeX128: 0,
         initialized: true,
@@ -151,7 +151,7 @@ describe('Pool', () => {
       })
     })
     it('emits a Initialized event with the input tick', async () => {
-      const sqrtPriceX96 = encodePriceSqrt(1, 2)
+      const sqrtPriceX96 = encodeSqrtPriceX96(1, 2)
       await expect(pool.initialize(sqrtPriceX96)).to.emit(pool, 'Initialize').withArgs(sqrtPriceX96, -6932)
     })
   })
@@ -161,24 +161,24 @@ describe('Pool', () => {
       await expect(pool.increaseObservationCardinalityNext(2)).to.be.revertedWith('LOK')
     })
     it('emits an event including both old and new', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await expect(pool.increaseObservationCardinalityNext(2))
         .to.emit(pool, 'IncreaseObservationCardinalityNext')
         .withArgs(1, 2)
     })
     it('does not emit an event for no op call', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await pool.increaseObservationCardinalityNext(3)
       await expect(pool.increaseObservationCardinalityNext(2)).to.not.emit(pool, 'IncreaseObservationCardinalityNext')
     })
     it('does not change cardinality next if less than current', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await pool.increaseObservationCardinalityNext(3)
       await pool.increaseObservationCardinalityNext(2)
       expect((await pool.slot0()).observationCardinalityNext).to.eq(3)
     })
     it('increases cardinality and cardinality next first time', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await pool.increaseObservationCardinalityNext(2)
       const { observationCardinality, observationCardinalityNext } = await pool.slot0()
       expect(observationCardinality).to.eq(1)
@@ -192,7 +192,7 @@ describe('Pool', () => {
     })
     describe('after initialization', () => {
       beforeEach('initialize the pool at price of 10:1', async () => {
-        await pool.initialize(encodePriceSqrt(1, 10))
+        await pool.initialize(encodeSqrtPriceX96(1, 10))
         await mint(wallet.address, minTick, maxTick, 3161)
       })
 
@@ -609,7 +609,7 @@ describe('Pool', () => {
   // the combined amount of liquidity that the pool is initialized with (including the 1 minimum liquidity that is burned)
   const initializeLiquidityAmount = expandTo18Decimals(2)
   async function initializeAtZeroTick(pool: MockTimePool): Promise<void> {
-    await pool.initialize(encodePriceSqrt(1, 1))
+    await pool.initialize(encodeSqrtPriceX96(1, 1))
     const tickSpacing = await pool.tickSpacing()
     const [min, max] = [getMinTick(tickSpacing), getMaxTick(tickSpacing)]
     await mint(wallet.address, min, max, initializeLiquidityAmount)
@@ -923,7 +923,7 @@ describe('Pool', () => {
   describe('#collect', () => {
     beforeEach(async () => {
       pool = await createPool(FeeAmount.LOW, TICK_SPACINGS[FeeAmount.LOW])
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
     })
 
     it('works with multiple LPs', async () => {
@@ -1042,7 +1042,7 @@ describe('Pool', () => {
 
     beforeEach(async () => {
       pool = await createPool(FeeAmount.LOW, TICK_SPACINGS[FeeAmount.LOW])
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await mint(wallet.address, minTick, maxTick, liquidityAmount)
     })
 
@@ -1295,7 +1295,7 @@ describe('Pool', () => {
       })
       describe('post initialize', () => {
         beforeEach('initialize pool', async () => {
-          await pool.initialize(encodePriceSqrt(1, 1))
+          await pool.initialize(encodeSqrtPriceX96(1, 1))
         })
         it('mint can only be called for multiples of 12', async () => {
           await expect(mint(wallet.address, -6, 0, 1)).to.be.reverted
@@ -1386,7 +1386,7 @@ describe('Pool', () => {
       await expect(flash(0, 200, other.address)).to.be.reverted
     })
     it('fails if no liquidity', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await expect(flash(100, 200, other.address)).to.be.revertedWith('L')
       await expect(flash(100, 0, other.address)).to.be.revertedWith('L')
       await expect(flash(0, 200, other.address)).to.be.revertedWith('L')
@@ -1574,7 +1574,7 @@ describe('Pool', () => {
       await expect(pool.increaseObservationCardinalityNext(2)).to.be.reverted
     })
     describe('after initialization', () => {
-      beforeEach('initialize the pool', () => pool.initialize(encodePriceSqrt(1, 1)))
+      beforeEach('initialize the pool', () => pool.initialize(encodeSqrtPriceX96(1, 1)))
       it('oracle starting state after initialization', async () => {
         const { observationCardinality, observationIndex, observationCardinalityNext } = await pool.slot0()
         expect(observationCardinality).to.eq(1)
@@ -1607,7 +1607,7 @@ describe('Pool', () => {
 
   describe('#setFeeProtocol', () => {
     beforeEach('initialize the pool', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
     })
 
     it('can only be called by factory owner', async () => {
@@ -1660,7 +1660,7 @@ describe('Pool', () => {
 
   describe('#lock', () => {
     beforeEach('initialize the pool', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await mint(wallet.address, minTick, maxTick, expandTo18Decimals(1))
     })
 
@@ -1677,7 +1677,7 @@ describe('Pool', () => {
     const tickUpper = TICK_SPACINGS[FeeAmount.MEDIUM]
     const tickSpacing = TICK_SPACINGS[FeeAmount.MEDIUM]
     beforeEach(async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await mint(wallet.address, tickLower, tickUpper, 10)
     })
     it('throws if ticks are in reverse order', async () => {
@@ -1715,7 +1715,7 @@ describe('Pool', () => {
     })
     it('does not account for time increase above range', async () => {
       await pool.advanceTime(5)
-      await swapToHigherPrice(encodePriceSqrt(2, 1), wallet.address)
+      await swapToHigherPrice(encodeSqrtPriceX96(2, 1), wallet.address)
       await pool.advanceTime(7)
       const { secondsPerLiquidityInsideX128, tickCumulativeInside, secondsInside } =
         await pool.snapshotCumulativesInside(tickLower, tickUpper)
@@ -1725,7 +1725,7 @@ describe('Pool', () => {
     })
     it('does not account for time increase below range', async () => {
       await pool.advanceTime(5)
-      await swapToLowerPrice(encodePriceSqrt(1, 2), wallet.address)
+      await swapToLowerPrice(encodeSqrtPriceX96(1, 2), wallet.address)
       await pool.advanceTime(7)
       const { secondsPerLiquidityInsideX128, tickCumulativeInside, secondsInside } =
         await pool.snapshotCumulativesInside(tickLower, tickUpper)
@@ -1735,9 +1735,9 @@ describe('Pool', () => {
       expect(secondsInside).to.eq(5)
     })
     it('time increase below range is not counted', async () => {
-      await swapToLowerPrice(encodePriceSqrt(1, 2), wallet.address)
+      await swapToLowerPrice(encodeSqrtPriceX96(1, 2), wallet.address)
       await pool.advanceTime(5)
-      await swapToHigherPrice(encodePriceSqrt(1, 1), wallet.address)
+      await swapToHigherPrice(encodeSqrtPriceX96(1, 1), wallet.address)
       await pool.advanceTime(7)
       const { secondsPerLiquidityInsideX128, tickCumulativeInside, secondsInside } =
         await pool.snapshotCumulativesInside(tickLower, tickUpper)
@@ -1747,9 +1747,9 @@ describe('Pool', () => {
       expect(secondsInside).to.eq(7)
     })
     it('time increase above range is not counted', async () => {
-      await swapToHigherPrice(encodePriceSqrt(2, 1), wallet.address)
+      await swapToHigherPrice(encodeSqrtPriceX96(2, 1), wallet.address)
       await pool.advanceTime(5)
-      await swapToLowerPrice(encodePriceSqrt(1, 1), wallet.address)
+      await swapToLowerPrice(encodeSqrtPriceX96(1, 1), wallet.address)
       await pool.advanceTime(7)
       const { secondsPerLiquidityInsideX128, tickCumulativeInside, secondsInside } =
         await pool.snapshotCumulativesInside(tickLower, tickUpper)
@@ -1761,7 +1761,7 @@ describe('Pool', () => {
     it('positions minted after time spent', async () => {
       await pool.advanceTime(5)
       await mint(wallet.address, tickUpper, getMaxTick(tickSpacing), 15)
-      await swapToHigherPrice(encodePriceSqrt(2, 1), wallet.address)
+      await swapToHigherPrice(encodeSqrtPriceX96(2, 1), wallet.address)
       await pool.advanceTime(8)
       const { secondsPerLiquidityInsideX128, tickCumulativeInside, secondsInside } =
         await pool.snapshotCumulativesInside(tickUpper, getMaxTick(tickSpacing))
@@ -1774,7 +1774,7 @@ describe('Pool', () => {
     it('overlapping liquidity is aggregated', async () => {
       await mint(wallet.address, tickLower, getMaxTick(tickSpacing), 15)
       await pool.advanceTime(5)
-      await swapToHigherPrice(encodePriceSqrt(2, 1), wallet.address)
+      await swapToHigherPrice(encodeSqrtPriceX96(2, 1), wallet.address)
       await pool.advanceTime(8)
       const { secondsPerLiquidityInsideX128, tickCumulativeInside, secondsInside } =
         await pool.snapshotCumulativesInside(tickLower, tickUpper)
@@ -1792,7 +1792,7 @@ describe('Pool', () => {
       } = await pool.snapshotCumulativesInside(getMinTick(tickSpacing), tickLower)
       await pool.advanceTime(8)
       // 13 seconds in starting range, then 3 seconds in newly minted range
-      await swapToLowerPrice(encodePriceSqrt(1, 2), wallet.address)
+      await swapToLowerPrice(encodeSqrtPriceX96(1, 2), wallet.address)
       await pool.advanceTime(3)
       const { secondsPerLiquidityInsideX128, tickCumulativeInside, secondsInside } =
         await pool.snapshotCumulativesInside(getMinTick(tickSpacing), tickLower)
@@ -1811,7 +1811,7 @@ describe('Pool', () => {
 
   describe('fees overflow scenarios', async () => {
     it('up to max uint 128', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await mint(wallet.address, minTick, maxTick, 1)
       await flash(0, 0, wallet.address, MaxUint128, MaxUint128)
 
@@ -1835,7 +1835,7 @@ describe('Pool', () => {
     })
 
     it('overflow max uint 128', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await mint(wallet.address, minTick, maxTick, 1)
       await flash(0, 0, wallet.address, MaxUint128, MaxUint128)
       await flash(0, 0, wallet.address, 1, 1)
@@ -1861,7 +1861,7 @@ describe('Pool', () => {
     })
 
     it('overflow max uint 128 after poke burns fees owed to 0', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await mint(wallet.address, minTick, maxTick, 1)
       await flash(0, 0, wallet.address, MaxUint128, MaxUint128)
       await pool.burn(minTick, maxTick, 0)
@@ -1881,7 +1881,7 @@ describe('Pool', () => {
     })
 
     it('two positions at the same snapshot', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await mint(wallet.address, minTick, maxTick, 1)
       await mint(other.address, minTick, maxTick, 1)
       await flash(0, 0, wallet.address, MaxUint128, 0)
@@ -1900,7 +1900,7 @@ describe('Pool', () => {
     })
 
     it('two positions 1 wei of fees apart overflows exactly once', async () => {
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await mint(wallet.address, minTick, maxTick, 1)
       await flash(0, 0, wallet.address, 1, 0)
       await mint(other.address, minTick, maxTick, 1)
@@ -1927,7 +1927,7 @@ describe('Pool', () => {
       underpay = (await underpayFactory.deploy()) as SwapPaymentTest
       await token0.approve(underpay.address, constants.MaxUint256)
       await token1.approve(underpay.address, constants.MaxUint256)
-      await pool.initialize(encodePriceSqrt(1, 1))
+      await pool.initialize(encodeSqrtPriceX96(1, 1))
       await mint(wallet.address, minTick, maxTick, expandTo18Decimals(1))
     })
 

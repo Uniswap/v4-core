@@ -11,7 +11,7 @@ import { formatPrice, formatTokenAmount } from './shared/format'
 
 import {
   createPoolFunctions,
-  encodePriceSqrt,
+  encodeSqrtPriceX96,
   expandTo18Decimals,
   FeeAmount,
   getMaxLiquidityPerTick,
@@ -60,7 +60,7 @@ describe('Pool arbitrage tests', () => {
 
   for (const feeProtocol of [0, 6]) {
     describe(`protocol fee = ${feeProtocol};`, () => {
-      const startingPrice = encodePriceSqrt(1, 1)
+      const startingPrice = encodeSqrtPriceX96(1, 1)
       const startingTick = 0
       const feeAmount = FeeAmount.MEDIUM
       const tickSpacing = TICK_SPACINGS[feeAmount]
@@ -141,8 +141,8 @@ describe('Pool arbitrage tests', () => {
             )
 
             const executionPrice = zeroForOne
-              ? encodePriceSqrt(amount1Delta, amount0Delta.mul(-1))
-              : encodePriceSqrt(amount1Delta.mul(-1), amount0Delta)
+              ? encodeSqrtPriceX96(amount1Delta, amount0Delta.mul(-1))
+              : encodeSqrtPriceX96(amount1Delta.mul(-1), amount0Delta)
 
             return { executionPrice, nextSqrtRatio, amount0Delta, amount1Delta }
           }
@@ -152,13 +152,13 @@ describe('Pool arbitrage tests', () => {
               description: 'exact input of 10e18 token0 with starting price of 1.0 and true price of 0.98',
               zeroForOne: true,
               inputAmount: expandTo18Decimals(10),
-              assumedTruePriceAfterSwap: encodePriceSqrt(98, 100),
+              assumedTruePriceAfterSwap: encodeSqrtPriceX96(98, 100),
             },
             {
               description: 'exact input of 10e18 token0 with starting price of 1.0 and true price of 1.01',
               zeroForOne: true,
               inputAmount: expandTo18Decimals(10),
-              assumedTruePriceAfterSwap: encodePriceSqrt(101, 100),
+              assumedTruePriceAfterSwap: encodeSqrtPriceX96(101, 100),
             },
           ]) {
             describe(description, () => {
