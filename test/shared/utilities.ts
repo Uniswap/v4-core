@@ -32,33 +32,10 @@ export function expandTo18Decimals(n: number): BigNumber {
   return BigNumber.from(n).mul(BigNumber.from(10).pow(18))
 }
 
-export function getCreate2Address(
-  factoryAddress: string,
-  [tokenA, tokenB]: [string, string],
-  fee: number,
-  bytecode: string
-): string {
-  const [token0, token1] = tokenA.toLowerCase() < tokenB.toLowerCase() ? [tokenA, tokenB] : [tokenB, tokenA]
-  const constructorArgumentsEncoded = utils.defaultAbiCoder.encode(
-    ['address', 'address', 'uint24'],
-    [token0, token1, fee]
-  )
-  const create2Inputs = [
-    '0xff',
-    factoryAddress,
-    // salt
-    utils.keccak256(constructorArgumentsEncoded),
-    // init code. bytecode + constructor arguments
-    utils.keccak256(bytecode),
-  ]
-  const sanitizedInputs = `0x${create2Inputs.map((i) => i.slice(2)).join('')}`
-  return utils.getAddress(`0x${utils.keccak256(sanitizedInputs).slice(-40)}`)
-}
-
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 })
 
 // returns the sqrt price as a 64x96
-export function encodePriceSqrt(reserve1: BigNumberish, reserve0: BigNumberish): BigNumber {
+export function encodeSqrtPriceX96(reserve1: BigNumberish, reserve0: BigNumberish): BigNumber {
   return BigNumber.from(
     new bn(reserve1.toString())
       .div(reserve0.toString())
@@ -71,6 +48,29 @@ export function encodePriceSqrt(reserve1: BigNumberish, reserve0: BigNumberish):
 
 export function getPositionKey(address: string, lowerTick: number, upperTick: number): string {
   return utils.keccak256(utils.solidityPack(['address', 'int24', 'int24'], [address, lowerTick, upperTick]))
+}
+
+export function getPoolId({
+  token0,
+  token1,
+  fee,
+}: {
+  token0: string | Contract
+  token1: string | Contract
+  fee: number
+}): string {
+  return utils.keccak256(
+    utils.solidityPack(
+      ['tuple(address,address,uint24)'],
+      [
+        [
+          typeof token0 === 'string' ? token0 : token0.address,
+          typeof token1 === 'string' ? token1 : token1.address,
+          fee,
+        ],
+      ]
+    )
+  )
 }
 
 export type SwapFunction = (

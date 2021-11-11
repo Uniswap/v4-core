@@ -3,7 +3,7 @@ import { ethers } from 'hardhat'
 import { TickMathTest } from '../typechain/TickMathTest'
 import { expect } from './shared/expect'
 import snapshotGasCost from './shared/snapshotGasCost'
-import { encodePriceSqrt, MIN_SQRT_RATIO, MAX_SQRT_RATIO } from './shared/utilities'
+import { encodeSqrtPriceX96, MIN_SQRT_RATIO, MAX_SQRT_RATIO } from './shared/utilities'
 import Decimal from 'decimal.js'
 
 const MIN_TICK = -887272
@@ -41,11 +41,11 @@ describe('TickMath', () => {
     })
 
     it('min tick ratio is less than js implementation', async () => {
-      expect(await tickMath.getSqrtRatioAtTick(MIN_TICK)).to.be.lt(encodePriceSqrt(1, BigNumber.from(2).pow(127)))
+      expect(await tickMath.getSqrtRatioAtTick(MIN_TICK)).to.be.lt(encodeSqrtPriceX96(1, BigNumber.from(2).pow(127)))
     })
 
     it('max tick ratio is greater than js implementation', async () => {
-      expect(await tickMath.getSqrtRatioAtTick(MAX_TICK)).to.be.gt(encodePriceSqrt(BigNumber.from(2).pow(127), 1))
+      expect(await tickMath.getSqrtRatioAtTick(MAX_TICK)).to.be.gt(encodeSqrtPriceX96(BigNumber.from(2).pow(127), 1))
     })
 
     it('max tick', async () => {
@@ -114,17 +114,17 @@ describe('TickMath', () => {
 
     for (const ratio of [
       MIN_SQRT_RATIO,
-      encodePriceSqrt(BigNumber.from(10).pow(12), 1),
-      encodePriceSqrt(BigNumber.from(10).pow(6), 1),
-      encodePriceSqrt(1, 64),
-      encodePriceSqrt(1, 8),
-      encodePriceSqrt(1, 2),
-      encodePriceSqrt(1, 1),
-      encodePriceSqrt(2, 1),
-      encodePriceSqrt(8, 1),
-      encodePriceSqrt(64, 1),
-      encodePriceSqrt(1, BigNumber.from(10).pow(6)),
-      encodePriceSqrt(1, BigNumber.from(10).pow(12)),
+      encodeSqrtPriceX96(BigNumber.from(10).pow(12), 1),
+      encodeSqrtPriceX96(BigNumber.from(10).pow(6), 1),
+      encodeSqrtPriceX96(1, 64),
+      encodeSqrtPriceX96(1, 8),
+      encodeSqrtPriceX96(1, 2),
+      encodeSqrtPriceX96(1, 1),
+      encodeSqrtPriceX96(2, 1),
+      encodeSqrtPriceX96(8, 1),
+      encodeSqrtPriceX96(64, 1),
+      encodeSqrtPriceX96(1, BigNumber.from(10).pow(6)),
+      encodeSqrtPriceX96(1, BigNumber.from(10).pow(12)),
       MAX_SQRT_RATIO.sub(1),
     ]) {
       describe(`ratio ${ratio}`, () => {

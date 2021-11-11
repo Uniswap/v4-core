@@ -8,7 +8,7 @@ interface TokensFixture {
   token2: TestERC20
 }
 
-async function tokensFixture(): Promise<TokensFixture> {
+export async function tokensFixture(): Promise<TokensFixture> {
   const tokenFactory = await ethers.getContractFactory('TestERC20')
   const tokenA = (await tokenFactory.deploy(BigNumber.from(2).pow(255))) as TestERC20
   const tokenB = (await tokenFactory.deploy(BigNumber.from(2).pow(255))) as TestERC20

@@ -4,7 +4,7 @@ import { SwapMathTest } from '../typechain/SwapMathTest'
 
 import { expect } from './shared/expect'
 import snapshotGasCost from './shared/snapshotGasCost'
-import { encodePriceSqrt, expandTo18Decimals } from './shared/utilities'
+import { encodeSqrtPriceX96, expandTo18Decimals } from './shared/utilities'
 import { SqrtPriceMathTest } from '../typechain/SqrtPriceMathTest'
 
 describe('SwapMath', () => {
@@ -19,8 +19,8 @@ describe('SwapMath', () => {
 
   describe('#computeSwapStep', () => {
     it('exact amount in that gets capped at price target in one for zero', async () => {
-      const price = encodePriceSqrt(1, 1)
-      const priceTarget = encodePriceSqrt(101, 100)
+      const price = encodeSqrtPriceX96(1, 1)
+      const priceTarget = encodeSqrtPriceX96(101, 100)
       const liquidity = expandTo18Decimals(2)
       const amount = expandTo18Decimals(1)
       const fee = 600
@@ -51,8 +51,8 @@ describe('SwapMath', () => {
     })
 
     it('exact amount out that gets capped at price target in one for zero', async () => {
-      const price = encodePriceSqrt(1, 1)
-      const priceTarget = encodePriceSqrt(101, 100)
+      const price = encodeSqrtPriceX96(1, 1)
+      const priceTarget = encodeSqrtPriceX96(101, 100)
       const liquidity = expandTo18Decimals(2)
       const amount = expandTo18Decimals(1).mul(-1)
       const fee = 600
@@ -83,8 +83,8 @@ describe('SwapMath', () => {
     })
 
     it('exact amount in that is fully spent in one for zero', async () => {
-      const price = encodePriceSqrt(1, 1)
-      const priceTarget = encodePriceSqrt(1000, 100)
+      const price = encodeSqrtPriceX96(1, 1)
+      const priceTarget = encodeSqrtPriceX96(1000, 100)
       const liquidity = expandTo18Decimals(2)
       const amount = expandTo18Decimals(1)
       const fee = 600
@@ -115,8 +115,8 @@ describe('SwapMath', () => {
     })
 
     it('exact amount out that is fully received in one for zero', async () => {
-      const price = encodePriceSqrt(1, 1)
-      const priceTarget = encodePriceSqrt(10000, 100)
+      const price = encodeSqrtPriceX96(1, 1)
+      const priceTarget = encodeSqrtPriceX96(10000, 100)
       const liquidity = expandTo18Decimals(2)
       const amount = expandTo18Decimals(1).mul(-1)
       const fee = 600
@@ -234,8 +234,8 @@ describe('SwapMath', () => {
       it('swap one for zero exact in capped', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(
-            encodePriceSqrt(1, 1),
-            encodePriceSqrt(101, 100),
+            encodeSqrtPriceX96(1, 1),
+            encodeSqrtPriceX96(101, 100),
             expandTo18Decimals(2),
             expandTo18Decimals(1),
             600
@@ -245,8 +245,8 @@ describe('SwapMath', () => {
       it('swap zero for one exact in capped', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(
-            encodePriceSqrt(1, 1),
-            encodePriceSqrt(99, 100),
+            encodeSqrtPriceX96(1, 1),
+            encodeSqrtPriceX96(99, 100),
             expandTo18Decimals(2),
             expandTo18Decimals(1),
             600
@@ -256,8 +256,8 @@ describe('SwapMath', () => {
       it('swap one for zero exact out capped', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(
-            encodePriceSqrt(1, 1),
-            encodePriceSqrt(101, 100),
+            encodeSqrtPriceX96(1, 1),
+            encodeSqrtPriceX96(101, 100),
             expandTo18Decimals(2),
             expandTo18Decimals(1).mul(-1),
             600
@@ -267,8 +267,8 @@ describe('SwapMath', () => {
       it('swap zero for one exact out capped', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(
-            encodePriceSqrt(1, 1),
-            encodePriceSqrt(99, 100),
+            encodeSqrtPriceX96(1, 1),
+            encodeSqrtPriceX96(99, 100),
             expandTo18Decimals(2),
             expandTo18Decimals(1).mul(-1),
             600
@@ -278,8 +278,8 @@ describe('SwapMath', () => {
       it('swap one for zero exact in partial', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(
-            encodePriceSqrt(1, 1),
-            encodePriceSqrt(1010, 100),
+            encodeSqrtPriceX96(1, 1),
+            encodeSqrtPriceX96(1010, 100),
             expandTo18Decimals(2),
             1000,
             600
@@ -289,8 +289,8 @@ describe('SwapMath', () => {
       it('swap zero for one exact in partial', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(
-            encodePriceSqrt(1, 1),
-            encodePriceSqrt(99, 1000),
+            encodeSqrtPriceX96(1, 1),
+            encodeSqrtPriceX96(99, 1000),
             expandTo18Decimals(2),
             1000,
             600
@@ -300,8 +300,8 @@ describe('SwapMath', () => {
       it('swap one for zero exact out partial', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(
-            encodePriceSqrt(1, 1),
-            encodePriceSqrt(1010, 100),
+            encodeSqrtPriceX96(1, 1),
+            encodeSqrtPriceX96(1010, 100),
             expandTo18Decimals(2),
             1000,
             600
@@ -311,8 +311,8 @@ describe('SwapMath', () => {
       it('swap zero for one exact out partial', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(
-            encodePriceSqrt(1, 1),
-            encodePriceSqrt(99, 1000),
+            encodeSqrtPriceX96(1, 1),
+            encodeSqrtPriceX96(99, 1000),
             expandTo18Decimals(2),
             1000,
             600
