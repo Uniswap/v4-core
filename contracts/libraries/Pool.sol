@@ -242,25 +242,37 @@ library Pool {
         int24 tickSpacing;
     }
 
+    struct ModifyPositionState {
+        int56 tickCumulative;
+        uint160 secondsPerLiquidityCumulativeX128;
+        bool flippedLower;
+        bool flippedUpper;
+        uint256 feeGrowthInside0X128;
+        uint256 feeGrowthInside1X128;
+    }
+
+    struct ModifyPositionResult {
+        int256 amount0;
+        int256 amount1;
+    }
+
     /// @dev Effect changes to a position in a pool
     /// @param params the position details and the change to the position's liquidity to effect
-    /// @return amount0 the delta of the token0 balance of the pool, negative if the pool should pay the recipient
-    /// @return amount1 the delta of the token1 balance of the pool, negative if the pool should pay the recipient
+    /// @return result the deltas of the token balances of the pool
     function modifyPosition(State storage self, ModifyPositionParams memory params)
         internal
         lock(self)
-        returns (int256 amount0, int256 amount1)
+        returns (ModifyPositionResult memory result)
     {
         checkTicks(params.tickLower, params.tickUpper);
 
         Position.Info storage position = self.positions.get(params.owner, params.tickLower, params.tickUpper);
 
         {
+            ModifyPositionState memory state;
             // if we need to update the ticks, do it
-            bool flippedLower;
-            bool flippedUpper;
             if (params.liquidityDelta != 0) {
-                (int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128) = self.observations.observeSingle(
+                (state.tickCumulative, state.secondsPerLiquidityCumulativeX128) = self.observations.observeSingle(
                     params.time,
                     0,
                     self.slot0.tick,
@@ -269,40 +281,40 @@ library Pool {
                     self.slot0.observationCardinality
                 );
 
-                flippedLower = self.ticks.update(
+                state.flippedLower = self.ticks.update(
                     params.tickLower,
                     self.slot0.tick,
                     params.liquidityDelta,
                     self.feeGrowthGlobal0X128,
                     self.feeGrowthGlobal1X128,
-                    secondsPerLiquidityCumulativeX128,
-                    tickCumulative,
+                    state.secondsPerLiquidityCumulativeX128,
+                    state.tickCumulative,
                     params.time,
                     false,
                     params.maxLiquidityPerTick
                 );
-                flippedUpper = self.ticks.update(
+                state.flippedUpper = self.ticks.update(
                     params.tickUpper,
                     self.slot0.tick,
                     params.liquidityDelta,
                     self.feeGrowthGlobal0X128,
                     self.feeGrowthGlobal1X128,
-                    secondsPerLiquidityCumulativeX128,
-                    tickCumulative,
+                    state.secondsPerLiquidityCumulativeX128,
+                    state.tickCumulative,
                     params.time,
                     true,
                     params.maxLiquidityPerTick
                 );
 
-                if (flippedLower) {
+                if (state.flippedLower) {
                     self.tickBitmap.flipTick(params.tickLower, params.tickSpacing);
                 }
-                if (flippedUpper) {
+                if (state.flippedUpper) {
                     self.tickBitmap.flipTick(params.tickUpper, params.tickSpacing);
                 }
             }
 
-            (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = self.ticks.getFeeGrowthInside(
+            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = self.ticks.getFeeGrowthInside(
                 params.tickLower,
                 params.tickUpper,
                 self.slot0.tick,
@@ -310,14 +322,14 @@ library Pool {
                 self.feeGrowthGlobal1X128
             );
 
-            position.update(params.liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
+            position.update(params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
 
             // clear any tick data that is no longer needed
             if (params.liquidityDelta < 0) {
-                if (flippedLower) {
+                if (state.flippedLower) {
                     self.ticks.clear(params.tickLower);
                 }
-                if (flippedUpper) {
+                if (state.flippedUpper) {
                     self.ticks.clear(params.tickUpper);
                 }
             }
@@ -327,43 +339,41 @@ library Pool {
             if (self.slot0.tick < params.tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ token0 (it's becoming more valuable) so user must provide it
-                amount0 = SqrtPriceMath.getAmount0Delta(
+                result.amount0 = SqrtPriceMath.getAmount0Delta(
                     TickMath.getSqrtRatioAtTick(params.tickLower),
                     TickMath.getSqrtRatioAtTick(params.tickUpper),
                     params.liquidityDelta
                 );
             } else if (self.slot0.tick < params.tickUpper) {
-                // current tick is inside the passed range
-                uint128 liquidityBefore = self.liquidity; // SLOAD for gas optimization
-
+                // current tick is inside the passed range, must modify liquidity
                 // write an oracle entry
                 (self.slot0.observationIndex, self.slot0.observationCardinality) = self.observations.write(
                     self.slot0.observationIndex,
                     params.time,
                     self.slot0.tick,
-                    liquidityBefore,
+                    self.liquidity,
                     self.slot0.observationCardinality,
                     self.slot0.observationCardinalityNext
                 );
 
-                amount0 = SqrtPriceMath.getAmount0Delta(
+                result.amount0 = SqrtPriceMath.getAmount0Delta(
                     self.slot0.sqrtPriceX96,
                     TickMath.getSqrtRatioAtTick(params.tickUpper),
                     params.liquidityDelta
                 );
-                amount1 = SqrtPriceMath.getAmount1Delta(
+                result.amount1 = SqrtPriceMath.getAmount1Delta(
                     TickMath.getSqrtRatioAtTick(params.tickLower),
                     self.slot0.sqrtPriceX96,
                     params.liquidityDelta
                 );
 
                 self.liquidity = params.liquidityDelta < 0
-                    ? liquidityBefore - uint128(-params.liquidityDelta)
-                    : liquidityBefore + uint128(params.liquidityDelta);
+                    ? self.liquidity - uint128(-params.liquidityDelta)
+                    : self.liquidity + uint128(params.liquidityDelta);
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ token1 (it's becoming more valuable) so user must provide it
-                amount1 = SqrtPriceMath.getAmount1Delta(
+                result.amount1 = SqrtPriceMath.getAmount1Delta(
                     TickMath.getSqrtRatioAtTick(params.tickLower),
                     TickMath.getSqrtRatioAtTick(params.tickUpper),
                     params.liquidityDelta

@@ -46,21 +46,21 @@ contract SingletonPool {
     function mint(Pool.Key memory key, MintParams memory params) external returns (uint256 amount0, uint256 amount1) {
         require(params.amount > 0);
 
-        //        (int256 amount0Int, int256 amount1Int) = _getPool(key).modifyPosition(
-        //            Pool.ModifyPositionParams({
-        //                owner: params.recipient,
-        //                tickLower: params.tickLower,
-        //                tickUpper: params.tickUpper,
-        //                liquidityDelta: int256(uint256(params.amount)).toInt128(),
-        //                time: _blockTimestamp(),
-        //    // todo: where to get these, probably from storage
-        //                maxLiquidityPerTick: type(uint128).max,
-        //                tickSpacing: 60
-        //            })
-        //        );
-        //
-        //        amount0 = uint256(amount0Int);
-        //        amount1 = uint256(amount1Int);
+        Pool.ModifyPositionResult memory result = _getPool(key).modifyPosition(
+            Pool.ModifyPositionParams({
+                owner: params.recipient,
+                tickLower: params.tickLower,
+                tickUpper: params.tickUpper,
+                liquidityDelta: int256(uint256(params.amount)).toInt128(),
+                time: _blockTimestamp(),
+                // todo: where to get these, probably from storage
+                maxLiquidityPerTick: type(uint128).max,
+                tickSpacing: 60
+            })
+        );
+
+        amount0 = uint256(result.amount0);
+        amount1 = uint256(result.amount1);
 
         // todo: account the delta via the vault
     }
