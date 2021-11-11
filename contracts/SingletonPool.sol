@@ -46,6 +46,7 @@ contract SingletonPool {
     function mint(Pool.Key memory key, MintParams memory params) external returns (uint256 amount0, uint256 amount1) {
         require(params.amount > 0);
 
+        // todo: where to get maxLiquidityPerTick, tickSpacing, probably from storage
         Pool.ModifyPositionResult memory result = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: params.recipient,
@@ -53,7 +54,6 @@ contract SingletonPool {
                 tickUpper: params.tickUpper,
                 liquidityDelta: int256(uint256(params.amount)).toInt128(),
                 time: _blockTimestamp(),
-                // todo: where to get these, probably from storage
                 maxLiquidityPerTick: type(uint128).max,
                 tickSpacing: 60
             })
@@ -77,6 +77,7 @@ contract SingletonPool {
     function burn(Pool.Key memory key, BurnParams memory params) external returns (uint256 amount0, uint256 amount1) {
         require(params.amount > 0);
 
+        // todo: where to get maxLiquidityPerTick, tickSpacing, probably from storage
         Pool.ModifyPositionResult memory result = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
@@ -84,7 +85,6 @@ contract SingletonPool {
                 tickUpper: params.tickUpper,
                 liquidityDelta: -int256(uint256(params.amount)).toInt128(),
                 time: _blockTimestamp(),
-                // todo: where to get these, probably from storage
                 maxLiquidityPerTick: type(uint128).max,
                 tickSpacing: 60
             })
@@ -92,6 +92,33 @@ contract SingletonPool {
 
         amount0 = uint256(-result.amount0);
         amount1 = uint256(-result.amount1);
+
+        // todo: account the delta via the vault
+    }
+
+    struct SwapParams {
+        address recipient;
+        bool zeroForOne;
+        int256 amountSpecified;
+        uint160 sqrtPriceLimitX96;
+        bytes data;
+    }
+
+    function swap(Pool.Key memory key, SwapParams memory params) external returns (int256 amount0, int256 amount1) {
+        Pool.SwapResult memory result = _getPool(key).swap(
+            Pool.SwapParams({
+                time: _blockTimestamp(),
+                fee: key.fee,
+                recipient: params.recipient,
+                zeroForOne: params.zeroForOne,
+                amountSpecified: params.amountSpecified,
+                sqrtPriceLimitX96: params.sqrtPriceLimitX96,
+                data: params.data,
+                tickSpacing: 60
+            })
+        );
+
+        (amount0, amount1) = (result.amount0, result.amount1);
 
         // todo: account the delta via the vault
     }

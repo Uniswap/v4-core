@@ -384,67 +384,6 @@ library Pool {
         }
     }
 
-    //    function collect(
-    //        State storage self,
-    //        Key memory key,
-    //        address recipient,
-    //        int24 tickLower,
-    //        int24 tickUpper,
-    //        uint128 amount0Requested,
-    //        uint128 amount1Requested
-    //    ) internal lock(self) returns (uint128 amount0, uint128 amount1) {
-    //        unchecked {
-    //            // we don't need to checkTicks here, because invalid positions will never have non-zero tokensOwed{0,1}
-    //            Position.Info storage position = self.positions.get(msg.sender, tickLower, tickUpper);
-    //
-    //            amount0 = amount0Requested > position.tokensOwed0 ? position.tokensOwed0 : amount0Requested;
-    //            amount1 = amount1Requested > position.tokensOwed1 ? position.tokensOwed1 : amount1Requested;
-    //
-    //            if (amount0 > 0) {
-    //                position.tokensOwed0 -= amount0;
-    //                TransferHelper.safeTransfer(key.token0, recipient, amount0);
-    //            }
-    //            if (amount1 > 0) {
-    //                position.tokensOwed1 -= amount1;
-    //                TransferHelper.safeTransfer(key.token1, recipient, amount1);
-    //            }
-    //        }
-    //    }
-
-    //    function burn(
-    //        State storage self,
-    //        Configuration memory config,
-    //        int24 tickLower,
-    //        int24 tickUpper,
-    //        uint128 amount,
-    //        uint32 time
-    //    ) internal lock(self) returns (uint256 amount0, uint256 amount1) {
-    //        unchecked {
-    //            (Position.Info storage position, int256 amount0Int, int256 amount1Int) = _modifyPosition(
-    //                self,
-    //                config,
-    //                ModifyPositionParams({
-    //                    owner: msg.sender,
-    //                    tickLower: tickLower,
-    //                    tickUpper: tickUpper,
-    //                    liquidityDelta: -int256(uint256(amount)).toInt128(),
-    //                    time: time
-    //                })
-    //            );
-    //
-    //            amount0 = uint256(-amount0Int);
-    //            amount1 = uint256(-amount1Int);
-    //
-    //            if (amount0 > 0 || amount1 > 0) {
-    //                (position.tokensOwed0, position.tokensOwed1) = (
-    //                    position.tokensOwed0 + uint128(amount0),
-    //                    position.tokensOwed1 + uint128(amount1)
-    //                );
-    //            }
-    //
-    //        }
-    //    }
-
     struct SwapCache {
         // the protocol fee for the input token
         uint8 feeProtocol;
@@ -504,8 +443,13 @@ library Pool {
         bytes data;
     }
 
+    struct SwapResult {
+        int256 amount0;
+        int256 amount1;
+    }
+
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
-    function swap(State storage self, SwapParams memory params) internal returns (int256 amount0, int256 amount1) {
+    function swap(State storage self, SwapParams memory params) internal returns (SwapResult memory result) {
         require(params.amountSpecified != 0, 'AS');
 
         Slot0 memory slot0Start = self.slot0;
@@ -657,7 +601,7 @@ library Pool {
 
         // update tick and write an oracle entry if the tick change
         if (state.tick != slot0Start.tick) {
-            (uint16 observationIndex, uint16 observationCardinality) = self.observations.write(
+            (self.slot0.observationIndex, self.slot0.observationCardinality) = self.observations.write(
                 slot0Start.observationIndex,
                 params.time,
                 slot0Start.tick,
@@ -665,12 +609,7 @@ library Pool {
                 slot0Start.observationCardinality,
                 slot0Start.observationCardinalityNext
             );
-            (
-                self.slot0.sqrtPriceX96,
-                self.slot0.tick,
-                self.slot0.observationIndex,
-                self.slot0.observationCardinality
-            ) = (state.sqrtPriceX96, state.tick, observationIndex, observationCardinality);
+            (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
         } else {
             // otherwise just update the price
             self.slot0.sqrtPriceX96 = state.sqrtPriceX96;
@@ -694,7 +633,7 @@ library Pool {
         }
 
         unchecked {
-            (amount0, amount1) = params.zeroForOne == exactInput
+            (result.amount0, result.amount1) = params.zeroForOne == exactInput
                 ? (params.amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
         }
@@ -706,12 +645,12 @@ library Pool {
         State storage self,
         uint8 feeProtocol0,
         uint8 feeProtocol1
-    ) internal lock(self) {
+    ) internal lock(self) returns (uint8 feeProtocolOld) {
         require(
             (feeProtocol0 == 0 || (feeProtocol0 >= 4 && feeProtocol0 <= 10)) &&
                 (feeProtocol1 == 0 || (feeProtocol1 >= 4 && feeProtocol1 <= 10))
         );
-        uint8 feeProtocolOld = self.slot0.feeProtocol;
+        feeProtocolOld = self.slot0.feeProtocol;
         self.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4);
     }
 }

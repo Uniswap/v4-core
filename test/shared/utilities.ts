@@ -1,7 +1,6 @@
 import bn from 'bignumber.js'
 import { BigNumber, BigNumberish, constants, Contract, ContractTransaction, utils, Wallet } from 'ethers'
 import { SwapTarget } from '../../typechain/SwapTarget'
-import { MultihopTester } from '../../typechain/MultihopTester'
 import { TestERC20 } from '../../typechain/TestERC20'
 
 export const MaxUint128 = BigNumber.from(2).pow(128).sub(1)
@@ -103,155 +102,121 @@ export interface PoolFunctions {
   flash: FlashFunction
   mint: MintFunction
 }
+
 export function createPoolFunctions({
   swapTarget,
   token0,
   token1,
-  pool,
+  fee,
 }: {
   swapTarget: SwapTarget
   token0: TestERC20
   token1: TestERC20
-  pool: MockTimePool
+  fee: number
 }): PoolFunctions {
-  async function swapToSqrtPrice(
-    inputToken: Contract,
-    targetPrice: BigNumberish,
-    to: Wallet | string
-  ): Promise<ContractTransaction> {
-    const method = inputToken === token0 ? swapTarget.swapToLowerSqrtPrice : swapTarget.swapToHigherSqrtPrice
-
-    await inputToken.approve(swapTarget.address, constants.MaxUint256)
-
-    const toAddress = typeof to === 'string' ? to : to.address
-
-    return method(pool.address, targetPrice, toAddress)
-  }
-
-  async function swap(
-    inputToken: Contract,
-    [amountIn, amountOut]: [BigNumberish, BigNumberish],
-    to: Wallet | string,
-    sqrtPriceLimitX96?: BigNumberish
-  ): Promise<ContractTransaction> {
-    const exactInput = amountOut === 0
-
-    const method =
-      inputToken === token0
-        ? exactInput
-          ? swapTarget.swapExact0For1
-          : swapTarget.swap0ForExact1
-        : exactInput
-        ? swapTarget.swapExact1For0
-        : swapTarget.swap1ForExact0
-
-    if (typeof sqrtPriceLimitX96 === 'undefined') {
-      if (inputToken === token0) {
-        sqrtPriceLimitX96 = MIN_SQRT_RATIO.add(1)
-      } else {
-        sqrtPriceLimitX96 = MAX_SQRT_RATIO.sub(1)
-      }
-    }
-    await inputToken.approve(swapTarget.address, constants.MaxUint256)
-
-    const toAddress = typeof to === 'string' ? to : to.address
-
-    return method(pool.address, exactInput ? amountIn : amountOut, toAddress, sqrtPriceLimitX96)
-  }
-
-  const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-    return swapToSqrtPrice(token0, sqrtPriceX96, to)
-  }
-
-  const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-    return swapToSqrtPrice(token1, sqrtPriceX96, to)
-  }
-
-  const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-    return swap(token0, [amount, 0], to, sqrtPriceLimitX96)
-  }
-
-  const swap0ForExact1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-    return swap(token0, [0, amount], to, sqrtPriceLimitX96)
-  }
-
-  const swapExact1For0: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-    return swap(token1, [amount, 0], to, sqrtPriceLimitX96)
-  }
-
-  const swap1ForExact0: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-    return swap(token1, [0, amount], to, sqrtPriceLimitX96)
-  }
-
-  const mint: MintFunction = async (recipient, tickLower, tickUpper, liquidity) => {
-    await token0.approve(swapTarget.address, constants.MaxUint256)
-    await token1.approve(swapTarget.address, constants.MaxUint256)
-    return swapTarget.mint(pool.address, recipient, tickLower, tickUpper, liquidity)
-  }
-
-  const flash: FlashFunction = async (amount0, amount1, to, pay0?: BigNumberish, pay1?: BigNumberish) => {
-    const fee = await pool.fee()
-    if (typeof pay0 === 'undefined') {
-      pay0 = BigNumber.from(amount0)
-        .mul(fee)
-        .add(1e6 - 1)
-        .div(1e6)
-        .add(amount0)
-    }
-    if (typeof pay1 === 'undefined') {
-      pay1 = BigNumber.from(amount1)
-        .mul(fee)
-        .add(1e6 - 1)
-        .div(1e6)
-        .add(amount1)
-    }
-    return swapTarget.flash(pool.address, typeof to === 'string' ? to : to.address, amount0, amount1, pay0, pay1)
-  }
-
-  return {
-    swapToLowerPrice,
-    swapToHigherPrice,
-    swapExact0For1,
-    swap0ForExact1,
-    swapExact1For0,
-    swap1ForExact0,
-    mint,
-    flash,
-  }
-}
-
-export interface MultiPoolFunctions {
-  swapForExact0Multi: SwapFunction
-  swapForExact1Multi: SwapFunction
-}
-
-export function createMultiPoolFunctions({
-  inputToken,
-  swapTarget,
-  poolInput,
-  poolOutput,
-}: {
-  inputToken: TestERC20
-  swapTarget: MultihopTester
-  poolInput: MockTimePool
-  poolOutput: MockTimePool
-}): MultiPoolFunctions {
-  async function swapForExact0Multi(amountOut: BigNumberish, to: Wallet | string): Promise<ContractTransaction> {
-    const method = swapTarget.swapForExact0Multi
-    await inputToken.approve(swapTarget.address, constants.MaxUint256)
-    const toAddress = typeof to === 'string' ? to : to.address
-    return method(toAddress, poolInput.address, poolOutput.address, amountOut)
-  }
-
-  async function swapForExact1Multi(amountOut: BigNumberish, to: Wallet | string): Promise<ContractTransaction> {
-    const method = swapTarget.swapForExact1Multi
-    await inputToken.approve(swapTarget.address, constants.MaxUint256)
-    const toAddress = typeof to === 'string' ? to : to.address
-    return method(toAddress, poolInput.address, poolOutput.address, amountOut)
-  }
-
-  return {
-    swapForExact0Multi,
-    swapForExact1Multi,
-  }
+  throw new Error('todo')
+  // async function swapToSqrtPrice(
+  //   inputToken: Contract,
+  //   targetPrice: BigNumberish,
+  //   to: Wallet | string
+  // ): Promise<ContractTransaction> {
+  //   const method = inputToken === token0 ? swapTarget.swapToLowerSqrtPrice : swapTarget.swapToHigherSqrtPrice
+  //
+  //   await inputToken.approve(swapTarget.address, constants.MaxUint256)
+  //
+  //   const toAddress = typeof to === 'string' ? to : to.address
+  //
+  //   return method(pool.address, targetPrice, toAddress)
+  // }
+  //
+  // async function swap(
+  //   inputToken: Contract,
+  //   [amountIn, amountOut]: [BigNumberish, BigNumberish],
+  //   to: Wallet | string,
+  //   sqrtPriceLimitX96?: BigNumberish
+  // ): Promise<ContractTransaction> {
+  //   const exactInput = amountOut === 0
+  //
+  //   const method =
+  //     inputToken === token0
+  //       ? exactInput
+  //         ? swapTarget.swapExact0For1
+  //         : swapTarget.swap0ForExact1
+  //       : exactInput
+  //       ? swapTarget.swapExact1For0
+  //       : swapTarget.swap1ForExact0
+  //
+  //   if (typeof sqrtPriceLimitX96 === 'undefined') {
+  //     if (inputToken === token0) {
+  //       sqrtPriceLimitX96 = MIN_SQRT_RATIO.add(1)
+  //     } else {
+  //       sqrtPriceLimitX96 = MAX_SQRT_RATIO.sub(1)
+  //     }
+  //   }
+  //   await inputToken.approve(swapTarget.address, constants.MaxUint256)
+  //
+  //   const toAddress = typeof to === 'string' ? to : to.address
+  //
+  //   return method(pool.address, exactInput ? amountIn : amountOut, toAddress, sqrtPriceLimitX96)
+  // }
+  //
+  // const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
+  //   return swapToSqrtPrice(token0, sqrtPriceX96, to)
+  // }
+  //
+  // const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
+  //   return swapToSqrtPrice(token1, sqrtPriceX96, to)
+  // }
+  //
+  // const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
+  //   return swap(token0, [amount, 0], to, sqrtPriceLimitX96)
+  // }
+  //
+  // const swap0ForExact1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
+  //   return swap(token0, [0, amount], to, sqrtPriceLimitX96)
+  // }
+  //
+  // const swapExact1For0: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
+  //   return swap(token1, [amount, 0], to, sqrtPriceLimitX96)
+  // }
+  //
+  // const swap1ForExact0: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
+  //   return swap(token1, [0, amount], to, sqrtPriceLimitX96)
+  // }
+  //
+  // const mint: MintFunction = async (recipient, tickLower, tickUpper, liquidity) => {
+  //   await token0.approve(swapTarget.address, constants.MaxUint256)
+  //   await token1.approve(swapTarget.address, constants.MaxUint256)
+  //   return swapTarget.mint(pool.address, recipient, tickLower, tickUpper, liquidity)
+  // }
+  //
+  // const flash: FlashFunction = async (amount0, amount1, to, pay0?: BigNumberish, pay1?: BigNumberish) => {
+  //   const fee = await pool.fee()
+  //   if (typeof pay0 === 'undefined') {
+  //     pay0 = BigNumber.from(amount0)
+  //       .mul(fee)
+  //       .add(1e6 - 1)
+  //       .div(1e6)
+  //       .add(amount0)
+  //   }
+  //   if (typeof pay1 === 'undefined') {
+  //     pay1 = BigNumber.from(amount1)
+  //       .mul(fee)
+  //       .add(1e6 - 1)
+  //       .div(1e6)
+  //       .add(amount1)
+  //   }
+  //   return swapTarget.flash(pool.address, typeof to === 'string' ? to : to.address, amount0, amount1, pay0, pay1)
+  // }
+  //
+  // return {
+  //   swapToLowerPrice,
+  //   swapToHigherPrice,
+  //   swapExact0For1,
+  //   swap0ForExact1,
+  //   swapExact1For0,
+  //   swap1ForExact0,
+  //   mint,
+  //   flash,
+  // }
 }
