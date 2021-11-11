@@ -64,4 +64,35 @@ contract SingletonPool {
 
         // todo: account the delta via the vault
     }
+
+    struct BurnParams {
+        // the lower and upper tick of the position
+        int24 tickLower;
+        int24 tickUpper;
+        // any change in liquidity
+        uint256 amount;
+    }
+
+    /// @dev Mint some liquidity for the given pool
+    function burn(Pool.Key memory key, BurnParams memory params) external returns (uint256 amount0, uint256 amount1) {
+        require(params.amount > 0);
+
+        Pool.ModifyPositionResult memory result = _getPool(key).modifyPosition(
+            Pool.ModifyPositionParams({
+                owner: msg.sender,
+                tickLower: params.tickLower,
+                tickUpper: params.tickUpper,
+                liquidityDelta: -int256(uint256(params.amount)).toInt128(),
+                time: _blockTimestamp(),
+                // todo: where to get these, probably from storage
+                maxLiquidityPerTick: type(uint128).max,
+                tickSpacing: 60
+            })
+        );
+
+        amount0 = uint256(-result.amount0);
+        amount1 = uint256(-result.amount1);
+
+        // todo: account the delta via the vault
+    }
 }

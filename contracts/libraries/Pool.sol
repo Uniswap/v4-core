@@ -266,8 +266,6 @@ library Pool {
     {
         checkTicks(params.tickLower, params.tickUpper);
 
-        Position.Info storage position = self.positions.get(params.owner, params.tickLower, params.tickUpper);
-
         {
             ModifyPositionState memory state;
             // if we need to update the ticks, do it
@@ -322,7 +320,11 @@ library Pool {
                 self.feeGrowthGlobal1X128
             );
 
-            position.update(params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
+            self.positions.get(params.owner, params.tickLower, params.tickUpper).update(
+                params.liquidityDelta,
+                state.feeGrowthInside0X128,
+                state.feeGrowthInside1X128
+            );
 
             // clear any tick data that is no longer needed
             if (params.liquidityDelta < 0) {
