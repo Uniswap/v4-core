@@ -1,53 +1,166 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity =0.8.9;
 
-import {IPoolImmutables, IPoolState, IPoolActions, IPoolEvents, IPoolDerivedState, IPoolOwnerActions, IPool} from './interfaces/IPool.sol';
+import {IPoolEvents} from '../interfaces/pool/IPoolEvents.sol';
 
-import {NoDelegateCall} from './NoDelegateCall.sol';
+import {SafeCast} from './SafeCast.sol';
+import {Tick} from './Tick.sol';
+import {TickBitmap} from './TickBitmap.sol';
+import {Position} from './Position.sol';
+import {Oracle} from './Oracle.sol';
+import {FullMath} from './FullMath.sol';
+import {FixedPoint128} from './FixedPoint128.sol';
+import {TransferHelper} from './TransferHelper.sol';
+import {TickMath} from './TickMath.sol';
+import {SqrtPriceMath} from './SqrtPriceMath.sol';
+import {SwapMath} from './SwapMath.sol';
+import {LowGasERC20} from './LowGasERC20.sol';
 
-import {SafeCast} from './libraries/SafeCast.sol';
-import {Tick} from './libraries/Tick.sol';
-import {TickBitmap} from './libraries/TickBitmap.sol';
-import {Position} from './libraries/Position.sol';
-import {Oracle} from './libraries/Oracle.sol';
+import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
+import {IMintCallback} from '../interfaces/callback/IMintCallback.sol';
+import {ISwapCallback} from '../interfaces/callback/ISwapCallback.sol';
+import {IFlashCallback} from '../interfaces/callback/IFlashCallback.sol';
 
-import {FullMath} from './libraries/FullMath.sol';
-import {FixedPoint128} from './libraries/FixedPoint128.sol';
-import {TransferHelper} from './libraries/TransferHelper.sol';
-import {TickMath} from './libraries/TickMath.sol';
-import {SqrtPriceMath} from './libraries/SqrtPriceMath.sol';
-import {SwapMath} from './libraries/SwapMath.sol';
-
-import {IPoolDeployer} from './interfaces/IPoolDeployer.sol';
-import {IPoolFactory} from './interfaces/IPoolFactory.sol';
-import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
-import {IMintCallback} from './interfaces/callback/IMintCallback.sol';
-import {ISwapCallback} from './interfaces/callback/ISwapCallback.sol';
-import {IFlashCallback} from './interfaces/callback/IFlashCallback.sol';
-
-contract Pool is IPool, NoDelegateCall {
-    using SafeCast for uint256;
-    using SafeCast for int256;
+library Pool {
+    using SafeCast for *;
     using Tick for mapping(int24 => Tick.Info);
     using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
 
-    /// @inheritdoc IPoolImmutables
-    address public immutable override factory;
-    /// @inheritdoc IPoolImmutables
-    address public immutable override token0;
-    /// @inheritdoc IPoolImmutables
-    address public immutable override token1;
-    /// @inheritdoc IPoolImmutables
-    uint24 public immutable override fee;
+    /// @notice Emitted exactly once by a pool when #initialize is first called on the pool
+    /// @dev Mint/Burn/Swap cannot be emitted by the pool before Initialize
+    /// @param sqrtPriceX96 The initial sqrt price of the pool, as a Q64.96
+    /// @param tick The initial tick of the pool, i.e. log base 1.0001 of the starting price of the pool
+    event Initialize(uint160 sqrtPriceX96, int24 tick);
 
-    /// @inheritdoc IPoolImmutables
-    int24 public immutable override tickSpacing;
+    /// @notice Emitted when liquidity is minted for a given position
+    /// @param sender The address that minted the liquidity
+    /// @param owner The owner of the position and recipient of any minted liquidity
+    /// @param tickLower The lower tick of the position
+    /// @param tickUpper The upper tick of the position
+    /// @param amount The amount of liquidity minted to the position range
+    /// @param amount0 How much token0 was required for the minted liquidity
+    /// @param amount1 How much token1 was required for the minted liquidity
+    event Mint(
+        address sender,
+        address indexed owner,
+        int24 indexed tickLower,
+        int24 indexed tickUpper,
+        uint128 amount,
+        uint256 amount0,
+        uint256 amount1
+    );
 
-    /// @inheritdoc IPoolImmutables
-    uint128 public immutable override maxLiquidityPerTick;
+    /// @notice Emitted when fees are collected by the owner of a position
+    /// @dev Collect events may be emitted with zero amount0 and amount1 when the caller chooses not to collect fees
+    /// @param owner The owner of the position for which fees are collected
+    /// @param tickLower The lower tick of the position
+    /// @param tickUpper The upper tick of the position
+    /// @param amount0 The amount of token0 fees collected
+    /// @param amount1 The amount of token1 fees collected
+    event Collect(
+        address indexed owner,
+        address recipient,
+        int24 indexed tickLower,
+        int24 indexed tickUpper,
+        uint128 amount0,
+        uint128 amount1
+    );
+
+    /// @notice Emitted when a position's liquidity is removed
+    /// @dev Does not withdraw any fees earned by the liquidity position, which must be withdrawn via #collect
+    /// @param owner The owner of the position for which liquidity is removed
+    /// @param tickLower The lower tick of the position
+    /// @param tickUpper The upper tick of the position
+    /// @param amount The amount of liquidity to remove
+    /// @param amount0 The amount of token0 withdrawn
+    /// @param amount1 The amount of token1 withdrawn
+    event Burn(
+        address indexed owner,
+        int24 indexed tickLower,
+        int24 indexed tickUpper,
+        uint128 amount,
+        uint256 amount0,
+        uint256 amount1
+    );
+
+    /// @notice Emitted by the pool for any swaps between token0 and token1
+    /// @param sender The address that initiated the swap call, and that received the callback
+    /// @param recipient The address that received the output of the swap
+    /// @param amount0 The delta of the token0 balance of the pool
+    /// @param amount1 The delta of the token1 balance of the pool
+    /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
+    /// @param liquidity The liquidity of the pool after the swap
+    /// @param tick The log base 1.0001 of price of the pool after the swap
+    event Swap(
+        address indexed sender,
+        address indexed recipient,
+        int256 amount0,
+        int256 amount1,
+        uint160 sqrtPriceX96,
+        uint128 liquidity,
+        int24 tick
+    );
+
+    /// @notice Emitted by the pool for any flashes of token0/token1
+    /// @param sender The address that initiated the swap call, and that received the callback
+    /// @param recipient The address that received the tokens from flash
+    /// @param amount0 The amount of token0 that was flashed
+    /// @param amount1 The amount of token1 that was flashed
+    /// @param paid0 The amount of token0 paid for the flash, which can exceed the amount0 plus the fee
+    /// @param paid1 The amount of token1 paid for the flash, which can exceed the amount1 plus the fee
+    event Flash(
+        address indexed sender,
+        address indexed recipient,
+        uint256 amount0,
+        uint256 amount1,
+        uint256 paid0,
+        uint256 paid1
+    );
+
+    /// @notice Emitted by the pool for increases to the number of observations that can be stored
+    /// @dev observationCardinalityNext is not the observation cardinality until an observation is written at the index
+    /// just before a mint/swap/burn.
+    /// @param observationCardinalityNextOld The previous value of the next observation cardinality
+    /// @param observationCardinalityNextNew The updated value of the next observation cardinality
+    event IncreaseObservationCardinalityNext(
+        uint16 observationCardinalityNextOld,
+        uint16 observationCardinalityNextNew
+    );
+
+    /// @notice Emitted when the protocol fee is changed by the pool
+    /// @param feeProtocol0Old The previous value of the token0 protocol fee
+    /// @param feeProtocol1Old The previous value of the token1 protocol fee
+    /// @param feeProtocol0New The updated value of the token0 protocol fee
+    /// @param feeProtocol1New The updated value of the token1 protocol fee
+    event SetFeeProtocol(uint8 feeProtocol0Old, uint8 feeProtocol1Old, uint8 feeProtocol0New, uint8 feeProtocol1New);
+
+    /// @notice Emitted when the collected protocol fees are withdrawn by the factory owner
+    /// @param sender The address that collects the protocol fees
+    /// @param recipient The address that receives the collected protocol fees
+    /// @param amount0 The amount of token0 protocol fees that is withdrawn
+    /// @param amount0 The amount of token1 protocol fees that is withdrawn
+    event CollectProtocol(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1);
+
+    /// @notice Returns the key for identifying a pool
+    struct Key {
+        /// @notice The lower token of the pool, sorted numerically
+        address token0;
+        /// @notice The higher token of the pool, sorted numerically
+        address token1;
+        /// @notice The fee for the pool
+        uint24 fee;
+    }
+
+    /// @notice Configuration associated with a given fee tier
+    struct FeeConfiguration {
+        /// @notice Initialized tick must be a multiple of this number
+        int24 tickSpacing;
+        /// @notice The maximum amount of position liquidity that can use any tick in the range
+        uint128 maxLiquidityPerTick;
+    }
 
     struct Slot0 {
         // the current price
@@ -66,98 +179,50 @@ contract Pool is IPool, NoDelegateCall {
         // whether the pool is locked
         bool unlocked;
     }
-    /// @inheritdoc IPoolState
-    Slot0 public override slot0;
-
-    /// @inheritdoc IPoolState
-    uint256 public override feeGrowthGlobal0X128;
-    /// @inheritdoc IPoolState
-    uint256 public override feeGrowthGlobal1X128;
 
     // accumulated protocol fees in token0/token1 units
+    // todo: this might be better accumulated in a pool
     struct ProtocolFees {
         uint128 token0;
         uint128 token1;
     }
-    /// @inheritdoc IPoolState
-    ProtocolFees public override protocolFees;
 
-    /// @inheritdoc IPoolState
-    uint128 public override liquidity;
-
-    /// @inheritdoc IPoolState
-    mapping(int24 => Tick.Info) public override ticks;
-    /// @inheritdoc IPoolState
-    mapping(int16 => uint256) public override tickBitmap;
-    /// @inheritdoc IPoolState
-    mapping(bytes32 => Position.Info) public override positions;
-    /// @inheritdoc IPoolState
-    Oracle.Observation[65535] public override observations;
-
-    /// @dev Mutually exclusive reentrancy protection into the pool to/from a method. This method also prevents entrance
-    /// to a function before the pool is initialized. The reentrancy guard is required throughout the contract because
-    /// we use balance checks to determine the payment status of interactions such as mint, swap and flash.
-    modifier lock() {
-        require(slot0.unlocked, 'LOK');
-        slot0.unlocked = false;
-        _;
-        slot0.unlocked = true;
+    /// @dev The state of a pool
+    struct State {
+        Slot0 slot0;
+        uint256 feeGrowthGlobal0X128;
+        uint256 feeGrowthGlobal1X128;
+        ProtocolFees protocolFees;
+        uint128 liquidity;
+        mapping(int24 => Tick.Info) ticks;
+        mapping(int16 => uint256) tickBitmap;
+        mapping(bytes32 => Position.Info) positions;
+        Oracle.Observation[65535] observations;
     }
 
-    /// @dev Prevents calling a function from anyone except the address returned by IPoolFactory#owner()
-    modifier onlyFactoryOwner() {
-        require(msg.sender == IPoolFactory(factory).owner());
+    /// @dev Locks the pool to perform some action on it while protected from reentrancy
+    modifier lock(State storage self) {
+        require(self.slot0.unlocked, 'LOK');
+        self.slot0.unlocked = false;
         _;
-    }
-
-    constructor() {
-        int24 _tickSpacing;
-        (factory, token0, token1, fee, _tickSpacing) = IPoolDeployer(msg.sender).parameters();
-        tickSpacing = _tickSpacing;
-
-        maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
+        self.slot0.unlocked = true;
     }
 
     /// @dev Common checks for valid tick inputs.
-    function checkTicks(int24 tickLower, int24 tickUpper) private pure {
+    function checkTicks(int24 tickLower, int24 tickUpper) internal pure {
         require(tickLower < tickUpper, 'TLU');
         require(tickLower >= TickMath.MIN_TICK, 'TLM');
         require(tickUpper <= TickMath.MAX_TICK, 'TUM');
     }
 
-    /// @dev Returns the block timestamp truncated to 32 bits, i.e. mod 2**32. This method is overridden in tests.
-    function _blockTimestamp() internal view virtual returns (uint32) {
-        return uint32(block.timestamp); // truncation is desired
-    }
-
-    /// @dev Get the pool's balance of token0
-    /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
-    /// check
-    function balance0() private view returns (uint256) {
-        (bool success, bytes memory data) = token0.staticcall(
-            abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this))
-        );
-        require(success && data.length >= 32);
-        return abi.decode(data, (uint256));
-    }
-
-    /// @dev Get the pool's balance of token1
-    /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
-    /// check
-    function balance1() private view returns (uint256) {
-        (bool success, bytes memory data) = token1.staticcall(
-            abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this))
-        );
-        require(success && data.length >= 32);
-        return abi.decode(data, (uint256));
-    }
-
-    /// @inheritdoc IPoolDerivedState
-    function snapshotCumulativesInside(int24 tickLower, int24 tickUpper)
-        external
+    function snapshotCumulativesInside(
+        State storage self,
+        int24 tickLower,
+        int24 tickUpper,
+        uint32 time
+    )
+        internal
         view
-        override
-        noDelegateCall
         returns (
             int56 tickCumulativeInside,
             uint160 secondsPerLiquidityInsideX128,
@@ -174,8 +239,8 @@ contract Pool is IPool, NoDelegateCall {
         uint32 secondsOutsideUpper;
 
         {
-            Tick.Info storage lower = ticks[tickLower];
-            Tick.Info storage upper = ticks[tickUpper];
+            Tick.Info storage lower = self.ticks[tickLower];
+            Tick.Info storage upper = self.ticks[tickUpper];
             bool initializedLower;
             (tickCumulativeLower, secondsPerLiquidityOutsideLowerX128, secondsOutsideLower, initializedLower) = (
                 lower.tickCumulativeOutside,
@@ -195,7 +260,7 @@ contract Pool is IPool, NoDelegateCall {
             require(initializedUpper);
         }
 
-        Slot0 memory _slot0 = slot0;
+        Slot0 memory _slot0 = self.slot0;
 
         unchecked {
             if (_slot0.tick < tickLower) {
@@ -205,13 +270,12 @@ contract Pool is IPool, NoDelegateCall {
                     secondsOutsideLower - secondsOutsideUpper
                 );
             } else if (_slot0.tick < tickUpper) {
-                uint32 time = _blockTimestamp();
-                (int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128) = observations.observeSingle(
+                (int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128) = self.observations.observeSingle(
                     time,
                     0,
                     _slot0.tick,
                     _slot0.observationIndex,
-                    liquidity,
+                    self.liquidity,
                     _slot0.observationCardinality
                 );
                 return (
@@ -231,52 +295,49 @@ contract Pool is IPool, NoDelegateCall {
         }
     }
 
-    /// @inheritdoc IPoolDerivedState
-    function observe(uint32[] calldata secondsAgos)
-        external
-        view
-        override
-        noDelegateCall
-        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
-    {
+    function observe(
+        State storage self,
+        uint32 time,
+        uint32[] calldata secondsAgos
+    ) internal view returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) {
         return
-            observations.observe(
-                _blockTimestamp(),
+            self.observations.observe(
+                time,
                 secondsAgos,
-                slot0.tick,
-                slot0.observationIndex,
-                liquidity,
-                slot0.observationCardinality
+                self.slot0.tick,
+                self.slot0.observationIndex,
+                self.liquidity,
+                self.slot0.observationCardinality
             );
     }
 
-    /// @inheritdoc IPoolActions
-    function increaseObservationCardinalityNext(uint16 observationCardinalityNext)
-        external
-        override
-        lock
-        noDelegateCall
+    function increaseObservationCardinalityNext(State storage self, uint16 observationCardinalityNext)
+        internal
+        lock(self)
     {
-        uint16 observationCardinalityNextOld = slot0.observationCardinalityNext; // for the event
-        uint16 observationCardinalityNextNew = observations.grow(
+        uint16 observationCardinalityNextOld = self.slot0.observationCardinalityNext; // for the event
+        uint16 observationCardinalityNextNew = self.observations.grow(
             observationCardinalityNextOld,
             observationCardinalityNext
         );
-        slot0.observationCardinalityNext = observationCardinalityNextNew;
+        self.slot0.observationCardinalityNext = observationCardinalityNextNew;
         if (observationCardinalityNextOld != observationCardinalityNextNew)
             emit IncreaseObservationCardinalityNext(observationCardinalityNextOld, observationCardinalityNextNew);
     }
 
-    /// @inheritdoc IPoolActions
     /// @dev not locked because it initializes unlocked
-    function initialize(uint160 sqrtPriceX96) external override {
-        require(slot0.sqrtPriceX96 == 0, 'AI');
+    function initialize(
+        State storage self,
+        uint32 time,
+        uint160 sqrtPriceX96
+    ) internal {
+        require(self.slot0.sqrtPriceX96 == 0, 'AI');
 
         int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        (uint16 cardinality, uint16 cardinalityNext) = observations.initialize(_blockTimestamp());
+        (uint16 cardinality, uint16 cardinalityNext) = self.observations.initialize(time);
 
-        slot0 = Slot0({
+        self.slot0 = Slot0({
             sqrtPriceX96: sqrtPriceX96,
             tick: tick,
             observationIndex: 0,
@@ -304,9 +365,13 @@ contract Pool is IPool, NoDelegateCall {
     /// @return position a storage pointer referencing the position with the given owner and tick range
     /// @return amount0 the amount of token0 owed to the pool, negative if the pool should pay the recipient
     /// @return amount1 the amount of token1 owed to the pool, negative if the pool should pay the recipient
-    function _modifyPosition(ModifyPositionParams memory params)
+    function _modifyPosition(
+        State storage self,
+        FeeConfiguration memory config,
+        ModifyPositionParams memory params,
+        uint32 time
+    )
         private
-        noDelegateCall
         returns (
             Position.Info storage position,
             int256 amount0,
@@ -315,14 +380,17 @@ contract Pool is IPool, NoDelegateCall {
     {
         checkTicks(params.tickLower, params.tickUpper);
 
-        Slot0 memory _slot0 = slot0; // SLOAD for gas optimization
+        Slot0 memory _slot0 = self.slot0; // SLOAD for gas optimization
 
         position = _updatePosition(
+            self,
+            config,
             params.owner,
             params.tickLower,
             params.tickUpper,
             params.liquidityDelta,
-            _slot0.tick
+            _slot0.tick,
+            time
         );
 
         if (params.liquidityDelta != 0) {
@@ -336,12 +404,12 @@ contract Pool is IPool, NoDelegateCall {
                 );
             } else if (_slot0.tick < params.tickUpper) {
                 // current tick is inside the passed range
-                uint128 liquidityBefore = liquidity; // SLOAD for gas optimization
+                uint128 liquidityBefore = self.liquidity; // SLOAD for gas optimization
 
                 // write an oracle entry
-                (slot0.observationIndex, slot0.observationCardinality) = observations.write(
+                (self.slot0.observationIndex, self.slot0.observationCardinality) = self.observations.write(
                     _slot0.observationIndex,
-                    _blockTimestamp(),
+                    time,
                     _slot0.tick,
                     liquidityBefore,
                     _slot0.observationCardinality,
@@ -359,7 +427,7 @@ contract Pool is IPool, NoDelegateCall {
                     params.liquidityDelta
                 );
 
-                liquidity = params.liquidityDelta < 0
+                self.liquidity = params.liquidityDelta < 0
                     ? liquidityBefore - uint128(-params.liquidityDelta)
                     : liquidityBefore + uint128(params.liquidityDelta);
             } else {
@@ -380,33 +448,35 @@ contract Pool is IPool, NoDelegateCall {
     /// @param tickUpper the upper tick of the position's tick range
     /// @param tick the current tick, passed to avoid sloads
     function _updatePosition(
+        State storage self,
+        FeeConfiguration memory config,
         address owner,
         int24 tickLower,
         int24 tickUpper,
         int128 liquidityDelta,
-        int24 tick
-    ) private returns (Position.Info storage position) {
+        int24 tick,
+        uint32 time
+    ) internal returns (Position.Info storage position) {
         unchecked {
-            position = positions.get(owner, tickLower, tickUpper);
+            position = self.positions.get(owner, tickLower, tickUpper);
 
-            uint256 _feeGrowthGlobal0X128 = feeGrowthGlobal0X128; // SLOAD for gas optimization
-            uint256 _feeGrowthGlobal1X128 = feeGrowthGlobal1X128; // SLOAD for gas optimization
+            uint256 _feeGrowthGlobal0X128 = self.feeGrowthGlobal0X128; // SLOAD for gas optimization
+            uint256 _feeGrowthGlobal1X128 = self.feeGrowthGlobal1X128; // SLOAD for gas optimization
 
             // if we need to update the ticks, do it
             bool flippedLower;
             bool flippedUpper;
             if (liquidityDelta != 0) {
-                uint32 time = _blockTimestamp();
-                (int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128) = observations.observeSingle(
+                (int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128) = self.observations.observeSingle(
                     time,
                     0,
-                    slot0.tick,
-                    slot0.observationIndex,
-                    liquidity,
-                    slot0.observationCardinality
+                    self.slot0.tick,
+                    self.slot0.observationIndex,
+                    self.liquidity,
+                    self.slot0.observationCardinality
                 );
 
-                flippedLower = ticks.update(
+                flippedLower = self.ticks.update(
                     tickLower,
                     tick,
                     liquidityDelta,
@@ -416,9 +486,9 @@ contract Pool is IPool, NoDelegateCall {
                     tickCumulative,
                     time,
                     false,
-                    maxLiquidityPerTick
+                    config.maxLiquidityPerTick
                 );
-                flippedUpper = ticks.update(
+                flippedUpper = self.ticks.update(
                     tickUpper,
                     tick,
                     liquidityDelta,
@@ -428,18 +498,18 @@ contract Pool is IPool, NoDelegateCall {
                     tickCumulative,
                     time,
                     true,
-                    maxLiquidityPerTick
+                    config.maxLiquidityPerTick
                 );
 
                 if (flippedLower) {
-                    tickBitmap.flipTick(tickLower, tickSpacing);
+                    self.tickBitmap.flipTick(tickLower, config.tickSpacing);
                 }
                 if (flippedUpper) {
-                    tickBitmap.flipTick(tickUpper, tickSpacing);
+                    self.tickBitmap.flipTick(tickUpper, config.tickSpacing);
                 }
             }
 
-            (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = ticks.getFeeGrowthInside(
+            (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = self.ticks.getFeeGrowthInside(
                 tickLower,
                 tickUpper,
                 tick,
@@ -452,32 +522,37 @@ contract Pool is IPool, NoDelegateCall {
             // clear any tick data that is no longer needed
             if (liquidityDelta < 0) {
                 if (flippedLower) {
-                    ticks.clear(tickLower);
+                    self.ticks.clear(tickLower);
                 }
                 if (flippedUpper) {
-                    ticks.clear(tickUpper);
+                    self.ticks.clear(tickUpper);
                 }
             }
         }
     }
 
-    /// @inheritdoc IPoolActions
-    /// @dev noDelegateCall is applied indirectly via _modifyPosition
     function mint(
+        State storage self,
+        FeeConfiguration memory config,
+        Key memory key,
         address recipient,
         int24 tickLower,
         int24 tickUpper,
         uint128 amount,
+        uint32 time,
         bytes calldata data
-    ) external override lock returns (uint256 amount0, uint256 amount1) {
+    ) internal lock(self) returns (uint256 amount0, uint256 amount1) {
         require(amount > 0);
         (, int256 amount0Int, int256 amount1Int) = _modifyPosition(
+            self,
+            config,
             ModifyPositionParams({
                 owner: recipient,
                 tickLower: tickLower,
                 tickUpper: tickUpper,
                 liquidityDelta: int256(uint256(amount)).toInt128()
-            })
+            }),
+            time
         );
 
         amount0 = uint256(amount0Int);
@@ -485,58 +560,63 @@ contract Pool is IPool, NoDelegateCall {
 
         uint256 balance0Before;
         uint256 balance1Before;
-        if (amount0 > 0) balance0Before = balance0();
-        if (amount1 > 0) balance1Before = balance1();
+        if (amount0 > 0) balance0Before = LowGasERC20.balance(key.token0);
+        if (amount1 > 0) balance1Before = LowGasERC20.balance(key.token1);
         IMintCallback(msg.sender).mintCallback(amount0, amount1, data);
-        if (amount0 > 0) require(balance0Before + amount0 <= balance0(), 'M0');
-        if (amount1 > 0) require(balance1Before + amount1 <= balance1(), 'M1');
+        if (amount0 > 0) require(balance0Before + amount0 <= LowGasERC20.balance(key.token0), 'M0');
+        if (amount1 > 0) require(balance1Before + amount1 <= LowGasERC20.balance(key.token1), 'M1');
 
         emit Mint(msg.sender, recipient, tickLower, tickUpper, amount, amount0, amount1);
     }
 
-    /// @inheritdoc IPoolActions
     function collect(
+        State storage self,
+        Key memory key,
         address recipient,
         int24 tickLower,
         int24 tickUpper,
         uint128 amount0Requested,
         uint128 amount1Requested
-    ) external override lock returns (uint128 amount0, uint128 amount1) {
+    ) internal lock(self) returns (uint128 amount0, uint128 amount1) {
         unchecked {
             // we don't need to checkTicks here, because invalid positions will never have non-zero tokensOwed{0,1}
-            Position.Info storage position = positions.get(msg.sender, tickLower, tickUpper);
+            Position.Info storage position = self.positions.get(msg.sender, tickLower, tickUpper);
 
             amount0 = amount0Requested > position.tokensOwed0 ? position.tokensOwed0 : amount0Requested;
             amount1 = amount1Requested > position.tokensOwed1 ? position.tokensOwed1 : amount1Requested;
 
             if (amount0 > 0) {
                 position.tokensOwed0 -= amount0;
-                TransferHelper.safeTransfer(token0, recipient, amount0);
+                TransferHelper.safeTransfer(key.token0, recipient, amount0);
             }
             if (amount1 > 0) {
                 position.tokensOwed1 -= amount1;
-                TransferHelper.safeTransfer(token1, recipient, amount1);
+                TransferHelper.safeTransfer(key.token1, recipient, amount1);
             }
 
             emit Collect(msg.sender, recipient, tickLower, tickUpper, amount0, amount1);
         }
     }
 
-    /// @inheritdoc IPoolActions
-    /// @dev noDelegateCall is applied indirectly via _modifyPosition
     function burn(
+        State storage self,
+        FeeConfiguration memory config,
         int24 tickLower,
         int24 tickUpper,
-        uint128 amount
-    ) external override lock returns (uint256 amount0, uint256 amount1) {
+        uint128 amount,
+        uint32 time
+    ) internal lock(self) returns (uint256 amount0, uint256 amount1) {
         unchecked {
             (Position.Info storage position, int256 amount0Int, int256 amount1Int) = _modifyPosition(
+                self,
+                config,
                 ModifyPositionParams({
                     owner: msg.sender,
                     tickLower: tickLower,
                     tickUpper: tickUpper,
                     liquidityDelta: -int256(uint256(amount)).toInt128()
-                })
+                }),
+                time
             );
 
             amount0 = uint256(-amount0Int);
@@ -558,8 +638,6 @@ contract Pool is IPool, NoDelegateCall {
         uint8 feeProtocol;
         // liquidity at the beginning of the swap
         uint128 liquidityStart;
-        // the timestamp of the current block
-        uint32 blockTimestamp;
         // the current value of the tick accumulator, computed only if we cross an initialized tick
         int56 tickCumulative;
         // the current value of seconds per liquidity accumulator, computed only if we cross an initialized tick
@@ -603,17 +681,20 @@ contract Pool is IPool, NoDelegateCall {
         uint256 feeAmount;
     }
 
-    /// @inheritdoc IPoolActions
     function swap(
+        State storage self,
+        Key memory key,
+        FeeConfiguration memory config,
+        uint32 time,
         address recipient,
         bool zeroForOne,
         int256 amountSpecified,
         uint160 sqrtPriceLimitX96,
         bytes calldata data
-    ) external override noDelegateCall returns (int256 amount0, int256 amount1) {
+    ) internal returns (int256 amount0, int256 amount1) {
         require(amountSpecified != 0, 'AS');
 
-        Slot0 memory slot0Start = slot0;
+        Slot0 memory slot0Start = self.slot0;
 
         require(slot0Start.unlocked, 'LOK');
         require(
@@ -623,11 +704,10 @@ contract Pool is IPool, NoDelegateCall {
             'SPL'
         );
 
-        slot0.unlocked = false;
+        self.slot0.unlocked = false;
 
         SwapCache memory cache = SwapCache({
-            liquidityStart: liquidity,
-            blockTimestamp: _blockTimestamp(),
+            liquidityStart: self.liquidity,
             feeProtocol: zeroForOne ? (slot0Start.feeProtocol % 16) : (slot0Start.feeProtocol >> 4),
             secondsPerLiquidityCumulativeX128: 0,
             tickCumulative: 0,
@@ -641,7 +721,7 @@ contract Pool is IPool, NoDelegateCall {
             amountCalculated: 0,
             sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
-            feeGrowthGlobalX128: zeroForOne ? feeGrowthGlobal0X128 : feeGrowthGlobal1X128,
+            feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
             protocolFee: 0,
             liquidity: cache.liquidityStart
         });
@@ -652,9 +732,9 @@ contract Pool is IPool, NoDelegateCall {
 
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
-            (step.tickNext, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(
+            (step.tickNext, step.initialized) = self.tickBitmap.nextInitializedTickWithinOneWord(
                 state.tick,
-                tickSpacing,
+                config.tickSpacing,
                 zeroForOne
             );
 
@@ -676,7 +756,7 @@ contract Pool is IPool, NoDelegateCall {
                     : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                fee
+                key.fee
             );
 
             if (exactInput) {
@@ -715,23 +795,25 @@ contract Pool is IPool, NoDelegateCall {
                     // check for the placeholder value, which we replace with the actual value the first time the swap
                     // crosses an initialized tick
                     if (!cache.computedLatestObservation) {
-                        (cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128) = observations.observeSingle(
-                            cache.blockTimestamp,
-                            0,
-                            slot0Start.tick,
-                            slot0Start.observationIndex,
-                            cache.liquidityStart,
-                            slot0Start.observationCardinality
-                        );
+                        (cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128) = self
+                            .observations
+                            .observeSingle(
+                                time,
+                                0,
+                                slot0Start.tick,
+                                slot0Start.observationIndex,
+                                cache.liquidityStart,
+                                slot0Start.observationCardinality
+                            );
                         cache.computedLatestObservation = true;
                     }
-                    int128 liquidityNet = ticks.cross(
+                    int128 liquidityNet = self.ticks.cross(
                         step.tickNext,
-                        (zeroForOne ? state.feeGrowthGlobalX128 : feeGrowthGlobal0X128),
-                        (zeroForOne ? feeGrowthGlobal1X128 : state.feeGrowthGlobalX128),
+                        (zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
+                        (zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128),
                         cache.secondsPerLiquidityCumulativeX128,
                         cache.tickCumulative,
-                        cache.blockTimestamp
+                        time
                     );
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
@@ -755,39 +837,39 @@ contract Pool is IPool, NoDelegateCall {
 
         // update tick and write an oracle entry if the tick change
         if (state.tick != slot0Start.tick) {
-            (uint16 observationIndex, uint16 observationCardinality) = observations.write(
+            (uint16 observationIndex, uint16 observationCardinality) = self.observations.write(
                 slot0Start.observationIndex,
-                cache.blockTimestamp,
+                time,
                 slot0Start.tick,
                 cache.liquidityStart,
                 slot0Start.observationCardinality,
                 slot0Start.observationCardinalityNext
             );
-            (slot0.sqrtPriceX96, slot0.tick, slot0.observationIndex, slot0.observationCardinality) = (
-                state.sqrtPriceX96,
-                state.tick,
-                observationIndex,
-                observationCardinality
-            );
+            (
+                self.slot0.sqrtPriceX96,
+                self.slot0.tick,
+                self.slot0.observationIndex,
+                self.slot0.observationCardinality
+            ) = (state.sqrtPriceX96, state.tick, observationIndex, observationCardinality);
         } else {
             // otherwise just update the price
-            slot0.sqrtPriceX96 = state.sqrtPriceX96;
+            self.slot0.sqrtPriceX96 = state.sqrtPriceX96;
         }
 
         // update liquidity if it changed
-        if (cache.liquidityStart != state.liquidity) liquidity = state.liquidity;
+        if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
         // update fee growth global and, if necessary, protocol fees
         // overflow is acceptable, protocol has to withdraw before it hits type(uint128).max fees
         if (zeroForOne) {
-            feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
+            self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
             unchecked {
-                if (state.protocolFee > 0) protocolFees.token0 += state.protocolFee;
+                if (state.protocolFee > 0) self.protocolFees.token0 += state.protocolFee;
             }
         } else {
-            feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
+            self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
             unchecked {
-                if (state.protocolFee > 0) protocolFees.token1 += state.protocolFee;
+                if (state.protocolFee > 0) self.protocolFees.token1 += state.protocolFee;
             }
         }
 
@@ -800,110 +882,60 @@ contract Pool is IPool, NoDelegateCall {
         // do the transfers and collect payment
         if (zeroForOne) {
             unchecked {
-                if (amount1 < 0) TransferHelper.safeTransfer(token1, recipient, uint256(-amount1));
+                if (amount1 < 0) TransferHelper.safeTransfer(key.token1, recipient, uint256(-amount1));
             }
 
-            uint256 balance0Before = balance0();
+            uint256 balance0Before = LowGasERC20.balance(key.token0);
             ISwapCallback(msg.sender).swapCallback(amount0, amount1, data);
-            require(balance0Before + uint256(amount0) <= balance0(), 'IIA');
+            require(balance0Before + uint256(amount0) <= LowGasERC20.balance(key.token0), 'IIA');
         } else {
             unchecked {
-                if (amount0 < 0) TransferHelper.safeTransfer(token0, recipient, uint256(-amount0));
+                if (amount0 < 0) TransferHelper.safeTransfer(key.token0, recipient, uint256(-amount0));
             }
 
-            uint256 balance1Before = balance1();
+            uint256 balance1Before = LowGasERC20.balance(key.token1);
             ISwapCallback(msg.sender).swapCallback(amount0, amount1, data);
-            require(balance1Before + uint256(amount1) <= balance1(), 'IIA');
+            require(balance1Before + uint256(amount1) <= LowGasERC20.balance(key.token1), 'IIA');
         }
 
         emit Swap(msg.sender, recipient, amount0, amount1, state.sqrtPriceX96, state.liquidity, state.tick);
-        slot0.unlocked = true;
+        self.slot0.unlocked = true;
     }
 
-    /// @inheritdoc IPoolActions
-    function flash(
-        address recipient,
-        uint256 amount0,
-        uint256 amount1,
-        bytes calldata data
-    ) external override lock noDelegateCall {
-        uint128 _liquidity = liquidity;
-        require(_liquidity > 0, 'L');
-
-        uint256 fee0 = FullMath.mulDivRoundingUp(amount0, fee, 1e6);
-        uint256 fee1 = FullMath.mulDivRoundingUp(amount1, fee, 1e6);
-        uint256 balance0Before = balance0();
-        uint256 balance1Before = balance1();
-
-        if (amount0 > 0) TransferHelper.safeTransfer(token0, recipient, amount0);
-        if (amount1 > 0) TransferHelper.safeTransfer(token1, recipient, amount1);
-
-        IFlashCallback(msg.sender).flashCallback(fee0, fee1, data);
-
-        uint256 balance0After = balance0();
-        uint256 balance1After = balance1();
-
-        require(balance0Before + fee0 <= balance0After, 'F0');
-        require(balance1Before + fee1 <= balance1After, 'F1');
-
-        // sub is safe because we know balanceAfter is gt balanceBefore by at least fee
-        uint256 paid0;
-        uint256 paid1;
-        unchecked {
-            paid0 = balance0After - balance0Before;
-            paid1 = balance1After - balance1Before;
-        }
-
-        if (paid0 > 0) {
-            unchecked {
-                uint8 feeProtocol0 = slot0.feeProtocol % 16;
-                uint256 pFees0 = feeProtocol0 == 0 ? 0 : paid0 / feeProtocol0;
-                if (uint128(pFees0) > 0) protocolFees.token0 += uint128(pFees0);
-                feeGrowthGlobal0X128 += FullMath.mulDiv(paid0 - pFees0, FixedPoint128.Q128, _liquidity);
-            }
-        }
-        if (paid1 > 0) {
-            unchecked {
-                uint8 feeProtocol1 = slot0.feeProtocol >> 4;
-                uint256 pFees1 = feeProtocol1 == 0 ? 0 : paid1 / feeProtocol1;
-                if (uint128(pFees1) > 0) protocolFees.token1 += uint128(pFees1);
-                feeGrowthGlobal1X128 += FullMath.mulDiv(paid1 - pFees1, FixedPoint128.Q128, _liquidity);
-            }
-        }
-
-        emit Flash(msg.sender, recipient, amount0, amount1, paid0, paid1);
-    }
-
-    /// @inheritdoc IPoolOwnerActions
-    function setFeeProtocol(uint8 feeProtocol0, uint8 feeProtocol1) external override lock onlyFactoryOwner {
+    function setFeeProtocol(
+        State storage self,
+        uint8 feeProtocol0,
+        uint8 feeProtocol1
+    ) internal lock(self) {
         require(
             (feeProtocol0 == 0 || (feeProtocol0 >= 4 && feeProtocol0 <= 10)) &&
                 (feeProtocol1 == 0 || (feeProtocol1 >= 4 && feeProtocol1 <= 10))
         );
-        uint8 feeProtocolOld = slot0.feeProtocol;
-        slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4);
+        uint8 feeProtocolOld = self.slot0.feeProtocol;
+        self.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4);
         emit SetFeeProtocol(feeProtocolOld % 16, feeProtocolOld >> 4, feeProtocol0, feeProtocol1);
     }
 
-    /// @inheritdoc IPoolOwnerActions
     function collectProtocol(
+        State storage self,
+        Key memory key,
         address recipient,
         uint128 amount0Requested,
         uint128 amount1Requested
-    ) external override lock onlyFactoryOwner returns (uint128 amount0, uint128 amount1) {
+    ) internal lock(self) returns (uint128 amount0, uint128 amount1) {
         unchecked {
-            amount0 = amount0Requested > protocolFees.token0 ? protocolFees.token0 : amount0Requested;
-            amount1 = amount1Requested > protocolFees.token1 ? protocolFees.token1 : amount1Requested;
+            amount0 = amount0Requested > self.protocolFees.token0 ? self.protocolFees.token0 : amount0Requested;
+            amount1 = amount1Requested > self.protocolFees.token1 ? self.protocolFees.token1 : amount1Requested;
 
             if (amount0 > 0) {
-                if (amount0 == protocolFees.token0) amount0--; // ensure that the slot is not cleared, for gas savings
-                protocolFees.token0 -= amount0;
-                TransferHelper.safeTransfer(token0, recipient, amount0);
+                if (amount0 == self.protocolFees.token0) amount0--; // ensure that the slot is not cleared, for gas savings
+                self.protocolFees.token0 -= amount0;
+                TransferHelper.safeTransfer(key.token0, recipient, amount0);
             }
             if (amount1 > 0) {
-                if (amount1 == protocolFees.token1) amount1--; // ensure that the slot is not cleared, for gas savings
-                protocolFees.token1 -= amount1;
-                TransferHelper.safeTransfer(token1, recipient, amount1);
+                if (amount1 == self.protocolFees.token1) amount1--; // ensure that the slot is not cleared, for gas savings
+                self.protocolFees.token1 -= amount1;
+                TransferHelper.safeTransfer(key.token1, recipient, amount1);
             }
 
             emit CollectProtocol(msg.sender, recipient, amount0, amount1);

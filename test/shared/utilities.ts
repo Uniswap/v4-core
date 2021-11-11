@@ -2,7 +2,6 @@ import bn from 'bignumber.js'
 import { BigNumber, BigNumberish, constants, Contract, ContractTransaction, utils, Wallet } from 'ethers'
 import { SwapTarget } from '../../typechain/SwapTarget'
 import { MultihopTester } from '../../typechain/MultihopTester'
-import { MockTimePool } from '../../typechain/MockTimePool'
 import { TestERC20 } from '../../typechain/TestERC20'
 
 export const MaxUint128 = BigNumber.from(2).pow(128).sub(1)
