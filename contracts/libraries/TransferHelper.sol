@@ -12,11 +12,11 @@ library TransferHelper {
     /// @param to The recipient of the transfer
     /// @param value The value of the transfer
     function safeTransfer(
-        address token,
+        IERC20Minimal token,
         address to,
         uint256 value
     ) internal {
-        (bool success, bytes memory data) = token.call(
+        (bool success, bytes memory data) = address(token).call(
             abi.encodeWithSelector(IERC20Minimal.transfer.selector, to, value)
         );
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'TF');
