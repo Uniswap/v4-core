@@ -1,5 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`SingletonPool #initialize gas cost 1`] = `70533`;
+exports[`SingletonPool #initialize gas cost 1`] = `70545`;
+
+exports[`SingletonPool #mint gas cost 1`] = `221787`;
 
 exports[`SingletonPool bytecode size 1`] = `16036`;

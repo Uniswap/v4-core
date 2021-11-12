@@ -4,11 +4,11 @@ import { SingletonPool, TestERC20 } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from './shared/snapshotGasCost'
-import { encodeSqrtPriceX96, FeeAmount } from './shared/utilities'
+import { encodeSqrtPriceX96, FeeAmount, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
-describe('SingletonPool', () => {
+describe.only('SingletonPool', () => {
   let wallet: Wallet, other: Wallet
 
   let singleton: SingletonPool
@@ -47,7 +47,17 @@ describe('SingletonPool', () => {
         },
         encodeSqrtPriceX96(10, 1)
       )
-      // todo: check the pool
+
+      const {
+        slot0: { sqrtPriceX96 },
+      } = await singleton.pools(
+        getPoolId({
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        })
+      )
+      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
     })
 
     it('gas cost', async () => {
@@ -59,6 +69,78 @@ describe('SingletonPool', () => {
             fee: FeeAmount.MEDIUM,
           },
           encodeSqrtPriceX96(10, 1)
+        )
+      )
+    })
+  })
+
+  describe('#mint', async () => {
+    it('reverts if pool not initialized', async () => {
+      await expect(
+        singleton.mint(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+          },
+          {
+            tickLower: 0,
+            tickUpper: 60,
+            amount: 100,
+            recipient: wallet.address,
+          }
+        )
+      ).to.be.revertedWith('LOK')
+    })
+
+    it('succeeds if pool is initialized', async () => {
+      await singleton.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+
+      await singleton.mint(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        {
+          tickLower: 0,
+          tickUpper: 60,
+          amount: 100,
+          recipient: wallet.address,
+        }
+      )
+    })
+
+    it('gas cost', async () => {
+      await singleton.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+
+      await snapshotGasCost(
+        singleton.mint(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+          },
+          {
+            tickLower: 0,
+            tickUpper: 60,
+            amount: 100,
+            recipient: wallet.address,
+          }
         )
       )
     })

@@ -1,5 +1,5 @@
 import bn from 'bignumber.js'
-import { BigNumber, BigNumberish, constants, Contract, ContractTransaction, utils, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Contract, ContractTransaction, utils, Wallet } from 'ethers'
 import { SwapTarget } from '../../typechain/SwapTarget'
 import { TestERC20 } from '../../typechain/TestERC20'
 
@@ -60,15 +60,9 @@ export function getPoolId({
   fee: number
 }): string {
   return utils.keccak256(
-    utils.solidityPack(
-      ['tuple(address,address,uint24)'],
-      [
-        [
-          typeof token0 === 'string' ? token0 : token0.address,
-          typeof token1 === 'string' ? token1 : token1.address,
-          fee,
-        ],
-      ]
+    utils.defaultAbiCoder.encode(
+      ['address', 'address', 'uint24'],
+      [typeof token0 === 'string' ? token0 : token0.address, typeof token1 === 'string' ? token1 : token1.address, fee]
     )
   )
 }
