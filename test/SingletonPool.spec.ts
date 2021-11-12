@@ -1,6 +1,6 @@
 import { Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
-import { SingletonPool, TestERC20 } from '../typechain'
+import { PoolManager, TestERC20 } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from './shared/snapshotGasCost'
@@ -8,16 +8,16 @@ import { encodeSqrtPriceX96, FeeAmount, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
-describe.only('SingletonPool', () => {
+describe.only('PoolManager', () => {
   let wallet: Wallet, other: Wallet
 
-  let singleton: SingletonPool
+  let singleton: PoolManager
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
   const fixture = async () => {
-    const singletonPoolFactory = await ethers.getContractFactory('SingletonPool')
+    const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const tokens = await tokensFixture()
     return {
-      singleton: (await singletonPoolFactory.deploy()) as SingletonPool,
+      singleton: (await singletonPoolFactory.deploy()) as PoolManager,
       tokens,
     }
   }

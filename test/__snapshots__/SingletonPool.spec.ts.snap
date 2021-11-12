@@ -1,9 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`SingletonPool #initialize gas cost 1`] = `70545`;
+exports[`PoolManager #initialize gas cost 1`] = `70598`;
 
-exports[`SingletonPool #mint gas cost 1`] = `221787`;
+exports[`PoolManager #mint gas cost 1`] = `224180`;
 
-exports[`SingletonPool #swap gas 1`] = `74554`;
+exports[`PoolManager #swap gas 1`] = `76815`;
 
-exports[`SingletonPool bytecode size 1`] = `16036`;
+exports[`PoolManager bytecode size 1`] = `16423`;

@@ -2,11 +2,13 @@
 pragma solidity ^0.8.10;
 
 import {Pool} from './libraries/Pool.sol';
+import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 
-contract SingletonPool {
+/// @notice Holds the state for all pools
+contract PoolManager {
     using SafeCast for *;
     using Pool for *;
 
@@ -20,7 +22,28 @@ contract SingletonPool {
         uint24 fee;
     }
 
+    struct FeeConfig {
+        int24 tickSpacing;
+        uint128 maxLiquidityPerTick;
+    }
+
     mapping(bytes32 => Pool.State) public pools;
+    mapping(uint24 => FeeConfig) public configs;
+
+    constructor() {
+        _configure(100, 1);
+        _configure(500, 10);
+        _configure(3000, 60);
+        _configure(10000, 200);
+    }
+
+    function _configure(uint24 fee, int24 tickSpacing) internal {
+        require(tickSpacing > 0);
+        require(configs[fee].tickSpacing == 0);
+        configs[fee].tickSpacing = tickSpacing;
+        configs[fee].maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        // todo: emit event
+    }
 
     /// @dev For mocking in unit tests
     function _blockTimestamp() internal view virtual returns (uint32) {
@@ -58,7 +81,8 @@ contract SingletonPool {
     function mint(PoolKey memory key, MintParams memory params) external returns (uint256 amount0, uint256 amount1) {
         require(params.amount > 0);
 
-        // todo: where to get maxLiquidityPerTick, tickSpacing, probably from storage
+        FeeConfig memory config = configs[key.fee];
+
         Pool.ModifyPositionResult memory result = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: params.recipient,
@@ -66,8 +90,8 @@ contract SingletonPool {
                 tickUpper: params.tickUpper,
                 liquidityDelta: int256(uint256(params.amount)).toInt128(),
                 time: _blockTimestamp(),
-                maxLiquidityPerTick: type(uint128).max,
-                tickSpacing: 60
+                maxLiquidityPerTick: config.maxLiquidityPerTick,
+                tickSpacing: config.tickSpacing
             })
         );
 
@@ -89,6 +113,8 @@ contract SingletonPool {
     function burn(PoolKey memory key, BurnParams memory params) external returns (uint256 amount0, uint256 amount1) {
         require(params.amount > 0);
 
+        FeeConfig memory config = configs[key.fee];
+
         // todo: where to get maxLiquidityPerTick, tickSpacing, probably from storage
         Pool.ModifyPositionResult memory result = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
@@ -97,8 +123,8 @@ contract SingletonPool {
                 tickUpper: params.tickUpper,
                 liquidityDelta: -int256(uint256(params.amount)).toInt128(),
                 time: _blockTimestamp(),
-                maxLiquidityPerTick: type(uint128).max,
-                tickSpacing: 60
+                maxLiquidityPerTick: config.maxLiquidityPerTick,
+                tickSpacing: config.tickSpacing
             })
         );
 
@@ -117,16 +143,18 @@ contract SingletonPool {
     }
 
     function swap(PoolKey memory key, SwapParams memory params) external returns (int256 amount0, int256 amount1) {
+        FeeConfig memory config = configs[key.fee];
+
         Pool.SwapResult memory result = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),
-                fee: key.fee,
                 recipient: params.recipient,
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96,
                 data: params.data,
-                tickSpacing: 60
+                fee: key.fee,
+                tickSpacing: config.tickSpacing
             })
         );
 
