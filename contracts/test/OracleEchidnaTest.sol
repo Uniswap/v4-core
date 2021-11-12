@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.9;
+pragma solidity =0.8.10;
 pragma abicoder v2;
 
 import {OracleTest} from './OracleTest.sol';
