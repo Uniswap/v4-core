@@ -20,6 +20,13 @@ library Pool {
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
 
+    /// @notice Represents a change in the pool's balance of token0 and token1.
+    /// @dev This is returned from most pool operations
+    struct BalanceDelta {
+        int256 amount0;
+        int256 amount1;
+    }
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
@@ -73,35 +80,41 @@ library Pool {
         require(tickUpper <= TickMath.MAX_TICK, 'TUM');
     }
 
-    /// @dev Take a snapshot of the cumulative values inside a tick range, only consistent as long as a position has non-zero liquidity
-    function snapshotCumulativesInside(
-        State storage self,
-        int24 tickLower,
-        int24 tickUpper,
-        uint32 time
-    )
-        internal
-        view
-        returns (
-            int56 tickCumulativeInside,
-            uint160 secondsPerLiquidityInsideX128,
-            uint32 secondsInside
-        )
-    {
-        checkTicks(tickLower, tickUpper);
-
+    struct ComputeSnapshotState {
         int56 tickCumulativeLower;
         int56 tickCumulativeUpper;
         uint160 secondsPerLiquidityOutsideLowerX128;
         uint160 secondsPerLiquidityOutsideUpperX128;
         uint32 secondsOutsideLower;
         uint32 secondsOutsideUpper;
+    }
 
+    struct Snapshot {
+        int56 tickCumulativeInside;
+        uint160 secondsPerLiquidityInsideX128;
+        uint32 secondsInside;
+    }
+
+    /// @dev Take a snapshot of the cumulative values inside a tick range, only consistent as long as a position has non-zero liquidity
+    function snapshotCumulativesInside(
+        State storage self,
+        int24 tickLower,
+        int24 tickUpper,
+        uint32 time
+    ) internal view returns (Snapshot memory result) {
+        checkTicks(tickLower, tickUpper);
+
+        ComputeSnapshotState memory state;
         {
             Tick.Info storage lower = self.ticks[tickLower];
             Tick.Info storage upper = self.ticks[tickUpper];
             bool initializedLower;
-            (tickCumulativeLower, secondsPerLiquidityOutsideLowerX128, secondsOutsideLower, initializedLower) = (
+            (
+                state.tickCumulativeLower,
+                state.secondsPerLiquidityOutsideLowerX128,
+                state.secondsOutsideLower,
+                initializedLower
+            ) = (
                 lower.tickCumulativeOutside,
                 lower.secondsPerLiquidityOutsideX128,
                 lower.secondsOutside,
@@ -110,7 +123,12 @@ library Pool {
             require(initializedLower);
 
             bool initializedUpper;
-            (tickCumulativeUpper, secondsPerLiquidityOutsideUpperX128, secondsOutsideUpper, initializedUpper) = (
+            (
+                state.tickCumulativeUpper,
+                state.secondsPerLiquidityOutsideUpperX128,
+                state.secondsOutsideUpper,
+                initializedUpper
+            ) = (
                 upper.tickCumulativeOutside,
                 upper.secondsPerLiquidityOutsideX128,
                 upper.secondsOutside,
@@ -123,11 +141,11 @@ library Pool {
 
         unchecked {
             if (_slot0.tick < tickLower) {
-                return (
-                    tickCumulativeLower - tickCumulativeUpper,
-                    secondsPerLiquidityOutsideLowerX128 - secondsPerLiquidityOutsideUpperX128,
-                    secondsOutsideLower - secondsOutsideUpper
-                );
+                result.tickCumulativeInside = state.tickCumulativeLower - state.tickCumulativeUpper;
+                result.secondsPerLiquidityInsideX128 =
+                    state.secondsPerLiquidityOutsideLowerX128 -
+                    state.secondsPerLiquidityOutsideUpperX128;
+                result.secondsInside = state.secondsOutsideLower - state.secondsOutsideUpper;
             } else if (_slot0.tick < tickUpper) {
                 (int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128) = self.observations.observeSingle(
                     time,
@@ -137,19 +155,18 @@ library Pool {
                     self.liquidity,
                     _slot0.observationCardinality
                 );
-                return (
-                    tickCumulative - tickCumulativeLower - tickCumulativeUpper,
+                result.tickCumulativeInside = tickCumulative - state.tickCumulativeLower - state.tickCumulativeUpper;
+                result.secondsPerLiquidityInsideX128 =
                     secondsPerLiquidityCumulativeX128 -
-                        secondsPerLiquidityOutsideLowerX128 -
-                        secondsPerLiquidityOutsideUpperX128,
-                    time - secondsOutsideLower - secondsOutsideUpper
-                );
+                    state.secondsPerLiquidityOutsideLowerX128 -
+                    state.secondsPerLiquidityOutsideUpperX128;
+                result.secondsInside = time - state.secondsOutsideLower - state.secondsOutsideUpper;
             } else {
-                return (
-                    tickCumulativeUpper - tickCumulativeLower,
-                    secondsPerLiquidityOutsideUpperX128 - secondsPerLiquidityOutsideLowerX128,
-                    secondsOutsideUpper - secondsOutsideLower
-                );
+                result.tickCumulativeInside = state.tickCumulativeUpper - state.tickCumulativeLower;
+                result.secondsPerLiquidityInsideX128 =
+                    state.secondsPerLiquidityOutsideUpperX128 -
+                    state.secondsPerLiquidityOutsideLowerX128;
+                result.secondsInside = state.secondsOutsideUpper - state.secondsOutsideLower;
             }
         }
     }
@@ -232,18 +249,13 @@ library Pool {
         uint256 feeGrowthInside1X128;
     }
 
-    struct ModifyPositionResult {
-        int256 amount0;
-        int256 amount1;
-    }
-
     /// @dev Effect changes to a position in a pool
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
     function modifyPosition(State storage self, ModifyPositionParams memory params)
         internal
         lock(self)
-        returns (ModifyPositionResult memory result)
+        returns (BalanceDelta memory result)
     {
         checkTicks(params.tickLower, params.tickUpper);
 
@@ -424,13 +436,8 @@ library Pool {
         bytes data;
     }
 
-    struct SwapResult {
-        int256 amount0;
-        int256 amount1;
-    }
-
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
-    function swap(State storage self, SwapParams memory params) internal returns (SwapResult memory result) {
+    function swap(State storage self, SwapParams memory params) internal returns (BalanceDelta memory result) {
         require(params.amountSpecified != 0, 'AS');
 
         Slot0 memory slot0Start = self.slot0;

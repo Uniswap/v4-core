@@ -83,7 +83,7 @@ contract PoolManager {
 
         FeeConfig memory config = configs[key.fee];
 
-        Pool.ModifyPositionResult memory result = _getPool(key).modifyPosition(
+        Pool.BalanceDelta memory result = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: params.recipient,
                 tickLower: params.tickLower,
@@ -116,7 +116,7 @@ contract PoolManager {
         FeeConfig memory config = configs[key.fee];
 
         // todo: where to get maxLiquidityPerTick, tickSpacing, probably from storage
-        Pool.ModifyPositionResult memory result = _getPool(key).modifyPosition(
+        Pool.BalanceDelta memory result = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -145,7 +145,7 @@ contract PoolManager {
     function swap(PoolKey memory key, SwapParams memory params) external returns (int256 amount0, int256 amount1) {
         FeeConfig memory config = configs[key.fee];
 
-        Pool.SwapResult memory result = _getPool(key).swap(
+        Pool.BalanceDelta memory result = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),
                 recipient: params.recipient,
@@ -161,5 +161,21 @@ contract PoolManager {
         (amount0, amount1) = (result.amount0, result.amount1);
 
         // todo: account the delta via the vault
+    }
+
+    function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
+        external
+        view
+        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
+    {
+        return _getPool(key).observe(_blockTimestamp(), secondsAgos);
+    }
+
+    function snapshotCumulativesInside(
+        PoolKey calldata key,
+        int24 tickLower,
+        int24 tickUpper
+    ) external view returns (Pool.Snapshot memory) {
+        return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
     }
 }

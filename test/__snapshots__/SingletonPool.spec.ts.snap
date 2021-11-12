@@ -6,4 +6,4 @@ exports[`PoolManager #mint gas cost 1`] = `224180`;
 
 exports[`PoolManager #swap gas 1`] = `76815`;
 
-exports[`PoolManager bytecode size 1`] = `16423`;
+exports[`PoolManager bytecode size 1`] = `18361`;
