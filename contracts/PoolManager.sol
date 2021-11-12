@@ -55,10 +55,11 @@ contract PoolManager {
     }
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external {
-        _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24) {
+        return _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
     }
 
+    /// @notice Increase the maximum number of stored observations for the pool's oracle
     function increaseObservationCardinalityNext(PoolKey memory key, uint16 observationCardinalityNext)
         external
         returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew)
@@ -163,6 +164,7 @@ contract PoolManager {
         // todo: account the delta via the vault
     }
 
+    /// @notice Observe a past state of a pool
     function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
         external
         view
@@ -171,11 +173,17 @@ contract PoolManager {
         return _getPool(key).observe(_blockTimestamp(), secondsAgos);
     }
 
+    /// @notice Get the snapshot of the cumulative values of a tick range
     function snapshotCumulativesInside(
         PoolKey calldata key,
         int24 tickLower,
         int24 tickUpper
     ) external view returns (Pool.Snapshot memory) {
         return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
+    }
+
+    /// @notice Update the protocol fee for a given pool
+    function setFeeProtocol(PoolKey calldata key, uint8 feeProtocol) external returns (uint8 feeProtocolOld) {
+        return _getPool(key).setFeeProtocol(feeProtocol);
     }
 }

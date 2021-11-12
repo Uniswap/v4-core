@@ -74,13 +74,13 @@ library Pool {
     }
 
     /// @dev Common checks for valid tick inputs.
-    function checkTicks(int24 tickLower, int24 tickUpper) internal pure {
+    function checkTicks(int24 tickLower, int24 tickUpper) private pure {
         require(tickLower < tickUpper, 'TLU');
         require(tickLower >= TickMath.MIN_TICK, 'TLM');
         require(tickUpper <= TickMath.MAX_TICK, 'TUM');
     }
 
-    struct ComputeSnapshotState {
+    struct SnapshotCumulativesInsideState {
         int56 tickCumulativeLower;
         int56 tickCumulativeUpper;
         uint160 secondsPerLiquidityOutsideLowerX128;
@@ -104,7 +104,7 @@ library Pool {
     ) internal view returns (Snapshot memory result) {
         checkTicks(tickLower, tickUpper);
 
-        ComputeSnapshotState memory state;
+        SnapshotCumulativesInsideState memory state;
         {
             Tick.Info storage lower = self.ticks[tickLower];
             Tick.Info storage upper = self.ticks[tickUpper];
@@ -629,16 +629,14 @@ library Pool {
         self.slot0.unlocked = true;
     }
 
-    function setFeeProtocol(
-        State storage self,
-        uint8 feeProtocol0,
-        uint8 feeProtocol1
-    ) internal lock(self) returns (uint8 feeProtocolOld) {
+    /// @notice Updates the protocol fee for a given pool
+    function setFeeProtocol(State storage self, uint8 feeProtocol) internal lock(self) returns (uint8 feeProtocolOld) {
+        (uint8 feeProtocol0, uint8 feeProtocol1) = (feeProtocol >> 4, feeProtocol % 16);
         require(
             (feeProtocol0 == 0 || (feeProtocol0 >= 4 && feeProtocol0 <= 10)) &&
                 (feeProtocol1 == 0 || (feeProtocol1 >= 4 && feeProtocol1 <= 10))
         );
         feeProtocolOld = self.slot0.feeProtocol;
-        self.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4);
+        self.slot0.feeProtocol = feeProtocol;
     }
 }

@@ -1,9 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`PoolManager #initialize gas cost 1`] = `70598`;
-
-exports[`PoolManager #mint gas cost 1`] = `224180`;
-
-exports[`PoolManager #swap gas 1`] = `76815`;
-
-exports[`PoolManager bytecode size 1`] = `18361`;
