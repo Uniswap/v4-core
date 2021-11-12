@@ -145,4 +145,75 @@ describe.only('SingletonPool', () => {
       )
     })
   })
+
+  describe('#swap', () => {
+    it('fails if pool is not initialized', async () => {
+      await expect(
+        singleton.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+          },
+          {
+            data: '0x',
+            recipient: wallet.address,
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(100, 1),
+            zeroForOne: true,
+          }
+        )
+      ).to.be.revertedWith('LOK')
+    })
+    it('succeeds if pool is not initialized', async () => {
+      await singleton.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await singleton.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        {
+          data: '0x',
+          recipient: wallet.address,
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 100),
+          zeroForOne: true,
+        }
+      )
+    })
+    it('gas', async () => {
+      await singleton.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await snapshotGasCost(
+        singleton.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+          },
+          {
+            data: '0x',
+            recipient: wallet.address,
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 100),
+            zeroForOne: true,
+          }
+        )
+      )
+    })
+  })
 })

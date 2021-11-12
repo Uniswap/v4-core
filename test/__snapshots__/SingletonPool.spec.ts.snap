@@ -4,4 +4,6 @@ exports[`SingletonPool #initialize gas cost 1`] = `70545`;
 
 exports[`SingletonPool #mint gas cost 1`] = `221787`;
 
+exports[`SingletonPool #swap gas 1`] = `74554`;
+
 exports[`SingletonPool bytecode size 1`] = `16036`;

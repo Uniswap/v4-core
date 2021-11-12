@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity =0.8.9;
+pragma solidity =0.8.10;
 
 import {SafeCast} from './SafeCast.sol';
 import {Tick} from './Tick.sol';
@@ -12,7 +12,6 @@ import {TransferHelper} from './TransferHelper.sol';
 import {TickMath} from './TickMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
 import {SwapMath} from './SwapMath.sol';
-import {LowGasERC20} from './LowGasERC20.sol';
 
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 import {IMintCallback} from '../interfaces/callback/IMintCallback.sol';
