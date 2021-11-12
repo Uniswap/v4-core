@@ -4,9 +4,21 @@ pragma solidity ^0.8.10;
 import {Pool} from './libraries/Pool.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 
+import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
+
 contract SingletonPool {
     using SafeCast for *;
     using Pool for *;
+
+    /// @notice Returns the key for identifying a pool
+    struct PoolKey {
+        /// @notice The lower token of the pool, sorted numerically
+        IERC20Minimal token0;
+        /// @notice The higher token of the pool, sorted numerically
+        IERC20Minimal token1;
+        /// @notice The fee for the pool
+        uint24 fee;
+    }
 
     mapping(bytes32 => Pool.State) public pools;
 
@@ -15,16 +27,16 @@ contract SingletonPool {
         return uint32(block.timestamp);
     }
 
-    function _getPool(Pool.Key memory key) private view returns (Pool.State storage) {
+    function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
         return pools[keccak256(abi.encode(key))];
     }
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(Pool.Key memory key, uint160 sqrtPriceX96) external {
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external {
         _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
     }
 
-    function increaseObservationCardinalityNext(Pool.Key memory key, uint16 observationCardinalityNext)
+    function increaseObservationCardinalityNext(PoolKey memory key, uint16 observationCardinalityNext)
         external
         returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew)
     {
@@ -43,7 +55,7 @@ contract SingletonPool {
     }
 
     /// @dev Mint some liquidity for the given pool
-    function mint(Pool.Key memory key, MintParams memory params) external returns (uint256 amount0, uint256 amount1) {
+    function mint(PoolKey memory key, MintParams memory params) external returns (uint256 amount0, uint256 amount1) {
         require(params.amount > 0);
 
         // todo: where to get maxLiquidityPerTick, tickSpacing, probably from storage
@@ -74,7 +86,7 @@ contract SingletonPool {
     }
 
     /// @dev Mint some liquidity for the given pool
-    function burn(Pool.Key memory key, BurnParams memory params) external returns (uint256 amount0, uint256 amount1) {
+    function burn(PoolKey memory key, BurnParams memory params) external returns (uint256 amount0, uint256 amount1) {
         require(params.amount > 0);
 
         // todo: where to get maxLiquidityPerTick, tickSpacing, probably from storage
@@ -104,7 +116,7 @@ contract SingletonPool {
         bytes data;
     }
 
-    function swap(Pool.Key memory key, SwapParams memory params) external returns (int256 amount0, int256 amount1) {
+    function swap(PoolKey memory key, SwapParams memory params) external returns (int256 amount0, int256 amount1) {
         Pool.SwapResult memory result = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),

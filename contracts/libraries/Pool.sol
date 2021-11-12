@@ -13,7 +13,6 @@ import {TickMath} from './TickMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
 import {SwapMath} from './SwapMath.sol';
 
-import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 import {IMintCallback} from '../interfaces/callback/IMintCallback.sol';
 import {ISwapCallback} from '../interfaces/callback/ISwapCallback.sol';
 import {IFlashCallback} from '../interfaces/callback/IFlashCallback.sol';
@@ -25,16 +24,6 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
-
-    /// @notice Returns the key for identifying a pool
-    struct Key {
-        /// @notice The lower token of the pool, sorted numerically
-        IERC20Minimal token0;
-        /// @notice The higher token of the pool, sorted numerically
-        IERC20Minimal token1;
-        /// @notice The fee for the pool
-        uint24 fee;
-    }
 
     struct Slot0 {
         // the current price
