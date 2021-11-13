@@ -79,12 +79,12 @@ contract PoolManager {
     }
 
     /// @dev Mint some liquidity for the given pool
-    function mint(PoolKey memory key, MintParams memory params) external returns (uint256 amount0, uint256 amount1) {
+    function mint(PoolKey memory key, MintParams memory params) external returns (Pool.BalanceDelta memory delta) {
         require(params.amount > 0);
 
         FeeConfig memory config = configs[key.fee];
 
-        Pool.BalanceDelta memory result = _getPool(key).modifyPosition(
+        delta = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: params.recipient,
                 tickLower: params.tickLower,
@@ -95,11 +95,6 @@ contract PoolManager {
                 tickSpacing: config.tickSpacing
             })
         );
-
-        amount0 = uint256(result.amount0);
-        amount1 = uint256(result.amount1);
-
-        // todo: account the delta via the vault
     }
 
     struct BurnParams {
@@ -111,13 +106,13 @@ contract PoolManager {
     }
 
     /// @dev Mint some liquidity for the given pool
-    function burn(PoolKey memory key, BurnParams memory params) external returns (uint256 amount0, uint256 amount1) {
+    function burn(PoolKey memory key, BurnParams memory params) external returns (Pool.BalanceDelta memory delta) {
         require(params.amount > 0);
 
         FeeConfig memory config = configs[key.fee];
 
         // todo: where to get maxLiquidityPerTick, tickSpacing, probably from storage
-        Pool.BalanceDelta memory result = _getPool(key).modifyPosition(
+        delta = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -128,11 +123,6 @@ contract PoolManager {
                 tickSpacing: config.tickSpacing
             })
         );
-
-        amount0 = uint256(-result.amount0);
-        amount1 = uint256(-result.amount1);
-
-        // todo: account the delta via the vault
     }
 
     struct SwapParams {
@@ -143,10 +133,10 @@ contract PoolManager {
         bytes data;
     }
 
-    function swap(PoolKey memory key, SwapParams memory params) external returns (int256 amount0, int256 amount1) {
+    function swap(PoolKey memory key, SwapParams memory params) external returns (Pool.BalanceDelta memory delta) {
         FeeConfig memory config = configs[key.fee];
 
-        Pool.BalanceDelta memory result = _getPool(key).swap(
+        delta = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),
                 recipient: params.recipient,
@@ -158,8 +148,6 @@ contract PoolManager {
                 tickSpacing: config.tickSpacing
             })
         );
-
-        (amount0, amount1) = (result.amount0, result.amount1);
 
         // todo: account the delta via the vault
     }

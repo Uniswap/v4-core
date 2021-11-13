@@ -15,9 +15,6 @@ library Position {
         // fee growth per unit of liquidity as of the last update to liquidity or fees owed
         uint256 feeGrowthInside0LastX128;
         uint256 feeGrowthInside1LastX128;
-        // the fees owed to the position owner in token0/token1
-        uint128 tokensOwed0;
-        uint128 tokensOwed1;
     }
 
     /// @notice Returns the Info struct of a position, given an owner and position boundaries
@@ -40,12 +37,14 @@ library Position {
     /// @param liquidityDelta The change in pool liquidity as a result of the position update
     /// @param feeGrowthInside0X128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
     /// @param feeGrowthInside1X128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
+    /// @return feesOwed0 The amount of token0 owed to the position owner
+    /// @return feesOwed1 The amount of token1 owed to the position owner
     function update(
         Info storage self,
         int128 liquidityDelta,
         uint256 feeGrowthInside0X128,
         uint256 feeGrowthInside1X128
-    ) internal {
+    ) internal returns (uint256 feesOwed0, uint256 feesOwed1) {
         Info memory _self = self;
 
         uint128 liquidityNext;
@@ -59,22 +58,16 @@ library Position {
         }
 
         // calculate accumulated fees. overflow in the subtraction of fee growth is expected
-        uint128 tokensOwed0;
-        uint128 tokensOwed1;
         unchecked {
-            tokensOwed0 = uint128(
-                FullMath.mulDiv(
-                    feeGrowthInside0X128 - _self.feeGrowthInside0LastX128,
-                    _self.liquidity,
-                    FixedPoint128.Q128
-                )
+            feesOwed0 = FullMath.mulDiv(
+                feeGrowthInside0X128 - _self.feeGrowthInside0LastX128,
+                _self.liquidity,
+                FixedPoint128.Q128
             );
-            tokensOwed1 = uint128(
-                FullMath.mulDiv(
-                    feeGrowthInside1X128 - _self.feeGrowthInside1LastX128,
-                    _self.liquidity,
-                    FixedPoint128.Q128
-                )
+            feesOwed1 = FullMath.mulDiv(
+                feeGrowthInside1X128 - _self.feeGrowthInside1LastX128,
+                _self.liquidity,
+                FixedPoint128.Q128
             );
         }
 
@@ -82,12 +75,5 @@ library Position {
         if (liquidityDelta != 0) self.liquidity = liquidityNext;
         self.feeGrowthInside0LastX128 = feeGrowthInside0X128;
         self.feeGrowthInside1LastX128 = feeGrowthInside1X128;
-        // overflow is acceptable, user must withdraw before they hit type(uint128).max fees
-        unchecked {
-            if (tokensOwed0 > 0 || tokensOwed1 > 0) {
-                self.tokensOwed0 += tokensOwed0;
-                self.tokensOwed1 += tokensOwed1;
-            }
-        }
     }
 }
