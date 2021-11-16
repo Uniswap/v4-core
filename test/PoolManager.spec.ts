@@ -156,8 +156,6 @@ describe.only('PoolManager', () => {
             fee: FeeAmount.MEDIUM,
           },
           {
-            data: '0x',
-            recipient: wallet.address,
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(100, 1),
             zeroForOne: true,
@@ -181,8 +179,6 @@ describe.only('PoolManager', () => {
           fee: FeeAmount.MEDIUM,
         },
         {
-          data: '0x',
-          recipient: wallet.address,
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 100),
           zeroForOne: true,
@@ -206,8 +202,6 @@ describe.only('PoolManager', () => {
             fee: FeeAmount.MEDIUM,
           },
           {
-            data: '0x',
-            recipient: wallet.address,
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 100),
             zeroForOne: true,

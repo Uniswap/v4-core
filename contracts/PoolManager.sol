@@ -69,7 +69,7 @@ contract PoolManager {
     }
 
     struct MintParams {
-        // the address that will receive the liquidity
+        // the address that will own the minted liquidity
         address recipient;
         // the lower and upper tick of the position
         int24 tickLower;
@@ -101,7 +101,7 @@ contract PoolManager {
         // the lower and upper tick of the position
         int24 tickLower;
         int24 tickUpper;
-        // any change in liquidity
+        // the reduction in liquidity to effect
         uint256 amount;
     }
 
@@ -111,7 +111,6 @@ contract PoolManager {
 
         FeeConfig memory config = configs[key.fee];
 
-        // todo: where to get maxLiquidityPerTick, tickSpacing, probably from storage
         delta = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
@@ -126,11 +125,9 @@ contract PoolManager {
     }
 
     struct SwapParams {
-        address recipient;
         bool zeroForOne;
         int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
-        bytes data;
     }
 
     function swap(PoolKey memory key, SwapParams memory params) external returns (Pool.BalanceDelta memory delta) {
@@ -139,17 +136,18 @@ contract PoolManager {
         delta = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),
-                recipient: params.recipient,
+                fee: key.fee,
+                tickSpacing: config.tickSpacing,
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
-                sqrtPriceLimitX96: params.sqrtPriceLimitX96,
-                data: params.data,
-                fee: key.fee,
-                tickSpacing: config.tickSpacing
+                sqrtPriceLimitX96: params.sqrtPriceLimitX96
             })
         );
+    }
 
-        // todo: account the delta via the vault
+    /// @notice Update the protocol fee for a given pool
+    function setFeeProtocol(PoolKey calldata key, uint8 feeProtocol) external returns (uint8 feeProtocolOld) {
+        return _getPool(key).setFeeProtocol(feeProtocol);
     }
 
     /// @notice Observe a past state of a pool
@@ -168,10 +166,5 @@ contract PoolManager {
         int24 tickUpper
     ) external view returns (Pool.Snapshot memory) {
         return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
-    }
-
-    /// @notice Update the protocol fee for a given pool
-    function setFeeProtocol(PoolKey calldata key, uint8 feeProtocol) external returns (uint8 feeProtocolOld) {
-        return _getPool(key).setFeeProtocol(feeProtocol);
     }
 }

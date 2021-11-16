@@ -430,11 +430,9 @@ library Pool {
         uint24 fee;
         int24 tickSpacing;
         uint32 time;
-        address recipient;
         bool zeroForOne;
         int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
-        bytes data;
     }
 
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
