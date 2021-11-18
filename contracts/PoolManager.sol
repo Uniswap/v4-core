@@ -6,6 +6,7 @@ import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
+import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager {
@@ -78,8 +79,69 @@ contract PoolManager {
         uint256 amount;
     }
 
+    /// @notice Represents the address that has currently locked the pool
+    address public lockedBy;
+
+    /// @notice Internal transient enumerable set
+    uint256 tokensTouchedBloomFilter;
+    IERC20Minimal[] public tokensTouched;
+    mapping(IERC20Minimal => int256) public tokenDelta;
+
+    function lock() external {
+        require(lockedBy == address(0));
+        lockedBy = msg.sender;
+        ILockCallback(msg.sender).lockAcquired();
+
+        // todo: handle payment of the deltas
+
+        for (uint256 i = 0; i < tokensTouched.length; i++) {
+            delete tokenDelta[tokensTouched[i]];
+        }
+        delete tokensTouchedBloomFilter;
+        delete tokensTouched;
+
+        // delimiter to indicate where the lock is cleared
+        delete lockedBy;
+    }
+
+    /// @dev Adds a token to a unique list of tokens that have been touched
+    function _addTokenToSet(IERC20Minimal token) internal {
+        // if the bloom filter doesn't hit, we know it's not in the set, push it
+        if (tokensTouchedBloomFilter & uint160(uint160(address(token))) != uint160(uint160(address(token)))) {
+            tokensTouched.push(token);
+        } else {
+            bool seen;
+            for (uint256 i = 0; i < tokensTouched.length; i++) {
+                if (seen = (tokensTouched[i] == token)) {
+                    break;
+                }
+            }
+            if (!seen) {
+                tokensTouched.push(token);
+            }
+        }
+        tokensTouchedBloomFilter |= uint160(uint160(address(token)));
+    }
+
+    /// @dev Accumulates a balance change to a map of token to balance changes
+    function _accountDelta(PoolKey memory key, Pool.BalanceDelta memory delta) internal {
+        _addTokenToSet(key.token0);
+        _addTokenToSet(key.token1);
+        tokenDelta[key.token0] += delta.amount0;
+        tokenDelta[key.token1] += delta.amount1;
+    }
+
+    modifier onlyLocker() {
+        require(msg.sender == lockedBy, 'LOK');
+        _;
+    }
+
     /// @dev Mint some liquidity for the given pool
-    function mint(PoolKey memory key, MintParams memory params) external returns (Pool.BalanceDelta memory delta) {
+    function mint(PoolKey memory key, MintParams memory params)
+        external
+        onlyLocker
+        returns (Pool.BalanceDelta memory delta)
+    {
         require(params.amount > 0);
 
         FeeConfig memory config = configs[key.fee];
@@ -95,6 +157,8 @@ contract PoolManager {
                 tickSpacing: config.tickSpacing
             })
         );
+
+        _accountDelta(key, delta);
     }
 
     struct BurnParams {
@@ -106,7 +170,11 @@ contract PoolManager {
     }
 
     /// @dev Mint some liquidity for the given pool
-    function burn(PoolKey memory key, BurnParams memory params) external returns (Pool.BalanceDelta memory delta) {
+    function burn(PoolKey memory key, BurnParams memory params)
+        external
+        onlyLocker
+        returns (Pool.BalanceDelta memory delta)
+    {
         require(params.amount > 0);
 
         FeeConfig memory config = configs[key.fee];
@@ -122,6 +190,8 @@ contract PoolManager {
                 tickSpacing: config.tickSpacing
             })
         );
+
+        _accountDelta(key, delta);
     }
 
     struct SwapParams {
@@ -130,7 +200,11 @@ contract PoolManager {
         uint160 sqrtPriceLimitX96;
     }
 
-    function swap(PoolKey memory key, SwapParams memory params) external returns (Pool.BalanceDelta memory delta) {
+    function swap(PoolKey memory key, SwapParams memory params)
+        external
+        onlyLocker
+        returns (Pool.BalanceDelta memory delta)
+    {
         FeeConfig memory config = configs[key.fee];
 
         delta = _getPool(key).swap(
@@ -143,6 +217,8 @@ contract PoolManager {
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96
             })
         );
+
+        _accountDelta(key, delta);
     }
 
     /// @notice Update the protocol fee for a given pool

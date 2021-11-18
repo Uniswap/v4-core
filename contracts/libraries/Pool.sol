@@ -41,8 +41,6 @@ library Pool {
         // the current protocol fee as a percentage of the swap fee taken on withdrawal
         // represented as an integer denominator (1/x)%
         uint8 feeProtocol;
-        // whether the pool is locked
-        bool unlocked;
     }
 
     // accumulated protocol fees in token0/token1 units
@@ -63,14 +61,6 @@ library Pool {
         mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
         Oracle.Observation[65535] observations;
-    }
-
-    /// @dev Locks the pool to perform some action on it while protected from reentrancy
-    modifier lock(State storage self) {
-        require(self.slot0.unlocked, 'LOK');
-        self.slot0.unlocked = false;
-        _;
-        self.slot0.unlocked = true;
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -187,7 +177,6 @@ library Pool {
             );
     }
 
-    /// @dev Not locked because it initializes the slot0.unlocked variable
     function initialize(
         State storage self,
         uint32 time,
@@ -205,15 +194,13 @@ library Pool {
             observationIndex: 0,
             observationCardinality: cardinality,
             observationCardinalityNext: cardinalityNext,
-            feeProtocol: 0,
-            unlocked: true
+            feeProtocol: 0
         });
     }
 
     /// @dev Increase the number of stored observations
     function increaseObservationCardinalityNext(State storage self, uint16 observationCardinalityNext)
         internal
-        lock(self)
         returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew)
     {
         observationCardinalityNextOld = self.slot0.observationCardinalityNext;
@@ -254,9 +241,10 @@ library Pool {
     /// @return result the deltas of the token balances of the pool
     function modifyPosition(State storage self, ModifyPositionParams memory params)
         internal
-        lock(self)
         returns (BalanceDelta memory result)
     {
+        require(self.slot0.sqrtPriceX96 != 0, 'I');
+
         checkTicks(params.tickLower, params.tickUpper);
 
         {
@@ -440,8 +428,7 @@ library Pool {
         require(params.amountSpecified != 0, 'AS');
 
         Slot0 memory slot0Start = self.slot0;
-
-        require(slot0Start.unlocked, 'LOK');
+        require(slot0Start.sqrtPriceX96 != 0, 'I');
         require(
             params.zeroForOne
                 ? params.sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 &&
@@ -450,8 +437,6 @@ library Pool {
                     params.sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO,
             'SPL'
         );
-
-        self.slot0.unlocked = false;
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
@@ -624,12 +609,10 @@ library Pool {
                 ? (params.amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
         }
-
-        self.slot0.unlocked = true;
     }
 
     /// @notice Updates the protocol fee for a given pool
-    function setFeeProtocol(State storage self, uint8 feeProtocol) internal lock(self) returns (uint8 feeProtocolOld) {
+    function setFeeProtocol(State storage self, uint8 feeProtocol) internal returns (uint8 feeProtocolOld) {
         (uint8 feeProtocol0, uint8 feeProtocol1) = (feeProtocol >> 4, feeProtocol % 16);
         require(
             (feeProtocol0 == 0 || (feeProtocol0 >= 4 && feeProtocol0 <= 10)) &&
