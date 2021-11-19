@@ -83,19 +83,19 @@ contract PoolManager {
     address public lockedBy;
 
     /// @notice Internal transient enumerable set
-    uint256 tokensTouchedBloomFilter;
+    uint256 public tokensTouchedBloomFilter;
     IERC20Minimal[] public tokensTouched;
     mapping(IERC20Minimal => int256) public tokenDelta;
 
     function lock() external {
         require(lockedBy == address(0));
         lockedBy = msg.sender;
+
+        // the caller does everything in this callback, including paying what they owe
         ILockCallback(msg.sender).lockAcquired();
 
-        // todo: handle payment of the deltas
-
         for (uint256 i = 0; i < tokensTouched.length; i++) {
-            delete tokenDelta[tokensTouched[i]];
+            require(tokenDelta[tokensTouched[i]] == 0, 'Not settled');
         }
         delete tokensTouchedBloomFilter;
         delete tokensTouched;
@@ -123,12 +123,15 @@ contract PoolManager {
         tokensTouchedBloomFilter |= uint160(uint160(address(token)));
     }
 
+    function _accountDelta(IERC20Minimal token, int256 delta) internal {
+        _addTokenToSet(token);
+        tokenDelta[token] += delta;
+    }
+
     /// @dev Accumulates a balance change to a map of token to balance changes
-    function _accountDelta(PoolKey memory key, Pool.BalanceDelta memory delta) internal {
-        _addTokenToSet(key.token0);
-        _addTokenToSet(key.token1);
-        tokenDelta[key.token0] += delta.amount0;
-        tokenDelta[key.token1] += delta.amount1;
+    function _accountPoolBalanceDelta(PoolKey memory key, Pool.BalanceDelta memory delta) internal {
+        _accountDelta(key.token0, delta.amount0);
+        _accountDelta(key.token1, delta.amount1);
     }
 
     modifier onlyLocker() {
@@ -158,7 +161,7 @@ contract PoolManager {
             })
         );
 
-        _accountDelta(key, delta);
+        _accountPoolBalanceDelta(key, delta);
     }
 
     struct BurnParams {
@@ -191,7 +194,7 @@ contract PoolManager {
             })
         );
 
-        _accountDelta(key, delta);
+        _accountPoolBalanceDelta(key, delta);
     }
 
     struct SwapParams {
@@ -218,7 +221,24 @@ contract PoolManager {
             })
         );
 
-        _accountDelta(key, delta);
+        _accountPoolBalanceDelta(key, delta);
+    }
+
+    /// @notice Called by the user to net out some value owed to the user
+    /// @dev Can also be used as a mechanism for _free_ flash loans
+    function take(
+        IERC20Minimal token,
+        address to,
+        uint256 amount
+    ) external onlyLocker {
+        _accountDelta(token, amount.toInt256());
+        token.transfer(to, amount);
+    }
+
+    /// @notice Called by the user to pay what is owed
+    function settle(IERC20Minimal token, uint256 amount) external onlyLocker {
+        _accountDelta(token, -amount.toInt256());
+        token.transferFrom(msg.sender, address(this), amount);
     }
 
     /// @notice Update the protocol fee for a given pool

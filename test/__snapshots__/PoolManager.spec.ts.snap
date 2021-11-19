@@ -2,4 +2,4 @@
 
 exports[`PoolManager #initialize gas cost 1`] = `70679`;
 
-exports[`PoolManager bytecode size 1`] = `19393`;
+exports[`PoolManager bytecode size 1`] = `20114`;
