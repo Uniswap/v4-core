@@ -6,9 +6,10 @@ import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
-import {IPoolManagerUser} from './interfaces/callback/IPoolManagerUser.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
+import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
+import {ISettleCallback} from './interfaces/callback/ISettleCallback.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
@@ -87,7 +88,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     function lock(bytes calldata data) external override acquiresLock {
         // the caller does everything in this callback, including paying what they owe
-        require(IPoolManagerUser(msg.sender).lockAcquired(data), 'No data');
+        require(ILockCallback(msg.sender).lockAcquired(data), 'No data');
 
         for (uint256 i = 0; i < tokensTouched.length; i++) {
             require(tokenDelta[tokensTouched[i]] == 0, 'Not settled');
@@ -221,12 +222,19 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @notice Called by the user to pay what is owed
-    function settle(IERC20Minimal token) external override noDelegateCall onlyLocker {
+    function settle(IERC20Minimal token, bytes calldata data)
+        external
+        override
+        noDelegateCall
+        onlyLocker
+        returns (uint256 paid)
+    {
         uint256 reservesBefore = reservesOf[token];
-        IPoolManagerUser(msg.sender).settleCallback(token, tokenDelta[token]);
+        ISettleCallback(msg.sender).settleCallback(token, tokenDelta[token], data);
         reservesOf[token] = token.balanceOf(address(this));
+        paid = reservesOf[token] - reservesBefore;
         // subtraction must be safe
-        _accountDelta(token, -(reservesOf[token] - reservesBefore).toInt256());
+        _accountDelta(token, -(paid.toInt256()));
     }
 
     /// @notice Update the protocol fee for a given pool
