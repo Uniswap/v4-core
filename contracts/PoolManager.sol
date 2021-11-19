@@ -86,9 +86,9 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         delete lockedBy;
     }
 
-    function lock(bytes calldata data) external override acquiresLock {
+    function lock(bytes calldata data) external override acquiresLock returns (bytes memory result) {
         // the caller does everything in this callback, including paying what they owe
-        require(ILockCallback(msg.sender).lockAcquired(data), 'No data');
+        result = ILockCallback(msg.sender).lockAcquired(data);
 
         for (uint256 i = 0; i < tokensTouched.length; i++) {
             require(tokenDelta[tokensTouched[i]] == 0, 'Not settled');
@@ -128,7 +128,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountDelta(key.token1, delta.amount1);
     }
 
-    modifier onlyLocker() {
+    modifier onlyByLocker() {
         require(msg.sender == lockedBy, 'LOK');
         _;
     }
@@ -138,7 +138,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         external
         override
         noDelegateCall
-        onlyLocker
+        onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
         require(params.amount > 0);
@@ -165,7 +165,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         external
         override
         noDelegateCall
-        onlyLocker
+        onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
         require(params.amount > 0);
@@ -191,7 +191,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         external
         override
         noDelegateCall
-        onlyLocker
+        onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
         FeeConfig memory config = configs[key.fee];
@@ -216,7 +216,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         IERC20Minimal token,
         address to,
         uint256 amount
-    ) external override noDelegateCall onlyLocker {
+    ) external override noDelegateCall onlyByLocker {
         _accountDelta(token, amount.toInt256());
         token.transfer(to, amount);
     }
@@ -226,7 +226,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         external
         override
         noDelegateCall
-        onlyLocker
+        onlyByLocker
         returns (uint256 paid)
     {
         uint256 reservesBefore = reservesOf[token];

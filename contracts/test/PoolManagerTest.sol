@@ -11,7 +11,5 @@ contract PoolManagerTest is ILockCallback {
     }
 
     /// @notice Called by the pool manager on `msg.sender` when a lock is acquired
-    function lockAcquired(bytes calldata) external override returns (bool) {
-        return true;
-    }
+    function lockAcquired(bytes calldata) external override returns (bytes memory) {}
 }

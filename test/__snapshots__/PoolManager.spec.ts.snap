@@ -2,6 +2,6 @@
 
 exports[`PoolManager #initialize gas cost 1`] = `70817`;
 
-exports[`PoolManager #lock gas overhead of no-op lock 1`] = `42665`;
+exports[`PoolManager #lock gas overhead of no-op lock 1`] = `43584`;
 
-exports[`PoolManager bytecode size 1`] = `20841`;
+exports[`PoolManager bytecode size 1`] = `21004`;

@@ -49,7 +49,7 @@ interface IPoolManager {
     function tokenDelta(IERC20Minimal token) external view returns (int256);
 
     /// @notice All operations go through this function
-    function lock(bytes calldata data) external;
+    function lock(bytes calldata data) external returns (bytes memory);
 
     /// @dev Mint some liquidity for the given pool
     function mint(PoolKey memory key, MintParams memory params) external returns (Pool.BalanceDelta memory delta);
