@@ -1,5 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PoolManager #initialize gas cost 1`] = `70657`;
+exports[`PoolManager #initialize gas cost 1`] = `70701`;
 
-exports[`PoolManager bytecode size 1`] = `20389`;
+exports[`PoolManager #lock gas overhead of no-op lock 1`] = `42664`;
+
+exports[`PoolManager bytecode size 1`] = `20677`;

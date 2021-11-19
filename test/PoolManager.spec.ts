@@ -1,6 +1,6 @@
 import { Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
-import { PoolManager, TestERC20 } from '../typechain'
+import { PoolManager, TestERC20, PoolManagerTest } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from './shared/snapshotGasCost'
@@ -11,13 +11,16 @@ const createFixtureLoader = waffle.createFixtureLoader
 describe.only('PoolManager', () => {
   let wallet: Wallet, other: Wallet
 
-  let singleton: PoolManager
+  let manager: PoolManager
+  let managerTest: PoolManagerTest
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
   const fixture = async () => {
     const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
+    const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const tokens = await tokensFixture()
     return {
-      singleton: (await singletonPoolFactory.deploy()) as PoolManager,
+      manager: (await singletonPoolFactory.deploy()) as PoolManager,
+      managerTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       tokens,
     }
   }
@@ -30,16 +33,26 @@ describe.only('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ singleton, tokens } = await loadFixture(fixture))
+    ;({ manager, tokens, managerTest } = await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
-    expect(((await waffle.provider.getCode(singleton.address)).length - 2) / 2).to.matchSnapshot()
+    expect(((await waffle.provider.getCode(manager.address)).length - 2) / 2).to.matchSnapshot()
+  })
+
+  describe('#lock', () => {
+    it('no-op lock is ok', async () => {
+      await managerTest.lock(manager.address)
+    })
+
+    it('gas overhead of no-op lock', async () => {
+      await snapshotGasCost(managerTest.lock(manager.address))
+    })
   })
 
   describe('#initialize', async () => {
     it('initializes a pool', async () => {
-      await singleton.initialize(
+      await manager.initialize(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -50,7 +63,7 @@ describe.only('PoolManager', () => {
 
       const {
         slot0: { sqrtPriceX96 },
-      } = await singleton.pools(
+      } = await manager.pools(
         getPoolId({
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -62,7 +75,7 @@ describe.only('PoolManager', () => {
 
     it('gas cost', async () => {
       await snapshotGasCost(
-        singleton.initialize(
+        manager.initialize(
           {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
@@ -77,7 +90,7 @@ describe.only('PoolManager', () => {
   describe.skip('#mint', async () => {
     it('reverts if pool not initialized', async () => {
       await expect(
-        singleton.mint(
+        manager.mint(
           {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
@@ -94,7 +107,7 @@ describe.only('PoolManager', () => {
     })
 
     it('succeeds if pool is initialized', async () => {
-      await singleton.initialize(
+      await manager.initialize(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -103,7 +116,7 @@ describe.only('PoolManager', () => {
         encodeSqrtPriceX96(1, 1)
       )
 
-      await singleton.mint(
+      await manager.mint(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -119,7 +132,7 @@ describe.only('PoolManager', () => {
     })
 
     it('gas cost', async () => {
-      await singleton.initialize(
+      await manager.initialize(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -129,7 +142,7 @@ describe.only('PoolManager', () => {
       )
 
       await snapshotGasCost(
-        singleton.mint(
+        manager.mint(
           {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
@@ -149,7 +162,7 @@ describe.only('PoolManager', () => {
   describe.skip('#swap', () => {
     it('fails if pool is not initialized', async () => {
       await expect(
-        singleton.swap(
+        manager.swap(
           {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
@@ -164,7 +177,7 @@ describe.only('PoolManager', () => {
       ).to.be.revertedWith('I')
     })
     it('succeeds if pool is not initialized', async () => {
-      await singleton.initialize(
+      await manager.initialize(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -172,7 +185,7 @@ describe.only('PoolManager', () => {
         },
         encodeSqrtPriceX96(1, 1)
       )
-      await singleton.swap(
+      await manager.swap(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -186,7 +199,7 @@ describe.only('PoolManager', () => {
       )
     })
     it('gas', async () => {
-      await singleton.initialize(
+      await manager.initialize(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -195,7 +208,7 @@ describe.only('PoolManager', () => {
         encodeSqrtPriceX96(1, 1)
       )
       await snapshotGasCost(
-        singleton.swap(
+        manager.swap(
           {
             token0: tokens.token0.address,
             token1: tokens.token1.address,

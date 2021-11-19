@@ -6,32 +6,24 @@ import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
-import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
-import {ISettleCallback} from './interfaces/callback/ISettleCallback.sol';
+import {IPoolManagerUser} from './interfaces/callback/IPoolManagerUser.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
+import {IPoolManager} from './interfaces/IPoolManager.sol';
 
 /// @notice Holds the state for all pools
-contract PoolManager is NoDelegateCall {
+contract PoolManager is IPoolManager, NoDelegateCall {
     using SafeCast for *;
     using Pool for *;
 
-    /// @notice Returns the key for identifying a pool
-    struct PoolKey {
-        /// @notice The lower token of the pool, sorted numerically
-        IERC20Minimal token0;
-        /// @notice The higher token of the pool, sorted numerically
-        IERC20Minimal token1;
-        /// @notice The fee for the pool
-        uint24 fee;
-    }
-
+    /// @notice Represents the configuration for a fee
     struct FeeConfig {
         int24 tickSpacing;
         uint128 maxLiquidityPerTick;
     }
 
+    // todo: can we make this documented in the interface
     mapping(bytes32 => Pool.State) public pools;
-    mapping(uint24 => FeeConfig) public configs;
+    mapping(uint24 => FeeConfig) public override configs;
 
     constructor() {
         _configure(100, 1);
@@ -53,64 +45,60 @@ contract PoolManager is NoDelegateCall {
         return uint32(block.timestamp);
     }
 
-    function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
+    function _getPool(IPoolManager.PoolKey memory key) private view returns (Pool.State storage) {
         return pools[keccak256(abi.encode(key))];
     }
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24) {
-        return _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
+    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
+        tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
     }
 
     /// @notice Increase the maximum number of stored observations for the pool's oracle
-    function increaseObservationCardinalityNext(PoolKey memory key, uint16 observationCardinalityNext)
+    function increaseObservationCardinalityNext(IPoolManager.PoolKey memory key, uint16 observationCardinalityNext)
         external
+        override
         returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew)
     {
         (observationCardinalityNextOld, observationCardinalityNextNew) = _getPool(key)
             .increaseObservationCardinalityNext(observationCardinalityNext);
     }
 
-    struct MintParams {
-        // the address that will own the minted liquidity
-        address recipient;
-        // the lower and upper tick of the position
-        int24 tickLower;
-        int24 tickUpper;
-        // any change in liquidity
-        uint256 amount;
-    }
-
     /// @notice Represents the address that has currently locked the pool
-    address public lockedBy;
+    address public override lockedBy;
 
     /// @notice All the latest tracked balances of tokens
-    mapping(IERC20Minimal => uint256) public reserves;
+    mapping(IERC20Minimal => uint256) public override reservesOf;
 
     /// @notice Internal transient enumerable set
-    uint256 public tokensTouchedBloomFilter;
-    IERC20Minimal[] public tokensTouched;
-    mapping(IERC20Minimal => int256) public tokenDelta;
+    uint256 public override tokensTouchedBloomFilter;
+    IERC20Minimal[] public override tokensTouched;
+    mapping(IERC20Minimal => int256) public override tokenDelta;
 
-    function lock() external {
+    /// @dev Used to make sure all actions within the lock function are wrapped in the lock acquisition. Note this has no gas overhead because it's inlined.
+    modifier acquiresLock() {
         require(lockedBy == address(0));
         lockedBy = msg.sender;
 
+        _;
+
+        delete lockedBy;
+    }
+
+    function lock(bytes calldata data) external override acquiresLock {
         // the caller does everything in this callback, including paying what they owe
-        ILockCallback(msg.sender).lockAcquired();
+        require(IPoolManagerUser(msg.sender).lockAcquired(data), 'No data');
 
         for (uint256 i = 0; i < tokensTouched.length; i++) {
             require(tokenDelta[tokensTouched[i]] == 0, 'Not settled');
         }
         delete tokensTouchedBloomFilter;
         delete tokensTouched;
-
-        // delimiter to indicate where the lock is cleared
-        delete lockedBy;
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
     function _addTokenToSet(IERC20Minimal token) internal {
+        // todo: is it cheaper to mstore `uint160(uint160(address(token)))` or cast everywhere it's used?
         // if the bloom filter doesn't hit, we know it's not in the set, push it
         if (tokensTouchedBloomFilter & uint160(uint160(address(token))) != uint160(uint160(address(token)))) {
             tokensTouched.push(token);
@@ -145,8 +133,9 @@ contract PoolManager is NoDelegateCall {
     }
 
     /// @dev Mint some liquidity for the given pool
-    function mint(PoolKey memory key, MintParams memory params)
+    function mint(IPoolManager.PoolKey memory key, IPoolManager.MintParams memory params)
         external
+        override
         noDelegateCall
         onlyLocker
         returns (Pool.BalanceDelta memory delta)
@@ -170,17 +159,10 @@ contract PoolManager is NoDelegateCall {
         _accountPoolBalanceDelta(key, delta);
     }
 
-    struct BurnParams {
-        // the lower and upper tick of the position
-        int24 tickLower;
-        int24 tickUpper;
-        // the reduction in liquidity to effect
-        uint256 amount;
-    }
-
     /// @dev Mint some liquidity for the given pool
-    function burn(PoolKey memory key, BurnParams memory params)
+    function burn(IPoolManager.PoolKey memory key, IPoolManager.BurnParams memory params)
         external
+        override
         noDelegateCall
         onlyLocker
         returns (Pool.BalanceDelta memory delta)
@@ -204,14 +186,9 @@ contract PoolManager is NoDelegateCall {
         _accountPoolBalanceDelta(key, delta);
     }
 
-    struct SwapParams {
-        bool zeroForOne;
-        int256 amountSpecified;
-        uint160 sqrtPriceLimitX96;
-    }
-
-    function swap(PoolKey memory key, SwapParams memory params)
+    function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
         external
+        override
         noDelegateCall
         onlyLocker
         returns (Pool.BalanceDelta memory delta)
@@ -238,29 +215,34 @@ contract PoolManager is NoDelegateCall {
         IERC20Minimal token,
         address to,
         uint256 amount
-    ) external noDelegateCall onlyLocker {
+    ) external override noDelegateCall onlyLocker {
         _accountDelta(token, amount.toInt256());
         token.transfer(to, amount);
     }
 
     /// @notice Called by the user to pay what is owed
-    function settle(IERC20Minimal token) external noDelegateCall onlyLocker {
-        uint256 reservesBefore = reserves[token];
-        ISettleCallback(msg.sender).settleCallback(token);
-        reserves[token] = token.balanceOf(address(this));
+    function settle(IERC20Minimal token) external override noDelegateCall onlyLocker {
+        uint256 reservesBefore = reservesOf[token];
+        IPoolManagerUser(msg.sender).settleCallback(token, tokenDelta[token]);
+        reservesOf[token] = token.balanceOf(address(this));
         // subtraction must be safe
-        _accountDelta(token, -(reserves[token] - reservesBefore).toInt256());
+        _accountDelta(token, -(reservesOf[token] - reservesBefore).toInt256());
     }
 
     /// @notice Update the protocol fee for a given pool
-    function setFeeProtocol(PoolKey calldata key, uint8 feeProtocol) external returns (uint8 feeProtocolOld) {
+    function setFeeProtocol(IPoolManager.PoolKey calldata key, uint8 feeProtocol)
+        external
+        override
+        returns (uint8 feeProtocolOld)
+    {
         return _getPool(key).setFeeProtocol(feeProtocol);
     }
 
     /// @notice Observe a past state of a pool
-    function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
+    function observe(IPoolManager.PoolKey calldata key, uint32[] calldata secondsAgos)
         external
         view
+        override
         noDelegateCall
         returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
     {
@@ -269,10 +251,10 @@ contract PoolManager is NoDelegateCall {
 
     /// @notice Get the snapshot of the cumulative values of a tick range
     function snapshotCumulativesInside(
-        PoolKey calldata key,
+        IPoolManager.PoolKey calldata key,
         int24 tickLower,
         int24 tickUpper
-    ) external view noDelegateCall returns (Pool.Snapshot memory) {
+    ) external view override noDelegateCall returns (Pool.Snapshot memory) {
         return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
     }
 }
