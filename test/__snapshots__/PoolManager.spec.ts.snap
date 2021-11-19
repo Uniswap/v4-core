@@ -4,4 +4,8 @@ exports[`PoolManager #initialize gas cost 1`] = `70817`;
 
 exports[`PoolManager #lock gas overhead of no-op lock 1`] = `43584`;
 
+exports[`PoolManager #mint gas cost 1`] = `362333`;
+
+exports[`PoolManager #swap gas 1`] = `185340`;
+
 exports[`PoolManager bytecode size 1`] = `21004`;
