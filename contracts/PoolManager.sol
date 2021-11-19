@@ -8,9 +8,10 @@ import {SafeCast} from './libraries/SafeCast.sol';
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 import {ISettleCallback} from './interfaces/callback/ISettleCallback.sol';
+import {NoDelegateCall} from './NoDelegateCall.sol';
 
 /// @notice Holds the state for all pools
-contract PoolManager {
+contract PoolManager is NoDelegateCall {
     using SafeCast for *;
     using Pool for *;
 
@@ -146,6 +147,7 @@ contract PoolManager {
     /// @dev Mint some liquidity for the given pool
     function mint(PoolKey memory key, MintParams memory params)
         external
+        noDelegateCall
         onlyLocker
         returns (Pool.BalanceDelta memory delta)
     {
@@ -179,6 +181,7 @@ contract PoolManager {
     /// @dev Mint some liquidity for the given pool
     function burn(PoolKey memory key, BurnParams memory params)
         external
+        noDelegateCall
         onlyLocker
         returns (Pool.BalanceDelta memory delta)
     {
@@ -209,6 +212,7 @@ contract PoolManager {
 
     function swap(PoolKey memory key, SwapParams memory params)
         external
+        noDelegateCall
         onlyLocker
         returns (Pool.BalanceDelta memory delta)
     {
@@ -234,13 +238,13 @@ contract PoolManager {
         IERC20Minimal token,
         address to,
         uint256 amount
-    ) external onlyLocker {
+    ) external noDelegateCall onlyLocker {
         _accountDelta(token, amount.toInt256());
         token.transfer(to, amount);
     }
 
     /// @notice Called by the user to pay what is owed
-    function settle(IERC20Minimal token) external onlyLocker {
+    function settle(IERC20Minimal token) external noDelegateCall onlyLocker {
         uint256 reservesBefore = reserves[token];
         ISettleCallback(msg.sender).settleCallback(token);
         reserves[token] = token.balanceOf(address(this));
@@ -257,6 +261,7 @@ contract PoolManager {
     function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
         external
         view
+        noDelegateCall
         returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
     {
         return _getPool(key).observe(_blockTimestamp(), secondsAgos);
@@ -267,7 +272,7 @@ contract PoolManager {
         PoolKey calldata key,
         int24 tickLower,
         int24 tickUpper
-    ) external view returns (Pool.Snapshot memory) {
+    ) external view noDelegateCall returns (Pool.Snapshot memory) {
         return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
     }
 }
