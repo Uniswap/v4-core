@@ -7,6 +7,7 @@ import {SafeCast} from './libraries/SafeCast.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
+import {ISettleCallback} from './interfaces/callback/ISettleCallback.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager {
@@ -81,6 +82,9 @@ contract PoolManager {
 
     /// @notice Represents the address that has currently locked the pool
     address public lockedBy;
+
+    /// @notice All the latest tracked balances of tokens
+    mapping(IERC20Minimal => uint256) public reserves;
 
     /// @notice Internal transient enumerable set
     uint256 public tokensTouchedBloomFilter;
@@ -236,9 +240,12 @@ contract PoolManager {
     }
 
     /// @notice Called by the user to pay what is owed
-    function settle(IERC20Minimal token, uint256 amount) external onlyLocker {
-        _accountDelta(token, -amount.toInt256());
-        token.transferFrom(msg.sender, address(this), amount);
+    function settle(IERC20Minimal token) external onlyLocker {
+        uint256 reservesBefore = reserves[token];
+        ISettleCallback(msg.sender).settleCallback(token);
+        reserves[token] = token.balanceOf(address(this));
+        // subtraction must be safe
+        _accountDelta(token, -(reserves[token] - reservesBefore).toInt256());
     }
 
     /// @notice Update the protocol fee for a given pool
