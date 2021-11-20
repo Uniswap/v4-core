@@ -73,7 +73,6 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
     /// @notice Internal transient enumerable set
-    uint256 public override tokensTouchedBloomFilter;
     IERC20Minimal[] public override tokensTouched;
     mapping(IERC20Minimal => int256) public override tokenDelta;
 
@@ -87,29 +86,22 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         for (uint256 i = 0; i < tokensTouched.length; i++) {
             require(tokenDelta[tokensTouched[i]] == 0, 'Not settled');
         }
-        delete tokensTouchedBloomFilter;
         delete tokensTouched;
         delete lockedBy;
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
     function _addTokenToSet(IERC20Minimal token) internal {
-        // todo: is it cheaper to mstore `uint160(uint160(address(token)))` or cast everywhere it's used?
         // if the bloom filter doesn't hit, we know it's not in the set, push it
-        if (tokensTouchedBloomFilter & uint160(uint160(address(token))) != uint160(uint160(address(token)))) {
-            tokensTouched.push(token);
-        } else {
-            bool seen;
-            for (uint256 i = 0; i < tokensTouched.length; i++) {
-                if (seen = (tokensTouched[i] == token)) {
-                    break;
-                }
-            }
-            if (!seen) {
-                tokensTouched.push(token);
+        bool seen;
+        for (uint256 i = 0; i < tokensTouched.length; i++) {
+            if (seen = (tokensTouched[i] == token)) {
+                break;
             }
         }
-        tokensTouchedBloomFilter |= uint160(uint160(address(token)));
+        if (!seen) {
+            tokensTouched.push(token);
+        }
     }
 
     function _accountDelta(IERC20Minimal token, int256 delta) internal {

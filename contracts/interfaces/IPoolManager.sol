@@ -42,8 +42,6 @@ interface IPoolManager {
     /// @notice Represents the address that has currently locked the pool
     function lockedBy() external view returns (address);
 
-    function tokensTouchedBloomFilter() external view returns (uint256);
-
     function tokensTouched(uint256 index) external view returns (IERC20Minimal);
 
     function tokenDelta(IERC20Minimal token) external view returns (int256);
