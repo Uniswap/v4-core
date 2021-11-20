@@ -36,13 +36,19 @@ contract PoolSwapTest is ILockCallback {
         Pool.BalanceDelta memory delta = manager.swap(data.key, data.params);
 
         if (data.params.zeroForOne) {
-            data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
-            manager.settle(data.key.token0);
-            manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
+            if (delta.amount0 > 0) {
+                data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
+                manager.settle(data.key.token0);
+            }
+            if (delta.amount1 < 0) manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
         } else {
-            data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
-            manager.settle(data.key.token1);
-            manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+            if (delta.amount1 > 0) {
+                data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
+                manager.settle(data.key.token1);
+            }
+            if (delta.amount0 < 0) {
+                manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+            }
         }
 
         return abi.encode(delta);
