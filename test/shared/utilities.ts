@@ -1,6 +1,5 @@
 import bn from 'bignumber.js'
 import { BigNumber, BigNumberish, Contract, ContractTransaction, utils, Wallet } from 'ethers'
-import { SwapTarget } from '../../typechain/SwapTarget'
 import { TestERC20 } from '../../typechain/TestERC20'
 
 export const MaxUint128 = BigNumber.from(2).pow(128).sub(1)
@@ -98,12 +97,12 @@ export interface PoolFunctions {
 }
 
 export function createPoolFunctions({
-  swapTarget,
+  // swapTarget,
   token0,
   token1,
   fee,
 }: {
-  swapTarget: SwapTarget
+  // swapTarget: SwapTarget
   token0: TestERC20
   token1: TestERC20
   fee: number
