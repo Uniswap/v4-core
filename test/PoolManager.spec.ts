@@ -4,7 +4,7 @@ import { PoolManager, TestERC20, PoolManagerTest, PoolSwapTest, PoolMintTest, Po
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from './shared/snapshotGasCost'
-import { encodeSqrtPriceX96, FeeAmount, getPoolId } from './shared/utilities'
+import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -191,7 +191,7 @@ describe.only('PoolManager', () => {
           },
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(100, 1),
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           }
         )
@@ -214,7 +214,7 @@ describe.only('PoolManager', () => {
         },
         {
           amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 100),
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         }
       )
@@ -237,7 +237,44 @@ describe.only('PoolManager', () => {
           },
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 100),
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          }
+        )
+      )
+    })
+    it('gas for actual swap', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await mintTest.mint(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          amount: expandTo18Decimals(1),
+          recipient: wallet.address,
+        }
+      )
+      await snapshotGasCost(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           }
         )

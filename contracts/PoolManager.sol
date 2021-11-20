@@ -9,7 +9,8 @@ import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
-import {ISettleCallback} from './interfaces/callback/ISettleCallback.sol';
+
+import {console} from 'hardhat/console.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
@@ -76,18 +77,11 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     IERC20Minimal[] public override tokensTouched;
     mapping(IERC20Minimal => int256) public override tokenDelta;
 
-    /// @dev Used to make sure all actions within the lock function are wrapped in the lock acquisition. Note this has no gas overhead because it's inlined.
-    modifier acquiresLock() {
+    function lock(bytes calldata data) external override returns (bytes memory result) {
         require(lockedBy == address(0));
         lockedBy = msg.sender;
 
-        _;
-
-        delete lockedBy;
-    }
-
-    function lock(bytes calldata data) external override acquiresLock returns (bytes memory result) {
-        // the caller does everything in this callback, including paying what they owe
+        // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         for (uint256 i = 0; i < tokensTouched.length; i++) {
@@ -95,6 +89,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         }
         delete tokensTouchedBloomFilter;
         delete tokensTouched;
+        delete lockedBy;
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
@@ -222,15 +217,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @notice Called by the user to pay what is owed
-    function settle(IERC20Minimal token, bytes calldata data)
-        external
-        override
-        noDelegateCall
-        onlyByLocker
-        returns (uint256 paid)
-    {
+    function settle(IERC20Minimal token) external override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[token];
-        ISettleCallback(msg.sender).settleCallback(token, tokenDelta[token], data);
         reservesOf[token] = token.balanceOf(address(this));
         paid = reservesOf[token] - reservesBefore;
         // subtraction must be safe

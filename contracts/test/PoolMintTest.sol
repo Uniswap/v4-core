@@ -4,12 +4,11 @@ pragma solidity =0.8.10;
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
-import {ISettleCallback} from '../interfaces/callback/ISettleCallback.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 import {Pool} from '../libraries/Pool.sol';
 
-contract PoolMintTest is ILockCallback, ISettleCallback {
+contract PoolMintTest is ILockCallback {
     IPoolManager public immutable manager;
 
     constructor(IPoolManager _manager) {
@@ -36,23 +35,15 @@ contract PoolMintTest is ILockCallback, ISettleCallback {
 
         Pool.BalanceDelta memory delta = manager.mint(data.key, data.params);
 
-        manager.settle(data.key.token0, abi.encode(data.sender));
-        manager.settle(data.key.token1, abi.encode(data.sender));
+        if (delta.amount0 > 0) {
+            data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
+            manager.settle(data.key.token0);
+        }
+        if (delta.amount1 > 0) {
+            data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
+            manager.settle(data.key.token1);
+        }
 
         return abi.encode(delta);
-    }
-
-    function settleCallback(
-        IERC20Minimal token,
-        int256 delta,
-        bytes calldata data
-    ) external override {
-        require(msg.sender == address(manager));
-
-        address sender = abi.decode(data, (address));
-
-        if (delta > 0) {
-            token.transferFrom(sender, msg.sender, uint256(delta));
-        }
     }
 }
