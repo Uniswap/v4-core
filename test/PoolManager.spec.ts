@@ -228,6 +228,20 @@ describe.only('PoolManager', () => {
         },
         encodeSqrtPriceX96(1, 1)
       )
+
+      await swapTest.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        }
+      )
+
       await snapshotGasCost(
         swapTest.swap(
           {
@@ -237,13 +251,13 @@ describe.only('PoolManager', () => {
           },
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           }
         )
       )
     })
-    it('gas for actual swap', async () => {
+    it('gas for swap against liquidity', async () => {
       await manager.initialize(
         {
           token0: tokens.token0.address,
@@ -265,6 +279,20 @@ describe.only('PoolManager', () => {
           recipient: wallet.address,
         }
       )
+
+      await swapTest.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        }
+      )
+
       await snapshotGasCost(
         swapTest.swap(
           {
@@ -274,7 +302,7 @@ describe.only('PoolManager', () => {
           },
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           }
         )
