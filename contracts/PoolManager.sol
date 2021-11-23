@@ -87,9 +87,11 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
-        for (uint256 i = 0; i < tokensTouched.length; i++) {
-            require(tokenDelta[tokensTouched[i]].delta == 0, 'Not settled');
-            delete tokenDelta[tokensTouched[i]];
+        unchecked {
+            for (uint256 i = 0; i < tokensTouched.length; i++) {
+                require(tokenDelta[tokensTouched[i]].delta == 0, 'Not settled');
+                delete tokenDelta[tokensTouched[i]];
+            }
         }
         delete tokensTouched;
         delete lockedBy;
@@ -97,12 +99,16 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     /// @dev Adds a token to a unique list of tokens that have been touched
     function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
-        PositionAndDelta storage pd = tokenDelta[token];
         uint256 len = tokensTouched.length;
+        if (len == 0) {
+            tokensTouched.push(token);
+            return 0;
+        }
+
+        PositionAndDelta storage pd = tokenDelta[token];
         slot = pd.slot;
-        if (slot < len) {
-            return slot;
-        } else {
+
+        if (slot == 0 && tokensTouched[slot] != token) {
             require(len < type(uint8).max);
             slot = uint8(len);
             pd.slot = slot;
@@ -111,6 +117,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     function _accountDelta(IERC20Minimal token, int256 delta) internal {
+        if (delta == 0) return;
         _addTokenToSet(token);
         tokenDelta[token].delta += int248(delta);
     }
