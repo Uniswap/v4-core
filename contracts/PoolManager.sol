@@ -205,6 +205,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         uint256 amount
     ) external override noDelegateCall onlyByLocker {
         _accountDelta(token, amount.toInt256());
+        reservesOf[token] -= amount;
         token.transfer(to, amount);
     }
 
