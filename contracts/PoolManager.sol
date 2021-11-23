@@ -74,7 +74,11 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     /// @notice Internal transient enumerable set
     IERC20Minimal[] public override tokensTouched;
-    mapping(IERC20Minimal => int256) public override tokenDelta;
+    struct PositionAndDelta {
+        uint8 slot;
+        int248 delta;
+    }
+    mapping(IERC20Minimal => PositionAndDelta) public override tokenDelta;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
         require(lockedBy == address(0));
@@ -84,29 +88,31 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         for (uint256 i = 0; i < tokensTouched.length; i++) {
-            require(tokenDelta[tokensTouched[i]] == 0, 'Not settled');
+            require(tokenDelta[tokensTouched[i]].delta == 0, 'Not settled');
+            delete tokenDelta[tokensTouched[i]];
         }
         delete tokensTouched;
         delete lockedBy;
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
-    function _addTokenToSet(IERC20Minimal token) internal {
-        // if the bloom filter doesn't hit, we know it's not in the set, push it
-        bool seen;
-        for (uint256 i = 0; i < tokensTouched.length; i++) {
-            if (seen = (tokensTouched[i] == token)) {
-                break;
-            }
-        }
-        if (!seen) {
+    function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
+        PositionAndDelta storage pd = tokenDelta[token];
+        uint256 len = tokensTouched.length;
+        slot = pd.slot;
+        if (slot < len) {
+            return slot;
+        } else {
+            require(len < type(uint8).max);
+            slot = uint8(len);
+            pd.slot = slot;
             tokensTouched.push(token);
         }
     }
 
     function _accountDelta(IERC20Minimal token, int256 delta) internal {
         _addTokenToSet(token);
-        tokenDelta[token] += delta;
+        tokenDelta[token].delta += int248(delta);
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
