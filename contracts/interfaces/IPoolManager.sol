@@ -3,6 +3,7 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {IPoolImplementation} from './IPoolImplementation.sol';
 
 interface IPoolManager {
     /// @notice Returns the key for identifying a pool
@@ -11,27 +12,14 @@ interface IPoolManager {
         IERC20Minimal token0;
         /// @notice The higher token of the pool, sorted numerically
         IERC20Minimal token1;
-        /// @notice The fee for the pool
-        uint24 fee;
+        /// @notice The implementation of the pool to use for the swap
+        IPoolImplementation poolImplementation;
     }
-
-    /// @notice Returns the immutable configuration for a given fee
-    function configs(uint24 fee) external view returns (int24 tickSpacing, uint128 maxLiquidityPerTick);
 
     /// @notice Returns the reserves for a given ERC20 token
     function reservesOf(IERC20Minimal token) external view returns (uint256);
 
-    /// @notice Initialize the state for a given pool ID
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
-
-    /// @notice Increase the maximum number of stored observations for the pool's oracle
-    function increaseObservationCardinalityNext(PoolKey memory key, uint16 observationCardinalityNext)
-        external
-        returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew);
-
     struct MintParams {
-        // the address that will own the minted liquidity
-        address recipient;
         // the lower and upper tick of the position
         int24 tickLower;
         int24 tickUpper;
@@ -81,20 +69,4 @@ interface IPoolManager {
 
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
-
-    /// @notice Update the protocol fee for a given pool
-    function setFeeProtocol(PoolKey calldata key, uint8 feeProtocol) external returns (uint8 feeProtocolOld);
-
-    /// @notice Observe a past state of a pool
-    function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
-        external
-        view
-        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s);
-
-    /// @notice Get the snapshot of the cumulative values of a tick range
-    function snapshotCumulativesInside(
-        PoolKey calldata key,
-        int24 tickLower,
-        int24 tickUpper
-    ) external view returns (Pool.Snapshot memory);
 }

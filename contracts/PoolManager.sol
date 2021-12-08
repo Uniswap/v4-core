@@ -15,56 +15,6 @@ import {console} from 'hardhat/console.sol';
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
     using SafeCast for *;
-    using Pool for *;
-
-    /// @notice Represents the configuration for a fee
-    struct FeeConfig {
-        int24 tickSpacing;
-        uint128 maxLiquidityPerTick;
-    }
-
-    // todo: can we make this documented in the interface
-    mapping(bytes32 => Pool.State) public pools;
-    mapping(uint24 => FeeConfig) public override configs;
-
-    constructor() {
-        _configure(100, 1);
-        _configure(500, 10);
-        _configure(3000, 60);
-        _configure(10000, 200);
-    }
-
-    function _configure(uint24 fee, int24 tickSpacing) internal {
-        require(tickSpacing > 0);
-        require(configs[fee].tickSpacing == 0);
-        configs[fee].tickSpacing = tickSpacing;
-        configs[fee].maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
-        // todo: emit event
-    }
-
-    /// @dev For mocking in unit tests
-    function _blockTimestamp() internal view virtual returns (uint32) {
-        return uint32(block.timestamp);
-    }
-
-    function _getPool(IPoolManager.PoolKey memory key) private view returns (Pool.State storage) {
-        return pools[keccak256(abi.encode(key))];
-    }
-
-    /// @notice Initialize the state for a given pool ID
-    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
-        tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
-    }
-
-    /// @notice Increase the maximum number of stored observations for the pool's oracle
-    function increaseObservationCardinalityNext(IPoolManager.PoolKey memory key, uint16 observationCardinalityNext)
-        external
-        override
-        returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew)
-    {
-        (observationCardinalityNextOld, observationCardinalityNextNew) = _getPool(key)
-            .increaseObservationCardinalityNext(observationCardinalityNext);
-    }
 
     /// @notice Represents the address that has currently locked the pool
     address public override lockedBy;
@@ -141,19 +91,12 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
-        require(params.amount > 0);
-
-        FeeConfig memory config = configs[key.fee];
-
-        delta = _getPool(key).modifyPosition(
+        delta = key.poolImplementation.modifyPosition(
             Pool.ModifyPositionParams({
-                owner: params.recipient,
+                owner: msg.sender,
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,
-                liquidityDelta: int256(uint256(params.amount)).toInt128(),
-                time: _blockTimestamp(),
-                maxLiquidityPerTick: config.maxLiquidityPerTick,
-                tickSpacing: config.tickSpacing
+                liquidityDelta: int256(uint256(params.amount)).toInt128()
             })
         );
 
@@ -168,19 +111,12 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
-        require(params.amount > 0);
-
-        FeeConfig memory config = configs[key.fee];
-
-        delta = _getPool(key).modifyPosition(
+        delta = key.poolImplementation.modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,
-                liquidityDelta: -int256(uint256(params.amount)).toInt128(),
-                time: _blockTimestamp(),
-                maxLiquidityPerTick: config.maxLiquidityPerTick,
-                tickSpacing: config.tickSpacing
+                liquidityDelta: -int256(uint256(params.amount)).toInt128()
             })
         );
 
@@ -194,18 +130,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
-        FeeConfig memory config = configs[key.fee];
-
-        delta = _getPool(key).swap(
-            Pool.SwapParams({
-                time: _blockTimestamp(),
-                fee: key.fee,
-                tickSpacing: config.tickSpacing,
-                zeroForOne: params.zeroForOne,
-                amountSpecified: params.amountSpecified,
-                sqrtPriceLimitX96: params.sqrtPriceLimitX96
-            })
-        );
+        delta = key.poolImplementation.swap(params);
 
         _accountPoolBalanceDelta(key, delta);
     }
@@ -229,34 +154,5 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         paid = reservesOf[token] - reservesBefore;
         // subtraction must be safe
         _accountDelta(token, -(paid.toInt256()));
-    }
-
-    /// @notice Update the protocol fee for a given pool
-    function setFeeProtocol(IPoolManager.PoolKey calldata key, uint8 feeProtocol)
-        external
-        override
-        returns (uint8 feeProtocolOld)
-    {
-        return _getPool(key).setFeeProtocol(feeProtocol);
-    }
-
-    /// @notice Observe a past state of a pool
-    function observe(IPoolManager.PoolKey calldata key, uint32[] calldata secondsAgos)
-        external
-        view
-        override
-        noDelegateCall
-        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
-    {
-        return _getPool(key).observe(_blockTimestamp(), secondsAgos);
-    }
-
-    /// @notice Get the snapshot of the cumulative values of a tick range
-    function snapshotCumulativesInside(
-        IPoolManager.PoolKey calldata key,
-        int24 tickLower,
-        int24 tickUpper
-    ) external view override noDelegateCall returns (Pool.Snapshot memory) {
-        return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
     }
 }
