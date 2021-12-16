@@ -7,8 +7,11 @@ import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {IV3PoolImplementation} from '../interfaces/implementations/IV3PoolImplementation.sol';
 import {NoDelegateCall} from '../NoDelegateCall.sol';
+import {BasePoolImplementation} from './base/BasePoolImplementation.sol';
+import {Tick} from '../libraries/Tick.sol';
+import {BalanceDelta} from '../interfaces/shared.sol';
 
-contract V3PoolImplementation is IV3PoolImplementation, NoDelegateCall {
+contract V3PoolImplementation is IV3PoolImplementation, BasePoolImplementation, NoDelegateCall {
     using Pool for *;
 
     /// @inheritdoc IV3PoolImplementation
@@ -17,6 +20,16 @@ contract V3PoolImplementation is IV3PoolImplementation, NoDelegateCall {
     int24 public immutable override tickSpacing;
     /// @inheritdoc IV3PoolImplementation
     uint128 public immutable override maxLiquidityPerTick;
+
+    constructor(
+        IPoolManager _manager,
+        uint24 _fee,
+        int24 _tickSpacing
+    ) BasePoolImplementation(_manager) {
+        fee = _fee;
+        tickSpacing = _tickSpacing;
+        maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
+    }
 
     // todo: can we make this documented in the interface
     mapping(bytes32 => Pool.State) public pools;
@@ -29,6 +42,18 @@ contract V3PoolImplementation is IV3PoolImplementation, NoDelegateCall {
     function _getPool(IERC20Minimal token0, IERC20Minimal token1) private view returns (Pool.State storage) {
         return pools[keccak256(abi.encode(token0, token1))];
     }
+
+    function modifyPosition(
+        address sender,
+        IPoolManager.Pair memory pair,
+        bytes memory data
+    ) external override managerOnly returns (BalanceDelta memory) {}
+
+    function swap(
+        address sender,
+        IPoolManager.Pair memory pair,
+        bytes memory data
+    ) external override managerOnly returns (BalanceDelta memory) {}
 
     /// @notice Initialize the state for a given pool ID
     function initialize(

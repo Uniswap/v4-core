@@ -27,7 +27,7 @@ contract PoolSwapTest is ILockCallback {
         external
         returns (BalanceDelta memory delta)
     {
-        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, params))), (Pool.BalanceDelta));
+        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, params))), (BalanceDelta));
     }
 
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
@@ -35,21 +35,21 @@ contract PoolSwapTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta memory delta = manager.swap(data.key, data.params);
+        BalanceDelta memory delta = manager.swap(data.key, abi.encode(data.params));
 
         if (data.params.zeroForOne) {
             if (delta.amount0 > 0) {
-                data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
-                manager.settle(data.key.token0);
+                data.key.pair.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
+                manager.settle(data.key.pair.token0);
             }
-            if (delta.amount1 < 0) manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
+            if (delta.amount1 < 0) manager.take(data.key.pair.token1, data.sender, uint256(-delta.amount1));
         } else {
             if (delta.amount1 > 0) {
-                data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
-                manager.settle(data.key.token1);
+                data.key.pair.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
+                manager.settle(data.key.pair.token1);
             }
             if (delta.amount0 < 0) {
-                manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+                manager.take(data.key.pair.token0, data.sender, uint256(-delta.amount0));
             }
         }
 

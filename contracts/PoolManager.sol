@@ -92,7 +92,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     {
         delta = key.poolImplementation.modifyPosition(msg.sender, key.pair, data);
 
-        _accountPoolBalanceDelta(key, delta);
+        _accountPoolBalanceDelta(key.pair, delta);
     }
 
     function swap(IPoolManager.PoolKey memory key, bytes memory data)
@@ -102,7 +102,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (BalanceDelta memory delta)
     {
-        delta = key.poolImplementation.swap(key.pair, data);
+        delta = key.poolImplementation.swap(msg.sender, key.pair, data);
 
         _accountPoolBalanceDelta(key.pair, delta);
     }
