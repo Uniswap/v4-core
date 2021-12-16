@@ -54,7 +54,7 @@ describe.only('PoolManager gas tests', () => {
       const gasTestFixture = async ([wallet]: Wallet[]) => {
         const { token0, token1 } = await tokensFixture()
 
-        const singletonPoolFactory = await ethers.getContractFactory('MockTimePoolManager')
+        const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
         const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
         const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
         const manager = (await singletonPoolFactory.deploy()) as PoolManager
@@ -106,22 +106,26 @@ describe.only('PoolManager gas tests', () => {
           })
         }
         const getSlot0 = async () => {
-          const { slot0 } = await manager.pools(getPoolId(poolKey.pair))
+          const { slot0 } = await v3PoolImplementation.pools(getPoolId(poolKey.pair))
           return slot0
         }
 
-        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-        await manager.setFeeProtocol(poolKey, feeProtocol + feeProtocol * 2 ** 4)
-        await manager.increaseObservationCardinalityNext(poolKey, 4)
+        await v3PoolImplementation.initialize(poolKey.pair.token0, poolKey.pair.token1, encodeSqrtPriceX96(1, 1))
+        await v3PoolImplementation.setFeeProtocol(
+          poolKey.pair.token0,
+          poolKey.pair.token1,
+          feeProtocol + feeProtocol * 2 ** 4
+        )
+        await v3PoolImplementation.increaseObservationCardinalityNext(poolKey.pair.token0, poolKey.pair.token1, 4)
 
-        await manager.advanceTime(1)
+        await v3PoolImplementation.advanceTime(1)
 
         await mint(wallet.address, minTick, maxTick, expandTo18Decimals(2))
 
         await swapExact0For1(expandTo18Decimals(1), wallet.address)
-        await manager.advanceTime(1)
+        await v3PoolImplementation.advanceTime(1)
         await swapToHigherPrice(startingPrice, wallet.address)
-        await manager.advanceTime(1)
+        await v3PoolImplementation.advanceTime(1)
 
         const { tick, sqrtPriceX96 } = await getSlot0()
 
@@ -235,7 +239,7 @@ describe.only('PoolManager gas tests', () => {
             expandTo18Decimals(1)
           )
           await swapExact0For1(2, wallet.address)
-          await manager.advanceTime(1)
+          await v3PoolImplementation.advanceTime(1)
           await snapshotGasCost(swapExact0For1(expandTo18Decimals(1), wallet.address))
           expect((await getSlot0()).tick).to.be.lt(startingTick - 4 * tickSpacing)
         })
@@ -250,7 +254,7 @@ describe.only('PoolManager gas tests', () => {
           )
           await swapExact0For1(expandTo18Decimals(1), wallet.address)
           await swapToHigherPrice(startingPrice, wallet.address)
-          await manager.advanceTime(1)
+          await v3PoolImplementation.advanceTime(1)
           await snapshotGasCost(swapExact0For1(expandTo18Decimals(1), wallet.address))
           expect((await getSlot0()).tick).to.be.lt(tickSpacing * -4)
         })
@@ -288,7 +292,7 @@ describe.only('PoolManager gas tests', () => {
             })
             it('add to position after some time passes', async () => {
               await mint(wallet.address, tickLower, tickUpper, expandTo18Decimals(1))
-              await manager.advanceTime(1)
+              await v3PoolImplementation.advanceTime(1)
               await snapshotGasCost(mint(wallet.address, tickLower, tickUpper, expandTo18Decimals(1)))
             })
           })
@@ -330,7 +334,7 @@ describe.only('PoolManager gas tests', () => {
       //         await snapshotGasCost(pool.burn(tickLower, tickUpper, expandTo18Decimals(1)))
       //       })
       //       it('burn entire position after some time passes', async () => {
-      //         await manager.advanceTime(1)
+      //         await v3PoolImplementation.advanceTime(1)
       //         await snapshotGasCost(pool.burn(tickLower, tickUpper, expandTo18Decimals(1)))
       //       })
       //     })
@@ -352,10 +356,14 @@ describe.only('PoolManager gas tests', () => {
 
       describe('#increaseObservationCardinalityNext', () => {
         it('grow by 1 slot', async () => {
-          await snapshotGasCost(manager.increaseObservationCardinalityNext(poolKey, 5))
+          await snapshotGasCost(
+            v3PoolImplementation.increaseObservationCardinalityNext(poolKey.pair.token0, poolKey.pair.token1, 5)
+          )
         })
         it('no op', async () => {
-          await snapshotGasCost(manager.increaseObservationCardinalityNext(poolKey, 3))
+          await snapshotGasCost(
+            v3PoolImplementation.increaseObservationCardinalityNext(poolKey.pair.token0, poolKey.pair.token1, 3)
+          )
         })
       })
 

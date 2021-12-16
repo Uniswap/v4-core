@@ -47,13 +47,43 @@ contract V3PoolImplementation is IV3PoolImplementation, BasePoolImplementation, 
         address sender,
         IPoolManager.Pair memory pair,
         bytes memory data
-    ) external override managerOnly returns (BalanceDelta memory) {}
+    ) external override managerOnly returns (BalanceDelta memory) {
+        IV3PoolImplementation.ModifyPositionParams memory params = abi.decode(
+            data,
+            (IV3PoolImplementation.ModifyPositionParams)
+        );
+        return
+            _getPool(pair.token0, pair.token1).modifyPosition(
+                Pool.ModifyPositionParams({
+                    owner: params.owner,
+                    tickLower: params.tickLower,
+                    tickUpper: params.tickUpper,
+                    liquidityDelta: int128(params.liquidityDelta),
+                    time: _blockTimestamp(),
+                    maxLiquidityPerTick: maxLiquidityPerTick,
+                    tickSpacing: tickSpacing
+                })
+            );
+    }
 
     function swap(
         address sender,
         IPoolManager.Pair memory pair,
         bytes memory data
-    ) external override managerOnly returns (BalanceDelta memory) {}
+    ) external override managerOnly returns (BalanceDelta memory) {
+        IV3PoolImplementation.SwapParams memory params = abi.decode(data, (IV3PoolImplementation.SwapParams));
+        return
+            _getPool(pair.token0, pair.token1).swap(
+                Pool.SwapParams({
+                    fee: fee,
+                    tickSpacing: tickSpacing,
+                    time: _blockTimestamp(),
+                    zeroForOne: params.zeroForOne,
+                    amountSpecified: params.amountSpecified,
+                    sqrtPriceLimitX96: params.sqrtPriceLimitX96
+                })
+            );
+    }
 
     /// @notice Initialize the state for a given pool ID
     function initialize(
