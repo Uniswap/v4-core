@@ -12,6 +12,8 @@ import {TickMath} from './TickMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
 import {SwapMath} from './SwapMath.sol';
 
+import {BalanceDelta} from '../interfaces/shared.sol';
+
 library Pool {
     using SafeCast for *;
     using Tick for mapping(int24 => Tick.Info);
@@ -19,13 +21,6 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
-
-    /// @notice Represents a change in the pool's balance of token0 and token1.
-    /// @dev This is returned from most pool operations
-    struct BalanceDelta {
-        int256 amount0;
-        int256 amount1;
-    }
 
     struct Slot0 {
         // the current price

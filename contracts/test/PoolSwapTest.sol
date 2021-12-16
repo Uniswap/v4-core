@@ -5,6 +5,8 @@ import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
+import {IV3PoolImplementation} from '../interfaces/implementations/IV3PoolImplementation.sol';
+import {BalanceDelta} from '../interfaces/shared.sol';
 
 import {Pool} from '../libraries/Pool.sol';
 
@@ -18,12 +20,12 @@ contract PoolSwapTest is ILockCallback {
     struct CallbackData {
         address sender;
         IPoolManager.PoolKey key;
-        IPoolManager.SwapParams params;
+        IV3PoolImplementation.SwapParams params;
     }
 
-    function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
+    function swap(IPoolManager.PoolKey memory key, IV3PoolImplementation.SwapParams memory params)
         external
-        returns (Pool.BalanceDelta memory delta)
+        returns (BalanceDelta memory delta)
     {
         delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, params))), (Pool.BalanceDelta));
     }
@@ -33,7 +35,7 @@ contract PoolSwapTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        Pool.BalanceDelta memory delta = manager.swap(data.key, data.params);
+        BalanceDelta memory delta = manager.swap(data.key, data.params);
 
         if (data.params.zeroForOne) {
             if (delta.amount0 > 0) {

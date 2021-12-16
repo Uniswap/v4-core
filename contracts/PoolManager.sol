@@ -9,8 +9,7 @@ import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
-
-import {console} from 'hardhat/console.sol';
+import {BalanceDelta} from './interfaces/shared.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
@@ -73,9 +72,9 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, Pool.BalanceDelta memory delta) internal {
-        _accountDelta(key.token0, delta.amount0);
-        _accountDelta(key.token1, delta.amount1);
+    function _accountPoolBalanceDelta(IPoolManager.Pair memory pair, BalanceDelta memory delta) internal {
+        _accountDelta(pair.token0, delta.amount0);
+        _accountDelta(pair.token1, delta.amount1);
     }
 
     modifier onlyByLocker() {
@@ -84,55 +83,28 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @dev Mint some liquidity for the given pool
-    function mint(IPoolManager.PoolKey memory key, IPoolManager.MintParams memory params)
+    function modifyPosition(IPoolManager.PoolKey memory key, bytes memory data)
         external
         override
         noDelegateCall
         onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
+        returns (BalanceDelta memory delta)
     {
-        delta = key.poolImplementation.modifyPosition(
-            Pool.ModifyPositionParams({
-                owner: msg.sender,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                liquidityDelta: int256(uint256(params.amount)).toInt128()
-            })
-        );
+        delta = key.poolImplementation.modifyPosition(msg.sender, key.pair, data);
 
         _accountPoolBalanceDelta(key, delta);
     }
 
-    /// @dev Mint some liquidity for the given pool
-    function burn(IPoolManager.PoolKey memory key, IPoolManager.BurnParams memory params)
+    function swap(IPoolManager.PoolKey memory key, bytes memory data)
         external
         override
         noDelegateCall
         onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
+        returns (BalanceDelta memory delta)
     {
-        delta = key.poolImplementation.modifyPosition(
-            Pool.ModifyPositionParams({
-                owner: msg.sender,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                liquidityDelta: -int256(uint256(params.amount)).toInt128()
-            })
-        );
+        delta = key.poolImplementation.swap(key.pair, data);
 
-        _accountPoolBalanceDelta(key, delta);
-    }
-
-    function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
-        external
-        override
-        noDelegateCall
-        onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
-    {
-        delta = key.poolImplementation.swap(params);
-
-        _accountPoolBalanceDelta(key, delta);
+        _accountPoolBalanceDelta(key.pair, delta);
     }
 
     /// @notice Called by the user to net out some value owed to the user

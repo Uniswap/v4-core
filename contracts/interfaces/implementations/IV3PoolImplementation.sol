@@ -6,6 +6,21 @@ import {IERC20Minimal} from '../external/IERC20Minimal.sol';
 import {Pool} from '../../libraries/Pool.sol';
 
 interface IV3PoolImplementation is IPoolImplementation {
+    /// @notice The data that is encoded in the IPoolImplementation#modifyPosition data argument
+    struct ModifyPositionParams {
+        address owner;
+        int24 tickLower;
+        int24 tickUpper;
+        int256 liquidityDelta;
+    }
+
+    /// @notice The data that is encoded in the IPoolImplementation#swap data argument
+    struct SwapParams {
+        bool zeroForOne;
+        int256 amountSpecified;
+        uint160 sqrtPriceLimitX96;
+    }
+
     /// @notice Returns the fee in pips taken on input to all swaps
     function fee() external view returns (uint24);
 

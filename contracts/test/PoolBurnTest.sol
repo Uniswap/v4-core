@@ -5,6 +5,8 @@ import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
+import {IV3PoolImplementation} from '../interfaces/implementations/IV3PoolImplementation.sol';
+import {BalanceDelta} from '../interfaces/shared.sol';
 
 import {Pool} from '../libraries/Pool.sol';
 
@@ -18,12 +20,12 @@ contract PoolBurnTest is ILockCallback {
     struct CallbackData {
         address sender;
         IPoolManager.PoolKey key;
-        IPoolManager.BurnParams params;
+        IV3PoolImplementation.BurnParams params;
     }
 
-    function burn(IPoolManager.PoolKey memory key, IPoolManager.BurnParams memory params)
+    function burn(IPoolManager.PoolKey memory key, IV3PoolImplementation.BurnParams memory params)
         external
-        returns (Pool.BalanceDelta memory delta)
+        returns (BalanceDelta memory delta)
     {
         delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, params))), (Pool.BalanceDelta));
     }
@@ -33,7 +35,7 @@ contract PoolBurnTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        Pool.BalanceDelta memory delta = manager.burn(data.key, data.params);
+        BalanceDelta memory delta = manager.burn(data.key, data.params);
 
         if (delta.amount0 < 0) {
             manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
