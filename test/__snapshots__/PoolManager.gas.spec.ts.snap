@@ -1,22 +1,38 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PoolManager gas tests fee is off #mint above current price add to position existing 1`] = `172534`;
+exports[`PoolManager gas tests fee is off #increaseObservationCardinalityNext grow by 1 slot 1`] = `50515`;
 
-exports[`PoolManager gas tests fee is off #mint above current price new position mint first in range 1`] = `267489`;
+exports[`PoolManager gas tests fee is off #increaseObservationCardinalityNext no op 1`] = `25446`;
 
-exports[`PoolManager gas tests fee is off #mint above current price second position in same range 1`] = `186214`;
+exports[`PoolManager gas tests fee is off #mint above current price add to position after some time passes 1`] = `172576`;
 
-exports[`PoolManager gas tests fee is off #mint around current price add to position existing 1`] = `238766`;
+exports[`PoolManager gas tests fee is off #mint above current price add to position existing 1`] = `172576`;
 
-exports[`PoolManager gas tests fee is off #mint around current price new position mint first in range 1`] = `390952`;
+exports[`PoolManager gas tests fee is off #mint above current price new position mint first in range 1`] = `267531`;
 
-exports[`PoolManager gas tests fee is off #mint around current price second position in same range 1`] = `252446`;
+exports[`PoolManager gas tests fee is off #mint above current price second position in same range 1`] = `186256`;
 
-exports[`PoolManager gas tests fee is off #mint below current price add to position existing 1`] = `173211`;
+exports[`PoolManager gas tests fee is off #mint around current price add to position after some time passes 1`] = `246092`;
 
-exports[`PoolManager gas tests fee is off #mint below current price new position mint first in range 1`] = `336673`;
+exports[`PoolManager gas tests fee is off #mint around current price add to position existing 1`] = `238808`;
 
-exports[`PoolManager gas tests fee is off #mint below current price second position in same range 1`] = `186891`;
+exports[`PoolManager gas tests fee is off #mint around current price new position mint first in range 1`] = `390994`;
+
+exports[`PoolManager gas tests fee is off #mint around current price second position in same range 1`] = `252488`;
+
+exports[`PoolManager gas tests fee is off #mint below current price add to position after some time passes 1`] = `173252`;
+
+exports[`PoolManager gas tests fee is off #mint below current price add to position existing 1`] = `173252`;
+
+exports[`PoolManager gas tests fee is off #mint below current price new position mint first in range 1`] = `336725`;
+
+exports[`PoolManager gas tests fee is off #mint below current price second position in same range 1`] = `186932`;
+
+exports[`PoolManager gas tests fee is off #snapshotCumulativesInside tick above 1`] = `33714`;
+
+exports[`PoolManager gas tests fee is off #snapshotCumulativesInside tick below 1`] = `33673`;
+
+exports[`PoolManager gas tests fee is off #snapshotCumulativesInside tick inside 1`] = `38947`;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `221386`;
 
@@ -28,6 +44,10 @@ exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, l
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `233481`;
 
+exports[`PoolManager gas tests fee is off #swapExact0For1 large swap crossing several initialized ticks after some time passes 1`] = `300699`;
+
+exports[`PoolManager gas tests fee is off #swapExact0For1 large swap crossing several initialized ticks second time after some time passes 1`] = `300699`;
+
 exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `221386`;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block with no tick movement 1`] = `208677`;
@@ -36,23 +56,39 @@ exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, 
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `289807`;
 
-exports[`PoolManager gas tests fee is on #mint above current price add to position existing 1`] = `172544`;
+exports[`PoolManager gas tests fee is on #increaseObservationCardinalityNext grow by 1 slot 1`] = `50515`;
 
-exports[`PoolManager gas tests fee is on #mint above current price new position mint first in range 1`] = `267499`;
+exports[`PoolManager gas tests fee is on #increaseObservationCardinalityNext no op 1`] = `25446`;
 
-exports[`PoolManager gas tests fee is on #mint above current price second position in same range 1`] = `186224`;
+exports[`PoolManager gas tests fee is on #mint above current price add to position after some time passes 1`] = `172585`;
 
-exports[`PoolManager gas tests fee is on #mint around current price add to position existing 1`] = `238776`;
+exports[`PoolManager gas tests fee is on #mint above current price add to position existing 1`] = `172585`;
 
-exports[`PoolManager gas tests fee is on #mint around current price new position mint first in range 1`] = `390962`;
+exports[`PoolManager gas tests fee is on #mint above current price new position mint first in range 1`] = `267540`;
 
-exports[`PoolManager gas tests fee is on #mint around current price second position in same range 1`] = `252456`;
+exports[`PoolManager gas tests fee is on #mint above current price second position in same range 1`] = `186265`;
 
-exports[`PoolManager gas tests fee is on #mint below current price add to position existing 1`] = `173220`;
+exports[`PoolManager gas tests fee is on #mint around current price add to position after some time passes 1`] = `246102`;
 
-exports[`PoolManager gas tests fee is on #mint below current price new position mint first in range 1`] = `336685`;
+exports[`PoolManager gas tests fee is on #mint around current price add to position existing 1`] = `238817`;
 
-exports[`PoolManager gas tests fee is on #mint below current price second position in same range 1`] = `186900`;
+exports[`PoolManager gas tests fee is on #mint around current price new position mint first in range 1`] = `391004`;
+
+exports[`PoolManager gas tests fee is on #mint around current price second position in same range 1`] = `252497`;
+
+exports[`PoolManager gas tests fee is on #mint below current price add to position after some time passes 1`] = `173262`;
+
+exports[`PoolManager gas tests fee is on #mint below current price add to position existing 1`] = `173262`;
+
+exports[`PoolManager gas tests fee is on #mint below current price new position mint first in range 1`] = `336737`;
+
+exports[`PoolManager gas tests fee is on #mint below current price second position in same range 1`] = `186942`;
+
+exports[`PoolManager gas tests fee is on #snapshotCumulativesInside tick above 1`] = `33714`;
+
+exports[`PoolManager gas tests fee is on #snapshotCumulativesInside tick below 1`] = `33673`;
+
+exports[`PoolManager gas tests fee is on #snapshotCumulativesInside tick inside 1`] = `38947`;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `225700`;
 
@@ -63,6 +99,10 @@ exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, la
 exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `305484`;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `238031`;
+
+exports[`PoolManager gas tests fee is on #swapExact0For1 large swap crossing several initialized ticks after some time passes 1`] = `305484`;
+
+exports[`PoolManager gas tests fee is on #swapExact0For1 large swap crossing several initialized ticks second time after some time passes 1`] = `305484`;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `225700`;
 

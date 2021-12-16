@@ -52,6 +52,7 @@ contract V3PoolImplementation is IV3PoolImplementation, BasePoolImplementation, 
             data,
             (IV3PoolImplementation.ModifyPositionParams)
         );
+        require(params.liquidityDelta >= 0 || sender == params.owner);
         return
             _getPool(pair.token0, pair.token1).modifyPosition(
                 Pool.ModifyPositionParams({
@@ -67,7 +68,7 @@ contract V3PoolImplementation is IV3PoolImplementation, BasePoolImplementation, 
     }
 
     function swap(
-        address sender,
+        address,
         IPoolManager.Pair memory pair,
         bytes memory data
     ) external override managerOnly returns (BalanceDelta memory) {

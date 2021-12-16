@@ -154,9 +154,16 @@ describe.only('PoolManager gas tests', () => {
       let poolKey: AsyncReturnType<typeof gasTestFixture>['poolKey']
 
       beforeEach('load the fixture', async () => {
-        ;({ swapExact0For1, manager, mint, swapToHigherPrice, swapToLowerPrice, getSlot0, poolKey } = await loadFixture(
-          gasTestFixture
-        ))
+        ;({
+          swapExact0For1,
+          manager,
+          mint,
+          swapToHigherPrice,
+          swapToLowerPrice,
+          getSlot0,
+          poolKey,
+          v3PoolImplementation,
+        } = await loadFixture(gasTestFixture))
       })
 
       describe('#swapExact0For1', () => {
