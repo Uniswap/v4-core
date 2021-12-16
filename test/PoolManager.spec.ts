@@ -6,7 +6,7 @@ import {
   PoolManagerTest,
   PoolSwapTest,
   PoolModifyPositionTest,
-  PoolBurnTest,
+  V3PoolImplementation,
 } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
@@ -24,14 +24,14 @@ describe.only('PoolManager', () => {
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
   let mintTest: PoolModifyPositionTest
-  let burnTest: PoolBurnTest
+  let v3PoolImplementation: V3PoolImplementation
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
   const fixture = async () => {
     const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
-    const burnTestFactory = await ethers.getContractFactory('PoolBurnTest')
+    const v3PoolImplementationFactory = await ethers.getContractFactory('V3PoolImplementation')
     const tokens = await tokensFixture()
     const manager = (await singletonPoolFactory.deploy()) as PoolManager
 
@@ -40,12 +40,16 @@ describe.only('PoolManager', () => {
       lockTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
       mintTest: (await mintTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
-      burnTest: (await burnTestFactory.deploy(manager.address)) as PoolBurnTest,
+      v3PoolImplementation: (await v3PoolImplementationFactory.deploy(
+        manager.address,
+        300,
+        60
+      )) as V3PoolImplementation,
       tokens,
     }
 
     for (const token of [tokens.token0, tokens.token1, tokens.token2]) {
-      for (const spender of [result.swapTest, result.mintTest, result.burnTest]) {
+      for (const spender of [result.swapTest, result.mintTest]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
       }
     }
@@ -61,7 +65,7 @@ describe.only('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, mintTest, burnTest, swapTest } = await loadFixture(fixture))
+    ;({ manager, tokens, lockTest, mintTest, swapTest, v3PoolImplementation } = await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
@@ -80,14 +84,7 @@ describe.only('PoolManager', () => {
 
   describe('#initialize', async () => {
     it('initializes a pool', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-        },
-        encodeSqrtPriceX96(10, 1)
-      )
+      await v3PoolImplementation.initialize(tokens.token0.address, tokens.token1.address, encodeSqrtPriceX96(10, 1))
 
       const {
         slot0: { sqrtPriceX96 },
@@ -95,7 +92,6 @@ describe.only('PoolManager', () => {
         getPoolId({
           token0: tokens.token0.address,
           token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
         })
       )
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
@@ -103,14 +99,7 @@ describe.only('PoolManager', () => {
 
     it('gas cost', async () => {
       await snapshotGasCost(
-        manager.initialize(
-          {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: FeeAmount.MEDIUM,
-          },
-          encodeSqrtPriceX96(10, 1)
-        )
+        v3PoolImplementation.initialize(tokens.token0.address, tokens.token1.address, encodeSqrtPriceX96(10, 1))
       )
     })
   })
@@ -120,67 +109,50 @@ describe.only('PoolManager', () => {
       await expect(
         mintTest.mint(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: FeeAmount.MEDIUM,
+            pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+            poolImplementation: v3PoolImplementation.address,
           },
           {
             tickLower: 0,
             tickUpper: 60,
-            amount: 100,
-            recipient: wallet.address,
+            liquidityDelta: 100,
+            owner: wallet.address,
           }
         )
       ).to.be.revertedWith('I')
     })
 
     it('succeeds if pool is initialized', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
+      await v3PoolImplementation.initialize(tokens.token0.address, tokens.token1.address, encodeSqrtPriceX96(1, 1))
 
       await mintTest.mint(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
+          pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+          poolImplementation: v3PoolImplementation.address,
         },
         {
           tickLower: 0,
           tickUpper: 60,
-          amount: 100,
-          recipient: wallet.address,
+          liquidityDelta: 100,
+          owner: wallet.address,
         }
       )
     })
 
     it('gas cost', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
+      await v3PoolImplementation.initialize(tokens.token0.address, tokens.token1.address, encodeSqrtPriceX96(1, 1))
 
       await snapshotGasCost(
         mintTest.mint(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: FeeAmount.MEDIUM,
+            pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+            poolImplementation: v3PoolImplementation.address,
           },
           {
             tickLower: 0,
             tickUpper: 60,
-            amount: 100,
-            recipient: wallet.address,
+            liquidityDelta: 100,
+            owner: wallet.address,
           }
         )
       )
@@ -192,9 +164,8 @@ describe.only('PoolManager', () => {
       await expect(
         swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: FeeAmount.MEDIUM,
+            pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+            poolImplementation: v3PoolImplementation.address,
           },
           {
             amountSpecified: 100,
@@ -205,19 +176,11 @@ describe.only('PoolManager', () => {
       ).to.be.revertedWith('I')
     })
     it('succeeds if pool is initialized', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
+      await v3PoolImplementation.initialize(tokens.token0.address, tokens.token1.address, encodeSqrtPriceX96(1, 1))
       await swapTest.swap(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
+          pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+          poolImplementation: v3PoolImplementation.address,
         },
         {
           amountSpecified: 100,
@@ -227,20 +190,12 @@ describe.only('PoolManager', () => {
       )
     })
     it('gas', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
+      await v3PoolImplementation.initialize(tokens.token0.address, tokens.token1.address, encodeSqrtPriceX96(1, 1))
 
       await swapTest.swap(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
+          pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+          poolImplementation: v3PoolImplementation.address,
         },
         {
           amountSpecified: 100,
@@ -252,9 +207,8 @@ describe.only('PoolManager', () => {
       await snapshotGasCost(
         swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: FeeAmount.MEDIUM,
+            pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+            poolImplementation: v3PoolImplementation.address,
           },
           {
             amountSpecified: 100,
@@ -265,33 +219,24 @@ describe.only('PoolManager', () => {
       )
     })
     it('gas for swap against liquidity', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
+      await v3PoolImplementation.initialize(tokens.token0.address, tokens.token1.address, encodeSqrtPriceX96(1, 1))
       await mintTest.mint(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
+          pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+          poolImplementation: v3PoolImplementation.address,
         },
         {
           tickLower: -120,
           tickUpper: 120,
-          amount: expandTo18Decimals(1),
-          recipient: wallet.address,
+          liquidityDelta: expandTo18Decimals(1),
+          owner: wallet.address,
         }
       )
 
       await swapTest.swap(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
+          pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+          poolImplementation: v3PoolImplementation.address,
         },
         {
           amountSpecified: 100,
@@ -303,9 +248,8 @@ describe.only('PoolManager', () => {
       await snapshotGasCost(
         swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: FeeAmount.MEDIUM,
+            pair: { token0: tokens.token0.address, token1: tokens.token1.address },
+            poolImplementation: v3PoolImplementation.address,
           },
           {
             amountSpecified: 100,

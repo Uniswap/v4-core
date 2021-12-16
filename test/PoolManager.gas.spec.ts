@@ -1,6 +1,6 @@
 import { ethers, waffle } from 'hardhat'
 import { Wallet } from 'ethers'
-import { MockTimePoolManager, PoolSwapTest, PoolModifyPositionTest, PoolBurnTest } from '../typechain'
+import { PoolManager, PoolSwapTest, PoolModifyPositionTest, MockTimeV3PoolImplementation } from '../typechain'
 import { expect } from './shared/expect'
 
 import { tokensFixture } from './shared/fixtures'
@@ -57,20 +57,24 @@ describe.only('PoolManager gas tests', () => {
         const singletonPoolFactory = await ethers.getContractFactory('MockTimePoolManager')
         const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
         const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
-        const burnTestFactory = await ethers.getContractFactory('PoolBurnTest')
-        const manager = (await singletonPoolFactory.deploy()) as MockTimePoolManager
+        const manager = (await singletonPoolFactory.deploy()) as PoolManager
+        const v3PoolImplementation = (await (
+          await ethers.getContractFactory('MockTimeV3PoolImplementation')
+        ).deploy(manager.address, 300, 60)) as MockTimeV3PoolImplementation
 
         const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
         const mintTest = (await mintTestFactory.deploy(manager.address)) as PoolModifyPositionTest
-        const burnTest = (await burnTestFactory.deploy(manager.address)) as PoolBurnTest
 
         for (const token of [token0, token1]) {
-          for (const spender of [swapTest, mintTest, burnTest]) {
+          for (const spender of [swapTest, mintTest]) {
             await token.connect(wallet).approve(spender.address, constants.MaxUint256)
           }
         }
 
-        const poolKey = { token0: token0.address, token1: token1.address, fee: FeeAmount.MEDIUM }
+        const poolKey = {
+          pair: { token0: token0.address, token1: token1.address },
+          poolImplementation: v3PoolImplementation.address,
+        }
 
         const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
           return swapTest.swap(poolKey, {
@@ -95,14 +99,14 @@ describe.only('PoolManager gas tests', () => {
         }
         const mint: MintFunction = (recipient, tickLower, tickUpper, liquidity) => {
           return mintTest.mint(poolKey, {
-            recipient,
+            owner: recipient,
             tickLower,
             tickUpper,
-            amount: liquidity,
+            liquidityDelta: liquidity,
           })
         }
         const getSlot0 = async () => {
-          const { slot0 } = await manager.pools(getPoolId(poolKey))
+          const { slot0 } = await manager.pools(getPoolId(poolKey.pair))
           return slot0
         }
 
@@ -124,13 +128,23 @@ describe.only('PoolManager gas tests', () => {
         expect(tick).to.eq(startingTick)
         expect(sqrtPriceX96).to.eq(startingPrice)
 
-        return { manager, getSlot0, poolKey, swapExact0For1, mint, swapToHigherPrice, swapToLowerPrice }
+        return {
+          manager,
+          getSlot0,
+          poolKey,
+          swapExact0For1,
+          v3PoolImplementation,
+          mint,
+          swapToHigherPrice,
+          swapToLowerPrice,
+        }
       }
 
       let swapExact0For1: SwapFunction
       let swapToHigherPrice: SwapToPriceFunction
       let swapToLowerPrice: SwapToPriceFunction
-      let manager: MockTimePoolManager
+      let manager: PoolManager
+      let v3PoolImplementation: MockTimeV3PoolImplementation
       let mint: MintFunction
       let getSlot0: AsyncReturnType<typeof gasTestFixture>['getSlot0']
       let poolKey: AsyncReturnType<typeof gasTestFixture>['poolKey']
@@ -347,15 +361,36 @@ describe.only('PoolManager gas tests', () => {
 
       describe('#snapshotCumulativesInside', () => {
         it('tick inside', async () => {
-          await snapshotGasCost(manager.estimateGas.snapshotCumulativesInside(poolKey, minTick, maxTick))
+          await snapshotGasCost(
+            v3PoolImplementation.estimateGas.snapshotCumulativesInside(
+              poolKey.pair.token0,
+              poolKey.pair.token1,
+              minTick,
+              maxTick
+            )
+          )
         })
         it('tick above', async () => {
           await swapToHigherPrice(MAX_SQRT_RATIO.sub(1), wallet.address)
-          await snapshotGasCost(manager.estimateGas.snapshotCumulativesInside(poolKey, minTick, maxTick))
+          await snapshotGasCost(
+            v3PoolImplementation.estimateGas.snapshotCumulativesInside(
+              poolKey.pair.token0,
+              poolKey.pair.token1,
+              minTick,
+              maxTick
+            )
+          )
         })
         it('tick below', async () => {
           await swapToLowerPrice(MIN_SQRT_RATIO.add(1), wallet.address)
-          await snapshotGasCost(manager.estimateGas.snapshotCumulativesInside(poolKey, minTick, maxTick))
+          await snapshotGasCost(
+            v3PoolImplementation.estimateGas.snapshotCumulativesInside(
+              poolKey.pair.token0,
+              poolKey.pair.token1,
+              minTick,
+              maxTick
+            )
+          )
         })
       })
     })

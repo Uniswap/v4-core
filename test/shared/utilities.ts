@@ -49,19 +49,11 @@ export function getPositionKey(address: string, lowerTick: number, upperTick: nu
   return utils.keccak256(utils.solidityPack(['address', 'int24', 'int24'], [address, lowerTick, upperTick]))
 }
 
-export function getPoolId({
-  token0,
-  token1,
-  fee,
-}: {
-  token0: string | Contract
-  token1: string | Contract
-  fee: number
-}): string {
+export function getPoolId({ token0, token1 }: { token0: string | Contract; token1: string | Contract }): string {
   return utils.keccak256(
     utils.defaultAbiCoder.encode(
-      ['address', 'address', 'uint24'],
-      [typeof token0 === 'string' ? token0 : token0.address, typeof token1 === 'string' ? token1 : token1.address, fee]
+      ['address', 'address'],
+      [typeof token0 === 'string' ? token0 : token0.address, typeof token1 === 'string' ? token1 : token1.address]
     )
   )
 }
