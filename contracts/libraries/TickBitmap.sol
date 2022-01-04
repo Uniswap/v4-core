@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
 import {BitMath} from './BitMath.sol';
