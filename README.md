@@ -44,4 +44,5 @@ contract MyContract {
     // pool.swap(...);
   }
 }
+
 ```
