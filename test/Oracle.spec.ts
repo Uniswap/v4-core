@@ -3,7 +3,6 @@ import { ethers, waffle } from 'hardhat'
 import { OracleTest } from '../typechain/OracleTest'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
-import { TEST_POOL_START_TIME } from './shared/fixtures'
 import snapshotGasCost from './shared/snapshotGasCost'
 import { MaxUint128 } from './shared/utilities'
 
@@ -635,7 +634,8 @@ describe('Oracle', () => {
 
     const BATCH_SIZE = 300
 
-    const STARTING_TIME = TEST_POOL_START_TIME
+    // Monday, October 5, 2020 9:00:00 AM GMT-05:00
+    const STARTING_TIME = 1601906400
 
     const maxedOutOracleFixture = async () => {
       const oracle = await oracleFixture()

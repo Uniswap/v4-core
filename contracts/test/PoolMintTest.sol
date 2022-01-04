@@ -8,7 +8,7 @@ import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 import {Pool} from '../libraries/Pool.sol';
 
-contract PoolSwapTest is ILockCallback {
+contract PoolMintTest is ILockCallback {
     IPoolManager public immutable manager;
 
     constructor(IPoolManager _manager) {
@@ -18,10 +18,10 @@ contract PoolSwapTest is ILockCallback {
     struct CallbackData {
         address sender;
         IPoolManager.PoolKey key;
-        IPoolManager.SwapParams params;
+        IPoolManager.MintParams params;
     }
 
-    function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
+    function mint(IPoolManager.PoolKey memory key, IPoolManager.MintParams memory params)
         external
         returns (Pool.BalanceDelta memory delta)
     {
@@ -33,22 +33,15 @@ contract PoolSwapTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        Pool.BalanceDelta memory delta = manager.swap(data.key, data.params);
+        Pool.BalanceDelta memory delta = manager.mint(data.key, data.params);
 
-        if (data.params.zeroForOne) {
-            if (delta.amount0 > 0) {
-                data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
-                manager.settle(data.key.token0);
-            }
-            if (delta.amount1 < 0) manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
-        } else {
-            if (delta.amount1 > 0) {
-                data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
-                manager.settle(data.key.token1);
-            }
-            if (delta.amount0 < 0) {
-                manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
-            }
+        if (delta.amount0 > 0) {
+            data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
+            manager.settle(data.key.token0);
+        }
+        if (delta.amount1 > 0) {
+            data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
+            manager.settle(data.key.token1);
         }
 
         return abi.encode(delta);
