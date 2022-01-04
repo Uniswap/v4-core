@@ -32,7 +32,7 @@ type AsyncReturnType<T extends (...args: any) => any> = T extends (...args: any)
   ? U
   : any
 
-describe.only('PoolManager gas tests', () => {
+describe('PoolManager gas tests', () => {
   let wallet: Wallet, other: Wallet
 
   let loadFixture: ReturnType<typeof createFixtureLoader>

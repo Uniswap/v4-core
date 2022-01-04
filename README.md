@@ -1,32 +1,26 @@
-# Uniswap V3
+# Uniswap Protocol
 
-[![Lint](https://github.com/Uniswap/v3-core/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/v3-core/actions/workflows/lint.yml)
-[![Tests](https://github.com/Uniswap/v3-core/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/v3-core/actions/workflows/tests.yml)
-[![Fuzz Testing](https://github.com/Uniswap/v3-core/actions/workflows/fuzz-testing.yml/badge.svg)](https://github.com/Uniswap/v3-core/actions/workflows/fuzz-testing.yml)
-[![Mythx](https://github.com/Uniswap/v3-core/actions/workflows/mythx.yml/badge.svg)](https://github.com/Uniswap/v3-core/actions/workflows/mythx.yml)
-[![npm version](https://img.shields.io/npm/v/@uniswap/core-experiments/latest.svg)](https://www.npmjs.com/package/@uniswap/core-experiments/v/latest)
+[![Lint](https://github.com/Uniswap/core-next/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/core-next/actions/workflows/lint.yml)
+[![Tests](https://github.com/Uniswap/core-next/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/core-next/actions/workflows/tests.yml)
+[![Fuzz Testing](https://github.com/Uniswap/core-next/actions/workflows/fuzz-testing.yml/badge.svg)](https://github.com/Uniswap/core-next/actions/workflows/fuzz-testing.yml)
+[![Mythx](https://github.com/Uniswap/core-next/actions/workflows/mythx.yml/badge.svg)](https://github.com/Uniswap/core-next/actions/workflows/mythx.yml)
+[![npm version](https://img.shields.io/npm/v/@uniswap/core-next/latest.svg)](https://www.npmjs.com/package/@uniswap/core-next/v/latest)
 
-This repository contains the core smart contracts for the Uniswap V3 Protocol.
-For higher level contracts, see the [uniswap-v3-periphery](https://github.com/Uniswap/uniswap-v3-periphery)
-repository.
-
-## Bug bounty
-
-This repository is subject to the Uniswap V3 bug bounty program, per the terms defined [here](./bug-bounty.md).
+This repository contains the smart contracts for the Uniswap Protocol.
 
 ## Local deployment
 
 In order to deploy this code to a local testnet, you should install the npm package
-`@uniswap/core-experiments`
+`@uniswap/core-next`
 and import the factory bytecode located at
-`@uniswap/core-experiments/artifacts/contracts/PoolFactory.sol/PoolFactory.json`.
+`@uniswap/core-next/artifacts/contracts/PoolManager.sol/PoolManager.json`.
 For example:
 
 ```typescript
 import {
   abi as FACTORY_ABI,
   bytecode as FACTORY_BYTECODE,
-} from '@uniswap/core-experiments/artifacts/contracts/PoolFactory.sol/PoolFactory.json'
+} from '@uniswap/core-next/artifacts/contracts/PoolManager.sol/PoolManager.json'
 
 // deploy the bytecode
 ```
@@ -38,28 +32,16 @@ your local deployment.
 ## Using solidity interfaces
 
 The Uniswap v3 interfaces are available for import into solidity smart contracts
-via the npm artifact `@uniswap/core-experiments`, e.g.:
+via the npm artifact `@uniswap/core-next`, e.g.:
 
 ```solidity
-import '@uniswap/core-experiments/contracts/interfaces/Pool.sol';
+import '@uniswap/core-next/contracts/interfaces/IPoolManager.sol';
 
 contract MyContract {
-  IPool pool;
+  IPoolManager pool;
 
   function doSomethingWithPool() {
     // pool.swap(...);
   }
 }
-
 ```
-
-## Licensing
-
-The primary license for Uniswap V3 Core is the Business Source License 1.1 (`BUSL-1.1`), see [`LICENSE`](./LICENSE).
-
-### Exceptions
-
-- All files in `contracts/interfaces/` are licensed under `GPL-2.0-or-later` (as indicated in their SPDX headers), see [`contracts/interfaces/LICENSE`](./contracts/interfaces/LICENSE)
-- Several files in `contracts/libraries/` are licensed under `GPL-2.0-or-later` (as indicated in their SPDX headers), see [`contracts/libraries/LICENSE_GPL`](contracts/libraries/LICENSE_GPL)
-- `contracts/libraries/FullMath.sol` is licensed under `MIT` (as indicated in its SPDX header), see [`contracts/libraries/LICENSE_MIT`](contracts/libraries/LICENSE_MIT)
-- All files in `contracts/test` remain unlicensed.

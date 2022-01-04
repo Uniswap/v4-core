@@ -1,7 +1,7 @@
 {
-  "name": "@uniswap/core-experiments",
-  "description": "🦄 Core smart contracts of Uniswap V3",
-  "license": "BUSL-1.1",
+  "name": "@uniswap/core-next",
+  "description": "🦄 Uniswap Protocol smart contracts",
+  "license": "UNLICENSED",
   "publishConfig": {
     "access": "public"
   },
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Uniswap/v3-core"
+    "url": "https://github.com/Uniswap/core-next"
   },
   "files": [
     "contracts/interfaces",
