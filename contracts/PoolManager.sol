@@ -10,8 +10,6 @@ import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
-import {console} from 'hardhat/console.sol';
-
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
     using SafeCast for *;
