@@ -10,7 +10,7 @@ const createFixtureLoader = waffle.createFixtureLoader
 
 const { constants } = ethers
 
-describe('PoolManager', () => {
+describe.only('PoolManager', () => {
   let wallet: Wallet, other: Wallet
 
   let manager: PoolManager
@@ -295,6 +295,68 @@ describe('PoolManager', () => {
 
       await snapshotGasCost(
         swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            zeroForOne: true,
+          }
+        )
+      )
+    })
+  })
+
+  describe('#swapDirect', () => {
+    it('gas for swap against liquidity', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await mintTest.mint(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          amount: expandTo18Decimals(1),
+          recipient: wallet.address,
+        }
+      )
+
+      await tokens.token0.approve(manager.address, constants.MaxUint256)
+
+      await expect(
+        manager.swapDirect(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          }
+        )
+      )
+        .to.emit(tokens.token0, 'Transfer')
+        .withArgs(wallet.address, manager.address, 100)
+        .to.emit(tokens.token1, 'Transfer')
+        .withArgs(manager.address, wallet.address, 98)
+
+      await snapshotGasCost(
+        await manager.swapDirect(
           {
             token0: tokens.token0.address,
             token1: tokens.token1.address,

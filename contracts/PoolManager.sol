@@ -209,6 +209,46 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountPoolBalanceDelta(key, delta);
     }
 
+    function _transferDelta(IERC20Minimal token, int256 delta) private {
+        if (delta < 0) {
+            reservesOf[token] -= uint256(-delta);
+            unchecked {
+                token.transfer(msg.sender, uint256(-delta));
+            }
+        } else if (delta > 0) {
+            reservesOf[token] += uint256(delta);
+            unchecked {
+                token.transferFrom(msg.sender, address(this), uint256(delta));
+            }
+        }
+    }
+
+    function _transferBalanceDelta(IPoolManager.PoolKey memory key, Pool.BalanceDelta memory delta) private {
+        _transferDelta(key.token0, delta.amount0);
+        _transferDelta(key.token1, delta.amount1);
+    }
+
+    function swapDirect(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
+        external
+        noDelegateCall
+        returns (Pool.BalanceDelta memory delta)
+    {
+        FeeConfig memory config = configs[key.fee];
+
+        delta = _getPool(key).swap(
+            Pool.SwapParams({
+                time: _blockTimestamp(),
+                fee: key.fee,
+                tickSpacing: config.tickSpacing,
+                zeroForOne: params.zeroForOne,
+                amountSpecified: params.amountSpecified,
+                sqrtPriceLimitX96: params.sqrtPriceLimitX96
+            })
+        );
+
+        _transferBalanceDelta(key, delta);
+    }
+
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(
