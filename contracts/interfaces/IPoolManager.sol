@@ -8,6 +8,15 @@ import {IPoolImplementation} from './IPoolImplementation.sol';
 import {BalanceDelta} from './shared.sol';
 
 interface IPoolManager {
+    /// @notice Thrown when a token is owed to the caller or the caller owes a token
+    /// @param token The token that is owed
+    /// @param delta The amount that is owed by or to the locker
+    error TokenNotSettled(IERC20Minimal token, int256 delta);
+
+    /// @notice Thrown when a function is called by an address that is not the current locker
+    /// @param locker The current locker
+    error LockedBy(address locker);
+
     struct Pair {
         /// @notice The lower token of the pool, sorted numerically
         IERC20Minimal token0;
@@ -41,6 +50,7 @@ interface IPoolManager {
 
     /// @notice All the below operations must happen in the context of a lock. Locks can be acquired by calling this function.
     /// @param data Any data to be passed through to the lock callback
+    /// @notice All operations go through this function
     function lock(bytes calldata data) external returns (bytes memory);
 
     /// @notice Modify a position in a pool

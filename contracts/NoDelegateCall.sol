@@ -4,6 +4,8 @@ pragma solidity =0.8.10;
 /// @title Prevents delegatecall to a contract
 /// @notice Base contract that provides a modifier for preventing delegatecall to methods in a child contract
 abstract contract NoDelegateCall {
+    error DelegateCallNotAllowed();
+
     /// @dev The original address of this contract
     address private immutable original;
 
@@ -16,7 +18,7 @@ abstract contract NoDelegateCall {
     /// @dev Private method is used instead of inlining into modifier because modifiers are copied into each method,
     ///     and the use of immutable means the address bytes are copied in every place the modifier is used.
     function checkNotDelegateCall() private view {
-        require(address(this) == original);
+        if (address(this) != original) revert DelegateCallNotAllowed();
     }
 
     /// @notice Prevents delegatecall into the modified method
