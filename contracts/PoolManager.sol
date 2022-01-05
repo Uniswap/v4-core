@@ -87,7 +87,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
         unchecked {
             for (uint256 i = 0; i < tokensTouched.length; i++) {
-                require(tokenDelta[tokensTouched[i]].delta == 0, 'Not settled');
+                if (tokenDelta[tokensTouched[i]].delta != 0)
+                    revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
                 delete tokenDelta[tokensTouched[i]];
             }
         }
@@ -127,7 +128,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     modifier onlyByLocker() {
-        require(msg.sender == lockedBy, 'LOK');
+        if (msg.sender != lockedBy) revert LockedBy(lockedBy);
         _;
     }
 
