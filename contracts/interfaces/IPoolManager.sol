@@ -56,6 +56,8 @@ interface IPoolManager {
     function tokenDelta(IERC20Minimal token) external view returns (uint8, int248);
 
     /// @notice All operations go through this function
+    /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
+    /// @return The data returned by the call to `ILockCallback(msg.sender).lockCallback(data)`
     function lock(bytes calldata data) external returns (bytes memory);
 
     /// @dev Mint some liquidity for the given pool
