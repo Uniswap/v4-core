@@ -3,7 +3,7 @@
   "description": "🦄 Uniswap Protocol smart contracts",
   "license": "UNLICENSED",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted"
   },
   "version": "1.0.0",
   "homepage": "https://uniswap.org",
