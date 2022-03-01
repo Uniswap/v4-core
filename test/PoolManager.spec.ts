@@ -1,6 +1,13 @@
 import { Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
-import { PoolManager, TestERC20, PoolManagerTest, PoolSwapTest, PoolMintTest, PoolBurnTest } from '../typechain'
+import {
+  PoolManager,
+  TestERC20,
+  PoolManagerTest,
+  PoolSwapTest,
+  PoolModifyPositionTest,
+  PoolBurnTest,
+} from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from './shared/snapshotGasCost'
@@ -16,14 +23,14 @@ describe('PoolManager', () => {
   let manager: PoolManager
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
-  let mintTest: PoolMintTest
+  let mintTest: PoolModifyPositionTest
   let burnTest: PoolBurnTest
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
   const fixture = async () => {
     const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
-    const mintTestFactory = await ethers.getContractFactory('PoolMintTest')
+    const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const burnTestFactory = await ethers.getContractFactory('PoolBurnTest')
     const tokens = await tokensFixture()
     const manager = (await singletonPoolFactory.deploy()) as PoolManager
@@ -32,7 +39,7 @@ describe('PoolManager', () => {
       manager,
       lockTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
-      mintTest: (await mintTestFactory.deploy(manager.address)) as PoolMintTest,
+      mintTest: (await mintTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       burnTest: (await burnTestFactory.deploy(manager.address)) as PoolBurnTest,
       tokens,
     }

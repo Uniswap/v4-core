@@ -1,6 +1,6 @@
 import { ethers, waffle } from 'hardhat'
 import { Wallet } from 'ethers'
-import { MockTimePoolManager, PoolSwapTest, PoolMintTest, PoolBurnTest } from '../typechain'
+import { MockTimePoolManager, PoolSwapTest, PoolModifyPositionTest, PoolBurnTest } from '../typechain'
 import { expect } from './shared/expect'
 
 import { tokensFixture } from './shared/fixtures'
@@ -56,12 +56,12 @@ describe('PoolManager gas tests', () => {
 
         const singletonPoolFactory = await ethers.getContractFactory('MockTimePoolManager')
         const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
-        const mintTestFactory = await ethers.getContractFactory('PoolMintTest')
+        const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
         const burnTestFactory = await ethers.getContractFactory('PoolBurnTest')
         const manager = (await singletonPoolFactory.deploy()) as MockTimePoolManager
 
         const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
-        const mintTest = (await mintTestFactory.deploy(manager.address)) as PoolMintTest
+        const mintTest = (await mintTestFactory.deploy(manager.address)) as PoolModifyPositionTest
         const burnTest = (await burnTestFactory.deploy(manager.address)) as PoolBurnTest
 
         for (const token of [token0, token1]) {
