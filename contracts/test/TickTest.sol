@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.10;
+pragma solidity =0.8.12;
 pragma abicoder v2;
 
 import {Tick} from '../libraries/Tick.sol';
