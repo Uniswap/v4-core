@@ -33,8 +33,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     function _configure(uint24 fee, int24 tickSpacing) internal {
-        require(tickSpacing > 0);
-        require(configs[fee].tickSpacing == 0);
+        if (tickSpacing <= 0) revert InvalidTickSpacing();
+        if (configs[fee].tickSpacing != 0) revert FeeAlreadyConfigured(fee);
         configs[fee].tickSpacing = tickSpacing;
         configs[fee].maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
         // todo: emit event
@@ -79,7 +79,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     mapping(IERC20Minimal => PositionAndDelta) public override tokenDelta;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        require(lockedBy == address(0));
+        if (lockedBy != address(0)) revert AlreadyLocked(lockedBy);
         lockedBy = msg.sender;
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
@@ -108,7 +108,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         slot = pd.slot;
 
         if (slot == 0 && tokensTouched[slot] != token) {
-            require(len < type(uint8).max);
+            if (len > type(uint8).max) revert MaxTokensTouched(token);
             slot = uint8(len);
             pd.slot = slot;
             tokensTouched.push(token);
@@ -140,7 +140,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
-        require(params.amount > 0);
+        if (params.amount == 0) revert CannotMintZeroLiquidity();
 
         FeeConfig memory config = configs[key.fee];
 
@@ -167,7 +167,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
-        require(params.amount > 0);
+        if (params.amount == 0) revert CannotBurnZeroLiquidity();
 
         FeeConfig memory config = configs[key.fee];
 
