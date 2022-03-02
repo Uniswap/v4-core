@@ -5,7 +5,6 @@ import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
 
 interface IPoolManager {
-
     /// @notice Thrown when trying to configure a tickspacing that's not a positive integer
     error InvalidTickSpacing();
 
