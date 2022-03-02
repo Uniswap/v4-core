@@ -10,4 +10,4 @@ exports[`PoolManager #swap gas 1`] = `71756`;
 
 exports[`PoolManager #swap gas for swap against liquidity 1`] = `203897`;
 
-exports[`PoolManager bytecode size 1`] = `21211`;
+exports[`PoolManager bytecode size 1`] = `21165`;

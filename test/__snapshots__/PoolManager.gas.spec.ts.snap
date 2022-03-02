@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PoolManager gas tests fee is off #increaseObservationCardinalityNext grow by 1 slot 1`] = `50906`;
+exports[`PoolManager gas tests fee is off #increaseObservationCardinalityNext grow by 1 slot 1`] = `50900`;
 
-exports[`PoolManager gas tests fee is off #increaseObservationCardinalityNext no op 1`] = `25837`;
+exports[`PoolManager gas tests fee is off #increaseObservationCardinalityNext no op 1`] = `25831`;
 
 exports[`PoolManager gas tests fee is off #mint above current price add to position after some time passes 1`] = `169063`;
 
@@ -56,9 +56,9 @@ exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, 
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `286423`;
 
-exports[`PoolManager gas tests fee is on #increaseObservationCardinalityNext grow by 1 slot 1`] = `50906`;
+exports[`PoolManager gas tests fee is on #increaseObservationCardinalityNext grow by 1 slot 1`] = `50900`;
 
-exports[`PoolManager gas tests fee is on #increaseObservationCardinalityNext no op 1`] = `25837`;
+exports[`PoolManager gas tests fee is on #increaseObservationCardinalityNext no op 1`] = `25831`;
 
 exports[`PoolManager gas tests fee is on #mint above current price add to position after some time passes 1`] = `169063`;
 
