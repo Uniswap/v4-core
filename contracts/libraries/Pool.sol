@@ -11,6 +11,7 @@ import {FixedPoint128} from './FixedPoint128.sol';
 import {TickMath} from './TickMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
 import {SwapMath} from './SwapMath.sol';
+import {TWAMM} from './TWAMM.sol';
 
 library Pool {
     using SafeCast for *;
@@ -19,6 +20,7 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
+    using TWAMM for TWAMM.LongTermOrders;
 
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
@@ -61,6 +63,7 @@ library Pool {
         mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
         Oracle.Observation[65535] observations;
+        TWAMM.LongTermOrders longTermOrders;
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -609,6 +612,10 @@ library Pool {
                 ? (params.amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
         }
+    }
+
+    function submitLongTermOrder(State storage self, TWAMM.LongTermOrderParams calldata params) internal returns (uint256) {
+        self.longTermOrders.submitLongTermOrder(params);
     }
 
     /// @notice Updates the protocol fee for a given pool
