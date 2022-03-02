@@ -21,7 +21,7 @@ contract PoolModifyPositionTest is ILockCallback {
         IPoolManager.ModifyPositionParams params;
     }
 
-    function mint(IPoolManager.PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
+    function modifyPosition(IPoolManager.PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
         external
         returns (Pool.BalanceDelta memory delta)
     {
