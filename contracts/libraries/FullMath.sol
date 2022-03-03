@@ -5,6 +5,11 @@ pragma solidity ^0.8.12;
 /// @notice Facilitates multiplication and division that can have overflow of an intermediate value without any loss of precision
 /// @dev Handles "phantom overflow" i.e., allows multiplication and division where an intermediate value overflows 256 bits
 library FullMath {
+
+    error InvalidZeroDenominator();
+    error InvalidLowDenominator();
+    error ResultExceedsMax();
+    
     /// @notice Calculates floor(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
     /// @param a The multiplicand
     /// @param b The multiplier
@@ -32,7 +37,7 @@ library FullMath {
 
             // Handle non-overflow cases, 256 by 256 division
             if (prod1 == 0) {
-                require(denominator > 0);
+                if (denominator == 0) revert InvalidZeroDenominator();
                 assembly {
                     result := div(prod0, denominator)
                 }
@@ -41,7 +46,7 @@ library FullMath {
 
             // Make sure the result is less than 2**256.
             // Also prevents denominator == 0
-            require(denominator > prod1);
+            if (denominator <= prod1) revert InvalidLowDenominator();
 
             ///////////////////////////////////////////////
             // 512 by 256 division.
@@ -120,7 +125,7 @@ library FullMath {
         unchecked {
             result = mulDiv(a, b, denominator);
             if (mulmod(a, b, denominator) > 0) {
-                require(result < type(uint256).max);
+                if (result >= type(uint256).max) revert ResultExceedsMax();
                 result++;
             }
         }

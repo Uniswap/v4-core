@@ -21,11 +21,11 @@ describe('TickMath', () => {
 
   describe('#getSqrtRatioAtTick', () => {
     it('throws for too low', async () => {
-      await expect(tickMath.getSqrtRatioAtTick(MIN_TICK - 1)).to.be.revertedWith('T')
+      await expect(tickMath.getSqrtRatioAtTick(MIN_TICK - 1)).to.be.revertedWith('TickOutOfBounds(-887273)')
     })
 
     it('throws for too low', async () => {
-      await expect(tickMath.getSqrtRatioAtTick(MAX_TICK + 1)).to.be.revertedWith('T')
+      await expect(tickMath.getSqrtRatioAtTick(MAX_TICK + 1)).to.be.revertedWith('TickOutOfBounds(887273)')
     })
 
     it('min tick', async () => {
@@ -92,11 +92,11 @@ describe('TickMath', () => {
 
   describe('#getTickAtSqrtRatio', () => {
     it('throws for too low', async () => {
-      await expect(tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO.sub(1))).to.be.revertedWith('R')
+      await expect(tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO.sub(1))).to.be.revertedWith('SqrtPriceOutOfBounds(4295128738)')
     })
 
     it('throws for too high', async () => {
-      await expect(tickMath.getTickAtSqrtRatio(BigNumber.from(MAX_SQRT_RATIO))).to.be.revertedWith('R')
+      await expect(tickMath.getTickAtSqrtRatio(BigNumber.from(MAX_SQRT_RATIO))).to.be.revertedWith('SqrtPriceOutOfBounds(1461446703485210103287273052203988822378723970342)')
     })
 
     it('ratio of min tick', async () => {
