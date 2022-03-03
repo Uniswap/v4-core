@@ -12,7 +12,7 @@ library Oracle {
     /// @notice Thrown when trying to interact with a non-initialized pool
     error PoolNotInitialized();
 
-    /// @notice Thrown when trying to observe a price that is older than the last recorded price
+    /// @notice Thrown when trying to observe a price that is older than the oldest recorded price
     /// @param oldestTimestamp Timestamp of the oldest remaining observation
     /// @param targetTimestamp Invalid timestamp targeted to be observed
     error TargetPredatesOldestObservation(uint32 oldestTimestamp, uint32 targetTimestamp);

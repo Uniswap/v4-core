@@ -578,7 +578,7 @@ describe('Oracle', () => {
           const maxTime = 2 ** 32
           const secondsAgo = 15
           let target = (await oracle.time()) - secondsAgo
-          if (target < 0) target = maxTime + target // TODO: lol wonky modolus math?
+          if (target < 0) target = maxTime + target // if target negative, subtract on modulus.
 
           await expect(observeSingle(secondsAgo)).to.be.revertedWith(
             `TargetPredatesOldestObservation(${oldestTimestamp}, ${target})`
