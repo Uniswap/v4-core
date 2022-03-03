@@ -4,10 +4,6 @@ pragma solidity ^0.8.12;
 /// @title BitMath
 /// @dev This library provides functionality for computing bit properties of an unsigned integer
 library BitMath {
-
-    /// @notice Thrown when input has value 0
-    error ZeroInputInvalid();
-
     /// @notice Returns the index of the most significant bit of the number,
     ///     where the least significant bit is at index 0 and the most significant bit is at index 255
     /// @dev The function satisfies the property:
@@ -15,7 +11,7 @@ library BitMath {
     /// @param x the value for which to compute the most significant bit, must be greater than 0
     /// @return r the index of the most significant bit
     function mostSignificantBit(uint256 x) internal pure returns (uint8 r) {
-        if (x == 0) revert ZeroInputInvalid();
+        require(x > 0);
 
         unchecked {
             if (x >= 0x100000000000000000000000000000000) {
@@ -57,7 +53,7 @@ library BitMath {
     /// @param x the value for which to compute the least significant bit, must be greater than 0
     /// @return r the index of the least significant bit
     function leastSignificantBit(uint256 x) internal pure returns (uint8 r) {
-        if (x == 0) revert ZeroInputInvalid();
+        require(x > 0);
 
         unchecked {
             r = 255;

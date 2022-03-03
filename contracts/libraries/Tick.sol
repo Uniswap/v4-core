@@ -10,9 +10,6 @@ import {TickMath} from './TickMath.sol';
 library Tick {
     using SafeCast for int256;
 
-    /// @notice Thrown when max liquidity exceeded
-    error MaxLiquidityExceeded();
-
     // info stored for each initialized individual tick
     struct Info {
         // the total position liquidity that references this tick
@@ -131,7 +128,7 @@ library Tick {
             ? liquidityGrossBefore - uint128(-liquidityDelta)
             : liquidityGrossBefore + uint128(liquidityDelta);
 
-        if (liquidityGrossAfter > maxLiquidity) revert MaxLiquidityExceeded();
+        require(liquidityGrossAfter <= maxLiquidity, 'LO');
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 

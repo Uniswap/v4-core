@@ -7,10 +7,6 @@ import {BitMath} from './BitMath.sol';
 /// @notice Stores a packed mapping of tick index to its initialized state
 /// @dev The mapping uses int16 for keys since ticks are represented as int24 and there are 256 (2^8) values per word.
 library TickBitmap {
-
-    /// @notice Thrown when tick is not divisible by enforced tickspacing
-    error InvalidTick();
-
     /// @notice Computes the position in the mapping where the initialized bit for a tick lives
     /// @param tick The tick for which to compute the position
     /// @return wordPos The key in the mapping containing the word in which the bit is stored
@@ -32,7 +28,7 @@ library TickBitmap {
         int24 tickSpacing
     ) internal {
         unchecked {
-            if (tick % tickSpacing != 0) revert InvalidTick(); // ensure that the tick is spaced
+            require(tick % tickSpacing == 0); // ensure that the tick is spaced
             (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
             uint256 mask = 1 << bitPos;
             self[wordPos] ^= mask;

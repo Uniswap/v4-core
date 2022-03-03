@@ -12,14 +12,6 @@ import {FixedPoint96} from './FixedPoint96.sol';
 library SqrtPriceMath {
     using SafeCast for uint256;
 
-    /// @notice Thrown when a parameter may not have value 0
-    error InvalidZeroValue();
-
-    /// @notice Thrown when denominator underflows
-    error Underflow();
-
-    error InvalidQuotient();
-
     /// @notice Gets the next sqrt price given a delta of token0
     /// @dev Always rounds up, because in the exact output case (increasing price) we need to move the price at least
     /// far enough to get the desired output amount, and in the exact input case (decreasing price) we need to move the
@@ -58,7 +50,7 @@ library SqrtPriceMath {
                 uint256 product;
                 // if the product overflows, we know the denominator underflows
                 // in addition, we must check that the denominator does not underflow
-                if ((product = amount * sqrtPX96) / amount != sqrtPX96 || numerator1 <= product) revert Underflow();
+                require((product = amount * sqrtPX96) / amount == sqrtPX96 && numerator1 > product);
                 uint256 denominator = numerator1 - product;
                 return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
             }
@@ -98,7 +90,7 @@ library SqrtPriceMath {
                     : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity)
             );
 
-            if (sqrtPX96 <= quotient) revert InvalidQuotient();
+            require(sqrtPX96 > quotient);
             // always fits 160 bits
             return uint160(sqrtPX96 - quotient);
         }
@@ -117,8 +109,8 @@ library SqrtPriceMath {
         uint256 amountIn,
         bool zeroForOne
     ) internal pure returns (uint160 sqrtQX96) {
-        if (sqrtPX96 == 0) revert InvalidZeroValue();
-        if (liquidity == 0) revert InvalidZeroValue();
+        require(sqrtPX96 > 0);
+        require(liquidity > 0);
 
         // round to make sure that we don't pass the target price
         return
@@ -140,8 +132,8 @@ library SqrtPriceMath {
         uint256 amountOut,
         bool zeroForOne
     ) internal pure returns (uint160 sqrtQX96) {
-        if (sqrtPX96 == 0) revert InvalidZeroValue();
-        if (liquidity == 0) revert InvalidZeroValue();
+        require(sqrtPX96 > 0);
+        require(liquidity > 0);
 
         // round to make sure that we pass the target price
         return
@@ -170,7 +162,7 @@ library SqrtPriceMath {
             uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
             uint256 numerator2 = sqrtRatioBX96 - sqrtRatioAX96;
 
-            if (sqrtRatioAX96 == 0) revert InvalidZeroValue();
+            require(sqrtRatioAX96 > 0);
 
             return
                 roundUp

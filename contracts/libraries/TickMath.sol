@@ -5,10 +5,6 @@ pragma solidity ^0.8.12;
 /// @notice Computes sqrt price for ticks of size 1.0001, i.e. sqrt(1.0001^tick) as fixed point Q64.96 numbers. Supports
 /// prices between 2**-128 and 2**128
 library TickMath {
-
-    error TickOutOfBounds(int24 tick);
-    error SqrtPriceOutOfBounds(uint160 sqrtPriceX96);
-
     /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
@@ -27,7 +23,7 @@ library TickMath {
     function getSqrtRatioAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
         unchecked {
             uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
-            if (absTick > uint256(int256(MAX_TICK))) revert TickOutOfBounds(tick);
+            require(absTick <= uint256(int256(MAX_TICK)), 'T');
 
             uint256 ratio = absTick & 0x1 != 0
                 ? 0xfffcb933bd6fad37aa2d162d1a594001
@@ -69,7 +65,7 @@ library TickMath {
     function getTickAtSqrtRatio(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
         unchecked {
             // second inequality must be < because the price can never reach the price at the max tick
-            if (sqrtPriceX96 < MIN_SQRT_RATIO || sqrtPriceX96 >= MAX_SQRT_RATIO) revert SqrtPriceOutOfBounds(sqrtPriceX96);
+            require(sqrtPriceX96 >= MIN_SQRT_RATIO && sqrtPriceX96 < MAX_SQRT_RATIO, 'R');
             uint256 ratio = uint256(sqrtPriceX96) << 32;
 
             uint256 r = ratio;

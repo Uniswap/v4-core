@@ -6,10 +6,6 @@ import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 /// @title TransferHelper
 /// @notice Contains helper methods for interacting with ERC20 tokens that do not consistently return true/false
 library TransferHelper {
-
-    /// @notice Thrown when safeTransfer does not execute successfully
-    error UnsuccessfulTransfer();
-
     /// @notice Transfers tokens from msg.sender to a recipient
     /// @dev Calls transfer on token contract, errors with TF if transfer fails
     /// @param token The contract address of the token which will be transferred
@@ -23,6 +19,6 @@ library TransferHelper {
         (bool success, bytes memory data) = address(token).call(
             abi.encodeWithSelector(IERC20Minimal.transfer.selector, to, value)
         );
-        if(!success || (data.length != 0 && !abi.decode(data, (bool)))) revert UnsuccessfulTransfer();
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TF');
     }
 }
