@@ -573,16 +573,20 @@ describe('Oracle', () => {
           expect(secondsPerLiquidityCumulativeX128).to.eq('1593655751746395137220137744805447790318')
         })
         it('older than oldest reverts', async () => {
-          const oldestTimestamp = (await oracle.observations(await oracle.index() + 1)).blockTimestamp
+          const oldestTimestamp = (await oracle.observations((await oracle.index()) + 1)).blockTimestamp
 
           const maxTime = 2 ** 32
           const secondsAgo = 15
-          let target = await oracle.time() - secondsAgo
+          let target = (await oracle.time()) - secondsAgo
           if (target < 0) target = maxTime + target // TODO: lol wonky modolus math?
 
-          await expect(observeSingle(secondsAgo)).to.be.revertedWith(`TargetPredatesOldestObservation(${oldestTimestamp}, ${target})`)
+          await expect(observeSingle(secondsAgo)).to.be.revertedWith(
+            `TargetPredatesOldestObservation(${oldestTimestamp}, ${target})`
+          )
           await oracle.advanceTime(5)
-          await expect(observeSingle(20)).to.be.revertedWith(`TargetPredatesOldestObservation(${oldestTimestamp}, ${target})`)
+          await expect(observeSingle(20)).to.be.revertedWith(
+            `TargetPredatesOldestObservation(${oldestTimestamp}, ${target})`
+          )
         })
         it('oldest observation', async () => {
           const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(14)
