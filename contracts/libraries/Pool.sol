@@ -20,16 +20,16 @@ library Pool {
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
 
-    /// @notice Thrown when configuring a fee tier that's already assigned a tickspacing
+    /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
     /// @param tickUpper The invalid tickUpper
     error TicksMisordered(int24 tickLower, int24 tickUpper);
 
-    /// @notice Thrown when tickLower is too low
+    /// @notice Thrown when tickLower is too low and recedes below min tick
     /// @param tickLower The invalid tickLower
     error TickLowerOutOfBounds(int24 tickLower);
 
-    /// @notice Thrown when tickUpper is too high
+    /// @notice Thrown when tickUpper is too high and exceeds max tick
     /// @param tickUpper The invalid tickUpper
     error TickUpperOutOfBounds(int24 tickUpper);
 
