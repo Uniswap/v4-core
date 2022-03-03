@@ -242,7 +242,8 @@ library Oracle {
             if (!beforeOrAt.initialized) beforeOrAt = self[0];
 
             // ensure that the target is chronologically at or after the oldest observation
-            if (!lte(time, beforeOrAt.blockTimestamp, target)) revert TargetPredatesOldestObservation(beforeOrAt.blockTimestamp, target);
+            if (!lte(time, beforeOrAt.blockTimestamp, target))
+                revert TargetPredatesOldestObservation(beforeOrAt.blockTimestamp, target);
 
             // if we've reached this point, we have to binary search
             return binarySearch(self, time, target, index, cardinality);

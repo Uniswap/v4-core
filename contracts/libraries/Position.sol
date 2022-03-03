@@ -8,7 +8,6 @@ import {FixedPoint128} from './FixedPoint128.sol';
 /// @notice Positions represent an owner address' liquidity between a lower and upper tick boundary
 /// @dev Positions store additional state for tracking fees owed to the position
 library Position {
-
     /// @notice Cannot update a position with no liquidity
     error CannotUpdateEmptyPosition();
 
