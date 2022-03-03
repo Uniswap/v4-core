@@ -22,7 +22,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     // todo: can we make this documented in the interface
-    mapping(bytes32 => Pool.State) public pools;
+    mapping(bytes32 => Pool.State) internal pools; // TODO: Private rn because public disallows nested mappings
     mapping(uint24 => FeeConfig) public override configs;
 
     constructor() {
@@ -38,6 +38,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         configs[fee].tickSpacing = tickSpacing;
         configs[fee].maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
         // todo: emit event
+    }
+
+    function slot0(bytes32 poolId) public view returns (Pool.Slot0 memory) {
+      return pools[poolId].slot0;
     }
 
     /// @dev For mocking in unit tests

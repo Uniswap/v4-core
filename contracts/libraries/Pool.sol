@@ -63,6 +63,7 @@ library Pool {
         mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
         Oracle.Observation[65535] observations;
+        mapping(uint256 => TWAMM.Order) orders;
         TWAMM.LongTermOrders longTermOrders;
     }
 
@@ -614,8 +615,11 @@ library Pool {
         }
     }
 
-    function submitLongTermOrder(State storage self, TWAMM.LongTermOrderParams calldata params) internal returns (uint256) {
-        self.longTermOrders.submitLongTermOrder(params);
+    function submitLongTermOrder(State storage self, TWAMM.LongTermOrderParams calldata params)
+        internal
+        returns (uint256 orderId)
+    {
+        orderId = self.longTermOrders.submitLongTermOrder(params);
     }
 
     /// @notice Updates the protocol fee for a given pool
