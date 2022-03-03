@@ -22,8 +22,8 @@ interface IPoolManager {
     /// @notice Thrown when attempting to burn zero liquidity
     error CannotBurnZeroLiquidity();
 
-    /// @notice Thrown when tokens touched has been exceeded max of 256
-    /// @param token First token that could not be added to touched set due to limit breach
+    /// @notice Thrown when tokens touched has exceeded max of 256
+    /// @param token First token that could not be added to touched set due to max reached
     error MaxTokensTouched(IERC20Minimal token);
 
     /// @notice Thrown when a token is owed to the caller or the caller owes a token
