@@ -247,11 +247,8 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
         external
         noDelegateCall
         onlyByLocker
-        returns (uint256 paid)
     {
-        if (amount < balanceOf(msg.sender, address(token).toUint256())) revert NotEnoughBalanceAvailable();
         _burn(msg.sender, address(token).toUint256(), amount);
-        // subtraction must be safe
         _accountDelta(token, -(amount.toInt256()));
     }
 
