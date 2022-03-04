@@ -22,10 +22,9 @@ interface IPoolManager {
         IERC20Minimal token1;
         /// @notice The fee for the pool
         uint24 fee;
+        /// @notice Ticks that involve positions must be a multiple of tick spacing
+        int24 tickSpacing;
     }
-
-    /// @notice Returns the immutable configuration for a given fee
-    function configs(uint24 fee) external view returns (int24 tickSpacing, uint128 maxLiquidityPerTick);
 
     /// @notice Returns the reserves for a given ERC20 token
     function reservesOf(IERC20Minimal token) external view returns (uint256);
@@ -38,41 +37,32 @@ interface IPoolManager {
         external
         returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew);
 
-    struct MintParams {
-        // the address that will own the minted liquidity
-        address recipient;
-        // the lower and upper tick of the position
-        int24 tickLower;
-        int24 tickUpper;
-        // any change in liquidity
-        uint256 amount;
-    }
-
     /// @notice Represents the address that has currently locked the pool
     function lockedBy() external view returns (address);
 
+    /// @notice The array of tokens touched in the context of the current lock. Never more than 256 elements
     function tokensTouched(uint256 index) external view returns (IERC20Minimal);
 
-    function tokenDelta(IERC20Minimal token) external view returns (uint8, int248);
+    /// @notice The deltas for each token, as well as the index where it's located in the tokensTouched array
+    function tokenDelta(IERC20Minimal token) external view returns (uint8 index, int248 delta);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
     /// @return The data returned by the call to `ILockCallback(msg.sender).lockCallback(data)`
     function lock(bytes calldata data) external returns (bytes memory);
 
-    /// @dev Mint some liquidity for the given pool
-    function mint(PoolKey memory key, MintParams memory params) external returns (Pool.BalanceDelta memory delta);
-
-    struct BurnParams {
+    struct ModifyPositionParams {
         // the lower and upper tick of the position
         int24 tickLower;
         int24 tickUpper;
-        // the reduction in liquidity to effect
-        uint256 amount;
+        // how to modify the liquidity
+        int256 liquidityDelta;
     }
 
-    /// @dev Mint some liquidity for the given pool
-    function burn(PoolKey memory key, BurnParams memory params) external returns (Pool.BalanceDelta memory delta);
+    /// @notice Modify the position for the given pool
+    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
+        external
+        returns (Pool.BalanceDelta memory delta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -80,6 +70,7 @@ interface IPoolManager {
         uint160 sqrtPriceLimitX96;
     }
 
+    /// @notice Swap against the given pool
     function swap(PoolKey memory key, SwapParams memory params) external returns (Pool.BalanceDelta memory delta);
 
     /// @notice Called by the user to net out some value owed to the user

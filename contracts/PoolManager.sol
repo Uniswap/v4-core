@@ -15,30 +15,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     using SafeCast for *;
     using Pool for *;
 
-    /// @notice Represents the configuration for a fee
-    struct FeeConfig {
-        int24 tickSpacing;
-        uint128 maxLiquidityPerTick;
-    }
-
-    // todo: can we make this documented in the interface
     mapping(bytes32 => Pool.State) public pools;
-    mapping(uint24 => FeeConfig) public override configs;
-
-    constructor() {
-        _configure(100, 1);
-        _configure(500, 10);
-        _configure(3000, 60);
-        _configure(10000, 200);
-    }
-
-    function _configure(uint24 fee, int24 tickSpacing) internal {
-        require(tickSpacing > 0);
-        require(configs[fee].tickSpacing == 0);
-        configs[fee].tickSpacing = tickSpacing;
-        configs[fee].maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
-        // todo: emit event
-    }
 
     /// @dev For mocking in unit tests
     function _blockTimestamp() internal view virtual returns (uint32) {
@@ -132,54 +109,23 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _;
     }
 
-    /// @dev Mint some liquidity for the given pool
-    function mint(IPoolManager.PoolKey memory key, IPoolManager.MintParams memory params)
+    /// @dev Modify the position
+    function modifyPosition(IPoolManager.PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
         external
         override
         noDelegateCall
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
-        require(params.amount > 0);
-
-        FeeConfig memory config = configs[key.fee];
-
-        delta = _getPool(key).modifyPosition(
-            Pool.ModifyPositionParams({
-                owner: params.recipient,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                liquidityDelta: int256(uint256(params.amount)).toInt128(),
-                time: _blockTimestamp(),
-                maxLiquidityPerTick: config.maxLiquidityPerTick,
-                tickSpacing: config.tickSpacing
-            })
-        );
-
-        _accountPoolBalanceDelta(key, delta);
-    }
-
-    /// @dev Mint some liquidity for the given pool
-    function burn(IPoolManager.PoolKey memory key, IPoolManager.BurnParams memory params)
-        external
-        override
-        noDelegateCall
-        onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
-    {
-        require(params.amount > 0);
-
-        FeeConfig memory config = configs[key.fee];
-
         delta = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,
-                liquidityDelta: -int256(uint256(params.amount)).toInt128(),
+                liquidityDelta: params.liquidityDelta.toInt128(),
                 time: _blockTimestamp(),
-                maxLiquidityPerTick: config.maxLiquidityPerTick,
-                tickSpacing: config.tickSpacing
+                maxLiquidityPerTick: Tick.tickSpacingToMaxLiquidityPerTick(key.tickSpacing),
+                tickSpacing: key.tickSpacing
             })
         );
 
@@ -193,13 +139,11 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
-        FeeConfig memory config = configs[key.fee];
-
         delta = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),
                 fee: key.fee,
-                tickSpacing: config.tickSpacing,
+                tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96

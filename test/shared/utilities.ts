@@ -53,15 +53,22 @@ export function getPoolId({
   token0,
   token1,
   fee,
+  tickSpacing,
 }: {
   token0: string | Contract
   token1: string | Contract
   fee: number
+  tickSpacing: number
 }): string {
   return utils.keccak256(
     utils.defaultAbiCoder.encode(
-      ['address', 'address', 'uint24'],
-      [typeof token0 === 'string' ? token0 : token0.address, typeof token1 === 'string' ? token1 : token1.address, fee]
+      ['address', 'address', 'uint24', 'int24'],
+      [
+        typeof token0 === 'string' ? token0 : token0.address,
+        typeof token1 === 'string' ? token1 : token1.address,
+        fee,
+        tickSpacing,
+      ]
     )
   )
 }
@@ -79,11 +86,10 @@ export type FlashFunction = (
   pay0?: BigNumberish,
   pay1?: BigNumberish
 ) => Promise<ContractTransaction>
-export type MintFunction = (
-  recipient: string,
+export type ModifyPositionFunction = (
   tickLower: BigNumberish,
   tickUpper: BigNumberish,
-  liquidity: BigNumberish
+  liquidityDelta: BigNumberish
 ) => Promise<ContractTransaction>
 export interface PoolFunctions {
   swapToLowerPrice: SwapToPriceFunction
@@ -93,7 +99,7 @@ export interface PoolFunctions {
   swapExact1For0: SwapFunction
   swap1ForExact0: SwapFunction
   flash: FlashFunction
-  mint: MintFunction
+  modifyPosition: ModifyPositionFunction
 }
 
 export function createPoolFunctions({
