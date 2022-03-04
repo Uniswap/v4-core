@@ -27,7 +27,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     mapping(bytes32 => Pool.State) public pools;
     mapping(uint24 => FeeConfig) public override configs;
 
-    constructor() ERC1155("") {
+    constructor() ERC1155('') {
         _configure(100, 1);
         _configure(500, 10);
         _configure(3000, 60);
@@ -99,7 +99,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
                         msg.sender,
                         address(tokensTouched[i]).toUint256(),
                         uint256(uint248(-tokenDelta[tokensTouched[i]].delta)),
-                        ""
+                        ''
                     );
                 delete tokenDelta[tokensTouched[i]];
             }
@@ -243,9 +243,13 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     }
 
     /// @notice Called by the user to pay what is owed from their ERC1155 balance
-    function settleWithBalance(IERC20Minimal token, uint256 amount) external noDelegateCall onlyByLocker returns (uint256 paid) {
-        if (amount < balanceOf(msg.sender, address(token).toUint256()))
-            revert NotEnoughBalanceAvailable();
+    function settleWithBalance(IERC20Minimal token, uint256 amount)
+        external
+        noDelegateCall
+        onlyByLocker
+        returns (uint256 paid)
+    {
+        if (amount < balanceOf(msg.sender, address(token).toUint256())) revert NotEnoughBalanceAvailable();
         _burn(msg.sender, address(token).toUint256(), amount);
         // subtraction must be safe
         _accountDelta(token, -(amount.toInt256()));
