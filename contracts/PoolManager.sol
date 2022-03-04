@@ -243,11 +243,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     }
 
     /// @notice Called by the user to pay what is owed from their ERC1155 balance
-    function settleWithBalance(IERC20Minimal token, uint256 amount)
-        external
-        noDelegateCall
-        onlyByLocker
-    {
+    function settleWithBalance(IERC20Minimal token, uint256 amount) external noDelegateCall onlyByLocker {
         _burn(msg.sender, address(token).toUint256(), amount);
         _accountDelta(token, -(amount.toInt256()));
     }
