@@ -221,29 +221,6 @@ describe('PoolManager', () => {
         true
       )
     })
-    it('mints erc1155s if the output token isnt taken', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
-      await swapTest.swap(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-        },
-        {
-          amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        false
-      )
-    })
     it('gas', async () => {
       await manager.initialize(
         {
@@ -283,6 +260,48 @@ describe('PoolManager', () => {
           true
         )
       )
+    })
+    it('mints erc1155s if the output token isnt taken', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await mintTest.mint(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          amount: expandTo18Decimals(1),
+          recipient: wallet.address,
+        }
+      )
+
+      await expect(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          false
+        )
+      ).to.emit(manager, 'TransferSingle')
+
+      const erc1155Balance = await manager.balanceOf(swapTest.address, tokens.token1.address)
+      expect(erc1155Balance).to.be.eq(98)
     })
     it('gas for swap against liquidity', async () => {
       await manager.initialize(
