@@ -79,7 +79,8 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
         },
-        encodeSqrtPriceX96(10, 1)
+        encodeSqrtPriceX96(10, 1),
+        10_000
       )
 
       const { sqrtPriceX96 } = await manager.slot0(
@@ -100,7 +101,8 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
           },
-          encodeSqrtPriceX96(10, 1)
+          encodeSqrtPriceX96(10, 1),
+          10_000
         )
       )
     })
@@ -132,7 +134,8 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
         },
-        encodeSqrtPriceX96(1, 1)
+        encodeSqrtPriceX96(1, 1),
+        10_000
       )
 
       await mintTest.mint(
@@ -157,7 +160,8 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
         },
-        encodeSqrtPriceX96(1, 1)
+        encodeSqrtPriceX96(1, 1),
+        10_000
       )
 
       await snapshotGasCost(
@@ -202,7 +206,8 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
         },
-        encodeSqrtPriceX96(1, 1)
+        encodeSqrtPriceX96(1, 1),
+        10_000
       )
       await swapTest.swap(
         {
@@ -224,7 +229,8 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
         },
-        encodeSqrtPriceX96(1, 1)
+        encodeSqrtPriceX96(1, 1),
+        10_000
       )
 
       await swapTest.swap(
@@ -262,7 +268,8 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
         },
-        encodeSqrtPriceX96(1, 1)
+        encodeSqrtPriceX96(1, 1),
+        10_000
       )
       await mintTest.mint(
         {

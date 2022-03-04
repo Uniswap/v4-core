@@ -21,8 +21,8 @@ library TWAMM {
 
     /// @notice structure contains full state related to long term orders
     struct State {
-        /// @notice minimum interval in seconds between order expiries
-        uint256 minimumInterval;
+        /// @notice interval in seconds between valie order expiry timestamps
+        uint256 expiryInterval;
         /// @notice last virtual orders were executed immediately before this block
         uint256 lastVirtualOrderTimestamp;
         /// @notice mapping from token index (0 and 1) to OrderPool that is selling that token
@@ -55,6 +55,11 @@ library TWAMM {
         uint256 expiration; // would adjust to nearest beforehand expiration interval
     }
 
+    function initialize(State storage self, uint256 expiryInterval) internal {
+        self.expiryInterval = expiryInterval;
+        self.lastVirtualOrderTimestamp = block.timestamp; // TODO: could make this a nice even number? (multiple of 1000)
+    }
+
     function submitLongTermOrder(State storage self, LongTermOrderParams calldata params)
         internal
         returns (uint256 orderId)
@@ -74,7 +79,7 @@ library TWAMM {
         });
 
         self.orderPools[tokenIndex].sellingRate += sellingRate;
-        self.orderPools[tokenIndex].salesRateEndingPerInterval += sellingRate;
+        self.orderPools[tokenIndex].salesRateEndingPerInterval[params.expiration] += sellingRate;
     }
 
     function cancelLongTermOrder(State storage self, uint256 orderId)
@@ -91,7 +96,7 @@ library TWAMM {
 
         uint8 tokenIndex = order.zeroForOne ? 0 : 1;
         self.orderPools[tokenIndex].sellingRate -= order.sellingRate;
-        self.orderPools[tokenIndex].salesRateEndingPerInterval -= sellingRate;
+        self.orderPools[tokenIndex].salesRateEndingPerInterval[order.expiration] -= order.sellingRate;
     }
 
     function calculateCancellationAmounts(Order memory order)

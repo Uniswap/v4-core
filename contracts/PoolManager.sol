@@ -55,8 +55,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
-        tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
+    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96, uint256 twammExpiryInterval) external override returns (int24 tick) {
+        tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96, twammExpiryInterval);
     }
 
     /// @notice Increase the maximum number of stored observations for the pool's oracle

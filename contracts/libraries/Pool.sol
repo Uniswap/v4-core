@@ -184,7 +184,8 @@ library Pool {
     function initialize(
         State storage self,
         uint32 time,
-        uint160 sqrtPriceX96
+        uint160 sqrtPriceX96,
+        uint256 twammExpiryInterval
     ) internal returns (int24 tick) {
         require(self.slot0.sqrtPriceX96 == 0, 'AI');
 
@@ -200,6 +201,8 @@ library Pool {
             observationCardinalityNext: cardinalityNext,
             feeProtocol: 0
         });
+
+        self.twamm.initialize(twammExpiryInterval);
     }
 
     /// @dev Increase the number of stored observations

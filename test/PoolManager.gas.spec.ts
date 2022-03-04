@@ -106,7 +106,7 @@ describe('PoolManager gas tests', () => {
           return slot0
         }
 
-        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), 10_000)
         await manager.setFeeProtocol(poolKey, feeProtocol + feeProtocol * 2 ** 4)
         await manager.increaseObservationCardinalityNext(poolKey, 4)
 
