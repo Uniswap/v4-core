@@ -193,7 +193,8 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
-          }
+          },
+          true
         )
       ).to.be.revertedWith('I')
     })
@@ -216,7 +217,31 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
-        }
+        },
+        true
+      )
+    })
+    it('mints erc1155s if the output token isnt taken', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await swapTest.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+        },
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        },
+        false
       )
     })
     it('gas', async () => {
@@ -239,7 +264,8 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
-        }
+        },
+        true
       )
 
       await snapshotGasCost(
@@ -253,7 +279,8 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
-          }
+          },
+          true
         )
       )
     })
@@ -290,7 +317,8 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
-        }
+        },
+        true
       )
 
       await snapshotGasCost(
@@ -304,7 +332,8 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
-          }
+          },
+          true
         )
       )
     })

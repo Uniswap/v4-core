@@ -77,21 +77,21 @@ describe('PoolManager gas tests', () => {
             zeroForOne: true,
             amountSpecified: amount,
             sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
-          })
+          }, true)
         }
         const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
           return swapTest.swap(poolKey, {
             zeroForOne: false,
             amountSpecified: MaxUint128,
             sqrtPriceLimitX96: sqrtPriceX96,
-          })
+          }, true)
         }
         const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
           return swapTest.swap(poolKey, {
             zeroForOne: true,
             amountSpecified: MaxUint128,
             sqrtPriceLimitX96: sqrtPriceX96,
-          })
+          }, true)
         }
         const mint: MintFunction = (recipient, tickLower, tickUpper, liquidity) => {
           return mintTest.mint(poolKey, {
