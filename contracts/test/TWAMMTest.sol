@@ -7,17 +7,16 @@ import {TWAMM} from '../libraries/TWAMM.sol';
 contract TWAMMTest {
     using TWAMM for TWAMM.LongTermOrders;
 
-    event LongTermOrderSubmitted(bytes32 orderId);
+    event LongTermOrderSubmitted(uint256 orderId);
 
     TWAMM.LongTermOrders public longTermOrders;
 
-    function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) public returns (bytes32 orderId) {
+    function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) public returns (uint256 orderId) {
         orderId = longTermOrders.submitLongTermOrder(params);
         emit LongTermOrderSubmitted(orderId);
     }
 
-    function getOrder(bool zeroForOne, bytes32 orderId) public view returns (TWAMM.Order memory) {
-        uint8 tokenIndex = zeroForOne ? 0 : 1;
-        return longTermOrders.orderPools[tokenIndex].orders[orderId];
+    function getOrder(uint256 orderId) public view returns (TWAMM.Order memory) {
+        return longTermOrders.orders[orderId];
     }
 }
