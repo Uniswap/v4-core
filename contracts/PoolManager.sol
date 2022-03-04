@@ -41,7 +41,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     function slot0(bytes32 poolId) public view returns (Pool.Slot0 memory) {
-      return pools[poolId].slot0;
+        return pools[poolId].slot0;
     }
 
     /// @dev For mocking in unit tests
