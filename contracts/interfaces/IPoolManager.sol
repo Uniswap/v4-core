@@ -43,8 +43,8 @@ interface IPoolManager {
     /// @notice The array of tokens touched in the context of the current lock. Never more than 256 elements
     function tokensTouched(uint256 index) external view returns (IERC20Minimal);
 
-    /// @notice The deltas by each token, for
-    function tokenDelta(IERC20Minimal token) external view returns (uint8 index, int248);
+    /// @notice The deltas for each token, as well as the index where it's located in the tokensTouched array
+    function tokenDelta(IERC20Minimal token) external view returns (uint8 index, int248 delta);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
@@ -59,7 +59,7 @@ interface IPoolManager {
         int256 liquidityDelta;
     }
 
-    /// @notice Mint some liquidity for the given pool
+    /// @notice Modify the position for the given pool
     function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
         external
         returns (Pool.BalanceDelta memory delta);
