@@ -71,25 +71,37 @@ describe('PoolManager gas tests', () => {
         const poolKey = { token0: token0.address, token1: token1.address, fee: FeeAmount.MEDIUM, tickSpacing: 60 }
 
         const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-          return swapTest.swap(poolKey, {
-            zeroForOne: true,
-            amountSpecified: amount,
-            sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
-          }, true)
+          return swapTest.swap(
+            poolKey,
+            {
+              zeroForOne: true,
+              amountSpecified: amount,
+              sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
+            },
+            true
+          )
         }
         const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-          return swapTest.swap(poolKey, {
-            zeroForOne: false,
-            amountSpecified: MaxUint128,
-            sqrtPriceLimitX96: sqrtPriceX96,
-          }, true)
+          return swapTest.swap(
+            poolKey,
+            {
+              zeroForOne: false,
+              amountSpecified: MaxUint128,
+              sqrtPriceLimitX96: sqrtPriceX96,
+            },
+            true
+          )
         }
         const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-          return swapTest.swap(poolKey, {
-            zeroForOne: true,
-            amountSpecified: MaxUint128,
-            sqrtPriceLimitX96: sqrtPriceX96,
-          }, true)
+          return swapTest.swap(
+            poolKey,
+            {
+              zeroForOne: true,
+              amountSpecified: MaxUint128,
+              sqrtPriceLimitX96: sqrtPriceX96,
+            },
+            true
+          )
         }
         const modifyPosition: ModifyPositionFunction = (tickLower, tickUpper, liquidityDelta) => {
           return modifyPositionTest.modifyPosition(poolKey, {

@@ -22,11 +22,15 @@ contract PoolSwapTest is ILockCallback {
         IPoolManager.SwapParams params;
     }
 
-    function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params, bool takeTokens)
-        external
-        returns (Pool.BalanceDelta memory delta)
-    {
-        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, takeTokens, key, params))), (Pool.BalanceDelta));
+    function swap(
+        IPoolManager.PoolKey memory key,
+        IPoolManager.SwapParams memory params,
+        bool takeTokens
+    ) external returns (Pool.BalanceDelta memory delta) {
+        delta = abi.decode(
+            manager.lock(abi.encode(CallbackData(msg.sender, takeTokens, key, params))),
+            (Pool.BalanceDelta)
+        );
     }
 
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
@@ -41,13 +45,15 @@ contract PoolSwapTest is ILockCallback {
                 data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
                 manager.settle(data.key.token0);
             }
-            if (delta.amount1 < 0 && data.takeTokens) manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
+            if (delta.amount1 < 0 && data.takeTokens)
+                manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
         } else {
             if (delta.amount1 > 0) {
                 data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
                 manager.settle(data.key.token1);
             }
-            if (delta.amount0 < 0 && data.takeTokens) manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+            if (delta.amount0 < 0 && data.takeTokens)
+                manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
         }
 
         return abi.encode(delta);
@@ -61,7 +67,6 @@ contract PoolSwapTest is ILockCallback {
         uint256,
         bytes calldata
     ) external pure returns (bytes4) {
-        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
+        return bytes4(keccak256('onERC1155Received(address,address,uint256,uint256,bytes)'));
     }
-
 }
