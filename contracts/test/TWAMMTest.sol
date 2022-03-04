@@ -5,11 +5,11 @@ pragma abicoder v2;
 import {TWAMM} from '../libraries/TWAMM.sol';
 
 contract TWAMMTest {
-    using TWAMM for TWAMM.LongTermOrders;
+    using TWAMM for TWAMM.State;
 
     event LongTermOrderSubmitted(uint256 orderId);
 
-    TWAMM.LongTermOrders public longTermOrders;
+    TWAMM.State public longTermOrders;
 
     function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) public returns (uint256 orderId) {
         orderId = longTermOrders.submitLongTermOrder(params);

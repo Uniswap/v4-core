@@ -20,7 +20,7 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
-    using TWAMM for TWAMM.LongTermOrders;
+    using TWAMM for TWAMM.State;
 
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
@@ -64,7 +64,7 @@ library Pool {
         mapping(bytes32 => Position.Info) positions;
         Oracle.Observation[65535] observations;
         mapping(uint256 => TWAMM.Order) orders;
-        TWAMM.LongTermOrders longTermOrders;
+        TWAMM.State twamm;
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -619,7 +619,7 @@ library Pool {
         internal
         returns (uint256 orderId)
     {
-        orderId = self.longTermOrders.submitLongTermOrder(params);
+        orderId = self.twamm.submitLongTermOrder(params);
     }
 
     /// @notice Updates the protocol fee for a given pool

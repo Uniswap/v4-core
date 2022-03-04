@@ -8,7 +8,7 @@ import {FixedPoint128} from './FixedPoint128.sol';
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
     ///@notice structure contains full state related to long term orders
-    struct LongTermOrders {
+    struct State {
         /// @notice minimum interval in seconds between order expiries
         uint256 minimumInterval;
         /// @notice last virtual orders were executed immediately before this block
@@ -40,7 +40,7 @@ library TWAMM {
         uint256 expiration; // would adjust to nearest beforehand expiration interval
     }
 
-    function submitLongTermOrder(LongTermOrders storage self, LongTermOrderParams calldata params)
+    function submitLongTermOrder(State storage self, LongTermOrderParams calldata params)
         internal
         returns (uint256 orderId)
     {
