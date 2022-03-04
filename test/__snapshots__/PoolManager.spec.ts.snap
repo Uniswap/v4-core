@@ -1,13 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PoolManager #initialize gas cost 1`] = `70675`;
+exports[`PoolManager #initialize gas cost 1`] = `70910`;
 
-exports[`PoolManager #lock gas overhead of no-op lock 1`] = `41816`;
+exports[`PoolManager #lock gas overhead of no-op lock 1`] = `41817`;
 
-exports[`PoolManager #mint gas cost 1`] = `312105`;
+exports[`PoolManager #mint gas cost 1`] = `310259`;
 
-exports[`PoolManager #swap gas 1`] = `72196`;
+exports[`PoolManager #swap gas 1`] = `70846`;
 
-exports[`PoolManager #swap gas for swap against liquidity 1`] = `205255`;
+exports[`PoolManager #swap gas for swap against liquidity 1`] = `203955`;
 
-exports[`PoolManager bytecode size 1`] = `26968`;
+exports[`PoolManager bytecode size 1`] = `26403`;
