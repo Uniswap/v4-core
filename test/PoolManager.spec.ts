@@ -82,9 +82,7 @@ describe('PoolManager', () => {
         encodeSqrtPriceX96(10, 1)
       )
 
-      const {
-        sqrtPriceX96,
-      } = await manager.slot0(
+      const { sqrtPriceX96 } = await manager.slot0(
         getPoolId({
           token0: tokens.token0.address,
           token1: tokens.token1.address,

@@ -7,7 +7,19 @@ import {FixedPoint128} from './FixedPoint128.sol';
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
-    ///@notice structure contains full state related to long term orders
+    /// @notice Thrown when account other than owner attempts to interact with an order
+    /// @param orderId The orderId
+    /// @param owner The owner of the order
+    /// @param currentAccount The invalid account attempting to interact with the order
+    error MustBeOwner(uint256 orderId, address owner, address currentAccount);
+
+    /// @notice Thrown when account other than owner attempts to interact with an order
+    /// @param orderId The orderId
+    /// @param expiration The expiration timestamp of the order
+    /// @param currentTime The current block timestamp
+    error OrderAlreadyCompleted(uint256 orderId, uint256 expiration, uint256 currentTime);
+
+    /// @notice structure contains full state related to long term orders
     struct State {
         /// @notice minimum interval in seconds between order expiries
         uint256 minimumInterval;
@@ -22,7 +34,10 @@ library TWAMM {
     }
 
     struct OrderPool {
+        /// @notice the total current selling rate
         uint256 sellingRate;
+        /// @notice (timestamp => salesRate) The amount of expiring salesRate at this interval
+        mapping(uint256 => uint256) salesRateEndingPerInterval;
     }
 
     /// @notice information associated with a long term order
@@ -44,6 +59,7 @@ library TWAMM {
         internal
         returns (uint256 orderId)
     {
+        // TODO: bump twamm order state
         orderId = self.nextId++;
 
         uint8 tokenIndex = params.zeroForOne ? 0 : 1;
@@ -58,5 +74,32 @@ library TWAMM {
         });
 
         self.orderPools[tokenIndex].sellingRate += sellingRate;
+        self.orderPools[tokenIndex].salesRateEndingPerInterval += sellingRate;
+    }
+
+    function cancelLongTermOrder(State storage self, uint256 orderId)
+        internal
+        returns (uint256 unsoldAmount, uint256 purchasedAmount)
+    {
+        // TODO: bump TWAMM order state
+        Order memory order = self.orders[orderId];
+        if (order.owner != msg.sender) revert MustBeOwner(orderId, order.owner, msg.sender);
+        if (order.expiration <= block.timestamp)
+            revert OrderAlreadyCompleted(orderId, order.expiration, block.timestamp);
+
+        (unsoldAmount, purchasedAmount) = calculateCancellationAmounts(order);
+
+        uint8 tokenIndex = order.zeroForOne ? 0 : 1;
+        self.orderPools[tokenIndex].sellingRate -= order.sellingRate;
+        self.orderPools[tokenIndex].salesRateEndingPerInterval -= sellingRate;
+    }
+
+    function calculateCancellationAmounts(Order memory order)
+        private
+        returns (uint256 unsoldAmount, uint256 purchasedAmount)
+    {
+        // TODO: actually calculate this
+        unsoldAmount = 111;
+        purchasedAmount = 222;
     }
 }

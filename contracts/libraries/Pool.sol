@@ -615,13 +615,6 @@ library Pool {
         }
     }
 
-    function submitLongTermOrder(State storage self, TWAMM.LongTermOrderParams calldata params)
-        internal
-        returns (uint256 orderId)
-    {
-        orderId = self.twamm.submitLongTermOrder(params);
-    }
-
     /// @notice Updates the protocol fee for a given pool
     function setFeeProtocol(State storage self, uint8 feeProtocol) internal returns (uint8 feeProtocolOld) {
         (uint8 feeProtocol0, uint8 feeProtocol1) = (feeProtocol >> 4, feeProtocol % 16);
@@ -631,5 +624,19 @@ library Pool {
         );
         feeProtocolOld = self.slot0.feeProtocol;
         self.slot0.feeProtocol = feeProtocol;
+    }
+
+    function submitLongTermOrder(State storage self, TWAMM.LongTermOrderParams calldata params)
+        internal
+        returns (uint256 orderId)
+    {
+        orderId = self.twamm.submitLongTermOrder(params);
+    }
+
+    function cancelLongTermOrder(State storage self, uint256 orderId)
+        external
+        returns (uint256 unsoldAmount, uint256 purchasedAmount)
+    {
+        (unsoldAmount, purchasedAmount) = self.twamm.cancelLongTermOrder(orderId);
     }
 }

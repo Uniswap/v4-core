@@ -26,16 +26,85 @@ describe.only('TWAMM', () => {
       twamm = await loadFixture(twammFixture)
     })
 
-		it('loads the fixture', async () => {
-			const expiration = ((await ethers.provider.getBlock('latest')).timestamp) + 86400
-			const tx = await twamm.submitLongTermOrder({
-				zeroForOne: true,
-				owner: wallet.address,
-				amountIn: `1${'0'.repeat(18)}`,
-				expiration
-			})
-			const receipt = await tx.wait()
-			console.log(receipt.events![0]!.args)
-		})
-	})
+    it('stores the new long term order', async () => {
+      const nextId = await twamm.getNextId()
+
+      const zeroForOne = true
+      const owner = wallet.address
+      const amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
+      const expiration = (await ethers.provider.getBlock('latest')).timestamp + 86400
+
+      await twamm.submitLongTermOrder({
+        zeroForOne,
+        owner,
+        amountIn,
+        expiration,
+      })
+
+      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      const sellingRate = amountIn.div(expiration - latestTimestamp)
+
+      const newOrder = await twamm.getOrder(nextId)
+
+      expect(newOrder.zeroForOne).to.equal(zeroForOne)
+      expect(newOrder.owner).to.equal(owner)
+      expect(newOrder.sellingRate).to.equal(sellingRate)
+      expect(newOrder.expiration).to.equal(expiration)
+    })
+
+    it('increases the sellingRate of the corresponding OrderPool', async () => {
+      const nextId = await twamm.getNextId()
+
+      const zeroForOne = true
+      const owner = wallet.address
+      const amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
+      const expiration = (await ethers.provider.getBlock('latest')).timestamp + 86400
+
+      await twamm.submitLongTermOrder({
+        zeroForOne,
+        owner,
+        amountIn,
+        expiration,
+      })
+
+      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      const sellingRate = amountIn.div(expiration - latestTimestamp)
+
+      const orderPool = await twamm.getOrderPool(0)
+      expect(orderPool.sellingRate).to.equal(sellingRate)
+    })
+  })
+
+  describe('#cancelLongTermOrder', () => {
+    let twamm: TWAMMTest
+    let orderId: BigNumber
+
+    beforeEach('deploy test twamm', async () => {
+      twamm = await loadFixture(twammFixture)
+      orderId = await twamm.getNextId()
+
+      const zeroForOne = true
+      const owner = wallet.address
+      const amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
+      const expiration = (await ethers.provider.getBlock('latest')).timestamp + 86400
+
+      await twamm.submitLongTermOrder({
+        zeroForOne,
+        owner,
+        amountIn,
+        expiration,
+      })
+    })
+
+    it('deletes the long term order', async () => {
+      // actually wondering if this should happen, tbd
+      await twamm.cancelLongTermOrder(orderId)
+    })
+
+    it('decreases the sellingRate of the corresponding OrderPool', async () => {
+      expect(parseInt((await twamm.getOrderPool(0)).sellingRate.toString())).to.be.greaterThan(0)
+      await twamm.cancelLongTermOrder(orderId)
+      expect((await twamm.getOrderPool(0)).sellingRate).to.equal(0)
+    })
+  })
 })

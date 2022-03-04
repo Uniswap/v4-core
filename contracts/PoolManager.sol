@@ -4,6 +4,7 @@ pragma solidity ^0.8.12;
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
+import {TWAMM} from './libraries/TWAMM.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
@@ -261,5 +262,18 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         int24 tickUpper
     ) external view override noDelegateCall returns (Pool.Snapshot memory) {
         return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
+    }
+
+    function submitLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.LongTermOrderParams calldata params)
+        external
+        onlyByLocker
+        returns (uint256 orderId)
+    {
+        return _getPool(key).submitLongTermOrder(params);
+    }
+
+    function cancelLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId) external onlyByLocker {
+        (uint256 unsoldAmount, uint256 purchasedAmount) = _getPool(key).cancelLongTermOrder(orderId);
+        // TODO: add to deltas
     }
 }
