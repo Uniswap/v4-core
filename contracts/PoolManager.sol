@@ -10,8 +10,10 @@ import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
+import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, NoDelegateCall {
+contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     using SafeCast for *;
     using Pool for *;
 
@@ -25,7 +27,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     mapping(bytes32 => Pool.State) public pools;
     mapping(uint24 => FeeConfig) public override configs;
 
-    constructor() {
+    constructor() ERC1155("") {
         _configure(100, 1);
         _configure(500, 10);
         _configure(3000, 60);
@@ -72,6 +74,9 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     /// @notice Internal transient enumerable set
     IERC20Minimal[] public override tokensTouched;
+
+    // @param slot The index of the tokensTouched array that this token is stored at
+    // @param delta The amount of token the locker owes to the protocol. If it is negative, the contract owes the locker instead.
     struct PositionAndDelta {
         uint8 slot;
         int248 delta;
@@ -87,8 +92,15 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
         unchecked {
             for (uint256 i = 0; i < tokensTouched.length; i++) {
-                if (tokenDelta[tokensTouched[i]].delta != 0)
+                if (tokenDelta[tokensTouched[i]].delta > 0)
                     revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
+                else if (tokenDelta[tokensTouched[i]].delta < 0)
+                    _mint(
+                        msg.sender,
+                        address(tokensTouched[i]).toUint256(),
+                        uint256(uint248(-tokenDelta[tokensTouched[i]].delta)),
+                        ""
+                    );
                 delete tokenDelta[tokensTouched[i]];
             }
         }
@@ -228,6 +240,15 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         paid = reservesOf[token] - reservesBefore;
         // subtraction must be safe
         _accountDelta(token, -(paid.toInt256()));
+    }
+
+    /// @notice Called by the user to pay what is owed from their ERC1155 balance
+    function settleWithBalance(IERC20Minimal token, uint256 amount) external noDelegateCall onlyByLocker returns (uint256 paid) {
+        if (amount < balanceOf(msg.sender, address(token).toUint256()))
+            revert NotEnoughBalanceAvailable();
+        _burn(msg.sender, address(token).toUint256(), amount);
+        // subtraction must be safe
+        _accountDelta(token, -(amount.toInt256()));
     }
 
     /// @notice Update the protocol fee for a given pool

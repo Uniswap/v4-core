@@ -10,6 +10,9 @@ interface IPoolManager {
     /// @param delta The amount that is owed by or to the locker
     error TokenNotSettled(IERC20Minimal token, int256 delta);
 
+    /// @notice Thrown when a user tries to burn more ERC1155s than they own
+    error NotEnoughBalanceAvailable();
+
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
     error LockedBy(address locker);
