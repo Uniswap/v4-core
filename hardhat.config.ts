@@ -12,13 +12,13 @@ subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async (args: TaskArguments, hre, r
     throw new Error('need binary for solc version')
   }
 
-  const compilerPath = pathJoin(__dirname, 'bin', 'solc-macosx-amd64-v0.8.12+commit.f00d7308')
+  const compilerPath = pathJoin(__dirname, 'bin', 'solc-macosx-amd64-v0.8.12+eip1153')
 
   return {
     compilerPath,
     isSolcJs: false,
     version: '0.8.12',
-    longVersion: '0.8.12+commit.f00d7308',
+    longVersion: '0.8.12+eip1153',
   }
 })
 
