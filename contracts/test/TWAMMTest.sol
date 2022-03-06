@@ -20,9 +20,9 @@ contract TWAMMTest {
         return state.orders[orderId];
     }
 
-    function getOrderPool(uint8 index) external view returns (uint256 sellingRate, uint256 fillerVar) {
+    function getOrderPool(uint8 index) external view returns (uint256 sellRate, uint256 fillerVar) {
         TWAMM.OrderPool storage order = state.orderPools[index];
-        sellingRate = order.sellRate;
+        sellRate = order.sellRate;
         fillerVar = 0;
     }
 

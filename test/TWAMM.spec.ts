@@ -42,17 +42,17 @@ describe.only('TWAMM', () => {
       })
 
       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      const sellingRate = amountIn.div(expiration - latestTimestamp)
+      const sellRate = amountIn.div(expiration - latestTimestamp)
 
       const newOrder = await twamm.getOrder(nextId)
 
-      expect(newOrder.zeroForOne).to.equal(zeroForOne)
+      expect(newOrder.sellTokenIndex).to.equal(0)
       expect(newOrder.owner).to.equal(owner)
-      expect(newOrder.sellingRate).to.equal(sellingRate)
+      expect(newOrder.sellRate).to.equal(sellRate)
       expect(newOrder.expiration).to.equal(expiration)
     })
 
-    it('increases the sellingRate of the corresponding OrderPool', async () => {
+    it('increases the sellRate of the corresponding OrderPool', async () => {
       const nextId = await twamm.getNextId()
 
       const zeroForOne = true
@@ -68,10 +68,10 @@ describe.only('TWAMM', () => {
       })
 
       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      const sellingRate = amountIn.div(expiration - latestTimestamp)
+      const sellRate = amountIn.div(expiration - latestTimestamp)
 
       const orderPool = await twamm.getOrderPool(0)
-      expect(orderPool.sellingRate).to.equal(sellingRate)
+      expect(orderPool.sellRate).to.equal(sellRate)
     })
   })
 
@@ -101,10 +101,10 @@ describe.only('TWAMM', () => {
       await twamm.cancelLongTermOrder(orderId)
     })
 
-    it('decreases the sellingRate of the corresponding OrderPool', async () => {
-      expect(parseInt((await twamm.getOrderPool(0)).sellingRate.toString())).to.be.greaterThan(0)
+    it('decreases the sellRate of the corresponding OrderPool', async () => {
+      expect(parseInt((await twamm.getOrderPool(0)).sellRate.toString())).to.be.greaterThan(0)
       await twamm.cancelLongTermOrder(orderId)
-      expect((await twamm.getOrderPool(0)).sellingRate).to.equal(0)
+      expect((await twamm.getOrderPool(0)).sellRate).to.equal(0)
     })
   })
 })

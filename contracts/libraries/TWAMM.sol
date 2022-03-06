@@ -34,14 +34,14 @@ library TWAMM {
 
     /// @notice Information associated with a long term order pool
     /// @member sellRate The total current sell rate among all orders
-    /// @member rewardFactor Sum of (salesProceeds_k / salesRate_k) over every period k.
+    /// @member earningsFactor Sum of (salesProceeds_k / salesRate_k) over every period k.
     /// @member sellRateEndingPerInterval Mapping (timestamp => sellRate) The amount of expiring sellRate at this interval
-    /// @member rewardFactorAtInterval Mapping (timestamp => sellRate) The reward factor accrued by a certain time interval
+    /// @member earningsFactorAtInterval Mapping (timestamp => sellRate) The earnings factor accrued by a certain time interval
     struct OrderPool {
         uint256 sellRate;
-        uint256 rewardFactor;
+        uint256 earningsFactor;
         mapping(uint256 => uint256) sellRateEndingPerInterval;
-        mapping(uint256 => uint256) rewardFactorAtInterval;
+        mapping(uint256 => uint256) earningsFactorAtInterval;
     }
 
     /// @notice Information associated with a long term order
@@ -49,13 +49,13 @@ library TWAMM {
     /// @member owner Owner of the order
     /// @member expiration Timestamp when the order expires
     /// @member sellRate Amount of tokens sold per interval
-    /// @member unclaimedRewardFactor The accrued reward factor from which to start claiming owed proceeds for this order
+    /// @member unclaimedEarningsFactor The accrued earnings factor from which to start claiming owed proceeds for this order
     struct Order {
         uint8 sellTokenIndex;
         address owner;
         uint256 expiration;
         uint256 sellRate;
-        uint256 unclaimedRewardFactor;
+        uint256 unclaimedEarningsFactor;
     }
 
     /// @notice Initialize TWAMM state
@@ -94,7 +94,7 @@ library TWAMM {
             expiration: params.expiration,
             sellRate: sellRate,
             sellTokenIndex: sellTokenIndex,
-            unclaimedRewardFactor: self.orderPools[sellTokenIndex].rewardFactor
+            unclaimedEarningsFactor: self.orderPools[sellTokenIndex].earningsFactor
         });
     }
 
@@ -118,19 +118,19 @@ library TWAMM {
     }
 
     function claimProceeds(State storage self, uint256 orderId) internal returns (uint256 claimedAmount) {
-      Order memory order = self.orderMap[orderId];
-      OrderPoolLib.OrderPool storage orderPool = self.OrderPoolMap[order.sellTokenIndex];
+      Order memory order = self.orders[orderId];
+      OrderPool storage orderPool = self.orderPools[order.sellTokenIndex];
 
       if (block.timestamp > order.expiration) {
-          uint256 rewardFactorAtExpiration = self.rewardFactorAtInterval[order.expiration];
+          uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
           // TODO: math to be refined
-          claimedAmount = (rewardFactorAtExpiration - order.unclaimedRewardFactor) * order.sellRate;
+          claimedAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
       }
       //if order has not yet expired, we just adjust the start
       else {
           // TODO: math to be refined
-          claimedAmount = (self.rewardFactor - order.unclaimedRewardFactor) * order.sellRate;
-          self.unclaimedRewardFactor[orderId] = self.rewardFactor;
+          claimedAmount = (orderPool.earningsFactor - order.unclaimedEarningsFactor) * order.sellRate;
+          self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactor;
       }
      }
 
