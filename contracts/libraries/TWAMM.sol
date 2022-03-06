@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
+import {Tick} from './Tick.sol';
+
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
-
     /// @notice Thrown when account other than owner attempts to interact with an order
     /// @param orderId The orderId
     /// @param owner The owner of the order
@@ -16,7 +17,6 @@ library TWAMM {
     /// @param expiration The expiration timestamp of the order
     /// @param currentTime The current block timestamp
     error OrderAlreadyCompleted(uint256 orderId, uint256 expiration, uint256 currentTime);
-
 
     /// @notice Contains full state related to long term orders
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
@@ -113,6 +113,7 @@ library TWAMM {
 
         (unsoldAmount, purchasedAmount) = calculateCancellationAmounts(order);
 
+        self.orders[orderId].sellRate = 0;
         self.orderPools[order.sellTokenIndex].sellRate -= order.sellRate;
         self.orderPools[order.sellTokenIndex].sellRateEndingPerInterval[order.expiration] -= order.sellRate;
     }
@@ -120,21 +121,36 @@ library TWAMM {
     /// @notice Claim earnings from an ongoing or expired order
     /// @param orderId The ID of the order to be claimed
     function claimEarnings(State storage self, uint256 orderId) internal returns (uint256 claimedAmount) {
-      Order memory order = self.orders[orderId];
-      OrderPool storage orderPool = self.orderPools[order.sellTokenIndex];
+        Order memory order = self.orders[orderId];
+        OrderPool storage orderPool = self.orderPools[order.sellTokenIndex];
 
-      if (block.timestamp > order.expiration) {
-          uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
-          // TODO: math to be refined
-          claimedAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
-      }
-      //if order has not yet expired, we just adjust the start
-      else {
-          // TODO: math to be refined
-          claimedAmount = (orderPool.earningsFactor - order.unclaimedEarningsFactor) * order.sellRate;
-          self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactor;
-      }
-     }
+        if (block.timestamp > order.expiration) {
+            uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
+            // TODO: math to be refined
+            claimedAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
+        }
+        //if order has not yet expired, we just adjust the start
+        else {
+            // TODO: math to be refined
+            claimedAmount = (orderPool.earningsFactor - order.unclaimedEarningsFactor) * order.sellRate;
+            self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactor;
+        }
+    }
+
+    struct ExecuteTWAMMParams {
+        uint160 sqrtPriceX96;
+        int24 tick;
+        uint8 feeProtocol;
+        uint128 liquidity;
+    }
+
+    function executeTWAMM(
+        State storage self,
+        ExecuteTWAMMParams memory params,
+        mapping(int24 => Tick.Info) storage ticks
+    ) internal returns (uint256 claimedAmount) {
+        // 0_o
+    }
 
     function calculateCancellationAmounts(Order memory order)
         private

@@ -31,7 +31,11 @@ interface IPoolManager {
     function reservesOf(IERC20Minimal token) external view returns (uint256);
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96, uint256 twammExpiryInterval) external returns (int24 tick);
+    function initialize(
+        PoolKey memory key,
+        uint160 sqrtPriceX96,
+        uint256 twammExpiryInterval
+    ) external returns (int24 tick);
 
     /// @notice Increase the maximum number of stored observations for the pool's oracle
     function increaseObservationCardinalityNext(PoolKey memory key, uint16 observationCardinalityNext)
