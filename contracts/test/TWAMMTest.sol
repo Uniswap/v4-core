@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.12;
-pragma abicoder v2;
 
 import {TWAMM} from '../libraries/TWAMM.sol';
 
@@ -23,7 +22,7 @@ contract TWAMMTest {
 
     function getOrderPool(uint8 index) external view returns (uint256 sellingRate, uint256 fillerVar) {
         TWAMM.OrderPool storage order = state.orderPools[index];
-        sellingRate = order.sellingRate;
+        sellingRate = order.sellRate;
         fillerVar = 0;
     }
 
