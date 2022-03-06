@@ -34,7 +34,7 @@ library TWAMM {
 
     /// @notice Information associated with a long term order pool
     /// @member sellRate The total current sell rate among all orders
-    /// @member earningsFactor Sum of (salesProceeds_k / salesRate_k) over every period k.
+    /// @member earningsFactor Sum of (salesEarnings_k / salesRate_k) over every period k.
     /// @member sellRateEndingPerInterval Mapping (timestamp => sellRate) The amount of expiring sellRate at this interval
     /// @member earningsFactorAtInterval Mapping (timestamp => sellRate) The earnings factor accrued by a certain time interval
     struct OrderPool {
@@ -49,7 +49,7 @@ library TWAMM {
     /// @member owner Owner of the order
     /// @member expiration Timestamp when the order expires
     /// @member sellRate Amount of tokens sold per interval
-    /// @member unclaimedEarningsFactor The accrued earnings factor from which to start claiming owed proceeds for this order
+    /// @member unclaimedEarningsFactor The accrued earnings factor from which to start claiming owed earnings for this order
     struct Order {
         uint8 sellTokenIndex;
         address owner;
@@ -117,7 +117,9 @@ library TWAMM {
         self.orderPools[order.sellTokenIndex].sellRateEndingPerInterval[order.expiration] -= order.sellRate;
     }
 
-    function claimProceeds(State storage self, uint256 orderId) internal returns (uint256 claimedAmount) {
+    /// @notice Claim earnings from an ongoing or expired order
+    /// @param orderId The ID of the order to be claimed
+    function claimEarnings(State storage self, uint256 orderId) internal returns (uint256 claimedAmount) {
       Order memory order = self.orders[orderId];
       OrderPool storage orderPool = self.orderPools[order.sellTokenIndex];
 
