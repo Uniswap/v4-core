@@ -12,7 +12,7 @@ library TWAMM {
     /// @param currentAccount The invalid account attempting to interact with the order
     error MustBeOwner(uint256 orderId, address owner, address currentAccount);
 
-    /// @notice Thrown when account other than owner attempts to interact with an order
+    /// @notice Thrown when trying to cancel an already completed order
     /// @param orderId The orderId
     /// @param expiration The expiration timestamp of the order
     /// @param currentTime The current block timestamp
@@ -27,20 +27,21 @@ library TWAMM {
     struct State {
         uint256 expirationInterval;
         uint256 lastVirtualOrderTimestamp;
+        uint256 nextId;
         mapping(uint8 => OrderPool) orderPools;
         mapping(uint256 => Order) orders;
-        uint256 nextId;
     }
 
-    /// @notice Information associated with a long term order pool
+    /// @notice Information related to a long term order pool
     /// @member sellRate The total current sell rate among all orders
+    /// @member sellRateEndingAtInterval Mapping (timestamp => sellRate) The amount of expiring sellRate at this interval
     /// @member earningsFactor Sum of (salesEarnings_k / salesRate_k) over every period k.
-    /// @member sellRateEndingPerInterval Mapping (timestamp => sellRate) The amount of expiring sellRate at this interval
     /// @member earningsFactorAtInterval Mapping (timestamp => sellRate) The earnings factor accrued by a certain time interval
     struct OrderPool {
         uint256 sellRate;
+        mapping(uint256 => uint256) sellRateEndingAtInterval;
+        //
         uint256 earningsFactor;
-        mapping(uint256 => uint256) sellRateEndingPerInterval;
         mapping(uint256 => uint256) earningsFactorAtInterval;
     }
 
@@ -83,12 +84,14 @@ library TWAMM {
         orderId = self.nextId++;
 
         uint8 sellTokenIndex = params.zeroForOne ? 0 : 1;
+        // TODO: refine math?
         uint256 sellRate = params.amountIn / (params.expiration - block.timestamp);
 
         self.orderPools[sellTokenIndex].sellRate += sellRate;
-        self.orderPools[sellTokenIndex].sellRateEndingPerInterval[params.expiration] += sellRate;
+        // TODO: update expiration if its not at interval (alternatively could take n intervals as param, this
+        // felt more deterministic though)
+        self.orderPools[sellTokenIndex].sellRateEndingAtInterval[params.expiration] += sellRate;
 
-        // TODO: update expiration if its not at interval
         self.orders[orderId] = Order({
             owner: params.owner,
             expiration: params.expiration,
@@ -115,24 +118,24 @@ library TWAMM {
 
         self.orders[orderId].sellRate = 0;
         self.orderPools[order.sellTokenIndex].sellRate -= order.sellRate;
-        self.orderPools[order.sellTokenIndex].sellRateEndingPerInterval[order.expiration] -= order.sellRate;
+        self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= order.sellRate;
     }
 
     /// @notice Claim earnings from an ongoing or expired order
     /// @param orderId The ID of the order to be claimed
-    function claimEarnings(State storage self, uint256 orderId) internal returns (uint256 claimedAmount) {
+    function claimEarnings(State storage self, uint256 orderId) internal returns (uint256 earningsAmount) {
         Order memory order = self.orders[orderId];
         OrderPool storage orderPool = self.orderPools[order.sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
             // TODO: math to be refined
-            claimedAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
+            earningsAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
         }
         //if order has not yet expired, we just adjust the start
         else {
             // TODO: math to be refined
-            claimedAmount = (orderPool.earningsFactor - order.unclaimedEarningsFactor) * order.sellRate;
+            earningsAmount = (orderPool.earningsFactor - order.unclaimedEarningsFactor) * order.sellRate;
             self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactor;
         }
     }
@@ -144,11 +147,27 @@ library TWAMM {
         uint128 liquidity;
     }
 
-    function executeTWAMM(
+    function executeTWAMMOrders(
         State storage self,
         ExecuteTWAMMParams memory params,
         mapping(int24 => Tick.Info) storage ticks
-    ) internal returns (uint256 claimedAmount) {
+    ) internal {
+      // TODO: Update Order Pools (earningsFactor vars)
+      // TODO: return numbers that will guide the new pool state...update that in pool or pool manager.
+      // ideally if ticks are needed, would just be for read purposes
+    }
+
+    function calculateTWAMMExecutionUpdates(ExecuteTWAMMParams memory params, mapping(int24 => Tick.Info) storage ticks)
+        private
+        returns (
+            uint256 earningsFactorPool0,
+            uint256 earningsFactorPool1,
+            int24 newTick,
+            uint256 fee0,
+            uint256 fee1
+        )
+    {
+        // TODO: calculate and return numbers that guide changes to OrderPools and Pool
         // 0_o
     }
 

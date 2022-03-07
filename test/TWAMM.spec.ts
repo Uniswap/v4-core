@@ -8,6 +8,7 @@ import { MaxUint128 } from './shared/utilities'
 
 describe.only('TWAMM', () => {
   let wallet: Wallet, other: Wallet
+  let twamm: TWAMMTest
 
   let loadFixture: ReturnType<typeof waffle.createFixtureLoader>
   before('create fixture loader', async () => {
@@ -15,24 +16,44 @@ describe.only('TWAMM', () => {
     loadFixture = waffle.createFixtureLoader([wallet, other])
   })
 
+  beforeEach(async () => {
+      twamm = await loadFixture(twammFixture)
+  })
+
   const twammFixture = async () => {
     const twammTestFactory = await ethers.getContractFactory('TWAMMTest')
     return (await twammTestFactory.deploy()) as TWAMMTest
   }
 
+  describe('initialize', () => {
+    it('sets the initial state of the twamm', async () => {
+      let { expirationInterval, lastVirtualOrderTimestamp } = await twamm.getState()
+      expect(expirationInterval).to.equal(0)
+      expect(lastVirtualOrderTimestamp).to.equal(0)
+
+      await twamm.initialize(10_000)
+
+      ;({ expirationInterval, lastVirtualOrderTimestamp } = await twamm.getState())
+      expect(expirationInterval).to.equal(10_000)
+      expect(lastVirtualOrderTimestamp).to.equal((await ethers.provider.getBlock('latest')).timestamp)
+    })
+  })
+
   describe('#submitLongTermOrder', () => {
-    let twamm: TWAMMTest
+    let zeroForOne: boolean
+    let owner: string
+    let amountIn: BigNumber
+    let expiration: number
+
     beforeEach('deploy test twamm', async () => {
-      twamm = await loadFixture(twammFixture)
+      zeroForOne = true
+      owner = wallet.address
+      amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
+      expiration = (await ethers.provider.getBlock('latest')).timestamp + 86400
     })
 
     it('stores the new long term order', async () => {
       const nextId = await twamm.getNextId()
-
-      const zeroForOne = true
-      const owner = wallet.address
-      const amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
-      const expiration = (await ethers.provider.getBlock('latest')).timestamp + 86400
 
       await twamm.submitLongTermOrder({
         zeroForOne,
@@ -52,13 +73,12 @@ describe.only('TWAMM', () => {
       expect(newOrder.expiration).to.equal(expiration)
     })
 
-    it('increases the sellRate of the corresponding OrderPool', async () => {
+    it('increases the sellRate and sellRateEndingPerInterval of the corresponding OrderPool', async () => {
       const nextId = await twamm.getNextId()
 
-      const zeroForOne = true
-      const owner = wallet.address
-      const amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
-      const expiration = (await ethers.provider.getBlock('latest')).timestamp + 86400
+      let orderPool = await twamm.getOrderPool(0)
+      expect(orderPool.sellRate).to.equal(0)
+      expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(0)
 
       await twamm.submitLongTermOrder({
         zeroForOne,
@@ -70,17 +90,16 @@ describe.only('TWAMM', () => {
       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       const sellRate = amountIn.div(expiration - latestTimestamp)
 
-      const orderPool = await twamm.getOrderPool(0)
+      orderPool = await twamm.getOrderPool(0)
       expect(orderPool.sellRate).to.equal(sellRate)
+      expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(sellRate)
     })
   })
 
   describe('#cancelLongTermOrder', () => {
-    let twamm: TWAMMTest
     let orderId: BigNumber
 
     beforeEach('deploy test twamm', async () => {
-      twamm = await loadFixture(twammFixture)
       orderId = await twamm.getNextId()
 
       const zeroForOne = true
@@ -96,8 +115,8 @@ describe.only('TWAMM', () => {
       })
     })
 
-    it('deletes the long term order', async () => {
-      // actually wondering if this should happen, tbd
+    it('changes the sell rate of the ordre to 0', async () => {
+      expect(parseInt((await twamm.getOrder(orderId)).sellRate.toString())).to.be.greaterThan(0)
       await twamm.cancelLongTermOrder(orderId)
     })
 

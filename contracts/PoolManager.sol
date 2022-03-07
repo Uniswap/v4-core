@@ -13,6 +13,7 @@ import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
+    using TWAMM for TWAMM.State;
     using SafeCast for *;
     using Pool for *;
 
@@ -273,11 +274,24 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (uint256 orderId)
     {
-        return _getPool(key).submitLongTermOrder(params);
+        return _getPool(key).twamm.submitLongTermOrder(params);
     }
 
-    function cancelLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId) external onlyByLocker {
-        (uint256 unsoldAmount, uint256 purchasedAmount) = _getPool(key).cancelLongTermOrder(orderId);
-        // TODO: add to deltas
+    function cancelLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId)
+        external
+        onlyByLocker
+        returns (uint256 unsoldAmount, uint256 purchasedAmount)
+    {
+        (unsoldAmount, purchasedAmount) = _getPool(key).twamm.cancelLongTermOrder(orderId);
+        // TODO: add to deltas (asumming EIP-1155)
+    }
+
+    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId)
+        external
+        onlyByLocker
+        returns (uint256 earningsAmount)
+    {
+        return _getPool(key).twamm.claimEarnings(orderId);
+        // TODO: add to deltas (asumming EIP-1155)
     }
 }
