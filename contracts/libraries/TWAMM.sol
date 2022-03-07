@@ -131,33 +131,76 @@ library TWAMM {
             uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
             // TODO: math to be refined
             earningsAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
-        }
-        //if order has not yet expired, we just adjust the start
-        else {
+        } else {
             // TODO: math to be refined
             earningsAmount = (orderPool.earningsFactor - order.unclaimedEarningsFactor) * order.sellRate;
             self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactor;
         }
     }
 
-    struct ExecuteTWAMMParams {
+    struct PoolParamsOnExecute {
         uint160 sqrtPriceX96;
         int24 tick;
         uint8 feeProtocol;
         uint128 liquidity;
     }
 
-    function executeTWAMMOrders(
-        State storage self,
-        ExecuteTWAMMParams memory params,
-        mapping(int24 => Tick.Info) storage ticks
-    ) internal {
-        // TODO: Update Order Pools (earningsFactor vars)
-        // TODO: return numbers that will guide the new pool state...update that in pool or pool manager.
-        // ideally if ticks are needed, would just be for read purposes
+    struct OrderPoolParamsOnExecute {
+        uint256 orderPool0SellRate;
+        uint256 orderPool1SellRate;
     }
 
-    function calculateTWAMMExecutionUpdates(ExecuteTWAMMParams memory params, mapping(int24 => Tick.Info) storage ticks)
+    function executeTWAMMOrders(
+        State storage self,
+        PoolParamsOnExecute memory poolParams,
+        mapping(int24 => Tick.Info) storage ticks
+    ) internal {
+        // TODO: return numbers that will guide the new pool state...update that in pool or pool manager.
+        // ideally if ticks are needed, would just be for read purposes
+
+        uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
+        uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +
+            (self.expirationInterval - (self.lastVirtualOrderTimestamp % self.expirationInterval));
+
+        while (nextExpirationTimestamp < block.timestamp) {
+            // skip calculations on intervals that don't have any expirations
+            if (
+                self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
+                self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
+            ) {
+                // TODO: calculate updates within this timeInterval
+
+                executeTWAMMAtInterval(
+                    prevTimestamp,
+                    nextExpirationTimestamp,
+                    poolParams,
+                    OrderPoolParamsOnExecute(self.orderPools[0].sellRate, self.orderPools[1].sellRate),
+                    ticks
+                );
+                prevTimestamp = nextExpirationTimestamp; // if we did a calculation, update prevTimestamp
+            }
+            nextExpirationTimestamp += self.expirationInterval;
+        }
+
+        if (prevTimestamp != block.timestamp) {
+            // TODO: calculate updates within this timeInterval
+        }
+    }
+
+    function executeTWAMMAtInterval(
+        uint256 startingTimestamp,
+        uint256 endingTimeStamp,
+        PoolParamsOnExecute memory poolParams,
+        OrderPoolParamsOnExecute memory orderPoolParams,
+        mapping(int24 => Tick.Info) storage ticks
+    ) private {
+        // TODO: Update Order Pools (earningsFactor vars)
+    }
+
+    function calculateTWAMMExecutionUpdates(
+        PoolParamsOnExecute memory params,
+        mapping(int24 => Tick.Info) storage ticks
+    )
         private
         returns (
             uint256 earningsFactorPool0,
@@ -168,6 +211,7 @@ library TWAMM {
         )
     {
         // TODO: calculate and return numbers that guide changes to OrderPools and Pool
+        // https://www.desmos.com/calculator/yr3qvkafvy
         // 0_o
     }
 
