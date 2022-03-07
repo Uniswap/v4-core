@@ -6,7 +6,7 @@ import { expect } from './shared/expect'
 import snapshotGasCost from './shared/snapshotGasCost'
 import { MaxUint128 } from './shared/utilities'
 
-describe.only('TWAMM', () => {
+describe('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
 

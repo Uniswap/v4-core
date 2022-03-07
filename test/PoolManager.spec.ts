@@ -1,6 +1,6 @@
 import { Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
-import { PoolManager, TestERC20, PoolManagerTest, PoolSwapTest, PoolMintTest, PoolBurnTest } from '../typechain'
+import { PoolManager, TestERC20, PoolManagerTest, PoolSwapTest, PoolModifyPositionTest } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from './shared/snapshotGasCost'
@@ -16,15 +16,13 @@ describe('PoolManager', () => {
   let manager: PoolManager
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
-  let mintTest: PoolMintTest
-  let burnTest: PoolBurnTest
+  let modifyPositionTest: PoolModifyPositionTest
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
   const fixture = async () => {
     const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
-    const mintTestFactory = await ethers.getContractFactory('PoolMintTest')
-    const burnTestFactory = await ethers.getContractFactory('PoolBurnTest')
+    const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const tokens = await tokensFixture()
     const manager = (await singletonPoolFactory.deploy()) as PoolManager
 
@@ -32,13 +30,12 @@ describe('PoolManager', () => {
       manager,
       lockTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
-      mintTest: (await mintTestFactory.deploy(manager.address)) as PoolMintTest,
-      burnTest: (await burnTestFactory.deploy(manager.address)) as PoolBurnTest,
+      modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       tokens,
     }
 
     for (const token of [tokens.token0, tokens.token1, tokens.token2]) {
-      for (const spender of [result.swapTest, result.mintTest, result.burnTest]) {
+      for (const spender of [result.swapTest, result.modifyPositionTest]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
       }
     }
@@ -54,7 +51,7 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, mintTest, burnTest, swapTest } = await loadFixture(fixture))
+    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest } = await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
@@ -78,6 +75,7 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         encodeSqrtPriceX96(10, 1),
         10_000
@@ -88,6 +86,7 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         })
       )
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
@@ -100,6 +99,7 @@ describe('PoolManager', () => {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
           },
           encodeSqrtPriceX96(10, 1),
           10_000
@@ -111,17 +111,17 @@ describe('PoolManager', () => {
   describe('#mint', async () => {
     it('reverts if pool not initialized', async () => {
       await expect(
-        mintTest.mint(
+        modifyPositionTest.modifyPosition(
           {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
           },
           {
             tickLower: 0,
             tickUpper: 60,
-            amount: 100,
-            recipient: wallet.address,
+            liquidityDelta: 100,
           }
         )
       ).to.be.revertedWith('I')
@@ -133,22 +133,23 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         encodeSqrtPriceX96(1, 1),
         10_000
       )
 
-      await mintTest.mint(
+      await modifyPositionTest.modifyPosition(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         {
           tickLower: 0,
           tickUpper: 60,
-          amount: 100,
-          recipient: wallet.address,
+          liquidityDelta: 100,
         }
       )
     })
@@ -159,23 +160,24 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         encodeSqrtPriceX96(1, 1),
         10_000
       )
 
       await snapshotGasCost(
-        mintTest.mint(
+        modifyPositionTest.modifyPosition(
           {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
           },
           {
             tickLower: 0,
             tickUpper: 60,
-            amount: 100,
-            recipient: wallet.address,
+            liquidityDelta: 100,
           }
         )
       )
@@ -190,6 +192,7 @@ describe('PoolManager', () => {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
           },
           {
             amountSpecified: 100,
@@ -205,6 +208,7 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         encodeSqrtPriceX96(1, 1),
         10_000
@@ -214,6 +218,7 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         {
           amountSpecified: 100,
@@ -228,6 +233,7 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         encodeSqrtPriceX96(1, 1),
         10_000
@@ -238,6 +244,7 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         {
           amountSpecified: 100,
@@ -252,6 +259,7 @@ describe('PoolManager', () => {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
           },
           {
             amountSpecified: 100,
@@ -267,21 +275,22 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         encodeSqrtPriceX96(1, 1),
         10_000
       )
-      await mintTest.mint(
+      await modifyPositionTest.modifyPosition(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         {
           tickLower: -120,
           tickUpper: 120,
-          amount: expandTo18Decimals(1),
-          recipient: wallet.address,
+          liquidityDelta: expandTo18Decimals(1),
         }
       )
 
@@ -290,6 +299,7 @@ describe('PoolManager', () => {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
         },
         {
           amountSpecified: 100,
@@ -304,6 +314,7 @@ describe('PoolManager', () => {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
           },
           {
             amountSpecified: 100,

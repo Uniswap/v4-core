@@ -35,7 +35,7 @@ contract TWAMMTest {
         view
         returns (uint256 sellRate)
     {
-        return twamm.orderPools[sellTokenIndex].sellRateEndingPerInterval[timestamp];
+        return twamm.orderPools[sellTokenIndex].sellRateEndingAtInterval[timestamp];
     }
 
     function getState()
