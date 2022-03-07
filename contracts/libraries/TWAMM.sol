@@ -152,9 +152,9 @@ library TWAMM {
         ExecuteTWAMMParams memory params,
         mapping(int24 => Tick.Info) storage ticks
     ) internal {
-      // TODO: Update Order Pools (earningsFactor vars)
-      // TODO: return numbers that will guide the new pool state...update that in pool or pool manager.
-      // ideally if ticks are needed, would just be for read purposes
+        // TODO: Update Order Pools (earningsFactor vars)
+        // TODO: return numbers that will guide the new pool state...update that in pool or pool manager.
+        // ideally if ticks are needed, would just be for read purposes
     }
 
     function calculateTWAMMExecutionUpdates(ExecuteTWAMMParams memory params, mapping(int24 => Tick.Info) storage ticks)

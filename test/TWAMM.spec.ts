@@ -17,7 +17,7 @@ describe('TWAMM', () => {
   })
 
   beforeEach(async () => {
-      twamm = await loadFixture(twammFixture)
+    twamm = await loadFixture(twammFixture)
   })
 
   const twammFixture = async () => {
@@ -32,7 +32,6 @@ describe('TWAMM', () => {
       expect(lastVirtualOrderTimestamp).to.equal(0)
 
       await twamm.initialize(10_000)
-
       ;({ expirationInterval, lastVirtualOrderTimestamp } = await twamm.getState())
       expect(expirationInterval).to.equal(10_000)
       expect(lastVirtualOrderTimestamp).to.equal((await ethers.provider.getBlock('latest')).timestamp)
