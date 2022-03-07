@@ -179,12 +179,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
         uint256 amount
     ) external override noDelegateCall onlyByLocker {
         _accountDelta(token, amount.toInt256());
-        _mint(
-            to,
-            address(token).toUint256(),
-            amount,
-            ''
-        );
+        _mint(to, address(token).toUint256(), amount, '');
     }
 
     /// @notice Called by the user to pay what is owed
