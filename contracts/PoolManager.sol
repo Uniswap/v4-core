@@ -71,15 +71,8 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
 
         unchecked {
             for (uint256 i = 0; i < tokensTouched.length; i++) {
-                if (tokenDelta[tokensTouched[i]].delta > 0)
+                if (tokenDelta[tokensTouched[i]].delta != 0)
                     revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
-                else if (tokenDelta[tokensTouched[i]].delta < 0)
-                    _mint(
-                        msg.sender,
-                        address(tokensTouched[i]).toUint256(),
-                        uint256(uint248(-tokenDelta[tokensTouched[i]].delta)),
-                        ''
-                    );
                 delete tokenDelta[tokensTouched[i]];
             }
         }
@@ -177,6 +170,21 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
         _accountDelta(token, amount.toInt256());
         reservesOf[token] -= amount;
         token.transfer(to, amount);
+    }
+
+    /// @notice Called by the user to move value into ERC1155 balance
+    function mintDelta(
+        IERC20Minimal token,
+        address to,
+        uint256 amount
+    ) external override noDelegateCall onlyByLocker {
+        _accountDelta(token, amount.toInt256());
+        _mint(
+            to,
+            address(token).toUint256(),
+            amount,
+            ''
+        );
     }
 
     /// @notice Called by the user to pay what is owed

@@ -310,7 +310,7 @@ describe('PoolManager', () => {
         )
       ).to.emit(manager, 'TransferSingle')
 
-      const erc1155Balance = await manager.balanceOf(swapTest.address, tokens.token1.address)
+      const erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
       expect(erc1155Balance).to.be.eq(98)
     })
     it('gas for swap against liquidity', async () => {

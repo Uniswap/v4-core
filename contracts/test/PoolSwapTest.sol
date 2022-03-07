@@ -45,28 +45,25 @@ contract PoolSwapTest is ILockCallback {
                 data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
                 manager.settle(data.key.token0);
             }
-            if (delta.amount1 < 0 && data.takeTokens)
-                manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
+            if (delta.amount1 < 0) {
+                if (data.takeTokens)
+                    manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
+                else
+                    manager.mintDelta(data.key.token1, data.sender, uint256(-delta.amount1));
+            }
         } else {
             if (delta.amount1 > 0) {
                 data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
                 manager.settle(data.key.token1);
             }
-            if (delta.amount0 < 0 && data.takeTokens)
-                manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+            if (delta.amount0 < 0) {
+                if (data.takeTokens)   
+                    manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+                else
+                    manager.mintDelta(data.key.token0, data.sender, uint256(-delta.amount0));
+            }
         }
 
         return abi.encode(delta);
-    }
-
-    // functions to be minted erc1155s
-    function onERC1155Received(
-        address,
-        address,
-        uint256,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return bytes4(keccak256('onERC1155Received(address,address,uint256,uint256,bytes)'));
     }
 }

@@ -81,6 +81,13 @@ interface IPoolManager {
         uint256 amount
     ) external;
 
+    /// @notice Called by the user to move value into ERC1155 balance
+    function mintDelta(
+        IERC20Minimal token,
+        address to,
+        uint256 amount
+    ) external;
+
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
 
