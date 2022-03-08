@@ -66,11 +66,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             for (uint256 i = 0; i < tokensTouched.length; i++) {
                 if (tokenDelta[tokensTouched[i]].delta != 0)
                     revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
-                delete tokenDelta[tokensTouched[i]];
             }
         }
-        delete tokensTouched;
-        delete lockedBy;
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
