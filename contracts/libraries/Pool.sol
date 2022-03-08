@@ -38,7 +38,7 @@ library Pool {
     error TickNotInitalized(int24 tick);
 
     /// @notice Thrown when trying to initalize an already initialized pool
-    error PoolAlreadyIniitalized();
+    error PoolAlreadyInitialized();
 
     /// @notice Thrown when trying to interact with a non-initialized pool
     error PoolNotInitialized();
@@ -219,7 +219,7 @@ library Pool {
         uint32 time,
         uint160 sqrtPriceX96
     ) internal returns (int24 tick) {
-        if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyIniitalized();
+        if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
