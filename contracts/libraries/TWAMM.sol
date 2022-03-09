@@ -106,7 +106,11 @@ library TWAMM {
     /// @param orderId The ID of the order to be cancelled
     function cancelLongTermOrder(State storage self, uint256 orderId)
         internal
-        returns (uint256 unsoldAmount, uint256 purchasedAmount)
+        returns (
+            uint256 unsoldAmount,
+            uint256 purchasedAmount,
+            uint8 sellTokenIndex
+        )
     {
         // TODO: bump TWAMM order state
         Order memory order = self.orders[orderId];
@@ -116,16 +120,22 @@ library TWAMM {
 
         (unsoldAmount, purchasedAmount) = calculateCancellationAmounts(order);
 
+        sellTokenIndex = order.sellTokenIndex;
+
         self.orders[orderId].sellRate = 0;
-        self.orderPools[order.sellTokenIndex].sellRate -= order.sellRate;
-        self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= order.sellRate;
+        self.orderPools[sellTokenIndex].sellRate -= order.sellRate;
+        self.orderPools[sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= order.sellRate;
     }
 
     /// @notice Claim earnings from an ongoing or expired order
     /// @param orderId The ID of the order to be claimed
-    function claimEarnings(State storage self, uint256 orderId) internal returns (uint256 earningsAmount) {
+    function claimEarnings(State storage self, uint256 orderId)
+        internal
+        returns (uint256 earningsAmount, uint8 sellTokenIndex)
+    {
         Order memory order = self.orders[orderId];
-        OrderPool storage orderPool = self.orderPools[order.sellTokenIndex];
+        sellTokenIndex = order.sellTokenIndex;
+        OrderPool storage orderPool = self.orderPools[sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];

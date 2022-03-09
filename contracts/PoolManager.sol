@@ -224,10 +224,25 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     function cancelLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId)
         external
         onlyByLocker
-        returns (uint256 unsoldAmount, uint256 purchasedAmount)
+        returns (
+            uint256 unsoldAmount,
+            uint256 purchasedAmount,
+            uint8 sellTokenIndex
+        )
     {
-        (unsoldAmount, purchasedAmount) = _getPool(key).twamm.cancelLongTermOrder(orderId);
-        // TODO: add to deltas (asumming EIP-1155)
+        (unsoldAmount, purchasedAmount, sellTokenIndex) = _getPool(key).twamm.cancelLongTermOrder(orderId);
+
+        (uint256 amount0, uint256 amount1) = sellTokenIndex == 0
+            ? (unsoldAmount, purchasedAmount)
+            : (purchasedAmount, unsoldAmount);
+
+        Pool.BalanceDelta memory delta = Pool.BalanceDelta({
+            amount0: -(amount0.toInt256()),
+            amount1: -(amount1.toInt256())
+        });
+
+        // Add to deltas (asumming EIP-1155)
+        _accountPoolBalanceDelta(key, delta);
     }
 
     function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId)
@@ -235,7 +250,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (uint256 earningsAmount)
     {
-        return _getPool(key).twamm.claimEarnings(orderId);
-        // TODO: add to deltas (asumming EIP-1155)
+        uint8 sellTokenIndex;
+        (earningsAmount, sellTokenIndex) = _getPool(key).twamm.claimEarnings(orderId);
+        IERC20Minimal buyToken = sellTokenIndex == 0 ? key.token1 : key.token0;
+        // Add to deltas (asumming EIP-1155)
+        _accountDelta(buyToken, -(earningsAmount.toInt256()));
     }
 }
