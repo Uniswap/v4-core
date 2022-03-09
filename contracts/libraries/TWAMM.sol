@@ -2,10 +2,17 @@
 pragma solidity ^0.8.12;
 
 import {Tick} from './Tick.sol';
+import {FixedPoint96} from './FixedPoint96.sol';
+import {SafeCast} from './SafeCast.sol';
+import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
+import 'hardhat/console.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
+    using ABDKMathQuad for *;
+    using SafeCast for *;
+
     /// @notice Thrown when account other than owner attempts to interact with an order
     /// @param orderId The orderId
     /// @param owner The owner of the order
@@ -139,9 +146,8 @@ library TWAMM {
     }
 
     struct PoolParamsOnExecute {
-        uint160 sqrtPriceX96;
-        int24 tick;
         uint8 feeProtocol;
+        uint160 sqrtPriceX96;
         uint128 liquidity;
     }
 
@@ -170,13 +176,22 @@ library TWAMM {
             ) {
                 // TODO: calculate updates within this timeInterval
 
-                executeTWAMMAtInterval(
-                    prevTimestamp,
-                    nextExpirationTimestamp,
-                    poolParams,
-                    OrderPoolParamsOnExecute(self.orderPools[0].sellRate, self.orderPools[1].sellRate),
-                    ticks
-                );
+                (
+                    uint160 newSqrtPriceX96,
+                    uint256 earningsFactorPool0,
+                    uint256 earningsFactorPool1
+                ) = calculateTWAMMExecutionUpdates(
+                        prevTimestamp,
+                        nextExpirationTimestamp,
+                        poolParams,
+                        OrderPoolParamsOnExecute(self.orderPools[0].sellRate, self.orderPools[1].sellRate),
+                        ticks
+                    );
+
+                // update order pools
+                self.orderPools[0].earningsFactorAtInterval[nextExpirationTimestamp] = earningsFactorPool0;
+                self.orderPools[1].earningsFactorAtInterval[nextExpirationTimestamp] = earningsFactorPool1;
+
                 prevTimestamp = nextExpirationTimestamp; // if we did a calculation, update prevTimestamp
             }
             nextExpirationTimestamp += self.expirationInterval;
@@ -187,32 +202,71 @@ library TWAMM {
         }
     }
 
-    function executeTWAMMAtInterval(
+    function calculateTWAMMExecutionUpdates(
         uint256 startingTimestamp,
         uint256 endingTimeStamp,
         PoolParamsOnExecute memory poolParams,
         OrderPoolParamsOnExecute memory orderPoolParams,
         mapping(int24 => Tick.Info) storage ticks
-    ) private {
-        // TODO: Update Order Pools (earningsFactor vars)
-    }
-
-    function calculateTWAMMExecutionUpdates(
-        PoolParamsOnExecute memory params,
-        mapping(int24 => Tick.Info) storage ticks
     )
-        private
+        internal
         returns (
+            uint160 sqrtPriceX96,
             uint256 earningsFactorPool0,
-            uint256 earningsFactorPool1,
-            int24 newTick,
-            uint256 fee0,
-            uint256 fee1
+            uint256 earningsFactorPool1
         )
     {
-        // TODO: calculate and return numbers that guide changes to OrderPools and Pool
         // https://www.desmos.com/calculator/yr3qvkafvy
-        // 0_o
+        // TODO: Need to incorporate ticks + update TWAP as well + refine math
+        bytes16 sqrtSellRatioX96 = orderPoolParams
+            .orderPool1SellRate
+            .fromUInt()
+            .div(orderPoolParams.orderPool0SellRate.fromUInt())
+            .sqrt()
+            .mul(FixedPoint96.Q96.fromUInt());
+        bytes16 sqrtSellRateX96 = orderPoolParams
+            .orderPool0SellRate
+            .fromUInt()
+            .mul(orderPoolParams.orderPool1SellRate.fromUInt())
+            .sqrt()
+            .mul(FixedPoint96.Q96.fromUInt());
+        bytes16 sqrtSellRate = orderPoolParams
+            .orderPool0SellRate
+            .fromUInt()
+            .mul(orderPoolParams.orderPool1SellRate.fromUInt())
+            .sqrt();
+        bytes16 time = (endingTimeStamp - startingTimestamp).fromUInt();
+
+        // corrrect
+        bytes16 c = sqrtSellRatioX96.sub(poolParams.sqrtPriceX96.fromUInt()).div(
+            sqrtSellRatioX96.add(poolParams.sqrtPriceX96.fromUInt())
+        );
+        // correct
+        bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(time).div(poolParams.liquidity.fromUInt());
+
+        // correct
+        bytes16 numerator = pow.exp().sub(c);
+        bytes16 denominator = pow.exp().add(c);
+
+        bytes16 newSqrtPriceX96 = sqrtSellRatioX96.mul(numerator).div(denominator);
+
+        console.log('time:');
+        console.log(time.toUInt());
+
+        console.log('c:');
+        console.logInt(c.mul(uint256(100000).fromUInt()).toInt());
+
+        console.log('pow:');
+        console.log(pow.mul(uint256(100000).fromUInt()).toUInt());
+
+        console.log('final: ');
+        console.log(newSqrtPriceX96.toUInt());
+
+        sqrtPriceX96 = newSqrtPriceX96.toUInt().toUint160();
+
+        // TODO: need v3 calculation for the amounts that have come out of the pool.
+        earningsFactorPool0 = 1111111;
+        earningsFactorPool1 = 2222222;
     }
 
     function calculateCancellationAmounts(Order memory order)

@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TWAMM #cancelLongTermOrder gas 1`] = `34980`;
+
+exports[`TWAMM #submitLongTermOrder gas 1`] = `160747`;
