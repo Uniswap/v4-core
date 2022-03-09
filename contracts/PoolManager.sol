@@ -58,12 +58,19 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => PositionAndDelta) public override tokenDelta;
 
+    /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
+    ///     more than 256 tokens.
+    uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
+
+    /// @dev Used to represent an unset tokens touched
+    IERC20Minimal private constant UNSET = IERC20Minimal(address(1));
+
     /// @dev Initialize all the slots so we only do dirty writes
     constructor() {
         lockedBy = address(1);
         unchecked {
-            for (uint256 i; i < 256; i++) {
-                tokensTouched[i] = IERC20Minimal(address(1));
+            for (uint256 i; i < MAX_TOKENS_TOUCHED; i++) {
+                tokensTouched[i] = UNSET;
             }
         }
     }
@@ -79,7 +86,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             for (uint256 i; i < numTokensTouched; i++) {
                 if (tokenDelta[tokensTouched[i]].delta != 0)
                     revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
-                tokensTouched[i] = IERC20Minimal(address(1));
+                tokensTouched[i] = UNSET;
             }
         }
         lockedBy = address(1);
@@ -98,7 +105,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         slot = pd.slot;
 
         if (slot == 0 && tokensTouched[slot] != token) {
-            require(len < type(uint8).max);
+            require(len < MAX_TOKENS_TOUCHED);
             slot = uint8(numTokensTouched++);
             pd.slot = slot;
             tokensTouched[len] = token;
