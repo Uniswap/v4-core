@@ -83,7 +83,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         unchecked {
-            for (uint256 i; i < numTokensTouched; i++) {
+            uint256 len = numTokensTouched;
+            for (uint256 i; i < len; i++) {
                 if (tokenDelta[tokensTouched[i]].delta != 0)
                     revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
                 tokensTouched[i] = UNSET;
