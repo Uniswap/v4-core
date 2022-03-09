@@ -95,12 +95,14 @@ describe('TWAMM', () => {
     })
 
     it('gas', async () => {
-      await snapshotGasCost(twamm.submitLongTermOrder({
-        zeroForOne,
-        owner,
-        amountIn,
-        expiration,
-      }))
+      await snapshotGasCost(
+        twamm.submitLongTermOrder({
+          zeroForOne,
+          owner,
+          amountIn,
+          expiration,
+        })
+      )
     })
   })
 
@@ -160,7 +162,7 @@ describe('TWAMM', () => {
           },
           {
             orderPool0SellRate,
-            orderPool1SellRate
+            orderPool1SellRate,
           }
         )
       })
