@@ -40,6 +40,9 @@ interface IPoolManager {
     /// @notice Represents the address that has currently locked the pool
     function lockedBy() external view returns (address);
 
+    /// @notice The number of tokens set in the transient tokensTouched array
+    function numTokensTouched() external view returns (uint96);
+
     /// @notice The array of tokens touched in the context of the current lock. Never more than 256 elements
     function tokensTouched(uint256 index) external view returns (IERC20Minimal);
 
