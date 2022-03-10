@@ -161,7 +161,7 @@ library TWAMM {
         PoolParamsOnExecute memory poolParams,
         mapping(int24 => Tick.Info) storage ticks
     ) internal {
-        // TODO: return numbers that will guide the new pool state...update that in pool or pool manager.
+        // TODO: (cleanup) return numbers that will guide the new pool state...update that in pool or pool manager.
         // ideally if ticks are needed, would just be for read purposes
 
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
@@ -174,8 +174,6 @@ library TWAMM {
                 self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                 self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
             ) {
-                // TODO: calculate updates within this timeInterval
-
                 (
                     uint160 newSqrtPriceX96,
                     uint256 earningsFactorPool0,
@@ -189,16 +187,29 @@ library TWAMM {
                     );
 
                 // update order pools
-                self.orderPools[0].earningsFactorAtInterval[nextExpirationTimestamp] = earningsFactorPool0;
-                self.orderPools[1].earningsFactorAtInterval[nextExpirationTimestamp] = earningsFactorPool1;
+                self.orderPools[0].earningsFactorAtInterval[nextExpirationTimestamp] += earningsFactorPool0;
+                self.orderPools[1].earningsFactorAtInterval[nextExpirationTimestamp] += earningsFactorPool1;
+                self.orderPools[0].sellRate -= self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp];
+                self.orderPools[1].sellRate -= self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp];
 
+                poolParams.sqrtPriceX96 = newSqrtPriceX96; // update pool price for next iteration
                 prevTimestamp = nextExpirationTimestamp; // if we did a calculation, update prevTimestamp
             }
             nextExpirationTimestamp += self.expirationInterval;
         }
 
         if (prevTimestamp != block.timestamp) {
-            // TODO: calculate updates within this timeInterval
+            (
+                uint160 newSqrtPriceX96,
+                uint256 earningsFactorPool0,
+                uint256 earningsFactorPool1
+            ) = calculateTWAMMExecutionUpdates(
+                    prevTimestamp,
+                    nextExpirationTimestamp,
+                    poolParams,
+                    OrderPoolParamsOnExecute(self.orderPools[0].sellRate, self.orderPools[1].sellRate),
+                    ticks
+                );
         }
     }
 
@@ -224,25 +235,20 @@ library TWAMM {
             .div(orderPoolParams.orderPool0SellRate.fromUInt())
             .sqrt()
             .mul(FixedPoint96.Q96.fromUInt());
-        bytes16 sqrtSellRateX96 = orderPoolParams
-            .orderPool0SellRate
-            .fromUInt()
-            .mul(orderPoolParams.orderPool1SellRate.fromUInt())
-            .sqrt()
-            .mul(FixedPoint96.Q96.fromUInt());
         bytes16 sqrtSellRate = orderPoolParams
             .orderPool0SellRate
             .fromUInt()
             .mul(orderPoolParams.orderPool1SellRate.fromUInt())
             .sqrt();
-        bytes16 time = (endingTimeStamp - startingTimestamp).fromUInt();
 
         // corrrect
         bytes16 c = sqrtSellRatioX96.sub(poolParams.sqrtPriceX96.fromUInt()).div(
             sqrtSellRatioX96.add(poolParams.sqrtPriceX96.fromUInt())
         );
         // correct
-        bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(time).div(poolParams.liquidity.fromUInt());
+        bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul((endingTimeStamp - startingTimestamp).fromUInt()).div(
+            poolParams.liquidity.fromUInt()
+        );
 
         // correct
         bytes16 numerator = pow.exp().sub(c);
@@ -250,8 +256,7 @@ library TWAMM {
 
         bytes16 newSqrtPriceX96 = sqrtSellRatioX96.mul(numerator).div(denominator);
 
-        console.log('time:');
-        console.log(time.toUInt());
+        // tracking intermediate calculations here: https://www.desmos.com/calculator/rjcdwnaoja
 
         console.log('c:');
         console.logInt(c.mul(uint256(100000).fromUInt()).toInt());
@@ -262,11 +267,11 @@ library TWAMM {
         console.log('final: ');
         console.log(newSqrtPriceX96.toUInt());
 
+        // TODO: For now give sold amount as earnings to opposite pool. Then take amount out from after swap and assign that
+        // to the corresponding pool. (unless I can get that number amountOut through pure calculation but seems hard)
+        earningsFactorPool0 = (endingTimeStamp - startingTimestamp) * orderPoolParams.orderPool1SellRate;
+        earningsFactorPool1 = (endingTimeStamp - startingTimestamp) * orderPoolParams.orderPool0SellRate;
         sqrtPriceX96 = newSqrtPriceX96.toUInt().toUint160();
-
-        // TODO: need v3 calculation for the amounts that have come out of the pool.
-        earningsFactorPool0 = 1111111;
-        earningsFactorPool1 = 2222222;
     }
 
     function calculateCancellationAmounts(Order memory order)
