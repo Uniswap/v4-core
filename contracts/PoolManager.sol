@@ -41,43 +41,64 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             .increaseObservationCardinalityNext(observationCardinalityNext);
     }
 
-    /// @notice Represents the address that has currently locked the pool
+    /// @inheritdoc IPoolManager
     address public override lockedBy;
+    /// @inheritdoc IPoolManager
+    uint96 public override numTokensTouched;
 
-    /// @notice All the latest tracked balances of tokens
+    /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
-    /// @notice Internal transient enumerable set
-    IERC20Minimal[] public override tokensTouched;
+    /// @inheritdoc IPoolManager
+    IERC20Minimal[256] public override tokensTouched;
     struct PositionAndDelta {
         uint8 slot;
         int248 delta;
     }
+    /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => PositionAndDelta) public override tokenDelta;
 
+    /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
+    ///     more than 256 tokens.
+    uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
+
+    /// @dev Used to represent an unset tokens touched
+    IERC20Minimal private constant UNSET = IERC20Minimal(address(1));
+
+    /// @dev Initialize all the slots so we only do dirty writes
+    constructor() {
+        lockedBy = address(1);
+        unchecked {
+            for (uint256 i; i < MAX_TOKENS_TOUCHED; i++) {
+                tokensTouched[i] = UNSET;
+            }
+        }
+    }
+
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        require(lockedBy == address(0));
+        require(lockedBy == address(1));
         lockedBy = msg.sender;
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         unchecked {
-            for (uint256 i = 0; i < tokensTouched.length; i++) {
+            uint256 len = numTokensTouched;
+            for (uint256 i; i < len; i++) {
                 if (tokenDelta[tokensTouched[i]].delta != 0)
                     revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
-                delete tokenDelta[tokensTouched[i]];
+                tokensTouched[i] = UNSET;
             }
         }
-        delete tokensTouched;
-        delete lockedBy;
+        lockedBy = address(1);
+        numTokensTouched = 0;
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
     function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
-        uint256 len = tokensTouched.length;
+        uint256 len = numTokensTouched;
         if (len == 0) {
-            tokensTouched.push(token);
+            tokensTouched[numTokensTouched = 1] = token;
             return 0;
         }
 
@@ -85,10 +106,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         slot = pd.slot;
 
         if (slot == 0 && tokensTouched[slot] != token) {
-            require(len < type(uint8).max);
-            slot = uint8(len);
+            require(len < MAX_TOKENS_TOUCHED);
+            slot = uint8(numTokensTouched++);
             pd.slot = slot;
-            tokensTouched.push(token);
+            tokensTouched[len] = token;
         }
     }
 
