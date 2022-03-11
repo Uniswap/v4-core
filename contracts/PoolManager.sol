@@ -18,7 +18,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     using Pool for *;
 
     mapping(bytes32 => Pool.State) public pools;
-    
+
     /// @dev Initialize all the slots so we only do dirty writes
     constructor() ERC1155('') {
         lockedBy = address(1);
