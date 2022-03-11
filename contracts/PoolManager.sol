@@ -211,7 +211,11 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     }
 
     /// @notice Called by the user to pay what is owed from their ERC1155 balance
-    function burn(IERC20Minimal token, address from, uint256 amount) external noDelegateCall onlyByLocker {
+    function burn(
+        IERC20Minimal token,
+        address from,
+        uint256 amount
+    ) external noDelegateCall onlyByLocker {
         if (from != msg.sender && !isApprovedForAll(from, msg.sender)) revert NotApprovedToBurn();
         _burn(from, uint256(uint160(address((token)))), amount);
         _accountDelta(token, -(amount.toInt256()));
