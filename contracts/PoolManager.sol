@@ -61,7 +61,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        require(lockedBy == address(1));
+        require(lockedBy == address(0));
         lockedBy = msg.sender;
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
