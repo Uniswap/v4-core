@@ -41,61 +41,71 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             .increaseObservationCardinalityNext(observationCardinalityNext);
     }
 
-    /// @notice Represents the address that has currently locked the pool
-    address public override lockedBy;
-
-    /// @notice All the latest tracked balances of tokens
+    /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
-    /// @notice Internal transient enumerable set
-    IERC20Minimal[] public override tokensTouched;
+    ////////////////// transient ////////////////////////
+    address[] public lockedBy;
     struct PositionAndDelta {
         uint8 slot;
         int248 delta;
     }
-    mapping(IERC20Minimal => PositionAndDelta) public override tokenDelta;
+    struct LockedState {
+        IERC20Minimal[] tokensTouched;
+        mapping(IERC20Minimal => PositionAndDelta) tokenDelta;
+    }
+    mapping(uint256 => LockedState) lockedStates;
+    ////////////////// transient ////////////////////////
+
+    /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
+    ///     more than 256 tokens.
+    uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        require(lockedBy == address(0));
-        lockedBy = msg.sender;
+        uint256 id = lockedBy.length;
+        lockedBy.push(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         unchecked {
-            for (uint256 i = 0; i < tokensTouched.length; i++) {
-                if (tokenDelta[tokensTouched[i]].delta != 0)
-                    revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
-                delete tokenDelta[tokensTouched[i]];
+            LockedState storage lockedState = lockedStates[id];
+            uint256 len = lockedState.tokensTouched.length;
+            for (uint256 i; i < len; i++) {
+                PositionAndDelta storage pd = lockedState.tokenDelta[lockedState.tokensTouched[i]];
+                if (pd.delta != 0) revert TokenNotSettled(lockedState.tokensTouched[i], pd.delta);
+                pd.slot = 0;
+                lockedState.tokensTouched[i] = IERC20Minimal(address(0));
             }
         }
-        delete tokensTouched;
-        delete lockedBy;
+
+        lockedBy.pop();
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
     function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
-        uint256 len = tokensTouched.length;
+        LockedState storage lockedState = lockedStates[lockedBy.length - 1];
+        uint256 len = lockedState.tokensTouched.length;
         if (len == 0) {
-            tokensTouched.push(token);
+            lockedState.tokensTouched.push(token);
             return 0;
         }
 
-        PositionAndDelta storage pd = tokenDelta[token];
+        PositionAndDelta storage pd = lockedState.tokenDelta[token];
         slot = pd.slot;
 
-        if (slot == 0 && tokensTouched[slot] != token) {
-            require(len < type(uint8).max);
+        if (slot == 0 && lockedState.tokensTouched[slot] != token) {
+            require(len < MAX_TOKENS_TOUCHED);
             slot = uint8(len);
             pd.slot = slot;
-            tokensTouched.push(token);
+            lockedState.tokensTouched.push(token);
         }
     }
 
     function _accountDelta(IERC20Minimal token, int256 delta) internal {
         if (delta == 0) return;
         _addTokenToSet(token);
-        tokenDelta[token].delta += int248(delta);
+        lockedStates[lockedBy.length - 1].tokenDelta[token].delta += int248(delta);
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
@@ -105,7 +115,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     modifier onlyByLocker() {
-        if (msg.sender != lockedBy) revert LockedBy(lockedBy);
+        address locker = lockedBy[lockedBy.length - 1];
+        if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
 
