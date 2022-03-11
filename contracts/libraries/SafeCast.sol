@@ -25,5 +25,4 @@ library SafeCast {
         require(y < 2**255);
         z = int256(y);
     }
-
 }

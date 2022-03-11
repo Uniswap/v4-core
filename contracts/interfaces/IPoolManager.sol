@@ -98,7 +98,11 @@ interface IPoolManager {
     function settle(IERC20Minimal token) external returns (uint256 paid);
 
     /// @notice Called to pay an amount that is owed from an address' ERC1155 balance
-    function burn(IERC20Minimal token, address from, uint256 amount) external;
+    function burn(
+        IERC20Minimal token,
+        address from,
+        uint256 amount
+    ) external;
 
     /// @notice Update the protocol fee for a given pool
     function setFeeProtocol(PoolKey calldata key, uint8 feeProtocol) external returns (uint8 feeProtocolOld);
