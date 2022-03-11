@@ -17,7 +17,8 @@ contract PoolSwapTest is ILockCallback {
 
     struct CallbackData {
         address sender;
-        bool takeTokens;
+        bool withdrawTokens;
+        bool settleUsingTransfer;
         IPoolManager.PoolKey key;
         IPoolManager.SwapParams params;
     }
@@ -25,10 +26,11 @@ contract PoolSwapTest is ILockCallback {
     function swap(
         IPoolManager.PoolKey memory key,
         IPoolManager.SwapParams memory params,
-        bool takeTokens
+        bool withdrawTokens,
+        bool settleUsingTransfer
     ) external returns (Pool.BalanceDelta memory delta) {
         delta = abi.decode(
-            manager.lock(abi.encode(CallbackData(msg.sender, takeTokens, key, params))),
+            manager.lock(abi.encode(CallbackData(msg.sender, withdrawTokens, settleUsingTransfer, key, params))),
             (Pool.BalanceDelta)
         );
     }
@@ -42,21 +44,25 @@ contract PoolSwapTest is ILockCallback {
 
         if (data.params.zeroForOne) {
             if (delta.amount0 > 0) {
-                data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
-                manager.settle(data.key.token0);
+                if (data.settleUsingTransfer) {
+                    data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
+                    manager.settle(data.key.token0);
+                } else manager.burn(data.key.token0, data.sender, uint256(delta.amount0));
             }
             if (delta.amount1 < 0) {
-                if (data.takeTokens) manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
-                else manager.mintDelta(data.key.token1, data.sender, uint256(-delta.amount1));
+                if (data.withdrawTokens) manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
+                else manager.mint(data.key.token1, data.sender, uint256(-delta.amount1));
             }
         } else {
             if (delta.amount1 > 0) {
-                data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
-                manager.settle(data.key.token1);
+                if (data.settleUsingTransfer) {
+                    data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
+                    manager.settle(data.key.token1);
+                } else manager.burn(data.key.token1, data.sender, uint256(delta.amount1));
             }
             if (delta.amount0 < 0) {
-                if (data.takeTokens) manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
-                else manager.mintDelta(data.key.token0, data.sender, uint256(-delta.amount0));
+                if (data.withdrawTokens) manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+                else manager.mint(data.key.token0, data.sender, uint256(-delta.amount0));
             }
         }
 

@@ -26,7 +26,4 @@ library SafeCast {
         z = int256(y);
     }
 
-    function toUint256(address y) internal pure returns (uint256 z) {
-        z = uint256(uint160(y));
-    }
 }

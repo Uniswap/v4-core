@@ -54,8 +54,8 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     /// @notice Internal transient enumerable set
     IERC20Minimal[] public override tokensTouched;
 
-    // @param slot The index of the tokensTouched array that this token is stored at
-    // @param delta The amount of token the locker owes to the protocol. If it is negative, the contract owes the locker instead.
+    // @member slot The index of the tokensTouched array that this token is stored at
+    // @member delta The amount of token the locker owes to the protocol. If it is negative, the contract owes the locker instead.
     struct PositionAndDelta {
         uint8 slot;
         int248 delta;
@@ -173,13 +173,13 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     }
 
     /// @notice Called by the user to move value into ERC1155 balance
-    function mintDelta(
+    function mint(
         IERC20Minimal token,
         address to,
         uint256 amount
     ) external override noDelegateCall onlyByLocker {
         _accountDelta(token, amount.toInt256());
-        _mint(to, address(token).toUint256(), amount, '');
+        _mint(to, uint256(uint160(address(token))), amount, '');
     }
 
     /// @notice Called by the user to pay what is owed
@@ -192,8 +192,9 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     }
 
     /// @notice Called by the user to pay what is owed from their ERC1155 balance
-    function settleWithBalance(IERC20Minimal token, uint256 amount) external noDelegateCall onlyByLocker {
-        _burn(msg.sender, address(token).toUint256(), amount);
+    function burn(IERC20Minimal token, address from, uint256 amount) external noDelegateCall onlyByLocker {
+        if (from != msg.sender && !isApprovedForAll(from, msg.sender)) revert NotApprovedToBurn();
+        _burn(from, uint256(uint160(address((token)))), amount);
         _accountDelta(token, -(amount.toInt256()));
     }
 

@@ -2,12 +2,12 @@
 
 exports[`PoolManager #initialize gas cost 1`] = `70910`;
 
-exports[`PoolManager #lock gas overhead of no-op lock 1`] = `41835`;
+exports[`PoolManager #lock gas overhead of no-op lock 1`] = `41852`;
 
-exports[`PoolManager #mint gas cost 1`] = `309860`;
+exports[`PoolManager #mint gas cost 1`] = `309842`;
 
-exports[`PoolManager #swap gas 1`] = `70834`;
+exports[`PoolManager #swap gas 1`] = `71100`;
 
-exports[`PoolManager #swap gas for swap against liquidity 1`] = `203074`;
+exports[`PoolManager #swap gas for swap against liquidity 1`] = `203352`;
 
-exports[`PoolManager bytecode size 1`] = `26327`;
+exports[`PoolManager bytecode size 1`] = `26418`;

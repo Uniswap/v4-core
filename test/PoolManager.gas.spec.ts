@@ -78,6 +78,7 @@ describe('PoolManager gas tests', () => {
               amountSpecified: amount,
               sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
             },
+            true,
             true
           )
         }
@@ -89,6 +90,7 @@ describe('PoolManager gas tests', () => {
               amountSpecified: MaxUint128,
               sqrtPriceLimitX96: sqrtPriceX96,
             },
+            true,
             true
           )
         }
@@ -100,6 +102,7 @@ describe('PoolManager gas tests', () => {
               amountSpecified: MaxUint128,
               sqrtPriceLimitX96: sqrtPriceX96,
             },
+            true,
             true
           )
         }
