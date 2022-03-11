@@ -18,8 +18,16 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     using Pool for *;
 
     mapping(bytes32 => Pool.State) public pools;
-
-    constructor() ERC1155('') {}
+    
+    /// @dev Initialize all the slots so we only do dirty writes
+    constructor() ERC1155('') {
+        lockedBy = address(1);
+        unchecked {
+            for (uint256 i; i < MAX_TOKENS_TOUCHED; i++) {
+                tokensTouched[i] = UNSET;
+            }
+        }
+    }
 
     /// @dev For mocking in unit tests
     function _blockTimestamp() internal view virtual returns (uint32) {
@@ -54,7 +62,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
     /// @inheritdoc IPoolManager
-    IERC20Minimal[] public override tokensTouched;
+    IERC20Minimal[256] public override tokensTouched;
 
     // @member slot The index of the tokensTouched array that this token is stored at
     // @member delta The amount of token the locker owes to the protocol. If it is negative, the contract owes the locker instead.
@@ -71,16 +79,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
 
     /// @dev Used to represent an unset tokens touched
     IERC20Minimal private constant UNSET = IERC20Minimal(address(1));
-
-    /// @dev Initialize all the slots so we only do dirty writes
-    constructor() {
-        lockedBy = address(1);
-        unchecked {
-            for (uint256 i; i < MAX_TOKENS_TOUCHED; i++) {
-                tokensTouched[i] = UNSET;
-            }
-        }
-    }
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
         require(lockedBy == address(1));
