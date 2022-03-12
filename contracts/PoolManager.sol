@@ -9,6 +9,7 @@ import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
+import {ITransientStorageProxy} from './ITransientStorageProxy.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
@@ -16,6 +17,19 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     using Pool for *;
 
     mapping(bytes32 => Pool.State) public pools;
+
+    ITransientStorageProxy public immutable transientStorage;
+
+    constructor() {
+        bytes
+            memory tspCode = hex'602480600c6000396000f3fe3680602014601457604014601257600080fd5b005b5060003533205c60005260206000f3';
+        address _transientStorage;
+        assembly {
+            let size := mload(tspCode)
+            _transientStorage := create(0, add(tspCode, 32), size)
+        }
+        transientStorage = ITransientStorageProxy(_transientStorage);
+    }
 
     /// @dev For mocking in unit tests
     function _blockTimestamp() internal view virtual returns (uint32) {
@@ -45,16 +59,16 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
     /// @inheritdoc IPoolManager
-    address public transient override lockedBy;
+    address public override lockedBy;
 
     /// @inheritdoc IPoolManager
-    IERC20Minimal[] public transient override tokensTouched;
+    IERC20Minimal[] public override tokensTouched;
     struct PositionAndDelta {
         uint8 slot;
         int248 delta;
     }
     /// @inheritdoc IPoolManager
-    mapping(IERC20Minimal => PositionAndDelta) public transient override tokenDelta;
+    mapping(IERC20Minimal => PositionAndDelta) public override tokenDelta;
 
     /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
     ///     more than 256 tokens.

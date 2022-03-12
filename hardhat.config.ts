@@ -7,20 +7,20 @@ import { subtask } from 'hardhat/config'
 import { TaskArguments } from 'hardhat/types'
 import { join as pathJoin } from 'path'
 
-subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async (args: TaskArguments, hre, runSuper) => {
-  if (args.solcVersion !== '0.8.12') {
-    throw new Error('need binary for solc version')
-  }
-
-  const compilerPath = pathJoin(__dirname, 'bin', 'solc')
-
-  return {
-    compilerPath,
-    isSolcJs: false,
-    version: '0.8.12',
-    longVersion: '0.8.12-develop.2022.3.5+commit.5aaf51f8.mod.Darwin.appleclang',
-  }
-})
+// subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async (args: TaskArguments, hre, runSuper) => {
+//   if (args.solcVersion !== '0.8.12') {
+//     throw new Error('need binary for solc version')
+//   }
+//
+//   const compilerPath = pathJoin(__dirname, 'bin', 'solc')
+//
+//   return {
+//     compilerPath,
+//     isSolcJs: false,
+//     version: '0.8.12',
+//     longVersion: '0.8.12-develop.2022.3.5+commit.5aaf51f8.mod.Darwin.appleclang',
+//   }
+// })
 
 export default {
   networks: {
