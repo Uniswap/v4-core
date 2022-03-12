@@ -52,6 +52,9 @@
     "typechain": "^4.0.0",
     "typescript": "^3.7.3"
   },
+  "resolutions": {
+    "@ethereumjs/vm": "tynes/ethereumjs-monorepo#eip1153"
+  },
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test"

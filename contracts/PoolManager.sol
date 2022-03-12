@@ -58,8 +58,12 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
+    bytes32 public constant LOCKED_BY_SLOT = bytes32(0);
+
     /// @inheritdoc IPoolManager
-    address public override lockedBy;
+    function lockedBy() public view returns (address) {
+        return address(bytes20(transientStorage.load(LOCKED_BY_SLOT)));
+    }
 
     /// @inheritdoc IPoolManager
     IERC20Minimal[] public override tokensTouched;
@@ -75,8 +79,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        require(lockedBy == address(0));
-        lockedBy = msg.sender;
+        require(lockedBy() == address(0));
+        transientStorage.store(LOCKED_BY_SLOT, bytes32(bytes20(msg.sender)));
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
@@ -88,6 +92,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
                     revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
             }
         }
+
+        transientStorage.store(LOCKED_BY_SLOT, bytes32(0));
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
@@ -122,7 +128,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     modifier onlyByLocker() {
-        if (msg.sender != lockedBy) revert LockedBy(lockedBy);
+        address lb = lockedBy();
+        if (msg.sender != lb) revert LockedBy(lb);
         _;
     }
 

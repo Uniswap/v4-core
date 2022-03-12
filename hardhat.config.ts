@@ -26,7 +26,6 @@ export default {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
-      forking: { url: 'https://eip1153.optimism.io/' },
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
