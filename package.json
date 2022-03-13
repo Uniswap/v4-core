@@ -57,6 +57,7 @@
   },
   "scripts": {
     "compile": "hardhat compile",
+    "compile-tsp": "./bin/solc --strict-assembly --optimize --optimize-runs=1000000 contracts/libraries/TransientStorageProxy.yul",
     "test": "hardhat test"
   }
 }

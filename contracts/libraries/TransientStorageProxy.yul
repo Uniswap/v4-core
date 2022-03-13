@@ -10,11 +10,11 @@ object "TransientStorageProxy" {
       code {
           switch calldatasize()
           case 32 {
-            mstore(0, tload(keccak256(caller(), calldataload(0))))
+            mstore(0, tload(calldataload(0)))
             return(0, 32)
           }
           case 64 {
-            tstore(calldataload(0), keccak256(caller(), calldataload(32)))
+            tstore(calldataload(0), calldataload(32))
           }
           default {
             revert(0, 0)

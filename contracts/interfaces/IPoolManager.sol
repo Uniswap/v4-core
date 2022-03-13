@@ -38,7 +38,7 @@ interface IPoolManager {
         returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew);
 
     /// @notice Represents the address that has currently locked the pool
-    function lockedBy() external view returns (address);
+    function lockedBy() external returns (address);
 
     /// @notice The array of tokens touched in the context of the current lock. Never more than 256 elements
     function tokensTouched(uint256 index) external view returns (IERC20Minimal);

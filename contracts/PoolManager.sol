@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.12;
 
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
@@ -9,26 +9,20 @@ import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
-import {ITransientStorageProxy} from './ITransientStorageProxy.sol';
+import {TransientStorageProxy, TransientStorage} from './libraries/TransientStorage.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
     using SafeCast for *;
     using Pool for *;
+    using TransientStorage for TransientStorageProxy;
 
     mapping(bytes32 => Pool.State) public pools;
 
-    ITransientStorageProxy public immutable transientStorage;
+    TransientStorageProxy public immutable transientStorage;
 
     constructor() {
-        bytes
-            memory tspCode = hex'602480600c6000396000f3fe3680602014601457604014601257600080fd5b005b5060003533205c60005260206000f3';
-        address _transientStorage;
-        assembly {
-            let size := mload(tspCode)
-            _transientStorage := create(0, add(tspCode, 32), size)
-        }
-        transientStorage = ITransientStorageProxy(_transientStorage);
+        transientStorage = TransientStorage.init();
     }
 
     /// @dev For mocking in unit tests
@@ -58,11 +52,15 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
-    bytes32 public constant LOCKED_BY_SLOT = bytes32(0);
+    uint256 public constant LOCKED_BY_SLOT = 0;
 
     /// @inheritdoc IPoolManager
-    function lockedBy() public view returns (address) {
-        return address(bytes20(transientStorage.load(LOCKED_BY_SLOT)));
+    function lockedBy() public returns (address) {
+        return address(uint160(transientStorage.load(LOCKED_BY_SLOT)));
+    }
+
+    function setLockedBy(address addr) internal {
+        transientStorage.store(LOCKED_BY_SLOT, uint256(uint160(addr)));
     }
 
     /// @inheritdoc IPoolManager
@@ -80,7 +78,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
         require(lockedBy() == address(0));
-        transientStorage.store(LOCKED_BY_SLOT, bytes32(bytes20(msg.sender)));
+        setLockedBy(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
@@ -93,7 +91,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             }
         }
 
-        transientStorage.store(LOCKED_BY_SLOT, bytes32(0));
+        setLockedBy(address(0));
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
