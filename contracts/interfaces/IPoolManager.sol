@@ -37,14 +37,14 @@ interface IPoolManager {
         external
         returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew);
 
-    /// @notice Represents the address that has currently locked the pool
-    function lockedBy() external returns (address);
-
-    /// @notice The array of tokens touched in the context of the current lock. Never more than 256 elements
-    function tokensTouched(uint256 index) external view returns (IERC20Minimal);
-
-    /// @notice The deltas for each token, as well as the index where it's located in the tokensTouched array
-    function tokenDelta(IERC20Minimal token) external view returns (uint8 index, int248 delta);
+    //    /// @notice Represents the address that has currently locked the pool
+    //    function lockedBy() external returns (address);
+    //
+    //    /// @notice The array of tokens touched in the context of the current lock. Never more than 256 elements
+    //    function tokensTouched(uint256 index) external view returns (IERC20Minimal);
+    //
+    //    /// @notice The deltas for each token, as well as the index where it's located in the tokensTouched array
+    //    function tokenDelta(IERC20Minimal token) external view returns (uint8 index, int248 delta);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
