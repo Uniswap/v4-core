@@ -54,6 +54,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     uint256 public constant LOCKED_BY_SLOT = uint256(keccak256('lockedBy'));
     uint256 public constant TOKENS_TOUCHED_SLOT = uint256(keccak256('tokensTouched'));
+    uint256 public constant TOKEN_DELTA_SLOT = uint256(keccak256('tokenDelta'));
 
     function lockedBy() public returns (address) {
         return address(uint160(transientStorage.load(LOCKED_BY_SLOT)));
@@ -77,15 +78,29 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         uint256 len = tokensTouchedLength();
         require(len < MAX_TOKENS_TOUCHED);
 
-        transientStorage.store(TOKENS_TOUCHED_SLOT, len + 1);
-        transientStorage.store(TOKENS_TOUCHED_SLOT + len, uint256(uint160(address(token))));
+        unchecked {
+            transientStorage.store(TOKENS_TOUCHED_SLOT, len + 1);
+            transientStorage.store(TOKENS_TOUCHED_SLOT + len + 1, uint256(uint160(address(token))));
+        }
     }
 
     struct PositionAndDelta {
         uint8 slot;
         int248 delta;
     }
-    mapping(IERC20Minimal => PositionAndDelta) public tokenDelta;
+
+    function tokenDelta(IERC20Minimal token) public returns (PositionAndDelta memory pd) {
+        uint256 storageSlot = uint256(keccak256(abi.encodePacked(TOKEN_DELTA_SLOT, token)));
+        uint256 value = transientStorage.load(storageSlot);
+        pd.slot = uint8(value >> 248);
+        pd.delta = int248(uint248(value & ~uint256(0xff << 248)));
+    }
+
+    function setTokenDelta(IERC20Minimal token, PositionAndDelta memory pd) internal {
+        uint256 storageSlot = uint256(keccak256(abi.encodePacked(TOKEN_DELTA_SLOT, token)));
+        uint256 value = (uint256(pd.slot) << 248) & uint256(uint248(pd.delta));
+        transientStorage.store(storageSlot, value);
+    }
 
     /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
     ///     more than 256 tokens.
@@ -102,7 +117,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             uint256 len = tokensTouchedLength();
             for (uint256 i; i < len; i++) {
                 IERC20Minimal token = tokensTouched(i);
-                if (tokenDelta[token].delta != 0) revert TokenNotSettled(token, tokenDelta[token].delta);
+                PositionAndDelta memory pd = tokenDelta(token);
+                if (pd.delta != 0) revert TokenNotSettled(token, pd.delta);
             }
         }
 
@@ -110,20 +126,17 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
-    function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
+    function _addTokenToSet(IERC20Minimal token) internal {
         uint256 len = tokensTouchedLength();
         if (len == 0) {
             pushTokenTouched(token);
-            return 0;
+            return;
         }
 
-        PositionAndDelta storage pd = tokenDelta[token];
-        slot = pd.slot;
+        PositionAndDelta memory pd = tokenDelta(token);
 
-        if (slot == 0 && tokensTouched(slot) != token) {
-            require(len < MAX_TOKENS_TOUCHED);
-            slot = uint8(len);
-            pd.slot = slot;
+        // we only need to add it if the slot is set to 0 and the token in slot 0 is not this token (i.e. slot 0 is not correct)
+        if (pd.slot == 0 && tokensTouched(0) != token) {
             pushTokenTouched(token);
         }
     }
@@ -131,7 +144,9 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     function _accountDelta(IERC20Minimal token, int256 delta) internal {
         if (delta == 0) return;
         _addTokenToSet(token);
-        tokenDelta[token].delta += int248(delta);
+        PositionAndDelta memory pd = tokenDelta(token);
+        pd.delta += int248(delta);
+        setTokenDelta(token, pd);
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
