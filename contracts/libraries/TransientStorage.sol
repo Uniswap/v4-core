@@ -7,7 +7,7 @@ library TransientStorage {
     function init() internal returns (TransientStorageProxy proxy) {
         // initCode == bytecode from `yarn compile-tsp`
         bytes
-            memory initCode = hex'602280600c6000396000f3fe3680602014601457604014601257600080fd5b005b506000355c60005260206000f3';
+            memory initCode = hex'602980600d600039806000f3fe366020811460135760408114602057600080fd5b600035b360005260206000f35b602035600035b450';
         assembly {
             let size := mload(initCode)
             proxy := create2(0, add(initCode, 32), size, 0)
