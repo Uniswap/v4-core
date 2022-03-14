@@ -2,11 +2,13 @@
 pragma solidity =0.8.12;
 
 import {TWAMM} from '../libraries/TWAMM.sol';
+import {Tick} from '../libraries/Tick.sol';
 
 contract TWAMMTest {
     using TWAMM for TWAMM.State;
 
     TWAMM.State public twamm;
+    mapping(int24 => Tick.Info) mockTicks;
 
     function initialize(uint256 orderInterval) external {
         twamm.initialize(orderInterval);
@@ -18,6 +20,28 @@ contract TWAMMTest {
 
     function cancelLongTermOrder(uint256 orderId) external {
         twamm.cancelLongTermOrder(orderId);
+    }
+
+    function calculateTWAMMExecutionUpdates(
+        uint256 startingTimestamp,
+        uint256 endingTimeStamp,
+        TWAMM.PoolParamsOnExecute memory poolParams,
+        TWAMM.OrderPoolParamsOnExecute memory orderPoolParams
+    )
+        external
+        returns (
+            uint160 sqrtPriceX96,
+            uint256 earningsFactorPool0,
+            uint256 earningsFactorPool1
+        )
+    {
+        TWAMM.calculateTWAMMExecutionUpdates(
+            startingTimestamp,
+            endingTimeStamp,
+            poolParams,
+            orderPoolParams,
+            mockTicks
+        );
     }
 
     function getOrder(uint256 orderId) external view returns (TWAMM.Order memory) {

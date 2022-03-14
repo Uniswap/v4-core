@@ -4,7 +4,7 @@ import { TWAMMTest } from '../typechain/TWAMMTest'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from './shared/snapshotGasCost'
-import { MaxUint128 } from './shared/utilities'
+import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
 
 describe('TWAMM', () => {
   let wallet: Wallet, other: Wallet
@@ -93,6 +93,17 @@ describe('TWAMM', () => {
       expect(orderPool.sellRate).to.equal(sellRate)
       expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(sellRate)
     })
+
+    it('gas', async () => {
+      await snapshotGasCost(
+        twamm.submitLongTermOrder({
+          zeroForOne,
+          owner,
+          amountIn,
+          expiration,
+        })
+      )
+    })
   })
 
   describe('#cancelLongTermOrder', () => {
@@ -123,6 +134,38 @@ describe('TWAMM', () => {
       expect(parseInt((await twamm.getOrderPool(0)).sellRate.toString())).to.be.greaterThan(0)
       await twamm.cancelLongTermOrder(orderId)
       expect((await twamm.getOrderPool(0)).sellRate).to.equal(0)
+    })
+
+    it('gas', async () => {
+      await snapshotGasCost(twamm.cancelLongTermOrder(orderId))
+    })
+  })
+
+  describe('#calculateTWAMMExecutionUpdates', () => {
+    describe('without any initialized ticks', () => {
+      it.only('returns the correct parameters', async () => {
+        const startTime = 0
+        const endTime = 20
+        const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+        const feeProtocol = 0
+        const liquidity = 50
+        const orderPool0SellRate = 2
+        const orderPool1SellRate = 4
+
+        const vals = await twamm.callStatic.calculateTWAMMExecutionUpdates(
+          startTime,
+          endTime,
+          {
+            feeProtocol,
+            sqrtPriceX96,
+            liquidity,
+          },
+          {
+            orderPool0SellRate,
+            orderPool1SellRate,
+          }
+        )
+      })
     })
   })
 })
