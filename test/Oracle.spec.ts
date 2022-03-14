@@ -281,7 +281,7 @@ describe('Oracle', () => {
 
       it('fails if an older observation does not exist', async () => {
         await oracle.initialize({ liquidity: 4, tick: 2, time: 5 })
-        await expect(observeSingle(1)).to.be.revertedWith('OLD')
+        await expect(observeSingle(1)).to.be.revertedWith('TargetPredatesOldestObservation(5, 4)')
       })
 
       it('does not fail across overflow boundary', async () => {
@@ -362,7 +362,7 @@ describe('Oracle', () => {
       it('single observation in past but not earlier than secondsAgo', async () => {
         await oracle.initialize({ liquidity: 4, tick: 2, time: 5 })
         await oracle.advanceTime(3)
-        await expect(observeSingle(4)).to.be.revertedWith('OLD')
+        await expect(observeSingle(4)).to.be.revertedWith('TargetPredatesOldestObservation(5, 4)')
       })
 
       it('single observation in past at exactly seconds ago', async () => {
@@ -573,9 +573,20 @@ describe('Oracle', () => {
           expect(secondsPerLiquidityCumulativeX128).to.eq('1593655751746395137220137744805447790318')
         })
         it('older than oldest reverts', async () => {
-          await expect(observeSingle(15)).to.be.revertedWith('OLD')
+          const oldestTimestamp = (await oracle.observations((await oracle.index()) + 1)).blockTimestamp
+
+          const maxTime = 2 ** 32
+          const secondsAgo = 15
+          let target = (await oracle.time()) - secondsAgo
+          if (target < 0) target = maxTime + target // if target negative, subtract on modulus.
+
+          await expect(observeSingle(secondsAgo)).to.be.revertedWith(
+            `TargetPredatesOldestObservation(${oldestTimestamp}, ${target})`
+          )
           await oracle.advanceTime(5)
-          await expect(observeSingle(20)).to.be.revertedWith('OLD')
+          await expect(observeSingle(20)).to.be.revertedWith(
+            `TargetPredatesOldestObservation(${oldestTimestamp}, ${target})`
+          )
         })
         it('oldest observation', async () => {
           const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(14)

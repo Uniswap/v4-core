@@ -5,6 +5,14 @@ import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
 
 interface IPoolManager {
+    /// @notice Thrown when trying to lock the contract when it is already locked
+    /// @param lockedBy current locker of the PoolManager
+    error AlreadyLocked(address lockedBy);
+
+    /// @notice Thrown when tokens touched has exceeded max of 256
+    /// @param token First token that could not be added to touched set due to max reached
+    error MaxTokensTouched(IERC20Minimal token);
+
     /// @notice Thrown when a token is owed to the caller or the caller owes a token
     /// @param token The token that is owed
     /// @param delta The amount that is owed by or to the locker

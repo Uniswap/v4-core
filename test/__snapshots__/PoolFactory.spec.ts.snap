@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`PoolFactory #createPool gas 1`] = `4670285`;
-
-exports[`PoolFactory factory bytecode size 1`] = `25347`;
-
-exports[`PoolFactory pool bytecode size 1`] = `22703`;
