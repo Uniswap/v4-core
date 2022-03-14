@@ -20,6 +20,45 @@ library Pool {
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
 
+    /// @notice Thrown when tickLower is not below tickUpper
+    /// @param tickLower The invalid tickLower
+    /// @param tickUpper The invalid tickUpper
+    error TicksMisordered(int24 tickLower, int24 tickUpper);
+
+    /// @notice Thrown when tickLower is less than min tick
+    /// @param tickLower The invalid tickLower
+    error TickLowerOutOfBounds(int24 tickLower);
+
+    /// @notice Thrown when tickUpper exceeds max tick
+    /// @param tickUpper The invalid tickUpper
+    error TickUpperOutOfBounds(int24 tickUpper);
+
+    /// @notice Thrown when interacting with an uninitialized tick that must be initialized
+    /// @param tick The uninitialized tick
+    error TickNotInitialized(int24 tick);
+
+    /// @notice Thrown when trying to initalize an already initialized pool
+    error PoolAlreadyInitialized();
+
+    /// @notice Thrown when trying to interact with a non-initialized pool
+    error PoolNotInitialized();
+
+    /// @notice Thrown when trying to swap amount of 0
+    error SwapAmountCannotBeZero();
+
+    /// @notice Thrown when sqrtPriceLimitX96 on a swap has already exceeded its limit
+    /// @param sqrtPriceCurrentX96 The invalid, already surpassed sqrtPriceLimitX96
+    /// @param sqrtPriceLimitX96 The invalid, already surpassed sqrtPriceLimitX96
+    error PriceLimitAlreadyExceeded(uint160 sqrtPriceCurrentX96, uint160 sqrtPriceLimitX96);
+
+    /// @notice Thrown when sqrtPriceLimitX96 lies outside of valid tick/price range
+    /// @param sqrtPriceLimitX96 The invalid, out-of-bounds sqrtPriceLimitX96
+    error PriceLimitOutOfBounds(uint160 sqrtPriceLimitX96);
+
+    /// @notice Thrown when trying to set an invalid protocol fee
+    /// @param feeProtocol The invalid feeProtocol
+    error InvalidFeeProtocol(uint8 feeProtocol);
+
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
     struct BalanceDelta {
@@ -65,9 +104,9 @@ library Pool {
 
     /// @dev Common checks for valid tick inputs.
     function checkTicks(int24 tickLower, int24 tickUpper) private pure {
-        require(tickLower < tickUpper, 'TLU');
-        require(tickLower >= TickMath.MIN_TICK, 'TLM');
-        require(tickUpper <= TickMath.MAX_TICK, 'TUM');
+        if (tickLower >= tickUpper) revert TicksMisordered(tickLower, tickUpper);
+        if (tickLower < TickMath.MIN_TICK) revert TickLowerOutOfBounds(tickLower);
+        if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
     struct SnapshotCumulativesInsideState {
@@ -110,7 +149,7 @@ library Pool {
                 lower.secondsOutside,
                 lower.initialized
             );
-            require(initializedLower);
+            if (!initializedLower) revert TickNotInitialized(tickLower);
 
             bool initializedUpper;
             (
@@ -124,7 +163,7 @@ library Pool {
                 upper.secondsOutside,
                 upper.initialized
             );
-            require(initializedUpper);
+            if (!initializedUpper) revert TickNotInitialized(tickUpper);
         }
 
         Slot0 memory _slot0 = self.slot0;
@@ -182,7 +221,7 @@ library Pool {
         uint32 time,
         uint160 sqrtPriceX96
     ) internal returns (int24 tick) {
-        require(self.slot0.sqrtPriceX96 == 0, 'AI');
+        if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
@@ -243,7 +282,7 @@ library Pool {
         internal
         returns (BalanceDelta memory result)
     {
-        require(self.slot0.sqrtPriceX96 != 0, 'I');
+        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
         checkTicks(params.tickLower, params.tickUpper);
 
@@ -425,18 +464,21 @@ library Pool {
 
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
     function swap(State storage self, SwapParams memory params) internal returns (BalanceDelta memory result) {
-        require(params.amountSpecified != 0, 'AS');
+        if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
-        require(slot0Start.sqrtPriceX96 != 0, 'I');
-        require(
-            params.zeroForOne
-                ? params.sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 &&
-                    params.sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO
-                : params.sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 &&
-                    params.sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO,
-            'SPL'
-        );
+        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
+        if (params.zeroForOne) {
+            if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96)
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
+            if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO)
+                revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
+        } else {
+            if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96)
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
+            if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO)
+                revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
+        }
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
@@ -614,10 +656,10 @@ library Pool {
     /// @notice Updates the protocol fee for a given pool
     function setFeeProtocol(State storage self, uint8 feeProtocol) internal returns (uint8 feeProtocolOld) {
         (uint8 feeProtocol0, uint8 feeProtocol1) = (feeProtocol >> 4, feeProtocol % 16);
-        require(
-            (feeProtocol0 == 0 || (feeProtocol0 >= 4 && feeProtocol0 <= 10)) &&
-                (feeProtocol1 == 0 || (feeProtocol1 >= 4 && feeProtocol1 <= 10))
-        );
+        if (
+            (feeProtocol0 != 0 && (feeProtocol0 < 4 || feeProtocol0 > 10)) ||
+            (feeProtocol1 != 0 && (feeProtocol1 < 4 || feeProtocol1 > 10))
+        ) revert InvalidFeeProtocol(feeProtocol);
         feeProtocolOld = self.slot0.feeProtocol;
         self.slot0.feeProtocol = feeProtocol;
     }

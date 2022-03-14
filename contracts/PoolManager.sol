@@ -76,7 +76,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     function pushTokenTouched(IERC20Minimal token) internal {
         uint256 len = tokensTouchedLength();
-        require(len < MAX_TOKENS_TOUCHED);
+        if (len >= type(uint8).max) revert MaxTokensTouched(token);
 
         unchecked {
             transientStorage.store(TOKENS_TOUCHED_SLOT, len + 1);
@@ -107,7 +107,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        require(lockedBy() == address(0));
+        if (lockedBy() != address(0)) revert AlreadyLocked(lockedBy());
         setLockedBy(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
