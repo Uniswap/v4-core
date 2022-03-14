@@ -241,7 +241,7 @@ library TWAMM {
             .mul(orderPoolParams.orderPool1SellRate.fromUInt())
             .sqrt();
 
-        // corrrect
+        // correct
         bytes16 c = sqrtSellRatioX96.sub(poolParams.sqrtPriceX96.fromUInt()).div(
             sqrtSellRatioX96.add(poolParams.sqrtPriceX96.fromUInt())
         );

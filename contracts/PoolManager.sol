@@ -218,6 +218,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (uint256 orderId)
     {
+        executeTWAMMOrders(key);
         return _getPool(key).twamm.submitLongTermOrder(params);
     }
 
@@ -226,6 +227,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (uint256 unsoldAmount, uint256 purchasedAmount)
     {
+        executeTWAMMOrders(key);
         (unsoldAmount, purchasedAmount) = _getPool(key).twamm.cancelLongTermOrder(orderId);
         // TODO: add to deltas (asumming EIP-1155)
     }
@@ -235,7 +237,22 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (uint256 earningsAmount)
     {
+        executeTWAMMOrders(key);
         return _getPool(key).twamm.claimEarnings(orderId);
         // TODO: add to deltas (asumming EIP-1155)
+    }
+
+    function executeTWAMMOrders(IPoolManager.PoolKey calldata key)
+        public
+        onlyByLocker
+        returns (uint256 earningsAmount)
+    {
+
+        Pool.State storage pool = _getPool(key);
+
+        pool.twamm.executeTWAMMOrders(
+            TWAMM.PoolParamsOnExecute(pool.slot0.feeProtocol, pool.slot0.sqrtPriceX96, pool.liquidity),
+            pool.ticks
+        );
     }
 }
