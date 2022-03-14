@@ -3,7 +3,7 @@ import { ethers } from 'hardhat'
 import { SwapMathTest } from '../typechain/SwapMathTest'
 
 import { expect } from './shared/expect'
-import snapshotGasCost from './shared/snapshotGasCost'
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, expandTo18Decimals } from './shared/utilities'
 import { SqrtPriceMathTest } from '../typechain/SqrtPriceMathTest'
 
