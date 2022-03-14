@@ -2,7 +2,7 @@ import { Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
 import { NoDelegateCallTest } from '../typechain/NoDelegateCallTest'
 import { expect } from './shared/expect'
-import snapshotGasCost from './shared/snapshotGasCost'
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 
 describe('NoDelegateCall', () => {
   let wallet: Wallet, other: Wallet

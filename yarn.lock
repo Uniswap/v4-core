@@ -1264,6 +1264,11 @@
   dependencies:
     "@types/yargs-parser" "*"
 
+"@uniswap/snapshot-gas-cost@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@uniswap/snapshot-gas-cost/-/snapshot-gas-cost-1.0.0.tgz#c774ad33081566594360d40258a258f65d614a7f"
+  integrity sha512-rsXnqMC1eJysCj+BTpql41d1ZeCt9iEIVvem+QxOXlJMKb8TPZgw31YggdwQRvAQl7cSsfT6pAR429V+NA/MGw==
+
 "@yarnpkg/lockfile@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@yarnpkg/lockfile/-/lockfile-1.1.0.tgz#e77a97fbd345b76d83245edcd17d393b1b41fb31"

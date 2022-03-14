@@ -1,14 +1,39 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Oracle #grow gas for growing by 1 slot when index != cardinality - 1 1`] = `49066`;
+exports[`Oracle #grow gas for growing by 1 slot when index != cardinality - 1 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 49066,
+}
+`;
 
-exports[`Oracle #grow gas for growing by 1 slot when index == cardinality - 1 1`] = `49066`;
+exports[`Oracle #grow gas for growing by 1 slot when index == cardinality - 1 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 49066,
+}
+`;
 
-exports[`Oracle #grow gas for growing by 10 slots when index != cardinality - 1 1`] = `249208`;
+exports[`Oracle #grow gas for growing by 10 slots when index != cardinality - 1 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 249208,
+}
+`;
 
-exports[`Oracle #grow gas for growing by 10 slots when index == cardinality - 1 1`] = `249208`;
+exports[`Oracle #grow gas for growing by 10 slots when index == cardinality - 1 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 249208,
+}
+`;
 
-exports[`Oracle #initialize gas 1`] = `67690`;
+exports[`Oracle #initialize gas 1`] = `
+Object {
+  "calldataByteLength": 100,
+  "gasUsed": 67690,
+}
+`;
 
 exports[`Oracle #observe before initialization gas for observe since most recent 1`] = `4613`;
 
