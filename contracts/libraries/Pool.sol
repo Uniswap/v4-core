@@ -29,13 +29,13 @@ library Pool {
     /// @param tickLower The invalid tickLower
     error TickLowerOutOfBounds(int24 tickLower);
 
-    /// @notice Thrown when tickUpper is too high and exceeds max tick
+    /// @notice Thrown when tickUpper exceeds max tick
     /// @param tickUpper The invalid tickUpper
     error TickUpperOutOfBounds(int24 tickUpper);
 
     /// @notice Thrown when interacting with an uninitialized tick that must be initialized
     /// @param tick The uninitialized tick
-    error TickNotInitalized(int24 tick);
+    error TickNotInitialized(int24 tick);
 
     /// @notice Thrown when trying to initalize an already initialized pool
     error PoolAlreadyInitialized();
@@ -47,14 +47,16 @@ library Pool {
     error SwapAmountCannotBeZero();
 
     /// @notice Thrown when sqrtPriceLimitX96 on a swap has already exceeded its limit
+    /// @param sqrtPriceCurrentX96 The invalid, already surpassed sqrtPriceLimitX96
     /// @param sqrtPriceLimitX96 The invalid, already surpassed sqrtPriceLimitX96
-    error PriceLimitAlreadyExceeded(uint160 sqrtPriceLimitX96, uint160 sqrtPriceCurrentX96);
+    error PriceLimitAlreadyExceeded(uint160 sqrtPriceCurrentX96, uint160 sqrtPriceLimitX96);
 
-    /// @notice Thrown when sqrtPriceLimitX96 lies outside of valid tick range
+    /// @notice Thrown when sqrtPriceLimitX96 lies outside of valid tick/price range
     /// @param sqrtPriceLimitX96 The invalid, out-of-bounds sqrtPriceLimitX96
     error PriceLimitOutOfBounds(uint160 sqrtPriceLimitX96);
 
     /// @notice Thrown when trying to set an invalid protocol fee
+    /// @param feeProtocol The invalid feeProtocol
     error InvalidFeeProtocol(uint8 feeProtocol);
 
     /// @notice Represents a change in the pool's balance of token0 and token1.
@@ -147,7 +149,7 @@ library Pool {
                 lower.secondsOutside,
                 lower.initialized
             );
-            if (!initializedLower) revert TickNotInitalized(tickLower);
+            if (!initializedLower) revert TickNotInitialized(tickLower);
 
             bool initializedUpper;
             (
@@ -161,7 +163,7 @@ library Pool {
                 upper.secondsOutside,
                 upper.initialized
             );
-            if (!initializedUpper) revert TickNotInitalized(tickUpper);
+            if (!initializedUpper) revert TickNotInitialized(tickUpper);
         }
 
         Slot0 memory _slot0 = self.slot0;
@@ -468,12 +470,12 @@ library Pool {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
         if (params.zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96)
-                revert PriceLimitAlreadyExceeded(params.sqrtPriceLimitX96, slot0Start.sqrtPriceX96);
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
             if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO)
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
         } else {
             if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96)
-                revert PriceLimitAlreadyExceeded(params.sqrtPriceLimitX96, slot0Start.sqrtPriceX96);
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
             if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO)
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
         }
