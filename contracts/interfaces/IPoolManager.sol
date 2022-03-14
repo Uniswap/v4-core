@@ -5,13 +5,6 @@ import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
 
 interface IPoolManager {
-    /// @notice Thrown when trying to configure a tickspacing that's not a positive integer
-    error InvalidTickSpacing();
-
-    /// @notice Thrown when configuring a fee tier that's already assigned a tickspacing
-    /// @param fee The configured fee amount
-    error FeeAlreadyConfigured(uint24 fee);
-
     /// @notice Thrown when trying to lock the contract when it is already locked
     /// @param lockedBy current locker of the PoolManager
     error AlreadyLocked(address lockedBy);

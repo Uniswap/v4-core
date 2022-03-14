@@ -25,7 +25,7 @@ library Pool {
     /// @param tickUpper The invalid tickUpper
     error TicksMisordered(int24 tickLower, int24 tickUpper);
 
-    /// @notice Thrown when tickLower is too low and recedes below min tick
+    /// @notice Thrown when tickLower is less than min tick
     /// @param tickLower The invalid tickLower
     error TickLowerOutOfBounds(int24 tickLower);
 

@@ -12,13 +12,13 @@ exports[`PoolManager gas tests fee is off #mint above current price new position
 
 exports[`PoolManager gas tests fee is off #mint above current price second position in same range 1`] = `167318`;
 
-exports[`PoolManager gas tests fee is off #mint around current price add to position after some time passes 1`] = `240920`;
+exports[`PoolManager gas tests fee is off #mint around current price add to position after some time passes 1`] = `240917`;
 
-exports[`PoolManager gas tests fee is off #mint around current price add to position existing 1`] = `233624`;
+exports[`PoolManager gas tests fee is off #mint around current price add to position existing 1`] = `233621`;
 
-exports[`PoolManager gas tests fee is off #mint around current price new position mint first in range 1`] = `385840`;
+exports[`PoolManager gas tests fee is off #mint around current price new position mint first in range 1`] = `385838`;
 
-exports[`PoolManager gas tests fee is off #mint around current price second position in same range 1`] = `233624`;
+exports[`PoolManager gas tests fee is off #mint around current price second position in same range 1`] = `233621`;
 
 exports[`PoolManager gas tests fee is off #mint below current price add to position after some time passes 1`] = `167995`;
 
@@ -34,27 +34,27 @@ exports[`PoolManager gas tests fee is off #snapshotCumulativesInside tick below 
 
 exports[`PoolManager gas tests fee is off #snapshotCumulativesInside tick inside 1`] = `39754`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `216715`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `216712`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block with no tick movement 1`] = `203907`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block with no tick movement 1`] = `203904`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `240920`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `240917`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `296004`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `296002`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `228786`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `228784`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 large swap crossing several initialized ticks after some time passes 1`] = `296004`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 large swap crossing several initialized ticks after some time passes 1`] = `296002`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 large swap crossing several initialized ticks second time after some time passes 1`] = `296004`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 large swap crossing several initialized ticks second time after some time passes 1`] = `296002`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `216715`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `216712`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block with no tick movement 1`] = `203996`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block with no tick movement 1`] = `203993`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `230043`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `230040`;
 
-exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `285101`;
+exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `285099`;
 
 exports[`PoolManager gas tests fee is on #increaseObservationCardinalityNext grow by 1 slot 1`] = `51197`;
 
@@ -68,13 +68,13 @@ exports[`PoolManager gas tests fee is on #mint above current price new position 
 
 exports[`PoolManager gas tests fee is on #mint above current price second position in same range 1`] = `167318`;
 
-exports[`PoolManager gas tests fee is on #mint around current price add to position after some time passes 1`] = `240920`;
+exports[`PoolManager gas tests fee is on #mint around current price add to position after some time passes 1`] = `240917`;
 
-exports[`PoolManager gas tests fee is on #mint around current price add to position existing 1`] = `233624`;
+exports[`PoolManager gas tests fee is on #mint around current price add to position existing 1`] = `233621`;
 
-exports[`PoolManager gas tests fee is on #mint around current price new position mint first in range 1`] = `385840`;
+exports[`PoolManager gas tests fee is on #mint around current price new position mint first in range 1`] = `385838`;
 
-exports[`PoolManager gas tests fee is on #mint around current price second position in same range 1`] = `233624`;
+exports[`PoolManager gas tests fee is on #mint around current price second position in same range 1`] = `233621`;
 
 exports[`PoolManager gas tests fee is on #mint below current price add to position after some time passes 1`] = `167995`;
 
@@ -90,24 +90,24 @@ exports[`PoolManager gas tests fee is on #snapshotCumulativesInside tick below 1
 
 exports[`PoolManager gas tests fee is on #snapshotCumulativesInside tick inside 1`] = `39754`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `221020`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `221017`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block with no tick movement 1`] = `208094`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block with no tick movement 1`] = `208092`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `245342`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `245340`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `300780`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `300777`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `233326`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `233324`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 large swap crossing several initialized ticks after some time passes 1`] = `300780`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 large swap crossing several initialized ticks after some time passes 1`] = `300777`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 large swap crossing several initialized ticks second time after some time passes 1`] = `300780`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 large swap crossing several initialized ticks second time after some time passes 1`] = `300777`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `221020`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `221017`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block with no tick movement 1`] = `208183`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block with no tick movement 1`] = `208180`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `234348`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `234345`;
 
-exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `289759`;
+exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `289756`;

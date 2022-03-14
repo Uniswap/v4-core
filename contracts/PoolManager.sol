@@ -85,7 +85,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         slot = pd.slot;
 
         if (slot == 0 && tokensTouched[slot] != token) {
-            if (len > type(uint8).max) revert MaxTokensTouched(token);
+            if (len >= type(uint8).max) revert MaxTokensTouched(token);
             slot = uint8(len);
             pd.slot = slot;
             tokensTouched.push(token);
