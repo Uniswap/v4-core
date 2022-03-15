@@ -54,7 +54,12 @@
     "typescript": "^3.7.3"
   },
   "resolutions": {
-    "@ethereumjs/vm": "tynes/ethereumjs-monorepo#eip1153"
+    "@ethereumjs/vm": "../ethereumjs-monorepo/packages/vm",
+    "@ethereumjs/block": "../ethereumjs-monorepo/packages/block",
+    "@ethereumjs/blockchain": "../ethereumjs-monorepo/packages/blockchain",
+    "@ethereumjs/common": "../ethereumjs-monorepo/packages/common",
+    "@ethereumjs/ethash": "../ethereumjs-monorepo/packages/ethash",
+    "@ethereumjs/tx": "../ethereumjs-monorepo/packages/tx"
   },
   "scripts": {
     "compile": "hardhat compile",
