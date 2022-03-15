@@ -32,7 +32,7 @@ library TransientStorage {
         assembly {
             mstore(0, slot)
             mstore(32, value)
-            if iszero(delegatecall(gas(), proxy, 0, 32, 0, 32)) {
+            if iszero(delegatecall(gas(), proxy, 0, 64, 0, 0)) {
                 revert(0, 0)
             }
         }
