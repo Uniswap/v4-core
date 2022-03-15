@@ -240,8 +240,6 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             amount0: -(amount0.toInt256()),
             amount1: -(amount1.toInt256())
         });
-
-        // Add to deltas (asumming EIP-1155)
         _accountPoolBalanceDelta(key, delta);
     }
 
@@ -250,10 +248,17 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (uint256 earningsAmount)
     {
+        Pool.State storage pool = _getPool(key);
+        uint160 sqrtPriceX96 = pool.slot0.sqrtPriceX96;
+        uint8 feeProtocol = pool.slot0.feeProtocol;
+        uint128 liquidity = pool.liquidity;
+        mapping(int24 => Tick.Info) storage ticks = pool.ticks;
+
+        TWAMM.PoolParamsOnExecute memory params = TWAMM.PoolParamsOnExecute(feeProtocol, sqrtPriceX96, liquidity);
+
         uint8 sellTokenIndex;
-        (earningsAmount, sellTokenIndex) = _getPool(key).twamm.claimEarnings(orderId);
+        (earningsAmount, sellTokenIndex) = _getPool(key).twamm.claimEarnings(orderId, params, ticks);
         IERC20Minimal buyToken = sellTokenIndex == 0 ? key.token1 : key.token0;
-        // Add to deltas (asumming EIP-1155)
         _accountDelta(buyToken, -(earningsAmount.toInt256()));
     }
 }

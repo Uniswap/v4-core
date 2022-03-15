@@ -136,21 +136,35 @@ library TWAMM {
 
     /// @notice Claim earnings from an ongoing or expired order
     /// @param orderId The ID of the order to be claimed
-    function claimEarnings(State storage self, uint256 orderId)
-        internal
-        returns (uint256 earningsAmount, uint8 sellTokenIndex)
-    {
+    function claimEarnings(
+        State storage self,
+        uint256 orderId,
+        PoolParamsOnExecute memory params,
+        mapping(int24 => Tick.Info) storage ticks
+    ) internal returns (uint256 earningsAmount, uint8 sellTokenIndex) {
+        // execute all virtual orders until current block
+        executeTWAMMOrders(self, params, ticks);
+
         Order memory order = self.orders[orderId];
         sellTokenIndex = order.sellTokenIndex;
         OrderPool storage orderPool = self.orderPools[sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
+            // console.log('earningsFactorAtExpiration', earningsFactorAtExpiration);
             // TODO: math to be refined
             earningsAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
+
+            // console.log('unclaimedFactor', order.unclaimedEarningsFactor);
+            // console.log('order.sellRate', order.sellRate);
+            // console.log('earningsAmount', earningsAmount);
+
+            // clear stake
+            self.orders[orderId].unclaimedEarningsFactor = 0;
         } else {
             // TODO: math to be refined
             earningsAmount = (orderPool.earningsFactor - order.unclaimedEarningsFactor) * order.sellRate;
+            //reset the earningsFactor
             self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactor;
         }
     }
@@ -239,6 +253,8 @@ library TWAMM {
     {
         // https://www.desmos.com/calculator/yr3qvkafvy
         // TODO: Need to incorporate ticks + update TWAP as well + refine math
+
+        // TODO: what if orderPool0SellRate is 0? - only swapping one direction
         bytes16 sqrtSellRatioX96 = orderPoolParams
             .orderPool1SellRate
             .fromUInt()

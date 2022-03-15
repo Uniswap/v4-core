@@ -6,7 +6,7 @@ import { expect } from './shared/expect'
 import snapshotGasCost from './shared/snapshotGasCost'
 import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
 
-describe('TWAMM', () => {
+describe.only('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
 
@@ -15,6 +15,10 @@ describe('TWAMM', () => {
     ;[wallet, other] = await (ethers as any).getSigners()
     loadFixture = waffle.createFixtureLoader([wallet, other])
   })
+
+  async function advanceTime(time: number) {
+    await ethers.provider.send('evm_mine', [time])
+  }
 
   beforeEach(async () => {
     twamm = await loadFixture(twammFixture)
@@ -143,8 +147,10 @@ describe('TWAMM', () => {
 
   describe('#calculateTWAMMExecutionUpdates', () => {
     describe('without any initialized ticks', () => {
-      it.only('returns the correct parameters', async () => {
+      it('returns the correct parameters', async () => {
         const startTime = 0
+        // TODO: a longer timestamp overflows
+        // 43315
         const endTime = 20
         const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
         const feeProtocol = 0
@@ -166,6 +172,70 @@ describe('TWAMM', () => {
           }
         )
       })
+    })
+  })
+
+  describe.skip('#claimEarnings', () => {
+    let orderId: BigNumber
+
+    const mockTicks = {}
+    const poolParams = { feeProtocol: 0, sqrtPriceX96: encodeSqrtPriceX96(1, 1), liquidity: 1000 }
+
+    beforeEach('create new longTermOrder', async () => {
+      orderId = await twamm.getNextId()
+
+      const zeroForOne = {
+        zeroForOne: true,
+        owner: wallet.address,
+        amountIn: BigNumber.from(`2${'0'.repeat(5)}`),
+        // 24 hours
+        expiration: (await ethers.provider.getBlock('latest')).timestamp + 86400,
+      }
+
+      const oneForZero = {
+        zeroForOne: false,
+        owner: wallet.address,
+        amountIn: BigNumber.from(`4${'0'.repeat(5)}`),
+        expiration: (await ethers.provider.getBlock('latest')).timestamp + 86400,
+      }
+
+      await twamm.initialize(10_000)
+      // TODO: test swaps in one direction
+      await twamm.submitLongTermOrder(zeroForOne)
+      await twamm.submitLongTermOrder(oneForZero)
+    })
+    it('should give correct earnings amount and have no unclaimed earnings', async () => {
+      const afterExpiration = (await ethers.provider.getBlock('latest')).timestamp + 86400
+      const expiration = (await twamm.getOrder(orderId)).expiration.toNumber()
+      expect(afterExpiration).to.be.greaterThan(expiration)
+
+      advanceTime(afterExpiration)
+
+      const tx = await twamm.claimEarnings(orderId, poolParams, mockTicks)
+      const tr = await tx.wait()
+
+      // console.log(tr.events![0].args)
+
+      const earningsAmount = tr.events![0].args![0]
+      const unclaimed = tr.events![0].args![1]!
+
+      // TODO: calculate expected earningsAmount
+      // expect(earningsAmount).to.be.greaterThan(0)
+      // expect(unclaimedEarnings).to.eq(0)
+    })
+
+    it('should give correct earningsAmount and have some unclaimed earnings', async () => {
+      const beforeExpiration = (await ethers.provider.getBlock('latest')).timestamp + 43200
+      advanceTime(beforeExpiration)
+      const tx = await twamm.claimEarnings(orderId, poolParams, mockTicks)
+      const tr = await tx.wait()
+
+      const earningsAmount = tr.events![0].args![0]
+      const unclaimed = tr.events![0].args![1]
+
+      // TODO: calculate expected earningsAmount
+      // expect(earningsAmount).to.greaterThan(0)
+      // expect(unclaimed).to.be.greaterThan(0)
     })
   })
 })
