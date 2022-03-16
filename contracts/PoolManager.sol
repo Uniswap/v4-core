@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
+import {IHooks} from './interfaces/callback/IHooks.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
@@ -14,6 +16,7 @@ import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 contract PoolManager is IPoolManager, NoDelegateCall {
     using SafeCast for *;
     using Pool for *;
+    using Hooks for IHooks;
 
     mapping(bytes32 => Pool.State) public pools;
 
@@ -27,8 +30,19 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
+    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick) {
+        require(address(key.hooks) == address(0), 'H');
         tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
+    }
+
+    /// @notice Initialize the state for a given pool ID
+    function initializeWithHooks(
+        IPoolManager.PoolKey memory key,
+        uint160 sqrtPriceX96,
+        IHooks.Params calldata hooksParams
+    ) external returns (int24 tick) {
+        require(key.hooks.validateHookAddress(hooksParams), 'HA');
+        return this.initialize(key, sqrtPriceX96);
     }
 
     /// @notice Increase the maximum number of stored observations for the pool's oracle
@@ -117,6 +131,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
+        if (key.hooks.shouldBeforeModifyPosition()) {
+            key.hooks.beforeModifyPosition(msg.sender, key, params);
+        }
+
         delta = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
@@ -130,6 +148,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         );
 
         _accountPoolBalanceDelta(key, delta);
+
+        if (key.hooks.shouldAfterModifyPosition()) {
+            key.hooks.afterModifyPosition(msg.sender, key, params);
+        }
     }
 
     function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
@@ -139,6 +161,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
+        if (key.hooks.shouldBeforeSwap()) {
+            key.hooks.beforeSwap(msg.sender, key, params);
+        }
+
         delta = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),
@@ -147,10 +173,15 @@ contract PoolManager is IPoolManager, NoDelegateCall {
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96
-            })
+            }),
+            key.hooks
         );
 
         _accountPoolBalanceDelta(key, delta);
+
+        if (key.hooks.shouldAfterSwap()) {
+            key.hooks.afterSwap(msg.sender, key, params);
+        }
     }
 
     /// @notice Called by the user to net out some value owed to the user

@@ -3,6 +3,7 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {IHooks} from './callback/IHooks.sol';
 
 interface IPoolManager {
     /// @notice Thrown when trying to lock the contract when it is already locked
@@ -32,6 +33,8 @@ interface IPoolManager {
         uint24 fee;
         /// @notice Ticks that involve positions must be a multiple of tick spacing
         int24 tickSpacing;
+        /// @notice Hook
+        IHooks hooks;
     }
 
     /// @notice Returns the reserves for a given ERC20 token
