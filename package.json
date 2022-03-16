@@ -54,12 +54,12 @@
     "typescript": "^3.7.3"
   },
   "resolutions": {
-    "@ethereumjs/vm": "../ethereumjs-monorepo/packages/vm",
-    "@ethereumjs/block": "../ethereumjs-monorepo/packages/block",
-    "@ethereumjs/blockchain": "../ethereumjs-monorepo/packages/blockchain",
-    "@ethereumjs/common": "../ethereumjs-monorepo/packages/common",
-    "@ethereumjs/ethash": "../ethereumjs-monorepo/packages/ethash",
-    "@ethereumjs/tx": "../ethereumjs-monorepo/packages/tx"
+    "@ethereumjs/vm": "link:../ethereumjs-monorepo/packages/vm",
+    "@ethereumjs/block": "link:../ethereumjs-monorepo/packages/block",
+    "@ethereumjs/blockchain": "link:../ethereumjs-monorepo/packages/blockchain",
+    "@ethereumjs/common": "link:../ethereumjs-monorepo/packages/common",
+    "@ethereumjs/ethash": "link:../ethereumjs-monorepo/packages/ethash",
+    "@ethereumjs/tx": "link:../ethereumjs-monorepo/packages/tx"
   },
   "scripts": {
     "compile": "hardhat compile",

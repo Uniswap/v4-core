@@ -366,62 +366,69 @@
     patch-package "^6.2.2"
     postinstall-postinstall "^2.1.0"
 
-"@ethereumjs/block@../ethereumjs-monorepo/packages/block", "@ethereumjs/block@^3.6.0", "@ethereumjs/block@^3.6.1":
-  version "3.6.1"
-  dependencies:
-    "@ethereumjs/common" "^2.6.2"
-    "@ethereumjs/tx" "^3.5.0"
-    ethereumjs-util "^7.1.4"
-    merkle-patricia-tree "^4.2.3"
+"@ethereumjs/block@^3.6.0":
+  version "0.0.0"
+  uid ""
 
-"@ethereumjs/blockchain@../ethereumjs-monorepo/packages/blockchain", "@ethereumjs/blockchain@^5.5.0", "@ethereumjs/blockchain@^5.5.1":
-  version "5.5.1"
-  dependencies:
-    "@ethereumjs/block" "^3.6.1"
-    "@ethereumjs/common" "^2.6.2"
-    "@ethereumjs/ethash" "^1.1.0"
-    debug "^4.3.3"
-    ethereumjs-util "^7.1.4"
-    level-mem "^5.0.1"
-    lru-cache "^5.1.1"
-    semaphore-async-await "^1.5.1"
+"@ethereumjs/block@^3.6.1":
+  version "0.0.0"
+  uid ""
 
-"@ethereumjs/common@../ethereumjs-monorepo/packages/common", "@ethereumjs/common@^2.6.0", "@ethereumjs/common@^2.6.2":
-  version "2.6.2"
-  dependencies:
-    crc-32 "^1.2.0"
-    ethereumjs-util "^7.1.4"
+"@ethereumjs/block@link:../ethereumjs-monorepo/packages/block":
+  version "0.0.0"
+  uid ""
 
-"@ethereumjs/ethash@../ethereumjs-monorepo/packages/ethash", "@ethereumjs/ethash@^1.1.0":
-  version "1.1.0"
-  dependencies:
-    "@ethereumjs/block" "^3.6.1"
-    "@types/levelup" "^4.3.0"
-    buffer-xor "^2.0.1"
-    ethereumjs-util "^7.1.4"
-    miller-rabin "^4.0.0"
+"@ethereumjs/blockchain@^5.5.0":
+  version "0.0.0"
+  uid ""
 
-"@ethereumjs/tx@../ethereumjs-monorepo/packages/tx", "@ethereumjs/tx@^3.4.0", "@ethereumjs/tx@^3.5.0":
-  version "3.5.0"
-  dependencies:
-    "@ethereumjs/common" "^2.6.2"
-    ethereumjs-util "^7.1.4"
+"@ethereumjs/blockchain@^5.5.1":
+  version "0.0.0"
+  uid ""
 
-"@ethereumjs/vm@../ethereumjs-monorepo/packages/vm", "@ethereumjs/vm@^5.6.0":
-  version "5.7.1"
-  dependencies:
-    "@ethereumjs/block" "^3.6.1"
-    "@ethereumjs/blockchain" "^5.5.1"
-    "@ethereumjs/common" "^2.6.2"
-    "@ethereumjs/tx" "^3.5.0"
-    async-eventemitter "^0.2.4"
-    core-js-pure "^3.0.1"
-    debug "^4.3.3"
-    ethereumjs-util "^7.1.4"
-    functional-red-black-tree "^1.0.1"
-    mcl-wasm "^0.7.1"
-    merkle-patricia-tree "^4.2.3"
-    rustbn.js "~0.2.0"
+"@ethereumjs/blockchain@link:../ethereumjs-monorepo/packages/blockchain":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/common@^2.6.0":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/common@^2.6.2":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/common@link:../ethereumjs-monorepo/packages/common":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/ethash@^1.1.0":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/ethash@link:../ethereumjs-monorepo/packages/ethash":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/tx@^3.4.0":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/tx@^3.5.0":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/tx@link:../ethereumjs-monorepo/packages/tx":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/vm@^5.6.0":
+  version "0.0.0"
+  uid ""
+
+"@ethereumjs/vm@link:../ethereumjs-monorepo/packages/vm":
+  version "0.0.0"
+  uid ""
 
 "@ethersproject/abi@5.0.0-beta.153":
   version "5.0.0-beta.153"
