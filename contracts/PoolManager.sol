@@ -119,9 +119,12 @@ contract PoolManager is IPoolManager, NoDelegateCall {
                 IERC20Minimal token = tokensTouched(i);
                 PositionAndDelta memory pd = tokenDelta(token);
                 if (pd.delta != 0) revert TokenNotSettled(token, pd.delta);
+                pd.slot = 0;
+                setTokenDelta(token, pd);
             }
         }
 
+        transientStorage.store(TOKENS_TOUCHED_SLOT, 0);
         setLockedBy(address(0));
     }
 
