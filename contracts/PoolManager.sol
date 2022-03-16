@@ -98,7 +98,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     function setTokenDelta(IERC20Minimal token, PositionAndDelta memory pd) internal {
         uint256 storageSlot = uint256(keccak256(abi.encodePacked(TOKEN_DELTA_SLOT, token)));
-        uint256 value = (uint256(pd.slot) << 248) & uint256(uint248(pd.delta));
+        uint256 value = (uint256(pd.slot) << 248) | uint256(uint248(pd.delta));
         transientStorage.store(storageSlot, value);
     }
 
