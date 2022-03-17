@@ -19,6 +19,8 @@ const createFixtureLoader = waffle.createFixtureLoader
 
 const { constants } = ethers
 
+const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
+
 describe('PoolManager', () => {
   let wallet: Wallet, other: Wallet
 
@@ -110,7 +112,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(10, 1)
       )
@@ -123,7 +125,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         })
       )
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
@@ -163,7 +165,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
-            hooks: '0x0000000000000000000000000000000000000000',
+            hooks: ADDRESS_ZERO,
           },
           encodeSqrtPriceX96(10, 1)
         )
@@ -180,7 +182,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
-            hooks: '0x0000000000000000000000000000000000000000',
+            hooks: ADDRESS_ZERO,
           },
           {
             tickLower: 0,
@@ -198,7 +200,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -209,7 +211,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         {
           tickLower: 0,
@@ -259,7 +261,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -271,7 +273,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
-            hooks: '0x0000000000000000000000000000000000000000',
+            hooks: ADDRESS_ZERO,
           },
           {
             tickLower: 0,
@@ -322,7 +324,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
-            hooks: '0x0000000000000000000000000000000000000000',
+            hooks: ADDRESS_ZERO,
           },
           {
             amountSpecified: 100,
@@ -339,7 +341,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -349,7 +351,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         {
           amountSpecified: 100,
@@ -396,7 +398,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -407,7 +409,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         {
           amountSpecified: 100,
@@ -423,7 +425,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
-            hooks: '0x0000000000000000000000000000000000000000',
+            hooks: ADDRESS_ZERO,
           },
           {
             amountSpecified: 100,
@@ -484,7 +486,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -494,7 +496,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         {
           tickLower: -120,
@@ -509,7 +511,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: '0x0000000000000000000000000000000000000000',
+          hooks: ADDRESS_ZERO,
         },
         {
           amountSpecified: 100,
@@ -525,7 +527,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
-            hooks: '0x0000000000000000000000000000000000000000',
+            hooks: ADDRESS_ZERO,
           },
           {
             amountSpecified: 100,
