@@ -148,7 +148,7 @@ describe('Hooks', () => {
     })
 
     it('fails when address invalid for no hooks', async () => {
-      // 0x1011...
+      // 0x1010...
       expect(
         await hooks.validateHookAddress('0xA000000000000000000000000000000000000000', {
           beforeSwap: false,
@@ -160,6 +160,7 @@ describe('Hooks', () => {
     })
 
     it('gas cost of validateHookAddress', async () => {
+      // 0x1010...
       await snapshotGasCost(
         hooks.getGasCostOfValidateHookAddress('0xA000000000000000000000000000000000000000', {
           beforeSwap: false,

@@ -30,7 +30,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick) {
+    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
     }
 
