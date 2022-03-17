@@ -247,12 +247,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (uint256 earningsAmount)
     {
-
         Pool.State storage pool = _getPool(key);
 
-        pool.twamm.executeTWAMMOrders(
-            TWAMM.PoolParamsOnExecute(pool.slot0.feeProtocol, pool.slot0.sqrtPriceX96, pool.liquidity),
-            pool.ticks
-        );
+        pool.twamm.executeTWAMMOrders(TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity), pool.ticks);
     }
 }

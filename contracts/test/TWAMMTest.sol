@@ -23,8 +23,7 @@ contract TWAMMTest {
     }
 
     function calculateTWAMMExecutionUpdates(
-        uint256 startingTimestamp,
-        uint256 endingTimeStamp,
+        uint256 secondsElapsed,
         TWAMM.PoolParamsOnExecute memory poolParams,
         TWAMM.OrderPoolParamsOnExecute memory orderPoolParams
     )
@@ -35,9 +34,8 @@ contract TWAMMTest {
             uint256 earningsFactorPool1
         )
     {
-        TWAMM.calculateTWAMMExecutionUpdates(
-            startingTimestamp,
-            endingTimeStamp,
+        (sqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TWAMM.calculateTWAMMExecutionUpdates(
+            secondsElapsed,
             poolParams,
             orderPoolParams,
             mockTicks
@@ -49,9 +47,9 @@ contract TWAMMTest {
     }
 
     function getOrderPool(uint8 index) external view returns (uint256 sellRate, uint256 earningsFactor) {
-        TWAMM.OrderPool storage order = twamm.orderPools[index];
-        sellRate = order.sellRate;
-        earningsFactor = order.earningsFactor;
+        TWAMM.OrderPool storage orderPool = twamm.orderPools[index];
+        sellRate = orderPool.sellRateCurrent;
+        earningsFactor = orderPool.earningsFactorCurrent;
     }
 
     function getOrderPoolSellRateEndingPerInterval(uint8 sellTokenIndex, uint256 timestamp)
