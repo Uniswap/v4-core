@@ -17,26 +17,26 @@ interface IHooks {
 
     function beforeModifyPosition(
         address sender,
-        IPoolManager.PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params
+        IPoolManager.PoolKey calldata key,
+        IPoolManager.ModifyPositionParams calldata params
     ) external;
 
     function afterModifyPosition(
         address sender,
-        IPoolManager.PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params
+        IPoolManager.PoolKey calldata key,
+        IPoolManager.ModifyPositionParams calldata params
     ) external;
 
     function beforeSwap(
         address sender,
-        IPoolManager.PoolKey memory key,
-        IPoolManager.SwapParams memory params
+        IPoolManager.PoolKey calldata key,
+        IPoolManager.SwapParams calldata params
     ) external;
 
     function afterSwap(
         address sender,
-        IPoolManager.PoolKey memory key,
-        IPoolManager.SwapParams memory params,
-        Pool.BalanceDelta memory delta
+        IPoolManager.PoolKey calldata key,
+        IPoolManager.SwapParams calldata params,
+        Pool.BalanceDelta calldata delta
     ) external;
 }

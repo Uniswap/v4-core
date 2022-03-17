@@ -10,27 +10,27 @@ contract EmptyTestHooks is IHooks {
 
     function beforeModifyPosition(
         address sender,
-        IPoolManager.PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params
+        IPoolManager.PoolKey calldata key,
+        IPoolManager.ModifyPositionParams calldata params
     ) external override {}
 
     function afterModifyPosition(
         address sender,
-        IPoolManager.PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params
+        IPoolManager.PoolKey calldata key,
+        IPoolManager.ModifyPositionParams calldata params
     ) external override {}
 
     function beforeSwap(
         address sender,
-        IPoolManager.PoolKey memory key,
-        IPoolManager.SwapParams memory params
+        IPoolManager.PoolKey calldata key,
+        IPoolManager.SwapParams calldata params
     ) external override {}
 
     function afterSwap(
         address sender,
-        IPoolManager.PoolKey memory key,
-        IPoolManager.SwapParams memory params,
-        Pool.BalanceDelta memory delta
+        IPoolManager.PoolKey calldata key,
+        IPoolManager.SwapParams calldata params,
+        Pool.BalanceDelta calldata delta
     ) external override {}
 }
 
@@ -39,33 +39,33 @@ contract TestHooks is IHooks {
 
     function beforeModifyPosition(
         address,
-        IPoolManager.PoolKey memory,
-        IPoolManager.ModifyPositionParams memory
+        IPoolManager.PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata
     ) external override {
         called['beforeModifyPosition'] = true;
     }
 
     function afterModifyPosition(
         address,
-        IPoolManager.PoolKey memory,
-        IPoolManager.ModifyPositionParams memory
+        IPoolManager.PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata
     ) external override {
         called['afterModifyPosition'] = true;
     }
 
     function beforeSwap(
         address,
-        IPoolManager.PoolKey memory,
-        IPoolManager.SwapParams memory
+        IPoolManager.PoolKey calldata,
+        IPoolManager.SwapParams calldata
     ) external override {
         called['beforeSwap'] = true;
     }
 
     function afterSwap(
         address,
-        IPoolManager.PoolKey memory,
-        IPoolManager.SwapParams memory,
-        Pool.BalanceDelta memory
+        IPoolManager.PoolKey calldata,
+        IPoolManager.SwapParams calldata,
+        Pool.BalanceDelta calldata
     ) external override {
         called['afterSwap'] = true;
     }
