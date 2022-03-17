@@ -54,7 +54,7 @@ export function getPoolId({
   token1,
   fee,
   tickSpacing,
-  hooks
+  hooks,
 }: {
   token0: string | Contract
   token1: string | Contract
