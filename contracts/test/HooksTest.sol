@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+pragma solidity >=0.5.0;
+import {Hooks} from '../libraries/Hooks.sol';
+import {IHooks} from '../interfaces/callback/IHooks.sol';
+
+contract HooksTest {
+    using Hooks for IHooks;
+
+    function validateHookAddress(address hookAddress, IHooks.Params calldata params) external pure returns (bool) {
+        return IHooks(hookAddress).validateHookAddress(params);
+    }
+
+    function shouldCallBeforeSwap(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallBeforeSwap();
+    }
+
+    function shouldCallAfterSwap(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallAfterSwap();
+    }
+
+    function shouldCallBeforeModifyPosition(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallBeforeModifyPosition();
+    }
+
+    function shouldCallAfterModifyPosition(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallAfterModifyPosition();
+    }
+
+    function getGasCostOfShouldCall(address hookAddress) external view returns (uint256) {
+        uint256 gasBefore = gasleft();
+        IHooks(hookAddress).shouldCallBeforeSwap();
+        return gasBefore - gasleft();
+    }
+
+    function getGasCostOfValidateHookAddress(address hookAddress, IHooks.Params calldata params)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 gasBefore = gasleft();
+        IHooks(hookAddress).validateHookAddress(params);
+        return gasBefore - gasleft();
+    }
+}

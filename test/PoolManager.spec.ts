@@ -1,6 +1,15 @@
 import { Wallet } from 'ethers'
+import hre from 'hardhat'
 import { ethers, waffle } from 'hardhat'
-import { PoolManager, TestERC20, PoolManagerTest, PoolSwapTest, PoolModifyPositionTest } from '../typechain'
+import {
+  PoolManager,
+  TestERC20,
+  PoolManagerTest,
+  PoolSwapTest,
+  PoolModifyPositionTest,
+  TestHooks,
+  EmptyTestHooks,
+} from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
@@ -17,14 +26,36 @@ describe('PoolManager', () => {
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
   let modifyPositionTest: PoolModifyPositionTest
+  let testHooksWithCalled: TestHooks
+  let testHooksEmpty: EmptyTestHooks
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
   const fixture = async () => {
     const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
+    const hooksTestWithCalledFactory = await ethers.getContractFactory('TestHooks')
+    const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
     const manager = (await singletonPoolFactory.deploy()) as PoolManager
+
+    // Deploy hooks to addresses with leading 1111 to enable all of them.
+    const testHooksWithCalledAddress = '0xfd2026b3eE6eC71fc6746ADB6311f6d3BA1C000b'
+    const testHooksEmptyAddress = '0xFb5801A7D398351b8BE11c439e05c5b3259aEC9b'
+
+    await hre.network.provider.send('hardhat_setCode', [
+      testHooksWithCalledAddress,
+      (await hre.artifacts.readArtifact('TestHooks')).deployedBytecode,
+    ])
+
+    const testHooksWithCalled: TestHooks = hooksTestWithCalledFactory.attach(testHooksWithCalledAddress) as TestHooks
+
+    await hre.network.provider.send('hardhat_setCode', [
+      testHooksEmptyAddress,
+      (await hre.artifacts.readArtifact('EmptyTestHooks')).deployedBytecode,
+    ])
+
+    const testHooksEmpty: EmptyTestHooks = hooksTestEmptyFactory.attach(testHooksEmptyAddress) as TestHooks
 
     const result = {
       manager,
@@ -32,6 +63,8 @@ describe('PoolManager', () => {
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       tokens,
+      testHooksWithCalled,
+      testHooksEmpty,
     }
 
     for (const token of [tokens.token0, tokens.token1, tokens.token2]) {
@@ -51,7 +84,8 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest } = await loadFixture(fixture))
+    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, testHooksWithCalled, testHooksEmpty } =
+      await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
@@ -76,6 +110,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         encodeSqrtPriceX96(10, 1)
       )
@@ -88,6 +123,33 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
+        })
+      )
+      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+    })
+
+    it('initializes a pool with hooks', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: testHooksWithCalled.address,
+        },
+        encodeSqrtPriceX96(10, 1)
+      )
+
+      const {
+        slot0: { sqrtPriceX96 },
+      } = await manager.pools(
+        getPoolId({
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: testHooksWithCalled.address,
         })
       )
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
@@ -101,6 +163,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
+            hooks: '0x0000000000000000000000000000000000000000',
           },
           encodeSqrtPriceX96(10, 1)
         )
@@ -117,6 +180,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
+            hooks: '0x0000000000000000000000000000000000000000',
           },
           {
             tickLower: 0,
@@ -134,6 +198,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -144,6 +209,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         {
           tickLower: 0,
@@ -153,6 +219,39 @@ describe('PoolManager', () => {
       )
     })
 
+    it('succeeds if pool is initialized and hook is provided', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: testHooksWithCalled.address,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+
+      await modifyPositionTest.modifyPosition(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: testHooksWithCalled.address,
+        },
+        {
+          tickLower: 0,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        }
+      )
+
+      expect(await testHooksWithCalled.called('beforeModifyPosition')).to.be.true
+      expect(await testHooksWithCalled.called('afterModifyPosition')).to.be.true
+      expect(await testHooksWithCalled.called('beforeSwap')).to.be.false
+      expect(await testHooksWithCalled.called('afterSwap')).to.be.false
+    })
+
     it('gas cost', async () => {
       await manager.initialize(
         {
@@ -160,6 +259,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -171,6 +271,37 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
+            hooks: '0x0000000000000000000000000000000000000000',
+          },
+          {
+            tickLower: 0,
+            tickUpper: 60,
+            liquidityDelta: 100,
+          }
+        )
+      )
+    })
+
+    it('gas cost with hooks', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: testHooksEmpty.address,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+
+      await snapshotGasCost(
+        modifyPositionTest.modifyPosition(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: testHooksEmpty.address,
           },
           {
             tickLower: 0,
@@ -191,6 +322,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
+            hooks: '0x0000000000000000000000000000000000000000',
           },
           {
             amountSpecified: 100,
@@ -207,6 +339,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -216,6 +349,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         {
           amountSpecified: 100,
@@ -224,13 +358,45 @@ describe('PoolManager', () => {
         }
       )
     })
-    it('gas', async () => {
+    it('succeeds if pool is initialized and hook is provided', async () => {
       await manager.initialize(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: testHooksWithCalled.address,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await swapTest.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: testHooksWithCalled.address,
+        },
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        }
+      )
+
+      expect(await testHooksWithCalled.called('beforeModifyPosition')).to.be.false
+      expect(await testHooksWithCalled.called('afterModifyPosition')).to.be.false
+      expect(await testHooksWithCalled.called('beforeSwap')).to.be.true
+      expect(await testHooksWithCalled.called('afterSwap')).to.be.true
+    })
+    it('gas cost', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -241,6 +407,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         {
           amountSpecified: 100,
@@ -256,6 +423,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
+            hooks: '0x0000000000000000000000000000000000000000',
           },
           {
             amountSpecified: 100,
@@ -265,13 +433,58 @@ describe('PoolManager', () => {
         )
       )
     })
-    it('gas for swap against liquidity', async () => {
+    it('gas cost with hooks', async () => {
       await manager.initialize(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: testHooksEmpty.address,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+
+      await swapTest.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: testHooksEmpty.address,
+        },
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        }
+      )
+
+      await snapshotGasCost(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: testHooksEmpty.address,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            zeroForOne: true,
+          }
+        )
+      )
+    })
+    it('gas cost for swap against liquidity', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -281,6 +494,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         {
           tickLower: -120,
@@ -295,6 +509,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
         },
         {
           amountSpecified: 100,
@@ -310,6 +525,7 @@ describe('PoolManager', () => {
             token1: tokens.token1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
+            hooks: '0x0000000000000000000000000000000000000000',
           },
           {
             amountSpecified: 100,

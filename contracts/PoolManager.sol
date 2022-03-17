@@ -31,18 +31,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     /// @notice Initialize the state for a given pool ID
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick) {
-        require(address(key.hooks) == address(0), 'H');
         tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
-    }
-
-    /// @notice Initialize the state for a given pool ID
-    function initializeWithHooks(
-        IPoolManager.PoolKey memory key,
-        uint160 sqrtPriceX96,
-        IHooks.Params calldata hooksParams
-    ) external returns (int24 tick) {
-        require(key.hooks.validateHookAddress(hooksParams), 'HA');
-        return this.initialize(key, sqrtPriceX96);
     }
 
     /// @notice Increase the maximum number of stored observations for the pool's oracle
@@ -131,7 +120,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
-        if (key.hooks.shouldBeforeModifyPosition()) {
+        if (key.hooks.shouldCallBeforeModifyPosition()) {
             key.hooks.beforeModifyPosition(msg.sender, key, params);
         }
 
@@ -149,7 +138,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
         _accountPoolBalanceDelta(key, delta);
 
-        if (key.hooks.shouldAfterModifyPosition()) {
+        if (key.hooks.shouldCallAfterModifyPosition()) {
             key.hooks.afterModifyPosition(msg.sender, key, params);
         }
     }
@@ -161,7 +150,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
-        if (key.hooks.shouldBeforeSwap()) {
+        if (key.hooks.shouldCallBeforeSwap()) {
             key.hooks.beforeSwap(msg.sender, key, params);
         }
 
@@ -173,14 +162,13 @@ contract PoolManager is IPoolManager, NoDelegateCall {
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96
-            }),
-            key.hooks
+            })
         );
 
         _accountPoolBalanceDelta(key, delta);
 
-        if (key.hooks.shouldAfterSwap()) {
-            key.hooks.afterSwap(msg.sender, key, params);
+        if (key.hooks.shouldCallAfterSwap()) {
+            key.hooks.afterSwap(msg.sender, key, params, delta);
         }
     }
 

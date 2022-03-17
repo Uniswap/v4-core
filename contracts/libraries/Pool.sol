@@ -466,8 +466,8 @@ library Pool {
     }
 
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
-    function swap(State storage self, SwapParams memory params, IHooks hooks) internal returns (BalanceDelta memory result) {
-        require(params.amountSpecified != 0, 'AS');
+    function swap(State storage self, SwapParams memory params) internal returns (BalanceDelta memory result) {
+        if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
@@ -589,10 +589,6 @@ library Pool {
                         cache.computedLatestObservation = true;
                     }
 
-                    if (hooks.shouldBeforeTickCrossing()) {
-                        hooks.beforeTickCrossing(msg.sender, params, state, step);
-                    }
-
                     int128 liquidityNet = self.ticks.cross(
                         step.tickNext,
                         (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
@@ -614,10 +610,6 @@ library Pool {
 
                 unchecked {
                     state.tick = params.zeroForOne ? step.tickNext - 1 : step.tickNext;
-                }
-
-                if (hooks.shouldAfterTickCrossing()) {
-                    hooks.afterTickCrossing(msg.sender, params, state, step);
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
