@@ -2,6 +2,7 @@
 pragma solidity ^0.8.12;
 
 import {Tick} from './Tick.sol';
+import {OrderPool} from './TWAMM/OrderPool.sol';
 import {FixedPoint96} from './FixedPoint96.sol';
 import {SafeCast} from './SafeCast.sol';
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
@@ -12,6 +13,7 @@ import 'hardhat/console.sol';
 library TWAMM {
     using ABDKMathQuad for *;
     using SafeCast for *;
+    using OrderPool for OrderPool.State;
 
     /// @notice Thrown when account other than owner attempts to interact with an order
     /// @param orderId The orderId
@@ -35,21 +37,8 @@ library TWAMM {
         uint256 expirationInterval;
         uint256 lastVirtualOrderTimestamp;
         uint256 nextId;
-        mapping(uint8 => OrderPool) orderPools;
+        mapping(uint8 => OrderPool.State) orderPools;
         mapping(uint256 => Order) orders;
-    }
-
-    /// @notice Information related to a long term order pool
-    /// @member sellRateCurrent The total current sell rate among all orders
-    /// @member sellRateEndingAtInterval Mapping (timestamp => sellRate) The amount of expiring sellRate at this interval
-    /// @member earningsFactor Sum of (salesEarnings_k / salesRate_k) over every period k.
-    /// @member earningsFactorAtInterval Mapping (timestamp => sellRate) The earnings factor accrued by a certain time interval
-    struct OrderPool {
-        uint256 sellRateCurrent;
-        mapping(uint256 => uint256) sellRateEndingAtInterval;
-        //
-        uint256 earningsFactorCurrent;
-        mapping(uint256 => uint256) earningsFactorAtInterval;
     }
 
     /// @notice Information associated with a long term order
@@ -132,7 +121,7 @@ library TWAMM {
     /// @param orderId The ID of the order to be claimed
     function claimEarnings(State storage self, uint256 orderId) internal returns (uint256 earningsAmount) {
         Order memory order = self.orders[orderId];
-        OrderPool storage orderPool = self.orderPools[order.sellTokenIndex];
+        OrderPool.State storage orderPool = self.orderPools[order.sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
@@ -160,9 +149,6 @@ library TWAMM {
         PoolParamsOnExecute memory poolParams,
         mapping(int24 => Tick.Info) storage ticks
     ) internal {
-        // TODO: (cleanup) return numbers that will guide the new pool state...update that in pool or pool manager.
-        // ideally if ticks are needed, would just be for read purposes
-
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
         uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +
             (self.expirationInterval - (self.lastVirtualOrderTimestamp % self.expirationInterval));
@@ -173,59 +159,36 @@ library TWAMM {
                 self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                 self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
             ) {
-                (
-                    uint160 newSqrtPriceX96,
-                    uint256 earningsFactorPool0,
-                    uint256 earningsFactorPool1
-                ) = calculateTWAMMExecutionUpdates(
-                        nextExpirationTimestamp - prevTimestamp,
-                        poolParams,
-                        OrderPoolParamsOnExecute(
-                            self.orderPools[0].sellRateCurrent,
-                            self.orderPools[1].sellRateCurrent
-                        ),
-                        ticks
-                    );
+                (uint160 newSqrtPriceX96, uint256 earningsPool0, uint256 earningsPool1) = calculateExecutionUpdates(
+                    nextExpirationTimestamp - prevTimestamp,
+                    poolParams,
+                    OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent),
+                    ticks
+                );
 
-                // update order pools (to clean)
-                self.orderPools[0].earningsFactorCurrent += earningsFactorPool0;
-                self.orderPools[1].earningsFactorCurrent += earningsFactorPool1;
-                self.orderPools[0].earningsFactorAtInterval[nextExpirationTimestamp] = self
-                    .orderPools[0]
-                    .earningsFactorCurrent;
-                self.orderPools[1].earningsFactorAtInterval[nextExpirationTimestamp] = self
-                    .orderPools[1]
-                    .earningsFactorCurrent;
-                self.orderPools[0].sellRateCurrent -= self.orderPools[0].sellRateEndingAtInterval[
-                    nextExpirationTimestamp
-                ];
-                self.orderPools[1].sellRateCurrent -= self.orderPools[1].sellRateEndingAtInterval[
-                    nextExpirationTimestamp
-                ];
-
-                poolParams.sqrtPriceX96 = newSqrtPriceX96; // update pool price for next iteration
-                prevTimestamp = nextExpirationTimestamp; // if we did a calculation, update prevTimestamp
+                // update order pools
+                self.orderPools[0].advanceToInterval(nextExpirationTimestamp, earningsPool0);
+                self.orderPools[1].advanceToInterval(nextExpirationTimestamp, earningsPool1);
+                // update values in memory
+                poolParams.sqrtPriceX96 = newSqrtPriceX96;
+                prevTimestamp = nextExpirationTimestamp;
             }
             nextExpirationTimestamp += self.expirationInterval;
         }
 
         if (nextExpirationTimestamp > block.timestamp) {
-            (
-                uint160 newSqrtPriceX96,
-                uint256 earningsFactorPool0,
-                uint256 earningsFactorPool1
-            ) = calculateTWAMMExecutionUpdates(
-                    block.timestamp - prevTimestamp,
-                    poolParams,
-                    OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent),
-                    ticks
-                );
-            self.orderPools[0].earningsFactorCurrent += earningsFactorPool0;
-            self.orderPools[1].earningsFactorCurrent += earningsFactorPool1;
+            (uint160 newSqrtPriceX96, uint256 earningsPool0, uint256 earningsPool1) = calculateExecutionUpdates(
+                block.timestamp - prevTimestamp,
+                poolParams,
+                OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent),
+                ticks
+            );
+            self.orderPools[0].advanceToCurrentTime(earningsPool0);
+            self.orderPools[1].advanceToCurrentTime(earningsPool1);
         }
     }
 
-    function calculateTWAMMExecutionUpdates(
+    function calculateExecutionUpdates(
         uint256 secondsElapsed,
         PoolParamsOnExecute memory poolParams,
         OrderPoolParamsOnExecute memory orderPoolParams,
@@ -234,8 +197,8 @@ library TWAMM {
         internal
         returns (
             uint160 sqrtPriceX96,
-            uint256 earningsFactorPool0,
-            uint256 earningsFactorPool1
+            uint256 earningsPool0,
+            uint256 earningsPool1
         )
     {
         // https://www.desmos.com/calculator/yr3qvkafvy
@@ -267,8 +230,8 @@ library TWAMM {
         });
 
         sqrtPriceX96 = newSqrtPriceX96.toUInt().toUint160();
-        earningsFactorPool0 = getEarningsFactorPool0(earningsFactorParams).toUInt();
-        earningsFactorPool1 = getEarningsFactorPool1(earningsFactorParams).toUInt();
+        earningsPool0 = getEarningsAmountPool0(earningsFactorParams).toUInt();
+        earningsPool1 = getEarningsAmountPool1(earningsFactorParams).toUInt();
     }
 
     struct EarningsFactorParams {
@@ -280,7 +243,7 @@ library TWAMM {
         bytes16 liquidity;
     }
 
-    function getEarningsFactorPool0(EarningsFactorParams memory params) private returns (bytes16 earningsFactor) {
+    function getEarningsAmountPool0(EarningsFactorParams memory params) private returns (bytes16 earningsFactor) {
         bytes16 minuend = params.sellRatio.mul(FixedPoint96.Q96.fromUInt()).mul(params.secondsElapsed);
         bytes16 subtrahend = params
             .liquidity
@@ -290,7 +253,7 @@ library TWAMM {
         return minuend.sub(subtrahend);
     }
 
-    function getEarningsFactorPool1(EarningsFactorParams memory params) private returns (bytes16 earningsFactor) {
+    function getEarningsAmountPool1(EarningsFactorParams memory params) private returns (bytes16 earningsFactor) {
         bytes16 minuend = params.secondsElapsed.div(params.sellRatio);
         bytes16 subtrahend = params
             .liquidity

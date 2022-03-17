@@ -2,6 +2,7 @@
 pragma solidity =0.8.12;
 
 import {TWAMM} from '../libraries/TWAMM.sol';
+import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {Tick} from '../libraries/Tick.sol';
 
 contract TWAMMTest {
@@ -22,7 +23,7 @@ contract TWAMMTest {
         twamm.cancelLongTermOrder(orderId);
     }
 
-    function calculateTWAMMExecutionUpdates(
+    function calculateExecutionUpdates(
         uint256 secondsElapsed,
         TWAMM.PoolParamsOnExecute memory poolParams,
         TWAMM.OrderPoolParamsOnExecute memory orderPoolParams
@@ -30,11 +31,11 @@ contract TWAMMTest {
         external
         returns (
             uint160 sqrtPriceX96,
-            uint256 earningsFactorPool0,
-            uint256 earningsFactorPool1
+            uint256 earningsPool0,
+            uint256 earningsPool1
         )
     {
-        (sqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TWAMM.calculateTWAMMExecutionUpdates(
+        (sqrtPriceX96, earningsPool0, earningsPool1) = TWAMM.calculateExecutionUpdates(
             secondsElapsed,
             poolParams,
             orderPoolParams,
@@ -47,7 +48,7 @@ contract TWAMMTest {
     }
 
     function getOrderPool(uint8 index) external view returns (uint256 sellRate, uint256 earningsFactor) {
-        TWAMM.OrderPool storage orderPool = twamm.orderPools[index];
+        OrderPool.State storage orderPool = twamm.orderPools[index];
         sellRate = orderPool.sellRateCurrent;
         earningsFactor = orderPool.earningsFactorCurrent;
     }

@@ -141,7 +141,7 @@ describe.only('TWAMM', () => {
     })
   })
 
-  describe('#calculateTWAMMExecutionUpdates', () => {
+  describe('#calculateExecutionUpdates', () => {
     let secondsElapsed: BigNumberish
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
@@ -158,7 +158,7 @@ describe.only('TWAMM', () => {
 
     describe('without any initialized ticks', () => {
       it('returns the correct parameters when sellRateCurrent0 is higher', async () => {
-        const results = await twamm.callStatic.calculateTWAMMExecutionUpdates(
+        const results = await twamm.callStatic.calculateExecutionUpdates(
           secondsElapsed,
           {
             sqrtPriceX96,
@@ -170,14 +170,14 @@ describe.only('TWAMM', () => {
           }
         )
         expect(results.sqrtPriceX96).to.eq('78943964243131674870404435821')
-        expect(results.earningsFactorPool0).to.eq('284198271275273415665190322494405')
-        expect(results.earningsFactorPool1).to.eq('286249414193404035566722049114112') // TODO: this number is coming out incorrect
+        expect(results.earningsPool0).to.eq('284198271275273415665190322494405')
+        expect(results.earningsPool1).to.eq('286249414193404035566722049114112') // TODO: this number is coming out incorrect
       })
 
       it('returns the correct parameters when sellRateCurrent1 is higher', async () => {
         sellRateCurrent0 = '5000'
         sellRateCurrent1 = '10000000000000'
-        const results = await twamm.callStatic.calculateTWAMMExecutionUpdates(
+        const results = await twamm.callStatic.calculateExecutionUpdates(
           secondsElapsed,
           {
             sqrtPriceX96,
@@ -189,14 +189,14 @@ describe.only('TWAMM', () => {
           }
         )
         expect(results.sqrtPriceX96).to.eq('79513383899172564501784006539')
-        expect(results.earningsFactorPool0).to.eq('286249414193404035907969615921152') // TODO: this number is incorrect from desmos
-        expect(results.earningsFactorPool1).to.eq('284198271275273415665190322324995') // TODO: precision is off at the 5th decimal place
+        expect(results.earningsPool0).to.eq('286249414193404035907969615921152') // TODO: this number is incorrect from desmos
+        expect(results.earningsPool1).to.eq('284198271275273415665190322324995') // TODO: precision is off at the 5th decimal place
       })
 
       it('returns the correct parameters over longer time periods', async () => {
         secondsElapsed = 3600 * 100
 
-        const results = await twamm.callStatic.calculateTWAMMExecutionUpdates(
+        const results = await twamm.callStatic.calculateExecutionUpdates(
           secondsElapsed,
           {
             sqrtPriceX96,
@@ -208,13 +208,13 @@ describe.only('TWAMM', () => {
           }
         )
         expect(results.sqrtPriceX96).to.eq('58256001859542945232537908987')
-        expect(results.earningsFactorPool0).to.eq('20972160668982461613573622115003872') // TODO: precision off at 5th decimal place
-        expect(results.earningsFactorPool1).to.eq('40022264742331847176083518403903488') // TODO: this number is incorrect in desmos, but close-ish
+        expect(results.earningsPool0).to.eq('20972160668982461613573622115003872') // TODO: precision off at 5th decimal place
+        expect(results.earningsPool1).to.eq('40022264742331847176083518403903488') // TODO: this number is incorrect in desmos, but close-ish
       })
 
       it('gas', async () => {
         await snapshotGasCost(
-          twamm.calculateTWAMMExecutionUpdates(
+          twamm.calculateExecutionUpdates(
             secondsElapsed,
             {
               sqrtPriceX96,
