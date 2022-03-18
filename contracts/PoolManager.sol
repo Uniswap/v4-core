@@ -218,6 +218,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (uint256 orderId)
     {
+        executeTWAMMOrders(key);
         return _getPool(key).twamm.submitLongTermOrder(params);
     }
 
@@ -250,15 +251,24 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     {
         Pool.State storage pool = _getPool(key);
         uint160 sqrtPriceX96 = pool.slot0.sqrtPriceX96;
-        uint8 feeProtocol = pool.slot0.feeProtocol;
         uint128 liquidity = pool.liquidity;
         mapping(int24 => Tick.Info) storage ticks = pool.ticks;
 
-        TWAMM.PoolParamsOnExecute memory params = TWAMM.PoolParamsOnExecute(feeProtocol, sqrtPriceX96, liquidity);
+        TWAMM.PoolParamsOnExecute memory params = TWAMM.PoolParamsOnExecute(sqrtPriceX96, liquidity);
 
         uint8 sellTokenIndex;
         (earningsAmount, sellTokenIndex) = _getPool(key).twamm.claimEarnings(orderId, params, ticks);
         IERC20Minimal buyToken = sellTokenIndex == 0 ? key.token1 : key.token0;
         _accountDelta(buyToken, -(earningsAmount.toInt256()));
+    }
+
+    function executeTWAMMOrders(IPoolManager.PoolKey calldata key)
+        public
+        onlyByLocker
+        returns (uint256 earningsAmount)
+    {
+        Pool.State storage pool = _getPool(key);
+
+        pool.twamm.executeTWAMMOrders(TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity), pool.ticks);
     }
 }
