@@ -342,7 +342,7 @@ describe.only('TWAMM', () => {
     })
   })
 
-  describe('#claimEarnings', () => {
+  describe.skip('#claimEarnings', () => {
     let orderId: BigNumber
     const mockTicks = {}
     const poolParams = {
@@ -387,7 +387,7 @@ describe.only('TWAMM', () => {
       await twamm.submitLongTermOrder(oneForZero)
       await twamm.submitLongTermOrder(zeroForOne2)
     })
-    it.only('should give correct earnings amount and have no unclaimed earnings', async () => {
+    it('should give correct earnings amount and have no unclaimed earnings', async () => {
       const expiration = (await twamm.getOrder(orderId)).expiration.toNumber()
       const afterExpiration = expiration + interval / 2
       expect(afterExpiration).to.be.greaterThan(expiration)
