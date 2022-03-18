@@ -225,12 +225,11 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     function cancelLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId)
         external
         onlyByLocker
-        returns (
-            uint256 unsoldAmount,
-            uint256 purchasedAmount,
-            uint8 sellTokenIndex
-        )
+        returns (uint256 unsoldAmount, uint256 purchasedAmount)
     {
+        executeTWAMMOrders(key);
+
+        uint8 sellTokenIndex;
         (unsoldAmount, purchasedAmount, sellTokenIndex) = _getPool(key).twamm.cancelLongTermOrder(orderId);
 
         (uint256 amount0, uint256 amount1) = sellTokenIndex == 0
@@ -249,15 +248,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (uint256 earningsAmount)
     {
-        Pool.State storage pool = _getPool(key);
-        uint160 sqrtPriceX96 = pool.slot0.sqrtPriceX96;
-        uint128 liquidity = pool.liquidity;
-        mapping(int24 => Tick.Info) storage ticks = pool.ticks;
-
-        TWAMM.PoolParamsOnExecute memory params = TWAMM.PoolParamsOnExecute(sqrtPriceX96, liquidity);
+        executeTWAMMOrders(key);
 
         uint8 sellTokenIndex;
-        (earningsAmount, sellTokenIndex) = _getPool(key).twamm.claimEarnings(orderId, params, ticks);
+        (earningsAmount, sellTokenIndex) = _getPool(key).twamm.claimEarnings(orderId);
         IERC20Minimal buyToken = sellTokenIndex == 0 ? key.token1 : key.token0;
         _accountDelta(buyToken, -(earningsAmount.toInt256()));
     }

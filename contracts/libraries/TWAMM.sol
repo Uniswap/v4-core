@@ -133,28 +133,26 @@ library TWAMM {
 
     /// @notice Claim earnings from an ongoing or expired order
     /// @param orderId The ID of the order to be claimed
-    function claimEarnings(
-        State storage self,
-        uint256 orderId,
-        PoolParamsOnExecute memory params,
-        mapping(int24 => Tick.Info) storage ticks
-    ) internal returns (uint256 earningsAmount, uint8 sellTokenIndex) {
-        // execute all virtual orders until current block
-        executeTWAMMOrders(self, params, ticks);
-
+    function claimEarnings(State storage self, uint256 orderId)
+        internal
+        returns (uint256 earningsAmount, uint8 sellTokenIndex)
+    {
         Order memory order = self.orders[orderId];
-        OrderPool.State storage orderPool = self.orderPools[order.sellTokenIndex];
+        sellTokenIndex = order.sellTokenIndex;
+        OrderPool.State storage orderPool = self.orderPools[sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
             // TODO: math to be refined
-            earningsAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
+            earningsAmount = ((earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate) / (2**96);
             // clear stake
             self.orders[orderId].unclaimedEarningsFactor = 0;
         } else {
-            // TODO: math to be refined
+            // TODO: math to be refined, divide by 2**96 bc its represented as fixedPointX96
             // TODO: set the earningsFactor
-            earningsAmount = (orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor) * order.sellRate;
+            earningsAmount =
+                ((orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor) * order.sellRate) /
+                (2**96);
             self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
         }
     }

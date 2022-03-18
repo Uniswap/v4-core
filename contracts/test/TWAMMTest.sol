@@ -75,7 +75,6 @@ contract TWAMMTest {
         return twamm.orderPools[sellTokenIndex].earningsFactorAtInterval[timestamp];
     }
 
-
     function getState()
         external
         view
@@ -98,7 +97,8 @@ contract TWAMMTest {
         external
         returns (uint256 earningsAmount, uint8 sellTokenIndex)
     {
-        (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderId, params, mockTicks);
+        twamm.executeTWAMMOrders(params, mockTicks);
+        (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderId);
         uint256 unclaimed = twamm.orders[orderId].unclaimedEarningsFactor;
         emit ClaimEarnings(earningsAmount, unclaimed);
     }
