@@ -175,6 +175,7 @@ describe.only('TWAMM', () => {
         expiration: timestampInterval3,
       })
 
+      // set two more expiry's so its never 0, logic isn't there yet
       await twamm.submitLongTermOrder({
         zeroForOne: false,
         owner: wallet.address,
@@ -193,6 +194,7 @@ describe.only('TWAMM', () => {
     it('updates all the necessarily intervals', async () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '10000000000000000000'
+      const fee = 3000
       await ethers.provider.send("evm_setNextBlockTimestamp", [timestampInterval3 + 5_000])
 
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.eq(0)
@@ -204,7 +206,7 @@ describe.only('TWAMM', () => {
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval4)).to.eq(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval4)).to.eq(0)
 
-      await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity })
+      await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee })
 
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.gt(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.gt(0)
@@ -223,10 +225,11 @@ describe.only('TWAMM', () => {
     it('gas', async () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '10000000000000000000'
+      const fee = 3000
       await ethers.provider.send("evm_setNextBlockTimestamp", [timestampInterval3 + 5_000])
 
       await snapshotGasCost(
-        twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity })
+        twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee })
       )
     })
   })
@@ -235,6 +238,7 @@ describe.only('TWAMM', () => {
     let secondsElapsed: BigNumberish
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
+    let fee: BigNumberish
     let sellRateCurrent0: BigNumberish
     let sellRateCurrent1: BigNumberish
 
@@ -242,6 +246,7 @@ describe.only('TWAMM', () => {
        secondsElapsed = 3600
        sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
        liquidity = '10000000000000000000'
+       fee = '3000'
        sellRateCurrent0 = '10000000000000'
        sellRateCurrent1 = '5000'
     })
@@ -253,6 +258,7 @@ describe.only('TWAMM', () => {
           {
             sqrtPriceX96,
             liquidity,
+            fee,
           },
           {
             sellRateCurrent0,
@@ -272,6 +278,7 @@ describe.only('TWAMM', () => {
           {
             sqrtPriceX96,
             liquidity,
+            fee,
           },
           {
             sellRateCurrent0,
@@ -291,6 +298,7 @@ describe.only('TWAMM', () => {
           {
             sqrtPriceX96,
             liquidity,
+            fee,
           },
           {
             sellRateCurrent0,
@@ -309,6 +317,7 @@ describe.only('TWAMM', () => {
             {
               sqrtPriceX96,
               liquidity,
+              fee,
             },
             {
               sellRateCurrent0,

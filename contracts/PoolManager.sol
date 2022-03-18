@@ -143,7 +143,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
-        external
+        public
         override
         noDelegateCall
         onlyByLocker
@@ -248,7 +248,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         returns (uint256 earningsAmount)
     {
         Pool.State storage pool = _getPool(key);
-
-        pool.twamm.executeTWAMMOrders(TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity), pool.ticks);
+        (bool zeroForOne, uint256 amountIn, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
+            TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee),
+            pool.ticks
+        );
+        swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
     }
 }

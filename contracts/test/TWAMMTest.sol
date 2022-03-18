@@ -73,7 +73,6 @@ contract TWAMMTest {
         return twamm.orderPools[sellTokenIndex].earningsFactorAtInterval[timestamp];
     }
 
-
     function getState()
         external
         view
