@@ -153,8 +153,9 @@ library TWAMM {
         uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +
             (self.expirationInterval - (self.lastVirtualOrderTimestamp % self.expirationInterval));
 
-        while (nextExpirationTimestamp < block.timestamp) {
+        while (nextExpirationTimestamp <= block.timestamp) {
             // skip calculations on intervals that don't have any expirations
+            // TODO: potentially optimize with bitmap of initialized intervals
             if (
                 self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                 self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0

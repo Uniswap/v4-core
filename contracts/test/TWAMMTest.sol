@@ -23,6 +23,10 @@ contract TWAMMTest {
         twamm.cancelLongTermOrder(orderId);
     }
 
+    function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
+        twamm.executeTWAMMOrders(poolParams, mockTicks);
+    }
+
     function calculateExecutionUpdates(
         uint256 secondsElapsed,
         TWAMM.PoolParamsOnExecute memory poolParams,
@@ -60,6 +64,15 @@ contract TWAMMTest {
     {
         return twamm.orderPools[sellTokenIndex].sellRateEndingAtInterval[timestamp];
     }
+
+    function getOrderPoolEarningsFactorAtInterval(uint8 sellTokenIndex, uint256 timestamp)
+        external
+        view
+        returns (uint256 sellRate)
+    {
+        return twamm.orderPools[sellTokenIndex].earningsFactorAtInterval[timestamp];
+    }
+
 
     function getState()
         external

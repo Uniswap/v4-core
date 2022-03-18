@@ -141,6 +141,86 @@ describe.only('TWAMM', () => {
     })
   })
 
+  describe('#executeTWAMMOrders', () => {
+    let latestTimestamp: number
+    let timestampInterval1: number
+    let timestampInterval2: number
+    let timestampInterval3: number
+    let timestampInterval4: number
+
+    function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
+        return timestamp + (interval - (timestamp % interval)) + (interval * (n-1))
+    }
+
+    beforeEach(async () => {
+      latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      timestampInterval1 = nIntervalsFrom(latestTimestamp, 10_000, 1)
+      timestampInterval2 = nIntervalsFrom(latestTimestamp, 10_000, 2)
+      timestampInterval3 = nIntervalsFrom(latestTimestamp, 10_000, 3)
+      timestampInterval4 = nIntervalsFrom(latestTimestamp, 10_000, 4)
+
+      await twamm.initialize(10_000)
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: true,
+        owner: wallet.address,
+        amountIn: BigNumber.from(`1${'0'.repeat(18)}`),
+        expiration: timestampInterval1,
+      })
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: false,
+        owner: wallet.address,
+        amountIn: BigNumber.from(`50${'0'.repeat(18)}`),
+        expiration: timestampInterval3,
+      })
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: false,
+        owner: wallet.address,
+        amountIn: BigNumber.from(`2${'0'.repeat(18)}`),
+        expiration: timestampInterval4,
+      })
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: true,
+        owner: wallet.address,
+        amountIn: BigNumber.from(`2${'0'.repeat(18)}`),
+        expiration: timestampInterval4,
+      })
+    })
+
+    it('updates all the necessarily intervals', async () => {
+      const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+      const liquidity = '10000000000000000000'
+      await ethers.provider.send("evm_setNextBlockTimestamp", [timestampInterval3 + 5_000])
+
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval2)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval2)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval3)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval3)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval4)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval4)).to.eq(0)
+
+      await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity })
+
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval2)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval2)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval3)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval3)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval4)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval4)).to.eq(0)
+    })
+
+    it('updates all necessary intervals when block is mined exactly on an interval')
+  })
+
   describe('#calculateExecutionUpdates', () => {
     let secondsElapsed: BigNumberish
     let sqrtPriceX96: BigNumberish
@@ -232,9 +312,9 @@ describe.only('TWAMM', () => {
 
       it('returns the correct parameters when TWAMM trades pushes the price to the min part of the curve')
 
-      it.skip('returns the correct parameters when orderPool1 has a 0 sell rate')
+      it('returns the correct parameters when orderPool1 has a 0 sell rate')
 
-      it.skip('returns the correct parameters when orderPool0 has a 0 sell rate')
+      it('returns the correct parameters when orderPool0 has a 0 sell rate')
     })
   })
 })
