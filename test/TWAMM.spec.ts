@@ -219,6 +219,16 @@ describe.only('TWAMM', () => {
     })
 
     it('updates all necessary intervals when block is mined exactly on an interval')
+
+    it('gas', async () => {
+      const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+      const liquidity = '10000000000000000000'
+      await ethers.provider.send("evm_setNextBlockTimestamp", [timestampInterval3 + 5_000])
+
+      await snapshotGasCost(
+        twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity })
+      )
+    })
   })
 
   describe('#calculateExecutionUpdates', () => {

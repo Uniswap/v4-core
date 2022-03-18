@@ -4,4 +4,6 @@ exports[`TWAMM #calculateExecutionUpdates without any initialized ticks gas 1`] 
 
 exports[`TWAMM #cancelLongTermOrder gas 1`] = `34944`;
 
+exports[`TWAMM #executeTWAMMOrders gas 1`] = `345406`;
+
 exports[`TWAMM #submitLongTermOrder gas 1`] = `160770`;
