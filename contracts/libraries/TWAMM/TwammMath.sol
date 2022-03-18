@@ -2,7 +2,7 @@
 pragma solidity ^0.8.12;
 
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
-import {TWAMM} from '../TWAMM.sol';
+import {TWAMM} from './TWAMM.sol';
 import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';

@@ -4,7 +4,7 @@ pragma solidity ^0.8.12;
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
-import {TWAMM} from './libraries/TWAMM.sol';
+import {TWAMM} from './libraries/TWAMM/TWAMM.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';

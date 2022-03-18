@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
-import {Tick} from './Tick.sol';
-import {OrderPool} from './TWAMM/OrderPool.sol';
-import {TwammMath} from './TWAMM/TwammMath.sol';
-import {FixedPoint96} from './FixedPoint96.sol';
-import {SwapMath} from './SwapMath.sol';
+import {Tick} from '../Tick.sol';
+import {OrderPool} from './OrderPool.sol';
+import {TwammMath} from './TwammMath.sol';
+import {FixedPoint96} from '../FixedPoint96.sol';
+import {SwapMath} from '../SwapMath.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -81,16 +81,12 @@ library TWAMM {
             revert ExpirationNotOnInterval(params.expiration);
         }
 
-        // TODO: bump twamm order state
         orderId = self.nextId++;
 
         uint8 sellTokenIndex = params.zeroForOne ? 0 : 1;
-        // TODO: refine math?
         uint256 sellRate = params.amountIn / (params.expiration - block.timestamp);
 
         self.orderPools[sellTokenIndex].sellRateCurrent += sellRate;
-        // TODO: update expiration if its not at interval (alternatively could take n intervals as param, this
-        // felt more deterministic though)
         self.orderPools[sellTokenIndex].sellRateEndingAtInterval[params.expiration] += sellRate;
 
         self.orders[orderId] = Order({
