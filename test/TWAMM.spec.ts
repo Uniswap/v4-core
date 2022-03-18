@@ -441,5 +441,14 @@ describe.only('TWAMM', () => {
       expect(parseInt(unclaimed.toString())).to.be.greaterThan(0)
     })
     // TODO: test an order that expires after only 1 interval and claim in between
+
+    it('gas', async () => {
+      const expiration = (await twamm.getOrder(orderId)).expiration.toNumber()
+      const afterExpiration = expiration + interval / 2
+
+      advanceTime(afterExpiration)
+
+      await snapshotGasCost(twamm.claimEarnings(orderId, poolParams, mockTicks))
+    })
   })
 })

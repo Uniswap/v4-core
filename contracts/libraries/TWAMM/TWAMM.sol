@@ -131,20 +131,16 @@ library TWAMM {
         returns (uint256 earningsAmount, uint8 sellTokenIndex)
     {
         Order memory order = self.orders[orderId];
-        sellTokenIndex = order.sellTokenIndex;
-        OrderPool.State storage orderPool = self.orderPools[sellTokenIndex];
+        OrderPool.State storage orderPool = self.orderPools[order.sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
-            // TODO: math to be refined
             earningsAmount =
                 ((earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate) >>
                 FixedPoint96.RESOLUTION;
             // clear stake
             self.orders[orderId].unclaimedEarningsFactor = 0;
         } else {
-            // TODO: math to be refined, divide by 2**96 bc its represented as fixedPointX96
-            // TODO: set the earningsFactor
             earningsAmount =
                 ((orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor) * order.sellRate) >>
                 FixedPoint96.RESOLUTION;
