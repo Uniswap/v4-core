@@ -9,8 +9,8 @@ pragma solidity ^0.8.12;
 /// Observations are overwritten when the full length of the oracle array is populated.
 /// The most recent observation is available, independent of the length of the oracle array, by passing 0 to observe()
 library Oracle {
-    /// @notice Thrown when trying to interact with a non-initialized pool
-    error PoolNotInitialized();
+    /// @notice Thrown when trying to interact with an Oracle of a non-initialized pool
+    error OracleCardinalityCannotBeZero();
 
     /// @notice Thrown when trying to observe a price that is older than the oldest recorded price
     /// @param oldestTimestamp Timestamp of the oldest remaining observation
@@ -123,7 +123,7 @@ library Oracle {
         uint16 next
     ) internal returns (uint16) {
         unchecked {
-            if (current == 0) revert PoolNotInitialized();
+            if (current == 0) revert OracleCardinalityCannotBeZero();
             // no-op if the passed next value isn't greater than the current next value
             if (next <= current) return current;
             // store in each slot to prevent fresh SSTOREs in swaps
@@ -338,7 +338,7 @@ library Oracle {
         uint16 cardinality
     ) internal view returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) {
         unchecked {
-            if (cardinality == 0) revert PoolNotInitialized();
+            if (cardinality == 0) revert OracleCardinalityCannotBeZero();
 
             tickCumulatives = new int56[](secondsAgos.length);
             secondsPerLiquidityCumulativeX128s = new uint160[](secondsAgos.length);
