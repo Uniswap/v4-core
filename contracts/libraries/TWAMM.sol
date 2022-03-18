@@ -27,6 +27,10 @@ library TWAMM {
     /// @param currentTime The current block timestamp
     error OrderAlreadyCompleted(uint256 orderId, uint256 expiration, uint256 currentTime);
 
+    /// @notice Thrown when trying to submit an order with an expiration that isn't on the interval.
+    /// @param expiration The expiration timestamp of the order
+    error ExpirationNotOnInterval(uint256 expiration);
+
     /// @notice Contains full state related to long term orders
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
     /// @member lastVirtualOrderTimestamp Last timestamp in which virtual orders were executed
@@ -76,6 +80,10 @@ library TWAMM {
         internal
         returns (uint256 orderId)
     {
+        if (params.expiration % self.expirationInterval != 0) {
+            revert ExpirationNotOnInterval(params.expiration);
+        }
+
         // TODO: bump twamm order state
         orderId = self.nextId++;
 
@@ -102,7 +110,11 @@ library TWAMM {
     /// @param orderId The ID of the order to be cancelled
     function cancelLongTermOrder(State storage self, uint256 orderId)
         internal
-        returns (uint256 unsoldAmount, uint256 purchasedAmount)
+        returns (
+            uint256 unsoldAmount,
+            uint256 purchasedAmount,
+            uint8 sellTokenIndex
+        )
     {
         // TODO: bump TWAMM order state
         Order memory order = self.orders[orderId];
@@ -112,6 +124,8 @@ library TWAMM {
 
         (unsoldAmount, purchasedAmount) = calculateCancellationAmounts(order);
 
+        sellTokenIndex = order.sellTokenIndex;
+
         self.orders[orderId].sellRate = 0;
         self.orderPools[order.sellTokenIndex].sellRateCurrent -= order.sellRate;
         self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= order.sellRate;
@@ -119,17 +133,28 @@ library TWAMM {
 
     /// @notice Claim earnings from an ongoing or expired order
     /// @param orderId The ID of the order to be claimed
-    function claimEarnings(State storage self, uint256 orderId) internal returns (uint256 earningsAmount) {
+    function claimEarnings(State storage self, uint256 orderId)
+        internal
+        returns (uint256 earningsAmount, uint8 sellTokenIndex)
+    {
         Order memory order = self.orders[orderId];
-        OrderPool.State storage orderPool = self.orderPools[order.sellTokenIndex];
+        sellTokenIndex = order.sellTokenIndex;
+        OrderPool.State storage orderPool = self.orderPools[sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
             // TODO: math to be refined
-            earningsAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
+            earningsAmount =
+                ((earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate) >>
+                FixedPoint96.RESOLUTION;
+            // clear stake
+            self.orders[orderId].unclaimedEarningsFactor = 0;
         } else {
-            // TODO: math to be refined
-            earningsAmount = (orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor) * order.sellRate;
+            // TODO: math to be refined, divide by 2**96 bc its represented as fixedPointX96
+            // TODO: set the earningsFactor
+            earningsAmount =
+                ((orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor) * order.sellRate) >>
+                FixedPoint96.RESOLUTION;
             self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
         }
     }
