@@ -91,4 +91,17 @@ contract TWAMMTest {
     function getNextId() external view returns (uint256 nextId) {
         return twamm.nextId;
     }
+
+    function claimEarnings(uint256 orderId, TWAMM.PoolParamsOnExecute memory params)
+        external
+        returns (
+            uint256 earningsAmount,
+            uint8 sellTokenIndex,
+            uint256 unclaimedEarnings
+        )
+    {
+        twamm.executeTWAMMOrders(params, mockTicks);
+        (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderId);
+        unclaimedEarnings = twamm.orders[orderId].unclaimedEarningsFactor;
+    }
 }

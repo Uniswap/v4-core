@@ -16,6 +16,17 @@ describe.only('TWAMM', () => {
     loadFixture = waffle.createFixtureLoader([wallet, other])
   })
 
+  async function advanceTime(time: number) {
+    await ethers.provider.send('evm_mine', [time])
+  }
+
+  // Finds the time that is numIntervals away from the timestamp.
+  // If numIntervals = 0, it finds the closest time.
+  function findExpiryTime(timestamp: number, numIntervals: number, interval: number) {
+    const nextExpirationTimestamp = timestamp + (interval - (timestamp % interval)) + numIntervals * interval
+    return nextExpirationTimestamp
+  }
+
   beforeEach(async () => {
     twamm = await loadFixture(twammFixture)
   })
@@ -42,18 +53,29 @@ describe.only('TWAMM', () => {
     let zeroForOne: boolean
     let owner: string
     let amountIn: BigNumber
+    let nonIntervalExpiration: number
     let expiration: number
 
     beforeEach('deploy test twamm', async () => {
       zeroForOne = true
       owner = wallet.address
       amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
-      expiration = (await ethers.provider.getBlock('latest')).timestamp + 86400
+      await twamm.initialize(10_000)
+      const blocktime = (await ethers.provider.getBlock('latest')).timestamp
+      nonIntervalExpiration = blocktime
+      // gets the valid expiry time that is 3 intervals out
+      expiration = findExpiryTime(blocktime, 3, 10000)
+    })
+
+    it('reverts because of bad expiry', async () => {
+      const nextId = await twamm.getNextId()
+      await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to.be
+        .reverted
     })
 
     it('stores the new long term order', async () => {
       const nextId = await twamm.getNextId()
-
+      // TODO: if the twamm is not initialized, should revert
       await twamm.submitLongTermOrder({
         zeroForOne,
         owner,
@@ -110,12 +132,14 @@ describe.only('TWAMM', () => {
     let orderId: BigNumber
 
     beforeEach('deploy test twamm', async () => {
+      twamm.initialize(10_000)
+
       orderId = await twamm.getNextId()
 
       const zeroForOne = true
       const owner = wallet.address
       const amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
-      const expiration = (await ethers.provider.getBlock('latest')).timestamp + 86400
+      const expiration = findExpiryTime((await ethers.provider.getBlock('latest')).timestamp, 3, 10_000)
 
       await twamm.submitLongTermOrder({
         zeroForOne,
@@ -149,7 +173,7 @@ describe.only('TWAMM', () => {
     let timestampInterval4: number
 
     function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
-        return timestamp + (interval - (timestamp % interval)) + (interval * (n-1))
+      return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
     }
 
     beforeEach(async () => {
@@ -335,5 +359,87 @@ describe.only('TWAMM', () => {
 
       it('returns the correct parameters when orderPool0 has a 0 sell rate')
     })
+  })
+
+  describe('#claimEarnings', () => {
+    let orderId: BigNumber
+    const mockTicks = {}
+    const poolParams = {
+      feeProtocol: 0,
+      sqrtPriceX96: encodeSqrtPriceX96(1, 1),
+      fee: '3000',
+      liquidity: '14496800315719602540',
+    }
+    let expiration: number
+    let expiration2: number
+    const interval = 10
+
+    beforeEach('create new longTermOrder', async () => {
+      await twamm.initialize(interval)
+
+      orderId = await twamm.getNextId()
+      const timestamp = (await ethers.provider.getBlock('latest')).timestamp
+      expiration = findExpiryTime(timestamp, 2, interval)
+      expiration2 = findExpiryTime(timestamp, 3, interval)
+
+      const zeroForOne = {
+        zeroForOne: true,
+        owner: wallet.address,
+        amountIn: BigNumber.from(`2${'0'.repeat(5)}`),
+        expiration: expiration,
+      }
+
+      const zeroForOne2 = {
+        zeroForOne: true,
+        owner: wallet.address,
+        amountIn: BigNumber.from(`2${'0'.repeat(5)}`),
+        expiration: expiration2,
+      }
+
+      const oneForZero = {
+        zeroForOne: false,
+        owner: wallet.address,
+        amountIn: BigNumber.from(`4${'0'.repeat(5)}`),
+        expiration: expiration2,
+      }
+      // TODO: Test swaps in one direction
+      await twamm.submitLongTermOrder(zeroForOne)
+      await twamm.submitLongTermOrder(oneForZero)
+      await twamm.submitLongTermOrder(zeroForOne2)
+    })
+
+    it('should give correct earnings amount and have no unclaimed earnings', async () => {
+      const expiration = (await twamm.getOrder(orderId)).expiration.toNumber()
+      const afterExpiration = expiration + interval / 2
+      expect(afterExpiration).to.be.greaterThan(expiration)
+
+      advanceTime(afterExpiration)
+
+      const result = await twamm.callStatic.claimEarnings(orderId, poolParams, mockTicks)
+
+      const earningsAmount: BigNumber = result.earningsAmount
+      const unclaimed: BigNumber = result.unclaimedEarnings
+
+      // TODO: calculate expected earningsAmount
+      expect(earningsAmount.toNumber()).to.be.greaterThan(0)
+      expect(unclaimed.toNumber()).to.eq(0)
+    })
+
+    it('should give correct earningsAmount and have some unclaimed earnings', async () => {
+      const expiration = (await twamm.getOrder(orderId)).expiration.toNumber()
+      const beforeExpiration = expiration - interval / 2
+
+      advanceTime(beforeExpiration)
+
+      const result = await twamm.callStatic.claimEarnings(orderId, poolParams, mockTicks)
+
+      const earningsAmount: BigNumber = result.earningsAmount
+      const unclaimed: BigNumber = result.unclaimedEarnings
+
+      // TODO: calculate expected earningsAmount
+      expect(earningsAmount.toNumber()).to.be.greaterThan(0)
+      expect(parseInt(unclaimed.toString())).to.be.greaterThan(0)
+    })
+    // TODO: test an order that expires after only 1 interval and claim in between
   })
 })
