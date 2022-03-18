@@ -25,6 +25,10 @@ library TWAMM {
     /// @param currentTime The current block timestamp
     error OrderAlreadyCompleted(uint256 orderId, uint256 expiration, uint256 currentTime);
 
+    /// @notice Thrown when trying to submit an order with an expiration that isn't on the interval.
+    /// @param expiration The expiration timestamp of the order
+    error ExpirationNotOnInterval(uint256 expiration);
+
     /// @notice Contains full state related to long term orders
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
     /// @member lastVirtualOrderTimestamp Last timestamp in which virtual orders were executed
@@ -87,6 +91,10 @@ library TWAMM {
         internal
         returns (uint256 orderId)
     {
+        if (params.expiration % self.expirationInterval != 0) {
+            revert ExpirationNotOnInterval(params.expiration);
+        }
+
         // TODO: bump twamm order state
         orderId = self.nextId++;
 
@@ -151,18 +159,13 @@ library TWAMM {
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
-            // console.log('earningsFactorAtExpiration', earningsFactorAtExpiration);
             // TODO: math to be refined
             earningsAmount = (earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate;
-
-            // console.log('unclaimedFactor', order.unclaimedEarningsFactor);
-            // console.log('order.sellRate', order.sellRate);
-            // console.log('earningsAmount', earningsAmount);
-
             // clear stake
             self.orders[orderId].unclaimedEarningsFactor = 0;
         } else {
             // TODO: math to be refined
+            // TODO: set the earningsFactor
             earningsAmount = (orderPool.earningsFactor - order.unclaimedEarningsFactor) * order.sellRate;
             //reset the earningsFactor
             self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactor;
@@ -221,7 +224,6 @@ library TWAMM {
             }
             nextExpirationTimestamp += self.expirationInterval;
         }
-
         if (prevTimestamp != block.timestamp) {
             (
                 uint160 newSqrtPriceX96,
@@ -283,15 +285,6 @@ library TWAMM {
         bytes16 newSqrtPriceX96 = sqrtSellRatioX96.mul(numerator).div(denominator);
 
         // tracking intermediate calculations here: https://www.desmos.com/calculator/rjcdwnaoja
-
-        console.log('c:');
-        console.logInt(c.mul(uint256(100000).fromUInt()).toInt());
-
-        console.log('pow:');
-        console.log(pow.mul(uint256(100000).fromUInt()).toUInt());
-
-        console.log('final: ');
-        console.log(newSqrtPriceX96.toUInt());
 
         // TODO: For now give sold amount as earnings to opposite pool. Then take amount out from after swap and assign that
         // to the corresponding pool. (unless I can get that number amountOut through pure calculation but seems hard)
