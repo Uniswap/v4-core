@@ -11,7 +11,6 @@ import {FixedPoint128} from './FixedPoint128.sol';
 import {TickMath} from './TickMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
 import {SwapMath} from './SwapMath.sol';
-import {PoolNotInitialized} from './CommonErrors.sol';
 
 library Pool {
     using SafeCast for *;
@@ -40,6 +39,9 @@ library Pool {
 
     /// @notice Thrown when trying to initalize an already initialized pool
     error PoolAlreadyInitialized();
+
+    /// @notice Thrown when trying to interact with a non-initialized pool
+    error PoolNotInitialized();
 
     /// @notice Thrown when trying to swap amount of 0
     error SwapAmountCannotBeZero();

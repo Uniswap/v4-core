@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
-import {PoolNotInitialized} from './CommonErrors.sol';
-
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
 /// @dev Instances of stored oracle data, "observations", are collected in the oracle array
@@ -11,6 +9,9 @@ import {PoolNotInitialized} from './CommonErrors.sol';
 /// Observations are overwritten when the full length of the oracle array is populated.
 /// The most recent observation is available, independent of the length of the oracle array, by passing 0 to observe()
 library Oracle {
+    /// @notice Thrown when trying to interact with a non-initialized pool
+    error PoolNotInitialized();
+
     /// @notice Thrown when trying to observe a price that is older than the oldest recorded price
     /// @param oldestTimestamp Timestamp of the oldest remaining observation
     /// @param targetTimestamp Invalid timestamp targeted to be observed
