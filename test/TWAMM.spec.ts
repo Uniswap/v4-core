@@ -342,7 +342,7 @@ describe.only('TWAMM', () => {
     })
   })
 
-  describe.skip('#claimEarnings', () => {
+  describe('#claimEarnings', () => {
     let orderId: BigNumber
     const mockTicks = {}
     const poolParams = {
@@ -387,20 +387,17 @@ describe.only('TWAMM', () => {
       await twamm.submitLongTermOrder(oneForZero)
       await twamm.submitLongTermOrder(zeroForOne2)
     })
-    it('should give correct earnings amount and have no unclaimed earnings', async () => {
+    it.only('should give correct earnings amount and have no unclaimed earnings', async () => {
       const expiration = (await twamm.getOrder(orderId)).expiration.toNumber()
       const afterExpiration = expiration + interval / 2
       expect(afterExpiration).to.be.greaterThan(expiration)
 
       advanceTime(afterExpiration)
 
-      const tx = await twamm.claimEarnings(orderId, poolParams, mockTicks)
-      const tr = await tx.wait()
+      const result = await twamm.callStatic.claimEarnings(orderId, poolParams, mockTicks)
 
-      // console.log(tr.events![0].args)
-
-      const earningsAmount: BigNumber = tr.events![0].args![0]
-      const unclaimed: BigNumber = tr.events![0].args![1]!
+      const earningsAmount: BigNumber = result.earningsAmount
+      const unclaimed: BigNumber = result.unclaimedEarnings
 
       // TODO: calculate expected earningsAmount
       expect(earningsAmount.toNumber()).to.be.greaterThan(0)

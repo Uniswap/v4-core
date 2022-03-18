@@ -11,8 +11,6 @@ contract TWAMMTest {
     TWAMM.State public twamm;
     mapping(int24 => Tick.Info) mockTicks;
 
-    event ClaimEarnings(uint256 earningsAmount, uint256 unclaimedEarnings);
-
     function initialize(uint256 orderInterval) external {
         twamm.initialize(orderInterval);
     }
@@ -95,11 +93,14 @@ contract TWAMMTest {
 
     function claimEarnings(uint256 orderId, TWAMM.PoolParamsOnExecute memory params)
         external
-        returns (uint256 earningsAmount, uint8 sellTokenIndex)
+        returns (
+            uint256 earningsAmount,
+            uint8 sellTokenIndex,
+            uint256 unclaimedEarnings
+        )
     {
         twamm.executeTWAMMOrders(params, mockTicks);
         (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderId);
-        uint256 unclaimed = twamm.orders[orderId].unclaimedEarningsFactor;
-        emit ClaimEarnings(earningsAmount, unclaimed);
+        unclaimedEarnings = twamm.orders[orderId].unclaimedEarningsFactor;
     }
 }
