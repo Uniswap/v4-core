@@ -2,6 +2,7 @@
 pragma solidity =0.8.12;
 
 import {TWAMM} from '../libraries/TWAMM.sol';
+import {TwammMath} from '../libraries/TWAMM/TwammMath.sol';
 import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {Tick} from '../libraries/Tick.sol';
 
@@ -39,7 +40,7 @@ contract TWAMMTest {
             uint256 earningsPool1
         )
     {
-        (sqrtPriceX96, earningsPool0, earningsPool1) = TWAMM.calculateExecutionUpdates(
+        (sqrtPriceX96, earningsPool0, earningsPool1) = TwammMath.calculateExecutionUpdates(
             secondsElapsed,
             poolParams,
             orderPoolParams,
