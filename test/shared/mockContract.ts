@@ -27,7 +27,7 @@ export const deployMockContract = async (contractInterface: Interface, address: 
     },
     calledWith: async (fn: string, params: any[]): Promise<boolean> => {
       // Drop fn selector, keep 0x prefix so ethers interprets as byte string
-      const paramsBytes = '0x' + contractInterface.encodeFunctionData(fn, params).slice(10) 
+      const paramsBytes = '0x' + contractInterface.encodeFunctionData(fn, params).slice(10)
       return contractMock.calledWith(contractInterface.getFunction(fn).format(FormatTypes.sighash), paramsBytes)
     },
   }
