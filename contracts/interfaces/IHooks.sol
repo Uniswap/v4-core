@@ -7,13 +7,6 @@ import {IPoolManager} from './IPoolManager.sol';
 /// the hooks contract is deployed to. For example, a 1 bit in the first bit of the address will
 /// cause the 'before swap' hook to be invoked. See the Hooks library for the full spec.
 interface IHooks {
-    struct Calls {
-        bool beforeModifyPosition;
-        bool afterModifyPosition;
-        bool beforeSwap;
-        bool afterSwap;
-    }
-
     function beforeModifyPosition(
         address sender,
         IPoolManager.PoolKey calldata key,

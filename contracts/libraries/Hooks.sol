@@ -14,11 +14,18 @@ library Hooks {
     uint256 public constant HOOK_MASK =
         BEFORE_SWAP_FLAG | AFTER_SWAP_FLAG | BEFORE_MODIFY_POSITION_FLAG | AFTER_MODIFY_POSITION_FLAG;
 
+    struct Calls {
+        bool beforeModifyPosition;
+        bool afterModifyPosition;
+        bool beforeSwap;
+        bool afterSwap;
+    }
+
     /// @notice Utility function intended to be used in hook constructors to ensure
     /// the deployed hook address will be called
     /// @param params The hooks that are intended to be called
     /// @return True if the hooks address causes only the specified hooks to be invoked
-    function isValidHookAddress(IHooks self, IHooks.Calls calldata params) internal pure returns (bool) {
+    function isValidHookAddress(IHooks self, Calls calldata params) internal pure returns (bool) {
         uint256 mask = 0;
         if (params.beforeSwap) {
             mask = mask | BEFORE_SWAP_FLAG;
