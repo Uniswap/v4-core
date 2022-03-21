@@ -266,6 +266,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee),
             pool.ticks
         );
-        swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
+        if (amountIn > 0) {
+          swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
+        }
     }
 }

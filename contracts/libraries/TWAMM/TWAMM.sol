@@ -6,6 +6,7 @@ import {OrderPool} from './OrderPool.sol';
 import {TwammMath} from './TwammMath.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SwapMath} from '../SwapMath.sol';
+import 'hardhat/console.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -171,10 +172,17 @@ library TWAMM {
             uint160 newSqrtPriceX96
         )
     {
+
+        if (self.orderPools[0].sellRateCurrent == 0 && self.orderPools[1].sellRateCurrent == 0) {
+          self.lastVirtualOrderTimestamp = block.timestamp;
+          return (false, 0, 0);
+        }
+
         uint160 prevSqrtPriceX96 = poolParams.sqrtPriceX96;
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
         uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +
             (self.expirationInterval - (self.lastVirtualOrderTimestamp % self.expirationInterval));
+
 
         while (nextExpirationTimestamp <= block.timestamp) {
             // skip calculations on intervals that don't have any expirations
@@ -196,13 +204,15 @@ library TWAMM {
             nextExpirationTimestamp += self.expirationInterval;
         }
 
-        if (nextExpirationTimestamp > block.timestamp) {
-            newSqrtPriceX96 = advanceToCurrentTime(self, nextExpirationTimestamp - prevTimestamp, poolParams, ticks);
+        if (prevTimestamp < block.timestamp) {
+            poolParams.sqrtPriceX96 = advanceToCurrentTime(self, nextExpirationTimestamp - prevTimestamp, poolParams, ticks);
         }
+
+        self.lastVirtualOrderTimestamp = block.timestamp;
 
         (, swapAmountIn, , ) = SwapMath.computeSwapStep(
             prevSqrtPriceX96,
-            newSqrtPriceX96,
+            poolParams.sqrtPriceX96,
             poolParams.liquidity,
             type(int256).max,
             poolParams.fee

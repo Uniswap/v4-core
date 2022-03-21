@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
+import 'hardhat/console.sol';
+
 /// @title TWAMM OrderPool - Represents an OrderPool inside of a TWAMM
 library OrderPool {
     /// @notice Information related to a long term order pool.
@@ -20,15 +22,15 @@ library OrderPool {
     function advanceToInterval(
         State storage self,
         uint256 expiration,
-        uint256 earningsAmount
+        uint256 earningsFactor
     ) internal {
-        self.earningsFactorCurrent += (earningsAmount / self.sellRateCurrent);
+        self.earningsFactorCurrent += earningsFactor;
         self.earningsFactorAtInterval[expiration] = self.earningsFactorCurrent;
         self.sellRateCurrent -= self.sellRateEndingAtInterval[expiration];
     }
 
     // Performs all the updates on an OrderPool that must happen when updating to the current time
-    function advanceToCurrentTime(State storage self, uint256 earningsAmount) internal {
-        self.earningsFactorCurrent += (earningsAmount / self.sellRateCurrent);
+    function advanceToCurrentTime(State storage self, uint256 earningsFactor) internal {
+        self.earningsFactorCurrent += earningsFactor;
     }
 }

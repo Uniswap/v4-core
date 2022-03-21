@@ -1,11 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`TWAMM #calculateExecutionUpdates without any initialized ticks gas 1`] = `74912`;
-
 exports[`TWAMM #cancelLongTermOrder gas 1`] = `34984`;
 
-exports[`TWAMM #claimEarnings gas 1`] = `255695`;
+exports[`TWAMM #claimEarnings gas 1`] = `259535`;
 
-exports[`TWAMM #executeTWAMMOrders gas 1`] = `348933`;
+exports[`TWAMM #executeTWAMMOrders gas 1`] = `351133`;
 
-exports[`TWAMM #submitLongTermOrder gas 1`] = `162950`;
+exports[`TWAMM #submitLongTermOrder gas 1`] = `162962`;

@@ -6,6 +6,22 @@ import { expect } from './shared/expect'
 import snapshotGasCost from './shared/snapshotGasCost'
 import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
 
+async function advanceTime(time: number) {
+  await ethers.provider.send('evm_mine', [time])
+}
+
+function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
+  return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
+}
+
+function toWei(n: string): BigNumber {
+  return ethers.utils.parseEther(n)
+}
+
+function divX96(n: BigNumber): string {
+  return (parseInt(n.toString()) / 2 ** 96).toString()
+}
+
 describe.only('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
@@ -15,10 +31,6 @@ describe.only('TWAMM', () => {
     ;[wallet, other] = await (ethers as any).getSigners()
     loadFixture = waffle.createFixtureLoader([wallet, other])
   })
-
-  async function advanceTime(time: number) {
-    await ethers.provider.send('evm_mine', [time])
-  }
 
   // Finds the time that is numIntervals away from the timestamp.
   // If numIntervals = 0, it finds the closest time.
@@ -59,7 +71,7 @@ describe.only('TWAMM', () => {
     beforeEach('deploy test twamm', async () => {
       zeroForOne = true
       owner = wallet.address
-      amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
+      amountIn = toWei('1'),
       await twamm.initialize(10_000)
       const blocktime = (await ethers.provider.getBlock('latest')).timestamp
       nonIntervalExpiration = blocktime
@@ -138,7 +150,7 @@ describe.only('TWAMM', () => {
 
       const zeroForOne = true
       const owner = wallet.address
-      const amountIn = BigNumber.from(`1${'0'.repeat(18)}`)
+      const amountIn = toWei('1')
       const expiration = findExpiryTime((await ethers.provider.getBlock('latest')).timestamp, 3, 10_000)
 
       await twamm.submitLongTermOrder({
@@ -172,10 +184,6 @@ describe.only('TWAMM', () => {
     let timestampInterval3: number
     let timestampInterval4: number
 
-    function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
-      return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
-    }
-
     beforeEach(async () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       timestampInterval1 = nIntervalsFrom(latestTimestamp, 10_000, 1)
@@ -188,14 +196,14 @@ describe.only('TWAMM', () => {
       await twamm.submitLongTermOrder({
         zeroForOne: true,
         owner: wallet.address,
-        amountIn: BigNumber.from(`1${'0'.repeat(18)}`),
+        amountIn: toWei('1'),
         expiration: timestampInterval1,
       })
 
       await twamm.submitLongTermOrder({
         zeroForOne: false,
         owner: wallet.address,
-        amountIn: BigNumber.from(`50${'0'.repeat(18)}`),
+        amountIn: toWei('5'),
         expiration: timestampInterval3,
       })
 
@@ -203,14 +211,14 @@ describe.only('TWAMM', () => {
       await twamm.submitLongTermOrder({
         zeroForOne: false,
         owner: wallet.address,
-        amountIn: BigNumber.from(`2${'0'.repeat(18)}`),
+        amountIn: toWei('2'),
         expiration: timestampInterval4,
       })
 
       await twamm.submitLongTermOrder({
         zeroForOne: true,
         owner: wallet.address,
-        amountIn: BigNumber.from(`2${'0'.repeat(18)}`),
+        amountIn: toWei('2'),
         expiration: timestampInterval4,
       })
     })
@@ -258,109 +266,6 @@ describe.only('TWAMM', () => {
     })
   })
 
-  describe('#calculateExecutionUpdates', () => {
-    let secondsElapsed: BigNumberish
-    let sqrtPriceX96: BigNumberish
-    let liquidity: BigNumberish
-    let fee: BigNumberish
-    let sellRateCurrent0: BigNumberish
-    let sellRateCurrent1: BigNumberish
-
-    beforeEach(async () => {
-       secondsElapsed = 3600
-       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
-       liquidity = '10000000000000000000'
-       fee = '3000'
-       sellRateCurrent0 = '10000000000000'
-       sellRateCurrent1 = '5000'
-    })
-
-    describe('without any initialized ticks', () => {
-      it('returns the correct parameters when sellRateCurrent0 is higher', async () => {
-        const results = await twamm.callStatic.calculateExecutionUpdates(
-          secondsElapsed,
-          {
-            sqrtPriceX96,
-            liquidity,
-            fee,
-          },
-          {
-            sellRateCurrent0,
-            sellRateCurrent1,
-          }
-        )
-        expect(results.sqrtPriceX96).to.eq('78943964243131674870404435821')
-        expect(results.earningsPool0).to.eq('284198271275273415665190322494405')
-        expect(results.earningsPool1).to.eq('286249414193404035566722049114112') // TODO: this number is coming out incorrect
-      })
-
-      it('returns the correct parameters when sellRateCurrent1 is higher', async () => {
-        sellRateCurrent0 = '5000'
-        sellRateCurrent1 = '10000000000000'
-        const results = await twamm.callStatic.calculateExecutionUpdates(
-          secondsElapsed,
-          {
-            sqrtPriceX96,
-            liquidity,
-            fee,
-          },
-          {
-            sellRateCurrent0,
-            sellRateCurrent1,
-          }
-        )
-        expect(results.sqrtPriceX96).to.eq('79513383899172564501784006539')
-        expect(results.earningsPool0).to.eq('286249414193404035907969615921152') // TODO: this number is incorrect from desmos
-        expect(results.earningsPool1).to.eq('284198271275273415665190322324995') // TODO: precision is off at the 5th decimal place
-      })
-
-      it('returns the correct parameters over longer time periods', async () => {
-        secondsElapsed = 3600 * 100
-
-        const results = await twamm.callStatic.calculateExecutionUpdates(
-          secondsElapsed,
-          {
-            sqrtPriceX96,
-            liquidity,
-            fee,
-          },
-          {
-            sellRateCurrent0,
-            sellRateCurrent1,
-          }
-        )
-        expect(results.sqrtPriceX96).to.eq('58256001859542945232537908987')
-        expect(results.earningsPool0).to.eq('20972160668982461613573622115003872') // TODO: precision off at 5th decimal place
-        expect(results.earningsPool1).to.eq('40022264742331847176083518403903488') // TODO: this number is incorrect in desmos, but close-ish
-      })
-
-      it('gas', async () => {
-        await snapshotGasCost(
-          twamm.calculateExecutionUpdates(
-            secondsElapsed,
-            {
-              sqrtPriceX96,
-              liquidity,
-              fee,
-            },
-            {
-              sellRateCurrent0,
-              sellRateCurrent1,
-            }
-          )
-        )
-      })
-
-      it('returns the correct parameters when TWAMM trades pushes the price to the max part of the curve')
-
-      it('returns the correct parameters when TWAMM trades pushes the price to the min part of the curve')
-
-      it('returns the correct parameters when orderPool1 has a 0 sell rate')
-
-      it('returns the correct parameters when orderPool0 has a 0 sell rate')
-    })
-  })
-
   describe('#claimEarnings', () => {
     let orderId: BigNumber
     const mockTicks = {}
@@ -385,21 +290,21 @@ describe.only('TWAMM', () => {
       const zeroForOne = {
         zeroForOne: true,
         owner: wallet.address,
-        amountIn: BigNumber.from(`2${'0'.repeat(5)}`),
+        amountIn: toWei('2'),
         expiration: expiration,
       }
 
       const zeroForOne2 = {
         zeroForOne: true,
         owner: wallet.address,
-        amountIn: BigNumber.from(`2${'0'.repeat(5)}`),
+        amountIn: toWei('2'),
         expiration: expiration2,
       }
 
       const oneForZero = {
         zeroForOne: false,
         owner: wallet.address,
-        amountIn: BigNumber.from(`4${'0'.repeat(5)}`),
+        amountIn: toWei('4'),
         expiration: expiration2,
       }
       // TODO: Test swaps in one direction
@@ -421,7 +326,7 @@ describe.only('TWAMM', () => {
       const unclaimed: BigNumber = result.unclaimedEarnings
 
       // TODO: calculate expected earningsAmount
-      expect(earningsAmount.toNumber()).to.be.greaterThan(0)
+      expect(parseInt(earningsAmount.toString())).to.be.greaterThan(0)
       expect(unclaimed.toNumber()).to.eq(0)
     })
 
@@ -437,7 +342,7 @@ describe.only('TWAMM', () => {
       const unclaimed: BigNumber = result.unclaimedEarnings
 
       // TODO: calculate expected earningsAmount
-      expect(earningsAmount.toNumber()).to.be.greaterThan(0)
+      expect(parseInt(earningsAmount.toString())).to.be.greaterThan(0)
       expect(parseInt(unclaimed.toString())).to.be.greaterThan(0)
     })
     // TODO: test an order that expires after only 1 interval and claim in between
@@ -449,6 +354,87 @@ describe.only('TWAMM', () => {
       advanceTime(afterExpiration)
 
       await snapshotGasCost(twamm.claimEarnings(orderId, poolParams, mockTicks))
+    })
+  })
+
+  describe('end-to-end simulation', async () => {
+    it('distributes correct rewards on equal trading pools at a price of 1', async () => {
+      const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+      const liquidity = '1000000000000000000000000'
+      const fee = '3000'
+
+      const fullSellAmount = toWei('5')
+      const halfSellAmount = toWei('2.5')
+
+      const poolParams = { sqrtPriceX96, liquidity , fee}
+
+       await twamm.initialize(10_000)
+
+       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+       const timestampInterval1 = nIntervalsFrom(latestTimestamp, 10_000, 1)
+       const timestampInterval2 = nIntervalsFrom(latestTimestamp, 10_000, 3)
+       const timestampInterval3 = nIntervalsFrom(latestTimestamp, 10_000, 4)
+
+       await ethers.provider.send("evm_setAutomine", [false])
+
+       await twamm.executeTWAMMOrders(poolParams)
+
+       await twamm.submitLongTermOrder({
+         zeroForOne: true,
+         owner: wallet.address,
+         amountIn: halfSellAmount,
+         expiration: timestampInterval2,
+       })
+
+       await twamm.submitLongTermOrder({
+         zeroForOne: true,
+         owner: wallet.address,
+         amountIn: halfSellAmount,
+         expiration: timestampInterval2,
+       })
+
+
+       await twamm.submitLongTermOrder({
+         zeroForOne: false,
+         owner: wallet.address,
+         amountIn: fullSellAmount,
+         expiration: timestampInterval2,
+       })
+
+       expect((await twamm.getOrderPool(0)).sellRate).to.eq(0)
+       expect((await twamm.getOrderPool(1)).sellRate).to.eq(0)
+
+       await ethers.provider.send("evm_setAutomine", [true])
+       await ethers.provider.send('evm_mine', [timestampInterval1])
+
+       expect((await twamm.getOrderPool(0)).sellRate).to.eq('250000000000000')
+       expect((await twamm.getOrderPool(1)).sellRate).to.eq('250000000000000')
+       expect((await twamm.getOrderPool(0)).earningsFactor).to.eq('0')
+       expect((await twamm.getOrderPool(1)).earningsFactor).to.eq('0')
+
+       await ethers.provider.send("evm_setNextBlockTimestamp", [timestampInterval2])
+       await twamm.executeTWAMMOrders(poolParams)
+
+       expect((await twamm.callStatic.getOrderPool(0)).sellRate).to.eq('0')
+       expect((await twamm.callStatic.getOrderPool(1)).sellRate).to.eq('0')
+       expect((await twamm.callStatic.getOrderPool(0)).earningsFactor).to.eq('1584563250285286751870879006720000')
+       expect((await twamm.callStatic.getOrderPool(1)).earningsFactor).to.eq('1584563250285286751870879006720000')
+
+       await ethers.provider.send("evm_setNextBlockTimestamp", [timestampInterval3])
+       await twamm.executeTWAMMOrders(poolParams)
+
+       expect((await twamm.getOrderPool(0)).sellRate).to.eq('0')
+       expect((await twamm.getOrderPool(1)).sellRate).to.eq('0')
+       expect((await twamm.getOrderPool(0)).earningsFactor).to.eq('1584563250285286751870879006720000')
+       expect((await twamm.getOrderPool(1)).earningsFactor).to.eq('1584563250285286751870879006720000')
+
+       expect((await twamm.getOrder(0)).sellRate).to.eq(halfSellAmount.div(20_000))
+       expect((await twamm.getOrder(1)).sellRate).to.eq(halfSellAmount.div(20_000))
+       expect((await twamm.getOrder(2)).sellRate).to.eq(fullSellAmount.div(20_000))
+
+       expect((await twamm.callStatic.claimEarnings(0, poolParams)).earningsAmount).to.eq(halfSellAmount)
+       expect((await twamm.callStatic.claimEarnings(1, poolParams)).earningsAmount).to.eq(halfSellAmount)
+       expect((await twamm.callStatic.claimEarnings(2, poolParams)).earningsAmount).to.eq(fullSellAmount)
     })
   })
 })
