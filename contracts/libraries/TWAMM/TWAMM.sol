@@ -105,9 +105,8 @@ library TWAMM {
     function cancelLongTermOrder(State storage self, uint256 orderId)
         internal
         returns (
-            uint256 unsoldAmount,
-            uint256 purchasedAmount,
-            uint8 sellTokenIndex
+            uint256 amountOut0,
+            uint256 amountOut1
         )
     {
         // TODO: bump TWAMM order state
@@ -116,9 +115,8 @@ library TWAMM {
         if (order.expiration <= block.timestamp)
             revert OrderAlreadyCompleted(orderId, order.expiration, block.timestamp);
 
-        (unsoldAmount, purchasedAmount) = calculateCancellationAmounts(order);
-
-        sellTokenIndex = order.sellTokenIndex;
+        (amountOut0, amountOut1) = calculateCancellationAmounts(order);
+        if (order.sellTokenIndex == 1) (amountOut1, amountOut0) = (amountOut0, amountOut1);
 
         self.orders[orderId].sellRate = 0;
         self.orderPools[order.sellTokenIndex].sellRateCurrent -= order.sellRate;
