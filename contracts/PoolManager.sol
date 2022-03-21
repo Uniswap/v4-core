@@ -8,7 +8,7 @@ import {SafeCast} from './libraries/SafeCast.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
-import {IHooks} from './interfaces/callback/IHooks.sol';
+import {IHooks} from './interfaces/IHooks.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
@@ -102,7 +102,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, Pool.BalanceDelta memory delta) internal {
+    function _accountPoolBalanceDelta(PoolKey memory key, IPoolManager.BalanceDelta memory delta) internal {
         _accountDelta(key.token0, delta.amount0);
         _accountDelta(key.token1, delta.amount1);
     }
@@ -118,7 +118,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         override
         noDelegateCall
         onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
+        returns (IPoolManager.BalanceDelta memory delta)
     {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             key.hooks.beforeModifyPosition(msg.sender, key, params);
@@ -148,7 +148,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         override
         noDelegateCall
         onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
+        returns (IPoolManager.BalanceDelta memory delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
             key.hooks.beforeSwap(msg.sender, key, params);

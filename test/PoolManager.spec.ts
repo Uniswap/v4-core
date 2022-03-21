@@ -1,4 +1,4 @@
-import { Wallet } from 'ethers'
+import { Contract, ContractFactory, Wallet } from 'ethers'
 import hre from 'hardhat'
 import { ethers, waffle } from 'hardhat'
 import {
@@ -7,13 +7,14 @@ import {
   PoolManagerTest,
   PoolSwapTest,
   PoolModifyPositionTest,
-  TestHooks,
   EmptyTestHooks,
 } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId } from './shared/utilities'
+import { FormatTypes, Interface } from 'ethers/lib/utils'
+import { deployMockContract, MockedContract } from './shared/mockContract'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -28,36 +29,31 @@ describe('PoolManager', () => {
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
   let modifyPositionTest: PoolModifyPositionTest
-  let testHooksWithCalled: TestHooks
+  let hooksMock: MockedContract
   let testHooksEmpty: EmptyTestHooks
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
+
   const fixture = async () => {
     const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
-    const hooksTestWithCalledFactory = await ethers.getContractFactory('TestHooks')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
     const manager = (await singletonPoolFactory.deploy()) as PoolManager
 
     // Deploy hooks to addresses with leading 1111 to enable all of them.
-    const testHooksWithCalledAddress = '0xfd2026b3eE6eC71fc6746ADB6311f6d3BA1C000b'
+    const mockHooksAddress = '0xfd2026b3eE6eC71fc6746ADB6311f6d3BA1C000b'
     const testHooksEmptyAddress = '0xFb5801A7D398351b8BE11c439e05c5b3259aEC9b'
 
-    await hre.network.provider.send('hardhat_setCode', [
-      testHooksWithCalledAddress,
-      (await hre.artifacts.readArtifact('TestHooks')).deployedBytecode,
-    ])
-
-    const testHooksWithCalled: TestHooks = hooksTestWithCalledFactory.attach(testHooksWithCalledAddress) as TestHooks
+    hooksMock = await deployMockContract(hooksTestEmptyFactory.interface, mockHooksAddress)
 
     await hre.network.provider.send('hardhat_setCode', [
       testHooksEmptyAddress,
       (await hre.artifacts.readArtifact('EmptyTestHooks')).deployedBytecode,
     ])
 
-    const testHooksEmpty: EmptyTestHooks = hooksTestEmptyFactory.attach(testHooksEmptyAddress) as TestHooks
+    const testHooksEmpty: EmptyTestHooks = hooksTestEmptyFactory.attach(testHooksEmptyAddress) as EmptyTestHooks
 
     const result = {
       manager,
@@ -65,7 +61,7 @@ describe('PoolManager', () => {
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       tokens,
-      testHooksWithCalled,
+      hooksMock,
       testHooksEmpty,
     }
 
@@ -86,8 +82,9 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, testHooksWithCalled, testHooksEmpty } =
-      await loadFixture(fixture))
+    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, hooksMock, testHooksEmpty } = await loadFixture(
+      fixture
+    ))
   })
 
   it('bytecode size', async () => {
@@ -138,7 +135,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: testHooksWithCalled.address,
+          hooks: hooksMock.address,
         },
         encodeSqrtPriceX96(10, 1)
       )
@@ -151,7 +148,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: testHooksWithCalled.address,
+          hooks: hooksMock.address,
         })
       )
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
@@ -228,7 +225,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: testHooksWithCalled.address,
+          hooks: hooksMock.address,
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -239,7 +236,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: testHooksWithCalled.address,
+          hooks: hooksMock.address,
         },
         {
           tickLower: 0,
@@ -248,10 +245,28 @@ describe('PoolManager', () => {
         }
       )
 
-      expect(await testHooksWithCalled.called('beforeModifyPosition')).to.be.true
-      expect(await testHooksWithCalled.called('afterModifyPosition')).to.be.true
-      expect(await testHooksWithCalled.called('beforeSwap')).to.be.false
-      expect(await testHooksWithCalled.called('afterSwap')).to.be.false
+      const args = [
+        modifyPositionTest.address,
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: hooksMock.address,
+        },
+        {
+          tickLower: 0,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        },
+      ]
+      expect(await hooksMock.calledWith('beforeModifyPosition', args)).to.be.true
+      expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.true
+      expect(await hooksMock.calledWith('afterModifyPosition', args)).to.be.true
+      expect(await hooksMock.called('afterModifyPosition')).to.be.true
+
+      expect(await hooksMock.called('beforeSwap')).to.be.false
+      expect(await hooksMock.called('afterSwap')).to.be.false
     })
 
     it('gas cost', async () => {
@@ -367,7 +382,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: testHooksWithCalled.address,
+          hooks: hooksMock.address,
         },
         encodeSqrtPriceX96(1, 1)
       )
@@ -377,7 +392,7 @@ describe('PoolManager', () => {
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
-          hooks: testHooksWithCalled.address,
+          hooks: hooksMock.address,
         },
         {
           amountSpecified: 100,
@@ -386,10 +401,30 @@ describe('PoolManager', () => {
         }
       )
 
-      expect(await testHooksWithCalled.called('beforeModifyPosition')).to.be.false
-      expect(await testHooksWithCalled.called('afterModifyPosition')).to.be.false
-      expect(await testHooksWithCalled.called('beforeSwap')).to.be.true
-      expect(await testHooksWithCalled.called('afterSwap')).to.be.true
+      const argsBeforeSwap = [
+        swapTest.address,
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: hooksMock.address,
+        },
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        },
+      ]
+
+      const argsAfterSwap = [...argsBeforeSwap, { amount0: 0, amount1: 0 }]
+
+      expect(await hooksMock.called('beforeModifyPosition')).to.be.false
+      expect(await hooksMock.called('afterModifyPosition')).to.be.false
+      expect(await hooksMock.calledOnce('beforeSwap')).to.be.true
+      expect(await hooksMock.calledOnce('afterSwap')).to.be.true
+      expect(await hooksMock.calledWith('beforeSwap', argsBeforeSwap)).to.be.true
+      expect(await hooksMock.calledWith('afterSwap', argsAfterSwap)).to.be.true
     })
     it('gas cost', async () => {
       await manager.initialize(
