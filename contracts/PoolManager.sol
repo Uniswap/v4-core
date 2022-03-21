@@ -53,16 +53,14 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
             .increaseObservationCardinalityNext(observationCardinalityNext);
     }
 
-    /// @inheritdoc IPoolManager
+    /// @notice Represents the address that has currently locked the pool
     address public override lockedBy;
-    /// @inheritdoc IPoolManager
-    uint96 public override numTokensTouched;
 
-    /// @inheritdoc IPoolManager
+    /// @notice All the latest tracked balances of tokens
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
-    /// @inheritdoc IPoolManager
-    IERC20Minimal[256] public override tokensTouched;
+    /// @notice Internal transient enumerable set
+    IERC20Minimal[] public override tokensTouched;
 
     // @member slot The index of the tokensTouched array that this token is stored at
     // @member delta The amount of token the locker owes to the protocol. If it is negative, the contract owes the locker instead.
@@ -70,40 +68,31 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
         uint8 slot;
         int248 delta;
     }
-    /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => PositionAndDelta) public override tokenDelta;
 
-    /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
-    ///     more than 256 tokens.
-    uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
-
-    /// @dev Used to represent an unset tokens touched
-    IERC20Minimal private constant UNSET = IERC20Minimal(address(1));
-
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        require(lockedBy == address(1));
+        if (lockedBy != address(0)) revert AlreadyLocked(lockedBy);
         lockedBy = msg.sender;
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         unchecked {
-            uint256 len = numTokensTouched;
-            for (uint256 i; i < len; i++) {
+            for (uint256 i = 0; i < tokensTouched.length; i++) {
                 if (tokenDelta[tokensTouched[i]].delta != 0)
                     revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
-                tokensTouched[i] = UNSET;
+                delete tokenDelta[tokensTouched[i]];
             }
         }
-        lockedBy = address(1);
-        numTokensTouched = 0;
+        delete tokensTouched;
+        delete lockedBy;
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
     function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
-        uint256 len = numTokensTouched;
+        uint256 len = tokensTouched.length;
         if (len == 0) {
-            tokensTouched[numTokensTouched = 1] = token;
+            tokensTouched.push(token);
             return 0;
         }
 
@@ -111,10 +100,10 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
         slot = pd.slot;
 
         if (slot == 0 && tokensTouched[slot] != token) {
-            require(len < MAX_TOKENS_TOUCHED);
-            slot = uint8(numTokensTouched++);
+            if (len >= type(uint8).max) revert MaxTokensTouched(token);
+            slot = uint8(len);
             pd.slot = slot;
-            tokensTouched[len] = token;
+            tokensTouched.push(token);
         }
     }
 

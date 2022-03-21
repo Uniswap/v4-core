@@ -8,6 +8,9 @@ import {FixedPoint128} from './FixedPoint128.sol';
 /// @notice Positions represent an owner address' liquidity between a lower and upper tick boundary
 /// @dev Positions store additional state for tracking fees owed to the position
 library Position {
+    /// @notice Cannot update a position with no liquidity
+    error CannotUpdateEmptyPosition();
+
     // info stored for each user's position
     struct Info {
         // the amount of liquidity owned by this position
@@ -49,7 +52,7 @@ library Position {
 
         uint128 liquidityNext;
         if (liquidityDelta == 0) {
-            require(_self.liquidity > 0, 'NP'); // disallow pokes for 0 liquidity positions
+            if (_self.liquidity == 0) revert CannotUpdateEmptyPosition(); // disallow pokes for 0 liquidity positions
             liquidityNext = _self.liquidity;
         } else {
             liquidityNext = liquidityDelta < 0
