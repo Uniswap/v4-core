@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.13;
 
 import {FullMath} from './FullMath.sol';
 import {FixedPoint128} from './FixedPoint128.sol';

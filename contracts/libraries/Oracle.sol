@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.13;
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
