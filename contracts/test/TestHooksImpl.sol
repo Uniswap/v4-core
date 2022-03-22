@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.12;
+pragma solidity =0.8.13;
 
 import {Hooks} from '../libraries/Hooks.sol';
 import {IHooks} from '../interfaces/IHooks.sol';
@@ -10,14 +10,16 @@ contract EmptyTestHooks is IHooks {
 
     constructor() {
         require(
-            IHooks(this).isValidHookAddress(Hooks.Calls({
-                beforeInitialize: true,
-                afterInitialize: true,
-                beforeModifyPosition: true,
-                afterModifyPosition: true,
-                beforeSwap: true,
-                afterSwap: true
-            }))
+            IHooks(this).isValidHookAddress(
+                Hooks.Calls({
+                    beforeInitialize: true,
+                    afterInitialize: true,
+                    beforeModifyPosition: true,
+                    afterModifyPosition: true,
+                    beforeSwap: true,
+                    afterSwap: true
+                })
+            )
         );
     }
 
