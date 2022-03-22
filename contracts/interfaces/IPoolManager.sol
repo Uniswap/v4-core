@@ -3,6 +3,7 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {IHooks} from './IHooks.sol';
 
 interface IPoolManager {
     /// @notice Thrown when trying to lock the contract when it is already locked
@@ -32,6 +33,15 @@ interface IPoolManager {
         uint24 fee;
         /// @notice Ticks that involve positions must be a multiple of tick spacing
         int24 tickSpacing;
+        /// @notice The hooks of the pool
+        IHooks hooks;
+    }
+
+    /// @notice Represents a change in the pool's balance of token0 and token1.
+    /// @dev This is returned from most pool operations
+    struct BalanceDelta {
+        int256 amount0;
+        int256 amount1;
     }
 
     /// @notice Returns the reserves for a given ERC20 token
@@ -70,7 +80,7 @@ interface IPoolManager {
     /// @notice Modify the position for the given pool
     function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
         external
-        returns (Pool.BalanceDelta memory delta);
+        returns (IPoolManager.BalanceDelta memory delta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -79,7 +89,9 @@ interface IPoolManager {
     }
 
     /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params) external returns (Pool.BalanceDelta memory delta);
+    function swap(PoolKey memory key, SwapParams memory params)
+        external
+        returns (IPoolManager.BalanceDelta memory delta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans

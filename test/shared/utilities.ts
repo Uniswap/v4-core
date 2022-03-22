@@ -54,20 +54,23 @@ export function getPoolId({
   token1,
   fee,
   tickSpacing,
+  hooks,
 }: {
   token0: string | Contract
   token1: string | Contract
   fee: number
   tickSpacing: number
+  hooks: string | Contract
 }): string {
   return utils.keccak256(
     utils.defaultAbiCoder.encode(
-      ['address', 'address', 'uint24', 'int24'],
+      ['address', 'address', 'uint24', 'int24', 'address'],
       [
         typeof token0 === 'string' ? token0 : token0.address,
         typeof token1 === 'string' ? token1 : token1.address,
         fee,
         tickSpacing,
+        typeof hooks === 'string' ? hooks : hooks.address,
       ]
     )
   )

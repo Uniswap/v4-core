@@ -68,7 +68,13 @@ describe('PoolManager gas tests', () => {
           }
         }
 
-        const poolKey = { token0: token0.address, token1: token1.address, fee: FeeAmount.MEDIUM, tickSpacing: 60 }
+        const poolKey = {
+          token0: token0.address,
+          token1: token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: '0x0000000000000000000000000000000000000000',
+        }
 
         const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
           return swapTest.swap(poolKey, {
