@@ -147,7 +147,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountPoolBalanceDelta(key, delta);
 
         if (key.hooks.shouldCallAfterModifyPosition()) {
-            key.hooks.afterModifyPosition(msg.sender, key, params);
+            key.hooks.afterModifyPosition(msg.sender, key, params, delta);
         }
     }
 

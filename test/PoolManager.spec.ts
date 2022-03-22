@@ -245,7 +245,7 @@ describe('PoolManager', () => {
         }
       )
 
-      const args = [
+      const argsBeforeModify = [
         modifyPositionTest.address,
         {
           token0: tokens.token0.address,
@@ -260,9 +260,11 @@ describe('PoolManager', () => {
           liquidityDelta: 100,
         },
       ]
-      expect(await hooksMock.calledWith('beforeModifyPosition', args)).to.be.true
+      const argsAfterModify = [...argsBeforeModify, { amount0: 1, amount1: 0 }]
+
+      expect(await hooksMock.calledWith('beforeModifyPosition', argsBeforeModify)).to.be.true
       expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.true
-      expect(await hooksMock.calledWith('afterModifyPosition', args)).to.be.true
+      expect(await hooksMock.calledWith('afterModifyPosition', argsAfterModify)).to.be.true
       expect(await hooksMock.called('afterModifyPosition')).to.be.true
 
       expect(await hooksMock.called('beforeSwap')).to.be.false
