@@ -29,6 +29,13 @@ library TWAMM {
     /// @param expiration The expiration timestamp of the order
     error ExpirationNotOnInterval(uint256 expiration);
 
+    /// @notice Thrown when trying to submit an order with an expiration time in the past.
+    /// @param expiration The expiration timestamp of the order
+    error ExpirationLessThanBlocktime(uint256 expiration);
+
+    /// @notice Thrown when trying to submit an order without initializing TWAMM state first
+    error NotInitialized();
+
     /// @notice Contains full state related to the TWAMM
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
     /// @member lastVirtualOrderTimestamp Last timestamp in which virtual orders were executed
@@ -78,6 +85,12 @@ library TWAMM {
         internal
         returns (uint256 orderId)
     {
+        if (self.expirationInterval == 0) {
+            revert NotInitialized();
+        }
+        if (params.expiration < block.timestamp) {
+            revert ExpirationLessThanBlocktime(params.expiration);
+        }
         if (params.expiration % self.expirationInterval != 0) {
             revert ExpirationNotOnInterval(params.expiration);
         }

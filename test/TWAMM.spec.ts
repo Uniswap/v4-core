@@ -66,6 +66,7 @@ describe.only('TWAMM', () => {
     let owner: string
     let amountIn: BigNumber
     let nonIntervalExpiration: number
+    let prevTimeExpiration: number
     let expiration: number
 
     beforeEach('deploy test twamm', async () => {
@@ -74,14 +75,28 @@ describe.only('TWAMM', () => {
       ;(amountIn = toWei('1')), await twamm.initialize(10_000)
       const blocktime = (await ethers.provider.getBlock('latest')).timestamp
       nonIntervalExpiration = blocktime
+      prevTimeExpiration = findExpiryTime(blocktime, -1, 10000)
       // gets the valid expiry time that is 3 intervals out
       expiration = findExpiryTime(blocktime, 3, 10000)
     })
 
-    it('reverts because of bad expiry', async () => {
+    it('reverts if expiry is not on an interval', async () => {
       const nextId = await twamm.getNextId()
       await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to.be
         .reverted
+    })
+
+    it('reverts if not initialized', async () => {
+      const twammUnitialized = await loadFixture(twammFixture)
+      await expect(
+        twammUnitialized.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration })
+      ).to.be.revertedWith('NotInitialized()')
+    })
+
+    it('reverts if expiry is in the past', async () => {
+      await expect(
+        twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: prevTimeExpiration })
+      ).to.be.revertedWith(`ExpirationLessThanBlocktime(${prevTimeExpiration})`)
     })
 
     it('stores the new long term order', async () => {
