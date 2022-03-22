@@ -2,8 +2,8 @@
 
 exports[`TWAMM #cancelLongTermOrder gas 1`] = `34995`;
 
-exports[`TWAMM #claimEarnings gas 1`] = `258774`;
+exports[`TWAMM #claimEarnings gas 1`] = `257555`;
 
-exports[`TWAMM #executeTWAMMOrders gas 1`] = `351319`;
+exports[`TWAMM #executeTWAMMOrders gas 1`] = `351003`;
 
-exports[`TWAMM #submitLongTermOrder gas 1`] = `162962`;
+exports[`TWAMM #submitLongTermOrder gas 1`] = `162950`;

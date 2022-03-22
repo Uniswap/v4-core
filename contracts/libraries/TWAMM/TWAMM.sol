@@ -29,7 +29,7 @@ library TWAMM {
     /// @param expiration The expiration timestamp of the order
     error ExpirationNotOnInterval(uint256 expiration);
 
-    /// @notice Contains full state related to long term orders
+    /// @notice Contains full state related to the TWAMM
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
     /// @member lastVirtualOrderTimestamp Last timestamp in which virtual orders were executed
     /// @member orderPools Mapping from token index (0 and 1) to OrderPool that is selling that token
@@ -104,12 +104,8 @@ library TWAMM {
     /// @param orderId The ID of the order to be cancelled
     function cancelLongTermOrder(State storage self, uint256 orderId)
         internal
-        returns (
-            uint256 amountOut0,
-            uint256 amountOut1
-        )
+        returns (uint256 amountOut0, uint256 amountOut1)
     {
-        // TODO: bump TWAMM order state
         Order memory order = self.orders[orderId];
         if (order.owner != msg.sender) revert MustBeOwner(orderId, order.owner, msg.sender);
         if (order.expiration <= block.timestamp)
@@ -133,16 +129,13 @@ library TWAMM {
         OrderPool.State storage orderPool = self.orderPools[order.sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
-            uint256 earningsFactorAtExpiration = orderPool.earningsFactorAtInterval[order.expiration];
-            earningsAmount =
-                ((earningsFactorAtExpiration - order.unclaimedEarningsFactor) * order.sellRate) >>
-                FixedPoint96.RESOLUTION;
-            // clear stake
-            self.orders[orderId].unclaimedEarningsFactor = 0;
+            uint256 earningsFactor = orderPool.earningsFactorAtInterval[order.expiration] -
+                order.unclaimedEarningsFactor;
+            earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
+            self.orders[orderId].sellRate = 0;
         } else {
-            earningsAmount =
-                ((orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor) * order.sellRate) >>
-                FixedPoint96.RESOLUTION;
+            uint256 earningsFactor = orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor;
+            earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
             self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
         }
     }
@@ -170,17 +163,15 @@ library TWAMM {
             uint160 newSqrtPriceX96
         )
     {
-
         if (self.orderPools[0].sellRateCurrent == 0 && self.orderPools[1].sellRateCurrent == 0) {
-          self.lastVirtualOrderTimestamp = block.timestamp;
-          return (false, 0, 0);
+            self.lastVirtualOrderTimestamp = block.timestamp;
+            return (false, 0, 0);
         }
 
         uint160 prevSqrtPriceX96 = poolParams.sqrtPriceX96;
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
         uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +
             (self.expirationInterval - (self.lastVirtualOrderTimestamp % self.expirationInterval));
-
 
         while (nextExpirationTimestamp <= block.timestamp) {
             // skip calculations on intervals that don't have any expirations
@@ -203,7 +194,12 @@ library TWAMM {
         }
 
         if (prevTimestamp < block.timestamp) {
-            poolParams.sqrtPriceX96 = advanceToCurrentTime(self, nextExpirationTimestamp - prevTimestamp, poolParams, ticks);
+            poolParams.sqrtPriceX96 = advanceToCurrentTime(
+                self,
+                nextExpirationTimestamp - prevTimestamp,
+                poolParams,
+                ticks
+            );
         }
 
         self.lastVirtualOrderTimestamp = block.timestamp;

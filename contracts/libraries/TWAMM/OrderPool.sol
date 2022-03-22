@@ -29,7 +29,7 @@ library OrderPool {
         self.sellRateCurrent -= self.sellRateEndingAtInterval[expiration];
     }
 
-    // Performs all the updates on an OrderPool that must happen when updating to the current time
+    // Performs all the updates on an OrderPool that must happen when updating to the current time not on an interval
     function advanceToCurrentTime(State storage self, uint256 earningsFactor) internal {
         self.earningsFactorCurrent += earningsFactor;
     }

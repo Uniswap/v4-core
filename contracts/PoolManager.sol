@@ -262,7 +262,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             pool.ticks
         );
         if (amountIn > 0) {
-          swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
+            swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
         }
     }
 }
