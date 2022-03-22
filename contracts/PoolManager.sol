@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.13;
 
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
@@ -66,7 +66,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     mapping(IERC20Minimal => PositionAndDelta) public override tokenDelta;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        require(lockedBy == address(0));
+        if (lockedBy != address(0)) revert AlreadyLocked(lockedBy);
         lockedBy = msg.sender;
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
@@ -95,7 +95,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         slot = pd.slot;
 
         if (slot == 0 && tokensTouched[slot] != token) {
-            require(len < type(uint8).max);
+            if (len >= type(uint8).max) revert MaxTokensTouched(token);
             slot = uint8(len);
             pd.slot = slot;
             tokensTouched.push(token);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.12;
+pragma solidity =0.8.13;
 
 import {TWAMM} from '../libraries/TWAMM/TWAMM.sol';
 import {TwammMath} from '../libraries/TWAMM/TwammMath.sol';

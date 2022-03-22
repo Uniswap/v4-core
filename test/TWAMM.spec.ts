@@ -3,7 +3,7 @@ import { ethers, waffle } from 'hardhat'
 import { TWAMMTest } from '../typechain/TWAMMTest'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
-import snapshotGasCost from './shared/snapshotGasCost'
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
 
 async function advanceTime(time: number) {

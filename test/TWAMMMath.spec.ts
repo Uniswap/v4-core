@@ -3,7 +3,7 @@ import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
-import snapshotGasCost from './shared/snapshotGasCost'
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
 
 function toWei(n: string): BigNumber {

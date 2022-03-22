@@ -4,7 +4,7 @@ import { MockTimePoolManager, PoolSwapTest, PoolModifyPositionTest } from '../ty
 import { expect } from './shared/expect'
 
 import { tokensFixture } from './shared/fixtures'
-import snapshotGasCost from './shared/snapshotGasCost'
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 
 import {
   expandTo18Decimals,

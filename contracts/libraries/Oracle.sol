@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.13;
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
@@ -9,6 +9,14 @@ pragma solidity ^0.8.12;
 /// Observations are overwritten when the full length of the oracle array is populated.
 /// The most recent observation is available, independent of the length of the oracle array, by passing 0 to observe()
 library Oracle {
+    /// @notice Thrown when trying to interact with an Oracle of a non-initialized pool
+    error OracleCardinalityCannotBeZero();
+
+    /// @notice Thrown when trying to observe a price that is older than the oldest recorded price
+    /// @param oldestTimestamp Timestamp of the oldest remaining observation
+    /// @param targetTimestamp Invalid timestamp targeted to be observed
+    error TargetPredatesOldestObservation(uint32 oldestTimestamp, uint32 targetTimestamp);
+
     struct Observation {
         // the block timestamp of the observation
         uint32 blockTimestamp;
@@ -115,7 +123,7 @@ library Oracle {
         uint16 next
     ) internal returns (uint16) {
         unchecked {
-            require(current > 0, 'I');
+            if (current == 0) revert OracleCardinalityCannotBeZero();
             // no-op if the passed next value isn't greater than the current next value
             if (next <= current) return current;
             // store in each slot to prevent fresh SSTOREs in swaps
@@ -234,7 +242,8 @@ library Oracle {
             if (!beforeOrAt.initialized) beforeOrAt = self[0];
 
             // ensure that the target is chronologically at or after the oldest observation
-            require(lte(time, beforeOrAt.blockTimestamp, target), 'OLD');
+            if (!lte(time, beforeOrAt.blockTimestamp, target))
+                revert TargetPredatesOldestObservation(beforeOrAt.blockTimestamp, target);
 
             // if we've reached this point, we have to binary search
             return binarySearch(self, time, target, index, cardinality);
@@ -329,7 +338,7 @@ library Oracle {
         uint16 cardinality
     ) internal view returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) {
         unchecked {
-            require(cardinality > 0, 'I');
+            if (cardinality == 0) revert OracleCardinalityCannotBeZero();
 
             tickCumulatives = new int56[](secondsAgos.length);
             secondsPerLiquidityCumulativeX128s = new uint160[](secondsAgos.length);

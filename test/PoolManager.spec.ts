@@ -3,7 +3,7 @@ import { ethers, waffle } from 'hardhat'
 import { PoolManager, TestERC20, PoolManagerTest, PoolSwapTest, PoolModifyPositionTest } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import snapshotGasCost from './shared/snapshotGasCost'
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
