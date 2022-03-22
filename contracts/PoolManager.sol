@@ -31,7 +31,15 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     /// @notice Initialize the state for a given pool ID
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
+        if (key.hooks.shouldCallBeforeInitialize()) {
+            key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
+        }
+
         tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
+
+        if (key.hooks.shouldCallAfterInitialize()) {
+            key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
+        }
     }
 
     /// @notice Increase the maximum number of stored observations for the pool's oracle

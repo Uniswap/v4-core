@@ -43,8 +43,8 @@ describe('PoolManager', () => {
     const manager = (await singletonPoolFactory.deploy()) as PoolManager
 
     // Deploy hooks to addresses with leading 1111 to enable all of them.
-    const mockHooksAddress = '0xfd2026b3eE6eC71fc6746ADB6311f6d3BA1C000b'
-    const testHooksEmptyAddress = '0xFb5801A7D398351b8BE11c439e05c5b3259aEC9b'
+    const mockHooksAddress = '0xFF00000000000000000000000000000000000000'
+    const testHooksEmptyAddress = '0xF000000000000000000000000000000000000000'
 
     hooksMock = await deployMockContract(hooksTestEmptyFactory.interface, mockHooksAddress)
 

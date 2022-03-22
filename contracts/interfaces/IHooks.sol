@@ -3,10 +3,23 @@ pragma solidity >=0.6.2;
 
 import {IPoolManager} from './IPoolManager.sol';
 
-/// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
-/// the hooks contract is deployed to. For example, a 1 bit in the first bit of the address will
+/// @notice The PoolManager contract decides whether to invoke specific hooks by inspecting the leading bits
+/// of the hooks contract address. For example, a 1 bit in the first bit of the address will
 /// cause the 'before swap' hook to be invoked. See the Hooks library for the full spec.
 interface IHooks {
+    function beforeInitialize(
+        address sender,
+        IPoolManager.PoolKey memory key,
+        uint160 sqrtPriceX96
+    ) external;
+
+    function afterInitialize(
+        address sender,
+        IPoolManager.PoolKey memory key,
+        uint160 sqrtPriceX96,
+        int24 tick
+    ) external;
+
     function beforeModifyPosition(
         address sender,
         IPoolManager.PoolKey calldata key,

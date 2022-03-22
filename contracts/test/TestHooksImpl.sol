@@ -1,11 +1,39 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.12;
 
+import {Hooks} from '../libraries/Hooks.sol';
 import {IHooks} from '../interfaces/IHooks.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
-import 'hardhat/console.sol';
 
 contract EmptyTestHooks is IHooks {
+    using Hooks for IHooks;
+
+    constructor() {
+        require(
+            IHooks(this).isValidHookAddress(Hooks.Calls({
+                beforeInitialize: true,
+                afterInitialize: true,
+                beforeModifyPosition: true,
+                afterModifyPosition: true,
+                beforeSwap: true,
+                afterSwap: true
+            }))
+        );
+    }
+
+    function beforeInitialize(
+        address sender,
+        IPoolManager.PoolKey memory key,
+        uint160 sqrtPriceX96
+    ) external override {}
+
+    function afterInitialize(
+        address sender,
+        IPoolManager.PoolKey memory key,
+        uint160 sqrtPriceX96,
+        int24 tick
+    ) external override {}
+
     function beforeModifyPosition(
         address sender,
         IPoolManager.PoolKey calldata key,

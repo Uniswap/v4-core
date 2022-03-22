@@ -8,7 +8,6 @@ import {Position} from './Position.sol';
 import {Oracle} from './Oracle.sol';
 import {FullMath} from './FullMath.sol';
 import {FixedPoint128} from './FixedPoint128.sol';
-import {Hooks} from './Hooks.sol';
 import {TickMath} from './TickMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
 import {SwapMath} from './SwapMath.sol';
