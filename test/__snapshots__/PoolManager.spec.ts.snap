@@ -1,5 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+<<<<<<< HEAD
 exports[`PoolManager #initialize gas cost 1`] = `
 Object {
   "calldataByteLength": 196,
@@ -36,3 +37,6 @@ Object {
 `;
 
 exports[`PoolManager bytecode size 1`] = `33589`;
+=======
+exports[`PoolManager bytecode size 1`] = `33396`;
+>>>>>>> start incorporating ticks

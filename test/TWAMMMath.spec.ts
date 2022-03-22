@@ -14,7 +14,7 @@ function divX96(n: BigNumber): string {
   return (parseInt(n.toString()) / 2 ** 96).toFixed(7).toString()
 }
 
-describe('TWAMMMath', () => {
+describe.only('TWAMMMath', () => {
   let twamm: TWAMMTest
   let wallet: Wallet, other: Wallet
   let loadFixture: ReturnType<typeof waffle.createFixtureLoader>
@@ -248,17 +248,19 @@ describe('TWAMMMath', () => {
       sqrtPriceEndX96 = encodeSqrtPriceX96(2, 1)
       liquidity = BigNumber.from('1000000000000000000000000')
       sellRateCurrent0 = toWei('1')
-      sellRateCurrent1 = toWei('2')
+      sellRateCurrent1 = toWei('100')
     })
 
     it('returns the correct result', async () => {
       let sqrtSellRate: BigNumberish
       let sqrtSellRatioX96: BigNumberish
 
-      sqrtSellRate = sellRateCurrent1.mul(sellRateCurrent0).pow(BigNumber.from(1).div(2))
-      sqrtSellRatioX96 = sellRateCurrent1.div(sellRateCurrent0).pow(BigNumber.from(1).div(2))
+      sqrtSellRate = Math.sqrt(parseInt(sellRateCurrent1.mul(sellRateCurrent0).toString())).toString()
+      sqrtSellRatioX96 = BigNumber.from(
+        Math.sqrt(parseInt(sellRateCurrent1.div(sellRateCurrent0).toString())).toString()
+      ).mul(BigNumber.from(2).pow(96))
 
-      console.log(
+      expect(
         await twamm.calculateTimeBetweenTicks(
           liquidity,
           sqrtPriceStartX96,
@@ -266,7 +268,7 @@ describe('TWAMMMath', () => {
           sqrtSellRate,
           sqrtSellRatioX96
         )
-      )
+      ).to.eq(4204)
     })
   })
 })
