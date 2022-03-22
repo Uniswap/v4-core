@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.13;
 
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
@@ -95,7 +95,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         slot = pd.slot;
 
         if (slot == 0 && lockedState.tokensTouched[slot] != token) {
-            require(len < MAX_TOKENS_TOUCHED);
+            if (len >= type(uint8).max) revert MaxTokensTouched(token);
             slot = uint8(len);
             pd.slot = slot;
             lockedState.tokensTouched.push(token);
