@@ -44,22 +44,30 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
-    ////////////////// transient ////////////////////////
-    address[] public lockedBy;
+    address[] public override lockedBy;
+
+    function lockedByLength() external view returns (uint256) {
+        return lockedBy.length;
+    }
+
+    /// @member slot The slot in the tokensTouched array where the token is found
+    /// @member delta The delta that is owed for that particular token
+    /// @dev Note this fits in a single slot
     struct PositionAndDelta {
         uint8 slot;
         int248 delta;
     }
-    struct LockedState {
+
+    /// @member tokensTouched The tokens that have been touched by this locker
+    /// @member tokenDelta The amount owed to the locker (positive) or owed to the pool (negative) of the token
+    struct LockState {
         IERC20Minimal[] tokensTouched;
         mapping(IERC20Minimal => PositionAndDelta) tokenDelta;
     }
-    mapping(uint256 => LockedState) lockedStates;
-    ////////////////// transient ////////////////////////
 
-    /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
-    ///     more than 256 tokens.
-    uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
+    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 tokens owed before
+    /// releasing their lock
+    mapping(uint256 => LockState) private lockStates;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
         uint256 id = lockedBy.length;
@@ -69,13 +77,13 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         unchecked {
-            LockedState storage lockedState = lockedStates[id];
-            uint256 len = lockedState.tokensTouched.length;
+            LockState storage lockState = lockStates[id];
+            uint256 len = lockState.tokensTouched.length;
             for (uint256 i; i < len; i++) {
-                PositionAndDelta storage pd = lockedState.tokenDelta[lockedState.tokensTouched[i]];
-                if (pd.delta != 0) revert TokenNotSettled(lockedState.tokensTouched[i], pd.delta);
+                PositionAndDelta storage pd = lockState.tokenDelta[lockState.tokensTouched[i]];
+                if (pd.delta != 0) revert TokenNotSettled(lockState.tokensTouched[i], pd.delta);
                 pd.slot = 0;
-                lockedState.tokensTouched[i] = IERC20Minimal(address(0));
+                lockState.tokensTouched[i] = IERC20Minimal(address(0));
             }
         }
 
@@ -84,28 +92,28 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     /// @dev Adds a token to a unique list of tokens that have been touched
     function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
-        LockedState storage lockedState = lockedStates[lockedBy.length - 1];
-        uint256 len = lockedState.tokensTouched.length;
+        LockState storage lockState = lockStates[lockedBy.length - 1];
+        uint256 len = lockState.tokensTouched.length;
         if (len == 0) {
-            lockedState.tokensTouched.push(token);
+            lockState.tokensTouched.push(token);
             return 0;
         }
 
-        PositionAndDelta storage pd = lockedState.tokenDelta[token];
+        PositionAndDelta storage pd = lockState.tokenDelta[token];
         slot = pd.slot;
 
-        if (slot == 0 && lockedState.tokensTouched[slot] != token) {
-            if (len >= type(uint8).max) revert MaxTokensTouched(token);
+        if (slot == 0 && lockState.tokensTouched[slot] != token) {
+            if (len >= type(uint8).max) revert MaxTokensTouched();
             slot = uint8(len);
             pd.slot = slot;
-            lockedState.tokensTouched.push(token);
+            lockState.tokensTouched.push(token);
         }
     }
 
     function _accountDelta(IERC20Minimal token, int256 delta) internal {
         if (delta == 0) return;
         _addTokenToSet(token);
-        lockedStates[lockedBy.length - 1].tokenDelta[token].delta += int248(delta);
+        lockStates[lockedBy.length - 1].tokenDelta[token].delta += int248(delta);
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
