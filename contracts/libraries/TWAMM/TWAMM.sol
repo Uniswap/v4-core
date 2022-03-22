@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Tick} from '../Tick.sol';
+import {TickBitmap} from '../TickBitmap.sol';
 import {OrderPool} from './OrderPool.sol';
 import {TwammMath} from './TwammMath.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
@@ -12,6 +13,7 @@ import 'hardhat/console.sol';
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
     using OrderPool for OrderPool.State;
+    using TickBitmap for mapping(int16 => uint256);
 
     /// @notice Thrown when account other than owner attempts to interact with an order
     /// @param orderId The orderId
@@ -157,7 +159,8 @@ library TWAMM {
     function executeTWAMMOrders(
         State storage self,
         PoolParamsOnExecute memory poolParams,
-        mapping(int24 => Tick.Info) storage ticks
+        mapping(int24 => Tick.Info) storage ticks,
+        mapping(int16 => uint256) storage tickBitmap
     )
         internal
         returns (
@@ -172,6 +175,7 @@ library TWAMM {
         }
 
         uint256 currentTimestamp = block.timestamp;
+        /* uint256 nextInitializedSqrtPriceX96 = tickBitmap.nextInitializedTickWithinOneWord); */
         uint160 prevSqrtPriceX96 = poolParams.sqrtPriceX96;
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
         uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +

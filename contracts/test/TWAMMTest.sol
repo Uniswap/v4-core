@@ -5,12 +5,16 @@ import {TWAMM} from '../libraries/TWAMM/TWAMM.sol';
 import {TwammMath} from '../libraries/TWAMM/TwammMath.sol';
 import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {Tick} from '../libraries/Tick.sol';
+import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
+import 'hardhat/console.sol';
 
 contract TWAMMTest {
     using TWAMM for TWAMM.State;
+    using ABDKMathQuad for *;
 
     TWAMM.State public twamm;
     mapping(int24 => Tick.Info) mockTicks;
+    mapping(int16 => uint256) mockTickBitmap;
 
     function initialize(uint256 orderInterval) external {
         twamm.initialize(orderInterval);
@@ -32,13 +36,13 @@ contract TWAMMTest {
             uint256 unclaimedEarnings
         )
     {
-        twamm.executeTWAMMOrders(params, mockTicks);
+        twamm.executeTWAMMOrders(params, mockTicks, mockTickBitmap);
         (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderId);
         unclaimedEarnings = twamm.orders[orderId].unclaimedEarningsFactor;
     }
 
     function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
-        twamm.executeTWAMMOrders(poolParams, mockTicks);
+        twamm.executeTWAMMOrders(poolParams, mockTicks, mockTickBitmap);
     }
 
     function calculateExecutionUpdates(
@@ -59,6 +63,24 @@ contract TWAMMTest {
             orderPoolParams,
             mockTicks
         );
+    }
+
+    function calculateTimeBetweenTicks(
+        uint256 liquidity,
+        uint256 sqrtPriceStartX96,
+        uint256 sqrtPriceEndX96,
+        uint256 sqrtSellRate,
+        uint256 sqrtSellRatioX96
+    ) external view returns (uint256) {
+      console.log(uint256(100000).fromUInt().ln().toUInt());
+        bytes16 result = TwammMath.calculateTimeBetweenTicks(
+            liquidity.fromUInt(),
+            sqrtPriceStartX96.fromUInt(),
+            sqrtPriceEndX96.fromUInt(),
+            sqrtSellRate.fromUInt(),
+            sqrtSellRatioX96.fromUInt()
+        );
+        return result.toUInt();
     }
 
     function getOrder(uint256 orderId) external view returns (TWAMM.Order memory) {
