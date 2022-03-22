@@ -234,11 +234,11 @@ library TWAMM {
         );
 
         if (nextTimestamp % self.expirationInterval == 0) {
-          self.orderPools[0].advanceToInterval(nextTimestamp, earningsPool0);
-          self.orderPools[1].advanceToInterval(nextTimestamp, earningsPool1);
+            self.orderPools[0].advanceToInterval(nextTimestamp, earningsPool0);
+            self.orderPools[1].advanceToInterval(nextTimestamp, earningsPool1);
         } else {
-          self.orderPools[0].advanceToCurrentTime(earningsPool0);
-          self.orderPools[1].advanceToCurrentTime(earningsPool1);
+            self.orderPools[0].advanceToCurrentTime(earningsPool0);
+            self.orderPools[1].advanceToCurrentTime(earningsPool1);
         }
 
         return nextSqrtPriceX96;
