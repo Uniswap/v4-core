@@ -72,7 +72,7 @@ contract TWAMMTest {
         uint256 sqrtSellRate,
         uint256 sqrtSellRatioX96
     ) external view returns (uint256) {
-      console.log(uint256(100000).fromUInt().ln().toUInt());
+        console.log(uint256(100000).fromUInt().ln().toUInt());
         bytes16 result = TwammMath.calculateTimeBetweenTicks(
             liquidity.fromUInt(),
             sqrtPriceStartX96.fromUInt(),

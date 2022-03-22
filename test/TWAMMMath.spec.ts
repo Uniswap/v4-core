@@ -258,13 +258,15 @@ describe.only('TWAMMMath', () => {
       sqrtSellRate = sellRateCurrent1.mul(sellRateCurrent0).pow(BigNumber.from(1).div(2))
       sqrtSellRatioX96 = sellRateCurrent1.div(sellRateCurrent0).pow(BigNumber.from(1).div(2))
 
-      console.log(await twamm.calculateTimeBetweenTicks(
-        liquidity,
-        sqrtPriceStartX96,
-        sqrtPriceEndX96,
-        sqrtSellRate,
-        sqrtSellRatioX96,
-      ))
+      console.log(
+        await twamm.calculateTimeBetweenTicks(
+          liquidity,
+          sqrtPriceStartX96,
+          sqrtPriceEndX96,
+          sqrtSellRate,
+          sqrtSellRatioX96
+        )
+      )
     })
   })
 })
