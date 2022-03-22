@@ -9,17 +9,15 @@ contract EmptyTestHooks is IHooks {
     using Hooks for IHooks;
 
     constructor() {
-        require(
-            IHooks(this).isValidHookAddress(
-                Hooks.Calls({
-                    beforeInitialize: true,
-                    afterInitialize: true,
-                    beforeModifyPosition: true,
-                    afterModifyPosition: true,
-                    beforeSwap: true,
-                    afterSwap: true
-                })
-            )
+        IHooks(this).validateHookAddress(
+            Hooks.Calls({
+                beforeInitialize: true,
+                afterInitialize: true,
+                beforeModifyPosition: true,
+                afterModifyPosition: true,
+                beforeSwap: true,
+                afterSwap: true
+            })
         );
     }
 

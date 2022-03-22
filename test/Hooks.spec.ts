@@ -16,7 +16,7 @@ describe('Hooks', () => {
   describe('#validateHookAddress', () => {
     it('succeeds', async () => {
       expect(
-        await hooks.isValidHookAddress('0x0000000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0x0000000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeModifyPosition: false,
@@ -24,13 +24,13 @@ describe('Hooks', () => {
           beforeSwap: false,
           afterSwap: false,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for before initialize only', async () => {
       expect(
         // 0x1000...
-        await hooks.isValidHookAddress('0x8000000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0x8000000000000000000000000000000000000000', {
           beforeInitialize: true,
           afterInitialize: false,
           beforeSwap: false,
@@ -38,13 +38,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: false,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for after initialize only', async () => {
       expect(
         // 0x0100...
-        await hooks.isValidHookAddress('0x4000000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0x4000000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: true,
           beforeSwap: false,
@@ -52,13 +52,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: false,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for before and after initialize only', async () => {
       expect(
         // 0x1100...
-        await hooks.isValidHookAddress('0xC000000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0xC000000000000000000000000000000000000000', {
           beforeInitialize: true,
           afterInitialize: true,
           beforeSwap: false,
@@ -66,13 +66,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: false,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for before swap only', async () => {
       expect(
         // 0x0010...
-        await hooks.isValidHookAddress('0x2000000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0x2000000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: true,
@@ -80,13 +80,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: false,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for after swap only', async () => {
       expect(
         // 0x0001...
-        await hooks.isValidHookAddress('0x1000000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0x1000000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: false,
@@ -94,13 +94,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: false,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for before and after swap only', async () => {
       expect(
         // 0x0011...
-        await hooks.isValidHookAddress('0x3000000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0x3000000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: true,
@@ -108,13 +108,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: false,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for before modify position only', async () => {
       expect(
         // 0x000010...
-        await hooks.isValidHookAddress('0x0800000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0x0800000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: false,
@@ -122,13 +122,13 @@ describe('Hooks', () => {
           beforeModifyPosition: true,
           afterModifyPosition: false,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for after modify position only', async () => {
       expect(
         // 0x000001...
-        await hooks.isValidHookAddress('0x0400000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0x0400000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: false,
@@ -136,13 +136,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: true,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for before and after modify position only', async () => {
       expect(
         // 0x000011...
-        await hooks.isValidHookAddress('0x0C00000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0x0C00000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: false,
@@ -150,13 +150,13 @@ describe('Hooks', () => {
           beforeModifyPosition: true,
           afterModifyPosition: true,
         })
-      ).to.be.true
+      )
     })
 
     it('succeeds for all hooks', async () => {
       expect(
         // 0x111111...
-        await hooks.isValidHookAddress('0xFF00000000000000000000000000000000000000', {
+        await hooks.validateHookAddress('0xFF00000000000000000000000000000000000000', {
           beforeInitialize: true,
           afterInitialize: true,
           beforeSwap: true,
@@ -164,13 +164,13 @@ describe('Hooks', () => {
           beforeModifyPosition: true,
           afterModifyPosition: true,
         })
-      ).to.be.true
+      )
     })
 
     it('fails when address invalid for before swap', async () => {
       // 0x001100...
-      expect(
-        await hooks.isValidHookAddress('0x3000000000000000000000000000000000000000', {
+      await expect(
+        hooks.validateHookAddress('0x3000000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: true,
@@ -178,13 +178,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: false,
         })
-      ).to.be.false
+      ).to.be.reverted
     })
 
     it('fails when address invalid for after swap', async () => {
       // 0x101100...
-      expect(
-        await hooks.isValidHookAddress('0xB000000000000000000000000000000000000000', {
+      await expect(
+        hooks.validateHookAddress('0xB000000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: false,
@@ -192,13 +192,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: false,
         })
-      ).to.be.false
+      ).to.be.reverted
     })
 
     it('fails when address invalid for all hooks', async () => {
       // 0x1011...
-      expect(
-        await hooks.isValidHookAddress('0xC000000000000000000000000000000000000000', {
+      await expect(
+        hooks.validateHookAddress('0xC000000000000000000000000000000000000000', {
           beforeInitialize: true,
           afterInitialize: true,
           beforeSwap: true,
@@ -206,13 +206,13 @@ describe('Hooks', () => {
           beforeModifyPosition: true,
           afterModifyPosition: true,
         })
-      ).to.be.false
+      ).to.be.reverted
     })
 
     it('fails when address invalid for no hooks', async () => {
       // 0x1010...
-      expect(
-        await hooks.isValidHookAddress('0xA000000000000000000000000000000000000000', {
+      await expect(
+        hooks.validateHookAddress('0xA000000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: false,
@@ -220,13 +220,13 @@ describe('Hooks', () => {
           beforeModifyPosition: false,
           afterModifyPosition: false,
         })
-      ).to.be.false
+      ).to.be.reverted
     })
 
     it('gas cost of validateHookAddress', async () => {
       // 0x101000...
       await snapshotGasCost(
-        hooks.getGasCostOfValidateHookAddress('0xA000000000000000000000000000000000000000', {
+        hooks.getGasCostOfValidateHookAddress('0x0000000000000000000000000000000000000000', {
           beforeInitialize: false,
           afterInitialize: false,
           beforeSwap: false,

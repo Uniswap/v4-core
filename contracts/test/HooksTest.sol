@@ -6,8 +6,8 @@ import {IHooks} from '../interfaces/IHooks.sol';
 contract HooksTest {
     using Hooks for IHooks;
 
-    function isValidHookAddress(address hookAddress, Hooks.Calls calldata params) external pure returns (bool) {
-        return IHooks(hookAddress).isValidHookAddress(params);
+    function validateHookAddress(address hookAddress, Hooks.Calls calldata params) external pure {
+        IHooks(hookAddress).validateHookAddress(params);
     }
 
     function shouldCallBeforeInitialize(address hookAddress) external pure returns (bool) {
@@ -46,7 +46,7 @@ contract HooksTest {
         returns (uint256)
     {
         uint256 gasBefore = gasleft();
-        IHooks(hookAddress).isValidHookAddress(params);
+        IHooks(hookAddress).validateHookAddress(params);
         return gasBefore - gasleft();
     }
 }

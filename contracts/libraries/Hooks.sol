@@ -23,32 +23,25 @@ library Hooks {
         bool afterSwap;
     }
 
+    /// @notice Thrown if the address will not lead to the specified hook calls being called
+    /// @param hooks The address of the hooks contract
+    error HookAddressNotValid(address hooks);
+
     /// @notice Utility function intended to be used in hook constructors to ensure
-    /// the deployed hook address will be called
+    /// the deployed hooks address causes the intended hooks to be called
     /// @param calls The hooks that are intended to be called
     /// @dev calls param is memory as the function will be called from constructors
-    /// @return True if the hooks address causes only the specified hooks to be invoked
-    function isValidHookAddress(IHooks self, Calls memory calls) internal pure returns (bool) {
-        if (calls.beforeInitialize != shouldCallBeforeInitialize(self)) {
-            return false;
+    function validateHookAddress(IHooks self, Calls memory calls) internal pure {
+        if (
+            calls.beforeInitialize != shouldCallBeforeInitialize(self) ||
+            calls.afterInitialize != shouldCallAfterInitialize(self) ||
+            calls.beforeSwap != shouldCallBeforeSwap(self) ||
+            calls.afterSwap != shouldCallAfterSwap(self) ||
+            calls.beforeModifyPosition != shouldCallBeforeModifyPosition(self) ||
+            calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
+        ) {
+            revert HookAddressNotValid(address(self));
         }
-        if (calls.afterInitialize != shouldCallAfterInitialize(self)) {
-            return false;
-        }
-        if (calls.beforeSwap != shouldCallBeforeSwap(self)) {
-            return false;
-        }
-        if (calls.afterSwap != shouldCallAfterSwap(self)) {
-            return false;
-        }
-        if (calls.beforeModifyPosition != shouldCallBeforeModifyPosition(self)) {
-            return false;
-        }
-        if (calls.afterModifyPosition != shouldCallAfterModifyPosition(self)) {
-            return false;
-        }
-
-        return true;
     }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
