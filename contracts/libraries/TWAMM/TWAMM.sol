@@ -151,6 +151,9 @@ library TWAMM {
         uint256 sellRateCurrent1;
     }
 
+    /// @notice Executes all existing long term orders in the TWAMM
+    /// @param poolParams The relevant state of the pool
+    /// @param ticks Points to tick information on the pool
     function executeTWAMMOrders(
         State storage self,
         PoolParamsOnExecute memory poolParams,
@@ -168,19 +171,20 @@ library TWAMM {
             return (false, 0, 0);
         }
 
+        uint256 currentTimestamp = block.timestamp;
         uint160 prevSqrtPriceX96 = poolParams.sqrtPriceX96;
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
         uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +
             (self.expirationInterval - (self.lastVirtualOrderTimestamp % self.expirationInterval));
 
-        while (nextExpirationTimestamp <= block.timestamp) {
+        while (nextExpirationTimestamp <= currentTimestamp) {
             // skip calculations on intervals that don't have any expirations
             // TODO: potentially optimize with bitmap of initialized intervals
             if (
                 self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                 self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
             ) {
-                uint160 nextSqrtPriceX96 = advanceToInterval(
+                uint160 nextSqrtPriceX96 = advanceToNewTimestamp(
                     self,
                     nextExpirationTimestamp,
                     nextExpirationTimestamp - prevTimestamp,
@@ -193,16 +197,17 @@ library TWAMM {
             nextExpirationTimestamp += self.expirationInterval;
         }
 
-        if (prevTimestamp < block.timestamp) {
-            poolParams.sqrtPriceX96 = advanceToCurrentTime(
+        if (prevTimestamp < currentTimestamp) {
+            poolParams.sqrtPriceX96 = advanceToNewTimestamp(
                 self,
-                nextExpirationTimestamp - prevTimestamp,
+                currentTimestamp,
+                currentTimestamp - prevTimestamp,
                 poolParams,
                 ticks
             );
         }
 
-        self.lastVirtualOrderTimestamp = block.timestamp;
+        self.lastVirtualOrderTimestamp = currentTimestamp;
 
         (, swapAmountIn, , ) = SwapMath.computeSwapStep(
             prevSqrtPriceX96,
@@ -214,9 +219,9 @@ library TWAMM {
         zeroForOne = prevSqrtPriceX96 > newSqrtPriceX96;
     }
 
-    function advanceToInterval(
+    function advanceToNewTimestamp(
         State storage self,
-        uint256 nextExpirationTimestamp,
+        uint256 nextTimestamp,
         uint256 secondsElapsed,
         PoolParamsOnExecute memory poolParams,
         mapping(int24 => Tick.Info) storage ticks
@@ -227,26 +232,16 @@ library TWAMM {
             OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent),
             ticks
         );
-        self.orderPools[0].advanceToInterval(nextExpirationTimestamp, earningsPool0);
-        self.orderPools[1].advanceToInterval(nextExpirationTimestamp, earningsPool1);
-        return nextSqrtPriceX96;
-    }
 
-    function advanceToCurrentTime(
-        State storage self,
-        uint256 secondsElapsed,
-        PoolParamsOnExecute memory poolParams,
-        mapping(int24 => Tick.Info) storage ticks
-    ) private returns (uint160) {
-        (uint160 finalSqrtPriceX96, uint256 earningsPool0, uint256 earningsPool1) = TwammMath.calculateExecutionUpdates(
-            secondsElapsed,
-            poolParams,
-            OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent),
-            ticks
-        );
-        self.orderPools[0].advanceToCurrentTime(earningsPool0);
-        self.orderPools[1].advanceToCurrentTime(earningsPool1);
-        return finalSqrtPriceX96;
+        if (nextTimestamp % self.expirationInterval == 0) {
+          self.orderPools[0].advanceToInterval(nextTimestamp, earningsPool0);
+          self.orderPools[1].advanceToInterval(nextTimestamp, earningsPool1);
+        } else {
+          self.orderPools[0].advanceToCurrentTime(earningsPool0);
+          self.orderPools[1].advanceToCurrentTime(earningsPool1);
+        }
+
+        return nextSqrtPriceX96;
     }
 
     function calculateCancellationAmounts(Order memory order)
