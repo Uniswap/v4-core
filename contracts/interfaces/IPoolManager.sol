@@ -3,8 +3,9 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 
-interface IPoolManager {
+interface IPoolManager is IERC1155 {
     /// @notice Thrown when trying to lock the contract when it is already locked
     /// @param lockedBy current locker of the PoolManager
     error AlreadyLocked(address lockedBy);
@@ -105,7 +106,6 @@ interface IPoolManager {
     /// @notice Called to pay an amount that is owed from an address' ERC1155 balance
     function burn(
         IERC20Minimal token,
-        address from,
         uint256 amount
     ) external;
 

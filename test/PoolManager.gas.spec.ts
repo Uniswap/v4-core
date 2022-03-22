@@ -82,6 +82,30 @@ describe('PoolManager gas tests', () => {
             true
           )
         }
+        const swapExact0For1AndMint1155: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
+          return swapTest.swap(
+            poolKey,
+            {
+              zeroForOne: true,
+              amountSpecified: amount,
+              sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
+            },
+            false,
+            true
+          )
+        }
+        const swap1For0AndBurn1155: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
+          return swapTest.swap(
+            poolKey,
+            {
+              zeroForOne: true,
+              amountSpecified: amount,
+              sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
+            },
+            false,
+            true
+          )
+        }
         const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
           return swapTest.swap(
             poolKey,

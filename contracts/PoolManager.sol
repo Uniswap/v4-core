@@ -11,23 +11,16 @@ import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
 import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
+contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver {
     using SafeCast for *;
     using Pool for *;
 
     mapping(bytes32 => Pool.State) public pools;
 
-    /// @dev Initialize all the slots so we only do dirty writes
-    constructor() ERC1155('') {
-        lockedBy = address(1);
-        unchecked {
-            for (uint256 i; i < MAX_TOKENS_TOUCHED; i++) {
-                tokensTouched[i] = UNSET;
-            }
-        }
-    }
+    constructor() ERC1155('') {}
 
     /// @dev For mocking in unit tests
     function _blockTimestamp() internal view virtual returns (uint32) {
@@ -202,11 +195,9 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
     /// @notice Called by the user to pay what is owed from their ERC1155 balance
     function burn(
         IERC20Minimal token,
-        address from,
         uint256 amount
     ) external noDelegateCall onlyByLocker {
-        if (from != msg.sender && !isApprovedForAll(from, msg.sender)) revert NotApprovedToBurn();
-        _burn(from, uint256(uint160(address((token)))), amount);
+        _burn(address(this), uint256(uint160(address((token)))), amount);
         _accountDelta(token, -(amount.toInt256()));
     }
 
@@ -237,5 +228,25 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155 {
         int24 tickUpper
     ) external view override noDelegateCall returns (Pool.Snapshot memory) {
         return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
+    }
+
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")); 
+    }
+
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    ) external returns (bytes4) {
+        return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
     }
 }

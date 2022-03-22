@@ -47,7 +47,16 @@ contract PoolSwapTest is ILockCallback {
                 if (data.settleUsingTransfer) {
                     data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
                     manager.settle(data.key.token0);
-                } else manager.burn(data.key.token0, data.sender, uint256(delta.amount0));
+                } else {
+                    manager.safeTransferFrom(
+                        data.sender,
+                        address(manager),
+                        uint256(uint160(address((data.key.token0)))),
+                        uint256(delta.amount0),
+                        ''
+                    );
+                    manager.burn(data.key.token0, uint256(delta.amount0));
+                }
             }
             if (delta.amount1 < 0) {
                 if (data.withdrawTokens) manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
@@ -58,7 +67,16 @@ contract PoolSwapTest is ILockCallback {
                 if (data.settleUsingTransfer) {
                     data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
                     manager.settle(data.key.token1);
-                } else manager.burn(data.key.token1, data.sender, uint256(delta.amount1));
+                } else {
+                    manager.safeTransferFrom(
+                        data.sender,
+                        address(manager),
+                        uint256(uint160(address((data.key.token1)))),
+                        uint256(delta.amount1),
+                        ''
+                    );
+                    manager.burn(data.key.token1, uint256(delta.amount1));
+                }
             }
             if (delta.amount0 < 0) {
                 if (data.withdrawTokens) manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
