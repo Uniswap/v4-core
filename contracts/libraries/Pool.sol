@@ -11,6 +11,8 @@ import {FixedPoint128} from './FixedPoint128.sol';
 import {TickMath} from './TickMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
 import {SwapMath} from './SwapMath.sol';
+import {IHooks} from '../interfaces/IHooks.sol';
+import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 library Pool {
     using SafeCast for *;
@@ -58,13 +60,6 @@ library Pool {
     /// @notice Thrown when trying to set an invalid protocol fee
     /// @param feeProtocol The invalid feeProtocol
     error InvalidFeeProtocol(uint8 feeProtocol);
-
-    /// @notice Represents a change in the pool's balance of token0 and token1.
-    /// @dev This is returned from most pool operations
-    struct BalanceDelta {
-        int256 amount0;
-        int256 amount1;
-    }
 
     struct Slot0 {
         // the current price
@@ -280,7 +275,7 @@ library Pool {
     /// @return result the deltas of the token balances of the pool
     function modifyPosition(State storage self, ModifyPositionParams memory params)
         internal
-        returns (BalanceDelta memory result)
+        returns (IPoolManager.BalanceDelta memory result)
     {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
@@ -463,7 +458,10 @@ library Pool {
     }
 
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
-    function swap(State storage self, SwapParams memory params) internal returns (BalanceDelta memory result) {
+    function swap(State storage self, SwapParams memory params)
+        internal
+        returns (IPoolManager.BalanceDelta memory result)
+    {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
@@ -585,6 +583,7 @@ library Pool {
                             );
                         cache.computedLatestObservation = true;
                     }
+
                     int128 liquidityNet = self.ticks.cross(
                         step.tickNext,
                         (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
