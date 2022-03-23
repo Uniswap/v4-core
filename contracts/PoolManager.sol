@@ -65,7 +65,6 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     /// @member slot The slot in the tokensTouched array where the token is found
     /// @member delta The delta that is owed for that particular token
-    /// @dev Note this fits in a single slot
     struct PositionAndDelta {
         uint8 slot;
         int248 delta;
