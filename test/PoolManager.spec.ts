@@ -8,7 +8,7 @@ import {
   PoolSwapTest,
   PoolModifyPositionTest,
   EmptyTestHooks,
-  PoolManagerReentrancy,
+  PoolManagerReentrancyTest,
 } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
@@ -102,8 +102,8 @@ describe('PoolManager', () => {
 
     it('can be reentered', async () => {
       const reenterTest = (await (
-        await ethers.getContractFactory('PoolManagerReentrancy')
-      ).deploy()) as PoolManagerReentrancy
+        await ethers.getContractFactory('PoolManagerReentrancyTest')
+      ).deploy()) as PoolManagerReentrancyTest
 
       await expect(reenterTest.reenter(manager.address, 3))
         .to.emit(reenterTest, 'LockAcquired')

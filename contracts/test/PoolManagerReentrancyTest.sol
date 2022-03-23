@@ -4,7 +4,7 @@ pragma solidity =0.8.13;
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
 
-contract PoolManagerReentrancy is ILockCallback {
+contract PoolManagerReentrancyTest is ILockCallback {
     event LockAcquired(uint256 count);
 
     function reenter(IPoolManager poolManager, uint256 count) external {
