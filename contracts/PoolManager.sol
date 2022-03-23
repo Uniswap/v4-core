@@ -81,6 +81,22 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
     mapping(uint256 => LockState) private lockStates;
 
+    /// @inheritdoc IPoolManager
+    function getTokensTouchedLength(uint256 id) external view returns (uint256) {
+        return lockStates[id].tokensTouched.length;
+    }
+
+    /// @inheritdoc IPoolManager
+    function getTokensTouched(uint256 id, uint256 index) external view returns (IERC20Minimal) {
+        return lockStates[id].tokensTouched[index];
+    }
+
+    /// @inheritdoc IPoolManager
+    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 slot, int248 delta) {
+        PositionAndDelta storage pd = lockStates[id].tokenDelta[token];
+        (slot, delta) = (pd.slot, pd.delta);
+    }
+
     function lock(bytes calldata data) external override returns (bytes memory result) {
         uint256 id = lockedBy.length;
         lockedBy.push(msg.sender);

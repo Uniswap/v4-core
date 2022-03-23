@@ -105,7 +105,33 @@ describe('PoolManager', () => {
         await ethers.getContractFactory('PoolManagerReentrancyTest')
       ).deploy()) as PoolManagerReentrancyTest
 
-      await expect(reenterTest.reenter(manager.address, 3))
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+
+      await modifyPositionTest.modifyPosition(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          tickLower: 0,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        }
+      )
+
+      await expect(reenterTest.reenter(manager.address, tokens.token0.address, 3))
         .to.emit(reenterTest, 'LockAcquired')
         .withArgs(3)
         .to.emit(reenterTest, 'LockAcquired')
