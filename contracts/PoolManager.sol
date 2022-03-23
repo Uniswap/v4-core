@@ -90,8 +90,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
         unchecked {
             LockState storage lockState = lockStates[id];
-            uint256 len = lockState.tokensTouched.length;
-            for (uint256 i; i < len; i++) {
+            uint256 numTokensTouched = lockState.tokensTouched.length;
+            for (uint256 i; i < numTokensTouched; i++) {
                 PositionAndDelta storage pd = lockState.tokenDelta[lockState.tokensTouched[i]];
                 if (pd.delta != 0) revert TokenNotSettled(lockState.tokensTouched[i], pd.delta);
                 pd.slot = 0;
@@ -105,8 +105,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     /// @dev Adds a token to a unique list of tokens that have been touched
     function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
         LockState storage lockState = lockStates[lockedBy.length - 1];
-        uint256 len = lockState.tokensTouched.length;
-        if (len == 0) {
+        uint256 numTokensTouched = lockState.tokensTouched.length;
+        if (numTokensTouched == 0) {
             lockState.tokensTouched.push(token);
             return 0;
         }
@@ -115,8 +115,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         slot = pd.slot;
 
         if (slot == 0 && lockState.tokensTouched[slot] != token) {
-            if (len >= type(uint8).max) revert MaxTokensTouched();
-            slot = uint8(len);
+            if (numTokensTouched >= type(uint8).max) revert MaxTokensTouched();
+            slot = uint8(numTokensTouched);
             pd.slot = slot;
             lockState.tokensTouched.push(token);
         }
