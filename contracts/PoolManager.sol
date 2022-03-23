@@ -92,11 +92,12 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             LockState storage lockState = lockStates[id];
             uint256 numTokensTouched = lockState.tokensTouched.length;
             for (uint256 i; i < numTokensTouched; i++) {
-                PositionAndDelta storage pd = lockState.tokenDelta[lockState.tokensTouched[i]];
-                if (pd.delta != 0) revert TokenNotSettled(lockState.tokensTouched[i], pd.delta);
-                pd.slot = 0;
-                lockState.tokensTouched[i] = IERC20Minimal(address(0));
+                IERC20Minimal token = lockState.tokensTouched[i];
+                PositionAndDelta storage pd = lockState.tokenDelta[token];
+                if (pd.delta != 0) revert TokenNotSettled(token, pd.delta);
+                delete lockState.tokenDelta[token];
             }
+            delete lockState.tokensTouched;
         }
 
         lockedBy.pop();
