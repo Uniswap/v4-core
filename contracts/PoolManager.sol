@@ -125,7 +125,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     function _accountDelta(IERC20Minimal token, int256 delta) internal {
         if (delta == 0) return;
         _addTokenToSet(token);
-        lockStates[lockedBy.length - 1].tokenDelta[token].delta += int248(delta);
+        lockStates[lockedBy.length - 1].tokenDelta[token].delta += delta.toInt248();
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
