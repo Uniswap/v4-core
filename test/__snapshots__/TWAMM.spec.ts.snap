@@ -10,14 +10,14 @@ Object {
 exports[`TWAMM #claimEarnings gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 259563,
+  "gasUsed": 249189,
 }
 `;
 
 exports[`TWAMM #executeTWAMMOrders gas 1`] = `
 Object {
   "calldataByteLength": 100,
-  "gasUsed": 355049,
+  "gasUsed": 339829,
 }
 `;
 
