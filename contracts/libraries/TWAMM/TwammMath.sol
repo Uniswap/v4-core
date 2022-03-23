@@ -82,20 +82,44 @@ library TwammMath {
         earningsPool1 = getEarningsAmountPool1(earningsFactorParams).toUInt();
     }
 
+    struct calculateTimeBetweenTicksParams {
+        uint256 liquidity;
+        uint160 sqrtPriceStartX96;
+        uint160 sqrtPriceEndX96;
+        uint256 sellRate0;
+        uint256 sellRate1;
+    }
+
     /// @notice Used when crossing an initialized tick. Can extract the amount of seconds it took to cross
     ///   the tick, and recalibrate the calculation from there to accommodate liquidity changes
     function calculateTimeBetweenTicks(
-        bytes16 liquidity,
-        bytes16 sqrtPriceStartX96,
-        bytes16 sqrtPriceEndX96,
-        bytes16 sqrtSellRate,
-        bytes16 sqrtSellRatioX96
-    ) internal view returns (bytes16 secondsBetween) {
-        bytes16 numpt1 = sqrtSellRatioX96.add(sqrtPriceEndX96).div(sqrtSellRatioX96.sub(sqrtPriceEndX96));
-        bytes16 numpt2 = sqrtSellRatioX96.sub(sqrtPriceStartX96).div(sqrtSellRatioX96.add(sqrtPriceStartX96));
-        bytes16 numerator = numpt1.mul(numpt2).ln().mul(liquidity);
+        uint256 liquidity,
+        uint160 sqrtPriceStartX96,
+        uint160 sqrtPriceEndX96,
+        uint256 sellRate0,
+        uint256 sellRate1
+    ) internal view returns (uint256 secondsBetween) {
+        bytes16 sellRate0Bytes = sellRate0.fromUInt();
+        bytes16 sellRate1Bytes = sellRate1.fromUInt();
+        bytes16 sqrtPriceStartX96Bytes = sqrtPriceStartX96.fromUInt();
+        bytes16 sqrtPriceEndX96Bytes = sqrtPriceEndX96.fromUInt();
+        bytes16 sqrtSellRatioX96 = sellRate1Bytes.div(sellRate0Bytes).sqrt().mul(Q96);
+        bytes16 sqrtSellRate = sellRate0Bytes.mul(sellRate1Bytes).sqrt();
+
+        bytes16 multiple = getTimeBetweenTicksMultiple(sqrtSellRatioX96, sqrtPriceStartX96Bytes, sqrtPriceEndX96Bytes);
+        bytes16 numerator = multiple.mul(liquidity.fromUInt());
         bytes16 denominator = uint256(2).fromUInt().mul(sqrtSellRate);
-        return numerator.div(denominator);
+        return numerator.div(denominator).toUInt();
+    }
+
+    function getTimeBetweenTicksMultiple(
+        bytes16 sqrtSellRatioX96,
+        bytes16 sqrtPriceStartX96,
+        bytes16 sqrtPriceEndX96
+    ) private pure returns (bytes16 multiple) {
+        bytes16 multiple1 = sqrtSellRatioX96.add(sqrtPriceEndX96).div(sqrtSellRatioX96.sub(sqrtPriceEndX96));
+        bytes16 multiple2 = sqrtSellRatioX96.sub(sqrtPriceStartX96).div(sqrtSellRatioX96.add(sqrtPriceStartX96));
+        return multiple1.mul(multiple2).ln();
     }
 
     struct EarningsFactorParams {

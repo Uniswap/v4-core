@@ -258,7 +258,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     {
         Pool.State storage pool = _getPool(key);
         (bool zeroForOne, uint256 amountIn, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
-            TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee),
+            TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee, key.tickSpacing),
             pool.ticks,
             pool.tickBitmap
         );

@@ -38,6 +38,7 @@ describe.only('TWAMMMath', () => {
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
     let fee: BigNumberish
+    let tickSpacing: BigNumberish
     let sellRateCurrent0: BigNumberish
     let sellRateCurrent1: BigNumberish
 
@@ -46,6 +47,7 @@ describe.only('TWAMMMath', () => {
       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       liquidity = '1000000000000000000000000'
       fee = '3000'
+      tickSpacing = '60'
       sellRateCurrent0 = toWei('1')
       sellRateCurrent1 = toWei('1')
     })
@@ -195,6 +197,7 @@ describe.only('TWAMMMath', () => {
             sqrtPriceX96: testcase.inputs.sqrtPriceX96,
             liquidity,
             fee,
+            tickSpacing,
           },
           {
             sellRateCurrent0: testcase.inputs.sellRate0,
@@ -216,6 +219,7 @@ describe.only('TWAMMMath', () => {
             sqrtPriceX96,
             liquidity,
             fee,
+            tickSpacing,
           },
           {
             sellRateCurrent0,
@@ -255,18 +259,13 @@ describe.only('TWAMMMath', () => {
       let sqrtSellRate: BigNumberish
       let sqrtSellRatioX96: BigNumberish
 
-      sqrtSellRate = Math.sqrt(parseInt(sellRateCurrent1.mul(sellRateCurrent0).toString())).toString()
-      sqrtSellRatioX96 = BigNumber.from(
-        Math.sqrt(parseInt(sellRateCurrent1.div(sellRateCurrent0).toString())).toString()
-      ).mul(BigNumber.from(2).pow(96))
-
       expect(
         await twamm.calculateTimeBetweenTicks(
           liquidity,
           sqrtPriceStartX96,
           sqrtPriceEndX96,
-          sqrtSellRate,
-          sqrtSellRatioX96
+          sellRateCurrent0,
+          sellRateCurrent1
         )
       ).to.eq(4204)
     })

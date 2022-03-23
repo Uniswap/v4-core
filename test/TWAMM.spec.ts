@@ -206,6 +206,7 @@ describe.only('TWAMM', () => {
         sqrtPriceX96: encodeSqrtPriceX96(1, 1),
         fee: '3000',
         liquidity: '14496800315719602540',
+        tickSpacing: 60,
       }
       const mockTicks = {}
       advanceTime(timestampInterval0 - interval)
@@ -232,6 +233,7 @@ describe.only('TWAMM', () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '1000000000000000000000000'
       const fee = '3000'
+      const tickSpacing = 60
 
       const error = 5
       const fullSellAmount = toWei('5')
@@ -239,7 +241,7 @@ describe.only('TWAMM', () => {
       const halfSellAmountUnderError = halfSellAmount.sub(halfSellAmount.div(error))
       const halfSellAmountOverError = halfSellAmount.add(halfSellAmount.div(error))
 
-      const poolParams = { sqrtPriceX96, liquidity, fee }
+      const poolParams = { sqrtPriceX96, liquidity, fee, tickSpacing }
 
       // set up timestamps
       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
@@ -300,6 +302,7 @@ describe.only('TWAMM', () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '1000000000000000000000000'
       const fee = '3000'
+      const tickSpacing = 60
 
       const error = 5
       const fullSellAmount = toWei('5')
@@ -307,7 +310,7 @@ describe.only('TWAMM', () => {
       const partialSellAmount = fullSellAmount.div(4)
       const partialBuyAmount = fullSellAmount.div(4).mul(3)
 
-      const poolParams = { sqrtPriceX96, liquidity, fee }
+      const poolParams = { sqrtPriceX96, liquidity, fee, tickSpacing }
 
       // set up timestamps
       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
@@ -418,6 +421,7 @@ describe.only('TWAMM', () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '10000000000000000000'
       const fee = 3000
+      const tickSpacing = 60
       await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval3 + 5_000])
 
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.eq(0)
@@ -429,7 +433,7 @@ describe.only('TWAMM', () => {
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval4)).to.eq(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval4)).to.eq(0)
 
-      await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee })
+      await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee, tickSpacing })
 
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.gt(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.gt(0)
@@ -449,9 +453,10 @@ describe.only('TWAMM', () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '10000000000000000000'
       const fee = 3000
+      const tickSpacing = 60
       await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval3 + 5_000])
 
-      await snapshotGasCost(twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee }))
+      await snapshotGasCost(twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee, tickSpacing }))
     })
   })
 
@@ -462,6 +467,7 @@ describe.only('TWAMM', () => {
       feeProtocol: 0,
       sqrtPriceX96: encodeSqrtPriceX96(1, 1),
       fee: '3000',
+      tickSpacing: '60',
       liquidity: '14496800315719602540',
     }
     let expiration: number
@@ -551,11 +557,12 @@ describe.only('TWAMM', () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '1000000000000000000000000'
       const fee = '3000'
+      const tickSpacing = '60'
 
       const fullSellAmount = toWei('5')
       const halfSellAmount = toWei('2.5')
 
-      const poolParams = { sqrtPriceX96, liquidity, fee }
+      const poolParams = { sqrtPriceX96, liquidity, fee, tickSpacing }
 
       await twamm.initialize(10_000)
 
