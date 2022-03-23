@@ -16,7 +16,11 @@ contract PoolManagerReentrancy is ILockCallback {
         uint256 total,
         uint256 count
     ) internal {
+        // check that it is currently already locked `total-count` times, ...
+        assert(poolManager.lockedByLength() == total - count);
         poolManager.lock(abi.encode(total, count));
+        // and still has that many locks after this particular lock is released
+        assert(poolManager.lockedByLength() == total - count);
     }
 
     function lockAcquired(bytes calldata data) external returns (bytes memory) {
