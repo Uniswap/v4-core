@@ -29,7 +29,8 @@ interface IHooks {
     function afterModifyPosition(
         address sender,
         IPoolManager.PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params
+        IPoolManager.ModifyPositionParams calldata params,
+        IPoolManager.BalanceDelta calldata delta
     ) external;
 
     function beforeSwap(
