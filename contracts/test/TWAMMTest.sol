@@ -24,8 +24,8 @@ contract TWAMMTest {
         orderId = twamm.submitLongTermOrder(params);
     }
 
-    function cancelLongTermOrder(uint256 orderId) external {
-        twamm.cancelLongTermOrder(orderId);
+    function cancelLongTermOrder(uint256 orderId) external returns (uint256 amountOut0, uint256 amountOut1) {
+        (amountOut0, amountOut1) = twamm.cancelLongTermOrder(orderId);
     }
 
     function claimEarnings(uint256 orderId, TWAMM.PoolParamsOnExecute memory params)

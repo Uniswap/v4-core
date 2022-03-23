@@ -140,4 +140,14 @@ library TwammMath {
     function reciprocal(bytes16 n) private pure returns (bytes16) {
         return uint256(1).fromUInt().div(n);
     }
+
+    function calculateCancellationAmounts(
+        TWAMM.Order memory order,
+        uint256 earningsFactorCurrent,
+        uint256 timestamp
+    ) internal view returns (uint256 unsoldAmount, uint256 purchasedAmount) {
+        unsoldAmount = order.sellRate * (order.expiration - timestamp);
+        uint256 earningsFactor = (earningsFactorCurrent - order.unclaimedEarningsFactor);
+        purchasedAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
+    }
 }

@@ -87,15 +87,9 @@ library TWAMM {
         internal
         returns (uint256 orderId)
     {
-        if (self.expirationInterval == 0) {
-            revert NotInitialized();
-        }
-        if (params.expiration < block.timestamp) {
-            revert ExpirationLessThanBlocktime(params.expiration);
-        }
-        if (params.expiration % self.expirationInterval != 0) {
-            revert ExpirationNotOnInterval(params.expiration);
-        }
+        if (self.expirationInterval == 0) revert NotInitialized();
+        if (params.expiration < block.timestamp) revert ExpirationLessThanBlocktime(params.expiration);
+        if (params.expiration % self.expirationInterval != 0) revert ExpirationNotOnInterval(params.expiration);
 
         orderId = self.nextId++;
 
@@ -127,7 +121,11 @@ library TWAMM {
             revert OrderAlreadyCompleted(orderId, order.expiration, block.timestamp);
 
         uint256 earningsFactorCurrent = self.orderPools[order.sellTokenIndex].earningsFactorCurrent;
-        (amountOut0, amountOut1) = calculateCancellationAmounts(earningsFactorCurrent, order);
+        (amountOut0, amountOut1) = TwammMath.calculateCancellationAmounts(
+            order,
+            earningsFactorCurrent,
+            block.timestamp
+        );
         if (order.sellTokenIndex == 1) (amountOut1, amountOut0) = (amountOut0, amountOut1);
 
         self.orders[orderId].sellRate = 0;
@@ -261,14 +259,5 @@ library TWAMM {
         }
 
         return nextSqrtPriceX96;
-    }
-
-    function calculateCancellationAmounts(uint256 earningsFactorCurrent, Order memory order)
-        private
-        returns (uint256 unsoldAmount, uint256 purchasedAmount)
-    {
-        unsoldAmount = order.sellRate * (order.expiration - block.timestamp);
-        uint256 earningsFactor = (earningsFactorCurrent - order.unclaimedEarningsFactor);
-        purchasedAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
     }
 }
