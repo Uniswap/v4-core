@@ -219,10 +219,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         _accountDelta(token, -(paid.toInt256()));
     }
 
-    function _burnAndAccount(
-        address token,
-        uint256 amount
-    ) internal {
+    function _burnAndAccount(address token, uint256 amount) internal {
         _burn(address(this), uint256(uint160(address((token)))), amount);
         _accountDelta(IERC20Minimal(token), -(amount.toInt256()));
     }
@@ -265,7 +262,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     ) external returns (bytes4) {
         if (msg.sender != address(this)) revert NotPoolManagerToken();
         _burnAndAccount(address(uint160(id)), value);
-        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)")); 
+        return bytes4(keccak256('onERC1155Received(address,address,uint256,uint256,bytes)'));
     }
 
     function onERC1155BatchReceived(
@@ -279,6 +276,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         for (uint256 i; i < ids.length; i++) {
             _burnAndAccount(address(uint160(ids[i])), values[i]);
         }
-        return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
+        return bytes4(keccak256('onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)'));
     }
 }
