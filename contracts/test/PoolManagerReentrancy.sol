@@ -8,15 +8,30 @@ contract PoolManagerReentrancy is ILockCallback {
     event LockAcquired(uint256 count);
 
     function reenter(IPoolManager poolManager, uint256 count) external {
-        poolManager.lock(abi.encode(count));
+        helper(poolManager, count, count);
+    }
+
+    function helper(
+        IPoolManager poolManager,
+        uint256 total,
+        uint256 count
+    ) internal {
+        poolManager.lock(abi.encode(total, count));
     }
 
     function lockAcquired(bytes calldata data) external returns (bytes memory) {
-        uint256 count = abi.decode(data, (uint256));
+        (uint256 total, uint256 count) = abi.decode(data, (uint256, uint256));
         emit LockAcquired(count);
 
-        assert(IPoolManager(msg.sender).lockedBy(IPoolManager(msg.sender).lockedByLength() - 1) == address(this));
-        if (count > 0) this.reenter(IPoolManager(msg.sender), count - 1);
+        uint256 id = total - count;
+
+        IPoolManager poolManager = IPoolManager(msg.sender);
+
+        assert(poolManager.lockedBy(id) == address(this));
+        assert(poolManager.lockedByLength() == id + 1);
+
+        if (count > 0) helper(IPoolManager(msg.sender), total, count - 1);
+
         return '';
     }
 }
