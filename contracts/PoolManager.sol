@@ -44,8 +44,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
+    /// @inheritdoc IPoolManager
     address[] public override lockedBy;
 
+    /// @inheritdoc IPoolManager
     function lockedByLength() external view returns (uint256) {
         return lockedBy.length;
     }
@@ -66,7 +68,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @dev Represents the state of the locker at the given index. Each locker must have net 0 tokens owed before
-    /// releasing their lock
+    /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
     mapping(uint256 => LockState) private lockStates;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
