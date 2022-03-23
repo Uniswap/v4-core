@@ -124,7 +124,8 @@ library TWAMM {
         if (order.expiration <= block.timestamp)
             revert OrderAlreadyCompleted(orderId, order.expiration, block.timestamp);
 
-        (amountOut0, amountOut1) = calculateCancellationAmounts(order);
+        uint256 earningsFactorCurrent = self.orderPools[order.sellTokenIndex].earningsFactorCurrent;
+        (amountOut0, amountOut1) = calculateCancellationAmounts(earningsFactorCurrent, order);
         if (order.sellTokenIndex == 1) (amountOut1, amountOut0) = (amountOut0, amountOut1);
 
         self.orders[orderId].sellRate = 0;
@@ -139,7 +140,8 @@ library TWAMM {
         returns (uint256 earningsAmount, uint8 sellTokenIndex)
     {
         Order memory order = self.orders[orderId];
-        OrderPool.State storage orderPool = self.orderPools[order.sellTokenIndex];
+        sellTokenIndex = order.sellTokenIndex;
+        OrderPool.State storage orderPool = self.orderPools[sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactor = orderPool.earningsFactorAtInterval[order.expiration] -
@@ -257,12 +259,12 @@ library TWAMM {
         return nextSqrtPriceX96;
     }
 
-    function calculateCancellationAmounts(Order memory order)
+    function calculateCancellationAmounts(uint256 earningsFactorCurrent, Order memory order)
         private
         returns (uint256 unsoldAmount, uint256 purchasedAmount)
     {
-        // TODO: actually calculate this
-        unsoldAmount = 111;
-        purchasedAmount = 222;
+        unsoldAmount = order.sellRate * (order.expiration - block.timestamp);
+        uint256 earningsFactor = (earningsFactorCurrent - order.unclaimedEarningsFactor);
+        purchasedAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
     }
 }
