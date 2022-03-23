@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.12;
+pragma solidity =0.8.13;
 
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
-
-import {Pool} from '../libraries/Pool.sol';
 
 contract PoolSwapTest is ILockCallback {
     IPoolManager public immutable manager;
@@ -28,10 +26,10 @@ contract PoolSwapTest is ILockCallback {
         IPoolManager.SwapParams memory params,
         bool withdrawTokens,
         bool settleUsingTransfer
-    ) external returns (Pool.BalanceDelta memory delta) {
+    ) external returns (IPoolManager.BalanceDelta memory delta) {
         delta = abi.decode(
             manager.lock(abi.encode(CallbackData(msg.sender, withdrawTokens, settleUsingTransfer, key, params))),
-            (Pool.BalanceDelta)
+            (IPoolManager.BalanceDelta)
         );
     }
 
@@ -40,7 +38,7 @@ contract PoolSwapTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        Pool.BalanceDelta memory delta = manager.swap(data.key, data.params);
+        IPoolManager.BalanceDelta memory delta = manager.swap(data.key, data.params);
 
         if (data.params.zeroForOne) {
             if (delta.amount0 > 0) {

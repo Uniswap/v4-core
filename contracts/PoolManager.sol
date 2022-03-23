@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.13;
 
+import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
+import {IHooks} from './interfaces/IHooks.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
@@ -17,6 +19,7 @@ import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Re
 contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver {
     using SafeCast for *;
     using Pool for *;
+    using Hooks for IHooks;
 
     mapping(bytes32 => Pool.State) public pools;
 
@@ -33,7 +36,15 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
     /// @notice Initialize the state for a given pool ID
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
+        if (key.hooks.shouldCallBeforeInitialize()) {
+            key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
+        }
+
         tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
+
+        if (key.hooks.shouldCallAfterInitialize()) {
+            key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
+        }
     }
 
     /// @notice Increase the maximum number of stored observations for the pool's oracle
@@ -103,11 +114,11 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     function _accountDelta(IERC20Minimal token, int256 delta) internal {
         if (delta == 0) return;
         _addTokenToSet(token);
-        tokenDelta[token].delta += int248(delta);
+        tokenDelta[token].delta += delta.toInt248();
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, Pool.BalanceDelta memory delta) internal {
+    function _accountPoolBalanceDelta(PoolKey memory key, IPoolManager.BalanceDelta memory delta) internal {
         _accountDelta(key.token0, delta.amount0);
         _accountDelta(key.token1, delta.amount1);
     }
@@ -123,8 +134,12 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         override
         noDelegateCall
         onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
+        returns (IPoolManager.BalanceDelta memory delta)
     {
+        if (key.hooks.shouldCallBeforeModifyPosition()) {
+            key.hooks.beforeModifyPosition(msg.sender, key, params);
+        }
+
         delta = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
@@ -138,6 +153,10 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         );
 
         _accountPoolBalanceDelta(key, delta);
+
+        if (key.hooks.shouldCallAfterModifyPosition()) {
+            key.hooks.afterModifyPosition(msg.sender, key, params, delta);
+        }
     }
 
     function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
@@ -145,8 +164,12 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         override
         noDelegateCall
         onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
+        returns (IPoolManager.BalanceDelta memory delta)
     {
+        if (key.hooks.shouldCallBeforeSwap()) {
+            key.hooks.beforeSwap(msg.sender, key, params);
+        }
+
         delta = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),
@@ -159,6 +182,10 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         );
 
         _accountPoolBalanceDelta(key, delta);
+
+        if (key.hooks.shouldCallAfterSwap()) {
+            key.hooks.afterSwap(msg.sender, key, params, delta);
+        }
     }
 
     /// @notice Called by the user to net out some value owed to the user

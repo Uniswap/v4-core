@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.12;
+pragma solidity =0.8.13;
 
 /// @title Prevents delegatecall to a contract
 /// @notice Base contract that provides a modifier for preventing delegatecall to methods in a child contract
