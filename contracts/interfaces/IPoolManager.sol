@@ -23,8 +23,8 @@ interface IPoolManager is IERC1155 {
     /// @param locker The current locker
     error LockedBy(address locker);
 
-    /// @notice The calling address is not approved to burn the specified address' tokens
-    error NotApprovedToBurn();
+    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
+    error NotPoolManagerToken();
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -102,12 +102,6 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
-
-    /// @notice Called to pay an amount that is owed from an address' ERC1155 balance
-    function burn(
-        IERC20Minimal token,
-        uint256 amount
-    ) external;
 
     /// @notice Update the protocol fee for a given pool
     function setFeeProtocol(PoolKey calldata key, uint8 feeProtocol) external returns (uint8 feeProtocolOld);
