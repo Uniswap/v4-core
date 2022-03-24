@@ -149,6 +149,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         onlyByLocker
         returns (Pool.BalanceDelta memory delta)
     {
+        executeTWAMMOrders(key);
         delta = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),
@@ -251,7 +252,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountDelta(buyToken, -(earningsAmount.toInt256()));
     }
 
-    function executeTWAMMOrders(IPoolManager.PoolKey calldata key)
+    function executeTWAMMOrders(IPoolManager.PoolKey memory key)
         public
         onlyByLocker
         returns (uint256 earningsAmount)
