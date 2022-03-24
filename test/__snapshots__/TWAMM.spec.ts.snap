@@ -6,3 +6,24 @@ Object {
   "gasUsed": 37191,
 }
 `;
+
+exports[`TWAMM #claimEarnings gas 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 249189,
+}
+`;
+
+exports[`TWAMM #executeTWAMMOrders gas 1`] = `
+Object {
+  "calldataByteLength": 100,
+  "gasUsed": 339444,
+}
+`;
+
+exports[`TWAMM #submitLongTermOrder gas 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 163113,
+}
+`;

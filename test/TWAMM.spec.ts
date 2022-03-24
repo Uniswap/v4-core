@@ -22,7 +22,7 @@ function divX96(n: BigNumber): string {
   return (parseInt(n.toString()) / 2 ** 96).toString()
 }
 
-describe('TWAMM', () => {
+describe.only('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
 
@@ -279,12 +279,6 @@ describe('TWAMM', () => {
       await twamm.executeTWAMMOrders(poolParams)
       const results = await twamm.callStatic.cancelLongTermOrder(orderToCancel)
 
-      const expirationOfOrder = (await twamm.getOrder(orderToCancel)).expiration
-      console.log('expiry time of order', expirationOfOrder.toString())
-
-      console.log('amount0', results.amountOut0.toString())
-      console.log('amount1', results.amountOut1.toString())
-
       expect(parseInt(results.amountOut0.toString())).to.be.greaterThanOrEqual(
         parseInt(halfSellAmountUnderError.toString())
       )
@@ -352,12 +346,6 @@ describe('TWAMM', () => {
       // update state and cancel the order at the partial point
       await twamm.executeTWAMMOrders(poolParams)
       const results = await twamm.callStatic.cancelLongTermOrder(orderToCancel)
-
-      const expirationOfOrder = (await twamm.getOrder(orderToCancel)).expiration
-      console.log('expiry time of order', expirationOfOrder.toString())
-
-      console.log('amount0', results.amountOut0.toString())
-      console.log('amount1', results.amountOut1.toString())
 
       const partialSellUnderError = partialSellAmount.sub(partialSellAmount.div(error))
       const partialSellOverError = partialSellAmount.add(partialSellAmount.div(error))
