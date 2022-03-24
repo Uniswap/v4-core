@@ -154,7 +154,7 @@ describe('TWAMM', () => {
     })
   })
 
-  describe.only('#cancelLongTermOrder', () => {
+  describe('#cancelLongTermOrder', () => {
     let orderId: BigNumber
     let interval: number
     let timestampInterval0: number
@@ -273,14 +273,11 @@ describe('TWAMM', () => {
         expiration: expiryTimestamp,
       })
 
-      // TODO: fix automine
-      //  await ethers.provider.send('evm_setAutomine', [false])
       await ethers.provider.send('evm_mine', [midPointTimestamp])
 
       // update state and cancel the order at the midpoint
       await twamm.executeTWAMMOrders(poolParams)
       const results = await twamm.callStatic.cancelLongTermOrder(orderToCancel)
-      // await ethers.provider.send('evm_setAutomine', [true])
 
       const expirationOfOrder = (await twamm.getOrder(orderToCancel)).expiration
       console.log('expiry time of order', expirationOfOrder.toString())
@@ -350,14 +347,11 @@ describe('TWAMM', () => {
         expiration: expiryTimestamp,
       })
 
-      // TODO: fix automine
-      // await ethers.provider.send('evm_setAutomine', [false])
       await ethers.provider.send('evm_mine', [partialPointTimestamp])
 
       // update state and cancel the order at the partial point
       await twamm.executeTWAMMOrders(poolParams)
       const results = await twamm.callStatic.cancelLongTermOrder(orderToCancel)
-      // await ethers.provider.send('evm_setAutomine', [true])
 
       const expirationOfOrder = (await twamm.getOrder(orderToCancel)).expiration
       console.log('expiry time of order', expirationOfOrder.toString())
