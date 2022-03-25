@@ -66,6 +66,7 @@ describe.only('TWAMM', () => {
     let owner: string
     let amountIn: BigNumber
     let nonIntervalExpiration: number
+    let prevTimeExpiration: number
     let expiration: number
 
     beforeEach('deploy test twamm', async () => {
@@ -74,14 +75,28 @@ describe.only('TWAMM', () => {
       ;(amountIn = toWei('1')), await twamm.initialize(10_000)
       const blocktime = (await ethers.provider.getBlock('latest')).timestamp
       nonIntervalExpiration = blocktime
+      prevTimeExpiration = findExpiryTime(blocktime, -1, 10000)
       // gets the valid expiry time that is 3 intervals out
       expiration = findExpiryTime(blocktime, 3, 10000)
     })
 
-    it('reverts because of bad expiry', async () => {
+    it('reverts if expiry is not on an interval', async () => {
       const nextId = await twamm.getNextId()
       await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to.be
         .reverted
+    })
+
+    it('reverts if not initialized', async () => {
+      const twammUnitialized = await loadFixture(twammFixture)
+      await expect(
+        twammUnitialized.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration })
+      ).to.be.revertedWith('NotInitialized()')
+    })
+
+    it('reverts if expiry is in the past', async () => {
+      await expect(
+        twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: prevTimeExpiration })
+      ).to.be.revertedWith(`ExpirationLessThanBlocktime(${prevTimeExpiration})`)
     })
 
     it('stores the new long term order', async () => {
@@ -141,34 +156,211 @@ describe.only('TWAMM', () => {
 
   describe('#cancelLongTermOrder', () => {
     let orderId: BigNumber
+    let interval: number
+    let timestampInterval0: number
 
     beforeEach('deploy test twamm', async () => {
       twamm.initialize(10_000)
 
       orderId = await twamm.getNextId()
 
-      const zeroForOne = true
       const owner = wallet.address
-      const amountIn = toWei('1')
-      const expiration = findExpiryTime((await ethers.provider.getBlock('latest')).timestamp, 3, 10_000)
+      interval = 10_000
+      const blocktime = (await ethers.provider.getBlock('latest')).timestamp
+      timestampInterval0 = findExpiryTime(blocktime, 3, interval)
+      const timestampInterval1 = findExpiryTime(blocktime, 4, interval)
+      const timestampInterval2 = findExpiryTime(blocktime, 5, interval)
 
       await twamm.submitLongTermOrder({
-        zeroForOne,
+        zeroForOne: true,
         owner,
-        amountIn,
-        expiration,
+        amountIn: toWei('3'),
+        expiration: timestampInterval0,
+      })
+
+      // set two more expiry's so its never 0, logic isn't there yet
+      await twamm.submitLongTermOrder({
+        zeroForOne: false,
+        owner,
+        amountIn: toWei('2'),
+        expiration: timestampInterval1,
+      })
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: true,
+        owner,
+        amountIn: toWei('2'),
+        expiration: timestampInterval2,
       })
     })
 
-    it('changes the sell rate of the ordre to 0', async () => {
+    it('changes the sell rate of the order to 0', async () => {
       expect(parseInt((await twamm.getOrder(orderId)).sellRate.toString())).to.be.greaterThan(0)
       await twamm.cancelLongTermOrder(orderId)
+      expect(parseInt((await twamm.getOrder(orderId)).sellRate.toString())).to.be.eq(0)
     })
 
-    it('decreases the sellRate of the corresponding OrderPool', async () => {
-      expect(parseInt((await twamm.getOrderPool(0)).sellRate.toString())).to.be.greaterThan(0)
+    it('claims some of the order, then cancels successfully', async () => {
+      const poolParams = {
+        feeProtocol: 0,
+        sqrtPriceX96: encodeSqrtPriceX96(1, 1),
+        fee: '3000',
+        liquidity: '14496800315719602540',
+      }
+      const mockTicks = {}
+      advanceTime(timestampInterval0 - interval)
+
+      const result = await twamm.callStatic.claimEarnings(orderId, poolParams, mockTicks)
+      const earningsAmount: BigNumber = result.earningsAmount
+      const unclaimed: BigNumber = result.unclaimedEarnings
+      // TODO: calculate expected earnings
+      expect(parseInt(earningsAmount.toString())).to.be.greaterThan(0)
+      expect(parseInt(unclaimed.toString())).to.be.greaterThan(0)
+
       await twamm.cancelLongTermOrder(orderId)
-      expect((await twamm.getOrderPool(0)).sellRate).to.equal(0)
+      expect(parseInt((await twamm.getOrder(orderId)).sellRate.toString())).to.eq(0)
+      expect(parseInt((await twamm.getOrder(orderId)).unclaimedEarningsFactor.toString())).to.eq(0)
+    })
+
+    it('reverts if you cancel after the expiration', async () => {
+      advanceTime(timestampInterval0 + 5)
+      expect(twamm.cancelLongTermOrder(orderId)).to.be.reverted
+    })
+
+    it('claims half the amount, refunds half the amount', async () => {
+      const orderToCancel = await twamm.getNextId()
+      const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+      const liquidity = '1000000000000000000000000'
+      const fee = '3000'
+
+      const error = 5
+      const fullSellAmount = toWei('5')
+      const halfSellAmount = fullSellAmount.div(2)
+      const halfSellAmountUnderError = halfSellAmount.sub(halfSellAmount.div(error))
+      const halfSellAmountOverError = halfSellAmount.add(halfSellAmount.div(error))
+
+      const poolParams = { sqrtPriceX96, liquidity, fee }
+
+      // set up timestamps
+      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      const submissionTimestamp = findExpiryTime(latestTimestamp, 1, interval) // start
+      const midPointTimestamp = findExpiryTime(latestTimestamp, 2, interval) // midpoint
+      const expiryTimestamp = findExpiryTime(latestTimestamp, 3, interval) // expire
+
+      // submit the order on an expiry interval for easier calculations
+      await ethers.provider.send('evm_mine', [submissionTimestamp])
+
+      await twamm.executeTWAMMOrders(poolParams)
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: true,
+        owner: wallet.address,
+        amountIn: fullSellAmount,
+        expiration: expiryTimestamp,
+      })
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: true,
+        owner: wallet.address,
+        amountIn: halfSellAmount,
+        expiration: expiryTimestamp,
+      })
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: false,
+        owner: wallet.address,
+        amountIn: fullSellAmount,
+        expiration: expiryTimestamp,
+      })
+
+      await ethers.provider.send('evm_mine', [midPointTimestamp])
+
+      // update state and cancel the order at the midpoint
+      await twamm.executeTWAMMOrders(poolParams)
+      const results = await twamm.callStatic.cancelLongTermOrder(orderToCancel)
+
+      expect(parseInt(results.amountOut0.toString())).to.be.greaterThanOrEqual(
+        parseInt(halfSellAmountUnderError.toString())
+      )
+      expect(parseInt(results.amountOut0.toString())).to.be.lessThanOrEqual(
+        parseInt(halfSellAmountOverError.toString())
+      )
+      expect(parseInt(results.amountOut1.toString())).to.be.greaterThanOrEqual(
+        parseInt(halfSellAmountUnderError.toString())
+      )
+      expect(parseInt(results.amountOut1.toString())).to.be.lessThanOrEqual(
+        parseInt(halfSellAmountOverError.toString())
+      )
+    })
+
+    it('claims 3/4 the amount and refunded 1/4 of the unsold amount', async () => {
+      // cancels at 3/4 of the way through
+      // sells 3/4 of token0, gets refunded 1/4 of token0
+      const orderToCancel = await twamm.getNextId()
+      const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+      const liquidity = '1000000000000000000000000'
+      const fee = '3000'
+
+      const error = 5
+      const fullSellAmount = toWei('5')
+      // refunded 1/4 of the full amount of the selling token
+      const partialSellAmount = fullSellAmount.div(4)
+      const partialBuyAmount = fullSellAmount.div(4).mul(3)
+
+      const poolParams = { sqrtPriceX96, liquidity, fee }
+
+      // set up timestamps
+      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      const submissionTimestamp = findExpiryTime(latestTimestamp, 1, interval) // start
+      const partialPointTimestamp = findExpiryTime(latestTimestamp, 4, interval) // partial point
+      const expiryTimestamp = findExpiryTime(latestTimestamp, 5, interval) // expire
+
+      // submit the order on an expiry interval for easier calculations
+      await ethers.provider.send('evm_mine', [submissionTimestamp])
+
+      await twamm.executeTWAMMOrders(poolParams)
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: true,
+        owner: wallet.address,
+        amountIn: fullSellAmount,
+        expiration: expiryTimestamp,
+      })
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: true,
+        owner: wallet.address,
+        amountIn: partialSellAmount,
+        expiration: expiryTimestamp,
+      })
+
+      await twamm.submitLongTermOrder({
+        zeroForOne: false,
+        owner: wallet.address,
+        amountIn: fullSellAmount,
+        expiration: expiryTimestamp,
+      })
+
+      await ethers.provider.send('evm_mine', [partialPointTimestamp])
+
+      // update state and cancel the order at the partial point
+      await twamm.executeTWAMMOrders(poolParams)
+      const results = await twamm.callStatic.cancelLongTermOrder(orderToCancel)
+
+      const partialSellUnderError = partialSellAmount.sub(partialSellAmount.div(error))
+      const partialSellOverError = partialSellAmount.add(partialSellAmount.div(error))
+
+      const partialBuyUnderError = partialBuyAmount.sub(partialBuyAmount.div(error))
+      const partialBuyOverError = partialBuyAmount.add(partialBuyAmount.div(error))
+
+      expect(parseInt(results.amountOut0.toString())).to.be.greaterThanOrEqual(
+        parseInt(partialSellUnderError.toString())
+      )
+      expect(parseInt(results.amountOut0.toString())).to.be.lessThanOrEqual(parseInt(partialSellOverError.toString()))
+      expect(parseInt(results.amountOut1.toString())).to.be.greaterThanOrEqual(
+        parseInt(partialBuyUnderError.toString())
+      )
+      expect(parseInt(results.amountOut1.toString())).to.be.lessThanOrEqual(parseInt(partialBuyOverError.toString()))
     })
 
     it('gas', async () => {
@@ -324,7 +516,7 @@ describe.only('TWAMM', () => {
 
       // TODO: calculate expected earningsAmount
       expect(parseInt(earningsAmount.toString())).to.be.greaterThan(0)
-      expect(unclaimed.toNumber()).to.eq(0)
+      expect(parseInt(unclaimed.toString())).to.eq(0)
     })
 
     it('should give correct earningsAmount and have some unclaimed earnings', async () => {

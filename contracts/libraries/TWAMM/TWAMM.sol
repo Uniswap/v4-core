@@ -31,6 +31,13 @@ library TWAMM {
     /// @param expiration The expiration timestamp of the order
     error ExpirationNotOnInterval(uint256 expiration);
 
+    /// @notice Thrown when trying to submit an order with an expiration time in the past.
+    /// @param expiration The expiration timestamp of the order
+    error ExpirationLessThanBlocktime(uint256 expiration);
+
+    /// @notice Thrown when trying to submit an order without initializing TWAMM state first
+    error NotInitialized();
+
     /// @notice Contains full state related to the TWAMM
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
     /// @member lastVirtualOrderTimestamp Last timestamp in which virtual orders were executed
@@ -80,9 +87,9 @@ library TWAMM {
         internal
         returns (uint256 orderId)
     {
-        if (params.expiration % self.expirationInterval != 0) {
-            revert ExpirationNotOnInterval(params.expiration);
-        }
+        if (self.expirationInterval == 0) revert NotInitialized();
+        if (params.expiration < block.timestamp) revert ExpirationLessThanBlocktime(params.expiration);
+        if (params.expiration % self.expirationInterval != 0) revert ExpirationNotOnInterval(params.expiration);
 
         orderId = self.nextId++;
 
@@ -113,7 +120,12 @@ library TWAMM {
         if (order.expiration <= block.timestamp)
             revert OrderAlreadyCompleted(orderId, order.expiration, block.timestamp);
 
-        (amountOut0, amountOut1) = calculateCancellationAmounts(order);
+        uint256 earningsFactorCurrent = self.orderPools[order.sellTokenIndex].earningsFactorCurrent;
+        (amountOut0, amountOut1) = TwammMath.calculateCancellationAmounts(
+            order,
+            earningsFactorCurrent,
+            block.timestamp
+        );
         if (order.sellTokenIndex == 1) (amountOut1, amountOut0) = (amountOut0, amountOut1);
 
         self.orders[orderId].sellRate = 0;
@@ -128,7 +140,8 @@ library TWAMM {
         returns (uint256 earningsAmount, uint8 sellTokenIndex)
     {
         Order memory order = self.orders[orderId];
-        OrderPool.State storage orderPool = self.orderPools[order.sellTokenIndex];
+        sellTokenIndex = order.sellTokenIndex;
+        OrderPool.State storage orderPool = self.orderPools[sellTokenIndex];
 
         if (block.timestamp > order.expiration) {
             uint256 earningsFactor = orderPool.earningsFactorAtInterval[order.expiration] -
@@ -246,14 +259,5 @@ library TWAMM {
         }
 
         return nextSqrtPriceX96;
-    }
-
-    function calculateCancellationAmounts(Order memory order)
-        private
-        returns (uint256 unsoldAmount, uint256 purchasedAmount)
-    {
-        // TODO: actually calculate this
-        unsoldAmount = 111;
-        purchasedAmount = 222;
     }
 }
