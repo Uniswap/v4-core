@@ -230,6 +230,7 @@ library TWAMM {
         }
 
         self.lastVirtualOrderTimestamp = currentTimestamp;
+        newSqrtPriceX96 = pool.sqrtPriceX96;
 
         (, swapAmountIn, , ) = SwapMath.computeSwapStep(
             prevSqrtPriceX96,

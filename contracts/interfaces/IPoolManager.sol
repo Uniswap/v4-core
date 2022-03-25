@@ -4,8 +4,9 @@ pragma solidity >=0.6.2;
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
 import {IHooks} from './IHooks.sol';
+import {ITWAMM} from './ITWAMM.sol';
 
-interface IPoolManager {
+interface IPoolManager is ITWAMM {
     /// @notice Thrown when tokens touched has exceeded max of 256
     error MaxTokensTouched();
 

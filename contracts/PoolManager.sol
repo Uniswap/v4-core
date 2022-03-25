@@ -12,6 +12,7 @@ import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IHooks} from './interfaces/IHooks.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
+import 'hardhat/console.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
@@ -24,6 +25,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     function slot0(bytes32 poolId) public view returns (Pool.Slot0 memory) {
         return pools[poolId].slot0;
+    }
+
+    function liquidity(bytes32 poolId) public view returns (uint128) {
+        return pools[poolId].liquidity;
     }
 
     /// @dev For mocking in unit tests
@@ -317,7 +322,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountDelta(buyToken, -(earningsAmount.toInt256()));
     }
 
-    function executeTWAMMOrders(IPoolManager.PoolKey memory key) public onlyByLocker returns (uint256 earningsAmount) {
+    function executeTWAMMOrders(IPoolManager.PoolKey memory key) public onlyByLocker {
         Pool.State storage pool = _getPool(key);
         (bool zeroForOne, uint256 amountIn, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
             TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee, key.tickSpacing),
@@ -325,7 +330,12 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             pool.tickBitmap
         );
         if (amountIn > 0) {
-            swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
+            IPoolManager.BalanceDelta memory delta = swap(
+                key,
+                SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96)
+            );
+            _accountDelta(key.token0, -delta.amount0);
+            _accountDelta(key.token1, -delta.amount1);
         }
     }
 }

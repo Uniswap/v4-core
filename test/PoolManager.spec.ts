@@ -7,13 +7,21 @@ import {
   PoolManagerTest,
   PoolSwapTest,
   PoolModifyPositionTest,
+  PoolTWAMMTest,
   EmptyTestHooks,
   PoolManagerReentrancyTest,
 } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId } from './shared/utilities'
+import {
+  encodeSqrtPriceX96,
+  expandTo18Decimals,
+  FeeAmount,
+  getMinTick,
+  getMaxTick,
+  getPoolId,
+} from './shared/utilities'
 import { deployMockContract, MockedContract } from './shared/mockContract'
 
 const createFixtureLoader = waffle.createFixtureLoader
@@ -22,13 +30,14 @@ const { constants } = ethers
 
 const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 
-describe.only('PoolManager', () => {
+describe('PoolManager', () => {
   let wallet: Wallet, other: Wallet
 
   let manager: PoolManager
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
   let modifyPositionTest: PoolModifyPositionTest
+  let twammTest: PoolTWAMMTest
   let hooksMock: MockedContract
   let testHooksEmpty: EmptyTestHooks
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
@@ -38,6 +47,7 @@ describe.only('PoolManager', () => {
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
+    const twammTestFactory = await ethers.getContractFactory('PoolTWAMMTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
     const manager = (await singletonPoolFactory.deploy()) as PoolManager
@@ -59,6 +69,7 @@ describe.only('PoolManager', () => {
       manager,
       lockTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
+      twammTest: (await twammTestFactory.deploy(manager.address)) as PoolTWAMMTest,
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       tokens,
       hooksMock,
@@ -66,7 +77,7 @@ describe.only('PoolManager', () => {
     }
 
     for (const token of [tokens.token0, tokens.token1, tokens.token2]) {
-      for (const spender of [result.swapTest, result.modifyPositionTest]) {
+      for (const spender of [result.swapTest, result.modifyPositionTest, result.twammTest]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
       }
     }
@@ -82,9 +93,8 @@ describe.only('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, hooksMock, testHooksEmpty } = await loadFixture(
-      fixture
-    ))
+    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, twammTest, hooksMock, testHooksEmpty } =
+      await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
@@ -622,6 +632,53 @@ describe.only('PoolManager', () => {
           }
         )
       )
+    })
+  })
+
+  describe('TWAMM', () => {
+    function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
+      return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
+    }
+
+    describe('#executeTWAMM', () => {
+      it('performs properly with initialized ticks', async () => {
+        const key = {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          hooks: ADDRESS_ZERO,
+          tickSpacing: 60,
+        }
+        await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: getMinTick(60),
+          tickUpper: getMaxTick(60),
+          liquidityDelta: expandTo18Decimals(1),
+        })
+
+        const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+        await ethers.provider.send('evm_setAutomine', [false])
+
+        await twammTest.submitLongTermOrder(key, {
+          zeroForOne: true,
+          owner: wallet.address,
+          amountIn: expandTo18Decimals(2),
+          expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
+        })
+
+        await twammTest.submitLongTermOrder(key, {
+          zeroForOne: false,
+          owner: wallet.address,
+          amountIn: expandTo18Decimals(1),
+          expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
+        })
+
+        await ethers.provider.send('evm_mine', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
+        await ethers.provider.send('evm_setAutomine', [true])
+
+        await twammTest.executeTWAMMOrders(key)
+      })
     })
   })
 })
