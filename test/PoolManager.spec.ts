@@ -114,7 +114,7 @@ describe.only('PoolManager', () => {
           hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(1, 1),
-        10_000,
+        10_000
       )
 
       await modifyPositionTest.modifyPosition(
@@ -153,7 +153,7 @@ describe.only('PoolManager', () => {
           hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(10, 1),
-        10_000,
+        10_000
       )
 
       const { sqrtPriceX96 } = await manager.slot0(
@@ -240,7 +240,7 @@ describe.only('PoolManager', () => {
           hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(1, 1),
-        10_000,
+        10_000
       )
 
       await modifyPositionTest.modifyPosition(
@@ -405,7 +405,7 @@ describe.only('PoolManager', () => {
           hooks: ADDRESS_ZERO,
         },
         encodeSqrtPriceX96(1, 1),
-        10_000,
+        10_000
       )
       await swapTest.swap(
         {
@@ -431,7 +431,8 @@ describe.only('PoolManager', () => {
           tickSpacing: 60,
           hooks: hooksMock.address,
         },
-        encodeSqrtPriceX96(1, 1), 10_000,
+        encodeSqrtPriceX96(1, 1),
+        10_000
       )
       await swapTest.swap(
         {

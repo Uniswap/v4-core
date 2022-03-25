@@ -36,7 +36,11 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96, uint256 twammExpiryInterval) external override returns (int24 tick) {
+    function initialize(
+        IPoolManager.PoolKey memory key,
+        uint160 sqrtPriceX96,
+        uint256 twammExpiryInterval
+    ) external override returns (int24 tick) {
         if (key.hooks.shouldCallBeforeInitialize()) {
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
@@ -313,11 +317,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountDelta(buyToken, -(earningsAmount.toInt256()));
     }
 
-    function executeTWAMMOrders(IPoolManager.PoolKey memory key)
-        public
-        onlyByLocker
-        returns (uint256 earningsAmount)
-    {
+    function executeTWAMMOrders(IPoolManager.PoolKey memory key) public onlyByLocker returns (uint256 earningsAmount) {
         Pool.State storage pool = _getPool(key);
         (bool zeroForOne, uint256 amountIn, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
             TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee, key.tickSpacing),
