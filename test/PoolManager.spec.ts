@@ -10,7 +10,7 @@ const createFixtureLoader = waffle.createFixtureLoader
 
 const { constants } = ethers
 
-describe('PoolManager', () => {
+describe.only('PoolManager', () => {
   let wallet: Wallet, other: Wallet
 
   let manager: PoolManager

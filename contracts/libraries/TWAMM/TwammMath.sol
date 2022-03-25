@@ -13,7 +13,7 @@ library TwammMath {
     using ABDKMathQuad for *;
     using SafeCast for *;
 
-    // FixedPoint96.Q96.fromUInt()
+    // ABDKMathQuad FixedPoint96.Q96.fromUInt()
     bytes16 constant Q96 = 0x405f0000000000000000000000000000;
 
     struct ParamsBytes16 {
@@ -24,6 +24,8 @@ library TwammMath {
         bytes16 secondsElapsed;
     }
 
+    /// @notice Calculation used incrementally (b/w expiration intervals or initialized ticks)
+    ///    to calculate earnings rewards and the amm price change resulting from executing TWAMM orders
     function calculateExecutionUpdates(
         uint256 secondsElapsed,
         TWAMM.PoolParamsOnExecute memory poolParams,
@@ -80,19 +82,44 @@ library TwammMath {
         earningsPool1 = getEarningsAmountPool1(earningsFactorParams).toUInt();
     }
 
+    struct calculateTimeBetweenTicksParams {
+        uint256 liquidity;
+        uint160 sqrtPriceStartX96;
+        uint160 sqrtPriceEndX96;
+        uint256 sellRate0;
+        uint256 sellRate1;
+    }
+
+    /// @notice Used when crossing an initialized tick. Can extract the amount of seconds it took to cross
+    ///   the tick, and recalibrate the calculation from there to accommodate liquidity changes
     function calculateTimeBetweenTicks(
-        bytes16 liquidity,
-        bytes16 sqrtPriceStartX96,
-        bytes16 sqrtPriceEndX96,
-        bytes16 sqrtSellRate,
-        bytes16 sqrtSellRatioX96
-    ) internal view returns (bytes16 secondsBetween) {
-        console.log(uint256(100000).fromUInt().ln().toUInt());
-        bytes16 numpt1 = sqrtSellRatioX96.add(sqrtPriceEndX96).div(sqrtSellRatioX96.sub(sqrtPriceEndX96));
-        bytes16 numpt2 = sqrtSellRatioX96.sub(sqrtPriceStartX96).div(sqrtSellRatioX96.add(sqrtPriceStartX96));
-        bytes16 numerator = numpt1.mul(numpt2).ln().sub(Q96.ln()).mul(liquidity);
+        uint256 liquidity,
+        uint160 sqrtPriceStartX96,
+        uint160 sqrtPriceEndX96,
+        uint256 sellRate0,
+        uint256 sellRate1
+    ) internal view returns (uint256 secondsBetween) {
+        bytes16 sellRate0Bytes = sellRate0.fromUInt();
+        bytes16 sellRate1Bytes = sellRate1.fromUInt();
+        bytes16 sqrtPriceStartX96Bytes = sqrtPriceStartX96.fromUInt();
+        bytes16 sqrtPriceEndX96Bytes = sqrtPriceEndX96.fromUInt();
+        bytes16 sqrtSellRatioX96 = sellRate1Bytes.div(sellRate0Bytes).sqrt().mul(Q96);
+        bytes16 sqrtSellRate = sellRate0Bytes.mul(sellRate1Bytes).sqrt();
+
+        bytes16 multiple = getTimeBetweenTicksMultiple(sqrtSellRatioX96, sqrtPriceStartX96Bytes, sqrtPriceEndX96Bytes);
+        bytes16 numerator = multiple.mul(liquidity.fromUInt());
         bytes16 denominator = uint256(2).fromUInt().mul(sqrtSellRate);
-        return numerator.div(denominator);
+        return numerator.div(denominator).toUInt();
+    }
+
+    function getTimeBetweenTicksMultiple(
+        bytes16 sqrtSellRatioX96,
+        bytes16 sqrtPriceStartX96,
+        bytes16 sqrtPriceEndX96
+    ) private pure returns (bytes16 multiple) {
+        bytes16 multiple1 = sqrtSellRatioX96.add(sqrtPriceEndX96).div(sqrtSellRatioX96.sub(sqrtPriceEndX96));
+        bytes16 multiple2 = sqrtSellRatioX96.sub(sqrtPriceStartX96).div(sqrtSellRatioX96.add(sqrtPriceStartX96));
+        return multiple1.mul(multiple2).ln();
     }
 
     struct EarningsFactorParams {
@@ -131,9 +158,7 @@ library TwammMath {
         ParamsBytes16 memory params
     ) private pure returns (bytes16 newSqrtPriceX96) {
         bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(secondsElapsed).div(params.liquidity);
-
         bytes16 c = sqrtSellRatioX96.sub(params.sqrtPriceX96).div(sqrtSellRatioX96.add(params.sqrtPriceX96));
-
         newSqrtPriceX96 = sqrtSellRatioX96.mul(pow.exp().sub(c)).div(pow.exp().add(c));
     }
 

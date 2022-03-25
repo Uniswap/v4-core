@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Tick} from '../Tick.sol';
 import {TickBitmap} from '../TickBitmap.sol';
+import {TickMath} from '../TickMath.sol';
 import {OrderPool} from './OrderPool.sol';
 import {TwammMath} from './TwammMath.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
@@ -13,6 +14,7 @@ import 'hardhat/console.sol';
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
     using OrderPool for OrderPool.State;
+    using TickMath for *;
     using TickBitmap for mapping(int16 => uint256);
 
     /// @notice Thrown when account other than owner attempts to interact with an order
@@ -159,6 +161,7 @@ library TWAMM {
         uint160 sqrtPriceX96;
         uint128 liquidity;
         uint24 fee;
+        int24 tickSpacing;
     }
 
     struct OrderPoolParamsOnExecute {
@@ -167,11 +170,11 @@ library TWAMM {
     }
 
     /// @notice Executes all existing long term orders in the TWAMM
-    /// @param poolParams The relevant state of the pool
+    /// @param pool The relevant state of the pool
     /// @param ticks Points to tick information on the pool
     function executeTWAMMOrders(
         State storage self,
-        PoolParamsOnExecute memory poolParams,
+        PoolParamsOnExecute memory pool,
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
     )
@@ -189,7 +192,7 @@ library TWAMM {
 
         uint256 currentTimestamp = block.timestamp;
         /* uint256 nextInitializedSqrtPriceX96 = tickBitmap.nextInitializedTickWithinOneWord); */
-        uint160 prevSqrtPriceX96 = poolParams.sqrtPriceX96;
+        uint160 prevSqrtPriceX96 = pool.sqrtPriceX96;
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
         uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +
             (self.expirationInterval - (self.lastVirtualOrderTimestamp % self.expirationInterval));
@@ -205,22 +208,24 @@ library TWAMM {
                     self,
                     nextExpirationTimestamp,
                     nextExpirationTimestamp - prevTimestamp,
-                    poolParams,
-                    ticks
+                    pool,
+                    ticks,
+                    tickBitmap
                 );
-                poolParams.sqrtPriceX96 = nextSqrtPriceX96;
+                pool.sqrtPriceX96 = nextSqrtPriceX96;
                 prevTimestamp = nextExpirationTimestamp;
             }
             nextExpirationTimestamp += self.expirationInterval;
         }
 
         if (prevTimestamp < currentTimestamp) {
-            poolParams.sqrtPriceX96 = advanceToNewTimestamp(
+            pool.sqrtPriceX96 = advanceToNewTimestamp(
                 self,
                 currentTimestamp,
                 currentTimestamp - prevTimestamp,
-                poolParams,
-                ticks
+                pool,
+                ticks,
+                tickBitmap
             );
         }
 
@@ -228,10 +233,10 @@ library TWAMM {
 
         (, swapAmountIn, , ) = SwapMath.computeSwapStep(
             prevSqrtPriceX96,
-            poolParams.sqrtPriceX96,
-            poolParams.liquidity,
+            pool.sqrtPriceX96,
+            pool.liquidity,
             type(int256).max,
-            poolParams.fee
+            pool.fee
         );
         zeroForOne = prevSqrtPriceX96 > newSqrtPriceX96;
     }
@@ -240,24 +245,65 @@ library TWAMM {
         State storage self,
         uint256 nextTimestamp,
         uint256 secondsElapsed,
-        PoolParamsOnExecute memory poolParams,
-        mapping(int24 => Tick.Info) storage ticks
+        PoolParamsOnExecute memory pool,
+        mapping(int24 => Tick.Info) storage ticks,
+        mapping(int16 => uint256) storage tickBitmap
     ) private returns (uint160) {
+        uint256 sellRate0 = self.orderPools[0].sellRateCurrent;
+        uint256 sellRate1 = self.orderPools[1].sellRateCurrent;
+
         (uint160 nextSqrtPriceX96, uint256 earningsPool0, uint256 earningsPool1) = TwammMath.calculateExecutionUpdates(
             secondsElapsed,
-            poolParams,
-            OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent),
+            pool,
+            OrderPoolParamsOnExecute(sellRate0, sellRate1),
             ticks
         );
 
-        if (nextTimestamp % self.expirationInterval == 0) {
-            self.orderPools[0].advanceToInterval(nextTimestamp, earningsPool0);
-            self.orderPools[1].advanceToInterval(nextTimestamp, earningsPool1);
+        if (crossedInitializedTick(pool, nextSqrtPriceX96, tickBitmap)) {
+            uint256 crossingTimestamp = TwammMath.calculateTimeBetweenTicks(
+                pool.liquidity,
+                pool.sqrtPriceX96,
+                nextSqrtPriceX96,
+                sellRate0,
+                sellRate1
+            );
+            return
+                advanceToNewTimestamp(
+                    self,
+                    crossingTimestamp,
+                    secondsElapsed - (nextTimestamp - crossingTimestamp),
+                    pool,
+                    ticks,
+                    tickBitmap
+                );
         } else {
-            self.orderPools[0].advanceToCurrentTime(earningsPool0);
-            self.orderPools[1].advanceToCurrentTime(earningsPool1);
+            if (nextTimestamp % self.expirationInterval == 0) {
+                self.orderPools[0].advanceToInterval(nextTimestamp, earningsPool0);
+                self.orderPools[1].advanceToInterval(nextTimestamp, earningsPool1);
+            } else {
+                self.orderPools[0].advanceToCurrentTime(earningsPool0);
+                self.orderPools[1].advanceToCurrentTime(earningsPool1);
+            }
+            return nextSqrtPriceX96;
         }
+    }
 
-        return nextSqrtPriceX96;
+    function crossedInitializedTick(
+        PoolParamsOnExecute memory pool,
+        uint160 nextSqrtPriceX96,
+        mapping(int16 => uint256) storage tickBitmap
+    ) private returns (bool) {
+        bool searchingLeft = nextSqrtPriceX96 < pool.sqrtPriceX96;
+        int24 targetTick = pool.sqrtPriceX96.getTickAtSqrtRatio();
+        (int24 nextTickInit, bool initialized) = tickBitmap.nextInitializedTickWithinOneWord(
+            targetTick,
+            pool.tickSpacing,
+            searchingLeft
+        );
+        if (initialized) {
+            // TODO: one is going to have to be less/greater or *equal to*, will just have to have a conditional.
+            if (searchingLeft) (nextTickInit, targetTick) = (targetTick, nextTickInit);
+            return nextTickInit < targetTick;
+        }
     }
 }

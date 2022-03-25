@@ -14,7 +14,7 @@ function divX96(n: BigNumber): string {
   return (parseInt(n.toString()) / 2 ** 96).toFixed(7).toString()
 }
 
-describe('TWAMMMath', () => {
+describe.only('TWAMMMath', () => {
   let twamm: TWAMMTest
   let wallet: Wallet, other: Wallet
   let loadFixture: ReturnType<typeof waffle.createFixtureLoader>
@@ -38,6 +38,7 @@ describe('TWAMMMath', () => {
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
     let fee: BigNumberish
+    let tickSpacing: BigNumberish
     let sellRateCurrent0: BigNumberish
     let sellRateCurrent1: BigNumberish
 
@@ -46,6 +47,7 @@ describe('TWAMMMath', () => {
       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       liquidity = '1000000000000000000000000'
       fee = '3000'
+      tickSpacing = '60'
       sellRateCurrent0 = toWei('1')
       sellRateCurrent1 = toWei('1')
     })
@@ -195,6 +197,7 @@ describe('TWAMMMath', () => {
             sqrtPriceX96: testcase.inputs.sqrtPriceX96,
             liquidity,
             fee,
+            tickSpacing,
           },
           {
             sellRateCurrent0: testcase.inputs.sellRate0,
@@ -216,6 +219,7 @@ describe('TWAMMMath', () => {
             sqrtPriceX96,
             liquidity,
             fee,
+            tickSpacing,
           },
           {
             sellRateCurrent0,
@@ -248,25 +252,22 @@ describe('TWAMMMath', () => {
       sqrtPriceEndX96 = encodeSqrtPriceX96(2, 1)
       liquidity = BigNumber.from('1000000000000000000000000')
       sellRateCurrent0 = toWei('1')
-      sellRateCurrent1 = toWei('2')
+      sellRateCurrent1 = toWei('100')
     })
 
     it('returns the correct result', async () => {
       let sqrtSellRate: BigNumberish
       let sqrtSellRatioX96: BigNumberish
 
-      sqrtSellRate = sellRateCurrent1.mul(sellRateCurrent0).pow(BigNumber.from(1).div(2))
-      sqrtSellRatioX96 = sellRateCurrent1.div(sellRateCurrent0).pow(BigNumber.from(1).div(2))
-
-      console.log(
+      expect(
         await twamm.calculateTimeBetweenTicks(
           liquidity,
           sqrtPriceStartX96,
           sqrtPriceEndX96,
-          sqrtSellRate,
-          sqrtSellRatioX96
+          sellRateCurrent0,
+          sellRateCurrent1
         )
-      )
+      ).to.eq(4204)
     })
   })
 })

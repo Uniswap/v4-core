@@ -67,20 +67,12 @@ contract TWAMMTest {
 
     function calculateTimeBetweenTicks(
         uint256 liquidity,
-        uint256 sqrtPriceStartX96,
-        uint256 sqrtPriceEndX96,
-        uint256 sqrtSellRate,
-        uint256 sqrtSellRatioX96
+        uint160 sqrtPriceStartX96,
+        uint160 sqrtPriceEndX96,
+        uint256 sellRate0,
+        uint256 sellRate1
     ) external view returns (uint256) {
-        console.log(uint256(100000).fromUInt().ln().toUInt());
-        bytes16 result = TwammMath.calculateTimeBetweenTicks(
-            liquidity.fromUInt(),
-            sqrtPriceStartX96.fromUInt(),
-            sqrtPriceEndX96.fromUInt(),
-            sqrtSellRate.fromUInt(),
-            sqrtSellRatioX96.fromUInt()
-        );
-        return result.toUInt();
+        return TwammMath.calculateTimeBetweenTicks(liquidity, sqrtPriceStartX96, sqrtPriceEndX96, sellRate0, sellRate1);
     }
 
     function getOrder(uint256 orderId) external view returns (TWAMM.Order memory) {
