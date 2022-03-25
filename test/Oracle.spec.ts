@@ -276,7 +276,7 @@ describe('Oracle', () => {
       }
 
       it('fails before initialize', async () => {
-        await expect(observeSingle(0)).to.be.revertedWith('I')
+        await expect(observeSingle(0)).to.be.revertedWith('OracleCardinalityCannotBeZero')
       })
 
       it('fails if an older observation does not exist', async () => {
