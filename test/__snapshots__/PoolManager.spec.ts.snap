@@ -2,37 +2,51 @@
 
 exports[`PoolManager #initialize gas cost 1`] = `
 Object {
-  "calldataByteLength": 196,
-  "gasUsed": 115340,
+  "calldataByteLength": 228,
+  "gasUsed": 115750,
 }
 `;
 
 exports[`PoolManager #lock gas overhead of no-op lock 1`] = `
 Object {
   "calldataByteLength": 36,
-  "gasUsed": 41771,
+  "gasUsed": 59667,
 }
 `;
 
 exports[`PoolManager #mint gas cost 1`] = `
 Object {
-  "calldataByteLength": 228,
-  "gasUsed": 309860,
+  "calldataByteLength": 260,
+  "gasUsed": 329770,
 }
 `;
 
-exports[`PoolManager #swap gas 1`] = `
+exports[`PoolManager #mint gas cost with hooks 1`] = `
 Object {
-  "calldataByteLength": 228,
-  "gasUsed": 78874,
+  "calldataByteLength": 260,
+  "gasUsed": 329780,
 }
 `;
 
-exports[`PoolManager #swap gas for swap against liquidity 1`] = `
+exports[`PoolManager #swap gas cost 1`] = `
 Object {
-  "calldataByteLength": 228,
-  "gasUsed": 211032,
+  "calldataByteLength": 260,
+  "gasUsed": 98116,
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `34683`;
+exports[`PoolManager #swap gas cost for swap against liquidity 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 232406,
+}
+`;
+
+exports[`PoolManager #swap gas cost with hooks 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 102222,
+}
+`;
+
+exports[`PoolManager bytecode size 1`] = `36439`;
