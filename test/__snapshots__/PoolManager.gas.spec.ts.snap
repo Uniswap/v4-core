@@ -107,77 +107,77 @@ exports[`PoolManager gas tests fee is off #snapshotCumulativesInside tick inside
 exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 218504,
+  "gasUsed": 218748,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 205709,
+  "gasUsed": 205953,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 242701,
+  "gasUsed": 242945,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 297746,
+  "gasUsed": 297990,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 230552,
+  "gasUsed": 230796,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 large swap crossing several initialized ticks after some time passes 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 297746,
+  "gasUsed": 297990,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 large swap crossing several initialized ticks second time after some time passes 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 297746,
+  "gasUsed": 297990,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 218504,
+  "gasUsed": 218748,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 205798,
+  "gasUsed": 206042,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 231838,
+  "gasUsed": 232082,
 }
 `;
 
 exports[`PoolManager gas tests fee is off #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 286856,
+  "gasUsed": 287100,
 }
 `;
 
@@ -288,76 +288,76 @@ exports[`PoolManager gas tests fee is on #snapshotCumulativesInside tick inside 
 exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 222809,
+  "gasUsed": 223053,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 209896,
+  "gasUsed": 210140,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 247124,
+  "gasUsed": 247368,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 302521,
+  "gasUsed": 302765,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 235092,
+  "gasUsed": 235336,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 large swap crossing several initialized ticks after some time passes 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 302521,
+  "gasUsed": 302765,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 large swap crossing several initialized ticks second time after some time passes 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 302521,
+  "gasUsed": 302765,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 222809,
+  "gasUsed": 223053,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 209985,
+  "gasUsed": 210229,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 236143,
+  "gasUsed": 236387,
 }
 `;
 
 exports[`PoolManager gas tests fee is on #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 291514,
+  "gasUsed": 291758,
 }
 `;

@@ -348,8 +348,10 @@ describe('PoolManager', () => {
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
-          true,
-          true
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true
+          }
         )
       ).to.be.revertedWith('I')
     })
@@ -377,8 +379,10 @@ describe('PoolManager', () => {
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
-        false,
-        false
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: false
+          }
       )
     })
     it('succeeds if pool is initialized and hook is provided', async () => {
@@ -405,8 +409,10 @@ describe('PoolManager', () => {
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
-        false,
-        false
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: false
+          }
       )
 
       const argsBeforeSwap = [
@@ -459,8 +465,10 @@ describe('PoolManager', () => {
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
-        true,
-        true
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true
+          }
       )
 
       await snapshotGasCost(
@@ -477,8 +485,10 @@ describe('PoolManager', () => {
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           },
-          false,
-          false
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: false
+          }
         )
       )
     })
@@ -507,8 +517,10 @@ describe('PoolManager', () => {
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
-        true,
-        true
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true
+          }
       )
 
       await snapshotGasCost(
@@ -525,8 +537,10 @@ describe('PoolManager', () => {
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           },
-          true,
-          true
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true
+          }
         )
       )
     })
@@ -570,8 +584,10 @@ describe('PoolManager', () => {
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
-          false,
-          true
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: true
+          }
         )
       ).to.emit(manager, 'TransferSingle')
 
@@ -619,8 +635,10 @@ describe('PoolManager', () => {
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
-          false,
-          true
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: true
+          }
         )
       ).to.emit(manager, 'TransferSingle')
 
@@ -645,8 +663,10 @@ describe('PoolManager', () => {
             sqrtPriceLimitX96: encodeSqrtPriceX96(4, 1),
             zeroForOne: false,
           },
-          true,
-          false
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: false
+          }
         )
       ).to.emit(manager, 'TransferSingle')
 
@@ -692,8 +712,10 @@ describe('PoolManager', () => {
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
-        true,
-        true
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true
+          }
       )
 
       await snapshotGasCost(
@@ -710,8 +732,10 @@ describe('PoolManager', () => {
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           },
-          true,
-          true
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true
+          }
         )
       )
     })

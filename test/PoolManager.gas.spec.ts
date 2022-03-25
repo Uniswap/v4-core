@@ -84,8 +84,10 @@ describe('PoolManager gas tests', () => {
               amountSpecified: amount,
               sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
             },
-            true,
-            true
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true
+          }
           )
         }
         const swapExact0For1AndMint1155: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
@@ -96,8 +98,10 @@ describe('PoolManager gas tests', () => {
               amountSpecified: amount,
               sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
             },
-            false,
-            true
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: true
+          }
           )
         }
         const swap1For0AndBurn1155: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
@@ -108,8 +112,10 @@ describe('PoolManager gas tests', () => {
               amountSpecified: amount,
               sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
             },
-            false,
-            true
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: true
+          }
           )
         }
         const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -120,8 +126,10 @@ describe('PoolManager gas tests', () => {
               amountSpecified: MaxUint128,
               sqrtPriceLimitX96: sqrtPriceX96,
             },
-            true,
-            true
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true
+          }
           )
         }
         const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -132,8 +140,10 @@ describe('PoolManager gas tests', () => {
               amountSpecified: MaxUint128,
               sqrtPriceLimitX96: sqrtPriceX96,
             },
-            true,
-            true
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true
+          }
           )
         }
         const modifyPosition: ModifyPositionFunction = (tickLower, tickUpper, liquidityDelta) => {
