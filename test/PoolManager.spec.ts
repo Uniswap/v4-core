@@ -23,6 +23,8 @@ import {
   getPoolId,
 } from './shared/utilities'
 import { deployMockContract, MockedContract } from './shared/mockContract'
+import { TickMath } from '@uniswap/v3-sdk'
+import JSBI from 'jsbi'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -641,7 +643,7 @@ describe('PoolManager', () => {
     }
 
     describe('#executeTWAMM', () => {
-      it('performs properly with initialized ticks', async () => {
+      it.only('performs properly with initialized ticks', async () => {
         const key = {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -657,27 +659,41 @@ describe('PoolManager', () => {
           liquidityDelta: expandTo18Decimals(1),
         })
 
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: -30660,
+          tickUpper: 30660,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+
         const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
         await ethers.provider.send('evm_setAutomine', [false])
 
         await twammTest.submitLongTermOrder(key, {
           zeroForOne: true,
           owner: wallet.address,
-          amountIn: expandTo18Decimals(2),
+          amountIn: expandTo18Decimals(1),
           expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
         })
 
         await twammTest.submitLongTermOrder(key, {
           zeroForOne: false,
           owner: wallet.address,
-          amountIn: expandTo18Decimals(1),
-          expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
+          amountIn: expandTo18Decimals(500),
+          expiration: nIntervalsFrom(latestTimestamp, 10_000, 5),
         })
 
         await ethers.provider.send('evm_mine', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
         await ethers.provider.send('evm_setAutomine', [true])
 
+        await ethers.provider.send('evm_setAutomine', [true])
+        await ethers.provider.send('evm_setNextBlockTimestamp', [nIntervalsFrom(latestTimestamp, 10_000, 2)])
+
         await twammTest.executeTWAMMOrders(key)
+
+        // console.log(`\n newSqrt`)
+        // const sqrtPriceX96 = (await manager.slot0(getPoolId(key))).sqrtPriceX96.toString()
+        // console.log(sqrtPriceX96)
+        // console.log(TickMath.getTickAtSqrtRatio(JSBI.BigInt(sqrtPriceX96)).toString())
       })
     })
   })

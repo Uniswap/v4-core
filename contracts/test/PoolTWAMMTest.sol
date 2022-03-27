@@ -35,8 +35,14 @@ contract PoolTWAMMTest is ILockCallback {
         );
     }
 
-    function executeTWAMMOrders(IPoolManager.PoolKey calldata key) external {
-        manager.lock(abi.encode(CallbackData(key, TransactionType.EXECUTE, abi.encode(''))));
+    function executeTWAMMOrders(IPoolManager.PoolKey calldata key)
+        external
+        returns (IPoolManager.BalanceDelta memory delta)
+    {
+        delta = abi.decode(
+            manager.lock(abi.encode(CallbackData(key, TransactionType.EXECUTE, abi.encode('')))),
+            (IPoolManager.BalanceDelta)
+        );
     }
 
     function lockAcquired(bytes calldata rawData) external returns (bytes memory returnVal) {
@@ -48,7 +54,7 @@ contract PoolTWAMMTest is ILockCallback {
             TWAMM.LongTermOrderParams memory params = abi.decode(data.params, (TWAMM.LongTermOrderParams));
             returnVal = abi.encode(manager.submitLongTermOrder(data.key, params));
         } else if (data.txType == TransactionType.EXECUTE) {
-            manager.executeTWAMMOrders(data.key);
+            returnVal = abi.encode(manager.executeTWAMMOrders(data.key));
         }
     }
 }

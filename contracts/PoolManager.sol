@@ -322,7 +322,11 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountDelta(buyToken, -(earningsAmount.toInt256()));
     }
 
-    function executeTWAMMOrders(IPoolManager.PoolKey memory key) public onlyByLocker {
+    function executeTWAMMOrders(IPoolManager.PoolKey memory key)
+        public
+        onlyByLocker
+        returns (IPoolManager.BalanceDelta memory delta)
+    {
         Pool.State storage pool = _getPool(key);
         (bool zeroForOne, uint256 amountIn, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
             TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee, key.tickSpacing),
@@ -330,10 +334,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             pool.tickBitmap
         );
         if (amountIn > 0) {
-            IPoolManager.BalanceDelta memory delta = swap(
-                key,
-                SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96)
-            );
+            console.log(sqrtPriceLimitX96);
+            delta = swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
             _accountDelta(key.token0, -delta.amount0);
             _accountDelta(key.token1, -delta.amount1);
         }
