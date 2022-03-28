@@ -119,8 +119,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         if (index >= MAX_TOKENS_TOUCHED) revert MaxTokensTouched();
 
         unchecked {
-            transientStorage.store(TOKENS_TOUCHED_SLOT, index + 1);
-            transientStorage.store(TOKENS_TOUCHED_SLOT + index + 1, uint256(uint160(address(token))));
+            transientStorage.store(TOKENS_TOUCHED_SLOT + (id * 256), index + 1);
+            transientStorage.store(TOKENS_TOUCHED_SLOT + (id * 256) + index + 1, uint256(uint160(address(token))));
         }
     }
 
