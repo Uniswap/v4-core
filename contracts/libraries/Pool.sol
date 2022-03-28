@@ -56,10 +56,6 @@ library Pool {
     /// @param sqrtPriceLimitX96 The invalid, out-of-bounds sqrtPriceLimitX96
     error PriceLimitOutOfBounds(uint160 sqrtPriceLimitX96);
 
-    /// @notice Thrown when trying to set an invalid protocol fee
-    /// @param feeProtocol The invalid feeProtocol
-    error InvalidFeeProtocol(uint8 feeProtocol);
-
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
@@ -71,16 +67,6 @@ library Pool {
         uint16 observationCardinality;
         // the next maximum number of observations to store, triggered in observations.write
         uint16 observationCardinalityNext;
-        // the current protocol fee as a percentage of the swap fee taken on withdrawal
-        // represented as an integer denominator (1/x)%
-        uint8 feeProtocol;
-    }
-
-    // accumulated protocol fees in token0/token1 units
-    // todo: this might be better accumulated in a pool
-    struct ProtocolFees {
-        uint128 token0;
-        uint128 token1;
     }
 
     /// @dev The state of a pool
@@ -88,7 +74,6 @@ library Pool {
         Slot0 slot0;
         uint256 feeGrowthGlobal0X128;
         uint256 feeGrowthGlobal1X128;
-        ProtocolFees protocolFees;
         uint128 liquidity;
         mapping(int24 => Tick.Info) ticks;
         mapping(int16 => uint256) tickBitmap;
@@ -226,8 +211,7 @@ library Pool {
             tick: tick,
             observationIndex: 0,
             observationCardinality: cardinality,
-            observationCardinalityNext: cardinalityNext,
-            feeProtocol: 0
+            observationCardinalityNext: cardinalityNext
         });
     }
 
@@ -400,8 +384,6 @@ library Pool {
     }
 
     struct SwapCache {
-        // the protocol fee for the input token
-        uint8 feeProtocol;
         // liquidity at the beginning of the swap
         uint128 liquidityStart;
         // the current value of the tick accumulator, computed only if we cross an initialized tick
@@ -424,8 +406,6 @@ library Pool {
         int24 tick;
         // the global fee growth of the input token
         uint256 feeGrowthGlobalX128;
-        // amount of input token paid as protocol fee
-        uint128 protocolFee;
         // the current liquidity in range
         uint128 liquidity;
     }
@@ -479,7 +459,6 @@ library Pool {
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
-            feeProtocol: params.zeroForOne ? (slot0Start.feeProtocol % 16) : (slot0Start.feeProtocol >> 4),
             secondsPerLiquidityCumulativeX128: 0,
             tickCumulative: 0,
             computedLatestObservation: false
@@ -493,7 +472,6 @@ library Pool {
             sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
             feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
-            protocolFee: 0,
             liquidity: cache.liquidityStart
         });
 
@@ -545,15 +523,6 @@ library Pool {
                     state.amountSpecifiedRemaining += step.amountOut.toInt256();
                 }
                 state.amountCalculated = state.amountCalculated + (step.amountIn + step.feeAmount).toInt256();
-            }
-
-            // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
-            if (cache.feeProtocol > 0) {
-                unchecked {
-                    uint256 delta = step.feeAmount / cache.feeProtocol;
-                    step.feeAmount -= delta;
-                    state.protocolFee += uint128(delta);
-                }
             }
 
             // update global fee tracker
@@ -630,18 +599,11 @@ library Pool {
         // update liquidity if it changed
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
-        // update fee growth global and, if necessary, protocol fees
-        // overflow is acceptable, protocol has to withdraw before it hits type(uint128).max fees
+        // update fee growth global
         if (params.zeroForOne) {
             self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
-            unchecked {
-                if (state.protocolFee > 0) self.protocolFees.token0 += state.protocolFee;
-            }
         } else {
             self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
-            unchecked {
-                if (state.protocolFee > 0) self.protocolFees.token1 += state.protocolFee;
-            }
         }
 
         unchecked {
@@ -649,16 +611,5 @@ library Pool {
                 ? (params.amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
         }
-    }
-
-    /// @notice Updates the protocol fee for a given pool
-    function setFeeProtocol(State storage self, uint8 feeProtocol) internal returns (uint8 feeProtocolOld) {
-        (uint8 feeProtocol0, uint8 feeProtocol1) = (feeProtocol >> 4, feeProtocol % 16);
-        if (
-            (feeProtocol0 != 0 && (feeProtocol0 < 4 || feeProtocol0 > 10)) ||
-            (feeProtocol1 != 0 && (feeProtocol1 < 4 || feeProtocol1 > 10))
-        ) revert InvalidFeeProtocol(feeProtocol);
-        feeProtocolOld = self.slot0.feeProtocol;
-        self.slot0.feeProtocol = feeProtocol;
     }
 }
