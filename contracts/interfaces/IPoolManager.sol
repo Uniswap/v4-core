@@ -111,9 +111,6 @@ interface IPoolManager {
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
 
-    /// @notice Update the protocol fee for a given pool
-    function setFeeProtocol(PoolKey calldata key, uint8 feeProtocol) external returns (uint8 feeProtocolOld);
-
     /// @notice Observe a past state of a pool
     function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
         external

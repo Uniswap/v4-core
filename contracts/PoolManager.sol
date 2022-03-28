@@ -238,20 +238,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountDelta(token, -(paid.toInt256()));
     }
 
-    /// @notice Update the protocol fee for a given pool
-    function setFeeProtocol(IPoolManager.PoolKey calldata key, uint8 feeProtocol)
-        external
-        override
-        returns (uint8 feeProtocolOld)
-    {
-        return _getPool(key).setFeeProtocol(feeProtocol);
-    }
-
     /// @notice Observe a past state of a pool
     function observe(IPoolManager.PoolKey calldata key, uint32[] calldata secondsAgos)
         external
         view
-        override
         noDelegateCall
         returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
     {
