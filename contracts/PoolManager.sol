@@ -17,6 +17,8 @@ import {TransientStorageProxy, TransientStorage} from './libraries/TransientStor
 contract PoolManager is IPoolManager, NoDelegateCall {
     using SafeCast for *;
     using Pool for *;
+    using Hooks for IHooks;
+    using TransientStorage for TransientStorageProxy;
 
     mapping(bytes32 => Pool.State) public pools;
 
@@ -65,93 +67,93 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     uint256 public constant TOKENS_TOUCHED_SLOT = uint256(keccak256('tokensTouched'));
     uint256 public constant TOKEN_DELTA_SLOT = uint256(keccak256('tokenDelta'));
 
+    /// @inheritdoc IPoolManager
     function lockedBy(uint256 index) public returns (address) {
         unchecked {
-           return address(uint160(transientStorage.load(LOCKED_BY_SLOT + index + 1)));
+            return address(uint160(transientStorage.load(LOCKED_BY_SLOT + index + 1)));
         }
     }
 
     /// @inheritdoc IPoolManager
-    function lockedByLength() external view returns (uint256) {
-        return address(uint160(transientStorage.load(LOCKED_BY_SLOT)));
+    function lockedByLength() public returns (uint256) {
+        return transientStorage.load(LOCKED_BY_SLOT);
     }
 
-    function pushLockedBy(address addr) internal {
-        transientStorage.store(LOCKED_BY_SLOT, uint256(uint160(addr)));
-    }
-
-    function tokensTouchedLength(uint256 id) public returns (uint256) {
-        return transientStorage.load(TOKENS_TOUCHED_SLOT);
-    }
-
-    function tokensTouched(uint256 ix) public returns (IERC20Minimal) {
+    /// @dev Push the latest locked by address from the stack
+    /// @return index The index of the locker, i.e. the locker's unique identifier
+    function pushLockedBy(address addr) internal returns (uint256 index) {
+        // addition by 1 is never expected to overflow
         unchecked {
-            return IERC20Minimal(address(uint160(transientStorage.load(TOKENS_TOUCHED_SLOT + ix + 1))));
+            index = lockedByLength();
+            transientStorage.store(LOCKED_BY_SLOT, index + 1);
+            transientStorage.store(LOCKED_BY_SLOT + index + 1, uint256(uint160(addr)));
         }
     }
 
-    function pushTokenTouched(IERC20Minimal token) internal {
-        uint256 len = tokensTouchedLength();
-        if (len >= type(uint8).max) revert MaxTokensTouched(token);
+    /// @dev Pop the latest locked by address from the stack
+    function popLockedBy() internal {
+        // subtraction can be unchecked because we never pop unless we've pushed
+        unchecked {
+            transientStorage.store(LOCKED_BY_SLOT, lockedByLength() - 1);
+        }
+    }
+
+    /// @inheritdoc IPoolManager
+    function getTokensTouchedLength(uint256 id) public returns (uint256) {
+        unchecked {
+            return transientStorage.load(TOKENS_TOUCHED_SLOT + (id * 256));
+        }
+    }
+
+    /// @inheritdoc IPoolManager
+    function getTokensTouched(uint256 id, uint256 index) public returns (IERC20Minimal) {
+        unchecked {
+            return IERC20Minimal(address(uint160(transientStorage.load(TOKENS_TOUCHED_SLOT + (id * 256) + index + 1))));
+        }
+    }
+
+    /// @dev Push the given token to the list of tokens touched.
+    /// @dev Note this does not check if the token is already in the list.
+    function pushTokenTouched(uint256 id, IERC20Minimal token) internal returns (uint256 index) {
+        index = getTokensTouchedLength(id);
+        if (index >= MAX_TOKENS_TOUCHED) revert MaxTokensTouched();
 
         unchecked {
-            transientStorage.store(TOKENS_TOUCHED_SLOT, len + 1);
-            transientStorage.store(TOKENS_TOUCHED_SLOT + len + 1, uint256(uint160(address(token))));
+            transientStorage.store(TOKENS_TOUCHED_SLOT, index + 1);
+            transientStorage.store(TOKENS_TOUCHED_SLOT + index + 1, uint256(uint160(address(token))));
         }
     }
 
-    /// @member slot The slot in the tokensTouched array where the token is found
-    /// @member delta The delta that is owed for that particular token
-    struct PositionAndDelta {
-        uint8 slot;
-        int248 delta;
-    }
-
     /// @inheritdoc IPoolManager
-    function tokenDelta(IERC20Minimal token) public returns (PositionAndDelta memory pd) {
-        uint256 storageSlot = uint256(keccak256(abi.encodePacked(TOKEN_DELTA_SLOT, token)));
-        uint256 value = transientStorage.load(storageSlot);
-        pd.slot = uint8(value >> 248);
-        pd.delta = int248(uint248(value & ~uint256(0xff << 248)));
+    function getTokenDelta(uint256 id, IERC20Minimal token) public returns (uint256 slot, int248 delta) {
+        uint256 value = transientStorage.load(uint256(keccak256(abi.encodePacked(TOKEN_DELTA_SLOT, id, token))));
+        (slot, delta) = (value >> 248, int248(uint248(value & ~uint256(0xff << 248))));
     }
 
-    function setTokenDelta(IERC20Minimal token, PositionAndDelta memory pd) internal {
-        uint256 storageSlot = uint256(keccak256(abi.encodePacked(TOKEN_DELTA_SLOT, token)));
-        uint256 value = (uint256(pd.slot) << 248) | uint256(uint248(pd.delta));
-        transientStorage.store(storageSlot, value);
+    function setTokenDelta(
+        uint256 id,
+        IERC20Minimal token,
+        uint256 slot,
+        int248 delta
+    ) internal {
+        transientStorage.store(
+            uint256(keccak256(abi.encodePacked(TOKEN_DELTA_SLOT, id, token))),
+            (uint256(slot) << 248) | uint256(uint248(delta))
+        );
     }
-
-
-    /// @inheritdoc IPoolManager
-    function getTokensTouchedLength(uint256 id) public view returns (uint256) {
-        return lockStates[id].tokensTouched.length;
-    }
-
-    /// @inheritdoc IPoolManager
-    function getTokensTouched(uint256 id, uint256 index) public view returns (IERC20Minimal) {
-        return lockStates[id].tokensTouched[index];
-    }
-
-    /// @inheritdoc IPoolManager
-    function getTokenDelta(uint256 id, IERC20Minimal token) public view returns (uint8 slot, int248 delta) {
-        PositionAndDelta storage pd = lockStates[id].tokenDelta[token];
-        (slot, delta) = (pd.slot, pd.delta);
-    }
-
 
     /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
     ///     more than 256 tokens.
     uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        uint256 id = lockedByLength();
-        pushLockedBy(msg.sender);
+        uint256 id = pushLockedBy(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         unchecked {
-            uint256 numTokensTouched = tokensTouchedLength(id);
+            uint256 numTokensTouched = getTokensTouchedLength(id);
             for (uint256 i; i < numTokensTouched; i++) {
                 IERC20Minimal token = getTokensTouched(id, i);
                 (, int248 delta) = getTokenDelta(id, token);
@@ -159,32 +161,29 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             }
         }
 
-        lockedBy.pop();
+        popLockedBy();
     }
 
-    /// @dev Adds a token to a unique list of tokens that have been touched
-    function _addTokenToSet(IERC20Minimal token) internal {
+    /// @dev Accounts the delta for the given token to the transient storage for the current locker
+    function _accountDelta(IERC20Minimal token, int256 delta) internal {
+        // delta of 0 is no-op
+        if (delta == 0) return;
+
         uint256 id = lockedByLength() - 1;
-        uint256 numTokensTouched = tokensTouchedLength(id);
+        uint256 numTokensTouched = getTokensTouchedLength(id);
         if (numTokensTouched == 0) {
             pushTokenTouched(id, token);
-            return;
+            setTokenDelta(id, token, 0, delta.toInt248());
+        } else {
+            (uint256 tokenSlot, int248 currentDelta) = getTokenDelta(id, token);
+
+            // we only need to add it if the slot is set to 0 and the token in slot 0 is not this token (i.e. slot 0 is not correct)
+            if (tokenSlot == 0 && getTokensTouched(id, 0) != token) {
+                tokenSlot = pushTokenTouched(id, token);
+            }
+
+            setTokenDelta(id, token, tokenSlot, currentDelta + delta.toInt248());
         }
-
-        PositionAndDelta memory pd = lockState.tokenDelta(token);
-
-        // we only need to add it if the slot is set to 0 and the token in slot 0 is not this token (i.e. slot 0 is not correct)
-        if (pd.slot == 0 && tokensTouched(0) != token) {
-            pushTokenTouched(token);
-        }
-    }
-
-    function _accountDelta(IERC20Minimal token, int256 delta) internal {
-        if (delta == 0) return;
-        _addTokenToSet(token);
-        PositionAndDelta memory pd = tokenDelta(token);
-        pd.delta += int248(delta);
-        setTokenDelta(token, pd);
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
@@ -194,7 +193,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     modifier onlyByLocker() {
-        address lb = lockedBy();
+        address lb = lockedBy(lockedByLength() - 1);
         if (msg.sender != lb) revert LockedBy(lb);
         _;
     }

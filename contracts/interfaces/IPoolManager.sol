@@ -52,24 +52,26 @@ interface IPoolManager {
 
     /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
     /// @param index The index of the locker, also known as the id of the locker
-    function lockedBy(uint256 index) external view returns (address);
+    function lockedBy(uint256 index) external returns (address);
 
     /// @notice Getter for the length of the lockedBy array
-    function lockedByLength() external view returns (uint256);
+    function lockedByLength() external returns (uint256);
 
     /// @notice Get the number of tokens touched for the given locker index. The current locker index is always `#lockedByLength() - 1`
     /// @param id The ID of the locker
-    function getTokensTouchedLength(uint256 id) external view returns (uint256);
+    function getTokensTouchedLength(uint256 id) external returns (uint256);
 
     /// @notice Get the token touched at the given index for the given locker index
     /// @param id The ID of the locker
     /// @param index The index of the token in the tokens touched array to get
-    function getTokensTouched(uint256 id, uint256 index) external view returns (IERC20Minimal);
+    function getTokensTouched(uint256 id, uint256 index) external returns (IERC20Minimal);
 
     /// @notice Get the current delta for a given token, and its position in the tokens touched array
     /// @param id The ID of the locker
     /// @param token The token for which to lookup the delta
-    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 slot, int248 delta);
+    /// @return slot The slot of the tokens touched array for the given ID where the token is stored in the list of tokens
+    /// @return delta The unresolved delta of the pool manager's token balance
+    function getTokenDelta(uint256 id, IERC20Minimal token) external returns (uint256 slot, int248 delta);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
