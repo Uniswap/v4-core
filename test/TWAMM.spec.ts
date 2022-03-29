@@ -22,7 +22,7 @@ function divX96(n: BigNumber): string {
   return (parseInt(n.toString()) / 2 ** 96).toString()
 }
 
-describe.only('TWAMM', () => {
+describe('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
 

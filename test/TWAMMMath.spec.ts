@@ -14,7 +14,7 @@ function divX96(n: BigNumber): string {
   return (parseInt(n.toString()) / 2 ** 96).toFixed(7).toString()
 }
 
-describe.only('TWAMMMath', () => {
+describe('TWAMMMath', () => {
   let twamm: TWAMMTest
   let wallet: Wallet, other: Wallet
   let loadFixture: ReturnType<typeof waffle.createFixtureLoader>

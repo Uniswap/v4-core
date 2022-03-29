@@ -3,15 +3,12 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {IHooks} from './IHooks.sol';
+import {ITWAMM} from './ITWAMM.sol';
 
-interface IPoolManager {
-    /// @notice Thrown when trying to lock the contract when it is already locked
-    /// @param lockedBy current locker of the PoolManager
-    error AlreadyLocked(address lockedBy);
-
+interface IPoolManager is ITWAMM {
     /// @notice Thrown when tokens touched has exceeded max of 256
-    /// @param token First token that could not be added to touched set due to max reached
-    error MaxTokensTouched(IERC20Minimal token);
+    error MaxTokensTouched();
 
     /// @notice Thrown when a token is owed to the caller or the caller owes a token
     /// @param token The token that is owed
@@ -32,6 +29,15 @@ interface IPoolManager {
         uint24 fee;
         /// @notice Ticks that involve positions must be a multiple of tick spacing
         int24 tickSpacing;
+        /// @notice The hooks of the pool
+        IHooks hooks;
+    }
+
+    /// @notice Represents a change in the pool's balance of token0 and token1.
+    /// @dev This is returned from most pool operations
+    struct BalanceDelta {
+        int256 amount0;
+        int256 amount1;
     }
 
     /// @notice Returns the reserves for a given ERC20 token
@@ -49,14 +55,26 @@ interface IPoolManager {
         external
         returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew);
 
-    /// @notice Represents the address that has currently locked the pool
-    function lockedBy() external view returns (address);
+    /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
+    /// @param index The index of the locker, also known as the id of the locker
+    function lockedBy(uint256 index) external view returns (address);
 
-    /// @notice The array of tokens touched in the context of the current lock. Never more than 256 elements
-    function tokensTouched(uint256 index) external view returns (IERC20Minimal);
+    /// @notice Getter for the length of the lockedBy array
+    function lockedByLength() external view returns (uint256);
 
-    /// @notice The deltas for each token, as well as the index where it's located in the tokensTouched array
-    function tokenDelta(IERC20Minimal token) external view returns (uint8 index, int248 delta);
+    /// @notice Get the number of tokens touched for the given locker index. The current locker index is always `#lockedByLength() - 1`
+    /// @param id The ID of the locker
+    function getTokensTouchedLength(uint256 id) external view returns (uint256);
+
+    /// @notice Get the token touched at the given index for the given locker index
+    /// @param id The ID of the locker
+    /// @param index The index of the token in the tokens touched array to get
+    function getTokensTouched(uint256 id, uint256 index) external view returns (IERC20Minimal);
+
+    /// @notice Get the current delta for a given token, and its position in the tokens touched array
+    /// @param id The ID of the locker
+    /// @param token The token for which to lookup the delta
+    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 slot, int248 delta);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
@@ -74,7 +92,7 @@ interface IPoolManager {
     /// @notice Modify the position for the given pool
     function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
         external
-        returns (Pool.BalanceDelta memory delta);
+        returns (IPoolManager.BalanceDelta memory delta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -83,7 +101,9 @@ interface IPoolManager {
     }
 
     /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params) external returns (Pool.BalanceDelta memory delta);
+    function swap(PoolKey memory key, SwapParams memory params)
+        external
+        returns (IPoolManager.BalanceDelta memory delta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
@@ -8,19 +9,26 @@ import {TWAMM} from './libraries/TWAMM/TWAMM.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
+import {IHooks} from './interfaces/IHooks.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
+import 'hardhat/console.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
     using TWAMM for TWAMM.State;
     using SafeCast for *;
     using Pool for *;
+    using Hooks for IHooks;
 
     mapping(bytes32 => Pool.State) internal pools; // TODO: Private rn because public disallows nested mappings
 
     function slot0(bytes32 poolId) public view returns (Pool.Slot0 memory) {
         return pools[poolId].slot0;
+    }
+
+    function liquidity(bytes32 poolId) public view returns (uint128) {
+        return pools[poolId].liquidity;
     }
 
     /// @dev For mocking in unit tests
@@ -38,7 +46,15 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         uint160 sqrtPriceX96,
         uint256 twammExpiryInterval
     ) external override returns (int24 tick) {
+        if (key.hooks.shouldCallBeforeInitialize()) {
+            key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
+        }
+
         tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96, twammExpiryInterval);
+
+        if (key.hooks.shouldCallAfterInitialize()) {
+            key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
+        }
     }
 
     /// @notice Increase the maximum number of stored observations for the pool's oracle
@@ -51,71 +67,108 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             .increaseObservationCardinalityNext(observationCardinalityNext);
     }
 
-    /// @notice Represents the address that has currently locked the pool
-    address public override lockedBy;
-
-    /// @notice All the latest tracked balances of tokens
+    /// @inheritdoc IPoolManager
     mapping(IERC20Minimal => uint256) public override reservesOf;
 
-    /// @notice Internal transient enumerable set
-    IERC20Minimal[] public override tokensTouched;
+    /// @inheritdoc IPoolManager
+    address[] public override lockedBy;
+
+    /// @inheritdoc IPoolManager
+    function lockedByLength() external view returns (uint256) {
+        return lockedBy.length;
+    }
+
+    /// @member slot The slot in the tokensTouched array where the token is found
+    /// @member delta The delta that is owed for that particular token
     struct PositionAndDelta {
         uint8 slot;
         int248 delta;
     }
-    mapping(IERC20Minimal => PositionAndDelta) public override tokenDelta;
+
+    /// @member tokensTouched The tokens that have been touched by this locker
+    /// @member tokenDelta The amount owed to the locker (positive) or owed to the pool (negative) of the token
+    struct LockState {
+        IERC20Minimal[] tokensTouched;
+        mapping(IERC20Minimal => PositionAndDelta) tokenDelta;
+    }
+
+    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 tokens owed before
+    /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
+    mapping(uint256 => LockState) private lockStates;
+
+    /// @inheritdoc IPoolManager
+    function getTokensTouchedLength(uint256 id) external view returns (uint256) {
+        return lockStates[id].tokensTouched.length;
+    }
+
+    /// @inheritdoc IPoolManager
+    function getTokensTouched(uint256 id, uint256 index) external view returns (IERC20Minimal) {
+        return lockStates[id].tokensTouched[index];
+    }
+
+    /// @inheritdoc IPoolManager
+    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 slot, int248 delta) {
+        PositionAndDelta storage pd = lockStates[id].tokenDelta[token];
+        (slot, delta) = (pd.slot, pd.delta);
+    }
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        if (lockedBy != address(0)) revert AlreadyLocked(lockedBy);
-        lockedBy = msg.sender;
+        uint256 id = lockedBy.length;
+        lockedBy.push(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         unchecked {
-            for (uint256 i = 0; i < tokensTouched.length; i++) {
-                if (tokenDelta[tokensTouched[i]].delta != 0)
-                    revert TokenNotSettled(tokensTouched[i], tokenDelta[tokensTouched[i]].delta);
-                delete tokenDelta[tokensTouched[i]];
+            LockState storage lockState = lockStates[id];
+            uint256 numTokensTouched = lockState.tokensTouched.length;
+            for (uint256 i; i < numTokensTouched; i++) {
+                IERC20Minimal token = lockState.tokensTouched[i];
+                PositionAndDelta storage pd = lockState.tokenDelta[token];
+                if (pd.delta != 0) revert TokenNotSettled(token, pd.delta);
+                delete lockState.tokenDelta[token];
             }
+            delete lockState.tokensTouched;
         }
-        delete tokensTouched;
-        delete lockedBy;
+
+        lockedBy.pop();
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
     function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
-        uint256 len = tokensTouched.length;
-        if (len == 0) {
-            tokensTouched.push(token);
+        LockState storage lockState = lockStates[lockedBy.length - 1];
+        uint256 numTokensTouched = lockState.tokensTouched.length;
+        if (numTokensTouched == 0) {
+            lockState.tokensTouched.push(token);
             return 0;
         }
 
-        PositionAndDelta storage pd = tokenDelta[token];
+        PositionAndDelta storage pd = lockState.tokenDelta[token];
         slot = pd.slot;
 
-        if (slot == 0 && tokensTouched[slot] != token) {
-            if (len >= type(uint8).max) revert MaxTokensTouched(token);
-            slot = uint8(len);
+        if (slot == 0 && lockState.tokensTouched[slot] != token) {
+            if (numTokensTouched >= type(uint8).max) revert MaxTokensTouched();
+            slot = uint8(numTokensTouched);
             pd.slot = slot;
-            tokensTouched.push(token);
+            lockState.tokensTouched.push(token);
         }
     }
 
     function _accountDelta(IERC20Minimal token, int256 delta) internal {
         if (delta == 0) return;
         _addTokenToSet(token);
-        tokenDelta[token].delta += int248(delta);
+        lockStates[lockedBy.length - 1].tokenDelta[token].delta += delta.toInt248();
     }
 
     /// @dev Accumulates a balance change to a map of token to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, Pool.BalanceDelta memory delta) internal {
+    function _accountPoolBalanceDelta(PoolKey memory key, IPoolManager.BalanceDelta memory delta) internal {
         _accountDelta(key.token0, delta.amount0);
         _accountDelta(key.token1, delta.amount1);
     }
 
     modifier onlyByLocker() {
-        if (msg.sender != lockedBy) revert LockedBy(lockedBy);
+        address locker = lockedBy[lockedBy.length - 1];
+        if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
 
@@ -125,8 +178,12 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         override
         noDelegateCall
         onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
+        returns (IPoolManager.BalanceDelta memory delta)
     {
+        if (key.hooks.shouldCallBeforeModifyPosition()) {
+            key.hooks.beforeModifyPosition(msg.sender, key, params);
+        }
+
         delta = _getPool(key).modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
@@ -140,6 +197,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         );
 
         _accountPoolBalanceDelta(key, delta);
+
+        if (key.hooks.shouldCallAfterModifyPosition()) {
+            key.hooks.afterModifyPosition(msg.sender, key, params, delta);
+        }
     }
 
     function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
@@ -147,9 +208,14 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         override
         noDelegateCall
         onlyByLocker
-        returns (Pool.BalanceDelta memory delta)
+        returns (IPoolManager.BalanceDelta memory delta)
     {
         executeTWAMMOrders(key);
+
+        if (key.hooks.shouldCallBeforeSwap()) {
+            key.hooks.beforeSwap(msg.sender, key, params);
+        }
+
         delta = _getPool(key).swap(
             Pool.SwapParams({
                 time: _blockTimestamp(),
@@ -162,6 +228,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         );
 
         _accountPoolBalanceDelta(key, delta);
+
+        if (key.hooks.shouldCallAfterSwap()) {
+            key.hooks.afterSwap(msg.sender, key, params, delta);
+        }
     }
 
     /// @notice Called by the user to net out some value owed to the user
@@ -232,7 +302,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
         (amountOut0, amountOut1) = _getPool(key).twamm.cancelLongTermOrder(orderId);
 
-        Pool.BalanceDelta memory delta = Pool.BalanceDelta({
+        IPoolManager.BalanceDelta memory delta = IPoolManager.BalanceDelta({
             amount0: -(amountOut0.toInt256()),
             amount1: -(amountOut1.toInt256())
         });
@@ -255,7 +325,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     function executeTWAMMOrders(IPoolManager.PoolKey memory key)
         public
         onlyByLocker
-        returns (uint256 earningsAmount)
+        returns (IPoolManager.BalanceDelta memory delta)
     {
         Pool.State storage pool = _getPool(key);
         (bool zeroForOne, uint256 amountIn, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
@@ -264,7 +334,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             pool.tickBitmap
         );
         if (amountIn > 0) {
-            swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
+            console.log(sqrtPriceLimitX96);
+            delta = swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
+            _accountDelta(key.token0, -delta.amount0);
+            _accountDelta(key.token1, -delta.amount1);
         }
     }
 }
