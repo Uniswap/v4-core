@@ -1,0 +1,6 @@
+[default]
+src = 'contracts'
+out = 'foundry-out'
+auto_detect_solc = true
+
+# See more config options https://github.com/gakonst/foundry/tree/master/config
