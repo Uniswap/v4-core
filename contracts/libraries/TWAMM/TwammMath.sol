@@ -86,7 +86,7 @@ library TwammMath {
         uint256 earningsFactor = (earningsFactorCurrent - order.unclaimedEarningsFactor);
         purchasedAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
     }
-    
+
     struct calculateTimeBetweenTicksParams {
         uint256 liquidity;
         uint160 sqrtPriceStartX96;

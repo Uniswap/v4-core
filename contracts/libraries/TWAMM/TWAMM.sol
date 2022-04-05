@@ -177,13 +177,7 @@ library TWAMM {
         PoolParamsOnExecute memory pool,
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
-    )
-        internal
-        returns (
-            bool zeroForOne,
-            uint160 newSqrtPriceX96
-        )
-    {
+    ) internal returns (bool zeroForOne, uint160 newSqrtPriceX96) {
         if (self.orderPools[0].sellRateCurrent == 0 && self.orderPools[1].sellRateCurrent == 0) {
             self.lastVirtualOrderTimestamp = block.timestamp;
             return (false, 0);
@@ -203,34 +197,26 @@ library TWAMM {
         uint256 prevTimestamp,
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
-    )
-        private
-        returns (
-            bool zeroForOne,
-            uint160 newSqrtPriceX96
-        )
-    {
+    ) private returns (bool zeroForOne, uint160 newSqrtPriceX96) {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
         while (nextExpirationTimestamp <= block.timestamp) {
-
-            (, pool) = advanceToNewTimestamp(
-                self,
-                AdvanceParams(
-                    nextExpirationTimestamp,
-                    nextExpirationTimestamp - prevTimestamp,
-                    pool,
-                    false
-                ),
-                ticks,
-                tickBitmap
-            );
-            // pool.sqrtPriceX96 = nextSqrtPriceX96;
-            prevTimestamp = nextExpirationTimestamp;
+            if (
+                self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
+                self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
+            ) {
+                pool = advanceToNewTimestamp(
+                    self,
+                    AdvanceParams(nextExpirationTimestamp, nextExpirationTimestamp - prevTimestamp, pool, false),
+                    ticks,
+                    tickBitmap
+                );
+                prevTimestamp = nextExpirationTimestamp;
+            }
             nextExpirationTimestamp += self.expirationInterval;
         }
 
         if (prevTimestamp < block.timestamp) {
-            (, pool) = advanceToNewTimestamp(
+            pool = advanceToNewTimestamp(
                 self,
                 AdvanceParams(block.timestamp, block.timestamp - prevTimestamp, pool, false),
                 ticks,
@@ -255,7 +241,7 @@ library TWAMM {
         AdvanceParams memory params,
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
-    ) private returns (uint256 amountIn, PoolParamsOnExecute memory updatedPool) {
+    ) private returns (PoolParamsOnExecute memory updatedPool) {
         (uint160 nextSqrtPriceX96, uint256 earningsPool0, uint256 earningsPool1) = TwammMath.calculateExecutionUpdates(
             params.secondsElapsed,
             params.pool,
@@ -272,12 +258,7 @@ library TWAMM {
             return
                 advanceTimeToTickCrossing(
                     self,
-                    TickCrossingParams(
-                        tick,
-                        params.nextTimestamp,
-                        params.secondsElapsed,
-                        params.pool
-                    ),
+                    TickCrossingParams(tick, params.nextTimestamp, params.secondsElapsed, params.pool),
                     ticks,
                     tickBitmap
                 );
@@ -307,7 +288,7 @@ library TWAMM {
         TickCrossingParams memory params,
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
-    ) private returns (uint256 amountIn, PoolParamsOnExecute memory updatedPool) {
+    ) private returns (PoolParamsOnExecute memory updatedPool) {
         uint256 secondsUntilCrossing = TwammMath.calculateTimeBetweenTicks(
             params.pool.liquidity,
             params.pool.sqrtPriceX96,
@@ -315,36 +296,31 @@ library TWAMM {
             self.orderPools[0].sellRateCurrent,
             self.orderPools[1].sellRateCurrent
         );
-            // cross tick
-            (amountIn, updatedPool) = advanceToNewTimestamp(
-                self,
-                AdvanceParams(
-                    params.nextTimestamp - (params.secondsElapsed - secondsUntilCrossing),
-                    secondsUntilCrossing,
-                    params.pool,
-                    true
-                ),
-                ticks,
-                tickBitmap
-            );
-            int128 liquidityNet = ticks[params.initializedTick].liquidityNet;
-            updatedPool.sqrtPriceX96 = params.initializedTick.getSqrtRatioAtTick();
-            updatedPool.liquidity =  liquidityNet < 0
-                ? updatedPool.liquidity - uint128(-liquidityNet)
-                : updatedPool.liquidity + uint128(liquidityNet);
+        // cross tick
+        updatedPool = advanceToNewTimestamp(
+            self,
+            AdvanceParams(
+                params.nextTimestamp - (params.secondsElapsed - secondsUntilCrossing),
+                secondsUntilCrossing,
+                params.pool,
+                true
+            ),
+            ticks,
+            tickBitmap
+        );
+        int128 liquidityNet = ticks[params.initializedTick].liquidityNet;
+        updatedPool.sqrtPriceX96 = params.initializedTick.getSqrtRatioAtTick();
+        updatedPool.liquidity = liquidityNet < 0
+            ? updatedPool.liquidity - uint128(-liquidityNet)
+            : updatedPool.liquidity + uint128(liquidityNet);
 
-            // continue to expiry
-            (amountIn, updatedPool) = advanceToNewTimestamp(
-                self,
-                AdvanceParams(
-                    params.nextTimestamp,
-                    params.secondsElapsed - secondsUntilCrossing,
-                    updatedPool,
-                    false
-                ),
-                ticks,
-                tickBitmap
-            );
+        // continue to expiry
+        updatedPool = advanceToNewTimestamp(
+            self,
+            AdvanceParams(params.nextTimestamp, params.secondsElapsed - secondsUntilCrossing, updatedPool, false),
+            ticks,
+            tickBitmap
+        );
     }
 
     function getNextInitializedTick(
