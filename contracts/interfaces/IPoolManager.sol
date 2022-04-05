@@ -69,7 +69,7 @@ interface IPoolManager {
     /// @notice Get the current delta for a given token, and its position in the tokens touched array
     /// @param id The ID of the locker
     /// @param token The token for which to lookup the delta
-    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 slot, int248 delta);
+    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 index, int248 delta);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
