@@ -25,6 +25,7 @@ library OrderPool {
         uint256 earningsFactor
     ) internal {
         self.earningsFactorCurrent += earningsFactor;
+        // TODO: only write if sellRateEndingAtInterval is nonzero.
         self.earningsFactorAtInterval[expiration] = self.earningsFactorCurrent;
         self.sellRateCurrent -= self.sellRateEndingAtInterval[expiration];
     }

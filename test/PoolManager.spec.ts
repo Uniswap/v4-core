@@ -99,7 +99,7 @@ describe('PoolManager', () => {
       await loadFixture(fixture))
   })
 
-  it('bytecode size', async () => {
+  it.only('bytecode size', async () => {
     expect(((await waffle.provider.getCode(manager.address)).length - 2) / 2).to.matchSnapshot()
   })
 

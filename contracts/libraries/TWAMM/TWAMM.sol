@@ -181,13 +181,12 @@ library TWAMM {
         internal
         returns (
             bool zeroForOne,
-            uint256 swapAmountIn,
             uint160 newSqrtPriceX96
         )
     {
         if (self.orderPools[0].sellRateCurrent == 0 && self.orderPools[1].sellRateCurrent == 0) {
             self.lastVirtualOrderTimestamp = block.timestamp;
-            return (false, 0, 0);
+            return (false, 0);
         }
 
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
@@ -208,21 +207,19 @@ library TWAMM {
         private
         returns (
             bool zeroForOne,
-            uint256 swapAmountIn,
             uint160 newSqrtPriceX96
         )
     {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
         while (nextExpirationTimestamp <= block.timestamp) {
 
-            (swapAmountIn, pool) = advanceToNewTimestamp(
+            (, pool) = advanceToNewTimestamp(
                 self,
                 AdvanceParams(
                     nextExpirationTimestamp,
                     nextExpirationTimestamp - prevTimestamp,
                     pool,
-                    false,
-                    swapAmountIn
+                    false
                 ),
                 ticks,
                 tickBitmap
@@ -233,14 +230,12 @@ library TWAMM {
         }
 
         if (prevTimestamp < block.timestamp) {
-            uint256 amountIn;
-            (swapAmountIn, pool) = advanceToNewTimestamp(
+            (, pool) = advanceToNewTimestamp(
                 self,
-                AdvanceParams(block.timestamp, block.timestamp - prevTimestamp, pool, false, swapAmountIn),
+                AdvanceParams(block.timestamp, block.timestamp - prevTimestamp, pool, false),
                 ticks,
                 tickBitmap
             );
-            swapAmountIn = amountIn;
         }
 
         self.lastVirtualOrderTimestamp = block.timestamp;
@@ -253,7 +248,6 @@ library TWAMM {
         uint256 secondsElapsed;
         PoolParamsOnExecute pool;
         bool isCurrentlyCrossing;
-        uint256 accumulatedAmountIn;
     }
 
     function advanceToNewTimestamp(
@@ -282,8 +276,7 @@ library TWAMM {
                         tick,
                         params.nextTimestamp,
                         params.secondsElapsed,
-                        params.pool,
-                        params.accumulatedAmountIn
+                        params.pool
                     ),
                     ticks,
                     tickBitmap
@@ -297,7 +290,6 @@ library TWAMM {
                 self.orderPools[1].advanceToCurrentTime(earningsPool1);
             }
 
-            amountIn = params.accumulatedAmountIn + getAmountDelta(params.pool, nextSqrtPriceX96);
             params.pool.sqrtPriceX96 = nextSqrtPriceX96;
             updatedPool = params.pool;
         }
@@ -308,7 +300,6 @@ library TWAMM {
         uint256 nextTimestamp;
         uint256 secondsElapsed;
         PoolParamsOnExecute pool;
-        uint256 accumulatedAmountIn;
     }
 
     function advanceTimeToTickCrossing(
@@ -331,8 +322,7 @@ library TWAMM {
                     params.nextTimestamp - (params.secondsElapsed - secondsUntilCrossing),
                     secondsUntilCrossing,
                     params.pool,
-                    true,
-                    params.accumulatedAmountIn
+                    true
                 ),
                 ticks,
                 tickBitmap
@@ -350,8 +340,7 @@ library TWAMM {
                     params.nextTimestamp,
                     params.secondsElapsed - secondsUntilCrossing,
                     updatedPool,
-                    false,
-                    amountIn
+                    false
                 ),
                 ticks,
                 tickBitmap
@@ -373,14 +362,6 @@ library TWAMM {
                 pool.tickSpacing,
                 searchingLeft
             );
-        }
-    }
-
-    function getAmountDelta(PoolParamsOnExecute memory pool, uint160 nextSqrtPriceX96) private returns (uint256) {
-        if (nextSqrtPriceX96 < pool.sqrtPriceX96) {
-            return SqrtPriceMath.getAmount0Delta(nextSqrtPriceX96, pool.sqrtPriceX96, pool.liquidity, false);
-        } else {
-            return SqrtPriceMath.getAmount1Delta(nextSqrtPriceX96, pool.sqrtPriceX96, pool.liquidity, false);
         }
     }
 }

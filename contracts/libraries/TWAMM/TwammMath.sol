@@ -41,10 +41,6 @@ library TwammMath {
     {
         // https://www.desmos.com/calculator/yr3qvkafvy
         // https://www.desmos.com/calculator/rjcdwnaoja -- tracks some intermediate calcs
-        // TODO:
-        // -- Need to incorporate ticks
-        // -- perform calcs when a sellpool is 0
-        // -- update TWAP
 
         ParamsBytes16 memory params = ParamsBytes16({
             sqrtPriceX96: poolParams.sqrtPriceX96.fromUInt(),
@@ -81,6 +77,16 @@ library TwammMath {
         earningsPool1 = getEarningsAmountPool1(earningsFactorParams).toUInt();
     }
 
+    function calculateCancellationAmounts(
+        TWAMM.Order memory order,
+        uint256 earningsFactorCurrent,
+        uint256 timestamp
+    ) internal view returns (uint256 unsoldAmount, uint256 purchasedAmount) {
+        unsoldAmount = order.sellRate * (order.expiration - timestamp);
+        uint256 earningsFactor = (earningsFactorCurrent - order.unclaimedEarningsFactor);
+        purchasedAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
+    }
+    
     struct calculateTimeBetweenTicksParams {
         uint256 liquidity;
         uint160 sqrtPriceStartX96;
@@ -163,15 +169,5 @@ library TwammMath {
 
     function reciprocal(bytes16 n) private pure returns (bytes16) {
         return uint256(1).fromUInt().div(n);
-    }
-
-    function calculateCancellationAmounts(
-        TWAMM.Order memory order,
-        uint256 earningsFactorCurrent,
-        uint256 timestamp
-    ) internal view returns (uint256 unsoldAmount, uint256 purchasedAmount) {
-        unsoldAmount = order.sellRate * (order.expiration - timestamp);
-        uint256 earningsFactor = (earningsFactorCurrent - order.unclaimedEarningsFactor);
-        purchasedAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
     }
 }

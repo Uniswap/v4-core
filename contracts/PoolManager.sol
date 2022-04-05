@@ -311,7 +311,6 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId)
         external
-        onlyByLocker
         returns (uint256 earningsAmount)
     {
         executeTWAMMOrders(key);
@@ -328,14 +327,18 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         returns (IPoolManager.BalanceDelta memory delta)
     {
         Pool.State storage pool = _getPool(key);
-        (bool zeroForOne, uint256 amountIn, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
+        (bool zeroForOne, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
             TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee, key.tickSpacing),
             pool.ticks,
             pool.tickBitmap
         );
-        if (amountIn > 0) {
-            console.log(sqrtPriceLimitX96);
-            delta = swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
+        console.log(pool.slot0.sqrtPriceX96);
+        console.log(sqrtPriceLimitX96);
+        console.log('');
+        if (sqrtPriceLimitX96 != 0 && sqrtPriceLimitX96 != pool.slot0.sqrtPriceX96) {
+            delta = swap(key, SwapParams(zeroForOne, type(int256).max, sqrtPriceLimitX96));
+            console.logInt(delta.amount0);
+            console.logInt(delta.amount1);
             _accountDelta(key.token0, -delta.amount0);
             _accountDelta(key.token1, -delta.amount1);
         }
