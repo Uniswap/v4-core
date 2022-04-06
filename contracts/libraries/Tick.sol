@@ -37,6 +37,25 @@ library Tick {
         uint128 cycle;
     }
 
+    /// @param tick The destination tick of the transition
+    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
+    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
+    /// @param secondsPerLiquidityCumulativeX128 The current seconds per liquidity
+    /// @param tickCumulative The tick * time elapsed since the pool was first initialized
+    /// @param time The current block.timestamp
+    /// @param tickSpacing The tick spacing
+    /// @param leftToRight Whether the tick is being crossed left to right or right to left
+    struct TickCross {
+        int24 tick;
+        uint256 feeGrowthGlobal0X128;
+        uint256 feeGrowthGlobal1X128;
+        uint160 secondsPerLiquidityCumulativeX128;
+        int56 tickCumulative;
+        uint32 time;
+        int24 tickSpacing;
+        bool leftToRight;
+    }
+
     /// @notice Derives max liquidity per tick from given tick spacing
     /// @dev Executed within the pool constructor
     /// @param tickSpacing The amount of required tick separation, realized in multiples of `tickSpacing`
@@ -166,44 +185,29 @@ library Tick {
 
     /// @notice Transitions to next tick as needed by price movement
     /// @param self The mapping containing all tick information for initialized ticks
-    /// @param tick The destination tick of the transition
-    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
-    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
-    /// @param secondsPerLiquidityCumulativeX128 The current seconds per liquidity
-    /// @param tickCumulative The tick * time elapsed since the pool was first initialized
-    /// @param time The current block.timestamp
-    /// @param tickSpacing The tick spacing
-    /// @param leftToRight Whether the tick is being crossed left to right or right to left
     /// @return liquidityNet The amount of liquidity added (subtracted) when tick is crossed from left to right (right to left)
     function cross(
         mapping(int24 => Tick.Info) storage self,
         mapping(bytes32 => Cycle.Info) storage cycles,
-        int24 tick,
-        uint256 feeGrowthGlobal0X128,
-        uint256 feeGrowthGlobal1X128,
-        uint160 secondsPerLiquidityCumulativeX128,
-        int56 tickCumulative,
-        uint32 time,
-        int24 tickSpacing,
-        bool leftToRight
+        TickCross memory tickCross
     ) internal returns (int128 liquidityNet) {
-        Tick.Info storage info = self[tick];
+        Tick.Info storage info = self[tickCross.tick];
         unchecked {
-            info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
-            info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
+            info.feeGrowthOutside0X128 = tickCross.feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
+            info.feeGrowthOutside1X128 = tickCross.feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
             info.secondsPerLiquidityOutsideX128 =
-                secondsPerLiquidityCumulativeX128 -
+                tickCross.secondsPerLiquidityCumulativeX128 -
                 info.secondsPerLiquidityOutsideX128;
-            info.tickCumulativeOutside = tickCumulative - info.tickCumulativeOutside;
-            info.secondsOutside = time - info.secondsOutside;
+            info.tickCumulativeOutside = tickCross.tickCumulative - info.tickCumulativeOutside;
+            info.secondsOutside = tickCross.time - info.secondsOutside;
             liquidityNet = info.liquidityNet;
             /// handle limit orders
         }
         
-        Cycle.Info storage cycleInfo = Cycle.get(cycles, tick, info.cycle);
+        Cycle.Info storage cycleInfo = Cycle.get(cycles, tickCross.tick, info.cycle);
         if (cycleInfo.limitLiquidity > 0) {
-                Tick.Info storage nextTickInfo = self[tick+tickSpacing];
-            if (leftToRight) {
+                Tick.Info storage nextTickInfo = self[tickCross.tick+tickCross.tickSpacing];
+            if (tickCross.leftToRight) {
                 info.liquidityNet -= int128(cycleInfo.limitLiquidity);
                 nextTickInfo.liquidityNet += int128(cycleInfo.limitLiquidity);
             } else {

@@ -3,11 +3,13 @@ pragma solidity =0.8.13;
 pragma abicoder v2;
 
 import {Tick} from '../libraries/Tick.sol';
+import {Cycle} from '../libraries/Cycle.sol';
 
 contract TickTest {
     using Tick for mapping(int24 => Tick.Info);
 
     mapping(int24 => Tick.Info) public ticks;
+    mapping(bytes32 => Cycle.Info) public cycles;
 
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) external pure returns (uint128) {
         return Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
@@ -59,21 +61,12 @@ contract TickTest {
     }
 
     function cross(
-        int24 tick,
-        uint256 feeGrowthGlobal0X128,
-        uint256 feeGrowthGlobal1X128,
-        uint160 secondsPerLiquidityCumulativeX128,
-        int56 tickCumulative,
-        uint32 time
+        Tick.TickCross memory tickCross
     ) external returns (int128 liquidityNet) {
         return
             ticks.cross(
-                tick,
-                feeGrowthGlobal0X128,
-                feeGrowthGlobal1X128,
-                secondsPerLiquidityCumulativeX128,
-                tickCumulative,
-                time
+                cycles,
+                tickCross
             );
     }
 }

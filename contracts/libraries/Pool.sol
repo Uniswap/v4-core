@@ -558,16 +558,20 @@ library Pool {
                         cache.computedLatestObservation = true;
                     }
 
+                    Tick.TickCross memory tickCross = Tick.TickCross({
+                        tick: step.tickNext,
+                        feeGrowthGlobal0X128: (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
+                        feeGrowthGlobal1X128: (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128),
+                        secondsPerLiquidityCumulativeX128: cache.secondsPerLiquidityCumulativeX128,
+                        tickCumulative: cache.tickCumulative,
+                        time: params.time,
+                        tickSpacing: params.tickSpacing,
+                        leftToRight: (state.tick < step.tickNext)
+                    });
+
                     int128 liquidityNet = self.ticks.cross(
                         self.cycles,
-                        step.tickNext,
-                        (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
-                        (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128),
-                        cache.secondsPerLiquidityCumulativeX128,
-                        cache.tickCumulative,
-                        params.time,
-                        params.tickSpacing,
-                        (state.tick < step.tickNext)
+                        tickCross
                     );
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min

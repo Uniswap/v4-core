@@ -2,6 +2,7 @@
 pragma solidity =0.8.13;
 
 import {Tick} from '../libraries/Tick.sol';
+import {Cycle} from '../libraries/Cycle.sol';
 
 contract TickOverflowSafetyEchidnaTest {
     using Tick for mapping(int24 => Tick.Info);
@@ -11,6 +12,7 @@ contract TickOverflowSafetyEchidnaTest {
     uint128 private constant MAX_LIQUIDITY = type(uint128).max / 32;
 
     mapping(int24 => Tick.Info) private ticks;
+    mapping(bytes32 => Cycle.Info) private cycles;
     int24 private tick = 0;
 
     // used to track how much total liquidity has been added. should never be negative
@@ -94,14 +96,33 @@ contract TickOverflowSafetyEchidnaTest {
     function moveToTick(int24 target) external {
         require(target > MIN_TICK);
         require(target < MAX_TICK);
+        Tick.TickCross memory tickCross;
         while (tick != target) {
+            tickCross = Tick.TickCross({
+                tick: tick,
+                feeGrowthGlobal0X128: feeGrowthGlobal0X128,
+                feeGrowthGlobal1X128: feeGrowthGlobal1X128,
+                secondsPerLiquidityCumulativeX128: 0,
+                tickCumulative: 0,
+                time: uint32(block.timestamp),
+                tickSpacing: 1,
+                leftToRight: false
+            });
             if (tick < target) {
                 if (ticks[tick + 1].liquidityGross > 0)
-                    ticks.cross(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128, 0, 0, uint32(block.timestamp));
+                    tickCross.tick += 1;
+                    tickCross.leftToRight = true;
+                    ticks.cross(
+                        cycles,
+                        tickCross
+                    );
                 tick++;
             } else {
                 if (ticks[tick].liquidityGross > 0)
-                    ticks.cross(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128, 0, 0, uint32(block.timestamp));
+                    ticks.cross(
+                        cycles,
+                        tickCross
+                    );
                 tick--;
             }
         }
