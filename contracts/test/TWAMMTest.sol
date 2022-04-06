@@ -20,15 +20,18 @@ contract TWAMMTest {
         twamm.initialize(orderInterval);
     }
 
-    function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (uint256 orderId) {
+    function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
         orderId = twamm.submitLongTermOrder(params);
     }
 
-    function cancelLongTermOrder(uint256 orderId) external returns (uint256 amountOut0, uint256 amountOut1) {
-        (amountOut0, amountOut1) = twamm.cancelLongTermOrder(orderId);
+    function cancelLongTermOrder(TWAMM.OrderKey calldata orderKey)
+        external
+        returns (uint256 amountOut0, uint256 amountOut1)
+    {
+        (amountOut0, amountOut1) = twamm.cancelLongTermOrder(orderKey);
     }
 
-    function claimEarnings(uint256 orderId, TWAMM.PoolParamsOnExecute memory params)
+    function claimEarnings(TWAMM.OrderKey calldata orderKey, TWAMM.PoolParamsOnExecute memory params)
         external
         returns (
             uint256 earningsAmount,
@@ -37,8 +40,8 @@ contract TWAMMTest {
         )
     {
         twamm.executeTWAMMOrders(params, mockTicks, mockTickBitmap);
-        (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderId);
-        unclaimedEarnings = twamm.orders[orderId].unclaimedEarningsFactor;
+        (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderKey);
+        unclaimedEarnings = twamm._getOrder(orderKey).unclaimedEarningsFactor;
     }
 
     function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
@@ -75,8 +78,8 @@ contract TWAMMTest {
         return TwammMath.calculateTimeBetweenTicks(liquidity, sqrtPriceStartX96, sqrtPriceEndX96, sellRate0, sellRate1);
     }
 
-    function getOrder(uint256 orderId) external view returns (TWAMM.Order memory) {
-        return twamm.orders[orderId];
+    function getOrder(TWAMM.OrderKey calldata orderKey) external view returns (TWAMM.Order memory) {
+        return twamm._getOrder(orderKey);
     }
 
     function getOrderPool(uint8 index) external view returns (uint256 sellRate, uint256 earningsFactor) {
@@ -101,21 +104,8 @@ contract TWAMMTest {
         return twamm.orderPools[sellTokenIndex].earningsFactorAtInterval[timestamp];
     }
 
-    function getState()
-        external
-        view
-        returns (
-            uint256 expirationInterval,
-            uint256 lastVirtualOrderTimestamp,
-            uint256 nextId
-        )
-    {
+    function getState() external view returns (uint256 expirationInterval, uint256 lastVirtualOrderTimestamp) {
         expirationInterval = twamm.expirationInterval;
         lastVirtualOrderTimestamp = twamm.lastVirtualOrderTimestamp;
-        nextId = twamm.nextId;
-    }
-
-    function getNextId() external view returns (uint256 nextId) {
-        return twamm.nextId;
     }
 }

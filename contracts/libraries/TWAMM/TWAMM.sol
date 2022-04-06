@@ -9,6 +9,7 @@ import {TwammMath} from './TwammMath.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
+import 'hardhat/console.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -21,13 +22,13 @@ library TWAMM {
     /// @param orderId The orderId
     /// @param owner The owner of the order
     /// @param currentAccount The invalid account attempting to interact with the order
-    error MustBeOwner(uint256 orderId, address owner, address currentAccount);
+    error MustBeOwner(bytes32 orderId, address owner, address currentAccount);
 
     /// @notice Thrown when trying to cancel an already completed order
     /// @param orderId The orderId
     /// @param expiration The expiration timestamp of the order
     /// @param currentTime The current block timestamp
-    error OrderAlreadyCompleted(uint256 orderId, uint256 expiration, uint256 currentTime);
+    error OrderAlreadyCompleted(bytes32 orderId, uint256 expiration, uint256 currentTime);
 
     /// @notice Thrown when trying to submit an order with an expiration that isn't on the interval.
     /// @param expiration The expiration timestamp of the order
@@ -40,6 +41,10 @@ library TWAMM {
     /// @notice Thrown when trying to submit an order without initializing TWAMM state first
     error NotInitialized();
 
+    /// @notice Thrown when trying to submit an order that's already ongoing.
+    /// @param orderId The already existing orderId
+    error OrderAlreadyExists(bytes32 orderId);
+
     /// @notice Contains full state related to the TWAMM
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
     /// @member lastVirtualOrderTimestamp Last timestamp in which virtual orders were executed
@@ -49,9 +54,18 @@ library TWAMM {
     struct State {
         uint256 expirationInterval;
         uint256 lastVirtualOrderTimestamp;
-        uint256 nextId;
         mapping(uint8 => OrderPool.State) orderPools;
-        mapping(uint256 => Order) orders;
+        mapping(bytes32 => Order) orders;
+    }
+
+    /// @notice Information that identifies an order
+    /// @member owner Owner of the order
+    /// @member expiration Timestamp when the order expires
+    /// @member zeroForOne Index of sell token, 0 for token0, 1 for token1
+    struct OrderKey {
+        address owner;
+        uint256 expiration;
+        bool zeroForOne;
     }
 
     /// @notice Information associated with a long term order
@@ -62,7 +76,6 @@ library TWAMM {
     /// @member unclaimedEarningsFactor The accrued earnings factor from which to start claiming owed earnings for this order
     struct Order {
         uint8 sellTokenIndex;
-        address owner;
         uint256 expiration;
         uint256 sellRate;
         uint256 unclaimedEarningsFactor;
@@ -87,13 +100,14 @@ library TWAMM {
     /// @param params All parameters to define the new order
     function submitLongTermOrder(State storage self, LongTermOrderParams calldata params)
         internal
-        returns (uint256 orderId)
+        returns (bytes32 orderId)
     {
         if (self.expirationInterval == 0) revert NotInitialized();
         if (params.expiration < block.timestamp) revert ExpirationLessThanBlocktime(params.expiration);
         if (params.expiration % self.expirationInterval != 0) revert ExpirationNotOnInterval(params.expiration);
 
-        orderId = self.nextId++;
+        orderId = _orderId(OrderKey(params.owner, params.expiration, params.zeroForOne));
+        if (self.orders[orderId].sellRate != 0) revert OrderAlreadyExists(orderId);
 
         uint8 sellTokenIndex = params.zeroForOne ? 0 : 1;
         uint256 sellRate = params.amountIn / (params.expiration - block.timestamp);
@@ -102,7 +116,6 @@ library TWAMM {
         self.orderPools[sellTokenIndex].sellRateEndingAtInterval[params.expiration] += sellRate;
 
         self.orders[orderId] = Order({
-            owner: params.owner,
             expiration: params.expiration,
             sellRate: sellRate,
             sellTokenIndex: sellTokenIndex,
@@ -112,13 +125,14 @@ library TWAMM {
 
     /// @notice Cancels a long term order and updates procceeds owed in both tokens
     ///   back to the owner
-    /// @param orderId The ID of the order to be cancelled
-    function cancelLongTermOrder(State storage self, uint256 orderId)
+    /// @param orderKey The key of the order to be cancelled
+    function cancelLongTermOrder(State storage self, OrderKey calldata orderKey)
         internal
         returns (uint256 amountOut0, uint256 amountOut1)
     {
-        Order memory order = self.orders[orderId];
-        if (order.owner != msg.sender) revert MustBeOwner(orderId, order.owner, msg.sender);
+        bytes32 orderId = _orderId(orderKey);
+        Order storage order = _getOrder(self, orderKey);
+        if (orderKey.owner != msg.sender) revert MustBeOwner(orderId, orderKey.owner, msg.sender);
         if (order.expiration <= block.timestamp)
             revert OrderAlreadyCompleted(orderId, order.expiration, block.timestamp);
 
@@ -130,17 +144,18 @@ library TWAMM {
         );
         if (order.sellTokenIndex == 1) (amountOut1, amountOut0) = (amountOut0, amountOut1);
 
-        self.orders[orderId].sellRate = 0;
         self.orderPools[order.sellTokenIndex].sellRateCurrent -= order.sellRate;
         self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= order.sellRate;
+        order.sellRate = 0;
     }
 
     /// @notice Claim earnings from an ongoing or expired order
-    /// @param orderId The ID of the order to be claimed
-    function claimEarnings(State storage self, uint256 orderId)
+    /// @param orderKey The key of the order to be claimed
+    function claimEarnings(State storage self, OrderKey calldata orderKey)
         internal
         returns (uint256 earningsAmount, uint8 sellTokenIndex)
     {
+        bytes32 orderId = _orderId(orderKey);
         Order memory order = self.orders[orderId];
         sellTokenIndex = order.sellTokenIndex;
         OrderPool.State storage orderPool = self.orderPools[sellTokenIndex];
@@ -339,5 +354,13 @@ library TWAMM {
                 searchingLeft
             );
         }
+    }
+
+    function _getOrder(State storage self, OrderKey memory key) internal view returns (Order storage) {
+        return self.orders[keccak256(abi.encode(key))];
+    }
+
+    function _orderId(OrderKey memory key) private view returns (bytes32) {
+        return keccak256(abi.encode(key));
     }
 }
