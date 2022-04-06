@@ -643,7 +643,7 @@ describe('PoolManager', () => {
     }
 
     describe.only('#executeTWAMM', () => {
-      it('performs properly with initialized ticks', async () => {
+      it('performs properly with initialized ticks w/ token1 excess', async () => {
         const key = {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -679,7 +679,60 @@ describe('PoolManager', () => {
           zeroForOne: false,
           owner: wallet.address,
           amountIn: expandTo18Decimals(500),
-          expiration: nIntervalsFrom(latestTimestamp, 10_000, 5),
+          expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
+        })
+
+        await ethers.provider.send('evm_mine', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
+        await ethers.provider.send('evm_setAutomine', [true])
+
+        await ethers.provider.send('evm_setAutomine', [true])
+        await ethers.provider.send('evm_setNextBlockTimestamp', [nIntervalsFrom(latestTimestamp, 10_000, 2)])
+
+        await twammTest.executeTWAMMOrders(key)
+
+        // console.log(`\n newSqrt`)
+        // const sqrtPriceX96 = (await manager.slot0(getPoolId(key))).sqrtPriceX96.toString()
+        // console.log(sqrtPriceX96)
+        // console.log(TickMath.getTickAtSqrtRatio(JSBI.BigInt(sqrtPriceX96)).toString())
+      })
+
+      it('performs properly with initialized ticks w/ token0 excess', async () => {
+        const key = {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          hooks: ADDRESS_ZERO,
+          tickSpacing: 60,
+        }
+        await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: getMinTick(60),
+          tickUpper: getMaxTick(60),
+          liquidityDelta: expandTo18Decimals(1),
+        })
+
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: -30660,
+          tickUpper: 30660,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+
+        const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+        await ethers.provider.send('evm_setAutomine', [false])
+
+        await twammTest.submitLongTermOrder(key, {
+          zeroForOne: true,
+          owner: wallet.address,
+          amountIn: expandTo18Decimals(500),
+          expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
+        })
+
+        await twammTest.submitLongTermOrder(key, {
+          zeroForOne: false,
+          owner: wallet.address,
+          amountIn: expandTo18Decimals(1),
+          expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
         })
 
         await ethers.provider.send('evm_mine', [nIntervalsFrom(latestTimestamp, 10_000, 1)])

@@ -12,7 +12,6 @@ import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IHooks} from './interfaces/IHooks.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
-import 'hardhat/console.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
@@ -332,13 +331,9 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             pool.ticks,
             pool.tickBitmap
         );
-        console.log(pool.slot0.sqrtPriceX96);
-        console.log(sqrtPriceLimitX96);
-        console.log('');
+
         if (sqrtPriceLimitX96 != 0 && sqrtPriceLimitX96 != pool.slot0.sqrtPriceX96) {
             delta = swap(key, SwapParams(zeroForOne, type(int256).max, sqrtPriceLimitX96));
-            console.logInt(delta.amount0);
-            console.logInt(delta.amount1);
             _accountDelta(key.token0, -delta.amount0);
             _accountDelta(key.token1, -delta.amount1);
         }

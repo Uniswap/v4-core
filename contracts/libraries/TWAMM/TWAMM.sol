@@ -9,7 +9,6 @@ import {TwammMath} from './TwammMath.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
-import 'hardhat/console.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -347,12 +346,14 @@ library TWAMM {
         bool searchingLeft = nextSqrtPriceX96 < pool.sqrtPriceX96;
         int24 targetTick = nextSqrtPriceX96.getTickAtSqrtRatio();
 
-        while (initialized == false && nextTickInit < targetTick) {
+        while (!searchingLeft ? nextTickInit < targetTick : nextTickInit > targetTick) {
+            if (searchingLeft) nextTickInit -= 1;
             (nextTickInit, initialized) = tickBitmap.nextInitializedTickWithinOneWord(
                 nextTickInit,
                 pool.tickSpacing,
                 searchingLeft
             );
+            if (initialized == true) break;
         }
     }
 

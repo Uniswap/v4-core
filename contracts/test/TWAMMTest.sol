@@ -6,7 +6,6 @@ import {TwammMath} from '../libraries/TWAMM/TwammMath.sol';
 import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {Tick} from '../libraries/Tick.sol';
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
-import 'hardhat/console.sol';
 
 contract TWAMMTest {
     using TWAMM for TWAMM.State;
