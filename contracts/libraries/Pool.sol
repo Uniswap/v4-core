@@ -5,6 +5,7 @@ import {SafeCast} from './SafeCast.sol';
 import {Tick} from './Tick.sol';
 import {TickBitmap} from './TickBitmap.sol';
 import {Position} from './Position.sol';
+import {Cycle} from './Cycle.sol';
 import {Oracle} from './Oracle.sol';
 import {FullMath} from './FullMath.sol';
 import {FixedPoint128} from './FixedPoint128.sol';
@@ -81,6 +82,8 @@ library Pool {
         mapping(int24 => Tick.Info) ticks;
         mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
+        mapping(bytes32 => Position.Info) limitPositions;
+        mapping(bytes32 => Cycle.Info) cycles;
         Oracle.Observation[65535] observations;
     }
 
@@ -556,12 +559,15 @@ library Pool {
                     }
 
                     int128 liquidityNet = self.ticks.cross(
+                        self.cycles,
                         step.tickNext,
                         (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
                         (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128),
                         cache.secondsPerLiquidityCumulativeX128,
                         cache.tickCumulative,
-                        params.time
+                        params.time,
+                        params.tickSpacing,
+                        (state.tick < step.tickNext)
                     );
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min

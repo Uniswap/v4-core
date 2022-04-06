@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import {SafeCast} from './SafeCast.sol';
 
 import {TickMath} from './TickMath.sol';
+import {Cycle} from './Cycle.sol';
 
 /// @title Tick
 /// @notice Contains functions for managing tick processes and relevant calculations
@@ -31,6 +32,9 @@ library Tick {
         // true iff the tick is initialized, i.e. the value is exactly equivalent to the expression liquidityGross != 0
         // these 8 bits are set to prevent fresh sstores when crossing newly initialized ticks
         bool initialized;
+        // The cycle number that this tick is in. Even when the current price is below the tick, odd if
+        // current price is above the tick. Initialised as 0 or 1 depending on price on initialisation.
+        uint128 cycle;
     }
 
     /// @notice Derives max liquidity per tick from given tick spacing
@@ -132,6 +136,7 @@ library Tick {
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 
+        // this means the tick is getting initialized
         if (liquidityGrossBefore == 0) {
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
             if (tick <= tickCurrent) {
@@ -140,6 +145,8 @@ library Tick {
                 info.secondsPerLiquidityOutsideX128 = secondsPerLiquidityCumulativeX128;
                 info.tickCumulativeOutside = tickCumulative;
                 info.secondsOutside = time;
+                // we only initialize cycle if this is the tick's first initialization
+                if (info.cycle == 0) info.cycle = 1;
             }
             info.initialized = true;
         }
@@ -165,18 +172,23 @@ library Tick {
     /// @param secondsPerLiquidityCumulativeX128 The current seconds per liquidity
     /// @param tickCumulative The tick * time elapsed since the pool was first initialized
     /// @param time The current block.timestamp
+    /// @param tickSpacing The tick spacing
+    /// @param leftToRight Whether the tick is being crossed left to right or right to left
     /// @return liquidityNet The amount of liquidity added (subtracted) when tick is crossed from left to right (right to left)
     function cross(
         mapping(int24 => Tick.Info) storage self,
+        mapping(bytes32 => Cycle.Info) storage cycles,
         int24 tick,
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128,
         uint160 secondsPerLiquidityCumulativeX128,
         int56 tickCumulative,
-        uint32 time
+        uint32 time,
+        int24 tickSpacing,
+        bool leftToRight
     ) internal returns (int128 liquidityNet) {
+        Tick.Info storage info = self[tick];
         unchecked {
-            Tick.Info storage info = self[tick];
             info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
             info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
             info.secondsPerLiquidityOutsideX128 =
@@ -185,6 +197,22 @@ library Tick {
             info.tickCumulativeOutside = tickCumulative - info.tickCumulativeOutside;
             info.secondsOutside = time - info.secondsOutside;
             liquidityNet = info.liquidityNet;
+            /// handle limit orders
+        }
+        
+        Cycle.Info storage cycleInfo = Cycle.get(cycles, tick, info.cycle);
+        if (cycleInfo.limitLiquidity > 0) {
+                Tick.Info storage nextTickInfo = self[tick+tickSpacing];
+            if (leftToRight) {
+                info.liquidityNet -= int128(cycleInfo.limitLiquidity);
+                nextTickInfo.liquidityNet += int128(cycleInfo.limitLiquidity);
+            } else {
+                info.liquidityNet += int128(cycleInfo.limitLiquidity);
+                nextTickInfo.liquidityNet -= int128(cycleInfo.limitLiquidity);
+            }
+        }
+        unchecked {
+            info.cycle += 1;
         }
     }
 }
