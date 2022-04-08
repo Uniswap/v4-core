@@ -12,7 +12,6 @@ import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IHooks} from './interfaces/IHooks.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
-import 'hardhat/console.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall {
@@ -287,20 +286,20 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     function submitLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.LongTermOrderParams calldata params)
         external
         onlyByLocker
-        returns (uint256 orderId)
+        returns (bytes32 orderId)
     {
         executeTWAMMOrders(key);
         return _getPool(key).twamm.submitLongTermOrder(params);
     }
 
-    function cancelLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId)
+    function cancelLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
         external
         onlyByLocker
         returns (uint256 amountOut0, uint256 amountOut1)
     {
         executeTWAMMOrders(key);
 
-        (amountOut0, amountOut1) = _getPool(key).twamm.cancelLongTermOrder(orderId);
+        (amountOut0, amountOut1) = _getPool(key).twamm.cancelLongTermOrder(orderKey);
 
         IPoolManager.BalanceDelta memory delta = IPoolManager.BalanceDelta({
             amount0: -(amountOut0.toInt256()),
@@ -309,15 +308,14 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountPoolBalanceDelta(key, delta);
     }
 
-    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId)
+    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
         external
-        onlyByLocker
         returns (uint256 earningsAmount)
     {
         executeTWAMMOrders(key);
 
         uint8 sellTokenIndex;
-        (earningsAmount, sellTokenIndex) = _getPool(key).twamm.claimEarnings(orderId);
+        (earningsAmount, sellTokenIndex) = _getPool(key).twamm.claimEarnings(orderKey);
         IERC20Minimal buyToken = sellTokenIndex == 0 ? key.token1 : key.token0;
         _accountDelta(buyToken, -(earningsAmount.toInt256()));
     }
@@ -328,14 +326,14 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         returns (IPoolManager.BalanceDelta memory delta)
     {
         Pool.State storage pool = _getPool(key);
-        (bool zeroForOne, uint256 amountIn, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
+        (bool zeroForOne, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
             TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee, key.tickSpacing),
             pool.ticks,
             pool.tickBitmap
         );
-        if (amountIn > 0) {
-            console.log(sqrtPriceLimitX96);
-            delta = swap(key, SwapParams(zeroForOne, int256(amountIn), sqrtPriceLimitX96));
+
+        if (sqrtPriceLimitX96 != 0 && sqrtPriceLimitX96 != pool.slot0.sqrtPriceX96) {
+            delta = swap(key, SwapParams(zeroForOne, type(int256).max, sqrtPriceLimitX96));
             _accountDelta(key.token0, -delta.amount0);
             _accountDelta(key.token1, -delta.amount1);
         }

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import 'hardhat/console.sol';
-
 /// @title TWAMM OrderPool - Represents an OrderPool inside of a TWAMM
 library OrderPool {
     /// @notice Information related to a long term order pool.
@@ -25,6 +23,7 @@ library OrderPool {
         uint256 earningsFactor
     ) internal {
         self.earningsFactorCurrent += earningsFactor;
+        // TODO: only write if sellRateEndingAtInterval is nonzero.
         self.earningsFactorAtInterval[expiration] = self.earningsFactorCurrent;
         self.sellRateCurrent -= self.sellRateEndingAtInterval[expiration];
     }

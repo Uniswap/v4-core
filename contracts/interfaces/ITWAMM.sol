@@ -7,9 +7,9 @@ import {IPoolManager} from './IPoolManager.sol';
 interface ITWAMM {
     function submitLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.LongTermOrderParams calldata params)
         external
-        returns (uint256 orderId);
+        returns (bytes32 orderId);
 
-    function cancelLongTermOrder(IPoolManager.PoolKey calldata key, uint256 orderId)
+    function cancelLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
         external
         returns (uint256 amountOut0, uint256 amountOut1);
 

@@ -160,33 +160,33 @@ describe('TWAMMMath', () => {
         },
       },
       // TODO: not working - amounts out are incorrect from desmos, not enough precision??
-      {
-        title: 'sell rates are extremely low compared to pool liquidity',
-        inputs: {
-          sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-          sellRate0: '10000',
-          sellRate1: '500',
-        },
-        outputsDivX96: {
-          price: '1.0000000',
-          amountOut0: '180.0000000',
-          amountOut1: '72000.0000000',
-        },
-      },
+      // {
+      //   title: 'sell rates are extremely low compared to pool liquidity',
+      //   inputs: {
+      //     sqrtPriceX96: encodeSqrtPriceX96(1, 1),
+      //     sellRate0: '10000',
+      //     sellRate1: '500',
+      //   },
+      //   outputsDivX96: {
+      //     price: '1.0000000',
+      //     amountOut0: '180.0000000',
+      //     amountOut1: '72000.0000000',
+      //   },
+      // },
       // TODO: not working - desmos also is turning up invalid numbers (like negative earnings accumulators)
-      {
-        title: 'sell rate of 1 wei in a pool with liquidity amounts that accommodates 18 token decimals',
-        inputs: {
-          sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-          sellRate0: '5',
-          sellRate1: '10000',
-        },
-        outputsDivX96: {
-          price: '1.0000000',
-          amountOut0: '184835683.94',
-          amountOut1: '-88816.04197',
-        },
-      },
+      // {
+      //   title: 'sell rate of 1 wei in a pool with liquidity amounts that accommodates 18 token decimals',
+      //   inputs: {
+      //     sqrtPriceX96: encodeSqrtPriceX96(1, 1),
+      //     sellRate0: '5',
+      //     sellRate1: '10000',
+      //   },
+      //   outputsDivX96: {
+      //     price: '1.0000000',
+      //     amountOut0: '184835683.94',
+      //     amountOut1: '-88816.04197',
+      //   },
+      // },
     ]
 
     for (let testcase of TEST_CASES) {

@@ -27,11 +27,11 @@ contract PoolTWAMMTest is ILockCallback {
 
     function submitLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.LongTermOrderParams calldata params)
         external
-        returns (uint256 orderId)
+        returns (bytes32 orderId)
     {
         orderId = abi.decode(
             manager.lock(abi.encode(CallbackData(key, TransactionType.SUBMIT, abi.encode(params)))),
-            (uint256)
+            (bytes32)
         );
     }
 
