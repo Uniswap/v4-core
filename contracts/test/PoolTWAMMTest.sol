@@ -12,6 +12,7 @@ contract PoolTWAMMTest is ILockCallback {
 
     enum TransactionType {
         SUBMIT,
+        CLAIM,
         EXECUTE
     }
 
@@ -35,6 +36,16 @@ contract PoolTWAMMTest is ILockCallback {
         );
     }
 
+    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata params)
+        external
+        returns (uint256 earningsAmount)
+    {
+        earningsAmount = abi.decode(
+            manager.lock(abi.encode(CallbackData(key, TransactionType.CLAIM, abi.encode(params)))),
+            (uint256)
+        );
+    }
+
     function executeTWAMMOrders(IPoolManager.PoolKey calldata key)
         external
         returns (IPoolManager.BalanceDelta memory delta)
@@ -53,6 +64,15 @@ contract PoolTWAMMTest is ILockCallback {
         if (data.txType == TransactionType.SUBMIT) {
             TWAMM.LongTermOrderParams memory params = abi.decode(data.params, (TWAMM.LongTermOrderParams));
             returnVal = abi.encode(manager.submitLongTermOrder(data.key, params));
+            IERC20Minimal token = params.zeroForOne ? data.key.token0 : data.key.token1;
+            token.transferFrom(params.owner, address(manager), params.amountIn);
+            manager.settle(token);
+        } else if (data.txType == TransactionType.CLAIM) {
+            TWAMM.OrderKey memory orderKey = abi.decode(data.params, (TWAMM.OrderKey));
+            uint256 earnings = manager.claimEarningsOnLongTermOrder(data.key, orderKey);
+            returnVal = abi.encode(earnings);
+            IERC20Minimal token = orderKey.zeroForOne ? data.key.token1 : data.key.token0;
+            manager.take(token, orderKey.owner, earnings);
         } else if (data.txType == TransactionType.EXECUTE) {
             returnVal = abi.encode(manager.executeTWAMMOrders(data.key));
         }

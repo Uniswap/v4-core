@@ -19,6 +19,8 @@ interface IPoolManager is ITWAMM {
     /// @param locker The current locker
     error LockedBy(address locker);
 
+    event Swap(int256 amount0, int256 amount1);
+
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower token of the pool, sorted numerically

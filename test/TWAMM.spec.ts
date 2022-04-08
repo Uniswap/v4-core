@@ -105,7 +105,7 @@ describe.only('TWAMM', () => {
     })
 
     it('stores the new long term order', async () => {
-      const orderKey = ({ owner, expiration, zeroForOne })
+      const orderKey = { owner, expiration, zeroForOne }
       // TODO: if the twamm is not initialized, should revert
       await twamm.submitLongTermOrder({
         zeroForOne,
@@ -125,7 +125,7 @@ describe.only('TWAMM', () => {
     })
 
     it('increases the sellRate and sellRateEndingPerInterval of the corresponding OrderPool', async () => {
-      const orderKey = ({ owner, expiration, zeroForOne })
+      const orderKey = { owner, expiration, zeroForOne }
 
       let orderPool = await twamm.getOrderPool(0)
       expect(orderPool.sellRate).to.equal(0)
@@ -256,8 +256,7 @@ describe.only('TWAMM', () => {
 
       await twamm.executeTWAMMOrders(poolParams)
 
-
-      const orderToCancel = { owner: wallet.address, expiration, zeroForOne: true}
+      const orderToCancel = { owner: wallet.address, expiration, zeroForOne: true }
       await twamm.submitLongTermOrder({
         zeroForOne: true,
         owner: wallet.address,

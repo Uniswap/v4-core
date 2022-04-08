@@ -9,6 +9,10 @@ interface ITWAMM {
         external
         returns (bytes32 orderId);
 
+    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
+        external
+        returns (uint256 earningsAmount);
+
     function cancelLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
         external
         returns (uint256 amountOut0, uint256 amountOut1);

@@ -33,7 +33,7 @@ describe('TWAMMMath', () => {
     twamm = await loadFixture(twammFixture)
   })
 
-  describe('#calculateExecutionUpdates outputs the correct results when', () => {
+  describe.only('#calculateExecutionUpdates outputs the correct results when', () => {
     let secondsElapsed: BigNumberish
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
@@ -247,17 +247,12 @@ describe('TWAMMMath', () => {
     let sellRateCurrent0: BigNumber
     let sellRateCurrent1: BigNumber
 
-    beforeEach(async () => {
+    it('returns the correct result', async () => {
       sqrtPriceStartX96 = encodeSqrtPriceX96(1, 1)
       sqrtPriceEndX96 = encodeSqrtPriceX96(2, 1)
       liquidity = BigNumber.from('1000000000000000000000000')
       sellRateCurrent0 = toWei('1')
       sellRateCurrent1 = toWei('100')
-    })
-
-    it('returns the correct result', async () => {
-      let sqrtSellRate: BigNumberish
-      let sqrtSellRatioX96: BigNumberish
 
       expect(
         await twamm.calculateTimeBetweenTicks(

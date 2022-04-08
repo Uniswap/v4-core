@@ -192,7 +192,7 @@ library TWAMM {
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
     ) internal returns (bool zeroForOne, uint160 newSqrtPriceX96) {
-        if (self.orderPools[0].sellRateCurrent == 0 && self.orderPools[1].sellRateCurrent == 0) {
+        if (!_hasOutstandingOrders(self)) {
             self.lastVirtualOrderTimestamp = block.timestamp;
             return (false, 0);
         }
@@ -214,6 +214,7 @@ library TWAMM {
     ) private returns (bool zeroForOne, uint160 newSqrtPriceX96) {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
         while (nextExpirationTimestamp <= block.timestamp) {
+            if (!_hasOutstandingOrders(self)) break;
             if (
                 self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                 self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
@@ -229,7 +230,7 @@ library TWAMM {
             nextExpirationTimestamp += self.expirationInterval;
         }
 
-        if (prevTimestamp < block.timestamp) {
+        if (prevTimestamp < block.timestamp && _hasOutstandingOrders(self)) {
             pool = advanceToNewTimestamp(
                 self,
                 AdvanceParams(block.timestamp, block.timestamp - prevTimestamp, pool, false),
@@ -303,13 +304,15 @@ library TWAMM {
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
     ) private returns (PoolParamsOnExecute memory updatedPool) {
+        uint160 targetSqrtPriceX96 = params.initializedTick.getSqrtRatioAtTick();
         uint256 secondsUntilCrossing = TwammMath.calculateTimeBetweenTicks(
             params.pool.liquidity,
             params.pool.sqrtPriceX96,
-            params.initializedTick.getSqrtRatioAtTick(),
+            targetSqrtPriceX96,
             self.orderPools[0].sellRateCurrent,
             self.orderPools[1].sellRateCurrent
         );
+
         // cross tick
         updatedPool = advanceToNewTimestamp(
             self,
@@ -322,8 +325,11 @@ library TWAMM {
             ticks,
             tickBitmap
         );
+
         int128 liquidityNet = ticks[params.initializedTick].liquidityNet;
-        updatedPool.sqrtPriceX96 = params.initializedTick.getSqrtRatioAtTick();
+        if (targetSqrtPriceX96 < params.pool.sqrtPriceX96) liquidityNet = -liquidityNet;
+
+        updatedPool.sqrtPriceX96 = targetSqrtPriceX96;
         updatedPool.liquidity = liquidityNet < 0
             ? updatedPool.liquidity - uint128(-liquidityNet)
             : updatedPool.liquidity + uint128(liquidityNet);
@@ -363,5 +369,9 @@ library TWAMM {
 
     function _orderId(OrderKey memory key) private view returns (bytes32) {
         return keccak256(abi.encode(key));
+    }
+
+    function _hasOutstandingOrders(State storage self) internal view returns (bool) {
+        return !(self.orderPools[0].sellRateCurrent == 0 && self.orderPools[1].sellRateCurrent == 0);
     }
 }

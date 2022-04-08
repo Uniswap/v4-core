@@ -228,6 +228,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
         _accountPoolBalanceDelta(key, delta);
 
+        emit Swap(delta.amount0, delta.amount1);
+
         if (key.hooks.shouldCallAfterSwap()) {
             key.hooks.afterSwap(msg.sender, key, params, delta);
         }
@@ -289,7 +291,9 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         returns (bytes32 orderId)
     {
         executeTWAMMOrders(key);
-        return _getPool(key).twamm.submitLongTermOrder(params);
+        orderId = _getPool(key).twamm.submitLongTermOrder(params);
+        IERC20Minimal token = params.zeroForOne ? key.token0 : key.token1;
+        _accountDelta(token, int256(params.amountIn));
     }
 
     function cancelLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
