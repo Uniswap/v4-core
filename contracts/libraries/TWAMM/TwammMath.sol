@@ -6,6 +6,7 @@ import {TWAMM} from './TWAMM.sol';
 import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';
+import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {
@@ -50,6 +51,8 @@ library TwammMath {
             secondsElapsed: secondsElapsed.fromUInt()
         });
 
+        // TODO sell ratio when pool 1 or pool 0 is 0
+        // can't use ratio?
         bytes16 sellRatio = params.sellRateCurrent1.div(params.sellRateCurrent0);
 
         bytes16 sqrtSellRatioX96 = sellRatio.sqrt().mul(Q96);
@@ -156,6 +159,7 @@ library TwammMath {
         return minuend.sub(subtrahend).mul(Q96);
     }
 
+    // TODO this calculation only works for nonzero pools
     function calculateNewSqrtPriceX96(
         bytes16 sqrtSellRatioX96,
         bytes16 sqrtSellRate,
@@ -163,6 +167,7 @@ library TwammMath {
         ParamsBytes16 memory params
     ) private pure returns (bytes16 newSqrtPriceX96) {
         bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(secondsElapsed).div(params.liquidity);
+        // sqrtSell - sqrtCurrent / sqrtSell + sqrtCurrent
         bytes16 c = sqrtSellRatioX96.sub(params.sqrtPriceX96).div(sqrtSellRatioX96.add(params.sqrtPriceX96));
         newSqrtPriceX96 = sqrtSellRatioX96.mul(pow.exp().sub(c)).div(pow.exp().add(c));
     }

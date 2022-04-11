@@ -99,7 +99,7 @@ describe('PoolManager', () => {
       await loadFixture(fixture))
   })
 
-  it.only('bytecode size', async () => {
+  it('bytecode size', async () => {
     expect(((await waffle.provider.getCode(manager.address)).length - 2) / 2).to.matchSnapshot()
   })
 
@@ -642,7 +642,7 @@ describe('PoolManager', () => {
       return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
     }
 
-    describe.only('#executeTWAMM', () => {
+    describe('#executeTWAMM', () => {
       it('performs properly with initialized ticks w/ token1 excess', async () => {
         const key = {
           token0: tokens.token0.address,

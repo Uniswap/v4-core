@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {FullMath} from './FullMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
+import 'hardhat/console.sol';
 
 /// @title Computes the result of a swap within ticks
 /// @notice Contains methods for computing the result of a swap within a single tick price range, i.e., a single tick.
@@ -26,8 +27,9 @@ library SwapMath {
         uint24 feePips
     )
         internal
-        pure
+        view
         returns (
+            // TODO : chance back to pure
             uint160 sqrtRatioNextX96,
             uint256 amountIn,
             uint256 amountOut,

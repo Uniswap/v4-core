@@ -21,7 +21,7 @@ library SqrtPriceMath {
     /// @param sqrtPX96 The starting price, i.e. before accounting for the token0 delta
     /// @param liquidity The amount of usable liquidity
     /// @param amount How much of token0 to add or remove from virtual reserves
-    /// @param add Whether to add or remove the amount of token0
+    /// @param add Whether to add or remove the amount of token0P
     /// @return The price after adding or removing amount, depending on add
     function getNextSqrtPriceFromAmount0RoundingUp(
         uint160 sqrtPX96,

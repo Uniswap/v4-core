@@ -10,7 +10,7 @@ contract SwapMathEchidnaTest {
         uint128 liquidity,
         int256 amountRemaining,
         uint24 feePips
-    ) external pure {
+    ) external view {
         require(sqrtPriceRaw > 0);
         require(sqrtPriceTargetRaw > 0);
         require(feePips > 0);

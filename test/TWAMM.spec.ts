@@ -28,7 +28,7 @@ type OrderKey = {
   zeroForOne: boolean
 }
 
-describe.only('TWAMM', () => {
+describe('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
 
@@ -105,7 +105,7 @@ describe.only('TWAMM', () => {
     })
 
     it('stores the new long term order', async () => {
-      const orderKey = ({ owner, expiration, zeroForOne })
+      const orderKey = { owner, expiration, zeroForOne }
       // TODO: if the twamm is not initialized, should revert
       await twamm.submitLongTermOrder({
         zeroForOne,
@@ -125,7 +125,7 @@ describe.only('TWAMM', () => {
     })
 
     it('increases the sellRate and sellRateEndingPerInterval of the corresponding OrderPool', async () => {
-      const orderKey = ({ owner, expiration, zeroForOne })
+      const orderKey = { owner, expiration, zeroForOne }
 
       let orderPool = await twamm.getOrderPool(0)
       expect(orderPool.sellRate).to.equal(0)
@@ -256,8 +256,7 @@ describe.only('TWAMM', () => {
 
       await twamm.executeTWAMMOrders(poolParams)
 
-
-      const orderToCancel = { owner: wallet.address, expiration, zeroForOne: true}
+      const orderToCancel = { owner: wallet.address, expiration, zeroForOne: true }
       await twamm.submitLongTermOrder({
         zeroForOne: true,
         owner: wallet.address,
@@ -400,7 +399,7 @@ describe.only('TWAMM', () => {
     let expiration2: number
     const interval = 10
 
-    beforeEach('create new longTermOrder', async () => {
+    beforeEach('create new longTermOrders', async () => {
       await twamm.initialize(interval)
 
       const timestamp = (await ethers.provider.getBlock('latest')).timestamp
@@ -476,6 +475,53 @@ describe.only('TWAMM', () => {
       advanceTime(afterExpiration)
 
       await snapshotGasCost(twamm.claimEarnings(orderKey, poolParams, mockTicks))
+    })
+  })
+
+  describe.only('#claimEarnings single pool', () => {
+    let orderId: BigNumber
+    const mockTicks = {}
+    const poolParams = {
+      feeProtocol: 0,
+      sqrtPriceX96: encodeSqrtPriceX96(1, 1),
+      fee: '3000',
+      tickSpacing: '60',
+      liquidity: '14496800315719602540',
+    }
+    let expiration: number
+    let blocktime: number
+    const interval = 10_000
+    const zeroForOne = true
+
+    beforeEach('submit one long term order', async () => {
+      twamm.initialize(interval)
+      //orderId = await twamm.getNextId()
+      blocktime = (await ethers.provider.getBlock('latest')).timestamp
+      console.log(blocktime)
+      expiration = findExpiryTime(blocktime, 3, interval)
+      await twamm.submitLongTermOrder({
+        zeroForOne,
+        owner: wallet.address,
+        amountIn: toWei('2'),
+        expiration: expiration,
+      })
+    })
+
+    it.only('claims successfully for one pool', async () => {
+      // advance time past 1 interval but not on the next interval
+      // TODO: if you advance the time too far, you run out of gas
+      // advanceTime(findExpiryTime(blocktime, 1, interval) + findExpiryTime(blocktime, 2, interval) / 2)
+
+      advanceTime(findExpiryTime(blocktime, 1, interval) + 1000)
+      blocktime = (await ethers.provider.getBlock('latest')).timestamp
+      console.log(blocktime)
+
+      const orderKey = { owner: wallet.address, expiration, zeroForOne: true }
+      const results = await twamm.callStatic.claimEarnings(orderKey, poolParams)
+
+      const earningsAmount = results.earningsAmount
+
+      // expect(earningsAmount).to.be.gt(0)
     })
   })
 
