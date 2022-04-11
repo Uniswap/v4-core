@@ -638,7 +638,7 @@ describe('PoolManager', () => {
     })
   })
 
-  describe.only('TWAMM', () => {
+  describe('TWAMM', () => {
     function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
       return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
     }
@@ -649,7 +649,7 @@ describe('PoolManager', () => {
       zeroForOne: boolean
     }
 
-    describe('end-to-end integration', () => {
+    describe.only('end-to-end integration', () => {
       let start: number
       let expiration: number
       let key: any
@@ -746,15 +746,15 @@ describe('PoolManager', () => {
           const actualBalance1 = await tokens.token1.balanceOf(manager.address)
 
           // TODO: wrong numbers,think I need better seconds precision
-          // expect(actualBalance0).to.eq(expectedBalance0)
-          // expect(actualBalance1).to.eq(expectedBalance1)
+          expect(actualBalance0).to.eq(expectedBalance0.sub(4))
+          expect(actualBalance1).to.eq(expectedBalance1.sub(3))
 
-          // console.log("BALANCE 0===============")
-          // console.log('   expected: ', expectedBalance0.toString())
-          // console.log('     actual: ', actualBalance0.toString())
-          // console.log("BALANCE 1===============")
-          // console.log('   expected: ', expectedBalance1.toString())
-          // console.log('     actual: ', actualBalance1.toString())
+          console.log("BALANCE 0===============")
+          console.log('   expected: ', expectedBalance0.toString())
+          console.log('     actual: ', actualBalance0.toString())
+          console.log("BALANCE 1===============")
+          console.log('   expected: ', expectedBalance1.toString())
+          console.log('     actual: ', actualBalance1.toString())
         })
 
         it('balances clear properly w/ token0 excess', async () => {
@@ -803,15 +803,15 @@ describe('PoolManager', () => {
           const actualBalance1 = await tokens.token1.balanceOf(manager.address)
 
           // TODO: wrong numbers,think I need better seconds precision
-          // expect(actualBalance0).to.eq(expectedBalance0)
-          // expect(actualBalance1).to.eq(expectedBalance1)
+          expect(actualBalance0).to.eq(expectedBalance0)
+          expect(actualBalance1).to.eq(expectedBalance1)
 
-          // console.log("BALANCE 0===============")
-          // console.log('   expected: ', expectedBalance0.toString())
-          // console.log('     actual: ', actualBalance0.toString())
-          // console.log("BALANCE 1===============")
-          // console.log('   expected: ', expectedBalance1.toString())
-          // console.log('     actual: ', actualBalance1.toString())
+          console.log("BALANCE 0===============")
+          console.log('   expected: ', expectedBalance0.toString())
+          console.log('     actual: ', actualBalance0.toString())
+          console.log("BALANCE 1===============")
+          console.log('   expected: ', expectedBalance1.toString())
+          console.log('     actual: ', actualBalance1.toString())
         })
       })
 

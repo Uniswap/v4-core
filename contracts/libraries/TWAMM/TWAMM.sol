@@ -10,6 +10,8 @@ import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
 
+import 'hardhat/console.sol';
+
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
@@ -213,15 +215,14 @@ library TWAMM {
         mapping(int16 => uint256) storage tickBitmap
     ) private returns (bool zeroForOne, uint160 newSqrtPriceX96) {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
-        while (nextExpirationTimestamp <= block.timestamp) {
-            if (!_hasOutstandingOrders(self)) break;
+        while (nextExpirationTimestamp <= block.timestamp && _hasOutstandingOrders(self)) {
             if (
                 self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                 self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
             ) {
                 pool = advanceToNewTimestamp(
                     self,
-                    AdvanceParams(nextExpirationTimestamp, nextExpirationTimestamp - prevTimestamp, pool, false),
+                    AdvanceParams(nextExpirationTimestamp, (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96, pool, false),
                     ticks,
                     tickBitmap
                 );
@@ -233,7 +234,7 @@ library TWAMM {
         if (prevTimestamp < block.timestamp && _hasOutstandingOrders(self)) {
             pool = advanceToNewTimestamp(
                 self,
-                AdvanceParams(block.timestamp, block.timestamp - prevTimestamp, pool, false),
+                AdvanceParams(block.timestamp, (block.timestamp - prevTimestamp) * FixedPoint96.Q96, pool, false),
                 ticks,
                 tickBitmap
             );
@@ -246,7 +247,7 @@ library TWAMM {
 
     struct AdvanceParams {
         uint256 nextTimestamp;
-        uint256 secondsElapsed;
+        uint256 secondsElapsedX96;
         PoolParamsOnExecute pool;
         bool isCurrentlyCrossing;
     }
@@ -258,7 +259,7 @@ library TWAMM {
         mapping(int16 => uint256) storage tickBitmap
     ) private returns (PoolParamsOnExecute memory updatedPool) {
         (uint160 nextSqrtPriceX96, uint256 earningsPool0, uint256 earningsPool1) = TwammMath.calculateExecutionUpdates(
-            params.secondsElapsed,
+            params.secondsElapsedX96,
             params.pool,
             OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent),
             ticks
@@ -273,7 +274,7 @@ library TWAMM {
             return
                 advanceTimeToTickCrossing(
                     self,
-                    TickCrossingParams(tick, params.nextTimestamp, params.secondsElapsed, params.pool),
+                    TickCrossingParams(tick, params.nextTimestamp, params.secondsElapsedX96, params.pool),
                     ticks,
                     tickBitmap
                 );
@@ -294,7 +295,7 @@ library TWAMM {
     struct TickCrossingParams {
         int24 initializedTick;
         uint256 nextTimestamp;
-        uint256 secondsElapsed;
+        uint256 secondsElapsedX96;
         PoolParamsOnExecute pool;
     }
 
@@ -305,7 +306,7 @@ library TWAMM {
         mapping(int16 => uint256) storage tickBitmap
     ) private returns (PoolParamsOnExecute memory updatedPool) {
         uint160 targetSqrtPriceX96 = params.initializedTick.getSqrtRatioAtTick();
-        uint256 secondsUntilCrossing = TwammMath.calculateTimeBetweenTicks(
+        uint256 secondsUntilCrossingX96 = TwammMath.calculateTimeBetweenTicks(
             params.pool.liquidity,
             params.pool.sqrtPriceX96,
             targetSqrtPriceX96,
@@ -317,8 +318,8 @@ library TWAMM {
         updatedPool = advanceToNewTimestamp(
             self,
             AdvanceParams(
-                params.nextTimestamp - (params.secondsElapsed - secondsUntilCrossing),
-                secondsUntilCrossing,
+                (params.nextTimestamp * FixedPoint96.Q96)  - (params.secondsElapsedX96 - secondsUntilCrossingX96),
+                secondsUntilCrossingX96,
                 params.pool,
                 true
             ),
@@ -337,7 +338,7 @@ library TWAMM {
         // continue to expiry
         updatedPool = advanceToNewTimestamp(
             self,
-            AdvanceParams(params.nextTimestamp, params.secondsElapsed - secondsUntilCrossing, updatedPool, false),
+            AdvanceParams(params.nextTimestamp, params.secondsElapsedX96 - secondsUntilCrossingX96, updatedPool, false),
             ticks,
             tickBitmap
         );

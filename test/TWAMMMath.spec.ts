@@ -43,7 +43,7 @@ describe('TWAMMMath', () => {
     let sellRateCurrent1: BigNumberish
 
     beforeEach(async () => {
-      secondsElapsed = 3600
+      secondsElapsed = BigNumber.from(3600).mul(BigNumber.from(2).pow(96))
       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       liquidity = '1000000000000000000000000'
       fee = '3000'

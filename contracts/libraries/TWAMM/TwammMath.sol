@@ -7,6 +7,8 @@ import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';
 
+import 'hardhat/console.sol';
+
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {
     using ABDKMathQuad for *;
@@ -64,7 +66,7 @@ library TwammMath {
         );
 
         EarningsFactorParams memory earningsFactorParams = EarningsFactorParams({
-            secondsElapsed: params.secondsElapsed,
+            secondsElapsedX96: params.secondsElapsed,
             sellRatio: sellRatio,
             sqrtSellRate: sqrtSellRate,
             prevSqrtPriceX96: params.sqrtPriceX96,
@@ -114,7 +116,7 @@ library TwammMath {
         bytes16 multiple = getTimeBetweenTicksMultiple(sqrtSellRatioX96, sqrtPriceStartX96Bytes, sqrtPriceEndX96Bytes);
         bytes16 numerator = multiple.mul(liquidity.fromUInt());
         bytes16 denominator = uint256(2).fromUInt().mul(sqrtSellRate);
-        return numerator.div(denominator).toUInt();
+        return numerator.mul(Q96).div(denominator).toUInt();
     }
 
     function getTimeBetweenTicksMultiple(
@@ -128,7 +130,7 @@ library TwammMath {
     }
 
     struct EarningsFactorParams {
-        bytes16 secondsElapsed;
+        bytes16 secondsElapsedX96;
         bytes16 sellRatio;
         bytes16 sqrtSellRate;
         bytes16 prevSqrtPriceX96;
@@ -137,7 +139,7 @@ library TwammMath {
     }
 
     function getEarningsAmountPool0(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
-        bytes16 minuend = params.sellRatio.mul(Q96).mul(params.secondsElapsed);
+        bytes16 minuend = params.sellRatio.mul(Q96).mul(params.secondsElapsedX96).div(Q96);
         bytes16 subtrahend = params
             .liquidity
             .mul(params.sellRatio.sqrt())
@@ -147,7 +149,7 @@ library TwammMath {
     }
 
     function getEarningsAmountPool1(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
-        bytes16 minuend = params.secondsElapsed.div(params.sellRatio);
+        bytes16 minuend = params.secondsElapsedX96.div(Q96).div(params.sellRatio);
         bytes16 subtrahend = params
             .liquidity
             .mul(reciprocal(params.sellRatio.sqrt()))
@@ -161,8 +163,8 @@ library TwammMath {
         bytes16 sqrtSellRate,
         bytes16 secondsElapsed,
         ParamsBytes16 memory params
-    ) private pure returns (bytes16 newSqrtPriceX96) {
-        bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(secondsElapsed).div(params.liquidity);
+    ) private view returns (bytes16 newSqrtPriceX96) {
+        bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(secondsElapsed).div(params.liquidity).div(Q96);
         bytes16 c = sqrtSellRatioX96.sub(params.sqrtPriceX96).div(sqrtSellRatioX96.add(params.sqrtPriceX96));
         newSqrtPriceX96 = sqrtSellRatioX96.mul(pow.exp().sub(c)).div(pow.exp().add(c));
     }
