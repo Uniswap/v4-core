@@ -649,7 +649,7 @@ describe('PoolManager', () => {
       zeroForOne: boolean
     }
 
-    describe.only('end-to-end integration', () => {
+    describe('end-to-end integration', () => {
       let start: number
       let expiration: number
       let key: any

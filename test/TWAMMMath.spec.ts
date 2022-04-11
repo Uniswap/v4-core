@@ -33,7 +33,7 @@ describe('TWAMMMath', () => {
     twamm = await loadFixture(twammFixture)
   })
 
-  describe.only('#calculateExecutionUpdates outputs the correct results when', () => {
+  describe('#calculateExecutionUpdates outputs the correct results when', () => {
     let secondsElapsed: BigNumberish
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
