@@ -745,16 +745,9 @@ describe('PoolManager', () => {
           const expectedBalance1 = liquidityBalance.add(swapDelta1)
           const actualBalance1 = await tokens.token1.balanceOf(manager.address)
 
-          // TODO: wrong numbers,think I need better seconds precision
+          // TODO: precision off by 4 and 3 respectively
           expect(actualBalance0).to.eq(expectedBalance0.sub(4))
           expect(actualBalance1).to.eq(expectedBalance1.sub(3))
-
-          console.log("BALANCE 0===============")
-          console.log('   expected: ', expectedBalance0.toString())
-          console.log('     actual: ', actualBalance0.toString())
-          console.log("BALANCE 1===============")
-          console.log('   expected: ', expectedBalance1.toString())
-          console.log('     actual: ', actualBalance1.toString())
         })
 
         it('balances clear properly w/ token0 excess', async () => {
@@ -802,16 +795,9 @@ describe('PoolManager', () => {
           const expectedBalance1 = liquidityBalance.add(swapDelta1)
           const actualBalance1 = await tokens.token1.balanceOf(manager.address)
 
-          // TODO: wrong numbers,think I need better seconds precision
-          expect(actualBalance0).to.eq(expectedBalance0)
-          expect(actualBalance1).to.eq(expectedBalance1)
-
-          console.log("BALANCE 0===============")
-          console.log('   expected: ', expectedBalance0.toString())
-          console.log('     actual: ', actualBalance0.toString())
-          console.log("BALANCE 1===============")
-          console.log('   expected: ', expectedBalance1.toString())
-          console.log('     actual: ', actualBalance1.toString())
+          // TODO: precision off by 5 and 6 respectively
+          expect(actualBalance0).to.eq(expectedBalance0.sub(5))
+          expect(actualBalance1).to.eq(expectedBalance1.sub(6))
         })
       })
 

@@ -17,13 +17,13 @@ Object {
 exports[`TWAMM #executeTWAMMOrders gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 363876,
+  "gasUsed": 363858,
 }
 `;
 
 exports[`TWAMM #submitLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 121546,
+  "gasUsed": 121558,
 }
 `;
