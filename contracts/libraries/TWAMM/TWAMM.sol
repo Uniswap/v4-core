@@ -255,7 +255,7 @@ library TWAMM {
         AdvanceParams memory params,
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
-    ) private returns (PoolParamsOnExecute memory updatedPool) {
+    ) private returns (PoolParamsOnExecute memory) {
         (uint160 nextSqrtPriceX96, uint256 earningsPool0, uint256 earningsPool1) = TwammMath.calculateExecutionUpdates(
             params.secondsElapsedX96,
             params.pool,
@@ -286,8 +286,9 @@ library TWAMM {
             }
 
             params.pool.sqrtPriceX96 = nextSqrtPriceX96;
-            updatedPool = params.pool;
         }
+
+        return params.pool;
     }
 
     struct TickCrossingParams {
@@ -302,7 +303,7 @@ library TWAMM {
         TickCrossingParams memory params,
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
-    ) private returns (PoolParamsOnExecute memory updatedPool) {
+    ) private returns (PoolParamsOnExecute memory) {
         uint160 targetSqrtPriceX96 = params.initializedTick.getSqrtRatioAtTick();
         bool zeroForOne = targetSqrtPriceX96 < params.pool.sqrtPriceX96;
 
@@ -315,7 +316,7 @@ library TWAMM {
         );
 
         // cross tick
-        updatedPool = advanceToNewTimestamp(
+        params.pool = advanceToNewTimestamp(
             self,
             AdvanceParams(
                 (params.nextTimestamp * FixedPoint96.Q96)  - (params.secondsElapsedX96 - secondsUntilCrossingX96),
@@ -330,15 +331,15 @@ library TWAMM {
         int128 liquidityNet = ticks[params.initializedTick].liquidityNet;
         if (zeroForOne) liquidityNet = -liquidityNet;
 
-        updatedPool.sqrtPriceX96 = targetSqrtPriceX96;
-        updatedPool.liquidity = liquidityNet < 0
-            ? updatedPool.liquidity - uint128(-liquidityNet)
-            : updatedPool.liquidity + uint128(liquidityNet);
+        params.pool.sqrtPriceX96 = targetSqrtPriceX96;
+        params.pool.liquidity = liquidityNet < 0
+            ? params.pool.liquidity - uint128(-liquidityNet)
+            : params.pool.liquidity + uint128(liquidityNet);
 
         // continue to expiry
-        updatedPool = advanceToNewTimestamp(
+        return advanceToNewTimestamp(
             self,
-            AdvanceParams(params.nextTimestamp, params.secondsElapsedX96 - secondsUntilCrossingX96, updatedPool, false),
+            AdvanceParams(params.nextTimestamp, params.secondsElapsedX96 - secondsUntilCrossingX96, params.pool, false),
             ticks,
             tickBitmap
         );

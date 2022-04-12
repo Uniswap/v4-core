@@ -14,7 +14,7 @@ function divX96(n: BigNumber): string {
   return (parseInt(n.toString()) / 2 ** 96).toFixed(7).toString()
 }
 
-describe('TWAMMMath', () => {
+describe.only('TWAMMMath', () => {
   let twamm: TWAMMTest
   let wallet: Wallet, other: Wallet
   let loadFixture: ReturnType<typeof waffle.createFixtureLoader>
@@ -33,7 +33,7 @@ describe('TWAMMMath', () => {
     twamm = await loadFixture(twammFixture)
   })
 
-  describe.only('#calculateExecutionUpdates outputs the correct results when', () => {
+  describe('#calculateExecutionUpdates outputs the correct results when', () => {
     let secondsElapsed: BigNumberish
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
@@ -262,7 +262,9 @@ describe('TWAMMMath', () => {
           sellRateCurrent0,
           sellRateCurrent1
         )
-      ).to.eq(4204)
+      // 333077535900883608001926988272645 / Q96 ~= 4204.029543
+      ).to.eq('333077535900883608001926988272645')
+
     })
   })
 })
