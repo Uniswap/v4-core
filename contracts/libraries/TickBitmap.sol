@@ -31,8 +31,6 @@ library TickBitmap {
             require(tick % tickSpacing == 0); // ensure that the tick is spaced
             (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
             uint256 mask = 1 << bitPos;
-            // 2^bitPos
-            // the tick bitmap sets the word position of the tick to the mask
             self[wordPos] ^= mask;
         }
     }
@@ -46,7 +44,6 @@ library TickBitmap {
     /// @return next The next initialized or uninitialized tick up to 256 ticks away from the current tick
     /// @return initialized Whether the next tick is initialized, as the function only searches within up to 256 ticks
     function nextInitializedTickWithinOneWord(
-        // 16 ticks in a word ?
         mapping(int16 => uint256) storage self,
         int24 tick,
         int24 tickSpacing,

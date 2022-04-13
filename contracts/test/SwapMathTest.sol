@@ -12,7 +12,7 @@ contract SwapMathTest {
         uint24 feePips
     )
         external
-        view
+        pure
         returns (
             uint160 sqrtQ,
             uint256 amountIn,

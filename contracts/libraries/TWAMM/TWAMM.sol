@@ -216,30 +216,35 @@ library TWAMM {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
 
         while (nextExpirationTimestamp <= block.timestamp && _hasOutstandingOrders(self)) {
-            if (self.orderPools[0].sellRateCurrent == 0 || self.orderPools[1].sellRateCurrent == 0) {
-                pool = advanceTimestampForSinglePoolSell(
-                    self,
-                    AdvanceParams(nextExpirationTimestamp, nextExpirationTimestamp - prevTimestamp, pool, false),
-                    // if we are selling none of token0 then we set the sellIndex to 1
-                    self.orderPools[0].sellRateCurrent == 0 ? 1 : 0,
-                    tickBitmap,
-                    ticks
-                );
-            } else {
-                pool = advanceToNewTimestamp(
-                    self,
-                    AdvanceParams(
-                        nextExpirationTimestamp,
-                        (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96,
-                        pool,
-                        false
-                    ),
-                    ticks,
-                    tickBitmap
-                );
+            if (
+                self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
+                self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
+            ) {
+                if (self.orderPools[0].sellRateCurrent != 0 && self.orderPools[1].sellRateCurrent != 0) {
+                    pool = advanceToNewTimestamp(
+                        self,
+                        AdvanceParams(
+                            nextExpirationTimestamp,
+                            (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96,
+                            pool,
+                            false
+                        ),
+                        ticks,
+                        tickBitmap
+                    );
+                } else {
+                    pool = advanceTimestampForSinglePoolSell(
+                        self,
+                        AdvanceParams(nextExpirationTimestamp, nextExpirationTimestamp - prevTimestamp, pool, false),
+                        // if we are selling none of token0 then we set the sellIndex to 1
+                        self.orderPools[0].sellRateCurrent == 0 ? 1 : 0,
+                        tickBitmap,
+                        ticks
+                    );
+                }
+                // update prevTimestamp only on intervals with sales
+                prevTimestamp = nextExpirationTimestamp;
             }
-            // regardless of single or double pool updates we adance the timestamp to the next interval
-            prevTimestamp = nextExpirationTimestamp;
             nextExpirationTimestamp += self.expirationInterval;
         }
 
@@ -250,9 +255,12 @@ library TWAMM {
             if (self.orderPools[0].sellRateCurrent == 0 || self.orderPools[1].sellRateCurrent == 0) {
                 pool = advanceTimestampForSinglePoolSell(
                     self,
-                    AdvanceParams(block.timestamp, block.timestamp - prevTimestamp, pool, false),
-                    // if we are selling none of token0 then we set the sellIndex to 1
-                    self.orderPools[0].sellRateCurrent == 0 ? 1 : 0,
+                    AdvanceSingleParams(
+                        block.timestamp,
+                        block.timestamp - prevTimestamp,
+                        pool,
+                        self.orderPools[0].sellRateCurrent == 0 ? 1 : 0
+                    ),
                     tickBitmap,
                     ticks
                 );
@@ -278,100 +286,19 @@ library TWAMM {
         bool isCurrentlyCrossing;
     }
 
+    struct AdvanceSingleParams {
+        uint256 nextTimestamp;
+        uint256 secondsElapsed;
+        PoolParamsOnExecute pool;
+        uint8 sellIndex;
+    }
+
     struct NextCrossingState {
         uint256 amount0;
         uint256 amount1;
         bool crossingInitializedTick;
         int24 tick;
         uint160 nextSqrtPriceX96;
-    }
-
-    function advanceTimestampForSinglePoolSell(
-        State storage self,
-        AdvanceParams memory params,
-        uint8 sellIndex,
-        mapping(int16 => uint256) storage tickBitmap,
-        mapping(int24 => Tick.Info) storage ticks
-    ) private returns (PoolParamsOnExecute memory updatedPool) {
-        uint256 sellRateCurrent = self.orderPools[sellIndex].sellRateCurrent;
-        // TODO FixedPoint96.RESOLUTION ?
-        uint256 amountSelling = (sellRateCurrent * params.secondsElapsedX96) >> FixedPoint96.RESOLUTION;
-
-        uint160 finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
-            params.pool.sqrtPriceX96,
-            params.pool.liquidity,
-            amountSelling,
-            sellIndex == 0 ? true : false
-        );
-
-        bool continuingToCross = finalSqrtPriceX96 < params.pool.sqrtPriceX96
-            ? params.pool.sqrtPriceX96 > finalSqrtPriceX96
-            : params.pool.sqrtPriceX96 < finalSqrtPriceX96;
-
-        // Set the updatedPool variable.
-        updatedPool = params.pool;
-        // earningsPoolTotal will track the total earnings in the opposite token from selling the sellToken.
-        uint256 earningsPoolTotal;
-
-        while (continuingToCross) {
-            NextCrossingState memory deltas = getNextCrossingState(updatedPool, finalSqrtPriceX96, tickBitmap);
-
-            earningsPoolTotal += sellIndex == 0 ? deltas.amount1 : deltas.amount0;
-
-            amountSelling -= sellIndex == 0 ? deltas.amount0 : deltas.amount1;
-
-            // Update the pool price.
-            updatedPool.sqrtPriceX96 = deltas.nextSqrtPriceX96;
-
-            // Update the pool liquidity.
-            // Only update the pool liquidity if we will be crossing an initialized tick.
-            if (deltas.crossingInitializedTick) {
-                // update pool liquidity to liquidity at the tick
-                int128 liquidityNet = ticks[deltas.tick].liquidityNet;
-                updatedPool.liquidity = liquidityNet < 0
-                    ? updatedPool.liquidity - uint128(-liquidityNet)
-                    : updatedPool.liquidity + uint128(liquidityNet);
-
-                // Recalculate the final price based on the amount swapped at the tick
-                finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
-                    updatedPool.sqrtPriceX96,
-                    updatedPool.liquidity,
-                    amountSelling,
-                    sellIndex == 0 ? true : false
-                );
-            }
-            // If the final price is equal to the current pools price, we have finished the swap. Else, continue to the new final target price.
-            continuingToCross = finalSqrtPriceX96 < updatedPool.sqrtPriceX96
-                ? updatedPool.sqrtPriceX96 > finalSqrtPriceX96
-                : updatedPool.sqrtPriceX96 < finalSqrtPriceX96;
-        }
-        if (params.nextTimestamp % self.expirationInterval == 0) {
-            self.orderPools[sellIndex].advanceToInterval(params.nextTimestamp, earningsPoolTotal);
-        } else {
-            self.orderPools[sellIndex].advanceToCurrentTime(earningsPoolTotal);
-        }
-    }
-
-    function getNextCrossingState(
-        PoolParamsOnExecute memory pool,
-        uint160 targetPriceX96,
-        mapping(int16 => uint256) storage tickBitmap
-    ) internal returns (NextCrossingState memory deltas) {
-        (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
-            // this pool keeps getting updated
-            pool,
-            targetPriceX96,
-            tickBitmap
-        );
-
-        // if we are not crossing any ticks it should just give us the tick at the final price
-        uint160 nextSqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
-
-        // update earnings and sell amounts
-        uint256 amount0 = SqrtPriceMath.getAmount0Delta(pool.sqrtPriceX96, nextSqrtPriceX96, pool.liquidity, false);
-        uint256 amount1 = SqrtPriceMath.getAmount1Delta(pool.sqrtPriceX96, nextSqrtPriceX96, pool.liquidity, false);
-
-        return NextCrossingState(amount0, amount1, crossingInitializedTick, tick, nextSqrtPriceX96);
     }
 
     function advanceToNewTimestamp(
@@ -412,6 +339,94 @@ library TWAMM {
             params.pool.sqrtPriceX96 = nextSqrtPriceX96;
             updatedPool = params.pool;
         }
+    }
+
+    function advanceTimestampForSinglePoolSell(
+        State storage self,
+        AdvanceSingleParams memory params,
+        mapping(int16 => uint256) storage tickBitmap,
+        mapping(int24 => Tick.Info) storage ticks
+    ) private returns (PoolParamsOnExecute memory updatedPool) {
+        uint256 sellRateCurrent = self.orderPools[params.sellIndex].sellRateCurrent;
+
+        uint256 amountSelling = sellRateCurrent * params.secondsElapsed;
+
+        uint160 finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
+            params.pool.sqrtPriceX96,
+            params.pool.liquidity,
+            amountSelling,
+            params.sellIndex == 0 ? true : false
+        );
+
+        bool crossingLeft = finalSqrtPriceX96 < params.pool.sqrtPriceX96;
+        bool continuingToCross = crossingLeft
+            ? params.pool.sqrtPriceX96 > finalSqrtPriceX96
+            : params.pool.sqrtPriceX96 < finalSqrtPriceX96;
+
+        // Set the updatedPool variable.
+        updatedPool = params.pool;
+        // earningsPoolTotal will track the total earnings in the opposite token from selling the sellToken.
+        uint256 earningsPoolTotal;
+
+        while (continuingToCross) {
+            NextCrossingState memory deltas = getNextCrossingState(updatedPool, finalSqrtPriceX96, tickBitmap);
+
+            earningsPoolTotal += params.sellIndex == 0 ? deltas.amount1 : deltas.amount0;
+
+            amountSelling -= params.sellIndex == 0 ? deltas.amount0 : deltas.amount1;
+
+            // Update the pool price.
+            updatedPool.sqrtPriceX96 = deltas.nextSqrtPriceX96;
+
+            // Update the pool liquidity.
+            // Only update the pool liquidity if we will be crossing an initialized tick.
+            if (deltas.crossingInitializedTick) {
+                // update pool liquidity to liquidity at the tick
+                int128 liquidityNet = ticks[deltas.tick].liquidityNet;
+                updatedPool.liquidity = liquidityNet < 0
+                    ? updatedPool.liquidity - uint128(-liquidityNet)
+                    : updatedPool.liquidity + uint128(liquidityNet);
+
+                // Recalculate the final price based on the amount swapped at the tick
+                finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
+                    updatedPool.sqrtPriceX96,
+                    updatedPool.liquidity,
+                    amountSelling,
+                    params.sellIndex == 0 ? true : false
+                );
+            }
+            // If the final price is equal to the current pools price, we have finished the swap. Else, continue to the new final target price.
+            continuingToCross = crossingLeft
+                ? updatedPool.sqrtPriceX96 > finalSqrtPriceX96
+                : updatedPool.sqrtPriceX96 < finalSqrtPriceX96;
+        }
+        if (params.nextTimestamp % self.expirationInterval == 0) {
+            self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, earningsPoolTotal);
+        } else {
+            self.orderPools[params.sellIndex].advanceToCurrentTime(earningsPoolTotal);
+        }
+    }
+
+    function getNextCrossingState(
+        PoolParamsOnExecute memory pool,
+        uint160 targetPriceX96,
+        mapping(int16 => uint256) storage tickBitmap
+    ) internal returns (NextCrossingState memory deltas) {
+        (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
+            // this pool keeps getting updated
+            pool,
+            targetPriceX96,
+            tickBitmap
+        );
+
+        // if we are not crossing any ticks it should just give us the tick at the final price
+        uint160 nextSqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
+
+        // update earnings and sell amounts
+        uint256 amount0 = SqrtPriceMath.getAmount0Delta(pool.sqrtPriceX96, nextSqrtPriceX96, pool.liquidity, false);
+        uint256 amount1 = SqrtPriceMath.getAmount1Delta(pool.sqrtPriceX96, nextSqrtPriceX96, pool.liquidity, false);
+
+        return NextCrossingState(amount0, amount1, crossingInitializedTick, tick, nextSqrtPriceX96);
     }
 
     struct TickCrossingParams {

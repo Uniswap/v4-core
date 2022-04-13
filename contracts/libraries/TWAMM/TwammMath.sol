@@ -51,8 +51,6 @@ library TwammMath {
             secondsElapsed: secondsElapsed.fromUInt()
         });
 
-        // TODO sell ratio when pool 1 or pool 0 is 0
-        // can't use ratio?
         bytes16 sellRatio = params.sellRateCurrent1.div(params.sellRateCurrent0);
 
         bytes16 sqrtSellRatioX96 = sellRatio.sqrt().mul(Q96);
@@ -159,7 +157,6 @@ library TwammMath {
         return minuend.sub(subtrahend).mul(Q96);
     }
 
-    // TODO this calculation only works for nonzero pools
     function calculateNewSqrtPriceX96(
         bytes16 sqrtSellRatioX96,
         bytes16 sqrtSellRate,
