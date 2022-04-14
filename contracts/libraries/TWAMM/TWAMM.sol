@@ -270,7 +270,7 @@ library TWAMM {
         }
         if (crossingInitializedTick) {
             return
-                advanceTimeToTickCrossing(
+                advanceTimeThroughTickCrossing(
                     self,
                     TickCrossingParams(tick, params.nextTimestamp, params.secondsElapsedX96, params.pool),
                     ticks,
@@ -298,7 +298,7 @@ library TWAMM {
         PoolParamsOnExecute pool;
     }
 
-    function advanceTimeToTickCrossing(
+    function advanceTimeThroughTickCrossing(
         State storage self,
         TickCrossingParams memory params,
         mapping(int24 => Tick.Info) storage ticks,
