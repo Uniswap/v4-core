@@ -374,6 +374,7 @@ describe.only('TWAMM', () => {
 
     it('updates all necessary intervals when block is mined exactly on an interval')
 
+    // TODO: intermittent gas failure. due to timestamps?
     it('gas', async () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '10000000000000000000'

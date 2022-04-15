@@ -62,8 +62,7 @@ contract TWAMMTest {
         (sqrtPriceX96, earningsPool0, earningsPool1) = TwammMath.calculateExecutionUpdates(
             secondsElapsed,
             poolParams,
-            orderPoolParams,
-            mockTicks
+            orderPoolParams
         );
     }
 
