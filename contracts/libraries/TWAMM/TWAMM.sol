@@ -261,21 +261,23 @@ library TWAMM {
         mapping(int24 => Tick.Info) storage ticks,
         mapping(int16 => uint256) storage tickBitmap
     ) private returns (PoolParamsOnExecute memory) {
-        uint160 nextSqrtPriceX96;
-        uint256 earningsFactorPool0;
-        uint256 earningsFactorPool1;
-        bool crossingInitializedTick;
+        uint160 finalSqrtPriceX96;
         uint256 secondsUntilCrossingX96;
 
-        while (params.pool.sqrtPriceX96 != nextSqrtPriceX96) {
-            (nextSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
+        while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
+            uint256 earningsFactorPool0;
+            uint256 earningsFactorPool1;
+            (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
                 params.secondsElapsedX96,
                 params.pool,
                 OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent)
             );
 
-            int24 tick;
-            (crossingInitializedTick, tick) = getNextInitializedTick(params.pool, nextSqrtPriceX96, tickBitmap);
+            (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
+                params.pool,
+                finalSqrtPriceX96,
+                tickBitmap
+            );
 
             if (crossingInitializedTick) {
                 (params.pool, secondsUntilCrossingX96) = advanceTimeThroughTickCrossing(
@@ -292,7 +294,7 @@ library TWAMM {
                     self.orderPools[0].advanceToCurrentTime(earningsFactorPool0);
                     self.orderPools[1].advanceToCurrentTime(earningsFactorPool1);
                 }
-                params.pool.sqrtPriceX96 = nextSqrtPriceX96;
+                params.pool.sqrtPriceX96 = finalSqrtPriceX96;
             }
         }
 
@@ -319,7 +321,6 @@ library TWAMM {
             self.orderPools[0].sellRateCurrent,
             self.orderPools[1].sellRateCurrent
         );
-
 
         // TODO: off by 1 wei (hence using the initializedSqrtPrice (l:331) param instead)
         (uint160 nextSqrtPriceX96, uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath
