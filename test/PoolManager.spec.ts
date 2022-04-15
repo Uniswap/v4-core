@@ -649,7 +649,106 @@ describe('PoolManager', () => {
       zeroForOne: boolean
     }
 
-    describe.only('end-to-end integration', () => {
+    describe.only('#executeTWAMMOrders', async () => {
+      let poolKey: any
+      let orderKey0: any
+      let orderKey1: any
+      let latestTimestamp: number
+
+      beforeEach(async () => {
+        latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+        poolKey = {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: 0,
+          hooks: ADDRESS_ZERO,
+          tickSpacing: 10,
+        }
+        orderKey0 = {
+          zeroForOne: true,
+          owner: wallet.address,
+          expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
+        }
+        orderKey1 = {
+          zeroForOne: false,
+          owner: wallet.address,
+          expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
+        }
+
+        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), 10_000)
+
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: getMinTick(10),
+          tickUpper: getMaxTick(10),
+          liquidityDelta: expandTo18Decimals(1),
+        })
+      })
+
+      it('gas with no initialized ticks', async () => {
+        await ethers.provider.send('evm_setAutomine', [false])
+        await twammTest.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(1),
+          ...orderKey0,
+        })
+        await twammTest.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(10),
+          ...orderKey1,
+        })
+        await ethers.provider.send('evm_mine', [latestTimestamp + 100])
+        await ethers.provider.send('evm_setAutomine', [true])
+        await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
+        await snapshotGasCost(twammTest.executeTWAMMOrders(poolKey))
+      })
+
+      it('gas crossing 1 initialized tick', async () => {
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -200,
+          tickUpper: 200,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+        await ethers.provider.send('evm_setAutomine', [false])
+        await twammTest.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(1),
+          ...orderKey0,
+        })
+        await twammTest.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(10),
+          ...orderKey1,
+        })
+        await ethers.provider.send('evm_mine', [latestTimestamp + 100])
+        await ethers.provider.send('evm_setAutomine', [true])
+        await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
+        await snapshotGasCost(twammTest.executeTWAMMOrders(poolKey))
+      })
+
+      it('gas crossing 2 initialized ticks', async () => {
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -200,
+          tickUpper: 200,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -2000,
+          tickUpper: 2000,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+        await ethers.provider.send('evm_setAutomine', [false])
+        await twammTest.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(1),
+          ...orderKey0,
+        })
+        await twammTest.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(10),
+          ...orderKey1,
+        })
+        await ethers.provider.send('evm_mine', [latestTimestamp + 100])
+        await ethers.provider.send('evm_setAutomine', [true])
+        await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
+        await snapshotGasCost(twammTest.executeTWAMMOrders(poolKey))
+      })
+    })
+
+    describe('end-to-end integration', () => {
       let start: number
       let expiration: number
       let key: any
@@ -745,7 +844,7 @@ describe('PoolManager', () => {
           const expectedBalance1 = liquidityBalance.add(swapDelta1)
           const actualBalance1 = await tokens.token1.balanceOf(manager.address)
 
-          // TODO: precision off by 4 and 3 respectively
+          // TODO: precision off by 4 and 3 wei respectively
           expect(actualBalance0).to.eq(expectedBalance0.sub(4))
           expect(actualBalance1).to.eq(expectedBalance1.sub(3))
         })
