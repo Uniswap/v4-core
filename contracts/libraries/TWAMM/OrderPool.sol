@@ -9,8 +9,8 @@ library OrderPool {
     /// @member earningsFactor Sum of (salesEarnings_k / salesRate_k) over every period k. Stored as Fixed Point X96.
     /// @member earningsFactorAtInterval Mapping (timestamp => sellRate) The earnings factor accrued by a certain time interval. Stored as Fixed Point X96.
     struct State {
-        uint256 sellRateCurrent;
-        mapping(uint256 => uint256) sellRateEndingAtInterval;
+        uint128 sellRateCurrent;
+        mapping(uint256 => uint128) sellRateEndingAtInterval;
         //
         uint256 earningsFactorCurrent;
         mapping(uint256 => uint256) earningsFactorAtInterval;

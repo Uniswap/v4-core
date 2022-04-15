@@ -63,7 +63,7 @@ library TWAMM {
     /// @member zeroForOne Index of sell token, 0 for token0, 1 for token1
     struct OrderKey {
         address owner;
-        uint256 expiration;
+        uint32 expiration;
         bool zeroForOne;
     }
 
@@ -76,7 +76,7 @@ library TWAMM {
     struct Order {
         uint8 sellTokenIndex;
         uint256 expiration;
-        uint256 sellRate;
+        uint128 sellRate;
         uint256 unclaimedEarningsFactor;
     }
 
@@ -91,8 +91,8 @@ library TWAMM {
     struct LongTermOrderParams {
         bool zeroForOne;
         address owner;
+        uint32 expiration;
         uint256 amountIn;
-        uint256 expiration;
     }
 
     /// @notice Submits a new long term order into the TWAMM
@@ -109,7 +109,7 @@ library TWAMM {
         if (self.orders[orderId].sellRate != 0) revert OrderAlreadyExists(orderId);
 
         uint8 sellTokenIndex = params.zeroForOne ? 0 : 1;
-        uint256 sellRate = params.amountIn / (params.expiration - block.timestamp);
+        uint128 sellRate = uint128(params.amountIn / (params.expiration - block.timestamp));
 
         self.orderPools[sellTokenIndex].sellRateCurrent += sellRate;
         self.orderPools[sellTokenIndex].sellRateEndingAtInterval[params.expiration] += sellRate;
