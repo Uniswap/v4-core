@@ -211,10 +211,10 @@ describe.only('TWAMM', () => {
         liquidity: '14496800315719602540',
         tickSpacing: 60,
       }
-      const mockTicks = {}
       advanceTime(timestampInterval0 - interval)
 
-      const result = await twamm.callStatic.claimEarnings(orderKey, poolParams, mockTicks)
+      await twamm.executeTWAMMOrders(poolParams)
+      const result = await twamm.callStatic.claimEarnings(orderKey)
       const earningsAmount: BigNumber = result.earningsAmount
       const unclaimed: BigNumber = result.unclaimedEarnings
       // TODO: calculate expected earnings
@@ -442,7 +442,8 @@ describe.only('TWAMM', () => {
 
       advanceTime(afterExpiration)
 
-      const result = await twamm.callStatic.claimEarnings(orderKey, poolParams, mockTicks)
+      await twamm.executeTWAMMOrders(poolParams)
+      const result = await twamm.callStatic.claimEarnings(orderKey)
 
       const earningsAmount: BigNumber = result.earningsAmount
       const unclaimed: BigNumber = result.unclaimedEarnings
@@ -458,7 +459,8 @@ describe.only('TWAMM', () => {
 
       advanceTime(beforeExpiration)
 
-      const result = await twamm.callStatic.claimEarnings(orderKey, poolParams, mockTicks)
+      await twamm.executeTWAMMOrders(poolParams)
+      const result = await twamm.callStatic.claimEarnings(orderKey)
 
       const earningsAmount: BigNumber = result.earningsAmount
       const unclaimed: BigNumber = result.unclaimedEarnings
@@ -475,7 +477,7 @@ describe.only('TWAMM', () => {
 
       advanceTime(afterExpiration)
 
-      await snapshotGasCost(twamm.claimEarnings(orderKey, poolParams, mockTicks))
+      await snapshotGasCost(twamm.claimEarnings(orderKey))
     })
   })
 
@@ -560,9 +562,9 @@ describe.only('TWAMM', () => {
       expect((await twamm.getOrder(orderKey2)).sellRate).to.eq(halfSellAmount.div(20_000))
       expect((await twamm.getOrder(orderKey3)).sellRate).to.eq(fullSellAmount.div(20_000))
 
-      expect((await twamm.callStatic.claimEarnings(orderKey1, poolParams)).earningsAmount).to.eq(halfSellAmount)
-      expect((await twamm.callStatic.claimEarnings(orderKey2, poolParams)).earningsAmount).to.eq(halfSellAmount)
-      expect((await twamm.callStatic.claimEarnings(orderKey3, poolParams)).earningsAmount).to.eq(fullSellAmount)
+      expect((await twamm.callStatic.claimEarnings(orderKey1)).earningsAmount).to.eq(halfSellAmount)
+      expect((await twamm.callStatic.claimEarnings(orderKey2)).earningsAmount).to.eq(halfSellAmount)
+      expect((await twamm.callStatic.claimEarnings(orderKey3)).earningsAmount).to.eq(fullSellAmount)
     })
   })
 })

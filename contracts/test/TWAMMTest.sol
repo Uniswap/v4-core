@@ -30,7 +30,7 @@ contract TWAMMTest {
         (amountOut0, amountOut1) = twamm.cancelLongTermOrder(orderKey);
     }
 
-    function claimEarnings(TWAMM.OrderKey calldata orderKey, TWAMM.PoolParamsOnExecute memory params)
+    function claimEarnings(TWAMM.OrderKey calldata orderKey)
         external
         returns (
             uint256 earningsAmount,
@@ -38,7 +38,6 @@ contract TWAMMTest {
             uint256 unclaimedEarnings
         )
     {
-        twamm.executeTWAMMOrders(params, mockTicks, mockTickBitmap);
         (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderKey);
         unclaimedEarnings = twamm._getOrder(orderKey).unclaimedEarningsFactor;
     }

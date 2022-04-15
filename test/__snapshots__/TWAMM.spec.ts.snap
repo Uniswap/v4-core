@@ -3,14 +3,14 @@
 exports[`TWAMM #cancelLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 100,
-  "gasUsed": 39518,
+  "gasUsed": 39463,
 }
 `;
 
 exports[`TWAMM #claimEarnings gas 1`] = `
 Object {
-  "calldataByteLength": 228,
-  "gasUsed": 270040,
+  "calldataByteLength": 100,
+  "gasUsed": 32925,
 }
 `;
 
