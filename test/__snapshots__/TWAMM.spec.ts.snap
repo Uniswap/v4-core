@@ -10,7 +10,7 @@ Object {
 exports[`TWAMM #claimEarnings gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 269897,
+  "gasUsed": 270040,
 }
 `;
 

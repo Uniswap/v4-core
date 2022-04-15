@@ -6,3 +6,10 @@ Object {
   "gasUsed": 68281,
 }
 `;
+
+exports[`TWAMMMath #calculateTimeBetweenTicks outputs the correct results when gas 1`] = `
+Object {
+  "calldataByteLength": 164,
+  "gasUsed": 56964,
+}
+`;
