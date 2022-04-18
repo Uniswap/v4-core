@@ -347,7 +347,6 @@ describe.only('TWAMM', () => {
       })
       await ethers.provider.send('evm_setAutomine', [true])
       await ethers.provider.send('evm_mine', [timestampInterval1])
-
     })
 
     it('updates all the necessarily intervals', async () => {
