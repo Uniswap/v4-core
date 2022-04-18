@@ -305,18 +305,23 @@ describe.only('TWAMM', () => {
 
     beforeEach(async () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      await ethers.provider.send('evm_setNextBlockTimestamp', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
+
+      await twamm.initialize(10_000)
+
+      latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       timestampInterval1 = nIntervalsFrom(latestTimestamp, 10_000, 1)
       timestampInterval2 = nIntervalsFrom(latestTimestamp, 10_000, 2)
       timestampInterval3 = nIntervalsFrom(latestTimestamp, 10_000, 3)
       timestampInterval4 = nIntervalsFrom(latestTimestamp, 10_000, 4)
 
-      await twamm.initialize(10_000)
+      await ethers.provider.send('evm_setAutomine', [false])
 
       await twamm.submitLongTermOrder({
         zeroForOne: true,
         owner: wallet.address,
         amountIn: toWei('1'),
-        expiration: timestampInterval1,
+        expiration: timestampInterval2,
       })
 
       await twamm.submitLongTermOrder({
@@ -340,6 +345,9 @@ describe.only('TWAMM', () => {
         amountIn: toWei('2'),
         expiration: timestampInterval4,
       })
+      await ethers.provider.send('evm_setAutomine', [true])
+      await ethers.provider.send('evm_mine', [timestampInterval1])
+
     })
 
     it('updates all the necessarily intervals', async () => {
@@ -360,12 +368,10 @@ describe.only('TWAMM', () => {
 
       await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee, tickSpacing })
 
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval2)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval2)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval2)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval2)).to.be.gt(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval3)).to.be.gt(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval3)).to.be.gt(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval4)).to.eq(0)
@@ -381,7 +387,6 @@ describe.only('TWAMM', () => {
       const fee = 3000
       const tickSpacing = 60
       await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval3 + 5_000])
-
       await snapshotGasCost(twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee, tickSpacing }))
     })
   })

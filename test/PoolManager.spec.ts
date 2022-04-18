@@ -638,7 +638,7 @@ describe('PoolManager', () => {
     })
   })
 
-  describe('TWAMM', () => {
+  describe.only('TWAMM', () => {
     function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
       return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
     }
@@ -649,7 +649,7 @@ describe('PoolManager', () => {
       zeroForOne: boolean
     }
 
-    describe.only('#executeTWAMMOrders', async () => {
+    describe('#executeTWAMMOrders', async () => {
       let poolKey: any
       let orderKey0: any
       let orderKey1: any
@@ -657,6 +657,7 @@ describe('PoolManager', () => {
 
       beforeEach(async () => {
         latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+
         poolKey = {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -675,7 +676,9 @@ describe('PoolManager', () => {
           expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
         }
 
+        await ethers.provider.send('evm_setNextBlockTimestamp', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
         await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), 10_000)
+        latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
 
         await modifyPositionTest.modifyPosition(poolKey, {
           tickLower: getMinTick(10),
