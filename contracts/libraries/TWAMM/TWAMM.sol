@@ -223,8 +223,7 @@ library TWAMM {
                     AdvanceParams(
                         nextExpirationTimestamp,
                         (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96,
-                        pool,
-                        false
+                        pool
                     ),
                     ticks,
                     tickBitmap
@@ -237,7 +236,7 @@ library TWAMM {
         if (prevTimestamp < block.timestamp && _hasOutstandingOrders(self)) {
             pool = advanceToNewTimestamp(
                 self,
-                AdvanceParams(block.timestamp, (block.timestamp - prevTimestamp) * FixedPoint96.Q96, pool, false),
+                AdvanceParams(block.timestamp, (block.timestamp - prevTimestamp) * FixedPoint96.Q96, pool),
                 ticks,
                 tickBitmap
             );
@@ -252,7 +251,6 @@ library TWAMM {
         uint256 nextTimestamp;
         uint256 secondsElapsedX96;
         PoolParamsOnExecute pool;
-        bool isCurrentlyCrossing;
     }
 
     function advanceToNewTimestamp(
