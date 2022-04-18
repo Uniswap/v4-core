@@ -3,7 +3,7 @@
 exports[`PoolManager TWAMM #executeTWAMMOrders gas crossing 1 initialized tick 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 511009,
+  "gasUsed": 511005,
 }
 `;
 
@@ -17,6 +17,6 @@ Object {
 exports[`PoolManager TWAMM #executeTWAMMOrders gas with no initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 374835,
+  "gasUsed": 374827,
 }
 `;

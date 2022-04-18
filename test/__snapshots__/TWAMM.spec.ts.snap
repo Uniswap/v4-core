@@ -17,7 +17,7 @@ Object {
 exports[`TWAMM #executeTWAMMOrders gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 367305,
+  "gasUsed": 367275,
 }
 `;
 

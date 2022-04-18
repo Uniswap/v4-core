@@ -260,7 +260,6 @@ library TWAMM {
         mapping(int16 => uint256) storage tickBitmap
     ) private returns (PoolParamsOnExecute memory) {
         uint160 finalSqrtPriceX96;
-        uint256 secondsUntilCrossingX96;
 
         while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
             uint256 earningsFactorPool0;
@@ -278,6 +277,7 @@ library TWAMM {
             );
 
             if (crossingInitializedTick) {
+                uint256 secondsUntilCrossingX96;
                 (params.pool, secondsUntilCrossingX96) = advanceTimeThroughTickCrossing(
                     self,
                     TickCrossingParams(tick, params.nextTimestamp, params.secondsElapsedX96, params.pool),
