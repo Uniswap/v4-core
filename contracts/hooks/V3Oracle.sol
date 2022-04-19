@@ -43,57 +43,76 @@ contract V3Oracle is IHooks {
     }
 
     function beforeInitialize(
-        address sender,
-        IPoolManager.PoolKey memory key,
-        uint160 sqrtPriceX96
-    ) external override {
+        address,
+        IPoolManager.PoolKey memory,
+        uint160
+    ) external pure override {
         revert();
     }
 
     function afterInitialize(
-        address sender,
+        address,
         IPoolManager.PoolKey memory key,
-        uint160 sqrtPriceX96,
-        int24 tick
+        uint160,
+        int24
     ) external override {
         bytes32 id = keccak256(abi.encode(key));
         (states[id].cardinality, states[id].cardinalityNext) = observations[id].initialize(_blockTimestamp());
     }
 
+    /// @dev Called before any action that potentially modifies pool price or liquidity, such as swap or modify position
+    function _updatePool(IPoolManager.PoolKey memory key) private {
+        (, int24 tick) = poolManager.getSlot0(key);
+
+        uint128 liquidity = poolManager.getLiquidity(key);
+
+        bytes32 id = keccak256(abi.encode(key));
+
+        (states[id].index, states[id].cardinality) = observations[id].write(
+            states[id].index,
+            _blockTimestamp(),
+            tick,
+            liquidity,
+            states[id].cardinality,
+            states[id].cardinalityNext
+        );
+    }
+
     function beforeModifyPosition(
-        address sender,
+        address,
         IPoolManager.PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params
+        IPoolManager.ModifyPositionParams calldata
     ) external override {
-        revert('TODO: implement');
+        _updatePool(key);
     }
 
     function afterModifyPosition(
-        address sender,
-        IPoolManager.PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
-        IPoolManager.BalanceDelta calldata delta
-    ) external override {
+        address,
+        IPoolManager.PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.BalanceDelta calldata
+    ) external pure override {
         revert();
     }
 
     function beforeSwap(
-        address sender,
+        address,
         IPoolManager.PoolKey calldata key,
-        IPoolManager.SwapParams calldata params
+        IPoolManager.SwapParams calldata
     ) external override {
-        revert('TODO: implement');
+        _updatePool(key);
     }
 
     function afterSwap(
-        address sender,
-        IPoolManager.PoolKey calldata key,
-        IPoolManager.SwapParams calldata params,
-        IPoolManager.BalanceDelta calldata delta
-    ) external override {
+        address,
+        IPoolManager.PoolKey calldata,
+        IPoolManager.SwapParams calldata,
+        IPoolManager.BalanceDelta calldata
+    ) external pure override {
         revert();
     }
 
+    /// @notice Observe the given pool for the timestamps
     function observe(IPoolManager.PoolKey calldata key, uint32[] calldata secondsAgos)
         external
         view
@@ -111,6 +130,7 @@ contract V3Oracle is IHooks {
             observations[id].observe(_blockTimestamp(), secondsAgos, tick, state.index, liquidity, state.cardinality);
     }
 
+    /// @notice Increase the cardinality target for the given pool
     function increaseCardinalityNext(IPoolManager.PoolKey calldata key, uint16 cardinalityNext)
         external
         returns (uint16 cardinalityNextOld, uint16 cardinalityNextNew)
