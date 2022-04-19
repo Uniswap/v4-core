@@ -4,26 +4,39 @@ pragma solidity =0.8.13;
 import {IHooks} from '../interfaces/IHooks.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 import {Hooks} from '../libraries/Hooks.sol';
+import {TickMath} from '../libraries/TickMath.sol';
 import {Oracle} from '../libraries/Oracle.sol';
 
-/// @notice Includes the Oracle feature in a similar way to V3. This is now externalized
-contract V3Oracle is IHooks {
+/// @notice A hook for a pool that allows a Uniswap pool to act as an oracle. Pools that use this hook must have full range
+///     tick spacing and liquidity is always permanently locked in these pools. This is the suggested configuration
+///     for protocols that wish to use a V3 style geomean oracle.
+contract GeomeanOracle is IHooks {
     using Oracle for Oracle.Observation[65535];
 
+    /// @notice Oracle pools do not have fees because they exist to serve as an oracle for a pair of tokens
+    error OraclePoolMustBeFreeFullRange();
+    /// @notice Oracle pools must have liquidity locked so that they cannot become more susceptible to price manipulation
+    error OraclePoolMustLockLiquidity();
+
+    /// @member index The index of the last written observation for the pool
+    /// @member cardinality The cardinality of the observations array for the pool
+    /// @member cardinalityNext The cardinality target of the observations array for the pool, which will replace cardinality when enough observations are written
     struct ObservationState {
         uint16 index;
         uint16 cardinality;
         uint16 cardinalityNext;
     }
 
-    mapping(bytes32 => Oracle.Observation[65535]) private observations;
+    /// @notice The list of observations for a given pool ID
+    mapping(bytes32 => Oracle.Observation[65535]) public observations;
+    /// @notice The current observation array state for the given pool ID
     mapping(bytes32 => ObservationState) public states;
 
     /// @notice The address of the pool manager
     IPoolManager public immutable poolManager;
 
     /// @dev For mocking
-    function _blockTimestamp() internal view returns (uint32) {
+    function _blockTimestamp() internal view virtual returns (uint32) {
         return uint32(block.timestamp);
     }
 
@@ -31,7 +44,7 @@ contract V3Oracle is IHooks {
         Hooks.validateHookAddress(
             this,
             Hooks.Calls({
-                beforeInitialize: false,
+                beforeInitialize: true,
                 afterInitialize: true,
                 beforeModifyPosition: true,
                 afterModifyPosition: false,
@@ -44,10 +57,10 @@ contract V3Oracle is IHooks {
 
     function beforeInitialize(
         address,
-        IPoolManager.PoolKey memory,
+        IPoolManager.PoolKey memory key,
         uint160
     ) external pure override {
-        revert();
+        if (key.fee != 0 || key.tickSpacing != TickMath.MAX_TICK) revert OraclePoolMustBeFreeFullRange();
     }
 
     function afterInitialize(
@@ -81,8 +94,9 @@ contract V3Oracle is IHooks {
     function beforeModifyPosition(
         address,
         IPoolManager.PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata
+        IPoolManager.ModifyPositionParams calldata params
     ) external override {
+        if (params.liquidityDelta < 0) revert OraclePoolMustLockLiquidity();
         _updatePool(key);
     }
 
