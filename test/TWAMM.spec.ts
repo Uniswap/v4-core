@@ -211,10 +211,10 @@ describe('TWAMM', () => {
         liquidity: '14496800315719602540',
         tickSpacing: 60,
       }
-      const mockTicks = {}
       advanceTime(timestampInterval0 - interval)
 
-      const result = await twamm.callStatic.claimEarnings(orderKey, poolParams, mockTicks)
+      await twamm.executeTWAMMOrders(poolParams)
+      const result = await twamm.callStatic.claimEarnings(orderKey)
       const earningsAmount: BigNumber = result.earningsAmount
       const unclaimed: BigNumber = result.unclaimedEarnings
       // TODO: calculate expected earnings
@@ -305,18 +305,23 @@ describe('TWAMM', () => {
 
     beforeEach(async () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      await ethers.provider.send('evm_setNextBlockTimestamp', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
+
+      await twamm.initialize(10_000)
+
+      latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       timestampInterval1 = nIntervalsFrom(latestTimestamp, 10_000, 1)
       timestampInterval2 = nIntervalsFrom(latestTimestamp, 10_000, 2)
       timestampInterval3 = nIntervalsFrom(latestTimestamp, 10_000, 3)
       timestampInterval4 = nIntervalsFrom(latestTimestamp, 10_000, 4)
 
-      await twamm.initialize(10_000)
+      await ethers.provider.send('evm_setAutomine', [false])
 
       await twamm.submitLongTermOrder({
         zeroForOne: true,
         owner: wallet.address,
         amountIn: toWei('1'),
-        expiration: timestampInterval1,
+        expiration: timestampInterval2,
       })
 
       await twamm.submitLongTermOrder({
@@ -340,6 +345,8 @@ describe('TWAMM', () => {
         amountIn: toWei('2'),
         expiration: timestampInterval4,
       })
+      await ethers.provider.send('evm_setAutomine', [true])
+      await ethers.provider.send('evm_mine', [timestampInterval1])
     })
 
     it('updates all the necessarily intervals', async () => {
@@ -360,12 +367,10 @@ describe('TWAMM', () => {
 
       await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee, tickSpacing })
 
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval2)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval2)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval2)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval2)).to.be.gt(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval3)).to.be.gt(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval3)).to.be.gt(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval4)).to.eq(0)
@@ -374,13 +379,13 @@ describe('TWAMM', () => {
 
     it('updates all necessary intervals when block is mined exactly on an interval')
 
+    // TODO: intermittent gas failure. due to timestamps?
     it('gas', async () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '10000000000000000000'
       const fee = 3000
       const tickSpacing = 60
       await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval3 + 5_000])
-
       await snapshotGasCost(twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee, tickSpacing }))
     })
   })
@@ -441,7 +446,8 @@ describe('TWAMM', () => {
 
       advanceTime(afterExpiration)
 
-      const result = await twamm.callStatic.claimEarnings(orderKey, poolParams, mockTicks)
+      await twamm.executeTWAMMOrders(poolParams)
+      const result = await twamm.callStatic.claimEarnings(orderKey)
 
       const earningsAmount: BigNumber = result.earningsAmount
       const unclaimed: BigNumber = result.unclaimedEarnings
@@ -457,7 +463,8 @@ describe('TWAMM', () => {
 
       advanceTime(beforeExpiration)
 
-      const result = await twamm.callStatic.claimEarnings(orderKey, poolParams, mockTicks)
+      await twamm.executeTWAMMOrders(poolParams)
+      const result = await twamm.callStatic.claimEarnings(orderKey)
 
       const earningsAmount: BigNumber = result.earningsAmount
       const unclaimed: BigNumber = result.unclaimedEarnings
@@ -474,7 +481,7 @@ describe('TWAMM', () => {
 
       advanceTime(afterExpiration)
 
-      await snapshotGasCost(twamm.claimEarnings(orderKey, poolParams, mockTicks))
+      await snapshotGasCost(twamm.claimEarnings(orderKey))
     })
   })
 
@@ -517,7 +524,7 @@ describe('TWAMM', () => {
       console.log(blocktime)
 
       const orderKey = { owner: wallet.address, expiration, zeroForOne: true }
-      const results = await twamm.callStatic.claimEarnings(orderKey, poolParams)
+      const results = await twamm.callStatic.claimEarnings(orderKey)
 
       const earningsAmount = results.earningsAmount
 
@@ -606,9 +613,9 @@ describe('TWAMM', () => {
       expect((await twamm.getOrder(orderKey2)).sellRate).to.eq(halfSellAmount.div(20_000))
       expect((await twamm.getOrder(orderKey3)).sellRate).to.eq(fullSellAmount.div(20_000))
 
-      expect((await twamm.callStatic.claimEarnings(orderKey1, poolParams)).earningsAmount).to.eq(halfSellAmount)
-      expect((await twamm.callStatic.claimEarnings(orderKey2, poolParams)).earningsAmount).to.eq(halfSellAmount)
-      expect((await twamm.callStatic.claimEarnings(orderKey3, poolParams)).earningsAmount).to.eq(fullSellAmount)
+      expect((await twamm.callStatic.claimEarnings(orderKey1)).earningsAmount).to.eq(halfSellAmount)
+      expect((await twamm.callStatic.claimEarnings(orderKey2)).earningsAmount).to.eq(halfSellAmount)
+      expect((await twamm.callStatic.claimEarnings(orderKey3)).earningsAmount).to.eq(fullSellAmount)
     })
   })
 })

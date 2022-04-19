@@ -29,8 +29,7 @@ library TwammMath {
     function calculateExecutionUpdates(
         uint256 secondsElapsed,
         TWAMM.PoolParamsOnExecute memory poolParams,
-        TWAMM.OrderPoolParamsOnExecute memory orderPoolParams,
-        mapping(int24 => Tick.Info) storage ticks
+        TWAMM.OrderPoolParamsOnExecute memory orderPoolParams
     )
         internal
         view

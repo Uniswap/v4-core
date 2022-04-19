@@ -22,14 +22,17 @@ library OrderPool {
         uint256 expiration,
         uint256 earningsFactor
     ) internal {
-        self.earningsFactorCurrent += earningsFactor;
-        // TODO: only write if sellRateEndingAtInterval is nonzero.
-        self.earningsFactorAtInterval[expiration] = self.earningsFactorCurrent;
-        self.sellRateCurrent -= self.sellRateEndingAtInterval[expiration];
+        unchecked {
+            self.earningsFactorCurrent += earningsFactor;
+            self.earningsFactorAtInterval[expiration] = self.earningsFactorCurrent;
+            self.sellRateCurrent -= self.sellRateEndingAtInterval[expiration];
+        }
     }
 
     // Performs all the updates on an OrderPool that must happen when updating to the current time not on an interval
     function advanceToCurrentTime(State storage self, uint256 earningsFactor) internal {
-        self.earningsFactorCurrent += earningsFactor;
+        unchecked {
+            self.earningsFactorCurrent += earningsFactor;
+        }
     }
 }

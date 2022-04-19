@@ -3,6 +3,13 @@
 exports[`TWAMMMath #calculateExecutionUpdates outputs the correct results when gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 68286,
+  "gasUsed": 68303,
+}
+`;
+
+exports[`TWAMMMath #calculateTimeBetweenTicks outputs the correct results when gas 1`] = `
+Object {
+  "calldataByteLength": 164,
+  "gasUsed": 56986,
 }
 `;

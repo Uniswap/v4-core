@@ -14,7 +14,7 @@ function divX96(n: BigNumber): string {
   return (parseInt(n.toString()) / 2 ** 96).toFixed(7).toString()
 }
 
-describe('TWAMMMath', () => {
+describe.only('TWAMMMath', () => {
   let twamm: TWAMMTest
   let wallet: Wallet, other: Wallet
   let loadFixture: ReturnType<typeof waffle.createFixtureLoader>
@@ -247,22 +247,37 @@ describe('TWAMMMath', () => {
     let sellRateCurrent0: BigNumber
     let sellRateCurrent1: BigNumber
 
-    it('returns the correct result', async () => {
+    beforeEach(() => {
       sqrtPriceStartX96 = encodeSqrtPriceX96(1, 1)
       sqrtPriceEndX96 = encodeSqrtPriceX96(2, 1)
       liquidity = BigNumber.from('1000000000000000000000000')
       sellRateCurrent0 = toWei('1')
       sellRateCurrent1 = toWei('100')
+    })
 
+    it('returns the correct result', async () => {
       expect(
-        await twamm.calculateTimeBetweenTicks(
+        await twamm.callStatic.calculateTimeBetweenTicks(
           liquidity,
           sqrtPriceStartX96,
           sqrtPriceEndX96,
           sellRateCurrent0,
           sellRateCurrent1
         )
-      ).to.eq(4204)
+        // 333077535900883608001926988272645 / Q96 ~= 4204.029543
+      ).to.eq('333077535900883608001926988272645')
+    })
+
+    it('gas', async () => {
+      await snapshotGasCost(
+        twamm.calculateTimeBetweenTicks(
+          liquidity,
+          sqrtPriceStartX96,
+          sqrtPriceEndX96,
+          sellRateCurrent0,
+          sellRateCurrent1
+        )
+      )
     })
   })
 })
