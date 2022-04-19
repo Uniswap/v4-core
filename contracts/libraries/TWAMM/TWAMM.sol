@@ -294,8 +294,8 @@ library TWAMM {
     }
 
     struct NextState {
-        uint256 amount0;
-        uint256 amount1;
+        uint256 earningsAmount0;
+        uint256 earningsAmount1;
         bool crossingInitializedTick;
         int24 tick;
         uint160 nextSqrtPriceX96;
@@ -362,10 +362,10 @@ library TWAMM {
         uint256 earningsPoolTotal;
 
         while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
-            NextCrossingState memory updatedState = getNextState(updatedPool, finalSqrtPriceX96, tickBitmap);
+            NextState memory updatedState = getNextState(updatedPool, finalSqrtPriceX96, tickBitmap);
 
-            earningsPoolTotal += params.sellIndex == 0 ? updatedState.amount1 : updatedState.amount0;
-            amountSelling -= params.sellIndex == 0 ? updatedState.amount0 : updatedState.amount1;
+            earningsPoolTotal += params.sellIndex == 0 ? updatedState.earningsAmount1 : updatedState.earningsAmount0;
+            amountSelling -= params.sellIndex == 0 ? updatedState.earningsAmount0 : updatedState.earningsAmount1;
 
             // Update the pool price.
             updatedPool.sqrtPriceX96 = updatedState.nextSqrtPriceX96;
@@ -399,7 +399,7 @@ library TWAMM {
         PoolParamsOnExecute memory pool,
         uint160 targetPriceX96,
         mapping(int16 => uint256) storage tickBitmap
-    ) internal returns (NextCrossingState memory deltas) {
+    ) internal returns (NextState memory updatedState) {
         (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
             // this pool keeps getting updated
             pool,
@@ -417,10 +417,20 @@ library TWAMM {
         }
 
         // update earnings and sell amounts
-        uint256 amount0 = SqrtPriceMath.getAmount0Delta(pool.sqrtPriceX96, nextSqrtPriceX96, pool.liquidity, true);
-        uint256 amount1 = SqrtPriceMath.getAmount1Delta(pool.sqrtPriceX96, nextSqrtPriceX96, pool.liquidity, true);
+        uint256 earningsAmount0 = SqrtPriceMath.getAmount0Delta(
+            pool.sqrtPriceX96,
+            nextSqrtPriceX96,
+            pool.liquidity,
+            true
+        );
+        uint256 earningsAmount1 = SqrtPriceMath.getAmount1Delta(
+            pool.sqrtPriceX96,
+            nextSqrtPriceX96,
+            pool.liquidity,
+            true
+        );
 
-        return NextState(amount0, amount1, crossingInitializedTick, tick, nextSqrtPriceX96);
+        return NextState(earningsAmount0, earningsAmount1, crossingInitializedTick, tick, nextSqrtPriceX96);
     }
 
     struct TickCrossingParams {
