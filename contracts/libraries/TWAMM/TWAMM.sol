@@ -9,7 +9,6 @@ import {TwammMath} from './TwammMath.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
-import 'hardhat/console.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -251,8 +250,6 @@ library TWAMM {
             nextExpirationTimestamp += self.expirationInterval;
         }
 
-        // if after all the interval updates have completed and there is stilll state updates to be made
-        // we still have to check if a single pool is selling or not
         if (prevTimestamp < block.timestamp && _hasOutstandingOrders(self)) {
             uint256 amountIn;
             if (self.orderPools[0].sellRateCurrent == 0 || self.orderPools[1].sellRateCurrent == 0) {
@@ -296,7 +293,7 @@ library TWAMM {
         uint8 sellIndex;
     }
 
-    struct NextCrossingState {
+    struct NextState {
         uint256 amount0;
         uint256 amount1;
         bool crossingInitializedTick;
@@ -359,31 +356,25 @@ library TWAMM {
             amountSelling,
             params.sellIndex == 0 ? true : false
         );
-
-        bool crossingLeft = finalSqrtPriceX96 < params.pool.sqrtPriceX96;
-        bool continuingToCross = crossingLeft
-            ? params.pool.sqrtPriceX96 > finalSqrtPriceX96
-            : params.pool.sqrtPriceX96 < finalSqrtPriceX96;
-
         // Set the updatedPool variable.
         updatedPool = params.pool;
         // earningsPoolTotal will track the total earnings in the buyToken.
         uint256 earningsPoolTotal;
 
-        while (continuingToCross) {
-            NextCrossingState memory deltas = getNextCrossingState(updatedPool, finalSqrtPriceX96, tickBitmap);
+        while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
+            NextCrossingState memory updatedState = getNextState(updatedPool, finalSqrtPriceX96, tickBitmap);
 
-            earningsPoolTotal += params.sellIndex == 0 ? deltas.amount1 : deltas.amount0;
-            amountSelling -= params.sellIndex == 0 ? deltas.amount0 : deltas.amount1;
+            earningsPoolTotal += params.sellIndex == 0 ? updatedState.amount1 : updatedState.amount0;
+            amountSelling -= params.sellIndex == 0 ? updatedState.amount0 : updatedState.amount1;
 
             // Update the pool price.
-            updatedPool.sqrtPriceX96 = deltas.nextSqrtPriceX96;
+            updatedPool.sqrtPriceX96 = updatedState.nextSqrtPriceX96;
 
             // Update the pool liquidity.
             // Only update the pool liquidity if we will be crossing an initialized tick.
-            if (deltas.crossingInitializedTick) {
+            if (updatedState.crossingInitializedTick) {
                 // update pool liquidity to liquidity at the tick
-                int128 liquidityNet = ticks[deltas.tick].liquidityNet;
+                int128 liquidityNet = ticks[updatedState.tick].liquidityNet;
                 updatedPool.liquidity = liquidityNet < 0
                     ? updatedPool.liquidity - uint128(-liquidityNet)
                     : updatedPool.liquidity + uint128(liquidityNet);
@@ -396,11 +387,6 @@ library TWAMM {
                 amountSelling,
                 params.sellIndex == 0 ? true : false
             );
-
-            // If the final price is equal to the current pools price, we have finished the swap. Else, continue to the new final target price.
-            continuingToCross = crossingLeft
-                ? updatedPool.sqrtPriceX96 > finalSqrtPriceX96
-                : updatedPool.sqrtPriceX96 < finalSqrtPriceX96;
         }
         if (params.nextTimestamp % self.expirationInterval == 0) {
             self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, earningsPoolTotal);
@@ -409,7 +395,7 @@ library TWAMM {
         }
     }
 
-    function getNextCrossingState(
+    function getNextState(
         PoolParamsOnExecute memory pool,
         uint160 targetPriceX96,
         mapping(int16 => uint256) storage tickBitmap
@@ -434,7 +420,7 @@ library TWAMM {
         uint256 amount0 = SqrtPriceMath.getAmount0Delta(pool.sqrtPriceX96, nextSqrtPriceX96, pool.liquidity, true);
         uint256 amount1 = SqrtPriceMath.getAmount1Delta(pool.sqrtPriceX96, nextSqrtPriceX96, pool.liquidity, true);
 
-        return NextCrossingState(amount0, amount1, crossingInitializedTick, tick, nextSqrtPriceX96);
+        return NextState(amount0, amount1, crossingInitializedTick, tick, nextSqrtPriceX96);
     }
 
     struct TickCrossingParams {
