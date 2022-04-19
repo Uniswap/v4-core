@@ -24,6 +24,23 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         return pools[keccak256(abi.encode(key))];
     }
 
+    /// @inheritdoc IPoolManager
+    function getSlot0(IPoolManager.PoolKey memory key)
+        external
+        view
+        override
+        returns (uint160 sqrtPriceX96, int24 tick)
+    {
+        Pool.Slot0 memory slot0 = _getPool(key).slot0;
+
+        return (slot0.sqrtPriceX96, slot0.tick);
+    }
+
+    /// @inheritdoc IPoolManager
+    function getLiquidity(IPoolManager.PoolKey memory key) external view override returns (uint128 liquidity) {
+        return _getPool(key).liquidity;
+    }
+
     /// @notice Initialize the state for a given pool ID
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         if (key.hooks.shouldCallBeforeInitialize()) {

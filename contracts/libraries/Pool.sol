@@ -59,6 +59,7 @@ library Pool {
         uint160 sqrtPriceX96;
         // the current tick
         int24 tick;
+        // 72 bits left!
     }
 
     /// @dev The state of a pool

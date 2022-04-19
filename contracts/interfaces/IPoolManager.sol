@@ -32,6 +32,12 @@ interface IPoolManager {
         IHooks hooks;
     }
 
+    /// @notice Get the current value in slot0 of the given pool
+    function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
+
+    /// @notice Get the current value of liquidity of the given pool
+    function getLiquidity(IPoolManager.PoolKey memory key) external view returns (uint128 liquidity);
+
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
     struct BalanceDelta {

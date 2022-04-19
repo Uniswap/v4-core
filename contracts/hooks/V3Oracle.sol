@@ -4,24 +4,42 @@ pragma solidity =0.8.13;
 import {IHooks} from '../interfaces/IHooks.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 import {Hooks} from '../libraries/Hooks.sol';
+import {Oracle} from '../libraries/Oracle.sol';
 
 /// @notice Includes the Oracle feature in a similar way to V3. This is now externalized
 contract V3Oracle is IHooks {
-    constructor() {
+    using Oracle for Oracle.Observation[65535];
+
+    struct ObservationState {
+        uint16 index;
+        uint16 cardinality;
+        uint16 cardinalityNext;
+    }
+
+    mapping(bytes32 => Oracle.Observation[65535]) private observations;
+    mapping(bytes32 => ObservationState) public states;
+
+    /// @notice The address of the pool manager
+    IPoolManager public immutable poolManager;
+
+    /// @dev For mocking
+    function _blockTimestamp() internal view returns (uint32) {
+        return uint32(block.timestamp);
+    }
+
+    constructor(IPoolManager _poolManager) {
         Hooks.validateHookAddress(
             this,
             Hooks.Calls({
                 beforeInitialize: false,
-                // to initialize the observations for the pool
                 afterInitialize: true,
-                // to record the tick at the start of the block for the pool
                 beforeModifyPosition: true,
                 afterModifyPosition: false,
-                // to record the tick at the start of the block for the pool
                 beforeSwap: true,
                 afterSwap: false
             })
         );
+        poolManager = _poolManager;
     }
 
     function beforeInitialize(
@@ -38,7 +56,8 @@ contract V3Oracle is IHooks {
         uint160 sqrtPriceX96,
         int24 tick
     ) external override {
-        revert();
+        bytes32 id = keccak256(abi.encode(key));
+        (states[id].cardinality, states[id].cardinalityNext) = observations[id].initialize(_blockTimestamp());
     }
 
     function beforeModifyPosition(
@@ -46,7 +65,7 @@ contract V3Oracle is IHooks {
         IPoolManager.PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata params
     ) external override {
-        revert();
+        revert('TODO: implement');
     }
 
     function afterModifyPosition(
@@ -63,7 +82,7 @@ contract V3Oracle is IHooks {
         IPoolManager.PoolKey calldata key,
         IPoolManager.SwapParams calldata params
     ) external override {
-        revert();
+        revert('TODO: implement');
     }
 
     function afterSwap(
@@ -75,46 +94,33 @@ contract V3Oracle is IHooks {
         revert();
     }
 
+    function observe(IPoolManager.PoolKey calldata key, uint32[] calldata secondsAgos)
+        external
+        view
+        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
+    {
+        bytes32 id = keccak256(abi.encode(key));
 
-//    /// @notice Observe a past state of a pool
-//    function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
-//    external
-//    view
-//    returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s);
-//
-//    /// @notice Get the snapshot of the cumulative values of a tick range
-//    function snapshotCumulativesInside(
-//        PoolKey calldata key,
-//        int24 tickLower,
-//        int24 tickUpper
-//    ) external view returns (Pool.Snapshot memory);
+        ObservationState memory state = states[id];
 
-    /// @dev Increase the number of stored observations
-//    function observe(
-//        IPoolManager.PoolKey calldata key,
-//        uint32[] calldata secondsAgos
-//    ) external view returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) {
-//        return observations[key].observe(
-//            time,
-//            secondsAgos,
-//            self.slot0.tick,
-//            self.slot0.observationIndex,
-//            self.liquidity,
-//            self.slot0.observationCardinality
-//        );
-//    }
-//
-//    /// @dev Increase the number of stored observations
-//    function increaseObservationCardinalityNext(State storage self, uint16 observationCardinalityNext)
-//    internal
-//    returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew)
-//    {
-//        observationCardinalityNextOld = self.slot0.observationCardinalityNext;
-//        observationCardinalityNextNew = self.observations.grow(
-//            observationCardinalityNextOld,
-//            observationCardinalityNext
-//        );
-//        self.slot0.observationCardinalityNext = observationCardinalityNextNew;
-//    }
+        (, int24 tick) = poolManager.getSlot0(key);
 
+        uint128 liquidity = poolManager.getLiquidity(key);
+
+        return
+            observations[id].observe(_blockTimestamp(), secondsAgos, tick, state.index, liquidity, state.cardinality);
+    }
+
+    function increaseCardinalityNext(IPoolManager.PoolKey calldata key, uint16 cardinalityNext)
+        external
+        returns (uint16 cardinalityNextOld, uint16 cardinalityNextNew)
+    {
+        bytes32 id = keccak256(abi.encode(key));
+
+        ObservationState storage state = states[id];
+
+        cardinalityNextOld = state.cardinalityNext;
+        cardinalityNextNew = observations[id].grow(cardinalityNextOld, cardinalityNext);
+        state.cardinalityNext = cardinalityNextNew;
+    }
 }
