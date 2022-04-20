@@ -447,30 +447,31 @@ describe('PoolManager', () => {
         }
       )
 
-      // const argsBeforeSwap = [
-      //   swapTest.address,
-      //   {
-      //     token0: tokens.token0.address,
-      //     token1: tokens.token1.address,
-      //     fee: FeeAmount.MEDIUM,
-      //     tickSpacing: 60,
-      //     hooks: hooksMock.address,
-      //   },
-      //   {
-      //     amountSpecified: 100,
-      //     sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
-      //     zeroForOne: true,
-      //   },
-      // ]
+      const argsBeforeSwap = [
+        swapTest.address,
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: hooksMock.address,
+        },
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        },
+        []
+      ]
 
-      // const argsAfterSwap = [...argsBeforeSwap, { amount0: 0, amount1: 0 }]
+      const argsAfterSwap = [...argsBeforeSwap.slice(0,3), { amount0: 0, amount1: 0 }]
 
-      // expect(await hooksMock.called('beforeModifyPosition')).to.be.false
-      // expect(await hooksMock.called('afterModifyPosition')).to.be.false
-      // expect(await hooksMock.calledOnce('beforeSwap')).to.be.true
-      // expect(await hooksMock.calledOnce('afterSwap')).to.be.true
-      // expect(await hooksMock.calledWith('beforeSwap', argsBeforeSwap)).to.be.true
-      // expect(await hooksMock.calledWith('afterSwap', argsAfterSwap)).to.be.true
+      expect(await hooksMock.called('beforeModifyPosition')).to.be.false
+      expect(await hooksMock.called('afterModifyPosition')).to.be.false
+      expect(await hooksMock.calledOnce('beforeSwap')).to.be.true
+      expect(await hooksMock.calledOnce('afterSwap')).to.be.true
+      expect(await hooksMock.calledWith('beforeSwap', argsBeforeSwap)).to.be.true
+      expect(await hooksMock.calledWith('afterSwap', argsAfterSwap)).to.be.true
     })
 
     it('succeeds if pool is initialized and hook is provided and hooks params', async () => {
