@@ -412,6 +412,8 @@ describe('TWAMM', () => {
       await twamm.submitLongTermOrder(zeroForOne2)
     })
 
+    it('returns the correct amount if there are claimed but uncollected earnings')
+
     it('should give correct earnings amount and have no unclaimed earnings', async () => {
       const expiration = (await twamm.getOrder(orderKey)).expiration.toNumber()
       const afterExpiration = expiration + interval / 2

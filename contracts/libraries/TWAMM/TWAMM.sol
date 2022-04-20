@@ -190,7 +190,7 @@ library TWAMM {
         returns (uint256 earningsAmount, uint8 sellTokenIndex)
     {
         bytes32 orderId = _orderId(orderKey);
-        Order memory order = self.orders[orderId];
+        Order storage order = self.orders[orderId];
         sellTokenIndex = order.sellTokenIndex;
         OrderPool.State storage orderPool = self.orderPools[sellTokenIndex];
 
@@ -199,12 +199,14 @@ library TWAMM {
                 uint256 earningsFactor = orderPool.earningsFactorAtInterval[order.expiration] -
                     order.unclaimedEarningsFactor;
                 earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
-                self.orders[orderId].sellRate = 0;
+                order.sellRate = 0;
             } else {
                 uint256 earningsFactor = orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor;
                 earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
-                self.orders[orderId].unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
+                order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
             }
+            earningsAmount += order.uncollectedEarningsAmount;
+            order.uncollectedEarningsAmount = 0;
         }
     }
 
