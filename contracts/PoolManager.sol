@@ -93,8 +93,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
 
     /// @inheritdoc IPoolManager
     function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 index, int248 delta) {
-        IndexAndDelta storage pd = lockStates[id].tokenDelta[token];
-        (index, delta) = (pd.index, pd.delta);
+        IndexAndDelta storage id = lockStates[id].tokenDelta[token];
+        (index, delta) = (id.index, id.delta);
     }
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
@@ -109,8 +109,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             uint256 numTokensTouched = lockState.tokensTouched.length;
             for (uint256 i; i < numTokensTouched; i++) {
                 IERC20Minimal token = lockState.tokensTouched[i];
-                IndexAndDelta storage pd = lockState.tokenDelta[token];
-                if (pd.delta != 0) revert TokenNotSettled(token, pd.delta);
+                IndexAndDelta storage id = lockState.tokenDelta[token];
+                if (id.delta != 0) revert TokenNotSettled(token, id.delta);
                 delete lockState.tokenDelta[token];
             }
             delete lockState.tokensTouched;
@@ -128,13 +128,13 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             return 0;
         }
 
-        IndexAndDelta storage pd = lockState.tokenDelta[token];
-        index = pd.index;
+        IndexAndDelta storage id = lockState.tokenDelta[token];
+        index = id.index;
 
         if (index == 0 && lockState.tokensTouched[index] != token) {
             if (numTokensTouched >= type(uint8).max) revert MaxTokensTouched();
             index = uint8(numTokensTouched);
-            pd.index = index;
+            id.index = index;
             lockState.tokensTouched.push(token);
         }
     }
