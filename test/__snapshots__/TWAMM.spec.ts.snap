@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TWAMM single pool sell tests gas snapshot for updates on single pool sell 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 100403,
+}
+`;

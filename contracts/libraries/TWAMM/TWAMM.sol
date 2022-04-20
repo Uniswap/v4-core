@@ -401,9 +401,14 @@ library TWAMM {
             );
         }
         if (params.nextTimestamp % self.expirationInterval == 0) {
-            self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, earningsPoolTotal);
+            self.orderPools[params.sellIndex].advanceToInterval(
+                params.nextTimestamp,
+                (earningsPoolTotal / sellRateCurrent) * FixedPoint96.Q96
+            );
         } else {
-            self.orderPools[params.sellIndex].advanceToCurrentTime(earningsPoolTotal);
+            self.orderPools[params.sellIndex].advanceToCurrentTime(
+                (earningsPoolTotal / sellRateCurrent) * FixedPoint96.Q96
+            );
         }
     }
 

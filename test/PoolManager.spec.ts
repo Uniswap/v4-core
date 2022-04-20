@@ -638,7 +638,7 @@ describe('PoolManager', () => {
     })
   })
 
-  describe.only('TWAMM', () => {
+  describe('TWAMM', () => {
     function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
       return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
     }

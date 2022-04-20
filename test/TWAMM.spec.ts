@@ -216,7 +216,7 @@ describe('TWAMM', () => {
       await twamm.executeTWAMMOrders(poolParams)
       const result = await twamm.callStatic.claimEarnings(orderKey)
       const earningsAmount: BigNumber = result.earningsAmount
-      const unclaimed: BigNumber = result.unclaimedEarnings
+      const unclaimed: BigNumber = result.unclaimedEarningsAmount
       // TODO: calculate expected earnings
       expect(parseInt(earningsAmount.toString())).to.be.greaterThan(0)
       expect(parseInt(unclaimed.toString())).to.be.greaterThan(0)
@@ -450,7 +450,7 @@ describe('TWAMM', () => {
       const result = await twamm.callStatic.claimEarnings(orderKey)
 
       const earningsAmount: BigNumber = result.earningsAmount
-      const unclaimed: BigNumber = result.unclaimedEarnings
+      const unclaimed: BigNumber = result.unclaimedEarningsAmount
 
       // TODO: calculate expected earningsAmount
       expect(parseInt(earningsAmount.toString())).to.be.greaterThan(0)
@@ -467,7 +467,7 @@ describe('TWAMM', () => {
       const result = await twamm.callStatic.claimEarnings(orderKey)
 
       const earningsAmount: BigNumber = result.earningsAmount
-      const unclaimed: BigNumber = result.unclaimedEarnings
+      const unclaimed: BigNumber = result.unclaimedEarningsAmount
 
       // TODO: calculate expected earningsAmount
       expect(parseInt(earningsAmount.toString())).to.be.greaterThan(0)
@@ -485,50 +485,91 @@ describe('TWAMM', () => {
     })
   })
 
-  describe.only('#claimEarnings single pool', () => {
-    let orderId: BigNumber
-    const mockTicks = {}
-    const poolParams = {
-      feeProtocol: 0,
-      sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-      fee: '3000',
-      tickSpacing: '60',
-      liquidity: '14496800315719602540',
-    }
-    let expiration: number
+  describe.only('single pool sell tests', async () => {
     let blocktime: number
+    let startTime: number
+    let halfTime: number
+    let expiryTime: number
+    let orderKey: OrderKey
+
     const interval = 10_000
     const zeroForOne = true
+    const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+    const liquidity = '1000000000000000000000000'
+    const fee = '3000'
+    const tickSpacing = 60
+    const poolParams = { sqrtPriceX96, liquidity, fee, tickSpacing }
 
-    beforeEach('submit one long term order', async () => {
-      twamm.initialize(interval)
-      //orderId = await twamm.getNextId()
+    const error = 5
+    const fullSellAmount = toWei('5')
+    const halfSellAmount = fullSellAmount.div(2)
+    const halfSellAmountUnderError = halfSellAmount.sub(halfSellAmount.div(error))
+    const halfSellAmountOverError = halfSellAmount.add(halfSellAmount.div(error))
+    const fullSellAmountUnderError = fullSellAmount.sub(fullSellAmount.div(error))
+    const fullSellAmountOverError = fullSellAmount.add(fullSellAmount.div(error))
+
+    beforeEach('submit a single long term order', async () => {
+      await twamm.initialize(interval)
+
       blocktime = (await ethers.provider.getBlock('latest')).timestamp
-      console.log(blocktime)
-      expiration = findExpiryTime(blocktime, 3, interval)
+      startTime = findExpiryTime(blocktime, 1, interval)
+      halfTime = findExpiryTime(blocktime, 2, interval)
+      expiryTime = findExpiryTime(blocktime, 3, interval)
+
+      orderKey = { owner: wallet.address, expiration: expiryTime, zeroForOne: true }
+      // Submit the order at the startTime.
+      advanceTime(startTime)
+      await twamm.executeTWAMMOrders(poolParams)
       await twamm.submitLongTermOrder({
         zeroForOne,
         owner: wallet.address,
-        amountIn: toWei('2'),
-        expiration: expiration,
+        amountIn: fullSellAmount,
+        expiration: expiryTime,
       })
+      blocktime = (await ethers.provider.getBlock('latest')).timestamp
+      const expectedSellRate = fullSellAmount.div(expiryTime - blocktime)
+      const actualSellRate = (await twamm.getOrder(orderKey)).sellRate
+
+      expect(expectedSellRate).to.be.eq(actualSellRate)
     })
 
-    it.only('claims successfully for one pool', async () => {
-      // advance time past 1 interval but not on the next interval
-      // TODO: if you advance the time too far, you run out of gas
-      // advanceTime(findExpiryTime(blocktime, 1, interval) + findExpiryTime(blocktime, 2, interval) / 2)
+    it('claims an order midway through a single pool sell', async () => {
+      advanceTime(halfTime)
+      twamm.executeTWAMMOrders(poolParams)
 
-      advanceTime(findExpiryTime(blocktime, 1, interval) + 1000)
-      blocktime = (await ethers.provider.getBlock('latest')).timestamp
-      console.log(blocktime)
-
-      const orderKey = { owner: wallet.address, expiration, zeroForOne: true }
       const results = await twamm.callStatic.claimEarnings(orderKey)
-
       const earningsAmount = results.earningsAmount
+      const unclaimedAmount = results.unclaimedEarningsAmount
 
-      // expect(earningsAmount).to.be.gt(0)
+      expect(parseInt(earningsAmount.toString())).to.be.greaterThanOrEqual(
+        parseInt(halfSellAmountUnderError.toString())
+      )
+      expect(parseInt(earningsAmount.toString())).to.be.lessThanOrEqual(parseInt(halfSellAmountOverError.toString()))
+      expect(parseInt(unclaimedAmount.toString())).to.be.greaterThanOrEqual(
+        parseInt(halfSellAmountUnderError.toString())
+      )
+      expect(parseInt(unclaimedAmount.toString())).to.be.lessThanOrEqual(parseInt(halfSellAmountOverError.toString()))
+    })
+
+    it('claims an order after a full single pool sell', async () => {
+      advanceTime(expiryTime)
+      twamm.executeTWAMMOrders(poolParams)
+
+      const results = await twamm.callStatic.claimEarnings(orderKey)
+      const earningsAmount = results.earningsAmount
+      const unclaimedAmount = results.unclaimedEarningsAmount
+
+      expect(parseInt(earningsAmount.toString())).to.be.greaterThanOrEqual(
+        parseInt(fullSellAmountUnderError.toString())
+      )
+      expect(parseInt(earningsAmount.toString())).to.be.lessThanOrEqual(parseInt(fullSellAmountOverError.toString()))
+      // There should be no unclaimed since we've sold the full amount.
+      expect(parseInt(unclaimedAmount.toString())).to.be.eq(0)
+    })
+
+    it('gas snapshot for updates on single pool sell', async () => {
+      advanceTime(expiryTime)
+      await snapshotGasCost(twamm.executeTWAMMOrders(poolParams))
     })
   })
 
