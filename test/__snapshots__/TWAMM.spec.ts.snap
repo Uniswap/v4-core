@@ -1,6 +1,34 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`TWAMM single pool sell tests gas snapshot for updates on single pool sell 1`] = `
+exports[`TWAMM #cancelLongTermOrder gas 1`] = `
+Object {
+  "calldataByteLength": 100,
+  "gasUsed": 39280,
+}
+`;
+
+exports[`TWAMM #claimEarnings gas 1`] = `
+Object {
+  "calldataByteLength": 100,
+  "gasUsed": 33680,
+}
+`;
+
+exports[`TWAMM #executeTWAMMOrders gas 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 366126,
+}
+`;
+
+exports[`TWAMM #submitLongTermOrder gas 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 121137,
+}
+`;
+
+exports[`TWAMM single pool sell tests gas 1`] = `
 Object {
   "calldataByteLength": 132,
   "gasUsed": 100403,

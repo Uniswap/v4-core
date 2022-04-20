@@ -1,22 +1,73 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`PoolManager #initialize gas cost 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 115708,
+}
+`;
+
+exports[`PoolManager #lock gas overhead of no-op lock 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 59684,
+}
+`;
+
+exports[`PoolManager #mint gas cost 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 329734,
+}
+`;
+
+exports[`PoolManager #mint gas cost with hooks 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 329744,
+}
+`;
+
+exports[`PoolManager #swap gas cost 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 99029,
+}
+`;
+
+exports[`PoolManager #swap gas cost for swap against liquidity 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 233304,
+}
+`;
+
+exports[`PoolManager #swap gas cost with hooks 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 103135,
+}
+`;
+
 exports[`PoolManager TWAMM #executeTWAMMOrders gas crossing 1 initialized tick 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 510236,
+  "gasUsed": 510226,
 }
 `;
 
 exports[`PoolManager TWAMM #executeTWAMMOrders gas crossing 2 initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 661455,
+  "gasUsed": 661443,
 }
 `;
 
 exports[`PoolManager TWAMM #executeTWAMMOrders gas with no initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 374463,
+  "gasUsed": 374453,
 }
 `;
+
+exports[`PoolManager bytecode size 1`] = `37882`;

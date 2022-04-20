@@ -485,7 +485,7 @@ describe('TWAMM', () => {
     })
   })
 
-  describe.only('single pool sell tests', async () => {
+  describe('single pool sell tests', async () => {
     let blocktime: number
     let startTime: number
     let halfTime: number
@@ -567,7 +567,7 @@ describe('TWAMM', () => {
       expect(parseInt(unclaimedAmount.toString())).to.be.eq(0)
     })
 
-    it('gas snapshot for updates on single pool sell', async () => {
+    it('gas', async () => {
       advanceTime(expiryTime)
       await snapshotGasCost(twamm.executeTWAMMOrders(poolParams))
     })
