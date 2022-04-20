@@ -1,5 +1,33 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`PoolManager #initialize gas cost 1`] = `
+Object {
+  "calldataByteLength": 196,
+  "gasUsed": 71257,
+}
+`;
+
+exports[`PoolManager #lock gas overhead of no-op lock 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 59720,
+}
+`;
+
+exports[`PoolManager #mint gas cost 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 329776,
+}
+`;
+
+exports[`PoolManager #mint gas cost with hooks 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 329786,
+}
+`;
+
 exports[`PoolManager #swap gas cost 1`] = `
 Object {
   "calldataByteLength": 260,
@@ -7,16 +35,25 @@ Object {
 }
 `;
 
+exports[`PoolManager #swap gas cost for swap against liquidity 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 223336,
+}
+`;
+
 exports[`PoolManager #swap gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 99156,
+  "gasUsed": 93580,
 }
 `;
 
 exports[`PoolManager #swap gas cost with hooks and hooks params 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 101176,
+  "gasUsed": 95601,
 }
 `;
+
+exports[`PoolManager bytecode size 1`] = `21612`;
