@@ -9,12 +9,14 @@ import {TwammMath} from './TwammMath.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
+import {SafeCast} from '../SafeCast.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
     using OrderPool for OrderPool.State;
     using TickMath for *;
+    using SafeCast for *;
     using TickBitmap for mapping(int16 => uint256);
 
     /// @notice Thrown when account other than owner attempts to interact with an order
@@ -25,9 +27,7 @@ library TWAMM {
 
     /// @notice Thrown when trying to cancel an already completed order
     /// @param orderId The orderId
-    /// @param expiration The expiration timestamp of the order
-    /// @param currentTime The current block timestamp
-    error OrderAlreadyCompleted(bytes32 orderId, uint256 expiration, uint256 currentTime);
+    error OrderAlreadyCompleted(bytes32 orderId);
 
     /// @notice Thrown when trying to submit an order with an expiration that isn't on the interval.
     /// @param expiration The expiration timestamp of the order
@@ -43,6 +43,16 @@ library TWAMM {
     /// @notice Thrown when trying to submit an order that's already ongoing.
     /// @param orderId The already existing orderId
     error OrderAlreadyExists(bytes32 orderId);
+
+    /// @notice Thrown when trying to interact with an order that does not exist.
+    /// @param orderId The already existing orderId
+    error OrderDoesNotExist(bytes32 orderId);
+
+    /// @notice Thrown when trying to subtract more value from a long term order than exists
+    /// @param orderId The orderId
+    /// @param unsoldAmount The amount still unsold
+    /// @param amountDelta The amount delta for the order
+    error InvalidAmountDelta(bytes32 orderId, uint256 unsoldAmount, int256 amountDelta);
 
     /// @notice Contains full state related to the TWAMM
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
@@ -73,11 +83,13 @@ library TWAMM {
     /// @member expiration Timestamp when the order expires
     /// @member sellRate Amount of tokens sold per interval
     /// @member unclaimedEarningsFactor The accrued earnings factor from which to start claiming owed earnings for this order
+    /// @member uncollectedEarningsAmount Earnings amount claimed thus far, but not yet transferred to the owner.
     struct Order {
         uint8 sellTokenIndex;
         uint256 expiration;
         uint256 sellRate;
         uint256 unclaimedEarningsFactor;
+        uint256 uncollectedEarningsAmount;
     }
 
     /// @notice Initialize TWAMM state
@@ -97,7 +109,7 @@ library TWAMM {
 
     /// @notice Submits a new long term order into the TWAMM
     /// @param params All parameters to define the new order
-    function submitLongTermOrder(State storage self, LongTermOrderParams calldata params)
+    function submitLongTermOrder(State storage self, LongTermOrderParams memory params)
         internal
         returns (bytes32 orderId)
     {
@@ -121,41 +133,58 @@ library TWAMM {
             expiration: params.expiration,
             sellRate: sellRate,
             sellTokenIndex: sellTokenIndex,
-            unclaimedEarningsFactor: self.orderPools[sellTokenIndex].earningsFactorCurrent
+            unclaimedEarningsFactor: self.orderPools[sellTokenIndex].earningsFactorCurrent,
+            uncollectedEarningsAmount: 0
         });
     }
 
-    /// @notice Cancels a long term order and updates procceeds owed in both tokens
-    ///   back to the owner
-    /// @param orderKey The key of the order to be cancelled
-    function cancelLongTermOrder(State storage self, OrderKey calldata orderKey)
-        internal
-        returns (uint256 amountOut0, uint256 amountOut1)
-    {
+    /// @notice Modify an existing long term order with a new sellAmount
+    /// @param self The TWAMM State
+    /// @param orderKey The OrderKey for which to identify the order
+    /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
+    ///    min value to remove full amount from order.
+    function modifyLongTermOrder(
+        State storage self,
+        OrderKey memory orderKey,
+        int128 amountDelta
+    ) internal returns (uint256 amountOut0, uint256 amountOut1) {
         bytes32 orderId = _orderId(orderKey);
         Order storage order = _getOrder(self, orderKey);
+        if (orderKey.owner == address(0)) revert OrderDoesNotExist(orderId);
         if (orderKey.owner != msg.sender) revert MustBeOwner(orderId, orderKey.owner, msg.sender);
-        if (order.expiration <= block.timestamp)
-            revert OrderAlreadyCompleted(orderId, order.expiration, block.timestamp);
-
-        uint256 earningsFactorCurrent = self.orderPools[order.sellTokenIndex].earningsFactorCurrent;
-        (amountOut0, amountOut1) = TwammMath.calculateCancellationAmounts(
-            order,
-            earningsFactorCurrent,
-            block.timestamp
-        );
-        if (order.sellTokenIndex == 1) (amountOut1, amountOut0) = (amountOut0, amountOut1);
+        if (order.expiration <= block.timestamp) revert OrderAlreadyCompleted(orderId);
 
         unchecked {
-            self.orderPools[order.sellTokenIndex].sellRateCurrent -= order.sellRate;
-            self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= order.sellRate;
-            order.sellRate = 0;
+            // cache existing earnings
+            uint256 earningsFactor = self.orderPools[order.sellTokenIndex].earningsFactorCurrent -
+                order.unclaimedEarningsFactor;
+            order.uncollectedEarningsAmount += (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
+
+            uint256 unsoldAmount = order.sellRate * (order.expiration - block.timestamp);
+            if (amountDelta == type(int128).min) amountDelta = -unsoldAmount.toInt256().toInt128();
+            uint256 newSellAmount = uint256(int256(unsoldAmount) + amountDelta);
+            if (newSellAmount < 0) revert InvalidAmountDelta(orderId, unsoldAmount, amountDelta);
+
+            uint256 newSellRate = newSellAmount / (order.expiration - block.timestamp);
+
+            if (amountDelta < 0) {
+                uint256 sellRateDelta = order.sellRate - newSellRate;
+                uint256 amountOut = uint256(uint128(-amountDelta));
+                self.orderPools[order.sellTokenIndex].sellRateCurrent -= sellRateDelta;
+                self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= sellRateDelta;
+                orderKey.zeroForOne ? amountOut0 = amountOut : amountOut1 = amountOut;
+            } else {
+                uint256 sellRateDelta = newSellRate - order.sellRate;
+                self.orderPools[order.sellTokenIndex].sellRateCurrent += sellRateDelta;
+                self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] += sellRateDelta;
+            }
+            order.sellRate = newSellRate;
         }
     }
 
     /// @notice Claim earnings from an ongoing or expired order
     /// @param orderKey The key of the order to be claimed
-    function claimEarnings(State storage self, OrderKey calldata orderKey)
+    function claimEarnings(State storage self, OrderKey memory orderKey)
         internal
         returns (uint256 earningsAmount, uint8 sellTokenIndex)
     {
