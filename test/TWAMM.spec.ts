@@ -226,16 +226,15 @@ describe('TWAMM', () => {
 
       it('claims some of the order, then cancels successfully', async () => {
         await twamm.executeTWAMMOrders(poolParams)
-        const result = await twamm.callStatic.claimEarnings(orderKey)
-        const earningsAmount: BigNumber = result.earningsAmount
-        const unclaimed: BigNumber = result.unclaimedEarnings
-        // TODO: calculate expected earnings
-        expect(parseInt(earningsAmount.toString())).to.be.greaterThan(0)
-        expect(parseInt(unclaimed.toString())).to.be.greaterThan(0)
-
         await twamm.modifyLongTermOrder(orderKey, MIN_INT128)
-        expect(parseInt((await twamm.getOrder(orderKey)).sellRate.toString())).to.eq(0)
-        expect(parseInt((await twamm.getOrder(orderKey)).unclaimedEarningsFactor.toString())).to.eq(0)
+        expect((await twamm.getOrder(orderKey)).sellRate).to.eq(0)
+      })
+
+      it('updates the unclaimedEarningsFactor to the current earningsFactor accumulator', async () => {
+        await twamm.executeTWAMMOrders(poolParams)
+        await twamm.modifyLongTermOrder(orderKey, MIN_INT128)
+        const orderPool = await twamm.getOrderPool(0)
+        expect((await twamm.getOrder(orderKey)).unclaimedEarningsFactor).to.eq(orderPool.earningsFactor)
       })
 
       it('claims half the amount at midpoint', async () => {

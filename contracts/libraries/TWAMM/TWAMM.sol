@@ -159,6 +159,7 @@ library TWAMM {
             uint256 earningsFactor = self.orderPools[order.sellTokenIndex].earningsFactorCurrent -
                 order.unclaimedEarningsFactor;
             order.uncollectedEarningsAmount += (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
+            order.unclaimedEarningsFactor = self.orderPools[order.sellTokenIndex].earningsFactorCurrent;
 
             uint256 unsoldAmount = order.sellRate * (order.expiration - block.timestamp);
             if (amountDelta == type(int128).min) amountDelta = -unsoldAmount.toInt256().toInt128();
