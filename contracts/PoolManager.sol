@@ -63,10 +63,10 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         return lockedBy.length;
     }
 
-    /// @member slot The slot in the tokensTouched array where the token is found
+    /// @member index The index in the tokensTouched array where the token is found
     /// @member delta The delta that is owed for that particular token
-    struct PositionAndDelta {
-        uint8 slot;
+    struct IndexAndDelta {
+        uint8 index;
         int248 delta;
     }
 
@@ -74,7 +74,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     /// @member tokenDelta The amount owed to the locker (positive) or owed to the pool (negative) of the token
     struct LockState {
         IERC20Minimal[] tokensTouched;
-        mapping(IERC20Minimal => PositionAndDelta) tokenDelta;
+        mapping(IERC20Minimal => IndexAndDelta) tokenDelta;
     }
 
     /// @dev Represents the state of the locker at the given index. Each locker must have net 0 tokens owed before
@@ -92,9 +92,9 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @inheritdoc IPoolManager
-    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 slot, int248 delta) {
-        PositionAndDelta storage pd = lockStates[id].tokenDelta[token];
-        (slot, delta) = (pd.slot, pd.delta);
+    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 index, int248 delta) {
+        IndexAndDelta storage indexAndDelta = lockStates[id].tokenDelta[token];
+        (index, delta) = (indexAndDelta.index, indexAndDelta.delta);
     }
 
     function lock(bytes calldata data) external override returns (bytes memory result) {
@@ -109,8 +109,8 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             uint256 numTokensTouched = lockState.tokensTouched.length;
             for (uint256 i; i < numTokensTouched; i++) {
                 IERC20Minimal token = lockState.tokensTouched[i];
-                PositionAndDelta storage pd = lockState.tokenDelta[token];
-                if (pd.delta != 0) revert TokenNotSettled(token, pd.delta);
+                IndexAndDelta storage indexAndDelta = lockState.tokenDelta[token];
+                if (indexAndDelta.delta != 0) revert TokenNotSettled(token, indexAndDelta.delta);
                 delete lockState.tokenDelta[token];
             }
             delete lockState.tokensTouched;
@@ -120,7 +120,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @dev Adds a token to a unique list of tokens that have been touched
-    function _addTokenToSet(IERC20Minimal token) internal returns (uint8 slot) {
+    function _addTokenToSet(IERC20Minimal token) internal returns (uint8 index) {
         LockState storage lockState = lockStates[lockedBy.length - 1];
         uint256 numTokensTouched = lockState.tokensTouched.length;
         if (numTokensTouched == 0) {
@@ -128,13 +128,13 @@ contract PoolManager is IPoolManager, NoDelegateCall {
             return 0;
         }
 
-        PositionAndDelta storage pd = lockState.tokenDelta[token];
-        slot = pd.slot;
+        IndexAndDelta storage indexAndDelta = lockState.tokenDelta[token];
+        index = indexAndDelta.index;
 
-        if (slot == 0 && lockState.tokensTouched[slot] != token) {
+        if (index == 0 && lockState.tokensTouched[index] != token) {
             if (numTokensTouched >= type(uint8).max) revert MaxTokensTouched();
-            slot = uint8(numTokensTouched);
-            pd.slot = slot;
+            index = uint8(numTokensTouched);
+            indexAndDelta.index = index;
             lockState.tokensTouched.push(token);
         }
     }
