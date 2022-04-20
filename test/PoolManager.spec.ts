@@ -461,10 +461,10 @@ describe('PoolManager', () => {
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
-        []
+        [],
       ]
 
-      const argsAfterSwap = [...argsBeforeSwap.slice(0,3), { amount0: 0, amount1: 0 }]
+      const argsAfterSwap = [...argsBeforeSwap.slice(0, 3), { amount0: 0, amount1: 0 }]
 
       expect(await hooksMock.called('beforeModifyPosition')).to.be.false
       expect(await hooksMock.called('afterModifyPosition')).to.be.false
