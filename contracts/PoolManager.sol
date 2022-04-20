@@ -196,7 +196,7 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         returns (IPoolManager.BalanceDelta memory delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
-            key.hooks.beforeSwap(msg.sender, key, params);
+            key.hooks.beforeSwap(msg.sender, key, params, Hooks.extractHooksParamsInSwap(msg.data));
         }
 
         delta = _getPool(key).swap(

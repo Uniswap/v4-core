@@ -44,6 +44,11 @@ library Hooks {
         }
     }
 
+    function extractHooksParamsInSwap(bytes calldata data) internal pure returns (bytes memory) {
+        if (data.length == 260) return '';
+        return data[260:];
+    }
+
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & BEFORE_INITIALIZE_FLAG != 0;
     }

@@ -36,7 +36,8 @@ interface IHooks {
     function beforeSwap(
         address sender,
         IPoolManager.PoolKey calldata key,
-        IPoolManager.SwapParams calldata params
+        IPoolManager.SwapParams calldata params,
+        bytes calldata hooksData
     ) external;
 
     function afterSwap(

@@ -50,7 +50,8 @@ contract EmptyTestHooks is IHooks {
     function beforeSwap(
         address sender,
         IPoolManager.PoolKey calldata key,
-        IPoolManager.SwapParams calldata params
+        IPoolManager.SwapParams calldata params,
+        bytes calldata hooksData
     ) external override {}
 
     function afterSwap(

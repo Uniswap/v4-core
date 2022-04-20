@@ -9,6 +9,7 @@ import {
   PoolModifyPositionTest,
   EmptyTestHooks,
   PoolManagerReentrancyTest,
+  PoolSwapTest2,
 } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
@@ -28,6 +29,7 @@ describe('PoolManager', () => {
   let manager: PoolManager
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
+  let swapTest2: PoolSwapTest2
   let modifyPositionTest: PoolModifyPositionTest
   let hooksMock: MockedContract
   let testHooksEmpty: EmptyTestHooks
@@ -37,6 +39,7 @@ describe('PoolManager', () => {
     const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
+    const swapTestFactory2 = await ethers.getContractFactory('PoolSwapTest2')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
@@ -59,6 +62,7 @@ describe('PoolManager', () => {
       manager,
       lockTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
+      swapTest2: (await swapTestFactory2.deploy(manager.address)) as PoolSwapTest2,
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       tokens,
       hooksMock,
@@ -82,9 +86,8 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, hooksMock, testHooksEmpty } = await loadFixture(
-      fixture
-    ))
+    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, swapTest2, hooksMock, testHooksEmpty } =
+      await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
@@ -372,7 +375,7 @@ describe('PoolManager', () => {
     })
   })
 
-  describe('#swap', () => {
+  describe.only('#swap', () => {
     it('fails if pool is not initialized', async () => {
       await expect(
         swapTest.swap(
@@ -417,6 +420,7 @@ describe('PoolManager', () => {
         }
       )
     })
+
     it('succeeds if pool is initialized and hook is provided', async () => {
       await manager.initialize(
         {
@@ -468,7 +472,60 @@ describe('PoolManager', () => {
       expect(await hooksMock.calledWith('beforeSwap', argsBeforeSwap)).to.be.true
       expect(await hooksMock.calledWith('afterSwap', argsAfterSwap)).to.be.true
     })
-    it('gas cost', async () => {
+
+    it.only('succeeds if pool is initialized and hook is provided and hooks params', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: hooksMock.address,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await swapTest2.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: hooksMock.address,
+        },
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        }
+      )
+
+      const argsBeforeSwap = [
+        swapTest2.address,
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: hooksMock.address,
+        },
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        },
+        '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF',
+      ]
+      // const argsAfterSwap = [...argsBeforeSwap.slice(0, 3), { amount0: 0, amount1: 0 }]
+
+      expect(await hooksMock.called('beforeModifyPosition')).to.be.false
+      expect(await hooksMock.called('afterModifyPosition')).to.be.false
+      expect(await hooksMock.calledOnce('beforeSwap')).to.be.true
+      expect(await hooksMock.calledOnce('afterSwap')).to.be.true
+      expect(await hooksMock.calledWith('beforeSwap', argsBeforeSwap)).to.be.true
+      // expect(await hooksMock.calledWith('afterSwap', argsAfterSwap)).to.be.true
+    })
+
+    it.only('gas cost', async () => {
       await manager.initialize(
         {
           token0: tokens.token0.address,
@@ -512,7 +569,7 @@ describe('PoolManager', () => {
         )
       )
     })
-    it('gas cost with hooks', async () => {
+    it.only('gas cost with hooks', async () => {
       await manager.initialize(
         {
           token0: tokens.token0.address,
@@ -524,7 +581,25 @@ describe('PoolManager', () => {
         encodeSqrtPriceX96(1, 1)
       )
 
-      await swapTest.swap(
+      await snapshotGasCost(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: testHooksEmpty.address,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            zeroForOne: true,
+          }
+        )
+      )
+    })
+    it.only('gas cost with hooks and hooks params', async () => {
+      await manager.initialize(
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
@@ -532,15 +607,11 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
         },
-        {
-          amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        }
+        encodeSqrtPriceX96(1, 1)
       )
 
       await snapshotGasCost(
-        swapTest.swap(
+        swapTest2.swap(
           {
             token0: tokens.token0.address,
             token1: tokens.token1.address,
