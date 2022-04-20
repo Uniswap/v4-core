@@ -485,7 +485,7 @@ describe('TWAMM', () => {
     })
   })
 
-  describe('single pool sell tests', async () => {
+  describe.only('single pool sell tests', async () => {
     let blocktime: number
     let startTime: number
     let halfTime: number
@@ -518,7 +518,8 @@ describe('TWAMM', () => {
 
       orderKey = { owner: wallet.address, expiration: expiryTime, zeroForOne: true }
       // Submit the order at the startTime.
-      advanceTime(startTime)
+      // advanceTime(startTime)
+      await ethers.provider.send('evm_setAutomine', [false])
       await twamm.executeTWAMMOrders(poolParams)
       await twamm.submitLongTermOrder({
         zeroForOne,
@@ -526,6 +527,9 @@ describe('TWAMM', () => {
         amountIn: fullSellAmount,
         expiration: expiryTime,
       })
+      await ethers.provider.send('evm_setAutomine', [true])
+      await ethers.provider.send('evm_mine', [startTime])
+
       blocktime = (await ethers.provider.getBlock('latest')).timestamp
       const expectedSellRate = fullSellAmount.div(expiryTime - blocktime)
       const actualSellRate = (await twamm.getOrder(orderKey)).sellRate
@@ -534,10 +538,12 @@ describe('TWAMM', () => {
     })
 
     it('claims an order midway through a single pool sell', async () => {
-      advanceTime(halfTime)
+      await ethers.provider.send('evm_setAutomine', [false])
       twamm.executeTWAMMOrders(poolParams)
-
       const results = await twamm.callStatic.claimEarnings(orderKey)
+      await ethers.provider.send('evm_setAutomine', [true])
+      await ethers.provider.send('evm_mine', [halfTime])
+
       const earningsAmount = results.earningsAmount
       const unclaimedAmount = results.unclaimedEarningsAmount
 
@@ -552,10 +558,12 @@ describe('TWAMM', () => {
     })
 
     it('claims an order after a full single pool sell', async () => {
-      advanceTime(expiryTime)
+      await ethers.provider.send('evm_setAutomine', [false])
       twamm.executeTWAMMOrders(poolParams)
-
       const results = await twamm.callStatic.claimEarnings(orderKey)
+      await ethers.provider.send('evm_setAutomine', [true])
+      await ethers.provider.send('evm_mine', [expiryTime])
+
       const earningsAmount = results.earningsAmount
       const unclaimedAmount = results.unclaimedEarningsAmount
 
