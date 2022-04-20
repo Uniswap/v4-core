@@ -46,21 +46,21 @@ contract PoolManagerReentrancyTest is ILockCallback {
         // tokens touched length is 0 when we enter
         assert(poolManager.getTokensTouchedLength(id) == 0);
 
-        (uint8 slot, int248 delta) = poolManager.getTokenDelta(id, tokenToBorrow);
-        assert(slot == 0 && delta == 0);
+        (uint8 index, int248 delta) = poolManager.getTokenDelta(id, tokenToBorrow);
+        assert(index == 0 && delta == 0);
 
         // take some
         poolManager.take(tokenToBorrow, address(this), 1);
         assert(poolManager.getTokensTouchedLength(id) == 1);
-        (slot, delta) = poolManager.getTokenDelta(id, tokenToBorrow);
-        assert(slot == 0 && delta == 1);
+        (index, delta) = poolManager.getTokenDelta(id, tokenToBorrow);
+        assert(index == 0 && delta == 1);
 
         // then pay it back
         tokenToBorrow.transfer(address(poolManager), 1);
         poolManager.settle(tokenToBorrow);
         assert(poolManager.getTokensTouchedLength(id) == 1);
-        (slot, delta) = poolManager.getTokenDelta(id, tokenToBorrow);
-        assert(slot == 0 && delta == 0);
+        (index, delta) = poolManager.getTokenDelta(id, tokenToBorrow);
+        assert(index == 0 && delta == 0);
 
         if (count > 0) helper(IPoolManager(msg.sender), tokenToBorrow, total, count - 1);
 
