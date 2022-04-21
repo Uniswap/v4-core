@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
-import 'hardhat/console.sol';
 
 /// @title TWAMM OrderPool - Represents an OrderPool inside of a TWAMM
 library OrderPool {
