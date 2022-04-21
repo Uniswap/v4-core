@@ -485,7 +485,7 @@ describe('TWAMM', () => {
     })
   })
 
-  describe.only('single pool sell tests', async () => {
+  describe('single pool sell tests', async () => {
     let blocktime: number
     let startTime: number
     let halfTime: number
@@ -527,8 +527,9 @@ describe('TWAMM', () => {
         amountIn: fullSellAmount,
         expiration: expiryTime,
       })
-      await ethers.provider.send('evm_setAutomine', [true])
+
       await ethers.provider.send('evm_mine', [startTime])
+      await ethers.provider.send('evm_setAutomine', [true])
 
       blocktime = (await ethers.provider.getBlock('latest')).timestamp
       const expectedSellRate = fullSellAmount.div(expiryTime - blocktime)
@@ -538,11 +539,9 @@ describe('TWAMM', () => {
     })
 
     it('claims an order midway through a single pool sell', async () => {
-      await ethers.provider.send('evm_setAutomine', [false])
+      await ethers.provider.send('evm_setNextBlockTimestamp', [halfTime])
       twamm.executeTWAMMOrders(poolParams)
       const results = await twamm.callStatic.claimEarnings(orderKey)
-      await ethers.provider.send('evm_setAutomine', [true])
-      await ethers.provider.send('evm_mine', [halfTime])
 
       const earningsAmount = results.earningsAmount
       const unclaimedAmount = results.unclaimedEarningsAmount
@@ -558,11 +557,9 @@ describe('TWAMM', () => {
     })
 
     it('claims an order after a full single pool sell', async () => {
-      await ethers.provider.send('evm_setAutomine', [false])
+      await ethers.provider.send('evm_setNextBlockTimestamp', [expiryTime + 1])
       twamm.executeTWAMMOrders(poolParams)
       const results = await twamm.callStatic.claimEarnings(orderKey)
-      await ethers.provider.send('evm_setAutomine', [true])
-      await ethers.provider.send('evm_mine', [expiryTime])
 
       const earningsAmount = results.earningsAmount
       const unclaimedAmount = results.unclaimedEarningsAmount
@@ -577,6 +574,20 @@ describe('TWAMM', () => {
 
     it('gas', async () => {
       advanceTime(expiryTime)
+      await snapshotGasCost(twamm.executeTWAMMOrders(poolParams))
+    })
+    it('gas zeroForOne=false', async () => {
+      advanceTime(expiryTime + 1)
+      blocktime = (await ethers.provider.getBlock('latest')).timestamp
+      const newExpiryTime = findExpiryTime(blocktime, 3, interval)
+      await twamm.executeTWAMMOrders(poolParams)
+      await twamm.submitLongTermOrder({
+        zeroForOne: false,
+        owner: wallet.address,
+        amountIn: fullSellAmount,
+        expiration: newExpiryTime,
+      })
+      advanceTime(newExpiryTime)
       await snapshotGasCost(twamm.executeTWAMMOrders(poolParams))
     })
   })
