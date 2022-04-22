@@ -17,14 +17,14 @@ Object {
 exports[`PoolManager #mint gas cost 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 329734,
+  "gasUsed": 329769,
 }
 `;
 
 exports[`PoolManager #mint gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 329744,
+  "gasUsed": 329779,
 }
 `;
 
@@ -52,22 +52,22 @@ Object {
 exports[`PoolManager TWAMM #executeTWAMMOrders gas crossing 1 initialized tick 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 510226,
+  "gasUsed": 510288,
 }
 `;
 
 exports[`PoolManager TWAMM #executeTWAMMOrders gas crossing 2 initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 661443,
+  "gasUsed": 661520,
 }
 `;
 
 exports[`PoolManager TWAMM #executeTWAMMOrders gas with no initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 374453,
+  "gasUsed": 374515,
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `37882`;
+exports[`PoolManager bytecode size 1`] = `38150`;

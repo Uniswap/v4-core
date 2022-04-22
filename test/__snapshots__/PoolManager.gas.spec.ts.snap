@@ -17,84 +17,84 @@ Object {
 exports[`PoolManager gas tests #mint above current price add to position after some time passes 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 187276,
+  "gasUsed": 187258,
 }
 `;
 
 exports[`PoolManager gas tests #mint above current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 187276,
+  "gasUsed": 187258,
 }
 `;
 
 exports[`PoolManager gas tests #mint above current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 282250,
+  "gasUsed": 282232,
 }
 `;
 
 exports[`PoolManager gas tests #mint above current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 187276,
+  "gasUsed": 187258,
 }
 `;
 
 exports[`PoolManager gas tests #mint around current price add to position after some time passes 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 261928,
+  "gasUsed": 261911,
 }
 `;
 
 exports[`PoolManager gas tests #mint around current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 254634,
+  "gasUsed": 254616,
 }
 `;
 
 exports[`PoolManager gas tests #mint around current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 406849,
+  "gasUsed": 406832,
 }
 `;
 
 exports[`PoolManager gas tests #mint around current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 254634,
+  "gasUsed": 254616,
 }
 `;
 
 exports[`PoolManager gas tests #mint below current price add to position after some time passes 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 187956,
+  "gasUsed": 187938,
 }
 `;
 
 exports[`PoolManager gas tests #mint below current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 187956,
+  "gasUsed": 187938,
 }
 `;
 
 exports[`PoolManager gas tests #mint below current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 347783,
+  "gasUsed": 347765,
 }
 `;
 
 exports[`PoolManager gas tests #mint below current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 187956,
+  "gasUsed": 187938,
 }
 `;
 

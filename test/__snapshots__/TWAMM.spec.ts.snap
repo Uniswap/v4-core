@@ -1,16 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`TWAMM #cancelLongTermOrder gas 1`] = `
-Object {
-  "calldataByteLength": 100,
-  "gasUsed": 39292,
-}
-`;
-
 exports[`TWAMM #claimEarnings gas 1`] = `
 Object {
   "calldataByteLength": 100,
-  "gasUsed": 33680,
+  "gasUsed": 35877,
 }
 `;
 
@@ -21,10 +14,17 @@ Object {
 }
 `;
 
+exports[`TWAMM #modifyLongTermOrder gas 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 40833,
+}
+`;
+
 exports[`TWAMM #submitLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 121137,
+  "gasUsed": 123258,
 }
 `;
 

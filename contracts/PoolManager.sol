@@ -286,14 +286,14 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         _accountDelta(token, int256(params.amountIn));
     }
 
-    function cancelLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
-        external
-        onlyByLocker
-        returns (uint256 amountOut0, uint256 amountOut1)
-    {
+    function modifyLongTermOrder(
+        IPoolManager.PoolKey calldata key,
+        TWAMM.OrderKey calldata orderKey,
+        int128 amountDelta
+    ) external onlyByLocker returns (uint256 amountOut0, uint256 amountOut1) {
         executeTWAMMOrders(key);
 
-        (amountOut0, amountOut1) = _getPool(key).twamm.cancelLongTermOrder(orderKey);
+        (amountOut0, amountOut1) = _getPool(key).twamm.modifyLongTermOrder(orderKey, amountDelta);
 
         IPoolManager.BalanceDelta memory delta = IPoolManager.BalanceDelta({
             amount0: -(amountOut0.toInt256()),

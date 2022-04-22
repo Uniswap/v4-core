@@ -24,11 +24,11 @@ contract TWAMMTest {
         orderId = twamm.submitLongTermOrder(params);
     }
 
-    function cancelLongTermOrder(TWAMM.OrderKey calldata orderKey)
+    function modifyLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)
         external
         returns (uint256 amountOut0, uint256 amountOut1)
     {
-        (amountOut0, amountOut1) = twamm.cancelLongTermOrder(orderKey);
+        (amountOut0, amountOut1) = twamm.modifyLongTermOrder(orderKey, amountDelta);
     }
 
     function claimEarnings(TWAMM.OrderKey calldata orderKey)
