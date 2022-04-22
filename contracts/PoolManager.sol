@@ -225,10 +225,17 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         uint256 amount0,
         uint256 amount1
     ) external override noDelegateCall onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
-        // TODO: do we need hooks for this?
+        if (key.hooks.shouldCallBeforeDonate()) {
+            key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+        }
+
         delta = _getPool(key).donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta);
+
+        if (key.hooks.shouldCallAfterDonate()) {
+            key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+        }
     }
 
     /// @inheritdoc IPoolManager
