@@ -56,6 +56,9 @@ library Pool {
     /// @param sqrtPriceLimitX96 The invalid, out-of-bounds sqrtPriceLimitX96
     error PriceLimitOutOfBounds(uint160 sqrtPriceLimitX96);
 
+    /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
+    error NoLiquidityToReceiveFees();
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
@@ -610,6 +613,23 @@ library Pool {
             (result.amount0, result.amount1) = params.zeroForOne == exactInput
                 ? (params.amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
+        }
+    }
+
+    /// @notice Donates the given amount of token0 and token1 to the pool
+    function donate(
+        State storage state,
+        uint256 amount0,
+        uint256 amount1
+    ) internal returns (IPoolManager.BalanceDelta memory delta) {
+        if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
+        delta.amount0 = amount0.toInt256();
+        delta.amount1 = amount1.toInt256();
+        unchecked {
+            if (amount0 > 0)
+                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
+            if (amount1 > 0)
+                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
         }
     }
 }
