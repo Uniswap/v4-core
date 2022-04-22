@@ -34,7 +34,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         return pools[keccak256(abi.encode(key))];
     }
 
-    /// @notice Initialize the state for a given pool ID
+    /// @inheritdoc IPoolManager
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         if (key.hooks.shouldCallBeforeInitialize()) {
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
@@ -47,7 +47,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         }
     }
 
-    /// @notice Increase the maximum number of stored observations for the pool's oracle
+    /// @inheritdoc IPoolManager
     function increaseObservationCardinalityNext(IPoolManager.PoolKey memory key, uint16 observationCardinalityNext)
         external
         override
@@ -102,6 +102,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         (index, delta) = (indexAndDelta.index, indexAndDelta.delta);
     }
 
+    /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
         uint256 id = lockedBy.length;
         lockedBy.push(msg.sender);
@@ -162,7 +163,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         _;
     }
 
-    /// @dev Modify the position
+    /// @inheritdoc IPoolManager
     function modifyPosition(IPoolManager.PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
         external
         override
@@ -193,6 +194,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         }
     }
 
+    /// @inheritdoc IPoolManager
     function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
         external
         override
@@ -222,8 +224,26 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         }
     }
 
-    /// @notice Called by the user to net out some value owed to the user
-    /// @dev Can also be used as a mechanism for _free_ flash loans
+    /// @inheritdoc IPoolManager
+    function donate(
+        IPoolManager.PoolKey memory key,
+        uint256 amount0,
+        uint256 amount1
+    ) external override noDelegateCall onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
+        if (key.hooks.shouldCallBeforeDonate()) {
+            key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+        }
+
+        delta = _getPool(key).donate(amount0, amount1);
+
+        _accountPoolBalanceDelta(key, delta);
+
+        if (key.hooks.shouldCallAfterDonate()) {
+            key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+        }
+    }
+
+    /// @inheritdoc IPoolManager
     function take(
         IERC20Minimal token,
         address to,
@@ -234,7 +254,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         token.transfer(to, amount);
     }
 
-    /// @notice Called by the user to move value into ERC1155 balance
+    /// @inheritdoc IPoolManager
     function mint(
         IERC20Minimal token,
         address to,
@@ -244,7 +264,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         _mint(to, uint256(uint160(address(token))), amount, '');
     }
 
-    /// @notice Called by the user to pay what is owed
+    /// @inheritdoc IPoolManager
     function settle(IERC20Minimal token) external override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[token];
         reservesOf[token] = token.balanceOf(address(this));
@@ -258,7 +278,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         _accountDelta(IERC20Minimal(token), -(amount.toInt256()));
     }
 
-    /// @notice Observe a past state of a pool
+    /// @inheritdoc IPoolManager
     function observe(IPoolManager.PoolKey calldata key, uint32[] calldata secondsAgos)
         external
         view
@@ -268,7 +288,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         return _getPool(key).observe(_blockTimestamp(), secondsAgos);
     }
 
-    /// @notice Get the snapshot of the cumulative values of a tick range
+    /// @inheritdoc IPoolManager
     function snapshotCumulativesInside(
         IPoolManager.PoolKey calldata key,
         int24 tickLower,

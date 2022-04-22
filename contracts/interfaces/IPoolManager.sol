@@ -91,7 +91,7 @@ interface IPoolManager is IERC1155 {
     /// @notice Modify the position for the given pool
     function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
         external
-        returns (IPoolManager.BalanceDelta memory delta);
+        returns (BalanceDelta memory delta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -100,9 +100,14 @@ interface IPoolManager is IERC1155 {
     }
 
     /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params)
-        external
-        returns (IPoolManager.BalanceDelta memory delta);
+    function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta memory delta);
+
+    /// @notice Donate the given token amounts to the pool with the given pool key
+    function donate(
+        PoolKey memory key,
+        uint256 amount0,
+        uint256 amount1
+    ) external returns (BalanceDelta memory delta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
