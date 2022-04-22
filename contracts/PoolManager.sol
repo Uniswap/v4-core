@@ -12,13 +12,18 @@ import {IHooks} from './interfaces/IHooks.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
+import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
+
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, NoDelegateCall {
+contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver {
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
 
     mapping(bytes32 => Pool.State) public pools;
+
+    constructor() ERC1155('') {}
 
     /// @dev For mocking in unit tests
     function _blockTimestamp() internal view virtual returns (uint32) {
@@ -250,12 +255,27 @@ contract PoolManager is IPoolManager, NoDelegateCall {
     }
 
     /// @inheritdoc IPoolManager
+    function mint(
+        IERC20Minimal token,
+        address to,
+        uint256 amount
+    ) external override noDelegateCall onlyByLocker {
+        _accountDelta(token, amount.toInt256());
+        _mint(to, uint256(uint160(address(token))), amount, '');
+    }
+
+    /// @inheritdoc IPoolManager
     function settle(IERC20Minimal token) external override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[token];
         reservesOf[token] = token.balanceOf(address(this));
         paid = reservesOf[token] - reservesBefore;
         // subtraction must be safe
         _accountDelta(token, -(paid.toInt256()));
+    }
+
+    function _burnAndAccount(IERC20Minimal token, uint256 amount) internal {
+        _burn(address(this), uint256(uint160(address((token)))), amount);
+        _accountDelta(IERC20Minimal(token), -(amount.toInt256()));
     }
 
     /// @inheritdoc IPoolManager
@@ -275,5 +295,34 @@ contract PoolManager is IPoolManager, NoDelegateCall {
         int24 tickUpper
     ) external view override noDelegateCall returns (Pool.Snapshot memory) {
         return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
+    }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256 id,
+        uint256 value,
+        bytes calldata
+    ) external returns (bytes4) {
+        if (msg.sender != address(this)) revert NotPoolManagerToken();
+        _burnAndAccount(IERC20Minimal(address(uint160(id))), value);
+        return IERC1155Receiver.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata
+    ) external returns (bytes4) {
+        if (msg.sender != address(this)) revert NotPoolManagerToken();
+        // unchecked to save gas on incrementations of i
+        unchecked {
+            for (uint256 i; i < ids.length; i++) {
+                _burnAndAccount(IERC20Minimal(address(uint160(ids[i]))), values[i]);
+            }
+        }
+        return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 }

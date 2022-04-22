@@ -390,6 +390,10 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
           }
         )
       ).to.be.revertedWith('I')
@@ -417,6 +421,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: false,
+          settleUsingTransfer: false,
         }
       )
     })
@@ -443,6 +451,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: false,
+          settleUsingTransfer: false,
         }
       )
 
@@ -495,6 +507,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
         }
       )
 
@@ -511,6 +527,10 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
+          },
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: false,
           }
         )
       )
@@ -539,6 +559,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
         }
       )
 
@@ -555,9 +579,142 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
           }
         )
       )
+    })
+    it('mints erc1155s if the output token isnt taken', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await modifyPositionTest.modifyPosition(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(1),
+        }
+      )
+
+      await expect(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: true,
+          }
+        )
+      ).to.emit(manager, 'TransferSingle')
+
+      const erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
+      expect(erc1155Balance).to.be.eq(98)
+    })
+    it('uses 1155s as input from an account that owns them', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await modifyPositionTest.modifyPosition(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(1),
+        }
+      )
+
+      // perform a swap and claim 1155s from it, so that they can be used in another trade
+      await expect(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: true,
+          }
+        )
+      ).to.emit(manager, 'TransferSingle')
+
+      let erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
+      expect(erc1155Balance).to.be.eq(98)
+
+      // give permission for swapTest to burn the 1155s
+      await manager.setApprovalForAll(swapTest.address, true)
+
+      // now swap from token1 to token0 again, using 1155s as input tokens
+      await expect(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: -25,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(4, 1),
+            zeroForOne: false,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: false,
+          }
+        )
+      ).to.emit(manager, 'TransferSingle')
+
+      erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
+      expect(erc1155Balance).to.be.eq(71)
     })
     it('gas cost for swap against liquidity', async () => {
       await manager.initialize(
@@ -597,6 +754,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
         }
       )
 
@@ -613,6 +774,10 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
           }
         )
       )
