@@ -84,30 +84,37 @@ describe('PoolManager gas tests', () => {
         },
         {
           withdrawTokens: true,
-          settleUsingTransfer: true
-        })
+          settleUsingTransfer: true,
+        }
+      )
     }
     const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-      return swapTest.swap(poolKey, {
-        zeroForOne: false,
-        amountSpecified: MaxUint128,
-        sqrtPriceLimitX96: sqrtPriceX96,
-      },
-      {
-        withdrawTokens: true,
-        settleUsingTransfer: true
-      })
+      return swapTest.swap(
+        poolKey,
+        {
+          zeroForOne: false,
+          amountSpecified: MaxUint128,
+          sqrtPriceLimitX96: sqrtPriceX96,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
+        }
+      )
     }
     const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-      return swapTest.swap(poolKey, {
-        zeroForOne: true,
-        amountSpecified: MaxUint128,
-        sqrtPriceLimitX96: sqrtPriceX96,
-      },
-      {
-        withdrawTokens: true,
-        settleUsingTransfer: true
-      })
+      return swapTest.swap(
+        poolKey,
+        {
+          zeroForOne: true,
+          amountSpecified: MaxUint128,
+          sqrtPriceLimitX96: sqrtPriceX96,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
+        }
+      )
     }
     const modifyPosition: ModifyPositionFunction = (tickLower, tickUpper, liquidityDelta) => {
       return modifyPositionTest.modifyPosition(poolKey, {

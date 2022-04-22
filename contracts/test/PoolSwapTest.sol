@@ -60,7 +60,8 @@ contract PoolSwapTest is ILockCallback {
                 }
             }
             if (delta.amount1 < 0) {
-                if (data.testSettings.withdrawTokens) manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
+                if (data.testSettings.withdrawTokens)
+                    manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
                 else manager.mint(data.key.token1, data.sender, uint256(-delta.amount1));
             }
         } else {
@@ -80,7 +81,8 @@ contract PoolSwapTest is ILockCallback {
                 }
             }
             if (delta.amount0 < 0) {
-                if (data.testSettings.withdrawTokens) manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+                if (data.testSettings.withdrawTokens)
+                    manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
                 else manager.mint(data.key.token0, data.sender, uint256(-delta.amount0));
             }
         }
