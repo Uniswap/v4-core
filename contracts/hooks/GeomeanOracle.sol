@@ -6,11 +6,12 @@ import {IPoolManager} from '../interfaces/IPoolManager.sol';
 import {Hooks} from '../libraries/Hooks.sol';
 import {TickMath} from '../libraries/TickMath.sol';
 import {Oracle} from '../libraries/Oracle.sol';
+import {BaseHook} from './base/BaseHook.sol';
 
 /// @notice A hook for a pool that allows a Uniswap pool to act as an oracle. Pools that use this hook must have full range
 ///     tick spacing and liquidity is always permanently locked in these pools. This is the suggested configuration
 ///     for protocols that wish to use a V3 style geomean oracle.
-contract GeomeanOracle is IHooks {
+contract GeomeanOracle is BaseHook {
     using Oracle for Oracle.Observation[65535];
 
     /// @notice Oracle pools do not have fees because they exist to serve as an oracle for a pair of tokens
@@ -32,15 +33,12 @@ contract GeomeanOracle is IHooks {
     /// @notice The current observation array state for the given pool ID
     mapping(bytes32 => ObservationState) public states;
 
-    /// @notice The address of the pool manager
-    IPoolManager public immutable poolManager;
-
     /// @dev For mocking
     function _blockTimestamp() internal view virtual returns (uint32) {
         return uint32(block.timestamp);
     }
 
-    constructor(IPoolManager _poolManager) {
+    constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
         Hooks.validateHookAddress(
             this,
             Hooks.Calls({
@@ -52,23 +50,22 @@ contract GeomeanOracle is IHooks {
                 afterSwap: false
             })
         );
-        poolManager = _poolManager;
     }
 
     function beforeInitialize(
         address,
-        IPoolManager.PoolKey memory key,
+        IPoolManager.PoolKey calldata key,
         uint160
-    ) external pure override {
+    ) external view override poolManagerOnly {
         if (key.fee != 0 || key.tickSpacing != TickMath.MAX_TICK) revert OraclePoolMustBeFreeFullRange();
     }
 
     function afterInitialize(
         address,
-        IPoolManager.PoolKey memory key,
+        IPoolManager.PoolKey calldata key,
         uint160,
         int24
-    ) external override {
+    ) external override poolManagerOnly {
         bytes32 id = keccak256(abi.encode(key));
         (states[id].cardinality, states[id].cardinalityNext) = observations[id].initialize(_blockTimestamp());
     }
@@ -95,35 +92,17 @@ contract GeomeanOracle is IHooks {
         address,
         IPoolManager.PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata params
-    ) external override {
+    ) external override poolManagerOnly {
         if (params.liquidityDelta < 0) revert OraclePoolMustLockLiquidity();
         _updatePool(key);
-    }
-
-    function afterModifyPosition(
-        address,
-        IPoolManager.PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
-        IPoolManager.BalanceDelta calldata
-    ) external pure override {
-        revert();
     }
 
     function beforeSwap(
         address,
         IPoolManager.PoolKey calldata key,
         IPoolManager.SwapParams calldata
-    ) external override {
+    ) external override poolManagerOnly {
         _updatePool(key);
-    }
-
-    function afterSwap(
-        address,
-        IPoolManager.PoolKey calldata,
-        IPoolManager.SwapParams calldata,
-        IPoolManager.BalanceDelta calldata
-    ) external pure override {
-        revert();
     }
 
     /// @notice Observe the given pool for the timestamps

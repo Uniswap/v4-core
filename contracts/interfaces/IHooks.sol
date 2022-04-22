@@ -9,13 +9,13 @@ import {IPoolManager} from './IPoolManager.sol';
 interface IHooks {
     function beforeInitialize(
         address sender,
-        IPoolManager.PoolKey memory key,
+        IPoolManager.PoolKey calldata key,
         uint160 sqrtPriceX96
     ) external;
 
     function afterInitialize(
         address sender,
-        IPoolManager.PoolKey memory key,
+        IPoolManager.PoolKey calldata key,
         uint160 sqrtPriceX96,
         int24 tick
     ) external;
