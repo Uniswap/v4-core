@@ -1,4 +1,4 @@
-import { Contract, ContractFactory, Wallet } from 'ethers'
+import { Wallet } from 'ethers'
 import hre from 'hardhat'
 import { ethers, waffle } from 'hardhat'
 import {
@@ -8,12 +8,12 @@ import {
   PoolSwapTest,
   PoolModifyPositionTest,
   EmptyTestHooks,
+  PoolManagerReentrancyTest,
 } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId } from './shared/utilities'
-import { FormatTypes, Interface } from 'ethers/lib/utils'
 import { deployMockContract, MockedContract } from './shared/mockContract'
 
 const createFixtureLoader = waffle.createFixtureLoader
@@ -98,6 +98,46 @@ describe('PoolManager', () => {
 
     it('gas overhead of no-op lock', async () => {
       await snapshotGasCost(lockTest.lock(manager.address))
+    })
+
+    it('can be reentered', async () => {
+      const reenterTest = (await (
+        await ethers.getContractFactory('PoolManagerReentrancyTest')
+      ).deploy()) as PoolManagerReentrancyTest
+
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+
+      await modifyPositionTest.modifyPosition(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          tickLower: 0,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        }
+      )
+
+      await expect(reenterTest.reenter(manager.address, tokens.token0.address, 3))
+        .to.emit(reenterTest, 'LockAcquired')
+        .withArgs(3)
+        .to.emit(reenterTest, 'LockAcquired')
+        .withArgs(2)
+        .to.emit(reenterTest, 'LockAcquired')
+        .withArgs(1)
     })
   })
 
