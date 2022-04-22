@@ -6,6 +6,7 @@ import {TwammMath} from '../libraries/TWAMM/TwammMath.sol';
 import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {Tick} from '../libraries/Tick.sol';
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
+import {FixedPoint96} from '../libraries/FixedPoint96.sol';
 
 contract TWAMMTest {
     using TWAMM for TWAMM.State;
@@ -35,11 +36,15 @@ contract TWAMMTest {
         returns (
             uint256 earningsAmount,
             uint8 sellTokenIndex,
-            uint256 unclaimedEarnings
+            uint256 unclaimedEarningsAmount
         )
     {
         (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderKey);
-        unclaimedEarnings = twamm._getOrder(orderKey).unclaimedEarningsFactor;
+        // unclaimedEarningsFactor is a fixed point
+        uint256 sellRateCurrent = twamm._getOrder(orderKey).sellRate;
+        unclaimedEarningsAmount =
+            (twamm._getOrder(orderKey).unclaimedEarningsFactor * sellRateCurrent) >>
+            FixedPoint96.RESOLUTION;
     }
 
     function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {

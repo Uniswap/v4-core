@@ -252,34 +252,63 @@ library TWAMM {
         mapping(int16 => uint256) storage tickBitmap
     ) private returns (bool zeroForOne, uint160 newSqrtPriceX96) {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
+
         unchecked {
             while (nextExpirationTimestamp <= block.timestamp && _hasOutstandingOrders(self)) {
                 if (
                     self.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                     self.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
                 ) {
-                    pool = advanceToNewTimestamp(
-                        self,
-                        AdvanceParams(
-                            nextExpirationTimestamp,
-                            (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96,
-                            pool
-                        ),
-                        ticks,
-                        tickBitmap
-                    );
+                    if (self.orderPools[0].sellRateCurrent != 0 && self.orderPools[1].sellRateCurrent != 0) {
+                        pool = advanceToNewTimestamp(
+                            self,
+                            AdvanceParams(
+                                nextExpirationTimestamp,
+                                (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96,
+                                pool
+                            ),
+                            ticks,
+                            tickBitmap
+                        );
+                    } else {
+                        pool = advanceTimestampForSinglePoolSell(
+                            self,
+                            AdvanceSingleParams(
+                                nextExpirationTimestamp,
+                                nextExpirationTimestamp - prevTimestamp,
+                                pool,
+                                self.orderPools[0].sellRateCurrent == 0 ? 1 : 0
+                            ),
+                            tickBitmap,
+                            ticks
+                        );
+                    }
                     prevTimestamp = nextExpirationTimestamp;
                 }
                 nextExpirationTimestamp += self.expirationInterval;
             }
 
             if (prevTimestamp < block.timestamp && _hasOutstandingOrders(self)) {
-                pool = advanceToNewTimestamp(
-                    self,
-                    AdvanceParams(block.timestamp, (block.timestamp - prevTimestamp) * FixedPoint96.Q96, pool),
-                    ticks,
-                    tickBitmap
-                );
+                if (self.orderPools[0].sellRateCurrent != 0 && self.orderPools[1].sellRateCurrent != 0) {
+                    pool = advanceToNewTimestamp(
+                        self,
+                        AdvanceParams(block.timestamp, (block.timestamp - prevTimestamp) * FixedPoint96.Q96, pool),
+                        ticks,
+                        tickBitmap
+                    );
+                } else {
+                    pool = advanceTimestampForSinglePoolSell(
+                        self,
+                        AdvanceSingleParams(
+                            block.timestamp,
+                            block.timestamp - prevTimestamp,
+                            pool,
+                            self.orderPools[0].sellRateCurrent == 0 ? 1 : 0
+                        ),
+                        tickBitmap,
+                        ticks
+                    );
+                }
             }
         }
 
@@ -292,6 +321,21 @@ library TWAMM {
         uint256 nextTimestamp;
         uint256 secondsElapsedX96;
         PoolParamsOnExecute pool;
+    }
+
+    struct AdvanceSingleParams {
+        uint256 nextTimestamp;
+        uint256 secondsElapsed;
+        PoolParamsOnExecute pool;
+        uint8 sellIndex;
+    }
+
+    struct NextState {
+        uint256 earningsAmount0;
+        uint256 earningsAmount1;
+        bool crossingInitializedTick;
+        int24 tick;
+        uint160 nextSqrtPriceX96;
     }
 
     function advanceToNewTimestamp(
@@ -339,6 +383,103 @@ library TWAMM {
         }
 
         return params.pool;
+    }
+
+    function advanceTimestampForSinglePoolSell(
+        State storage self,
+        AdvanceSingleParams memory params,
+        mapping(int16 => uint256) storage tickBitmap,
+        mapping(int24 => Tick.Info) storage ticks
+    ) private returns (PoolParamsOnExecute memory updatedPool) {
+        uint256 sellRateCurrent = self.orderPools[params.sellIndex].sellRateCurrent;
+        uint256 amountSelling = sellRateCurrent * params.secondsElapsed;
+
+        uint160 finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
+            params.pool.sqrtPriceX96,
+            params.pool.liquidity,
+            amountSelling,
+            params.sellIndex == 0 ? true : false
+        );
+        // Set the updatedPool variable.
+        updatedPool = params.pool;
+        // earningsPoolTotal will track the total earnings in the buyToken.
+        uint256 earningsPoolTotal;
+
+        while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
+            NextState memory updatedState = getNextState(updatedPool, finalSqrtPriceX96, tickBitmap);
+
+            earningsPoolTotal += params.sellIndex == 0 ? updatedState.earningsAmount1 : updatedState.earningsAmount0;
+            amountSelling -= params.sellIndex == 0 ? updatedState.earningsAmount0 : updatedState.earningsAmount1;
+
+            // Update the pool price.
+            updatedPool.sqrtPriceX96 = updatedState.nextSqrtPriceX96;
+
+            // Update the pool liquidity.
+            // Only update the pool liquidity if we will be crossing an initialized tick.
+            if (updatedState.crossingInitializedTick) {
+                // update pool liquidity to liquidity at the tick
+                int128 liquidityNet = ticks[updatedState.tick].liquidityNet;
+                updatedPool.liquidity = liquidityNet < 0
+                    ? updatedPool.liquidity - uint128(-liquidityNet)
+                    : updatedPool.liquidity + uint128(liquidityNet);
+            }
+
+            // Recalculate the final price based on the amount swapped at the tick
+            finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
+                updatedPool.sqrtPriceX96,
+                updatedPool.liquidity,
+                amountSelling,
+                params.sellIndex == 0 ? true : false
+            );
+        }
+        if (params.nextTimestamp % self.expirationInterval == 0) {
+            self.orderPools[params.sellIndex].advanceToInterval(
+                params.nextTimestamp,
+                (earningsPoolTotal / sellRateCurrent) * FixedPoint96.Q96
+            );
+        } else {
+            self.orderPools[params.sellIndex].advanceToCurrentTime(
+                (earningsPoolTotal / sellRateCurrent) * FixedPoint96.Q96
+            );
+        }
+    }
+
+    function getNextState(
+        PoolParamsOnExecute memory pool,
+        uint160 targetPriceX96,
+        mapping(int16 => uint256) storage tickBitmap
+    ) internal returns (NextState memory updatedState) {
+        (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
+            // this pool keeps getting updated
+            pool,
+            targetPriceX96,
+            tickBitmap
+        );
+
+        uint160 nextSqrtPriceX96;
+        if (crossingInitializedTick) {
+            nextSqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
+        } else {
+            // If we are not crossing any initialized ticks, we can just swap the full amount to the target price.
+            tick = TickMath.getTickAtSqrtRatio(targetPriceX96);
+            nextSqrtPriceX96 = targetPriceX96;
+        }
+
+        // update earnings and sell amounts
+        uint256 earningsAmount0 = SqrtPriceMath.getAmount0Delta(
+            pool.sqrtPriceX96,
+            nextSqrtPriceX96,
+            pool.liquidity,
+            true
+        );
+        uint256 earningsAmount1 = SqrtPriceMath.getAmount1Delta(
+            pool.sqrtPriceX96,
+            nextSqrtPriceX96,
+            pool.liquidity,
+            true
+        );
+
+        return NextState(earningsAmount0, earningsAmount1, crossingInitializedTick, tick, nextSqrtPriceX96);
     }
 
     struct TickCrossingParams {
