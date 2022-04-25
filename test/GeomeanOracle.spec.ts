@@ -7,12 +7,36 @@ import hre, { ethers } from 'hardhat'
 import { tokensFixture } from './shared/fixtures'
 import { createHookMask, encodeSqrtPriceX96 } from './shared/utilities'
 
-describe('GeomeanOracle', () => {
+describe.only('GeomeanOracle', () => {
   let wallets: Wallet[]
   let oracle: GeomeanOracle
   let poolManager: PoolManager
   let token0: TestERC20
   let token1: TestERC20
+
+  /**
+   * We are using hardhat_setCode to deploy the geomean oracle, so we need to replace all the immutable references
+   * @param poolManagerAddress the address of the pool manager, the only immutable of the geomean oracle
+   */
+  async function getDeployedGeomeanOracleCode(poolManagerAddress: string): Promise<string> {
+    const artifact = await hre.artifacts.readArtifact('GeomeanOracle')
+    const fullyQualifiedName = `${artifact.sourceName}:${artifact.contractName}`
+    const debugArtifact = await hre.artifacts.getBuildInfo(fullyQualifiedName)
+    const immutableReferences =
+      debugArtifact?.output?.contracts?.[artifact.sourceName]?.[artifact.contractName]?.evm?.deployedBytecode
+        ?.immutableReferences
+    if (!immutableReferences) throw new Error('Could not find immutable references')
+    if (Object.keys(immutableReferences).length !== 1) throw new Error('Unexpected immutable references length')
+    const key = Object.keys(immutableReferences)[0]
+    const refs = immutableReferences[key]
+    let bytecode: string = artifact.deployedBytecode
+    const paddedTo32Address = '0'.repeat(24) + poolManagerAddress.slice(2)
+    for (const { start, length } of refs) {
+      if (length !== 32) throw new Error('Unexpected immutable reference length')
+      bytecode = bytecode.slice(0, start * 2 + 2) + paddedTo32Address + bytecode.slice(2 + start * 2 + length * 2)
+    }
+    return bytecode
+  }
 
   const fixture = async ([wallet]: Wallet[]) => {
     const geomeanOracleFactory = await ethers.getContractFactory('GeomeanOracle')
@@ -30,11 +54,13 @@ describe('GeomeanOracle', () => {
       afterModifyPosition: false,
       beforeSwap: true,
       afterSwap: false,
+      beforeDonate: false,
+      afterDonate: false,
     })
 
     await hre.network.provider.send('hardhat_setCode', [
       geomeanOracleHookAddress,
-      (await hre.artifacts.readArtifact('GeomeanOracle')).deployedBytecode.concat(manager.address.slice(2)),
+      await getDeployedGeomeanOracleCode(manager.address),
     ])
 
     const geomeanOracle: GeomeanOracle = geomeanOracleFactory.attach(geomeanOracleHookAddress) as GeomeanOracle
@@ -74,7 +100,7 @@ describe('GeomeanOracle', () => {
 
   describe('#beforeInitialize', async () => {
     // failing because of immutable not being set
-    it.skip('allows initialize of free max range pool', async () => {
+    it('allows initialize of free max range pool', async () => {
       await poolManager.initialize(
         {
           token0: token0.address,

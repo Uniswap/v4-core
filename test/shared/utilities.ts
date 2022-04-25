@@ -81,28 +81,11 @@ export type SwapFunction = (
   sqrtPriceLimitX96?: BigNumberish
 ) => Promise<ContractTransaction>
 export type SwapToPriceFunction = (sqrtPriceX96: BigNumberish, to: Wallet | string) => Promise<ContractTransaction>
-export type FlashFunction = (
-  amount0: BigNumberish,
-  amount1: BigNumberish,
-  to: Wallet | string,
-  pay0?: BigNumberish,
-  pay1?: BigNumberish
-) => Promise<ContractTransaction>
 export type ModifyPositionFunction = (
   tickLower: BigNumberish,
   tickUpper: BigNumberish,
   liquidityDelta: BigNumberish
 ) => Promise<ContractTransaction>
-export interface PoolFunctions {
-  swapToLowerPrice: SwapToPriceFunction
-  swapToHigherPrice: SwapToPriceFunction
-  swapExact0For1: SwapFunction
-  swap0ForExact1: SwapFunction
-  swapExact1For0: SwapFunction
-  swap1ForExact0: SwapFunction
-  flash: FlashFunction
-  modifyPosition: ModifyPositionFunction
-}
 
 /**
  * Creates a 20 byte mask for the given hook configuration
@@ -114,6 +97,8 @@ export function createHookMask({
   beforeModifyPosition,
   beforeSwap,
   afterSwap,
+  beforeDonate,
+  afterDonate,
 }: {
   beforeInitialize: boolean
   afterInitialize: boolean
@@ -121,6 +106,8 @@ export function createHookMask({
   afterModifyPosition: boolean
   beforeSwap: boolean
   afterSwap: boolean
+  beforeDonate: boolean
+  afterDonate: boolean
 }): string {
   let result: BigNumber = BigNumber.from(0)
   if (beforeInitialize) result = result.add(BigNumber.from(1).shl(159))
@@ -129,5 +116,7 @@ export function createHookMask({
   if (afterSwap) result = result.add(BigNumber.from(1).shl(156))
   if (beforeModifyPosition) result = result.add(BigNumber.from(1).shl(155))
   if (afterModifyPosition) result = result.add(BigNumber.from(1).shl(154))
+  if (beforeDonate) result = result.add(BigNumber.from(1).shl(153))
+  if (afterDonate) result = result.add(BigNumber.from(1).shl(152))
   return utils.hexZeroPad(result.toHexString(), 20)
 }

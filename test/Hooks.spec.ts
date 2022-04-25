@@ -27,6 +27,8 @@ describe('Hooks', () => {
           afterModifyPosition: false,
           beforeSwap: false,
           afterSwap: false,
+          afterDonate: false,
+          beforeDonate: false,
         })
       ).to.eq('0x0000000000000000000000000000000000000000')
     })
@@ -39,8 +41,10 @@ describe('Hooks', () => {
           afterModifyPosition: true,
           beforeSwap: true,
           afterSwap: true,
+          afterDonate: true,
+          beforeDonate: true,
         })
-      ).to.eq('0xfc00000000000000000000000000000000000000')
+      ).to.eq('0xff00000000000000000000000000000000000000')
     })
   })
 
