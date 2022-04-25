@@ -29,8 +29,11 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         return pools[poolId].slot0;
     }
 
-
-    function feeGrowthGlobalX128(bytes32 poolId) public view returns (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) {
+    function feeGrowthGlobalX128(bytes32 poolId)
+        public
+        view
+        returns (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128)
+    {
         return (pools[poolId].feeGrowthGlobal0X128, pools[poolId].feeGrowthGlobal1X128);
     }
 
@@ -376,7 +379,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
             _accountDelta(key.token0, -delta.amount0);
             _accountDelta(key.token1, -delta.amount1);
         }
-
     }
 
     function onERC1155Received(
