@@ -1,15 +1,15 @@
 import { createFixtureLoader } from 'ethereum-waffle'
-import { Wallet } from 'ethers'
+import { BigNumberish, Wallet } from 'ethers'
 import { MAX_TICK, MIN_TICK } from './shared/constants'
 import { expect } from './shared/expect'
-import { GeomeanOracle, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
+import { MockTimeGeomeanOracle, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
 import hre, { ethers } from 'hardhat'
 import { tokensFixture } from './shared/fixtures'
 import { createHookMask, encodeSqrtPriceX96 } from './shared/utilities'
 
-describe.only('GeomeanOracle', () => {
+describe('GeomeanOracle', () => {
   let wallets: Wallet[]
-  let oracle: GeomeanOracle
+  let oracle: MockTimeGeomeanOracle
   let poolManager: PoolManager
   let token0: TestERC20
   let token1: TestERC20
@@ -19,7 +19,7 @@ describe.only('GeomeanOracle', () => {
    * @param poolManagerAddress the address of the pool manager, the only immutable of the geomean oracle
    */
   async function getDeployedGeomeanOracleCode(poolManagerAddress: string): Promise<string> {
-    const artifact = await hre.artifacts.readArtifact('GeomeanOracle')
+    const artifact = await hre.artifacts.readArtifact('MockTimeGeomeanOracle')
     const fullyQualifiedName = `${artifact.sourceName}:${artifact.contractName}`
     const debugArtifact = await hre.artifacts.getBuildInfo(fullyQualifiedName)
     const immutableReferences =
@@ -39,7 +39,7 @@ describe.only('GeomeanOracle', () => {
   }
 
   const fixture = async ([wallet]: Wallet[]) => {
-    const geomeanOracleFactory = await ethers.getContractFactory('GeomeanOracle')
+    const geomeanOracleFactory = await ethers.getContractFactory('MockTimeGeomeanOracle')
 
     const poolManagerFactory = await ethers.getContractFactory('PoolManager')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
@@ -63,7 +63,9 @@ describe.only('GeomeanOracle', () => {
       await getDeployedGeomeanOracleCode(manager.address),
     ])
 
-    const geomeanOracle: GeomeanOracle = geomeanOracleFactory.attach(geomeanOracleHookAddress) as GeomeanOracle
+    const geomeanOracle: MockTimeGeomeanOracle = geomeanOracleFactory.attach(
+      geomeanOracleHookAddress
+    ) as MockTimeGeomeanOracle
 
     const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
     const modifyPositionTest = (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest
@@ -90,27 +92,33 @@ describe.only('GeomeanOracle', () => {
     loadFixture = createFixtureLoader(wallets)
   })
 
+  let poolKey: {
+    token0: string
+    token1: string
+    fee: BigNumberish
+    tickSpacing: BigNumberish
+    hooks: string
+  }
+
   beforeEach('deploy oracle', async () => {
     ;({
       geomeanOracle: oracle,
       manager: poolManager,
       tokens: { token0, token1 },
     } = await loadFixture(fixture))
+    poolKey = {
+      token0: token0.address,
+      token1: token1.address,
+      fee: 0,
+      hooks: oracle.address,
+      tickSpacing: MAX_TICK,
+    }
   })
 
   describe('#beforeInitialize', async () => {
     // failing because of immutable not being set
     it('allows initialize of free max range pool', async () => {
-      await poolManager.initialize(
-        {
-          token0: token0.address,
-          token1: token1.address,
-          fee: 0,
-          hooks: oracle.address,
-          tickSpacing: MAX_TICK,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
     })
 
     it('reverts if pool has fee', async () => {
