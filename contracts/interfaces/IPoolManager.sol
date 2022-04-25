@@ -3,9 +3,10 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import {IHooks} from './IHooks.sol';
 
-interface IPoolManager {
+interface IPoolManager is IERC1155 {
     /// @notice Thrown when tokens touched has exceeded max of 256
     error MaxTokensTouched();
 
@@ -17,6 +18,9 @@ interface IPoolManager {
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
     error LockedBy(address locker);
+
+    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
+    error NotPoolManagerToken();
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -88,7 +92,7 @@ interface IPoolManager {
     /// @notice Modify the position for the given pool
     function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
         external
-        returns (IPoolManager.BalanceDelta memory delta);
+        returns (BalanceDelta memory delta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -97,13 +101,25 @@ interface IPoolManager {
     }
 
     /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params)
-        external
-        returns (IPoolManager.BalanceDelta memory delta);
+    function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta memory delta);
+
+    /// @notice Donate the given token amounts to the pool with the given pool key
+    function donate(
+        PoolKey memory key,
+        uint256 amount0,
+        uint256 amount1
+    ) external returns (BalanceDelta memory delta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(
+        IERC20Minimal token,
+        address to,
+        uint256 amount
+    ) external;
+
+    /// @notice Called by the user to move value into ERC1155 balance
+    function mint(
         IERC20Minimal token,
         address to,
         uint256 amount

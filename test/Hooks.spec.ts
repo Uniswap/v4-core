@@ -54,6 +54,8 @@ describe('Hooks', () => {
           afterModifyPosition: false,
           beforeSwap: false,
           afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -68,6 +70,8 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -82,6 +86,8 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -96,6 +102,8 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -110,6 +118,8 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -124,6 +134,8 @@ describe('Hooks', () => {
           afterSwap: true,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -138,6 +150,8 @@ describe('Hooks', () => {
           afterSwap: true,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -152,6 +166,8 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: true,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -166,6 +182,8 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: false,
           afterModifyPosition: true,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -180,6 +198,56 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: true,
           afterModifyPosition: true,
+          beforeDonate: false,
+          afterDonate: false,
+        })
+      )
+    })
+
+    it('succeeds for before donate only', async () => {
+      expect(
+        // 0x000010...
+        await hooks.validateHookAddress('0x0200000000000000000000000000000000000000', {
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeDonate: true,
+          afterDonate: false,
+        })
+      )
+    })
+
+    it('succeeds for after donate only', async () => {
+      expect(
+        // 0x000001...
+        await hooks.validateHookAddress('0x0100000000000000000000000000000000000000', {
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: true,
+        })
+      )
+    })
+
+    it('succeeds for before and after donate only', async () => {
+      expect(
+        // 0x000011...
+        await hooks.validateHookAddress('0x0300000000000000000000000000000000000000', {
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeDonate: true,
+          afterDonate: true,
         })
       )
     })
@@ -194,6 +262,8 @@ describe('Hooks', () => {
           afterSwap: true,
           beforeModifyPosition: true,
           afterModifyPosition: true,
+          beforeDonate: true,
+          afterDonate: true,
         })
       )
     })
@@ -208,6 +278,8 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       ).to.be.reverted
     })
@@ -222,6 +294,8 @@ describe('Hooks', () => {
           afterSwap: true,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       ).to.be.reverted
     })
@@ -236,6 +310,8 @@ describe('Hooks', () => {
           afterSwap: true,
           beforeModifyPosition: true,
           afterModifyPosition: true,
+          beforeDonate: true,
+          afterDonate: true,
         })
       ).to.be.reverted
     })
@@ -250,6 +326,8 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       ).to.be.reverted
     })
@@ -264,6 +342,8 @@ describe('Hooks', () => {
           afterSwap: false,
           beforeModifyPosition: false,
           afterModifyPosition: false,
+          beforeDonate: false,
+          afterDonate: false,
         })
       )
     })
@@ -305,6 +385,18 @@ describe('Hooks', () => {
     })
     it('fails for shouldCallAfterModifyPosition', async () => {
       expect(await hooks.shouldCallAfterModifyPosition('0xC000000000000000000000000000000000000000')).to.be.false
+    })
+    it('succeeds for shouldCallBeforeDonate', async () => {
+      expect(await hooks.shouldCallBeforeDonate('0x0200000000000000000000000000000000000000')).to.be.true
+    })
+    it('fails for shouldCallBeforeDonate', async () => {
+      expect(await hooks.shouldCallBeforeDonate('0x0000000000000000000000000000000000000000')).to.be.false
+    })
+    it('succeeds for shouldCallAfterDonate', async () => {
+      expect(await hooks.shouldCallAfterDonate('0x0100000000000000000000000000000000000000')).to.be.true
+    })
+    it('fails for shouldCallAfterDonate', async () => {
+      expect(await hooks.shouldCallAfterDonate('0x0000000000000000000000000000000000000000')).to.be.false
     })
     it('succeeds for all hooks', async () => {
       expect(await hooks.shouldCallBeforeInitialize('0xFF00000000000000000000000000000000000000')).to.be.true
