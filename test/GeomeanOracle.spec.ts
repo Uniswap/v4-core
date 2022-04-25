@@ -1,11 +1,11 @@
 import { createFixtureLoader } from 'ethereum-waffle'
-import { BigNumberish, Wallet } from 'ethers'
+import { Wallet } from 'ethers'
 import { MAX_TICK, MIN_TICK } from './shared/constants'
 import { expect } from './shared/expect'
 import { MockTimeGeomeanOracle, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
 import hre, { ethers } from 'hardhat'
 import { tokensFixture } from './shared/fixtures'
-import { createHookMask, encodeSqrtPriceX96 } from './shared/utilities'
+import { createHookMask, encodeSqrtPriceX96, getPoolId } from './shared/utilities'
 
 describe('GeomeanOracle', () => {
   let wallets: Wallet[]
@@ -95,8 +95,8 @@ describe('GeomeanOracle', () => {
   let poolKey: {
     token0: string
     token1: string
-    fee: BigNumberish
-    tickSpacing: BigNumberish
+    fee: number
+    tickSpacing: number
     hooks: string
   }
 
@@ -113,10 +113,22 @@ describe('GeomeanOracle', () => {
       hooks: oracle.address,
       tickSpacing: MAX_TICK,
     }
+    await oracle.setTime(1)
+  })
+
+  let snapshotId: string
+
+  beforeEach('check the pool is not initialized', async () => {
+    const { sqrtPriceX96 } = await poolManager.getSlot0(poolKey)
+    expect(sqrtPriceX96, 'pool is not initialized').to.eq(0)
+    snapshotId = await hre.network.provider.send('evm_snapshot')
+  })
+
+  afterEach('revert', async () => {
+    await hre.network.provider.send('evm_revert', [snapshotId])
   })
 
   describe('#beforeInitialize', async () => {
-    // failing because of immutable not being set
     it('allows initialize of free max range pool', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
     })
@@ -149,6 +161,34 @@ describe('GeomeanOracle', () => {
           encodeSqrtPriceX96(1, 1)
         )
       ).to.be.revertedWith('') // OraclePoolMustBeFreeFullRange()
+    })
+  })
+
+  describe('#afterInitialize', async () => {
+    it('initializes the oracle state', async () => {
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
+      const { index, cardinality, cardinalityNext } = await oracle.states(getPoolId(poolKey))
+      expect(index).to.eq(0)
+      expect(cardinality).to.eq(1)
+      expect(cardinalityNext).to.eq(1)
+    })
+    it('initializes the observations array index 0', async () => {
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
+      const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
+        await oracle.observations(getPoolId(poolKey), 0)
+      expect(initialized).to.be.true
+      expect(blockTimestamp, 'timestamp').to.eq(1)
+      expect(tickCumulative, 'cumulative tick').to.eq(0)
+      expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(0)
+    })
+    it('observe of 0', async () => {
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
+      const {
+        tickCumulatives: [tickCumulative],
+        secondsPerLiquidityCumulativeX128s: [secondsPerLiquidityCumulativeX128],
+      } = await oracle.observe(poolKey, [0])
+      expect(tickCumulative).to.eq(0)
+      expect(secondsPerLiquidityCumulativeX128).to.eq(0)
     })
   })
 })

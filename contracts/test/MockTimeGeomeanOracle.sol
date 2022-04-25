@@ -7,9 +7,8 @@ import {GeomeanOracle} from '../hooks/GeomeanOracle.sol';
 contract MockTimeGeomeanOracle is GeomeanOracle {
     uint32 public time;
 
-    constructor(IPoolManager _poolManager) GeomeanOracle(_poolManager) {
-        time = 1;
-    }
+    /// @dev Note this is not used, because we use hardhat_setCode to deploy this contract
+    constructor(IPoolManager _poolManager) GeomeanOracle(_poolManager) {}
 
     function setTime(uint32 _time) external {
         time = _time;
