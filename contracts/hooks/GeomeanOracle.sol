@@ -47,7 +47,9 @@ contract GeomeanOracle is BaseHook {
                 beforeModifyPosition: true,
                 afterModifyPosition: false,
                 beforeSwap: true,
-                afterSwap: false
+                afterSwap: false,
+                beforeDonate: false,
+                afterDonate: false
             })
         );
     }

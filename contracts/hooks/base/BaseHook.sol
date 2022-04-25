@@ -72,4 +72,22 @@ abstract contract BaseHook is IHooks {
     ) external virtual override {
         revert HookNotImplemented();
     }
+
+    function beforeDonate(
+        address,
+        IPoolManager.PoolKey calldata,
+        uint256,
+        uint256
+    ) external virtual override {
+        revert HookNotImplemented();
+    }
+
+    function afterDonate(
+        address,
+        IPoolManager.PoolKey calldata,
+        uint256,
+        uint256
+    ) external virtual override {
+        revert HookNotImplemented();
+    }
 }
