@@ -31,6 +31,20 @@ export default {
   },
   solidity: {
     version: '0.8.13',
+    overrides: {
+      'contracts/test/HooksTest.sol': {
+        version: '0.8.13',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000000,
+          },
+          metadata: {
+            bytecodeHash: 'none',
+          },
+        },
+      },
+    },
     settings: {
       optimizer: {
         enabled: true,
