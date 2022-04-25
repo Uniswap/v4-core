@@ -36,13 +36,13 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
     /// @inheritdoc IPoolManager
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
-        if (key.hooks.shouldCallBeforeInitialize()) {
+        if (key.hooks.shouldCall(Hooks.CallPoint.BeforeInitialize)) {
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
 
         tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
 
-        if (key.hooks.shouldCallAfterInitialize()) {
+        if (key.hooks.shouldCall(Hooks.CallPoint.AfterInitialize)) {
             key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
         }
     }
@@ -171,7 +171,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         onlyByLocker
         returns (IPoolManager.BalanceDelta memory delta)
     {
-        if (key.hooks.shouldCallBeforeModifyPosition()) {
+        if (key.hooks.shouldCall(Hooks.CallPoint.BeforeModifyPosition)) {
             key.hooks.beforeModifyPosition(msg.sender, key, params);
         }
 
@@ -189,7 +189,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
         _accountPoolBalanceDelta(key, delta);
 
-        if (key.hooks.shouldCallAfterModifyPosition()) {
+        if (key.hooks.shouldCall(Hooks.CallPoint.AfterModifyPosition)) {
             key.hooks.afterModifyPosition(msg.sender, key, params, delta);
         }
     }
@@ -202,7 +202,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         onlyByLocker
         returns (IPoolManager.BalanceDelta memory delta)
     {
-        if (key.hooks.shouldCallBeforeSwap()) {
+        if (key.hooks.shouldCall(Hooks.CallPoint.BeforeSwap)) {
             key.hooks.beforeSwap(msg.sender, key, params);
         }
 
@@ -219,7 +219,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
         _accountPoolBalanceDelta(key, delta);
 
-        if (key.hooks.shouldCallAfterSwap()) {
+        if (key.hooks.shouldCall(Hooks.CallPoint.AfterSwap)) {
             key.hooks.afterSwap(msg.sender, key, params, delta);
         }
     }
@@ -230,7 +230,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         uint256 amount0,
         uint256 amount1
     ) external override noDelegateCall onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
-        if (key.hooks.shouldCallBeforeDonate()) {
+        if (key.hooks.shouldCall(Hooks.CallPoint.BeforeDonate)) {
             key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
         }
 
@@ -238,7 +238,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
         _accountPoolBalanceDelta(key, delta);
 
-        if (key.hooks.shouldCallAfterDonate()) {
+        if (key.hooks.shouldCall(Hooks.CallPoint.AfterDonate)) {
             key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
         }
     }

@@ -11,40 +11,40 @@ contract HooksTest {
     }
 
     function shouldCallBeforeInitialize(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeInitialize();
+        return IHooks(hookAddress).shouldCall(Hooks.CallPoint.BeforeInitialize);
     }
 
     function shouldCallAfterInitialize(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterInitialize();
+        return IHooks(hookAddress).shouldCall(Hooks.CallPoint.AfterInitialize);
     }
 
     function shouldCallBeforeSwap(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeSwap();
+        return IHooks(hookAddress).shouldCall(Hooks.CallPoint.BeforeSwap);
     }
 
     function shouldCallAfterSwap(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterSwap();
+        return IHooks(hookAddress).shouldCall(Hooks.CallPoint.AfterSwap);
     }
 
     function shouldCallBeforeModifyPosition(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeModifyPosition();
+        return IHooks(hookAddress).shouldCall(Hooks.CallPoint.BeforeModifyPosition);
     }
 
     function shouldCallAfterModifyPosition(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterModifyPosition();
+        return IHooks(hookAddress).shouldCall(Hooks.CallPoint.AfterModifyPosition);
     }
 
     function shouldCallBeforeDonate(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeDonate();
+        return IHooks(hookAddress).shouldCall(Hooks.CallPoint.BeforeDonate);
     }
 
     function shouldCallAfterDonate(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterDonate();
+        return IHooks(hookAddress).shouldCall(Hooks.CallPoint.AfterDonate);
     }
 
     function getGasCostOfShouldCall(address hookAddress) external view returns (uint256) {
         uint256 gasBefore = gasleft();
-        IHooks(hookAddress).shouldCallBeforeSwap();
+        IHooks(hookAddress).shouldCall(Hooks.CallPoint.BeforeSwap);
         return gasBefore - gasleft();
     }
 
