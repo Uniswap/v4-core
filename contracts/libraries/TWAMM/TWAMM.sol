@@ -404,8 +404,8 @@ library TWAMM {
                 ticks
             );
             unchecked {
-              totalEarnings += params.sellIndex == 0 ? swapDelta1 : swapDelta0;
-              amountSelling -= params.sellIndex == 0 ? swapDelta0 : swapDelta1;
+                totalEarnings += params.sellIndex == 0 ? swapDelta1 : swapDelta0;
+                amountSelling -= params.sellIndex == 0 ? swapDelta0 : swapDelta1;
             }
 
             // Recalculate the final price based on the amount swapped at the tick
@@ -419,14 +419,9 @@ library TWAMM {
 
         uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateCurrent;
         if (params.nextTimestamp % self.expirationInterval == 0) {
-            self.orderPools[params.sellIndex].advanceToInterval(
-                params.nextTimestamp,
-                accruedEarningsFactor
-            );
+            self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, accruedEarningsFactor);
         } else {
-            self.orderPools[params.sellIndex].advanceToCurrentTime(
-                accruedEarningsFactor
-            );
+            self.orderPools[params.sellIndex].advanceToCurrentTime(accruedEarningsFactor);
         }
     }
 
