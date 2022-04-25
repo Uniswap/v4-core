@@ -15,16 +15,23 @@ contract PoolSwapTest is ILockCallback {
 
     struct CallbackData {
         address sender;
+        TestSettings testSettings;
         IPoolManager.PoolKey key;
         IPoolManager.SwapParams params;
     }
 
-    function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
-        external
-        returns (IPoolManager.BalanceDelta memory delta)
-    {
+    struct TestSettings {
+        bool withdrawTokens;
+        bool settleUsingTransfer;
+    }
+
+    function swap(
+        IPoolManager.PoolKey memory key,
+        IPoolManager.SwapParams memory params,
+        TestSettings memory testSettings
+    ) external returns (IPoolManager.BalanceDelta memory delta) {
         delta = abi.decode(
-            manager.lock(abi.encode(CallbackData(msg.sender, key, params))),
+            manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params))),
             (IPoolManager.BalanceDelta)
         );
     }
@@ -38,17 +45,45 @@ contract PoolSwapTest is ILockCallback {
 
         if (data.params.zeroForOne) {
             if (delta.amount0 > 0) {
-                data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
-                manager.settle(data.key.token0);
+                if (data.testSettings.settleUsingTransfer) {
+                    data.key.token0.transferFrom(data.sender, address(manager), uint256(delta.amount0));
+                    manager.settle(data.key.token0);
+                } else {
+                    // the received hook on this transfer will burn the tokens
+                    manager.safeTransferFrom(
+                        data.sender,
+                        address(manager),
+                        uint256(uint160(address((data.key.token0)))),
+                        uint256(delta.amount0),
+                        ''
+                    );
+                }
             }
-            if (delta.amount1 < 0) manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
+            if (delta.amount1 < 0) {
+                if (data.testSettings.withdrawTokens)
+                    manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
+                else manager.mint(data.key.token1, data.sender, uint256(-delta.amount1));
+            }
         } else {
             if (delta.amount1 > 0) {
-                data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
-                manager.settle(data.key.token1);
+                if (data.testSettings.settleUsingTransfer) {
+                    data.key.token1.transferFrom(data.sender, address(manager), uint256(delta.amount1));
+                    manager.settle(data.key.token1);
+                } else {
+                    // the received hook on this transfer will burn the tokens
+                    manager.safeTransferFrom(
+                        data.sender,
+                        address(manager),
+                        uint256(uint160(address((data.key.token1)))),
+                        uint256(delta.amount1),
+                        ''
+                    );
+                }
             }
             if (delta.amount0 < 0) {
-                manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+                if (data.testSettings.withdrawTokens)
+                    manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
+                else manager.mint(data.key.token0, data.sender, uint256(-delta.amount0));
             }
         }
 

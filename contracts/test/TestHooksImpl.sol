@@ -16,7 +16,9 @@ contract EmptyTestHooks is IHooks {
                 beforeModifyPosition: true,
                 afterModifyPosition: true,
                 beforeSwap: true,
-                afterSwap: true
+                afterSwap: true,
+                beforeDonate: true,
+                afterDonate: true
             })
         );
     }
@@ -58,5 +60,19 @@ contract EmptyTestHooks is IHooks {
         IPoolManager.PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         IPoolManager.BalanceDelta calldata delta
+    ) external override {}
+
+    function beforeDonate(
+        address sender,
+        IPoolManager.PoolKey calldata key,
+        uint256 amount0,
+        uint256 amount1
+    ) external override {}
+
+    function afterDonate(
+        address sender,
+        IPoolManager.PoolKey calldata key,
+        uint256 amount0,
+        uint256 amount1
     ) external override {}
 }

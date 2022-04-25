@@ -45,4 +45,18 @@ interface IHooks {
         IPoolManager.SwapParams calldata params,
         IPoolManager.BalanceDelta calldata delta
     ) external;
+
+    function beforeDonate(
+        address sender,
+        IPoolManager.PoolKey calldata key,
+        uint256 amount0,
+        uint256 amount1
+    ) external;
+
+    function afterDonate(
+        address sender,
+        IPoolManager.PoolKey calldata key,
+        uint256 amount0,
+        uint256 amount1
+    ) external;
 }
