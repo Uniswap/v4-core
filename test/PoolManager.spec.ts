@@ -1210,6 +1210,69 @@ describe('PoolManager', () => {
           expect(actualBalance1).to.eq(expectedBalance1.sub(4))
         })
       })
+
+      describe('single pool sell', () => {
+        beforeEach('set up pool', async () => {
+          const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+          const amountLiquidity = expandTo18Decimals(1)
+
+          start = nIntervalsFrom(latestTimestamp, 10_000, 1)
+          expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+
+          orderKey0 = {
+            zeroForOne: true,
+            owner: wallet.address,
+            expiration,
+          }
+
+          key = {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: 0,
+            hooks: ADDRESS_ZERO,
+            tickSpacing: 10,
+          }
+          await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+
+          // 1) Add liquidity balances to AMM
+          await modifyPositionTest.modifyPosition(key, {
+            tickLower: getMinTick(10),
+            tickUpper: getMaxTick(10),
+            liquidityDelta: amountLiquidity,
+          })
+          await modifyPositionTest.modifyPosition(key, {
+            tickLower: -2000,
+            tickUpper: 2000,
+            liquidityDelta: amountLiquidity,
+          })
+          await modifyPositionTest.modifyPosition(key, {
+            tickLower: -3000,
+            tickUpper: 3000,
+            liquidityDelta: amountLiquidity,
+          })
+          await modifyPositionTest.modifyPosition(key, {
+            tickLower: -3100,
+            tickUpper: 3100,
+            liquidityDelta: amountLiquidity,
+          })
+        })
+
+        describe('when crossing two ticks', () => {
+          it('crosses both ticks properly', async () => {
+            await ethers.provider.send('evm_setNextBlockTimestamp', [start])
+
+            await twammTest.submitLongTermOrder(key, {
+              amountIn: expandTo18Decimals(1),
+              ...orderKey0,
+            })
+
+            await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
+            const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
+
+            const { sqrtPriceX96 } = await manager.slot0(getPoolId(key))
+          })
+        })
+      })
     })
   })
 })

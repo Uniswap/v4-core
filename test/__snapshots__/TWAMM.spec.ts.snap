@@ -31,13 +31,13 @@ Object {
 exports[`TWAMM single pool sell tests gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 100403,
+  "gasUsed": 97856,
 }
 `;
 
 exports[`TWAMM single pool sell tests gas zeroForOne=false 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 110382,
+  "gasUsed": 107824,
 }
 `;
