@@ -5,6 +5,7 @@ import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
+import { getJsonWalletAddress } from 'ethers/lib/utils'
 
 async function mineNextBlock(time: number) {
   await ethers.provider.send('evm_mine', [time])
@@ -165,6 +166,141 @@ describe('TWAMM', () => {
           expiration,
         })
       )
+    })
+  })
+
+  describe('Single pool twamm trades on illiquid pools', () => {
+    //  Will essentially buy the most it can from the pool on the very first update and on subsequent claims, it claims nothing bc there is nothing left in the pool.
+    let blocktime: number
+    let submission: number
+    let midPointTime: number
+    let expiration: number
+
+    const interval = 10_000
+
+    const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+    const liquidity = '1000000'
+    // seems like the min amount that can be left in the pool is 1
+    const maxPoolSell = '999999'
+    const fee = '3000'
+    const tickSpacing = 60
+    const poolParams = { sqrtPriceX96, liquidity, fee, tickSpacing }
+
+    const amountIn = toWei('4')
+    const zeroForOne = true
+    const halfAmount = amountIn.div(2)
+
+    beforeEach('Initialize a single pool sell', async () => {
+      blocktime = (await ethers.provider.getBlock('latest')).timestamp
+      submission = nIntervalsFrom(blocktime, interval, 1)
+
+      midPointTime = nIntervalsFrom(blocktime, interval, 3)
+      expiration = nIntervalsFrom(blocktime, interval, 5)
+
+      await twamm.initialize(interval)
+
+      const zeroForOneOrder = { zeroForOne, owner: wallet.address, amountIn, expiration }
+      await setAutomine(false)
+      await twamm.executeTWAMMOrders(poolParams)
+      await twamm.submitLongTermOrder(zeroForOneOrder)
+      await mineNextBlock(submission)
+      await setAutomine(true)
+    })
+
+    it('likely buys the maximum of the token after the first update', async () => {
+      const firstInterval = nIntervalsFrom(blocktime, interval, 2)
+      // Set the time somewhere between submission and the first full interval.
+      await setAutomine(false)
+      await twamm.executeTWAMMOrders(poolParams)
+      await mineNextBlock((submission + firstInterval) / 2)
+      await setAutomine(true)
+      const results = await twamm.callStatic.claimEarnings({ owner: wallet.address, expiration, zeroForOne })
+      expect(results.earningsAmount.toString()).to.eq(maxPoolSell)
+    })
+    it('mid amount sell', async () => {
+      // Set the time to the midpoint between the submission and the expiration.
+      await setAutomine(false)
+      await twamm.executeTWAMMOrders(poolParams)
+      await mineNextBlock(midPointTime)
+      await setAutomine(true)
+      const results = await twamm.callStatic.claimEarnings({ owner: wallet.address, expiration, zeroForOne })
+
+      expect(results.earningsAmount).to.be.lt(halfAmount)
+      expect(results.earningsAmount).to.be.eq(maxPoolSell)
+
+      // Set the time to past the expiration.
+      await setAutomine(false)
+      await mineNextBlock(expiration + 1)
+      await setAutomine(true)
+
+      const resultsFinal = await twamm.callStatic.claimEarnings({ owner: wallet.address, expiration, zeroForOne })
+      // this is 0 bc it has already claimed the max amount from the pool
+      expect(resultsFinal.earningsAmount).to.be.eq(0)
+    })
+    it('full amount sell', async () => {
+      await setAutomine(false)
+      await twamm.executeTWAMMOrders(poolParams)
+      await mineNextBlock(expiration + 1)
+      await setAutomine(true)
+      const results = await twamm.callStatic.claimEarnings({ owner: wallet.address, expiration, zeroForOne })
+
+      console.log('full earnings')
+      console.log(results.earningsAmount.toString())
+      // still expecting to get less than half the amount since the rate is so bad
+      expect(results.earningsAmount).to.be.lt(halfAmount)
+      expect(results.earningsAmount).to.be.eq(maxPoolSell)
+    })
+  })
+
+  describe.only('Multiple pool twamm trades on illiquid pools', () => {
+    let blocktime: number
+    let timestamp1: number
+    let timestamp2: number
+    let timestamp3: number
+
+    const interval = 10_000
+
+    const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+    const liquidity = '100000'
+    const fee = '3000'
+    const tickSpacing = 60
+
+    const poolParams = { sqrtPriceX96, liquidity, fee, tickSpacing }
+
+    const amountIn = toWei('4')
+    const zeroForOne = true
+    const halfAmount = amountIn.div(2)
+
+    beforeEach('Initialize two orders', async () => {
+      blocktime = (await ethers.provider.getBlock('latest')).timestamp
+      timestamp1 = nIntervalsFrom(blocktime, interval, 1)
+      timestamp2 = nIntervalsFrom(blocktime, interval, 3)
+      timestamp3 = nIntervalsFrom(blocktime, interval, 5)
+
+      await twamm.initialize(interval)
+      await twamm.executeTWAMMOrders(poolParams)
+
+      const zeroForOneOrder = { zeroForOne, owner: wallet.address, amountIn, expiration: timestamp3 }
+      const oneForZeroOrder = { zeroForOne: false, owner: wallet.address, amountIn: halfAmount, expiration: timestamp3 }
+      await ethers.provider.send('evm_setNextBlockTimestamp', [timestamp1])
+      await twamm.submitLongTermOrder(zeroForOneOrder)
+      await twamm.submitLongTermOrder(oneForZeroOrder)
+    })
+    // Currently overflow issues when updating the state.
+    // TODO: figure out the expected behavior when trading with a very illiquid pool
+    it('should not overflow??', async () => {
+      await ethers.provider.send('evm_mine', [timestamp3 + 1])
+      await twamm.executeTWAMMOrders(poolParams)
+      await twamm.callStatic.claimEarnings({
+        owner: wallet.address,
+        expiration: timestamp3,
+        zeroForOne,
+      })
+      await twamm.callStatic.claimEarnings({
+        owner: wallet.address,
+        expiration: timestamp3,
+        zeroForOne: false,
+      })
     })
   })
 
