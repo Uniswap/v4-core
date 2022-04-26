@@ -243,7 +243,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
         _accountPoolBalanceDelta(key, delta);
 
-        emit Swap(delta.amount0, delta.amount1);
 
         if (key.hooks.shouldCallAfterSwap()) {
             key.hooks.afterSwap(msg.sender, key, params, delta);
@@ -364,21 +363,9 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
     function executeTWAMMOrders(IPoolManager.PoolKey memory key)
         public
-        onlyByLocker
         returns (IPoolManager.BalanceDelta memory delta)
     {
-        Pool.State storage pool = _getPool(key);
-        (bool zeroForOne, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
-            TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee, key.tickSpacing),
-            pool.ticks,
-            pool.tickBitmap
-        );
-
-        if (sqrtPriceLimitX96 != 0 && sqrtPriceLimitX96 != pool.slot0.sqrtPriceX96) {
-            delta = swap(key, SwapParams(zeroForOne, type(int256).max, sqrtPriceLimitX96));
-            _accountDelta(key.token0, -delta.amount0);
-            _accountDelta(key.token1, -delta.amount1);
-        }
+        _getPool(key).executeTwammOrders(Pool.ExecuteTWAMMParams(key.fee, key.tickSpacing));
     }
 
     function onERC1155Received(

@@ -3,32 +3,44 @@ pragma solidity =0.8.13;
 
 import {TWAMM} from '../libraries/TWAMM/TWAMM.sol';
 import {TwammMath} from '../libraries/TWAMM/TwammMath.sol';
+import {Pool} from '../libraries/Pool.sol';
 import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {Tick} from '../libraries/Tick.sol';
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
 import {FixedPoint96} from '../libraries/FixedPoint96.sol';
 
 contract TWAMMTest {
+    using Pool for Pool.State;
     using TWAMM for TWAMM.State;
     using ABDKMathQuad for *;
 
-    TWAMM.State public twamm;
-    mapping(int24 => Tick.Info) mockTicks;
-    mapping(int16 => uint256) mockTickBitmap;
+    Pool.State private pool;
+
+    struct PoolParamsOnExecute {
+        uint160 sqrtPriceX96;
+        uint128 liquidity;
+        uint24 fee;
+        int24 tickSpacing;
+    }
+
+    struct OrderPoolParamsOnExecute {
+        uint256 sellRateCurrent0;
+        uint256 sellRateCurrent1;
+    }
 
     function initialize(uint256 orderInterval) external {
-        twamm.initialize(orderInterval);
+        pool.twamm.initialize(orderInterval);
     }
 
     function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
-        orderId = twamm.submitLongTermOrder(params);
+        orderId = pool.twamm.submitLongTermOrder(params);
     }
 
     function modifyLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)
         external
         returns (uint256 amountOut0, uint256 amountOut1)
     {
-        (amountOut0, amountOut1) = twamm.modifyLongTermOrder(orderKey, amountDelta);
+        (amountOut0, amountOut1) = pool.twamm.modifyLongTermOrder(orderKey, amountDelta);
     }
 
     function claimEarnings(TWAMM.OrderKey calldata orderKey)
@@ -39,22 +51,25 @@ contract TWAMMTest {
             uint256 unclaimedEarningsAmount
         )
     {
-        (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderKey);
+        (earningsAmount, sellTokenIndex) = pool.twamm.claimEarnings(orderKey);
         // unclaimedEarningsFactor is a fixed point
-        uint256 sellRateCurrent = twamm._getOrder(orderKey).sellRate;
+        uint256 sellRateCurrent = pool.twamm._getOrder(orderKey).sellRate;
         unclaimedEarningsAmount =
-            (twamm._getOrder(orderKey).unclaimedEarningsFactor * sellRateCurrent) >>
+            (pool.twamm._getOrder(orderKey).unclaimedEarningsFactor * sellRateCurrent) >>
             FixedPoint96.RESOLUTION;
     }
 
-    function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
-        twamm.executeTWAMMOrders(poolParams, mockTicks, mockTickBitmap);
+    function executeTWAMMOrders(PoolParamsOnExecute memory params) external {
+        pool.slot0.sqrtPriceX96 = params.sqrtPriceX96;
+        pool.liquidity = params.liquidity;
+
+        pool._executeTWAMMOrders(Pool.ExecuteTWAMMParams(params.fee, params.tickSpacing));
     }
 
     function calculateExecutionUpdates(
         uint256 secondsElapsed,
-        TWAMM.PoolParamsOnExecute memory poolParams,
-        TWAMM.OrderPoolParamsOnExecute memory orderPoolParams
+        PoolParamsOnExecute memory poolParams,
+        OrderPoolParamsOnExecute memory orderPoolParams
     )
         external
         returns (
@@ -64,9 +79,13 @@ contract TWAMMTest {
         )
     {
         (sqrtPriceX96, earningsPool0, earningsPool1) = TwammMath.calculateExecutionUpdates(
-            secondsElapsed,
-            poolParams,
-            orderPoolParams
+            TwammMath.ExecutionUpdateParams(
+                secondsElapsed,
+                poolParams.sqrtPriceX96,
+                poolParams.liquidity,
+                orderPoolParams.sellRateCurrent0,
+                orderPoolParams.sellRateCurrent1
+            )
         );
     }
 
@@ -81,11 +100,11 @@ contract TWAMMTest {
     }
 
     function getOrder(TWAMM.OrderKey calldata orderKey) external view returns (TWAMM.Order memory) {
-        return twamm._getOrder(orderKey);
+        return pool.twamm._getOrder(orderKey);
     }
 
     function getOrderPool(uint8 index) external view returns (uint256 sellRate, uint256 earningsFactor) {
-        OrderPool.State storage orderPool = twamm.orderPools[index];
+        OrderPool.State storage orderPool = pool.twamm.orderPools[index];
         sellRate = orderPool.sellRateCurrent;
         earningsFactor = orderPool.earningsFactorCurrent;
     }
@@ -95,7 +114,7 @@ contract TWAMMTest {
         view
         returns (uint256 sellRate)
     {
-        return twamm.orderPools[sellTokenIndex].sellRateEndingAtInterval[timestamp];
+        return pool.twamm.orderPools[sellTokenIndex].sellRateEndingAtInterval[timestamp];
     }
 
     function getOrderPoolEarningsFactorAtInterval(uint8 sellTokenIndex, uint256 timestamp)
@@ -103,11 +122,11 @@ contract TWAMMTest {
         view
         returns (uint256 sellRate)
     {
-        return twamm.orderPools[sellTokenIndex].earningsFactorAtInterval[timestamp];
+        return pool.twamm.orderPools[sellTokenIndex].earningsFactorAtInterval[timestamp];
     }
 
     function getState() external view returns (uint256 expirationInterval, uint256 lastVirtualOrderTimestamp) {
-        expirationInterval = twamm.expirationInterval;
-        lastVirtualOrderTimestamp = twamm.lastVirtualOrderTimestamp;
+        expirationInterval = pool.twamm.expirationInterval;
+        lastVirtualOrderTimestamp = pool.twamm.lastVirtualOrderTimestamp;
     }
 }

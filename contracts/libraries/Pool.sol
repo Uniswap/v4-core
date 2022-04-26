@@ -8,11 +8,14 @@ import {Position} from './Position.sol';
 import {Oracle} from './Oracle.sol';
 import {FullMath} from './FullMath.sol';
 import {FixedPoint128} from './FixedPoint128.sol';
+import {FixedPoint96} from './FixedPoint96.sol';
 import {TickMath} from './TickMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
 import {SwapMath} from './SwapMath.sol';
 import {TWAMM} from './TWAMM/TWAMM.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
+
+import 'hardhat/console.sol';
 
 library Pool {
     using SafeCast for *;
@@ -22,6 +25,8 @@ library Pool {
     using Position for Position.Info;
     using Oracle for Oracle.Observation[65535];
     using TWAMM for TWAMM.State;
+
+    event Swap(int256 amount0, int256 amount1);
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -620,22 +625,125 @@ library Pool {
                 ? (params.amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
         }
+
+        emit Swap(result.amount0, result.amount1);
+
     }
 
     /// @notice Donates the given amount of token0 and token1 to the pool
     function donate(
-        State storage state,
+        State storage self,
         uint256 amount0,
         uint256 amount1
     ) internal returns (IPoolManager.BalanceDelta memory delta) {
-        if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
+        if (self.liquidity == 0) revert NoLiquidityToReceiveFees();
         delta.amount0 = amount0.toInt256();
         delta.amount1 = amount1.toInt256();
         unchecked {
-            if (amount0 > 0)
-                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
-            if (amount1 > 0)
-                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
+            if (amount0 > 0) self.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, self.liquidity);
+            if (amount1 > 0) self.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, self.liquidity);
         }
+    }
+
+    struct ExecuteTWAMMParams {
+        uint24 fee;
+        int24 tickSpacing;
+    }
+
+    function executeTwammOrders(State storage self, ExecuteTWAMMParams memory params)
+        internal
+        returns (bool zeroForOne, uint160 newSqrtPriceX96)
+    {
+        (zeroForOne, newSqrtPriceX96) = _executeTWAMMOrders(self, params);
+
+        if (self.slot0.sqrtPriceX96 != newSqrtPriceX96) {
+            swap(self, SwapParams(params.fee, params.tickSpacing, uint32(block.timestamp), zeroForOne, type(int256).max, newSqrtPriceX96));
+        }
+    }
+
+    function _executeTWAMMOrders(
+        State storage self,
+        ExecuteTWAMMParams memory params
+    ) internal returns (bool zeroForOne, uint160 newSqrtPriceX96) {
+        if (!self.twamm.hasOutstandingOrders()) {
+            self.twamm.lastVirtualOrderTimestamp = block.timestamp;
+            return (false, self.slot0.sqrtPriceX96);
+        }
+
+        uint256 prevTimestamp = self.twamm.lastVirtualOrderTimestamp;
+        uint256 nextExpirationTimestamp = self.twamm.lastVirtualOrderTimestamp +
+            (self.twamm.expirationInterval - (self.twamm.lastVirtualOrderTimestamp % self.twamm.expirationInterval));
+        uint160 initialSqrtPriceX96 = self.slot0.sqrtPriceX96;
+
+        TWAMM.CachedPoolUpdates memory cachedPool = TWAMM.CachedPoolUpdates(self.slot0.sqrtPriceX96, self.liquidity);
+
+        unchecked {
+            while (nextExpirationTimestamp <= block.timestamp && self.twamm.hasOutstandingOrders()) {
+                if (
+                    self.twamm.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
+                    self.twamm.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
+                ) {
+                    if (
+                        self.twamm.orderPools[0].sellRateCurrent != 0 && self.twamm.orderPools[1].sellRateCurrent != 0
+                    ) {
+                        cachedPool = self.twamm.advanceToNewTimestamp(
+                            TWAMM.AdvanceParams(
+                                params.tickSpacing,
+                                nextExpirationTimestamp,
+                                (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96,
+                                cachedPool
+                            ),
+                            self.tickBitmap,
+                            self.ticks
+                        );
+                    } else {
+                        cachedPool = self.twamm.advanceTimestampForSinglePoolSell(
+                            TWAMM.AdvanceSingleParams(
+                                params.tickSpacing,
+                                nextExpirationTimestamp,
+                                nextExpirationTimestamp - prevTimestamp,
+                                cachedPool,
+                                self.twamm.orderPools[0].sellRateCurrent == 0 ? 1 : 0
+                            ),
+                            self.tickBitmap,
+                            self.ticks
+                        );
+                    }
+                    prevTimestamp = nextExpirationTimestamp;
+                }
+                nextExpirationTimestamp += self.twamm.expirationInterval;
+            }
+
+            if (prevTimestamp < block.timestamp && self.twamm.hasOutstandingOrders()) {
+                if (self.twamm.orderPools[0].sellRateCurrent != 0 && self.twamm.orderPools[1].sellRateCurrent != 0) {
+                    cachedPool = self.twamm.advanceToNewTimestamp(
+                        TWAMM.AdvanceParams(
+                            params.tickSpacing,
+                            block.timestamp,
+                            (block.timestamp - prevTimestamp) * FixedPoint96.Q96,
+                            cachedPool
+                        ),
+                        self.tickBitmap,
+                        self.ticks
+                    );
+                } else {
+                    cachedPool = self.twamm.advanceTimestampForSinglePoolSell(
+                        TWAMM.AdvanceSingleParams(
+                            params.tickSpacing,
+                            block.timestamp,
+                            block.timestamp - prevTimestamp,
+                            cachedPool,
+                            self.twamm.orderPools[0].sellRateCurrent == 0 ? 1 : 0
+                        ),
+                        self.tickBitmap,
+                        self.ticks
+                    );
+                }
+            }
+        }
+
+        self.twamm.lastVirtualOrderTimestamp = block.timestamp;
+        newSqrtPriceX96 = cachedPool.sqrtPriceX96;
+        zeroForOne = initialSqrtPriceX96 > newSqrtPriceX96;
     }
 }

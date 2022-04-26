@@ -85,86 +85,172 @@ describe('TWAMM', () => {
     let prevTimeExpiration: number
     let expiration: number
 
-    beforeEach('deploy test twamm', async () => {
-      zeroForOne = true
-      owner = wallet.address
-      ;(amountIn = toWei('1')), await twamm.initialize(10_000)
-      const blocktime = (await ethers.provider.getBlock('latest')).timestamp
-      nonIntervalExpiration = blocktime
-      prevTimeExpiration = findExpiryTime(blocktime, -1, 10000)
-      // gets the valid expiry time that is 3 intervals out
-      expiration = findExpiryTime(blocktime, 3, 10000)
-    })
-
-    it('reverts if expiry is not on an interval', async () => {
-      await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to.be
-        .reverted
-    })
-
-    it('reverts if not initialized', async () => {
-      const twammUnitialized = await loadFixture(twammFixture)
-      await expect(
-        twammUnitialized.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration })
-      ).to.be.revertedWith('NotInitialized()')
-    })
-
-    it('reverts if expiry is in the past', async () => {
-      await expect(
-        twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: prevTimeExpiration })
-      ).to.be.revertedWith(`ExpirationLessThanBlocktime(${prevTimeExpiration})`)
-    })
-
-    it('stores the new long term order', async () => {
-      const orderKey = { owner, expiration, zeroForOne }
-      // TODO: if the twamm is not initialized, should revert
-      await twamm.submitLongTermOrder({
-        zeroForOne,
-        owner,
-        amountIn,
-        expiration,
+    describe('for token0', () => {
+      beforeEach('deploy test twamm', async () => {
+        zeroForOne = true
+        owner = wallet.address
+        ;(amountIn = toWei('1')), await twamm.initialize(10_000)
+        const blocktime = (await ethers.provider.getBlock('latest')).timestamp
+        nonIntervalExpiration = blocktime
+        prevTimeExpiration = findExpiryTime(blocktime, -1, 10000)
+        // gets the valid expiry time that is 3 intervals out
+        expiration = findExpiryTime(blocktime, 3, 10000)
       })
 
-      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      const sellRate = amountIn.div(expiration - latestTimestamp)
-
-      const newOrder = await twamm.getOrder(orderKey)
-
-      expect(newOrder.sellTokenIndex).to.equal(0)
-      expect(newOrder.sellRate).to.equal(sellRate)
-      expect(newOrder.expiration).to.equal(expiration)
-    })
-
-    it('increases the sellRate and sellRateEndingPerInterval of the corresponding OrderPool', async () => {
-      const orderKey = { owner, expiration, zeroForOne }
-
-      let orderPool = await twamm.getOrderPool(0)
-      expect(orderPool.sellRate).to.equal(0)
-      expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(0)
-
-      await twamm.submitLongTermOrder({
-        zeroForOne,
-        owner,
-        amountIn,
-        expiration,
+      it('reverts if expiry is not on an interval', async () => {
+        await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to.be
+          .reverted
       })
 
-      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      const sellRate = amountIn.div(expiration - latestTimestamp)
+      it('reverts if not initialized', async () => {
+        const twammUnitialized = await loadFixture(twammFixture)
+        await expect(
+          twammUnitialized.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration })
+        ).to.be.revertedWith('NotInitialized()')
+      })
 
-      orderPool = await twamm.getOrderPool(0)
-      expect(orderPool.sellRate).to.equal(sellRate)
-      expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(sellRate)
-    })
+      it('reverts if expiry is in the past', async () => {
+        await expect(
+          twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: prevTimeExpiration })
+        ).to.be.revertedWith(`ExpirationLessThanBlocktime(${prevTimeExpiration})`)
+      })
 
-    it('gas', async () => {
-      await snapshotGasCost(
-        twamm.submitLongTermOrder({
+      it('stores the new long term order', async () => {
+        const orderKey = { owner, expiration, zeroForOne }
+        // TODO: if the twamm is not initialized, should revert
+        await twamm.submitLongTermOrder({
           zeroForOne,
           owner,
           amountIn,
           expiration,
         })
-      )
+
+        const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+        const sellRate = amountIn.div(expiration - latestTimestamp)
+
+        const newOrder = await twamm.getOrder(orderKey)
+
+        expect(newOrder.sellTokenIndex).to.equal(0)
+        expect(newOrder.sellRate).to.equal(sellRate)
+        expect(newOrder.expiration).to.equal(expiration)
+      })
+
+      it('increases the sellRate and sellRateEndingPerInterval of the corresponding OrderPool', async () => {
+        const orderKey = { owner, expiration, zeroForOne }
+
+        let orderPool = await twamm.getOrderPool(0)
+        expect(orderPool.sellRate).to.equal(0)
+        expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(0)
+
+        await twamm.submitLongTermOrder({
+          zeroForOne,
+          owner,
+          amountIn,
+          expiration,
+        })
+
+        const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+        const sellRate = amountIn.div(expiration - latestTimestamp)
+
+        orderPool = await twamm.getOrderPool(0)
+        expect(orderPool.sellRate).to.equal(sellRate)
+        expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(sellRate)
+      })
+
+      it('gas', async () => {
+        await snapshotGasCost(
+          twamm.submitLongTermOrder({
+            zeroForOne,
+            owner,
+            amountIn,
+            expiration,
+          })
+        )
+      })
+    })
+
+    describe('for token1', () => {
+      beforeEach('deploy test twamm', async () => {
+        zeroForOne = false
+        owner = wallet.address
+        ;(amountIn = toWei('1')), await twamm.initialize(10_000)
+        const blocktime = (await ethers.provider.getBlock('latest')).timestamp
+        nonIntervalExpiration = blocktime
+        prevTimeExpiration = findExpiryTime(blocktime, -1, 10000)
+        // gets the valid expiry time that is 3 intervals out
+        expiration = findExpiryTime(blocktime, 3, 10000)
+      })
+
+      it('reverts if expiry is not on an interval', async () => {
+        await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to.be
+          .reverted
+      })
+
+      it('reverts if not initialized', async () => {
+        const twammUnitialized = await loadFixture(twammFixture)
+        await expect(
+          twammUnitialized.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration })
+        ).to.be.revertedWith('NotInitialized()')
+      })
+
+      it('reverts if expiry is in the past', async () => {
+        await expect(
+          twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: prevTimeExpiration })
+        ).to.be.revertedWith(`ExpirationLessThanBlocktime(${prevTimeExpiration})`)
+      })
+
+      it('stores the new long term order', async () => {
+        const orderKey = { owner, expiration, zeroForOne }
+        // TODO: if the twamm is not initialized, should revert
+        await twamm.submitLongTermOrder({
+          zeroForOne,
+          owner,
+          amountIn,
+          expiration,
+        })
+
+        const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+        const sellRate = amountIn.div(expiration - latestTimestamp)
+
+        const newOrder = await twamm.getOrder(orderKey)
+
+        expect(newOrder.sellTokenIndex).to.equal(1)
+        expect(newOrder.sellRate).to.equal(sellRate)
+        expect(newOrder.expiration).to.equal(expiration)
+      })
+
+      it('increases the sellRate and sellRateEndingPerInterval of the corresponding OrderPool', async () => {
+        const orderKey = { owner, expiration, zeroForOne }
+
+        let orderPool = await twamm.getOrderPool(0)
+        expect(orderPool.sellRate).to.equal(0)
+        expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(0)
+
+        await twamm.submitLongTermOrder({
+          zeroForOne,
+          owner,
+          amountIn,
+          expiration,
+        })
+
+        const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+        const sellRate = amountIn.div(expiration - latestTimestamp)
+
+        orderPool = await twamm.getOrderPool(1)
+        expect(orderPool.sellRate).to.equal(sellRate)
+        expect(await twamm.getOrderPoolSellRateEndingPerInterval(1, expiration)).to.equal(sellRate)
+      })
+
+      it('gas', async () => {
+        await snapshotGasCost(
+          twamm.submitLongTermOrder({
+            zeroForOne,
+            owner,
+            amountIn,
+            expiration,
+          })
+        )
+      })
     })
   })
 

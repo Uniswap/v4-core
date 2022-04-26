@@ -6,7 +6,7 @@ import {TWAMM} from './TWAMM.sol';
 import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';
-
+import 'hardhat/console.sol';
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {
     using ABDKMathQuad for *;
@@ -20,16 +20,20 @@ library TwammMath {
         bytes16 liquidity;
         bytes16 sellRateCurrent0;
         bytes16 sellRateCurrent1;
-        bytes16 secondsElapsed;
+        bytes16 secondsElapsedX96;
+    }
+
+    struct ExecutionUpdateParams {
+        uint256 secondsElapsedX96;
+        uint160 sqrtPriceX96;
+        uint128 liquidity;
+        uint256 sellRateCurrent0;
+        uint256 sellRateCurrent1;
     }
 
     /// @notice Calculation used incrementally (b/w expiration intervals or initialized ticks)
     ///    to calculate earnings rewards and the amm price change resulting from executing TWAMM orders
-    function calculateExecutionUpdates(
-        uint256 secondsElapsed,
-        TWAMM.PoolParamsOnExecute memory poolParams,
-        TWAMM.OrderPoolParamsOnExecute memory orderPoolParams
-    )
+    function calculateExecutionUpdates(ExecutionUpdateParams memory params)
         internal
         view
         returns (
@@ -40,35 +44,35 @@ library TwammMath {
     {
         // https://www.desmos.com/calculator/yr3qvkafvy
         // https://www.desmos.com/calculator/rjcdwnaoja -- tracks some intermediate calcs
-
-        ParamsBytes16 memory params = ParamsBytes16({
-            sqrtPriceX96: poolParams.sqrtPriceX96.fromUInt(),
-            liquidity: poolParams.liquidity.fromUInt(),
-            sellRateCurrent0: orderPoolParams.sellRateCurrent0.fromUInt(),
-            sellRateCurrent1: orderPoolParams.sellRateCurrent1.fromUInt(),
-            secondsElapsed: secondsElapsed.fromUInt()
+        
+        ParamsBytes16 memory bytesParams = ParamsBytes16({
+            sqrtPriceX96: params.sqrtPriceX96.fromUInt(),
+            liquidity: params.liquidity.fromUInt(),
+            sellRateCurrent0: params.sellRateCurrent0.fromUInt(),
+            sellRateCurrent1: params.sellRateCurrent1.fromUInt(),
+            secondsElapsedX96: params.secondsElapsedX96.fromUInt()
         });
 
-        bytes16 sellRatio = params.sellRateCurrent1.div(params.sellRateCurrent0);
+        bytes16 sellRatio = bytesParams.sellRateCurrent1.div(bytesParams.sellRateCurrent0);
 
         bytes16 sqrtSellRatioX96 = sellRatio.sqrt().mul(Q96);
 
-        bytes16 sqrtSellRate = params.sellRateCurrent0.mul(params.sellRateCurrent1).sqrt();
+        bytes16 sqrtSellRate = bytesParams.sellRateCurrent0.mul(bytesParams.sellRateCurrent1).sqrt();
 
         bytes16 newSqrtPriceX96 = calculateNewSqrtPriceX96(
             sqrtSellRatioX96,
             sqrtSellRate,
-            params.secondsElapsed,
-            params
+            bytesParams.secondsElapsedX96,
+            bytesParams
         );
 
         EarningsFactorParams memory earningsFactorParams = EarningsFactorParams({
-            secondsElapsedX96: params.secondsElapsed,
+            secondsElapsedX96: bytesParams.secondsElapsedX96,
             sellRatio: sellRatio,
             sqrtSellRate: sqrtSellRate,
-            prevSqrtPriceX96: params.sqrtPriceX96,
+            prevSqrtPriceX96: bytesParams.sqrtPriceX96,
             newSqrtPriceX96: newSqrtPriceX96,
-            liquidity: params.liquidity
+            liquidity: bytesParams.liquidity
         });
 
         sqrtPriceX96 = newSqrtPriceX96.toUInt().toUint160();
@@ -148,10 +152,10 @@ library TwammMath {
     function calculateNewSqrtPriceX96(
         bytes16 sqrtSellRatioX96,
         bytes16 sqrtSellRate,
-        bytes16 secondsElapsed,
+        bytes16 secondsElapsedX96,
         ParamsBytes16 memory params
     ) private view returns (bytes16 newSqrtPriceX96) {
-        bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(secondsElapsed).div(params.liquidity).div(Q96);
+        bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(secondsElapsedX96).div(params.liquidity).div(Q96);
         bytes16 c = sqrtSellRatioX96.sub(params.sqrtPriceX96).div(sqrtSellRatioX96.add(params.sqrtPriceX96));
         newSqrtPriceX96 = sqrtSellRatioX96.mul(pow.exp().sub(c)).div(pow.exp().add(c));
     }
