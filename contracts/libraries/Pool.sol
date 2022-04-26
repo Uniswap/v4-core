@@ -108,7 +108,9 @@ library Pool {
 
     struct ModifyPositionState {
         bool flippedLower;
+        uint128 liquidityGrossAfterLower;
         bool flippedUpper;
+        uint128 liquidityGrossAfterUpper;
         uint256 feeGrowthInside0X128;
         uint256 feeGrowthInside1X128;
     }
@@ -128,7 +130,7 @@ library Pool {
             ModifyPositionState memory state;
             // if we need to update the ticks, do it
             if (params.liquidityDelta != 0) {
-                state.flippedLower = self.ticks.update(
+                (state.flippedLower, state.liquidityGrossAfterLower) = self.ticks.update(
                     params.tickLower,
                     self.slot0.tick,
                     params.liquidityDelta,
@@ -136,7 +138,7 @@ library Pool {
                     self.feeGrowthGlobal1X128,
                     false
                 );
-                state.flippedUpper = self.ticks.update(
+                (state.flippedUpper, state.liquidityGrossAfterUpper) = self.ticks.update(
                     params.tickUpper,
                     self.slot0.tick,
                     params.liquidityDelta,
@@ -146,9 +148,9 @@ library Pool {
                 );
 
                 uint128 maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
-                if (self.ticks[params.tickLower].liquidityGross > maxLiquidityPerTick)
+                if (state.liquidityGrossAfterLower > maxLiquidityPerTick)
                     revert TickLiquidityOverflow(params.tickLower);
-                if (self.ticks[params.tickUpper].liquidityGross > maxLiquidityPerTick)
+                if (state.liquidityGrossAfterUpper > maxLiquidityPerTick)
                     revert TickLiquidityOverflow(params.tickUpper);
 
                 if (state.flippedLower) {

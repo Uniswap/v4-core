@@ -34,7 +34,7 @@ contract TickTest {
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128,
         bool upper
-    ) external returns (bool flipped) {
+    ) external returns (bool flipped, uint128 liquidityGrossAfter) {
         return ticks.update(tick, tickCurrent, liquidityDelta, feeGrowthGlobal0X128, feeGrowthGlobal1X128, upper);
     }
 

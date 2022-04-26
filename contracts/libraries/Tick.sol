@@ -101,11 +101,11 @@ library Tick {
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128,
         bool upper
-    ) internal returns (bool flipped) {
+    ) internal returns (bool flipped, uint128 liquidityGrossAfter) {
         Tick.Info storage info = self[tick];
 
         uint128 liquidityGrossBefore = info.liquidityGross;
-        uint128 liquidityGrossAfter = liquidityDelta < 0
+        liquidityGrossAfter = liquidityDelta < 0
             ? liquidityGrossBefore - uint128(-liquidityDelta)
             : liquidityGrossBefore + uint128(liquidityDelta);
 

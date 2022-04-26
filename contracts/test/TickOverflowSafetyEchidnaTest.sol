@@ -41,7 +41,7 @@ contract TickOverflowSafetyEchidnaTest {
         require(tickLower > MIN_TICK);
         require(tickUpper < MAX_TICK);
         require(tickLower < tickUpper);
-        bool flippedLower = ticks.update(
+        (bool flippedLower, ) = ticks.update(
             tickLower,
             tick,
             liquidityDelta,
@@ -49,7 +49,7 @@ contract TickOverflowSafetyEchidnaTest {
             feeGrowthGlobal1X128,
             false
         );
-        bool flippedUpper = ticks.update(
+        (bool flippedUpper, ) = ticks.update(
             tickUpper,
             tick,
             liquidityDelta,

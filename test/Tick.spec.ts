@@ -124,23 +124,27 @@ describe('Tick', () => {
 
   describe('#update', async () => {
     it('flips from zero to nonzero', async () => {
-      expect(await tickTest.callStatic.update(0, 0, 1, 0, 0, false)).to.eq(true)
+      const { flipped, liquidityGrossAfter } = await tickTest.callStatic.update(0, 0, 1, 0, 0, false)
+      expect(flipped).to.eq(true)
+      expect(liquidityGrossAfter).to.eq(1)
     })
     it('does not flip from nonzero to greater nonzero', async () => {
       await tickTest.update(0, 0, 1, 0, 0, false)
-      expect(await tickTest.callStatic.update(0, 0, 1, 0, 0, false)).to.eq(false)
+      const { flipped, liquidityGrossAfter } = await tickTest.callStatic.update(0, 0, 1, 0, 0, false)
+      expect(flipped).to.eq(false)
+      expect(liquidityGrossAfter).to.eq(2)
     })
     it('flips from nonzero to zero', async () => {
       await tickTest.update(0, 0, 1, 0, 0, false)
-      expect(await tickTest.callStatic.update(0, 0, -1, 0, 0, false)).to.eq(true)
+      const { flipped, liquidityGrossAfter } = await tickTest.callStatic.update(0, 0, -1, 0, 0, false)
+      expect(flipped).to.eq(true)
+      expect(liquidityGrossAfter).to.eq(0)
     })
     it('does not flip from nonzero to lesser nonzero', async () => {
       await tickTest.update(0, 0, 2, 0, 0, false)
-      expect(await tickTest.callStatic.update(0, 0, -1, 0, 0, false)).to.eq(false)
-    })
-    it('does not flip from nonzero to lesser nonzero', async () => {
-      await tickTest.update(0, 0, 2, 0, 0, false)
-      expect(await tickTest.callStatic.update(0, 0, -1, 0, 0, false)).to.eq(false)
+      const { flipped, liquidityGrossAfter } = await tickTest.callStatic.update(0, 0, -1, 0, 0, false)
+      expect(flipped).to.eq(false)
+      expect(liquidityGrossAfter).to.eq(1)
     })
     it('nets the liquidity based on upper flag', async () => {
       await tickTest.update(0, 0, 2, 0, 0, false)
