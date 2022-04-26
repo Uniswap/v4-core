@@ -22,6 +22,9 @@ interface IPoolManager is IERC1155 {
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
 
+    /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
+    error TickSpacingTooLarge();
+
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower token of the pool, sorted numerically
@@ -35,6 +38,9 @@ interface IPoolManager is IERC1155 {
         /// @notice The hooks of the pool
         IHooks hooks;
     }
+
+    /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
+    function MAX_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);

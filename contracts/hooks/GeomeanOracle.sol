@@ -73,7 +73,7 @@ contract GeomeanOracle is BaseHook {
         IPoolManager.PoolKey calldata key,
         uint160
     ) external view override poolManagerOnly {
-        if (key.fee != 0 || key.tickSpacing != type(int16).max) revert OraclePoolMustBeFreeFullRange();
+        if (key.fee != 0 || key.tickSpacing != poolManager.MAX_TICK_SPACING()) revert OraclePoolMustBeFreeFullRange();
     }
 
     function afterInitialize(

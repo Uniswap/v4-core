@@ -21,6 +21,8 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     using Pool for *;
     using Hooks for IHooks;
 
+    int24 public constant override MAX_TICK_SPACING = type(int16).max;
+
     mapping(bytes32 => Pool.State) public pools;
 
     constructor() ERC1155('') {}
@@ -50,10 +52,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     function getLiquidity(IPoolManager.PoolKey memory key) external view override returns (uint128 liquidity) {
         return _getPool(key).liquidity;
     }
-
-    int24 public constant MAX_TICK_SPACING = type(int16).max;
-
-    error TickSpacingTooLarge();
 
     /// @inheritdoc IPoolManager
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
