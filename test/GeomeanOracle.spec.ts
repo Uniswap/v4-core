@@ -14,6 +14,7 @@ describe('GeomeanOracle', () => {
   let oracle: MockTimeGeomeanOracle
   let poolManager: PoolManager
   let swapTest: PoolSwapTest
+  let modifyPositionTest: PoolModifyPositionTest
   let token0: TestERC20
   let token1: TestERC20
 
@@ -109,6 +110,7 @@ describe('GeomeanOracle', () => {
       manager: poolManager,
       tokens: { token0, token1 },
       swapTest,
+      modifyPositionTest,
     } = await loadFixture(fixture))
     poolKey = {
       token0: token0.address,
@@ -196,27 +198,22 @@ describe('GeomeanOracle', () => {
     })
   })
 
-  describe('#beforeSwap', async () => {
+  describe('#beforeModifyPosition', async () => {
     beforeEach('initialize the pool', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
     })
 
-    it('swap with no time change writes no observations', async () => {
-      await swapTest.swap(
-        poolKey,
-        {
-          zeroForOne: true,
-          amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
-        },
-        { withdrawTokens: true, settleUsingTransfer: true }
-      )
-      const { sqrtPriceX96 } = await poolManager.getSlot0(poolKey)
-      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(1, 2))
+    it('modifyPosition with no time change writes no observations', async () => {
+      await modifyPositionTest.modifyPosition(poolKey, {
+        tickLower: -MAX_TICK_SPACING,
+        tickUpper: MAX_TICK_SPACING,
+        liquidityDelta: 1000,
+      })
       const { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
       expect(index).to.eq(0)
       expect(cardinality).to.eq(1)
       expect(cardinalityNext).to.eq(1)
+
       const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
         await oracle.getObservation(poolKey, 0)
       expect(initialized).to.be.true
@@ -225,17 +222,13 @@ describe('GeomeanOracle', () => {
       expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(0)
     })
 
-    it('swap with time change writes an observation', async () => {
+    it('modifyPosition with time change writes an observation', async () => {
       await oracle.setTime(3) // advance 2 seconds
-      await swapTest.swap(
-        poolKey,
-        {
-          zeroForOne: true,
-          amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
-        },
-        { withdrawTokens: true, settleUsingTransfer: true }
-      )
+      await modifyPositionTest.modifyPosition(poolKey, {
+        tickLower: -MAX_TICK_SPACING,
+        tickUpper: MAX_TICK_SPACING,
+        liquidityDelta: 1000,
+      })
       const { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
       expect(index).to.eq(0)
       expect(cardinality).to.eq(1)
@@ -251,7 +244,7 @@ describe('GeomeanOracle', () => {
       )
     })
 
-    it('swap with time change writes an observation and updates cardinality', async () => {
+    it('modifyPosition with time change writes an observation and updates cardinality', async () => {
       await oracle.setTime(3) // advance 2 seconds
       await oracle.increaseCardinalityNext(poolKey, 2)
 
@@ -260,15 +253,11 @@ describe('GeomeanOracle', () => {
       expect(cardinality).to.eq(1)
       expect(cardinalityNext).to.eq(2)
 
-      await swapTest.swap(
-        poolKey,
-        {
-          zeroForOne: true,
-          amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
-        },
-        { withdrawTokens: true, settleUsingTransfer: true }
-      )
+      await modifyPositionTest.modifyPosition(poolKey, {
+        tickLower: -MAX_TICK_SPACING,
+        tickUpper: MAX_TICK_SPACING,
+        liquidityDelta: 1000,
+      })
 
       // cardinality is updated
       ;({ index, cardinality, cardinalityNext } = await oracle.getState(poolKey))
