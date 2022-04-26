@@ -171,7 +171,7 @@ describe('GeomeanOracle', () => {
   describe('#afterInitialize', async () => {
     it('initializes the oracle state', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
-      const { index, cardinality, cardinalityNext } = await oracle.states(getPoolId(poolKey))
+      const { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
       expect(index).to.eq(0)
       expect(cardinality).to.eq(1)
       expect(cardinalityNext).to.eq(1)
@@ -179,7 +179,7 @@ describe('GeomeanOracle', () => {
     it('initializes the observations array index 0', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
       const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
-        await oracle.observations(getPoolId(poolKey), 0)
+        await oracle.getObservation(poolKey, 0)
       expect(initialized).to.be.true
       expect(blockTimestamp, 'timestamp').to.eq(1)
       expect(tickCumulative, 'cumulative tick').to.eq(0)
@@ -196,7 +196,7 @@ describe('GeomeanOracle', () => {
     })
   })
 
-  describe('#afterSwap', async () => {
+  describe('#beforeSwap', async () => {
     beforeEach('initialize the pool', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
     })
@@ -213,10 +213,89 @@ describe('GeomeanOracle', () => {
       )
       const { sqrtPriceX96 } = await poolManager.getSlot0(poolKey)
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(1, 2))
-      const { index, cardinality, cardinalityNext } = await oracle.states(getPoolId(poolKey))
+      const { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
       expect(index).to.eq(0)
       expect(cardinality).to.eq(1)
       expect(cardinalityNext).to.eq(1)
+      const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
+        await oracle.getObservation(poolKey, 0)
+      expect(initialized).to.be.true
+      expect(blockTimestamp, 'timestamp').to.eq(1)
+      expect(tickCumulative, 'cumulative tick').to.eq(0)
+      expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(0)
+    })
+
+    it('swap with time change writes an observation', async () => {
+      await oracle.setTime(3) // advance 2 seconds
+      await swapTest.swap(
+        poolKey,
+        {
+          zeroForOne: true,
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+        },
+        { withdrawTokens: true, settleUsingTransfer: true }
+      )
+      const { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
+      expect(index).to.eq(0)
+      expect(cardinality).to.eq(1)
+      expect(cardinalityNext).to.eq(1)
+
+      const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
+        await oracle.getObservation(poolKey, 0)
+      expect(initialized).to.be.true
+      expect(blockTimestamp, 'timestamp').to.eq(3)
+      expect(tickCumulative, 'cumulative tick').to.eq(13862)
+      expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(
+        '680564733841876926926749214863536422912'
+      )
+    })
+
+    it('swap with time change writes an observation and updates cardinality', async () => {
+      await oracle.setTime(3) // advance 2 seconds
+      await oracle.increaseCardinalityNext(poolKey, 2)
+
+      let { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
+      expect(index).to.eq(0)
+      expect(cardinality).to.eq(1)
+      expect(cardinalityNext).to.eq(2)
+
+      await swapTest.swap(
+        poolKey,
+        {
+          zeroForOne: true,
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+        },
+        { withdrawTokens: true, settleUsingTransfer: true }
+      )
+
+      // cardinality is updated
+      ;({ index, cardinality, cardinalityNext } = await oracle.getState(poolKey))
+      expect(index).to.eq(1)
+      expect(cardinality).to.eq(2)
+      expect(cardinalityNext).to.eq(2)
+
+      // index 0 is untouched
+      {
+        const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
+          await oracle.getObservation(poolKey, 0)
+        expect(initialized).to.be.true
+        expect(blockTimestamp, 'timestamp').to.eq(1)
+        expect(tickCumulative, 'cumulative tick').to.eq(0)
+        expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(0)
+      }
+      // index 1 is written
+      {
+        const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
+          await oracle.getObservation(poolKey, 1)
+        expect(initialized).to.be.true
+        expect(blockTimestamp, 'timestamp').to.eq(3)
+        expect(tickCumulative, 'cumulative tick').to.eq(13862)
+        expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(
+          '680564733841876926926749214863536422912'
+        )
+      }
     })
   })
 })
