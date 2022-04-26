@@ -106,8 +106,6 @@ library Pool {
     }
 
     struct ModifyPositionState {
-        int56 tickCumulative;
-        uint160 secondsPerLiquidityCumulativeX128;
         bool flippedLower;
         bool flippedUpper;
         uint256 feeGrowthInside0X128;
