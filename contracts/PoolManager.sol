@@ -21,6 +21,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     using Pool for *;
     using Hooks for IHooks;
 
+    /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
     mapping(bytes32 => Pool.State) public pools;
