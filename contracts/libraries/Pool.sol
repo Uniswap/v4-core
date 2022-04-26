@@ -32,6 +32,9 @@ library Pool {
     /// @param tickUpper The invalid tickUpper
     error TickUpperOutOfBounds(int24 tickUpper);
 
+    /// @notice For the tick spacing, the tick has too much liquidity
+    error TickLiquidityOverflow(int24 tick);
+
     /// @notice Thrown when interacting with an uninitialized tick that must be initialized
     /// @param tick The uninitialized tick
     error TickNotInitialized(int24 tick);
@@ -99,8 +102,6 @@ library Pool {
         int24 tickUpper;
         // any change in liquidity
         int128 liquidityDelta;
-        // the max liquidity per tick
-        uint128 maxLiquidityPerTick;
         // the spacing between ticks
         int24 tickSpacing;
     }
@@ -133,8 +134,7 @@ library Pool {
                     params.liquidityDelta,
                     self.feeGrowthGlobal0X128,
                     self.feeGrowthGlobal1X128,
-                    false,
-                    params.maxLiquidityPerTick
+                    false
                 );
                 state.flippedUpper = self.ticks.update(
                     params.tickUpper,
@@ -142,9 +142,14 @@ library Pool {
                     params.liquidityDelta,
                     self.feeGrowthGlobal0X128,
                     self.feeGrowthGlobal1X128,
-                    true,
-                    params.maxLiquidityPerTick
+                    true
                 );
+
+                uint128 maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
+                if (self.ticks[params.tickLower].liquidityGross > maxLiquidityPerTick)
+                    revert TickLiquidityOverflow(params.tickLower);
+                if (self.ticks[params.tickUpper].liquidityGross > maxLiquidityPerTick)
+                    revert TickLiquidityOverflow(params.tickUpper);
 
                 if (state.flippedLower) {
                     self.tickBitmap.flipTick(params.tickLower, params.tickSpacing);

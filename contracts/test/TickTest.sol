@@ -33,19 +33,9 @@ contract TickTest {
         int128 liquidityDelta,
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128,
-        bool upper,
-        uint128 maxLiquidity
+        bool upper
     ) external returns (bool flipped) {
-        return
-            ticks.update(
-                tick,
-                tickCurrent,
-                liquidityDelta,
-                feeGrowthGlobal0X128,
-                feeGrowthGlobal1X128,
-                upper,
-                maxLiquidity
-            );
+        return ticks.update(tick, tickCurrent, liquidityDelta, feeGrowthGlobal0X128, feeGrowthGlobal1X128, upper);
     }
 
     function clear(int24 tick) external {

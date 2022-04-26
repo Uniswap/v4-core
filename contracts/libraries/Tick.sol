@@ -8,8 +8,6 @@ import {TickMath} from './TickMath.sol';
 /// @title Tick
 /// @notice Contains functions for managing tick processes and relevant calculations
 library Tick {
-    error TickLiquidityOverflow(int24 tick);
-
     using SafeCast for int256;
 
     // info stored for each initialized individual tick
@@ -94,7 +92,6 @@ library Tick {
     /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
     /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
     /// @param upper true for updating a position's upper tick, or false for updating a position's lower tick
-    /// @param maxLiquidity The maximum liquidity allocation for a single tick
     /// @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
     function update(
         mapping(int24 => Tick.Info) storage self,
@@ -103,8 +100,7 @@ library Tick {
         int128 liquidityDelta,
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128,
-        bool upper,
-        uint128 maxLiquidity
+        bool upper
     ) internal returns (bool flipped) {
         Tick.Info storage info = self[tick];
 
@@ -112,8 +108,6 @@ library Tick {
         uint128 liquidityGrossAfter = liquidityDelta < 0
             ? liquidityGrossBefore - uint128(-liquidityDelta)
             : liquidityGrossBefore + uint128(liquidityDelta);
-
-        if (liquidityGrossAfter > maxLiquidity) revert TickLiquidityOverflow(tick);
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 

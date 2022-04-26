@@ -8,7 +8,6 @@ contract TickOverflowSafetyEchidnaTest {
 
     int24 private constant MIN_TICK = -16;
     int24 private constant MAX_TICK = 16;
-    uint128 private constant MAX_LIQUIDITY = type(uint128).max / 32;
 
     mapping(int24 => Tick.Info) private ticks;
     int24 private tick = 0;
@@ -48,8 +47,7 @@ contract TickOverflowSafetyEchidnaTest {
             liquidityDelta,
             feeGrowthGlobal0X128,
             feeGrowthGlobal1X128,
-            false,
-            MAX_LIQUIDITY
+            false
         );
         bool flippedUpper = ticks.update(
             tickUpper,
@@ -57,8 +55,7 @@ contract TickOverflowSafetyEchidnaTest {
             liquidityDelta,
             feeGrowthGlobal0X128,
             feeGrowthGlobal1X128,
-            true,
-            MAX_LIQUIDITY
+            true
         );
 
         if (flippedLower) {
