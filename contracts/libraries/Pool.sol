@@ -147,11 +147,13 @@ library Pool {
                     true
                 );
 
-                uint128 maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
-                if (state.liquidityGrossAfterLower > maxLiquidityPerTick)
-                    revert TickLiquidityOverflow(params.tickLower);
-                if (state.liquidityGrossAfterUpper > maxLiquidityPerTick)
-                    revert TickLiquidityOverflow(params.tickUpper);
+                if (params.liquidityDelta > 0) {
+                    uint128 maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
+                    if (state.liquidityGrossAfterLower > maxLiquidityPerTick)
+                        revert TickLiquidityOverflow(params.tickLower);
+                    if (state.liquidityGrossAfterUpper > maxLiquidityPerTick)
+                        revert TickLiquidityOverflow(params.tickUpper);
+                }
 
                 if (state.flippedLower) {
                     self.tickBitmap.flipTick(params.tickLower, params.tickSpacing);
