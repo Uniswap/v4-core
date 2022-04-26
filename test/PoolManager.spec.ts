@@ -833,5 +833,26 @@ describe('PoolManager', () => {
       expect(feeGrowthGlobal0X128).to.eq(BigNumber.from('340282366920938463463374607431768211456')) // 100 << 128 divided by liquidity
       expect(feeGrowthGlobal1X128).to.eq(BigNumber.from('680564733841876926926749214863536422912')) // 200 << 128 divided by liquidity
     })
+
+    describe('hooks', () => {
+      it('calls beforeDonate and afterDonate', async () => {
+        const key = {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: 100,
+          hooks: hooksMock.address,
+          tickSpacing: 10,
+        }
+        await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: -60,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        })
+        await donateTest.donate(key, 100, 200)
+        expect(await hooksMock.calledWith('beforeDonate', [donateTest.address, key, 100, 200])).to.be.true
+        expect(await hooksMock.calledWith('afterDonate', [donateTest.address, key, 100, 200])).to.be.true
+      })
+    })
   })
 })

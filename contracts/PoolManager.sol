@@ -239,7 +239,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         _accountPoolBalanceDelta(key, delta);
 
         if (key.hooks.shouldCallAfterDonate()) {
-            key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+            key.hooks.afterDonate(msg.sender, key, amount0, amount1);
         }
     }
 
