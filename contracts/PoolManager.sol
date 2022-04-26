@@ -51,8 +51,15 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         return _getPool(key).liquidity;
     }
 
+    int24 public constant MAX_TICK_SPACING = type(int16).max;
+
+    error TickSpacingTooLarge();
+
     /// @inheritdoc IPoolManager
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
+        // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
+        if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
+
         if (key.hooks.shouldCallBeforeInitialize()) {
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }

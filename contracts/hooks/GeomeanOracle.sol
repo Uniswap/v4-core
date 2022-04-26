@@ -33,6 +33,20 @@ contract GeomeanOracle is BaseHook {
     /// @notice The current observation array state for the given pool ID
     mapping(bytes32 => ObservationState) public states;
 
+    /// @notice Returns the observation for the given pool key and observation index
+    function getObservation(IPoolManager.PoolKey memory key, uint256 index)
+        external
+        view
+        returns (Oracle.Observation memory observation)
+    {
+        observation = observations[keccak256(abi.encode(key))][index];
+    }
+
+    /// @notice Returns the state for the given pool key
+    function getState(IPoolManager.PoolKey memory key) external view returns (ObservationState memory state) {
+        state = states[keccak256(abi.encode(key))];
+    }
+
     /// @dev For mocking
     function _blockTimestamp() internal view virtual returns (uint32) {
         return uint32(block.timestamp);
@@ -59,7 +73,7 @@ contract GeomeanOracle is BaseHook {
         IPoolManager.PoolKey calldata key,
         uint160
     ) external view override poolManagerOnly {
-        if (key.fee != 0 || key.tickSpacing != TickMath.MAX_TICK) revert OraclePoolMustBeFreeFullRange();
+        if (key.fee != 0 || key.tickSpacing != type(int16).max) revert OraclePoolMustBeFreeFullRange();
     }
 
     function afterInitialize(

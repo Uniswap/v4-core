@@ -7,10 +7,13 @@ import hre, { ethers } from 'hardhat'
 import { tokensFixture } from './shared/fixtures'
 import { createHookMask, encodeSqrtPriceX96, getPoolId } from './shared/utilities'
 
+const MAX_TICK_SPACING = 32767
+
 describe('GeomeanOracle', () => {
   let wallets: Wallet[]
   let oracle: MockTimeGeomeanOracle
   let poolManager: PoolManager
+  let swapTest: PoolSwapTest
   let token0: TestERC20
   let token1: TestERC20
 
@@ -105,13 +108,14 @@ describe('GeomeanOracle', () => {
       geomeanOracle: oracle,
       manager: poolManager,
       tokens: { token0, token1 },
+      swapTest,
     } = await loadFixture(fixture))
     poolKey = {
       token0: token0.address,
       token1: token1.address,
       fee: 0,
       hooks: oracle.address,
-      tickSpacing: MAX_TICK,
+      tickSpacing: MAX_TICK_SPACING,
     }
     await oracle.setTime(1)
   })
@@ -189,6 +193,30 @@ describe('GeomeanOracle', () => {
       } = await oracle.observe(poolKey, [0])
       expect(tickCumulative).to.eq(0)
       expect(secondsPerLiquidityCumulativeX128).to.eq(0)
+    })
+  })
+
+  describe('#afterSwap', async () => {
+    beforeEach('initialize the pool', async () => {
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
+    })
+
+    it('swap with no time change writes no observations', async () => {
+      await swapTest.swap(
+        poolKey,
+        {
+          zeroForOne: true,
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+        },
+        { withdrawTokens: true, settleUsingTransfer: true }
+      )
+      const { sqrtPriceX96 } = await poolManager.getSlot0(poolKey)
+      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(1, 2))
+      const { index, cardinality, cardinalityNext } = await oracle.states(getPoolId(poolKey))
+      expect(index).to.eq(0)
+      expect(cardinality).to.eq(1)
+      expect(cardinalityNext).to.eq(1)
     })
   })
 })
