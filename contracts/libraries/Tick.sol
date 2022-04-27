@@ -8,6 +8,8 @@ import {TickMath} from './TickMath.sol';
 /// @title Tick
 /// @notice Contains functions for managing tick processes and relevant calculations
 library Tick {
+    error TickLiquidityOverflow(int24 tick);
+
     using SafeCast for int256;
 
     // info stored for each initialized individual tick
