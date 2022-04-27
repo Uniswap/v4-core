@@ -15,7 +15,11 @@ contract GeomeanOracle is BaseHook {
     using Oracle for Oracle.Observation[65535];
 
     /// @notice Oracle pools do not have fees because they exist to serve as an oracle for a pair of tokens
-    error OraclePoolMustBeFreeFullRange();
+    error OnlyOneOraclePoolAllowed();
+
+    /// @notice Oracle positions must be full range
+    error OraclePositionsMustBeFullRange();
+
     /// @notice Oracle pools must have liquidity locked so that they cannot become more susceptible to price manipulation
     error OraclePoolMustLockLiquidity();
 
@@ -73,7 +77,10 @@ contract GeomeanOracle is BaseHook {
         IPoolManager.PoolKey calldata key,
         uint160
     ) external view override poolManagerOnly {
-        if (key.fee != 0 || key.tickSpacing != poolManager.MAX_TICK_SPACING()) revert OraclePoolMustBeFreeFullRange();
+        // This is to limit the fragmentation of pools using this oracle hook. In other words,
+        // there may only be one pool per pair of tokens that use this hook. The tick spacing is set to the maximum
+        // because we only allow max range liquidity in this pool.
+        if (key.fee != 0 || key.tickSpacing != poolManager.MAX_TICK_SPACING()) revert OnlyOneOraclePoolAllowed();
     }
 
     function afterInitialize(
@@ -110,6 +117,11 @@ contract GeomeanOracle is BaseHook {
         IPoolManager.ModifyPositionParams calldata params
     ) external override poolManagerOnly {
         if (params.liquidityDelta < 0) revert OraclePoolMustLockLiquidity();
+        int24 maxTickSpacing = poolManager.MAX_TICK_SPACING();
+        if (
+            params.tickLower != TickMath.minUsableTick(maxTickSpacing) ||
+            params.tickUpper != TickMath.maxUsableTick(maxTickSpacing)
+        ) revert OraclePositionsMustBeFullRange();
         _updatePool(key);
     }
 

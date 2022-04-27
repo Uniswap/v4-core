@@ -1,13 +1,11 @@
 import { createFixtureLoader } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { MAX_TICK, MIN_TICK } from './shared/constants'
-import { expect } from './shared/expect'
-import { MockTimeGeomeanOracle, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
 import hre, { ethers } from 'hardhat'
+import { MockTimeGeomeanOracle, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
+import { MAX_TICK_SPACING } from './shared/constants'
+import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { createHookMask, encodeSqrtPriceX96, getPoolId } from './shared/utilities'
-
-const MAX_TICK_SPACING = 32767
+import { createHookMask, encodeSqrtPriceX96, getMaxTick, getMinTick } from './shared/utilities'
 
 describe('GeomeanOracle', () => {
   let wallets: Wallet[]
@@ -147,11 +145,11 @@ describe('GeomeanOracle', () => {
             token1: token1.address,
             fee: 1,
             hooks: oracle.address,
-            tickSpacing: MAX_TICK,
+            tickSpacing: MAX_TICK_SPACING,
           },
           encodeSqrtPriceX96(1, 1)
         )
-      ).to.be.revertedWith('') // OraclePoolMustBeFreeFullRange()
+      ).to.be.revertedWith('OnlyOneOraclePoolAllowed()')
     })
 
     it('reverts if pool has non-max tickspacing', async () => {
@@ -162,11 +160,11 @@ describe('GeomeanOracle', () => {
             token1: token1.address,
             fee: 0,
             hooks: oracle.address,
-            tickSpacing: MIN_TICK,
+            tickSpacing: 60,
           },
           encodeSqrtPriceX96(1, 1)
         )
-      ).to.be.revertedWith('') // OraclePoolMustBeFreeFullRange()
+      ).to.be.revertedWith('OnlyOneOraclePoolAllowed()')
     })
   })
 
@@ -203,10 +201,34 @@ describe('GeomeanOracle', () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
     })
 
+    it('modifyPosition cannot be called with tick ranges other than min/max tick', async () => {
+      await expect(
+        modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -MAX_TICK_SPACING,
+          tickUpper: MAX_TICK_SPACING,
+          liquidityDelta: 1000,
+        })
+      ).to.be.revertedWith('OraclePositionsMustBeFullRange()')
+      await expect(
+        modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: getMinTick(MAX_TICK_SPACING),
+          tickUpper: MAX_TICK_SPACING,
+          liquidityDelta: 1000,
+        })
+      ).to.be.revertedWith('OraclePositionsMustBeFullRange()')
+      await expect(
+        modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -MAX_TICK_SPACING,
+          tickUpper: getMaxTick(MAX_TICK_SPACING),
+          liquidityDelta: 1000,
+        })
+      ).to.be.revertedWith('OraclePositionsMustBeFullRange()')
+    })
+
     it('modifyPosition with no time change writes no observations', async () => {
       await modifyPositionTest.modifyPosition(poolKey, {
-        tickLower: -MAX_TICK_SPACING,
-        tickUpper: MAX_TICK_SPACING,
+        tickLower: getMinTick(MAX_TICK_SPACING),
+        tickUpper: getMaxTick(MAX_TICK_SPACING),
         liquidityDelta: 1000,
       })
       const { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
@@ -225,8 +247,8 @@ describe('GeomeanOracle', () => {
     it('modifyPosition with time change writes an observation', async () => {
       await oracle.setTime(3) // advance 2 seconds
       await modifyPositionTest.modifyPosition(poolKey, {
-        tickLower: -MAX_TICK_SPACING,
-        tickUpper: MAX_TICK_SPACING,
+        tickLower: getMinTick(MAX_TICK_SPACING),
+        tickUpper: getMaxTick(MAX_TICK_SPACING),
         liquidityDelta: 1000,
       })
       const { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
@@ -254,8 +276,8 @@ describe('GeomeanOracle', () => {
       expect(cardinalityNext).to.eq(2)
 
       await modifyPositionTest.modifyPosition(poolKey, {
-        tickLower: -MAX_TICK_SPACING,
-        tickUpper: MAX_TICK_SPACING,
+        tickLower: getMinTick(MAX_TICK_SPACING),
+        tickUpper: getMaxTick(MAX_TICK_SPACING),
         liquidityDelta: 1000,
       })
 
