@@ -194,7 +194,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,
                 liquidityDelta: params.liquidityDelta.toInt128(),
-                maxLiquidityPerTick: Tick.tickSpacingToMaxLiquidityPerTick(key.tickSpacing),
                 tickSpacing: key.tickSpacing
             })
         );

@@ -31,10 +31,11 @@ library Tick {
     /// @return The max liquidity per tick
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
         unchecked {
-            uint24 numTicks = uint24(
-                (TickMath.maxUsableTick(tickSpacing) - TickMath.minUsableTick(tickSpacing)) / tickSpacing
-            ) + 1; // 0 tick is not counted by this
-            return type(uint128).max / numTicks;
+            return
+                uint128(
+                    (type(uint128).max * uint256(int256(tickSpacing))) /
+                        uint256(int256(TickMath.MAX_TICK * 2 + tickSpacing))
+                );
         }
     }
 
@@ -94,8 +95,8 @@ library Tick {
     /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
     /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
     /// @param upper true for updating a position's upper tick, or false for updating a position's lower tick
-    /// @param maxLiquidity The maximum liquidity allocation for a single tick
     /// @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
+    /// @return liquidityGrossAfter The total amount of  liquidity for all positions that references the tick after the update
     function update(
         mapping(int24 => Tick.Info) storage self,
         int24 tick,
@@ -103,17 +104,14 @@ library Tick {
         int128 liquidityDelta,
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128,
-        bool upper,
-        uint128 maxLiquidity
-    ) internal returns (bool flipped) {
+        bool upper
+    ) internal returns (bool flipped, uint128 liquidityGrossAfter) {
         Tick.Info storage info = self[tick];
 
         uint128 liquidityGrossBefore = info.liquidityGross;
-        uint128 liquidityGrossAfter = liquidityDelta < 0
+        liquidityGrossAfter = liquidityDelta < 0
             ? liquidityGrossBefore - uint128(-liquidityDelta)
             : liquidityGrossBefore + uint128(liquidityDelta);
-
-        if (liquidityGrossAfter > maxLiquidity) revert TickLiquidityOverflow(tick);
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 

@@ -72,11 +72,30 @@ describe('TickMath', () => {
     }
   })
 
+  describe('#MIN_TICK', async () => {
+    // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
+    it('equals -#MAX_TICK', async () => {
+      const min = await tickMath.MIN_TICK()
+      expect(min).to.eq((await tickMath.MAX_TICK()) * -1)
+      expect(min).to.eq(MIN_TICK) // also just check the JS matches
+    })
+  })
+
+  describe('#MAX_TICK', async () => {
+    // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
+    // this test is redundant with the above MIN_TICK test
+    it('equals -#MIN_TICK', async () => {
+      const max = await tickMath.MAX_TICK()
+      expect(max).to.eq((await tickMath.MIN_TICK()) * -1)
+      expect(max).to.eq(MAX_TICK) // also just check the JS matches
+    })
+  })
+
   describe('#MIN_SQRT_RATIO', async () => {
     it('equals #getSqrtRatioAtTick(MIN_TICK)', async () => {
       const min = await tickMath.getSqrtRatioAtTick(MIN_TICK)
       expect(min).to.eq(await tickMath.MIN_SQRT_RATIO())
-      expect(min).to.eq(MIN_SQRT_RATIO)
+      expect(min).to.eq(MIN_SQRT_RATIO) // also just check the JS matches
     })
   })
 
@@ -84,7 +103,7 @@ describe('TickMath', () => {
     it('equals #getSqrtRatioAtTick(MAX_TICK)', async () => {
       const max = await tickMath.getSqrtRatioAtTick(MAX_TICK)
       expect(max).to.eq(await tickMath.MAX_SQRT_RATIO())
-      expect(max).to.eq(MAX_SQRT_RATIO)
+      expect(max).to.eq(MAX_SQRT_RATIO) // also just check the JS matches
     })
   })
 
