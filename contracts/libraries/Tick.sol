@@ -96,6 +96,7 @@ library Tick {
     /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
     /// @param upper true for updating a position's upper tick, or false for updating a position's lower tick
     /// @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
+    /// @return liquidityGrossAfter The total amount of  liquidity for all positions that references the tick after the update
     function update(
         mapping(int24 => Tick.Info) storage self,
         int24 tick,
