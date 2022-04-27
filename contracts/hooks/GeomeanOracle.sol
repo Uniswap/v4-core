@@ -38,7 +38,7 @@ contract GeomeanOracle is BaseHook {
     mapping(bytes32 => ObservationState) public states;
 
     /// @notice Returns the observation for the given pool key and observation index
-    function getObservation(IPoolManager.PoolKey memory key, uint256 index)
+    function getObservation(IPoolManager.PoolKey calldata key, uint256 index)
         external
         view
         returns (Oracle.Observation memory observation)
@@ -47,7 +47,7 @@ contract GeomeanOracle is BaseHook {
     }
 
     /// @notice Returns the state for the given pool key
-    function getState(IPoolManager.PoolKey memory key) external view returns (ObservationState memory state) {
+    function getState(IPoolManager.PoolKey calldata key) external view returns (ObservationState memory state) {
         state = states[keccak256(abi.encode(key))];
     }
 

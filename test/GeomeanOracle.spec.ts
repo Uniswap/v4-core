@@ -125,10 +125,12 @@ describe('GeomeanOracle', () => {
   beforeEach('check the pool is not initialized', async () => {
     const { sqrtPriceX96 } = await poolManager.getSlot0(poolKey)
     expect(sqrtPriceX96, 'pool is not initialized').to.eq(0)
+    // it seems like the waffle fixture is not working correctly (perhaps due to hardhat_setCode), and if we don't do this and revert in afterEach, the pool is already initialized
     snapshotId = await hre.network.provider.send('evm_snapshot')
   })
 
   afterEach('revert', async () => {
+    // see the beforeEach hook
     await hre.network.provider.send('evm_revert', [snapshotId])
   })
 
