@@ -2,9 +2,9 @@ import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { TickTest } from '../typechain/TickTest'
-import { MAX_TICK_SPACING } from './shared/constants'
+import { MAX_TICK, MAX_TICK_SPACING, MIN_TICK } from './shared/constants'
 import { expect } from './shared/expect'
-import { FeeAmount, getMaxLiquidityPerTick, TICK_SPACINGS } from './shared/utilities'
+import { FeeAmount, getMaxTick, getMinTick, TICK_SPACINGS } from './shared/utilities'
 
 const MaxUint128 = BigNumber.from(2).pow(128).sub(1)
 
@@ -19,30 +19,44 @@ describe('Tick', () => {
   })
 
   describe('#tickSpacingToMaxLiquidityPerTick', () => {
-    it('returns the correct value for low fee', async () => {
+    function checkCantOverflow(tickSpacing: number, maxLiquidityPerTick: BigNumber) {
+      expect(
+        maxLiquidityPerTick.mul((getMaxTick(tickSpacing) - getMinTick(tickSpacing)) / tickSpacing + 1),
+        'max liquidity if all ticks are full'
+      ).to.be.lte(MaxUint128)
+    }
+
+    it('returns the correct value for low fee tick spacing', async () => {
       const maxLiquidityPerTick = await tickTest.tickSpacingToMaxLiquidityPerTick(TICK_SPACINGS[FeeAmount.LOW])
-      expect(maxLiquidityPerTick).to.eq('1917569901783203986719870431555990') // 110.8 bits
-      expect(maxLiquidityPerTick).to.eq(getMaxLiquidityPerTick(TICK_SPACINGS[FeeAmount.LOW]))
+      expect(maxLiquidityPerTick).to.eq('1917565579412846627735051215301243')
+      checkCantOverflow(TICK_SPACINGS[FeeAmount.LOW], maxLiquidityPerTick)
     })
-    it('returns the correct value for medium fee', async () => {
+    it('returns the correct value for medium fee tick spacing', async () => {
       const maxLiquidityPerTick = await tickTest.tickSpacingToMaxLiquidityPerTick(TICK_SPACINGS[FeeAmount.MEDIUM])
-      expect(maxLiquidityPerTick).to.eq('11505743598341114571880798222544994') // 113.1 bits
-      expect(maxLiquidityPerTick).to.eq(getMaxLiquidityPerTick(TICK_SPACINGS[FeeAmount.MEDIUM]))
+      expect(maxLiquidityPerTick).to.eq('11505069308564788430434325881101413') // 113.1 bits
+      checkCantOverflow(TICK_SPACINGS[FeeAmount.MEDIUM], maxLiquidityPerTick)
     })
-    it('returns the correct value for high fee', async () => {
+    it('returns the correct value for high fee tick spacing', async () => {
       const maxLiquidityPerTick = await tickTest.tickSpacingToMaxLiquidityPerTick(TICK_SPACINGS[FeeAmount.HIGH])
-      expect(maxLiquidityPerTick).to.eq('38350317471085141830651933667504588') // 114.7 bits
-      expect(maxLiquidityPerTick).to.eq(getMaxLiquidityPerTick(TICK_SPACINGS[FeeAmount.HIGH]))
+      expect(maxLiquidityPerTick).to.eq('38347205785278154309959589375342946') // 114.7 bits
+      checkCantOverflow(TICK_SPACINGS[FeeAmount.HIGH], maxLiquidityPerTick)
+    })
+
+    it('returns the correct value for 1', async () => {
+      const maxLiquidityPerTick = await tickTest.tickSpacingToMaxLiquidityPerTick(1)
+      expect(maxLiquidityPerTick).to.eq('191757530477355301479181766273477') // 126 bits
+      checkCantOverflow(1, maxLiquidityPerTick)
     })
     it('returns the correct value for entire range', async () => {
       const maxLiquidityPerTick = await tickTest.tickSpacingToMaxLiquidityPerTick(887272)
       expect(maxLiquidityPerTick).to.eq(MaxUint128.div(3)) // 126 bits
-      expect(maxLiquidityPerTick).to.eq(getMaxLiquidityPerTick(887272))
+      checkCantOverflow(887272, maxLiquidityPerTick)
     })
+
     it('returns the correct value for 2302', async () => {
       const maxLiquidityPerTick = await tickTest.tickSpacingToMaxLiquidityPerTick(2302)
-      expect(maxLiquidityPerTick).to.eq('441351967472034323558203122479595605') // 118 bits
-      expect(maxLiquidityPerTick).to.eq(getMaxLiquidityPerTick(2302))
+      expect(maxLiquidityPerTick).to.eq('440854192570431170114173285871668350') // 118 bits
+      checkCantOverflow(2302, maxLiquidityPerTick)
     })
 
     it('gas cost min tick spacing', async () => {

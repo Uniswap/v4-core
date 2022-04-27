@@ -29,10 +29,11 @@ library Tick {
     /// @return The max liquidity per tick
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
         unchecked {
-            uint24 numTicks = uint24(
-                (TickMath.maxUsableTick(tickSpacing) - TickMath.minUsableTick(tickSpacing)) / tickSpacing
-            ) + 1; // 0 tick is not counted by this
-            return type(uint128).max / numTicks;
+            return
+                uint128(
+                    (type(uint128).max * uint256(int256(tickSpacing))) /
+                        uint256(int256(TickMath.MAX_TICK * 2 + tickSpacing))
+                );
         }
     }
 

@@ -5,11 +5,6 @@ export const MaxUint128 = BigNumber.from(2).pow(128).sub(1)
 
 export const getMinTick = (tickSpacing: number) => Math.ceil(-887272 / tickSpacing) * tickSpacing
 export const getMaxTick = (tickSpacing: number) => Math.floor(887272 / tickSpacing) * tickSpacing
-export const getMaxLiquidityPerTick = (tickSpacing: number) =>
-  BigNumber.from(2)
-    .pow(128)
-    .sub(1)
-    .div((getMaxTick(tickSpacing) - getMinTick(tickSpacing)) / tickSpacing + 1)
 
 export const MIN_SQRT_RATIO = BigNumber.from('4295128739')
 export const MAX_SQRT_RATIO = BigNumber.from('1461446703485210103287273052203988822378723970342')
