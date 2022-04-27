@@ -1,6 +1,5 @@
 import bn from 'bignumber.js'
 import { BigNumber, BigNumberish, Contract, ContractTransaction, utils, Wallet } from 'ethers'
-import { TestERC20 } from '../../typechain/TestERC20'
 
 export const MaxUint128 = BigNumber.from(2).pow(128).sub(1)
 
@@ -82,143 +81,42 @@ export type SwapFunction = (
   sqrtPriceLimitX96?: BigNumberish
 ) => Promise<ContractTransaction>
 export type SwapToPriceFunction = (sqrtPriceX96: BigNumberish, to: Wallet | string) => Promise<ContractTransaction>
-export type FlashFunction = (
-  amount0: BigNumberish,
-  amount1: BigNumberish,
-  to: Wallet | string,
-  pay0?: BigNumberish,
-  pay1?: BigNumberish
-) => Promise<ContractTransaction>
 export type ModifyPositionFunction = (
   tickLower: BigNumberish,
   tickUpper: BigNumberish,
   liquidityDelta: BigNumberish
 ) => Promise<ContractTransaction>
-export interface PoolFunctions {
-  swapToLowerPrice: SwapToPriceFunction
-  swapToHigherPrice: SwapToPriceFunction
-  swapExact0For1: SwapFunction
-  swap0ForExact1: SwapFunction
-  swapExact1For0: SwapFunction
-  swap1ForExact0: SwapFunction
-  flash: FlashFunction
-  modifyPosition: ModifyPositionFunction
-}
 
-export function createPoolFunctions({
-  // swapTarget,
-  token0,
-  token1,
-  fee,
+/**
+ * Creates a 20 byte mask for the given hook configuration
+ */
+export function createHookMask({
+  beforeInitialize,
+  afterInitialize,
+  afterModifyPosition,
+  beforeModifyPosition,
+  beforeSwap,
+  afterSwap,
+  beforeDonate,
+  afterDonate,
 }: {
-  // swapTarget: SwapTarget
-  token0: TestERC20
-  token1: TestERC20
-  fee: number
-}): PoolFunctions {
-  throw new Error('todo')
-  // async function swapToSqrtPrice(
-  //   inputToken: Contract,
-  //   targetPrice: BigNumberish,
-  //   to: Wallet | string
-  // ): Promise<ContractTransaction> {
-  //   const method = inputToken === token0 ? swapTarget.swapToLowerSqrtPrice : swapTarget.swapToHigherSqrtPrice
-  //
-  //   await inputToken.approve(swapTarget.address, constants.MaxUint256)
-  //
-  //   const toAddress = typeof to === 'string' ? to : to.address
-  //
-  //   return method(pool.address, targetPrice, toAddress)
-  // }
-  //
-  // async function swap(
-  //   inputToken: Contract,
-  //   [amountIn, amountOut]: [BigNumberish, BigNumberish],
-  //   to: Wallet | string,
-  //   sqrtPriceLimitX96?: BigNumberish
-  // ): Promise<ContractTransaction> {
-  //   const exactInput = amountOut === 0
-  //
-  //   const method =
-  //     inputToken === token0
-  //       ? exactInput
-  //         ? swapTarget.swapExact0For1
-  //         : swapTarget.swap0ForExact1
-  //       : exactInput
-  //       ? swapTarget.swapExact1For0
-  //       : swapTarget.swap1ForExact0
-  //
-  //   if (typeof sqrtPriceLimitX96 === 'undefined') {
-  //     if (inputToken === token0) {
-  //       sqrtPriceLimitX96 = MIN_SQRT_RATIO.add(1)
-  //     } else {
-  //       sqrtPriceLimitX96 = MAX_SQRT_RATIO.sub(1)
-  //     }
-  //   }
-  //   await inputToken.approve(swapTarget.address, constants.MaxUint256)
-  //
-  //   const toAddress = typeof to === 'string' ? to : to.address
-  //
-  //   return method(pool.address, exactInput ? amountIn : amountOut, toAddress, sqrtPriceLimitX96)
-  // }
-  //
-  // const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-  //   return swapToSqrtPrice(token0, sqrtPriceX96, to)
-  // }
-  //
-  // const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
-  //   return swapToSqrtPrice(token1, sqrtPriceX96, to)
-  // }
-  //
-  // const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-  //   return swap(token0, [amount, 0], to, sqrtPriceLimitX96)
-  // }
-  //
-  // const swap0ForExact1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-  //   return swap(token0, [0, amount], to, sqrtPriceLimitX96)
-  // }
-  //
-  // const swapExact1For0: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-  //   return swap(token1, [amount, 0], to, sqrtPriceLimitX96)
-  // }
-  //
-  // const swap1ForExact0: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
-  //   return swap(token1, [0, amount], to, sqrtPriceLimitX96)
-  // }
-  //
-  // const mint: MintFunction = async (recipient, tickLower, tickUpper, liquidity) => {
-  //   await token0.approve(swapTarget.address, constants.MaxUint256)
-  //   await token1.approve(swapTarget.address, constants.MaxUint256)
-  //   return swapTarget.mint(pool.address, recipient, tickLower, tickUpper, liquidity)
-  // }
-  //
-  // const flash: FlashFunction = async (amount0, amount1, to, pay0?: BigNumberish, pay1?: BigNumberish) => {
-  //   const fee = await pool.fee()
-  //   if (typeof pay0 === 'undefined') {
-  //     pay0 = BigNumber.from(amount0)
-  //       .mul(fee)
-  //       .add(1e6 - 1)
-  //       .div(1e6)
-  //       .add(amount0)
-  //   }
-  //   if (typeof pay1 === 'undefined') {
-  //     pay1 = BigNumber.from(amount1)
-  //       .mul(fee)
-  //       .add(1e6 - 1)
-  //       .div(1e6)
-  //       .add(amount1)
-  //   }
-  //   return swapTarget.flash(pool.address, typeof to === 'string' ? to : to.address, amount0, amount1, pay0, pay1)
-  // }
-  //
-  // return {
-  //   swapToLowerPrice,
-  //   swapToHigherPrice,
-  //   swapExact0For1,
-  //   swap0ForExact1,
-  //   swapExact1For0,
-  //   swap1ForExact0,
-  //   mint,
-  //   flash,
-  // }
+  beforeInitialize: boolean
+  afterInitialize: boolean
+  beforeModifyPosition: boolean
+  afterModifyPosition: boolean
+  beforeSwap: boolean
+  afterSwap: boolean
+  beforeDonate: boolean
+  afterDonate: boolean
+}): string {
+  let result: BigNumber = BigNumber.from(0)
+  if (beforeInitialize) result = result.add(BigNumber.from(1).shl(159))
+  if (afterInitialize) result = result.add(BigNumber.from(1).shl(158))
+  if (beforeSwap) result = result.add(BigNumber.from(1).shl(157))
+  if (afterSwap) result = result.add(BigNumber.from(1).shl(156))
+  if (beforeModifyPosition) result = result.add(BigNumber.from(1).shl(155))
+  if (afterModifyPosition) result = result.add(BigNumber.from(1).shl(154))
+  if (beforeDonate) result = result.add(BigNumber.from(1).shl(153))
+  if (afterDonate) result = result.add(BigNumber.from(1).shl(152))
+  return utils.hexZeroPad(result.toHexString(), 20)
 }

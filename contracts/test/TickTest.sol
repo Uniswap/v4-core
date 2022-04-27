@@ -33,9 +33,6 @@ contract TickTest {
         int128 liquidityDelta,
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128,
-        uint160 secondsPerLiquidityCumulativeX128,
-        int56 tickCumulative,
-        uint32 time,
         bool upper,
         uint128 maxLiquidity
     ) external returns (bool flipped) {
@@ -46,9 +43,6 @@ contract TickTest {
                 liquidityDelta,
                 feeGrowthGlobal0X128,
                 feeGrowthGlobal1X128,
-                secondsPerLiquidityCumulativeX128,
-                tickCumulative,
-                time,
                 upper,
                 maxLiquidity
             );
@@ -61,19 +55,8 @@ contract TickTest {
     function cross(
         int24 tick,
         uint256 feeGrowthGlobal0X128,
-        uint256 feeGrowthGlobal1X128,
-        uint160 secondsPerLiquidityCumulativeX128,
-        int56 tickCumulative,
-        uint32 time
+        uint256 feeGrowthGlobal1X128
     ) external returns (int128 liquidityNet) {
-        return
-            ticks.cross(
-                tick,
-                feeGrowthGlobal0X128,
-                feeGrowthGlobal1X128,
-                secondsPerLiquidityCumulativeX128,
-                tickCumulative,
-                time
-            );
+        return ticks.cross(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
     }
 }

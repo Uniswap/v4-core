@@ -36,14 +36,14 @@ describe('PoolManager', () => {
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
 
   const fixture = async () => {
-    const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
+    const poolManagerFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
-    const manager = (await singletonPoolFactory.deploy()) as PoolManager
+    const manager = (await poolManagerFactory.deploy()) as PoolManager
 
     // Deploy hooks to addresses with leading 1111 to enable all of them.
     const mockHooksAddress = '0xFF00000000000000000000000000000000000000'

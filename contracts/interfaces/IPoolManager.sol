@@ -22,6 +22,9 @@ interface IPoolManager is IERC1155 {
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
 
+    /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
+    error TickSpacingTooLarge();
+
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower token of the pool, sorted numerically
@@ -36,6 +39,15 @@ interface IPoolManager is IERC1155 {
         IHooks hooks;
     }
 
+    /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
+    function MAX_TICK_SPACING() external view returns (int24);
+
+    /// @notice Get the current value in slot0 of the given pool
+    function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
+
+    /// @notice Get the current value of liquidity of the given pool
+    function getLiquidity(IPoolManager.PoolKey memory key) external view returns (uint128 liquidity);
+
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
     struct BalanceDelta {
@@ -48,11 +60,6 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
-
-    /// @notice Increase the maximum number of stored observations for the pool's oracle
-    function increaseObservationCardinalityNext(PoolKey memory key, uint16 observationCardinalityNext)
-        external
-        returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew);
 
     /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
     /// @param index The index of the locker, also known as the id of the locker
@@ -126,17 +133,4 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
-
-    /// @notice Observe a past state of a pool
-    function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
-        external
-        view
-        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s);
-
-    /// @notice Get the snapshot of the cumulative values of a tick range
-    function snapshotCumulativesInside(
-        PoolKey calldata key,
-        int24 tickLower,
-        int24 tickUpper
-    ) external view returns (Pool.Snapshot memory);
 }

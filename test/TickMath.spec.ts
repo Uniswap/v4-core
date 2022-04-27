@@ -1,13 +1,11 @@
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
+import Decimal from 'decimal.js'
 import { BigNumber } from 'ethers'
 import { ethers } from 'hardhat'
 import { TickMathTest } from '../typechain/TickMathTest'
+import { MAX_TICK, MIN_TICK } from './shared/constants'
 import { expect } from './shared/expect'
-import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import { encodeSqrtPriceX96, MIN_SQRT_RATIO, MAX_SQRT_RATIO } from './shared/utilities'
-import Decimal from 'decimal.js'
-
-const MIN_TICK = -887272
-const MAX_TICK = 887272
+import { encodeSqrtPriceX96, MAX_SQRT_RATIO, MIN_SQRT_RATIO } from './shared/utilities'
 
 Decimal.config({ toExpNeg: -500, toExpPos: 500 })
 

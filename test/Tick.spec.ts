@@ -67,10 +67,6 @@ describe('Tick', () => {
         feeGrowthOutside1X128: 3,
         liquidityGross: 0,
         liquidityNet: 0,
-        secondsPerLiquidityOutsideX128: 0,
-        tickCumulativeOutside: 0,
-        secondsOutside: 0,
-        initialized: true,
       })
       const { feeGrowthInside0X128, feeGrowthInside1X128 } = await tickTest.getFeeGrowthInside(-2, 2, 0, 15, 15)
       expect(feeGrowthInside0X128).to.eq(13)
@@ -83,10 +79,6 @@ describe('Tick', () => {
         feeGrowthOutside1X128: 3,
         liquidityGross: 0,
         liquidityNet: 0,
-        secondsPerLiquidityOutsideX128: 0,
-        tickCumulativeOutside: 0,
-        secondsOutside: 0,
-        initialized: true,
       })
       const { feeGrowthInside0X128, feeGrowthInside1X128 } = await tickTest.getFeeGrowthInside(-2, 2, 0, 15, 15)
       expect(feeGrowthInside0X128).to.eq(13)
@@ -99,20 +91,12 @@ describe('Tick', () => {
         feeGrowthOutside1X128: 3,
         liquidityGross: 0,
         liquidityNet: 0,
-        secondsPerLiquidityOutsideX128: 0,
-        tickCumulativeOutside: 0,
-        secondsOutside: 0,
-        initialized: true,
       })
       await tickTest.setTick(2, {
         feeGrowthOutside0X128: 4,
         feeGrowthOutside1X128: 1,
         liquidityGross: 0,
         liquidityNet: 0,
-        secondsPerLiquidityOutsideX128: 0,
-        tickCumulativeOutside: 0,
-        secondsOutside: 0,
-        initialized: true,
       })
       const { feeGrowthInside0X128, feeGrowthInside1X128 } = await tickTest.getFeeGrowthInside(-2, 2, 0, 15, 15)
       expect(feeGrowthInside0X128).to.eq(9)
@@ -125,20 +109,12 @@ describe('Tick', () => {
         feeGrowthOutside1X128: constants.MaxUint256.sub(2),
         liquidityGross: 0,
         liquidityNet: 0,
-        secondsPerLiquidityOutsideX128: 0,
-        tickCumulativeOutside: 0,
-        secondsOutside: 0,
-        initialized: true,
       })
       await tickTest.setTick(2, {
         feeGrowthOutside0X128: 3,
         feeGrowthOutside1X128: 5,
         liquidityGross: 0,
         liquidityNet: 0,
-        secondsPerLiquidityOutsideX128: 0,
-        tickCumulativeOutside: 0,
-        secondsOutside: 0,
-        initialized: true,
       })
       const { feeGrowthInside0X128, feeGrowthInside1X128 } = await tickTest.getFeeGrowthInside(-2, 2, 0, 15, 15)
       expect(feeGrowthInside0X128).to.eq(16)
@@ -148,93 +124,60 @@ describe('Tick', () => {
 
   describe('#update', async () => {
     it('flips from zero to nonzero', async () => {
-      expect(await tickTest.callStatic.update(0, 0, 1, 0, 0, 0, 0, 0, false, 3)).to.eq(true)
+      expect(await tickTest.callStatic.update(0, 0, 1, 0, 0, false, 3)).to.eq(true)
     })
     it('does not flip from nonzero to greater nonzero', async () => {
-      await tickTest.update(0, 0, 1, 0, 0, 0, 0, 0, false, 3)
-      expect(await tickTest.callStatic.update(0, 0, 1, 0, 0, 0, 0, 0, false, 3)).to.eq(false)
+      await tickTest.update(0, 0, 1, 0, 0, false, 3)
+      expect(await tickTest.callStatic.update(0, 0, 1, 0, 0, false, 3)).to.eq(false)
     })
     it('flips from nonzero to zero', async () => {
-      await tickTest.update(0, 0, 1, 0, 0, 0, 0, 0, false, 3)
-      expect(await tickTest.callStatic.update(0, 0, -1, 0, 0, 0, 0, 0, false, 3)).to.eq(true)
+      await tickTest.update(0, 0, 1, 0, 0, false, 3)
+      expect(await tickTest.callStatic.update(0, 0, -1, 0, 0, false, 3)).to.eq(true)
     })
     it('does not flip from nonzero to lesser nonzero', async () => {
-      await tickTest.update(0, 0, 2, 0, 0, 0, 0, 0, false, 3)
-      expect(await tickTest.callStatic.update(0, 0, -1, 0, 0, 0, 0, 0, false, 3)).to.eq(false)
+      await tickTest.update(0, 0, 2, 0, 0, false, 3)
+      expect(await tickTest.callStatic.update(0, 0, -1, 0, 0, false, 3)).to.eq(false)
     })
     it('does not flip from nonzero to lesser nonzero', async () => {
-      await tickTest.update(0, 0, 2, 0, 0, 0, 0, 0, false, 3)
-      expect(await tickTest.callStatic.update(0, 0, -1, 0, 0, 0, 0, 0, false, 3)).to.eq(false)
+      await tickTest.update(0, 0, 2, 0, 0, false, 3)
+      expect(await tickTest.callStatic.update(0, 0, -1, 0, 0, false, 3)).to.eq(false)
     })
     it('reverts if total liquidity gross is greater than max', async () => {
-      await tickTest.update(0, 0, 2, 0, 0, 0, 0, 0, false, 3)
-      await tickTest.update(0, 0, 1, 0, 0, 0, 0, 0, true, 3)
-      await expect(tickTest.update(0, 0, 1, 0, 0, 0, 0, 0, false, 3)).to.be.revertedWith('LO')
+      await tickTest.update(0, 0, 2, 0, 0, false, 3)
+      await tickTest.update(0, 0, 1, 0, 0, true, 3)
+      await expect(tickTest.update(0, 0, 1, 0, 0, false, 3)).to.be.revertedWith('TickLiquidityOverflow(0)')
     })
     it('nets the liquidity based on upper flag', async () => {
-      await tickTest.update(0, 0, 2, 0, 0, 0, 0, 0, false, 10)
-      await tickTest.update(0, 0, 1, 0, 0, 0, 0, 0, true, 10)
-      await tickTest.update(0, 0, 3, 0, 0, 0, 0, 0, true, 10)
-      await tickTest.update(0, 0, 1, 0, 0, 0, 0, 0, false, 10)
+      await tickTest.update(0, 0, 2, 0, 0, false, 10)
+      await tickTest.update(0, 0, 1, 0, 0, true, 10)
+      await tickTest.update(0, 0, 3, 0, 0, true, 10)
+      await tickTest.update(0, 0, 1, 0, 0, false, 10)
       const { liquidityGross, liquidityNet } = await tickTest.ticks(0)
       expect(liquidityGross).to.eq(2 + 1 + 3 + 1)
       expect(liquidityNet).to.eq(2 - 1 - 3 + 1)
     })
     it('reverts on overflow liquidity gross', async () => {
-      await tickTest.update(0, 0, MaxUint128.div(2).sub(1), 0, 0, 0, 0, 0, false, MaxUint128)
-      await expect(tickTest.update(0, 0, MaxUint128.div(2).sub(1), 0, 0, 0, 0, 0, false, MaxUint128)).to.be.reverted
+      await tickTest.update(0, 0, MaxUint128.div(2).sub(1), 0, 0, false, MaxUint128)
+      await expect(tickTest.update(0, 0, MaxUint128.div(2).sub(1), 0, 0, false, MaxUint128)).to.be.reverted
     })
     it('assumes all growth happens below ticks lte current tick', async () => {
-      await tickTest.update(1, 1, 1, 1, 2, 3, 4, 5, false, MaxUint128)
-      const {
-        feeGrowthOutside0X128,
-        feeGrowthOutside1X128,
-        secondsOutside,
-        secondsPerLiquidityOutsideX128,
-        tickCumulativeOutside,
-        initialized,
-      } = await tickTest.ticks(1)
+      await tickTest.update(1, 1, 1, 1, 2, false, MaxUint128)
+      const { feeGrowthOutside0X128, feeGrowthOutside1X128 } = await tickTest.ticks(1)
       expect(feeGrowthOutside0X128).to.eq(1)
       expect(feeGrowthOutside1X128).to.eq(2)
-      expect(secondsPerLiquidityOutsideX128).to.eq(3)
-      expect(tickCumulativeOutside).to.eq(4)
-      expect(secondsOutside).to.eq(5)
-      expect(initialized).to.eq(true)
     })
     it('does not set any growth fields if tick is already initialized', async () => {
-      await tickTest.update(1, 1, 1, 1, 2, 3, 4, 5, false, MaxUint128)
-      await tickTest.update(1, 1, 1, 6, 7, 8, 9, 10, false, MaxUint128)
-      const {
-        feeGrowthOutside0X128,
-        feeGrowthOutside1X128,
-        secondsOutside,
-        secondsPerLiquidityOutsideX128,
-        tickCumulativeOutside,
-        initialized,
-      } = await tickTest.ticks(1)
+      await tickTest.update(1, 1, 1, 1, 2, false, MaxUint128)
+      await tickTest.update(1, 1, 1, 6, 7, false, MaxUint128)
+      const { feeGrowthOutside0X128, feeGrowthOutside1X128 } = await tickTest.ticks(1)
       expect(feeGrowthOutside0X128).to.eq(1)
       expect(feeGrowthOutside1X128).to.eq(2)
-      expect(secondsPerLiquidityOutsideX128).to.eq(3)
-      expect(tickCumulativeOutside).to.eq(4)
-      expect(secondsOutside).to.eq(5)
-      expect(initialized).to.eq(true)
     })
     it('does not set any growth fields for ticks gt current tick', async () => {
-      await tickTest.update(2, 1, 1, 1, 2, 3, 4, 5, false, MaxUint128)
-      const {
-        feeGrowthOutside0X128,
-        feeGrowthOutside1X128,
-        secondsOutside,
-        secondsPerLiquidityOutsideX128,
-        tickCumulativeOutside,
-        initialized,
-      } = await tickTest.ticks(2)
+      await tickTest.update(2, 1, 1, 1, 2, false, MaxUint128)
+      const { feeGrowthOutside0X128, feeGrowthOutside1X128 } = await tickTest.ticks(2)
       expect(feeGrowthOutside0X128).to.eq(0)
       expect(feeGrowthOutside1X128).to.eq(0)
-      expect(secondsPerLiquidityOutsideX128).to.eq(0)
-      expect(tickCumulativeOutside).to.eq(0)
-      expect(secondsOutside).to.eq(0)
-      expect(initialized).to.eq(true)
     })
   })
 
@@ -246,30 +189,13 @@ describe('Tick', () => {
         feeGrowthOutside1X128: 2,
         liquidityGross: 3,
         liquidityNet: 4,
-        secondsPerLiquidityOutsideX128: 5,
-        tickCumulativeOutside: 6,
-        secondsOutside: 7,
-        initialized: true,
       })
       await tickTest.clear(2)
-      const {
-        feeGrowthOutside0X128,
-        feeGrowthOutside1X128,
-        secondsOutside,
-        secondsPerLiquidityOutsideX128,
-        liquidityGross,
-        tickCumulativeOutside,
-        liquidityNet,
-        initialized,
-      } = await tickTest.ticks(2)
+      const { feeGrowthOutside0X128, feeGrowthOutside1X128, liquidityGross, liquidityNet } = await tickTest.ticks(2)
       expect(feeGrowthOutside0X128).to.eq(0)
       expect(feeGrowthOutside1X128).to.eq(0)
-      expect(secondsOutside).to.eq(0)
-      expect(secondsPerLiquidityOutsideX128).to.eq(0)
-      expect(tickCumulativeOutside).to.eq(0)
       expect(liquidityGross).to.eq(0)
       expect(liquidityNet).to.eq(0)
-      expect(initialized).to.eq(false)
     })
   })
 
@@ -280,24 +206,11 @@ describe('Tick', () => {
         feeGrowthOutside1X128: 2,
         liquidityGross: 3,
         liquidityNet: 4,
-        secondsPerLiquidityOutsideX128: 5,
-        tickCumulativeOutside: 6,
-        secondsOutside: 7,
-        initialized: true,
       })
-      await tickTest.cross(2, 7, 9, 8, 15, 10)
-      const {
-        feeGrowthOutside0X128,
-        feeGrowthOutside1X128,
-        secondsOutside,
-        tickCumulativeOutside,
-        secondsPerLiquidityOutsideX128,
-      } = await tickTest.ticks(2)
+      await tickTest.cross(2, 7, 9)
+      const { feeGrowthOutside0X128, feeGrowthOutside1X128 } = await tickTest.ticks(2)
       expect(feeGrowthOutside0X128).to.eq(6)
       expect(feeGrowthOutside1X128).to.eq(7)
-      expect(secondsPerLiquidityOutsideX128).to.eq(3)
-      expect(tickCumulativeOutside).to.eq(9)
-      expect(secondsOutside).to.eq(3)
     })
     it('two flips are no op', async () => {
       await tickTest.setTick(2, {
@@ -305,25 +218,12 @@ describe('Tick', () => {
         feeGrowthOutside1X128: 2,
         liquidityGross: 3,
         liquidityNet: 4,
-        secondsPerLiquidityOutsideX128: 5,
-        tickCumulativeOutside: 6,
-        secondsOutside: 7,
-        initialized: true,
       })
-      await tickTest.cross(2, 7, 9, 8, 15, 10)
-      await tickTest.cross(2, 7, 9, 8, 15, 10)
-      const {
-        feeGrowthOutside0X128,
-        feeGrowthOutside1X128,
-        secondsOutside,
-        tickCumulativeOutside,
-        secondsPerLiquidityOutsideX128,
-      } = await tickTest.ticks(2)
+      await tickTest.cross(2, 7, 9)
+      await tickTest.cross(2, 7, 9)
+      const { feeGrowthOutside0X128, feeGrowthOutside1X128 } = await tickTest.ticks(2)
       expect(feeGrowthOutside0X128).to.eq(1)
       expect(feeGrowthOutside1X128).to.eq(2)
-      expect(secondsPerLiquidityOutsideX128).to.eq(5)
-      expect(tickCumulativeOutside).to.eq(6)
-      expect(secondsOutside).to.eq(7)
     })
   })
 })

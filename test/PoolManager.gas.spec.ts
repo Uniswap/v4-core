@@ -1,6 +1,6 @@
 import { ethers, waffle } from 'hardhat'
 import { Wallet } from 'ethers'
-import { MockTimePoolManager, PoolSwapTest, PoolModifyPositionTest } from '../typechain'
+import { PoolManager, PoolSwapTest, PoolModifyPositionTest } from '../typechain'
 import { expect } from './shared/expect'
 
 import { tokensFixture } from './shared/fixtures'
@@ -17,7 +17,6 @@ import {
   getMaxTick,
   MaxUint128,
   SwapToPriceFunction,
-  MAX_SQRT_RATIO,
   MIN_SQRT_RATIO,
   getPoolId,
 } from './shared/utilities'
@@ -52,10 +51,10 @@ describe('PoolManager gas tests', () => {
   const gasTestFixture = async ([wallet]: Wallet[]) => {
     const { token0, token1 } = await tokensFixture()
 
-    const singletonPoolFactory = await ethers.getContractFactory('MockTimePoolManager')
+    const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
-    const manager = (await singletonPoolFactory.deploy()) as MockTimePoolManager
+    const manager = (await singletonPoolFactory.deploy()) as PoolManager
 
     const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
     const modifyPositionTest = (await mintTestFactory.deploy(manager.address)) as PoolModifyPositionTest
@@ -129,16 +128,11 @@ describe('PoolManager gas tests', () => {
     }
 
     await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-    await manager.increaseObservationCardinalityNext(poolKey, 4)
-
-    await manager.advanceTime(1)
 
     await modifyPosition(minTick, maxTick, expandTo18Decimals(2))
 
     await swapExact0For1(expandTo18Decimals(1), wallet.address)
-    await manager.advanceTime(1)
     await swapToHigherPrice(startingPrice, wallet.address)
-    await manager.advanceTime(1)
 
     const { tick, sqrtPriceX96 } = await getSlot0()
 
@@ -151,7 +145,7 @@ describe('PoolManager gas tests', () => {
   let swapExact0For1: SwapFunction
   let swapToHigherPrice: SwapToPriceFunction
   let swapToLowerPrice: SwapToPriceFunction
-  let manager: MockTimePoolManager
+  let manager: PoolManager
   let modifyPosition: ModifyPositionFunction
   let getSlot0: AsyncReturnType<typeof gasTestFixture>['getSlot0']
   let poolKey: AsyncReturnType<typeof gasTestFixture>['poolKey']
@@ -221,25 +215,6 @@ describe('PoolManager gas tests', () => {
       await snapshotGasCost(swapExact0For1(expandTo18Decimals(1), wallet.address))
       expect((await getSlot0()).tick).to.be.lt(startingTick - 2 * tickSpacing) // we crossed the last tick
     })
-
-    it('large swap crossing several initialized ticks after some time passes', async () => {
-      await modifyPosition(startingTick - 3 * tickSpacing, startingTick - tickSpacing, expandTo18Decimals(1))
-      await modifyPosition(startingTick - 4 * tickSpacing, startingTick - 2 * tickSpacing, expandTo18Decimals(1))
-      await swapExact0For1(2, wallet.address)
-      await manager.advanceTime(1)
-      await snapshotGasCost(swapExact0For1(expandTo18Decimals(1), wallet.address))
-      expect((await getSlot0()).tick).to.be.lt(startingTick - 4 * tickSpacing)
-    })
-
-    it('large swap crossing several initialized ticks second time after some time passes', async () => {
-      await modifyPosition(startingTick - 3 * tickSpacing, startingTick - tickSpacing, expandTo18Decimals(1))
-      await modifyPosition(startingTick - 4 * tickSpacing, startingTick - 2 * tickSpacing, expandTo18Decimals(1))
-      await swapExact0For1(expandTo18Decimals(1), wallet.address)
-      await swapToHigherPrice(startingPrice, wallet.address)
-      await manager.advanceTime(1)
-      await snapshotGasCost(swapExact0For1(expandTo18Decimals(1), wallet.address))
-      expect((await getSlot0()).tick).to.be.lt(tickSpacing * -4)
-    })
   })
 
   describe('#mint', () => {
@@ -270,11 +245,6 @@ describe('PoolManager gas tests', () => {
         })
         it('second position in same range', async () => {
           await modifyPosition(tickLower, tickUpper, expandTo18Decimals(1))
-          await snapshotGasCost(modifyPosition(tickLower, tickUpper, expandTo18Decimals(1)))
-        })
-        it('add to position after some time passes', async () => {
-          await modifyPosition(tickLower, tickUpper, expandTo18Decimals(1))
-          await manager.advanceTime(1)
           await snapshotGasCost(modifyPosition(tickLower, tickUpper, expandTo18Decimals(1)))
         })
       })
@@ -335,27 +305,4 @@ describe('PoolManager gas tests', () => {
   //     await snapshotGasCost(pool.burn(tickLower, tickUpper, 0))
   //   })
   // })
-
-  describe('#increaseObservationCardinalityNext', () => {
-    it('grow by 1 slot', async () => {
-      await snapshotGasCost(manager.increaseObservationCardinalityNext(poolKey, 5))
-    })
-    it('no op', async () => {
-      await snapshotGasCost(manager.increaseObservationCardinalityNext(poolKey, 3))
-    })
-  })
-
-  describe('#snapshotCumulativesInside', () => {
-    it('tick inside', async () => {
-      await snapshotGasCost(manager.estimateGas.snapshotCumulativesInside(poolKey, minTick, maxTick))
-    })
-    it('tick above', async () => {
-      await swapToHigherPrice(MAX_SQRT_RATIO.sub(1), wallet.address)
-      await snapshotGasCost(manager.estimateGas.snapshotCumulativesInside(poolKey, minTick, maxTick))
-    })
-    it('tick below', async () => {
-      await swapToLowerPrice(MIN_SQRT_RATIO.add(1), wallet.address)
-      await snapshotGasCost(manager.estimateGas.snapshotCumulativesInside(poolKey, minTick, maxTick))
-    })
-  })
 })

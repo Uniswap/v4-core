@@ -21,6 +21,9 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     using Pool for *;
     using Hooks for IHooks;
 
+    /// @inheritdoc IPoolManager
+    int24 public constant override MAX_TICK_SPACING = type(int16).max;
+
     mapping(bytes32 => Pool.State) public pools;
 
     constructor() ERC1155('') {}
@@ -35,26 +38,36 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     }
 
     /// @inheritdoc IPoolManager
+    function getSlot0(IPoolManager.PoolKey memory key)
+        external
+        view
+        override
+        returns (uint160 sqrtPriceX96, int24 tick)
+    {
+        Pool.Slot0 memory slot0 = _getPool(key).slot0;
+
+        return (slot0.sqrtPriceX96, slot0.tick);
+    }
+
+    /// @inheritdoc IPoolManager
+    function getLiquidity(IPoolManager.PoolKey memory key) external view override returns (uint128 liquidity) {
+        return _getPool(key).liquidity;
+    }
+
+    /// @inheritdoc IPoolManager
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
+        // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
+        if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
+
         if (key.hooks.shouldCallBeforeInitialize()) {
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
 
-        tick = _getPool(key).initialize(_blockTimestamp(), sqrtPriceX96);
+        tick = _getPool(key).initialize(sqrtPriceX96);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
         }
-    }
-
-    /// @inheritdoc IPoolManager
-    function increaseObservationCardinalityNext(IPoolManager.PoolKey memory key, uint16 observationCardinalityNext)
-        external
-        override
-        returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew)
-    {
-        (observationCardinalityNextOld, observationCardinalityNextNew) = _getPool(key)
-            .increaseObservationCardinalityNext(observationCardinalityNext);
     }
 
     /// @inheritdoc IPoolManager
@@ -181,7 +194,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,
                 liquidityDelta: params.liquidityDelta.toInt128(),
-                time: _blockTimestamp(),
                 maxLiquidityPerTick: Tick.tickSpacingToMaxLiquidityPerTick(key.tickSpacing),
                 tickSpacing: key.tickSpacing
             })
@@ -208,7 +220,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
         delta = _getPool(key).swap(
             Pool.SwapParams({
-                time: _blockTimestamp(),
                 fee: key.fee,
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
@@ -276,25 +287,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     function _burnAndAccount(IERC20Minimal token, uint256 amount) internal {
         _burn(address(this), uint256(uint160(address((token)))), amount);
         _accountDelta(IERC20Minimal(token), -(amount.toInt256()));
-    }
-
-    /// @inheritdoc IPoolManager
-    function observe(IPoolManager.PoolKey calldata key, uint32[] calldata secondsAgos)
-        external
-        view
-        noDelegateCall
-        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
-    {
-        return _getPool(key).observe(_blockTimestamp(), secondsAgos);
-    }
-
-    /// @inheritdoc IPoolManager
-    function snapshotCumulativesInside(
-        IPoolManager.PoolKey calldata key,
-        int24 tickLower,
-        int24 tickUpper
-    ) external view override noDelegateCall returns (Pool.Snapshot memory) {
-        return _getPool(key).snapshotCumulativesInside(tickLower, tickUpper, _blockTimestamp());
     }
 
     function onERC1155Received(

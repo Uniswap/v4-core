@@ -8,6 +8,8 @@ import {TickMath} from './TickMath.sol';
 /// @title Tick
 /// @notice Contains functions for managing tick processes and relevant calculations
 library Tick {
+    error TickLiquidityOverflow(int24 tick);
+
     using SafeCast for int256;
 
     // info stored for each initialized individual tick
@@ -20,17 +22,6 @@ library Tick {
         // only has relative meaning, not absolute — the value depends on when the tick is initialized
         uint256 feeGrowthOutside0X128;
         uint256 feeGrowthOutside1X128;
-        // the cumulative tick value on the other side of the tick
-        int56 tickCumulativeOutside;
-        // the seconds per unit of liquidity on the _other_ side of this tick (relative to the current tick)
-        // only has relative meaning, not absolute — the value depends on when the tick is initialized
-        uint160 secondsPerLiquidityOutsideX128;
-        // the seconds spent on the other side of the tick (relative to the current tick)
-        // only has relative meaning, not absolute — the value depends on when the tick is initialized
-        uint32 secondsOutside;
-        // true iff the tick is initialized, i.e. the value is exactly equivalent to the expression liquidityGross != 0
-        // these 8 bits are set to prevent fresh sstores when crossing newly initialized ticks
-        bool initialized;
     }
 
     /// @notice Derives max liquidity per tick from given tick spacing
@@ -40,9 +31,9 @@ library Tick {
     /// @return The max liquidity per tick
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
         unchecked {
-            int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
-            int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
-            uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
+            uint24 numTicks = uint24(
+                (TickMath.maxUsableTick(tickSpacing) - TickMath.minUsableTick(tickSpacing)) / tickSpacing
+            ) + 1; // 0 tick is not counted by this
             return type(uint128).max / numTicks;
         }
     }
@@ -102,9 +93,6 @@ library Tick {
     /// @param liquidityDelta A new amount of liquidity to be added (subtracted) when tick is crossed from left to right (right to left)
     /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
     /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
-    /// @param secondsPerLiquidityCumulativeX128 The all-time seconds per max(1, liquidity) of the pool
-    /// @param tickCumulative The tick * time elapsed since the pool was first initialized
-    /// @param time The current block timestamp cast to a uint32
     /// @param upper true for updating a position's upper tick, or false for updating a position's lower tick
     /// @param maxLiquidity The maximum liquidity allocation for a single tick
     /// @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
@@ -115,9 +103,6 @@ library Tick {
         int128 liquidityDelta,
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128,
-        uint160 secondsPerLiquidityCumulativeX128,
-        int56 tickCumulative,
-        uint32 time,
         bool upper,
         uint128 maxLiquidity
     ) internal returns (bool flipped) {
@@ -128,7 +113,7 @@ library Tick {
             ? liquidityGrossBefore - uint128(-liquidityDelta)
             : liquidityGrossBefore + uint128(liquidityDelta);
 
-        require(liquidityGrossAfter <= maxLiquidity, 'LO');
+        if (liquidityGrossAfter > maxLiquidity) revert TickLiquidityOverflow(tick);
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 
@@ -137,11 +122,7 @@ library Tick {
             if (tick <= tickCurrent) {
                 info.feeGrowthOutside0X128 = feeGrowthGlobal0X128;
                 info.feeGrowthOutside1X128 = feeGrowthGlobal1X128;
-                info.secondsPerLiquidityOutsideX128 = secondsPerLiquidityCumulativeX128;
-                info.tickCumulativeOutside = tickCumulative;
-                info.secondsOutside = time;
             }
-            info.initialized = true;
         }
 
         info.liquidityGross = liquidityGrossAfter;
@@ -162,28 +143,17 @@ library Tick {
     /// @param tick The destination tick of the transition
     /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
     /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
-    /// @param secondsPerLiquidityCumulativeX128 The current seconds per liquidity
-    /// @param tickCumulative The tick * time elapsed since the pool was first initialized
-    /// @param time The current block.timestamp
     /// @return liquidityNet The amount of liquidity added (subtracted) when tick is crossed from left to right (right to left)
     function cross(
         mapping(int24 => Tick.Info) storage self,
         int24 tick,
         uint256 feeGrowthGlobal0X128,
-        uint256 feeGrowthGlobal1X128,
-        uint160 secondsPerLiquidityCumulativeX128,
-        int56 tickCumulative,
-        uint32 time
+        uint256 feeGrowthGlobal1X128
     ) internal returns (int128 liquidityNet) {
         unchecked {
             Tick.Info storage info = self[tick];
             info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
             info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
-            info.secondsPerLiquidityOutsideX128 =
-                secondsPerLiquidityCumulativeX128 -
-                info.secondsPerLiquidityOutsideX128;
-            info.tickCumulativeOutside = tickCumulative - info.tickCumulativeOutside;
-            info.secondsOutside = time - info.secondsOutside;
             liquidityNet = info.liquidityNet;
         }
     }
