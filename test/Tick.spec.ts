@@ -1,6 +1,8 @@
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { TickTest } from '../typechain/TickTest'
+import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { FeeAmount, getMaxLiquidityPerTick, TICK_SPACINGS } from './shared/utilities'
 
@@ -41,6 +43,18 @@ describe('Tick', () => {
       const maxLiquidityPerTick = await tickTest.tickSpacingToMaxLiquidityPerTick(2302)
       expect(maxLiquidityPerTick).to.eq('441351967472034323558203122479595605') // 118 bits
       expect(maxLiquidityPerTick).to.eq(getMaxLiquidityPerTick(2302))
+    })
+
+    it('gas cost min tick spacing', async () => {
+      await snapshotGasCost(tickTest.getGasCostOfTickSpacingToMaxLiquidityPerTick(1))
+    })
+
+    it('gas cost 60 tick spacing', async () => {
+      await snapshotGasCost(tickTest.getGasCostOfTickSpacingToMaxLiquidityPerTick(60))
+    })
+
+    it('gas cost max tick spacing', async () => {
+      await snapshotGasCost(tickTest.getGasCostOfTickSpacingToMaxLiquidityPerTick(MAX_TICK_SPACING))
     })
   })
 

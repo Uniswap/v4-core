@@ -13,6 +13,12 @@ contract TickTest {
         return Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
     }
 
+    function getGasCostOfTickSpacingToMaxLiquidityPerTick(int24 tickSpacing) external view returns (uint256) {
+        uint256 gasBefore = gasleft();
+        uint128 maxLiquidity = Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        return gasBefore - gasleft();
+    }
+
     function setTick(int24 tick, Tick.Info memory info) external {
         ticks[tick] = info;
     }
