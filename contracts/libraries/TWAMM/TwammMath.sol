@@ -15,6 +15,9 @@ library TwammMath {
     // ABDKMathQuad FixedPoint96.Q96.fromUInt()
     bytes16 constant Q96 = 0x405f0000000000000000000000000000;
 
+    // (type(uint160).max).fromUInt()
+    bytes16 constant MAX_PRICE = 0x409effffffffffffffffffffffffffff;
+
     struct ParamsBytes16 {
         bytes16 sqrtPriceX96;
         bytes16 liquidity;
@@ -71,7 +74,9 @@ library TwammMath {
             liquidity: params.liquidity
         });
 
-        sqrtPriceX96 = newSqrtPriceX96.toUInt().toUint160();
+        sqrtPriceX96 = newSqrtPriceX96 > MAX_PRICE
+            ? MAX_PRICE.toUInt().toUint160()
+            : newSqrtPriceX96.toUInt().toUint160();
         earningsPool0 = getEarningsAmountPool0(earningsFactorParams).toUInt();
         earningsPool1 = getEarningsAmountPool1(earningsFactorParams).toUInt();
     }
