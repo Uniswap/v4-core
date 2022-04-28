@@ -13,6 +13,8 @@ library Hooks {
     uint256 public constant AFTER_SWAP_FLAG = 1 << 156;
     uint256 public constant BEFORE_MODIFY_POSITION_FLAG = 1 << 155;
     uint256 public constant AFTER_MODIFY_POSITION_FLAG = 1 << 154;
+    uint256 public constant BEFORE_DONATE_FLAG = 1 << 153;
+    uint256 public constant AFTER_DONATE_FLAG = 1 << 152;
 
     struct Calls {
         bool beforeInitialize;
@@ -21,6 +23,8 @@ library Hooks {
         bool afterModifyPosition;
         bool beforeSwap;
         bool afterSwap;
+        bool beforeDonate;
+        bool afterDonate;
     }
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
@@ -38,7 +42,9 @@ library Hooks {
             calls.beforeSwap != shouldCallBeforeSwap(self) ||
             calls.afterSwap != shouldCallAfterSwap(self) ||
             calls.beforeModifyPosition != shouldCallBeforeModifyPosition(self) ||
-            calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
+            calls.afterModifyPosition != shouldCallAfterModifyPosition(self) ||
+            calls.beforeDonate != shouldCallBeforeDonate(self) ||
+            calls.afterDonate != shouldCallAfterDonate(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -66,5 +72,13 @@ library Hooks {
 
     function shouldCallAfterModifyPosition(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & AFTER_MODIFY_POSITION_FLAG != 0;
+    }
+
+    function shouldCallBeforeDonate(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & BEFORE_DONATE_FLAG != 0;
+    }
+
+    function shouldCallAfterDonate(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
     }
 }

@@ -1,13 +1,11 @@
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
+import Decimal from 'decimal.js'
 import { BigNumber } from 'ethers'
 import { ethers } from 'hardhat'
 import { TickMathTest } from '../typechain/TickMathTest'
+import { MAX_TICK, MIN_TICK } from './shared/constants'
 import { expect } from './shared/expect'
-import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import { encodeSqrtPriceX96, MIN_SQRT_RATIO, MAX_SQRT_RATIO } from './shared/utilities'
-import Decimal from 'decimal.js'
-
-const MIN_TICK = -887272
-const MAX_TICK = 887272
+import { encodeSqrtPriceX96, MAX_SQRT_RATIO, MIN_SQRT_RATIO } from './shared/utilities'
 
 Decimal.config({ toExpNeg: -500, toExpPos: 500 })
 
@@ -74,11 +72,30 @@ describe('TickMath', () => {
     }
   })
 
+  describe('#MIN_TICK', async () => {
+    // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
+    it('equals -#MAX_TICK', async () => {
+      const min = await tickMath.MIN_TICK()
+      expect(min).to.eq((await tickMath.MAX_TICK()) * -1)
+      expect(min).to.eq(MIN_TICK) // also just check the JS matches
+    })
+  })
+
+  describe('#MAX_TICK', async () => {
+    // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
+    // this test is redundant with the above MIN_TICK test
+    it('equals -#MIN_TICK', async () => {
+      const max = await tickMath.MAX_TICK()
+      expect(max).to.eq((await tickMath.MIN_TICK()) * -1)
+      expect(max).to.eq(MAX_TICK) // also just check the JS matches
+    })
+  })
+
   describe('#MIN_SQRT_RATIO', async () => {
     it('equals #getSqrtRatioAtTick(MIN_TICK)', async () => {
       const min = await tickMath.getSqrtRatioAtTick(MIN_TICK)
       expect(min).to.eq(await tickMath.MIN_SQRT_RATIO())
-      expect(min).to.eq(MIN_SQRT_RATIO)
+      expect(min).to.eq(MIN_SQRT_RATIO) // also just check the JS matches
     })
   })
 
@@ -86,7 +103,7 @@ describe('TickMath', () => {
     it('equals #getSqrtRatioAtTick(MAX_TICK)', async () => {
       const max = await tickMath.getSqrtRatioAtTick(MAX_TICK)
       expect(max).to.eq(await tickMath.MAX_SQRT_RATIO())
-      expect(max).to.eq(MAX_SQRT_RATIO)
+      expect(max).to.eq(MAX_SQRT_RATIO) // also just check the JS matches
     })
   })
 
