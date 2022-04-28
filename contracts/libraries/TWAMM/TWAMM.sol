@@ -21,6 +21,7 @@ library TWAMM {
     using TickMath for *;
     using SafeCast for *;
     using TickBitmap for mapping(int16 => uint256);
+    using Pool for Pool.State;
 
     /// @notice Thrown when account other than owner attempts to interact with an order
     /// @param orderId The orderId
@@ -228,8 +229,7 @@ library TWAMM {
     function advanceToNewTimestamp(
         State storage self,
         AdvanceParams memory params,
-        mapping(int16 => uint256) storage tickBitmap,
-        mapping(int24 => Tick.Info) storage ticks
+        Pool.State storage pool
     ) internal returns (CachedPoolUpdates memory) {
         uint160 finalSqrtPriceX96;
 
@@ -250,7 +250,7 @@ library TWAMM {
                 params.tickSpacing,
                 params.pool,
                 finalSqrtPriceX96,
-                tickBitmap
+                pool.tickBitmap
             );
             unchecked {
                 if (crossingInitializedTick) {
@@ -258,7 +258,7 @@ library TWAMM {
                     (params.pool, secondsUntilCrossingX96) = advanceTimeThroughTickCrossing(
                         self,
                         TickCrossingParams(tick, params.nextTimestamp, params.secondsElapsedX96, params.pool),
-                        ticks
+                        pool.ticks
                     );
                     params.secondsElapsedX96 = params.secondsElapsedX96 - secondsUntilCrossingX96;
                 } else {
@@ -288,8 +288,7 @@ library TWAMM {
     function advanceTimestampForSinglePoolSell(
         State storage self,
         AdvanceSingleParams memory params,
-        mapping(int16 => uint256) storage tickBitmap,
-        mapping(int24 => Tick.Info) storage ticks
+        Pool.State storage pool
     ) internal returns (CachedPoolUpdates memory) {
         uint256 sellRateCurrent = self.orderPools[params.sellIndex].sellRateCurrent;
         uint256 amountSelling = sellRateCurrent * params.secondsElapsed;
@@ -309,8 +308,8 @@ library TWAMM {
                 params.tickSpacing,
                 params.pool,
                 finalSqrtPriceX96,
-                tickBitmap,
-                ticks
+                pool.tickBitmap,
+                pool.ticks
             );
             unchecked {
                 totalEarnings += params.sellIndex == 0 ? swapDelta1 : swapDelta0;

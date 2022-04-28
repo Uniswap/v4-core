@@ -693,8 +693,7 @@ library Pool {
                                 (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96,
                                 cachedPool
                             ),
-                            self.tickBitmap,
-                            self.ticks
+                            self
                         );
                     } else {
                         cachedPool = self.twamm.advanceTimestampForSinglePoolSell(
@@ -705,8 +704,7 @@ library Pool {
                                 cachedPool,
                                 self.twamm.orderPools[0].sellRateCurrent == 0 ? 1 : 0
                             ),
-                            self.tickBitmap,
-                            self.ticks
+                            self
                         );
                     }
                     prevTimestamp = nextExpirationTimestamp;
@@ -723,8 +721,7 @@ library Pool {
                             (block.timestamp - prevTimestamp) * FixedPoint96.Q96,
                             cachedPool
                         ),
-                        self.tickBitmap,
-                        self.ticks
+                        self
                     );
                 } else {
                     cachedPool = self.twamm.advanceTimestampForSinglePoolSell(
@@ -735,8 +732,7 @@ library Pool {
                             cachedPool,
                             self.twamm.orderPools[0].sellRateCurrent == 0 ? 1 : 0
                         ),
-                        self.tickBitmap,
-                        self.ticks
+                        self
                     );
                 }
             }
