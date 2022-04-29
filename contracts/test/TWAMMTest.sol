@@ -29,7 +29,7 @@ contract TWAMMTest {
     }
 
     function initialize(uint256 orderInterval) external {
-        pool.twamm.initialize(orderInterval);
+        pool.initialize(uint32(block.timestamp), 1 << 96, orderInterval);
     }
 
     function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {

@@ -980,7 +980,7 @@ describe('PoolManager', () => {
       let orderKey1: OrderKey
       let liquidityBalance: BigNumber
 
-      describe('when TWAMM crosses a tick', () => {
+      describe.only('when TWAMM crosses a tick', () => {
         beforeEach('set up pool', async () => {
           const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
           const amountLiquidity = expandTo18Decimals(1)
@@ -1258,7 +1258,7 @@ describe('PoolManager', () => {
         })
 
         describe('when crossing two ticks', () => {
-          it.only('crosses both ticks properly', async () => {
+          it('crosses both ticks properly', async () => {
             await ethers.provider.send('evm_setNextBlockTimestamp', [start])
 
             await twammTest.submitLongTermOrder(key, {

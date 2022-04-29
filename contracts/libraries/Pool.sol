@@ -726,6 +726,7 @@ library Pool {
             }
         }
 
+        console.log(self.slot0.sqrtPriceX96);
         self.twamm.lastVirtualOrderTimestamp = block.timestamp;
     }
 }
