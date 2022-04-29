@@ -1258,7 +1258,7 @@ describe('PoolManager', () => {
         })
 
         describe('when crossing two ticks', () => {
-          it('crosses both ticks properly', async () => {
+          it.only('crosses both ticks properly', async () => {
             await ethers.provider.send('evm_setNextBlockTimestamp', [start])
 
             await twammTest.submitLongTermOrder(key, {

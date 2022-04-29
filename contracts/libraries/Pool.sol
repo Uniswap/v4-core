@@ -649,28 +649,6 @@ library Pool {
         uint24 fee;
         int24 tickSpacing;
     }
-    //
-    // function executeTwammOrders(State storage self, ExecuteTWAMMParams memory params)
-    //     internal
-    //     returns (bool zeroForOne, uint160 newSqrtPriceX96)
-    // {
-    //     bool shouldSwap;
-    //     (zeroForOne, newSqrtPriceX96, shouldSwap) = _executeTWAMMOrders(self, params);
-    //
-    //     if (shouldSwap && self.slot0.sqrtPriceX96 != newSqrtPriceX96) {
-    //         swap(
-    //             self,
-    //             SwapParams(
-    //                 params.fee,
-    //                 params.tickSpacing,
-    //                 uint32(block.timestamp),
-    //                 zeroForOne,
-    //                 type(int256).max,
-    //                 newSqrtPriceX96
-    //             )
-    //         );
-    //     }
-    // }
 
     function executeTwammOrders(State storage self, ExecuteTWAMMParams memory params)
         internal
@@ -686,6 +664,7 @@ library Pool {
         uint160 initialSqrtPriceX96 = self.slot0.sqrtPriceX96;
 
         unchecked {
+            // executeTWAMM on every interval with expiring orders
             while (nextExpirationTimestamp <= block.timestamp && self.twamm.hasOutstandingOrders()) {
                 if (
                     self.twamm.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
@@ -720,6 +699,7 @@ library Pool {
                 nextExpirationTimestamp += self.twamm.expirationInterval;
             }
 
+            // if we haven't caught up to the current block.timestamp, execute orders until current time
             if (prevTimestamp < block.timestamp && self.twamm.hasOutstandingOrders()) {
                 if (self.twamm.orderPools[0].sellRateCurrent != 0 && self.twamm.orderPools[1].sellRateCurrent != 0) {
                     self.twamm.advanceToNewTimestamp(

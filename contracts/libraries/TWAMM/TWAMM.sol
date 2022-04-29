@@ -307,6 +307,14 @@ library TWAMM {
         uint256 amountSelling = sellRateCurrent * params.secondsElapsed;
         uint256 totalEarnings;
 
+
+        console.log('----------------sqrtpricemath args---------------');
+        console.log(pool.slot0.sqrtPriceX96);
+        console.log(pool.liquidity);
+        console.log(amountSelling);
+        console.log(params.sellIndex);
+        console.log('----------------sqrtpricemath args---------------');
+
         uint160 finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
             pool.slot0.sqrtPriceX96,
             pool.liquidity,
@@ -319,8 +327,10 @@ library TWAMM {
                 pool,
                 params.fee,
                 params.tickSpacing,
-                finalSqrtPriceX96
+                finalSqrtPriceX96,
+                amountSelling
             );
+
             unchecked {
                 totalEarnings += params.sellIndex == 0 ? swapDelta1 : swapDelta0;
                 amountSelling -= params.sellIndex == 0 ? swapDelta0 : swapDelta1;
@@ -347,31 +357,35 @@ library TWAMM {
         Pool.State storage pool,
         uint24 fee,
         int24 tickSpacing,
-        uint160 targetPriceX96
+        uint160 targetPriceX96,
+        uint256 maxAmount
     )
         internal
         returns (uint256 delta0, uint256 delta1)
     {
         uint160 initialSqrtPriceX96 = pool.slot0.sqrtPriceX96;
+        uint128 liquidity = pool.liquidity;
         (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
             pool,
             tickSpacing,
             targetPriceX96
         );
 
-        uint160 newSqrtPriceX96 = crossingInitializedTick ? TickMath.getSqrtRatioAtTick(tick) : pool.slot0.sqrtPriceX96;
+        uint160 newSqrtPriceX96 = crossingInitializedTick ? TickMath.getSqrtRatioAtTick(tick) : targetPriceX96;
         IPoolManager.BalanceDelta memory deltas = pool.swap(
             Pool.SwapParams(
                 fee,
                 tickSpacing,
                 uint32(block.timestamp),
-                newSqrtPriceX96 < pool.slot0.sqrtPriceX96,
-                type(int256).max,
+                newSqrtPriceX96 < initialSqrtPriceX96,
+                int256(maxAmount),
                 newSqrtPriceX96
             )
           );
           delta0 = deltas.amount0 < 0 ? uint256(-deltas.amount0) : uint256(deltas.amount0);
           delta1 = deltas.amount1 < 0 ? uint256(-deltas.amount1) : uint256(deltas.amount1);
+          uint256 swapDelta0 = SqrtPriceMath.getAmount0Delta(initialSqrtPriceX96, newSqrtPriceX96, liquidity, true);
+          uint256 swapDelta1 = SqrtPriceMath.getAmount1Delta(initialSqrtPriceX96, newSqrtPriceX96, liquidity, true);
     }
 
     struct TickCrossingParams {
