@@ -213,6 +213,11 @@ library TWAMM {
             earningsAmount += order.uncollectedEarningsAmount;
             order.uncollectedEarningsAmount = 0;
         }
+
+        console.log('------------claim earnings--------------');
+        console.log(earningsAmount);
+        console.log(sellTokenIndex);
+        console.log('------------claim earnings--------------');
     }
 
     struct CachedPoolUpdates {
@@ -287,6 +292,7 @@ library TWAMM {
                     );
                 }
             }
+            console.log(pool.slot0.sqrtPriceX96);
         }
     }
 
