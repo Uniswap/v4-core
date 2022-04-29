@@ -7,6 +7,7 @@ import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';
 import 'hardhat/console.sol';
+
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {
     using ABDKMathQuad for *;
@@ -44,7 +45,7 @@ library TwammMath {
     {
         // https://www.desmos.com/calculator/yr3qvkafvy
         // https://www.desmos.com/calculator/rjcdwnaoja -- tracks some intermediate calcs
-        
+
         ParamsBytes16 memory bytesParams = ParamsBytes16({
             sqrtPriceX96: params.sqrtPriceX96.fromUInt(),
             liquidity: params.liquidity.fromUInt(),

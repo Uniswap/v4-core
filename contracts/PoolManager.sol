@@ -243,7 +243,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
         _accountPoolBalanceDelta(key, delta);
 
-
         if (key.hooks.shouldCallAfterSwap()) {
             key.hooks.afterSwap(msg.sender, key, params, delta);
         }
@@ -363,7 +362,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
     function executeTWAMMOrders(IPoolManager.PoolKey memory key)
         public
-        returns (IPoolManager.BalanceDelta memory delta)
     {
         _getPool(key).executeTwammOrders(Pool.ExecuteTWAMMParams(key.fee, key.tickSpacing));
     }

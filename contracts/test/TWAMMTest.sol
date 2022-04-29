@@ -63,7 +63,7 @@ contract TWAMMTest {
         pool.slot0.sqrtPriceX96 = params.sqrtPriceX96;
         pool.liquidity = params.liquidity;
 
-        pool._executeTWAMMOrders(Pool.ExecuteTWAMMParams(params.fee, params.tickSpacing));
+        pool.executeTwammOrders(Pool.ExecuteTWAMMParams(params.fee, params.tickSpacing));
     }
 
     function calculateExecutionUpdates(

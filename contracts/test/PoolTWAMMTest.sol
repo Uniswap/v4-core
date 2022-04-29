@@ -48,12 +48,8 @@ contract PoolTWAMMTest is ILockCallback {
 
     function executeTWAMMOrders(IPoolManager.PoolKey calldata key)
         external
-        returns (IPoolManager.BalanceDelta memory delta)
     {
-        delta = abi.decode(
-            manager.lock(abi.encode(CallbackData(key, TransactionType.EXECUTE, abi.encode('')))),
-            (IPoolManager.BalanceDelta)
-        );
+          manager.lock(abi.encode(CallbackData(key, TransactionType.EXECUTE, abi.encode(''))));
     }
 
     function lockAcquired(bytes calldata rawData) external returns (bytes memory returnVal) {
@@ -74,7 +70,7 @@ contract PoolTWAMMTest is ILockCallback {
             IERC20Minimal token = orderKey.zeroForOne ? data.key.token1 : data.key.token0;
             manager.take(token, orderKey.owner, earnings);
         } else if (data.txType == TransactionType.EXECUTE) {
-            returnVal = abi.encode(manager.executeTWAMMOrders(data.key));
+            manager.executeTWAMMOrders(data.key);
         }
     }
 }
