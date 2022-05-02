@@ -8,7 +8,6 @@ contract TickOverflowSafetyEchidnaTest {
 
     int24 private constant MIN_TICK = -16;
     int24 private constant MAX_TICK = 16;
-    uint128 private constant MAX_LIQUIDITY = type(uint128).max / 32;
 
     mapping(int24 => Tick.Info) private ticks;
     int24 private tick = 0;
@@ -42,29 +41,21 @@ contract TickOverflowSafetyEchidnaTest {
         require(tickLower > MIN_TICK);
         require(tickUpper < MAX_TICK);
         require(tickLower < tickUpper);
-        bool flippedLower = ticks.update(
+        (bool flippedLower, ) = ticks.update(
             tickLower,
             tick,
             liquidityDelta,
             feeGrowthGlobal0X128,
             feeGrowthGlobal1X128,
-            0,
-            0,
-            uint32(block.timestamp),
-            false,
-            MAX_LIQUIDITY
+            false
         );
-        bool flippedUpper = ticks.update(
+        (bool flippedUpper, ) = ticks.update(
             tickUpper,
             tick,
             liquidityDelta,
             feeGrowthGlobal0X128,
             feeGrowthGlobal1X128,
-            0,
-            0,
-            uint32(block.timestamp),
-            true,
-            MAX_LIQUIDITY
+            true
         );
 
         if (flippedLower) {
@@ -97,11 +88,10 @@ contract TickOverflowSafetyEchidnaTest {
         while (tick != target) {
             if (tick < target) {
                 if (ticks[tick + 1].liquidityGross > 0)
-                    ticks.cross(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128, 0, 0, uint32(block.timestamp));
+                    ticks.cross(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 tick++;
             } else {
-                if (ticks[tick].liquidityGross > 0)
-                    ticks.cross(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128, 0, 0, uint32(block.timestamp));
+                if (ticks[tick].liquidityGross > 0) ticks.cross(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 tick--;
             }
         }

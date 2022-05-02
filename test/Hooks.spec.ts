@@ -2,6 +2,7 @@ import { expect } from './shared/expect'
 import { HooksTest } from '../typechain/HooksTest'
 import { ethers, waffle } from 'hardhat'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
+import { createHookMask } from './shared/utilities'
 
 describe('Hooks', () => {
   let hooks: HooksTest
@@ -11,6 +12,40 @@ describe('Hooks', () => {
   }
   beforeEach('deploy HooksTest', async () => {
     hooks = await waffle.loadFixture(fixture)
+  })
+
+  /**
+   * Tester for our utility function
+   */
+  describe('#createHookMask', () => {
+    it('called nowhere', () => {
+      expect(
+        createHookMask({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          afterDonate: false,
+          beforeDonate: false,
+        })
+      ).to.eq('0x0000000000000000000000000000000000000000')
+    })
+    it('called everywhere', () => {
+      expect(
+        createHookMask({
+          beforeInitialize: true,
+          afterInitialize: true,
+          beforeModifyPosition: true,
+          afterModifyPosition: true,
+          beforeSwap: true,
+          afterSwap: true,
+          afterDonate: true,
+          beforeDonate: true,
+        })
+      ).to.eq('0xff00000000000000000000000000000000000000')
+    })
   })
 
   describe('#validateHookAddress', () => {
