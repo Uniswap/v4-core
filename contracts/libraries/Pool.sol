@@ -662,6 +662,7 @@ library Pool {
         uint256 nextExpirationTimestamp = self.twamm.lastVirtualOrderTimestamp +
             (self.twamm.expirationInterval - (self.twamm.lastVirtualOrderTimestamp % self.twamm.expirationInterval));
         uint160 initialSqrtPriceX96 = self.slot0.sqrtPriceX96;
+        uint160 finalSqrtPriceX96;
 
         unchecked {
             // executeTWAMM on every interval with expiring orders
@@ -673,7 +674,7 @@ library Pool {
                     if (
                         self.twamm.orderPools[0].sellRateCurrent != 0 && self.twamm.orderPools[1].sellRateCurrent != 0
                     ) {
-                        self.twamm.advanceToNewTimestamp(
+                        finalSqrtPriceX96 = self.twamm.advanceToNewTimestamp(
                             TWAMM.AdvanceParams(
                                 params.fee,
                                 params.tickSpacing,
@@ -683,7 +684,7 @@ library Pool {
                             self
                         );
                     } else {
-                        self.twamm.advanceTimestampForSinglePoolSell(
+                        finalSqrtPriceX96 = self.twamm.advanceTimestampForSinglePoolSell(
                             TWAMM.AdvanceSingleParams(
                                 params.fee,
                                 params.tickSpacing,
@@ -702,7 +703,7 @@ library Pool {
             // if we haven't caught up to the current block.timestamp, execute orders until current time
             if (prevTimestamp < block.timestamp && self.twamm.hasOutstandingOrders()) {
                 if (self.twamm.orderPools[0].sellRateCurrent != 0 && self.twamm.orderPools[1].sellRateCurrent != 0) {
-                    self.twamm.advanceToNewTimestamp(
+                    finalSqrtPriceX96 = self.twamm.advanceToNewTimestamp(
                         TWAMM.AdvanceParams(
                             params.fee,
                             params.tickSpacing,
@@ -712,7 +713,7 @@ library Pool {
                         self
                     );
                 } else {
-                    self.twamm.advanceTimestampForSinglePoolSell(
+                    finalSqrtPriceX96 = self.twamm.advanceTimestampForSinglePoolSell(
                         TWAMM.AdvanceSingleParams(
                             params.fee,
                             params.tickSpacing,
@@ -725,6 +726,17 @@ library Pool {
                 }
             }
         }
+        if (finalSqrtPriceX96 != 0 && self.slot0.sqrtPriceX96 != finalSqrtPriceX96) swap(
+            self,
+            Pool.SwapParams(
+                params.fee,
+                params.tickSpacing,
+                uint32(block.timestamp),
+                finalSqrtPriceX96 < self.slot0.sqrtPriceX96,
+                type(int256).max,
+                finalSqrtPriceX96
+            )
+        );
         self.twamm.lastVirtualOrderTimestamp = block.timestamp;
     }
 }

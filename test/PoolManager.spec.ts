@@ -859,7 +859,7 @@ describe('PoolManager', () => {
     })
   })
 
-  describe.only('TWAMM', () => {
+  describe('TWAMM', () => {
     function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
       return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
     }
@@ -980,7 +980,7 @@ describe('PoolManager', () => {
       let orderKey1: OrderKey
       let liquidityBalance: BigNumber
 
-      describe.only('when TWAMM crosses a tick', () => {
+      describe('when TWAMM crosses a tick', () => {
         beforeEach('set up pool', async () => {
           const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
           const amountLiquidity = expandTo18Decimals(1)
@@ -1125,7 +1125,7 @@ describe('PoolManager', () => {
       })
 
       describe('when TWAMM crosses no ticks', () => {
-        it('clears all balances appropriately when trading against a 0 fee AMM', async () => {
+        it('token 1 excess: clears all balances appropriately when trading against a 0 fee AMM', async () => {
           const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
           const amountLiquidity = expandTo18Decimals(1)
           const amountLTO0 = expandTo18Decimals(1)

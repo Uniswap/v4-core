@@ -213,11 +213,6 @@ library TWAMM {
             earningsAmount += order.uncollectedEarningsAmount;
             order.uncollectedEarningsAmount = 0;
         }
-
-        console.log('------------claim earnings--------------');
-        console.log(earningsAmount);
-        console.log(sellTokenIndex);
-        console.log('------------claim earnings--------------');
     }
 
     struct CachedPoolUpdates {
@@ -236,10 +231,9 @@ library TWAMM {
         State storage self,
         AdvanceParams memory params,
         Pool.State storage pool
-    ) internal {
-        uint160 finalSqrtPriceX96;
+    ) internal returns (uint160 finalSqrtPriceX96) {
 
-        while (pool.slot0.sqrtPriceX96 != finalSqrtPriceX96) {
+        while (true) { // YOLO
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
             (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
@@ -280,19 +274,9 @@ library TWAMM {
                         self.orderPools[0].advanceToCurrentTime(earningsFactorPool0);
                         self.orderPools[1].advanceToCurrentTime(earningsFactorPool1);
                     }
-                    if (pool.slot0.sqrtPriceX96 != finalSqrtPriceX96) pool.swap(
-                        Pool.SwapParams(
-                            params.fee,
-                            params.tickSpacing,
-                            uint32(block.timestamp),
-                            finalSqrtPriceX96 < pool.slot0.sqrtPriceX96,
-                            type(int256).max,
-                            finalSqrtPriceX96
-                        )
-                    );
+                    break;
                 }
             }
-            console.log(pool.slot0.sqrtPriceX96);
         }
     }
 
@@ -308,12 +292,12 @@ library TWAMM {
         State storage self,
         AdvanceSingleParams memory params,
         Pool.State storage pool
-    ) internal {
+    ) internal returns (uint160 finalSqrtPriceX96) {
         uint256 sellRateCurrent = self.orderPools[params.sellIndex].sellRateCurrent;
         uint256 amountSelling = sellRateCurrent * params.secondsElapsed;
         uint256 totalEarnings;
 
-        uint160 finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
+        finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
             pool.slot0.sqrtPriceX96,
             pool.liquidity,
             amountSelling,
@@ -367,19 +351,25 @@ library TWAMM {
             targetPriceX96
         );
 
-        uint160 newSqrtPriceX96 = crossingInitializedTick ? TickMath.getSqrtRatioAtTick(tick) : targetPriceX96;
-        IPoolManager.BalanceDelta memory deltas = pool.swap(
-            Pool.SwapParams(
-                fee,
-                tickSpacing,
-                uint32(block.timestamp),
-                newSqrtPriceX96 < pool.slot0.sqrtPriceX96,
-                int256(maxAmount),
-                newSqrtPriceX96
-            )
-          );
-          delta0 = deltas.amount0 < 0 ? uint256(-deltas.amount0) : uint256(deltas.amount0);
-          delta1 = deltas.amount1 < 0 ? uint256(-deltas.amount1) : uint256(deltas.amount1);
+
+        if (crossingInitializedTick) {
+          uint160 initializedSqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
+          IPoolManager.BalanceDelta memory deltas = pool.swap(
+              Pool.SwapParams(
+                  fee,
+                  tickSpacing,
+                  uint32(block.timestamp),
+                  initializedSqrtPriceX96 < pool.slot0.sqrtPriceX96,
+                  int256(maxAmount),
+                  initializedSqrtPriceX96
+              )
+            );
+            delta0 = deltas.amount0 < 0 ? uint256(-deltas.amount0) : uint256(deltas.amount0);
+            delta1 = deltas.amount1 < 0 ? uint256(-deltas.amount1) : uint256(deltas.amount1);
+        } else {
+          delta0 = SqrtPriceMath.getAmount0Delta(targetPriceX96, pool.slot0.sqrtPriceX96, pool.liquidity, true);
+          delta1 = SqrtPriceMath.getAmount1Delta(targetPriceX96, pool.slot0.sqrtPriceX96, pool.liquidity, true);
+        }
     }
 
     struct TickCrossingParams {
