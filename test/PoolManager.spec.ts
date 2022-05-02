@@ -1050,8 +1050,8 @@ describe('PoolManager', () => {
           const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
           const events = receipt.logs.map((log) => manager.interface.parseLog(log))
 
-          const swapDelta0 = events[0].args.amount0
-          const swapDelta1 = events[0].args.amount1
+          const swapDelta0 = events.reduce((accum, event) => accum.add(event.args.amount0), BigNumber.from(0))
+          const swapDelta1 = events.reduce((accum, event) => accum.add(event.args.amount1), BigNumber.from(0))
 
           const claimedEarnings1 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
           const claimedEarnings0 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
@@ -1100,8 +1100,8 @@ describe('PoolManager', () => {
           const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
           const events = receipt.logs.map((log) => manager.interface.parseLog(log))
 
-          const swapDelta0 = events[0].args.amount0
-          const swapDelta1 = events[0].args.amount1
+          const swapDelta0 = events.reduce((accum, event) => accum.add(event.args.amount0), BigNumber.from(0))
+          const swapDelta1 = events.reduce((accum, event) => accum.add(event.args.amount1), BigNumber.from(0))
 
           const claimedEarnings1 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
           const claimedEarnings0 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)

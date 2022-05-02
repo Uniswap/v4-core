@@ -19,6 +19,5 @@ interface ITWAMM {
         int128 amountDelta
     ) external returns (uint256 amountOut0, uint256 amountOut1);
 
-    function executeTWAMMOrders(IPoolManager.PoolKey memory key)
-        external;
+    function executeTWAMMOrders(IPoolManager.PoolKey memory key) external;
 }

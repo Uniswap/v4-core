@@ -98,8 +98,8 @@ describe('TWAMM', () => {
       })
 
       it('reverts if expiry is not on an interval', async () => {
-        await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to.be
-          .reverted
+        await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to
+          .be.reverted
       })
 
       it('reverts if not initialized', async () => {
@@ -182,8 +182,8 @@ describe('TWAMM', () => {
       })
 
       it('reverts if expiry is not on an interval', async () => {
-        await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to.be
-          .reverted
+        await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to
+          .be.reverted
       })
 
       it('reverts if not initialized', async () => {

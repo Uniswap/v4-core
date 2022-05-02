@@ -46,10 +46,8 @@ contract PoolTWAMMTest is ILockCallback {
         );
     }
 
-    function executeTWAMMOrders(IPoolManager.PoolKey calldata key)
-        external
-    {
-          manager.lock(abi.encode(CallbackData(key, TransactionType.EXECUTE, abi.encode(''))));
+    function executeTWAMMOrders(IPoolManager.PoolKey calldata key) external {
+        manager.lock(abi.encode(CallbackData(key, TransactionType.EXECUTE, abi.encode(''))));
     }
 
     function lockAcquired(bytes calldata rawData) external returns (bytes memory returnVal) {

@@ -360,9 +360,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         _accountDelta(buyToken, -(earningsAmount.toInt256()));
     }
 
-    function executeTWAMMOrders(IPoolManager.PoolKey memory key)
-        public
-    {
+    function executeTWAMMOrders(IPoolManager.PoolKey memory key) public {
         _getPool(key).executeTwammOrders(Pool.ExecuteTWAMMParams(key.fee, key.tickSpacing));
     }
 

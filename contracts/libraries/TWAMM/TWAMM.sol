@@ -232,8 +232,7 @@ library TWAMM {
         AdvanceParams memory params,
         Pool.State storage pool
     ) internal returns (uint160 finalSqrtPriceX96) {
-
-        while (true) { // YOLO
+        while (true) {
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
             (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
@@ -305,7 +304,7 @@ library TWAMM {
         );
 
         while (pool.slot0.sqrtPriceX96 != finalSqrtPriceX96) {
-          (uint256 swapDelta0, uint256 swapDelta1) = swapToTargetOrInitializedTick(
+            (uint256 swapDelta0, uint256 swapDelta1) = swapToTargetOrInitializedTick(
                 pool,
                 params.fee,
                 params.tickSpacing,
@@ -341,34 +340,26 @@ library TWAMM {
         int24 tickSpacing,
         uint160 targetPriceX96,
         uint256 maxAmount
-    )
-        internal
-        returns (uint256 delta0, uint256 delta1)
-    {
-        (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
-            pool,
-            tickSpacing,
-            targetPriceX96
-        );
-
+    ) internal returns (uint256 delta0, uint256 delta1) {
+        (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(pool, tickSpacing, targetPriceX96);
 
         if (crossingInitializedTick) {
-          uint160 initializedSqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
-          IPoolManager.BalanceDelta memory deltas = pool.swap(
-              Pool.SwapParams(
-                  fee,
-                  tickSpacing,
-                  uint32(block.timestamp),
-                  initializedSqrtPriceX96 < pool.slot0.sqrtPriceX96,
-                  int256(maxAmount),
-                  initializedSqrtPriceX96
-              )
+            uint160 initializedSqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
+            IPoolManager.BalanceDelta memory deltas = pool.swap(
+                Pool.SwapParams(
+                    fee,
+                    tickSpacing,
+                    uint32(block.timestamp),
+                    initializedSqrtPriceX96 < pool.slot0.sqrtPriceX96,
+                    int256(maxAmount),
+                    initializedSqrtPriceX96
+                )
             );
             delta0 = deltas.amount0 < 0 ? uint256(-deltas.amount0) : uint256(deltas.amount0);
             delta1 = deltas.amount1 < 0 ? uint256(-deltas.amount1) : uint256(deltas.amount1);
         } else {
-          delta0 = SqrtPriceMath.getAmount0Delta(targetPriceX96, pool.slot0.sqrtPriceX96, pool.liquidity, true);
-          delta1 = SqrtPriceMath.getAmount1Delta(targetPriceX96, pool.slot0.sqrtPriceX96, pool.liquidity, true);
+            delta0 = SqrtPriceMath.getAmount0Delta(targetPriceX96, pool.slot0.sqrtPriceX96, pool.liquidity, true);
+            delta1 = SqrtPriceMath.getAmount1Delta(targetPriceX96, pool.slot0.sqrtPriceX96, pool.liquidity, true);
         }
     }
 

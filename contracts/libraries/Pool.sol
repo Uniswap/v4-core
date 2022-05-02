@@ -455,7 +455,6 @@ library Pool {
         internal
         returns (IPoolManager.BalanceDelta memory result)
     {
-
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
@@ -650,9 +649,7 @@ library Pool {
         int24 tickSpacing;
     }
 
-    function executeTwammOrders(State storage self, ExecuteTWAMMParams memory params)
-        internal
-    {
+    function executeTwammOrders(State storage self, ExecuteTWAMMParams memory params) internal {
         if (!self.twamm.hasOutstandingOrders()) {
             self.twamm.lastVirtualOrderTimestamp = block.timestamp;
             return;
@@ -726,17 +723,18 @@ library Pool {
                 }
             }
         }
-        if (finalSqrtPriceX96 != 0 && self.slot0.sqrtPriceX96 != finalSqrtPriceX96) swap(
-            self,
-            Pool.SwapParams(
-                params.fee,
-                params.tickSpacing,
-                uint32(block.timestamp),
-                finalSqrtPriceX96 < self.slot0.sqrtPriceX96,
-                type(int256).max,
-                finalSqrtPriceX96
-            )
-        );
+        if (finalSqrtPriceX96 != 0 && self.slot0.sqrtPriceX96 != finalSqrtPriceX96)
+            swap(
+                self,
+                Pool.SwapParams(
+                    params.fee,
+                    params.tickSpacing,
+                    uint32(block.timestamp),
+                    finalSqrtPriceX96 < self.slot0.sqrtPriceX96,
+                    type(int256).max,
+                    finalSqrtPriceX96
+                )
+            );
         self.twamm.lastVirtualOrderTimestamp = block.timestamp;
     }
 }
