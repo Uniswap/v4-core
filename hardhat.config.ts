@@ -3,9 +3,9 @@ import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import '@nomiclabs/hardhat-etherscan'
 
-const importToml = require("import-toml");
-const foundryConfig = importToml.sync("foundry.toml");
- 
+const importToml = require('import-toml')
+const foundryConfig = importToml.sync('foundry.toml')
+
 export default {
   networks: {
     hardhat: {
