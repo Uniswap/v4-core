@@ -723,11 +723,11 @@ library Pool {
                 }
             }
         }
-        if (finalSqrtPriceX96 != 0 && self.slot0.sqrtPriceX96 != finalSqrtPriceX96)
+        if (finalSqrtPriceX96 != 0 && self.slot0.sqrtPriceX96 != finalSqrtPriceX96) {
             swap(
                 self,
                 Pool.SwapParams(
-                    params.fee,
+                    0,
                     params.tickSpacing,
                     uint32(block.timestamp),
                     finalSqrtPriceX96 < self.slot0.sqrtPriceX96,
@@ -735,6 +735,7 @@ library Pool {
                     finalSqrtPriceX96
                 )
             );
+        }
         self.twamm.lastVirtualOrderTimestamp = block.timestamp;
     }
 }

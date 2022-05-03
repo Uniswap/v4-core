@@ -1250,15 +1250,10 @@ describe('PoolManager', () => {
             tickUpper: 3000,
             liquidityDelta: amountLiquidity,
           })
-          await modifyPositionTest.modifyPosition(key, {
-            tickLower: -3100,
-            tickUpper: 3100,
-            liquidityDelta: amountLiquidity,
-          })
         })
 
         describe('when crossing two ticks', () => {
-          it('crosses both ticks properly', async () => {
+          it('trades properly', async () => {
             await ethers.provider.send('evm_setNextBlockTimestamp', [start])
 
             await twammTest.submitLongTermOrder(key, {
@@ -1270,6 +1265,7 @@ describe('PoolManager', () => {
             const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
 
             const { sqrtPriceX96 } = await manager.slot0(getPoolId(key))
+            expect(sqrtPriceX96).to.eq('30582443689392192646239894976')
           })
         })
       })
