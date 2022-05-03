@@ -7,6 +7,7 @@ export default {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
+      enabledEips: [1153],
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,

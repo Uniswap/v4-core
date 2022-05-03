@@ -46,7 +46,7 @@ contract PoolManagerReentrancyTest is ILockCallback {
         // tokens touched length is 0 when we enter
         assert(poolManager.getTokensTouchedLength(id) == 0);
 
-        (uint8 index, int248 delta) = poolManager.getTokenDelta(id, tokenToBorrow);
+        (uint256 index, int248 delta) = poolManager.getTokenDelta(id, tokenToBorrow);
         assert(index == 0 && delta == 0);
 
         // take some

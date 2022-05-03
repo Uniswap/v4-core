@@ -370,7 +370,7 @@
   version "0.0.0"
   uid ""
 
-"@ethereumjs/block@^3.6.1":
+"@ethereumjs/block@^3.6.2":
   version "0.0.0"
   uid ""
 
@@ -382,7 +382,7 @@
   version "0.0.0"
   uid ""
 
-"@ethereumjs/blockchain@^5.5.1":
+"@ethereumjs/blockchain@^5.5.2":
   version "0.0.0"
   uid ""
 
@@ -394,7 +394,7 @@
   version "0.0.0"
   uid ""
 
-"@ethereumjs/common@^2.6.2":
+"@ethereumjs/common@^2.6.4":
   version "0.0.0"
   uid ""
 
@@ -414,7 +414,7 @@
   version "0.0.0"
   uid ""
 
-"@ethereumjs/tx@^3.5.0":
+"@ethereumjs/tx@^3.5.1":
   version "0.0.0"
   uid ""
 
@@ -4944,10 +4944,10 @@ hardhat-typechain@^0.3.5:
   resolved "https://registry.yarnpkg.com/hardhat-typechain/-/hardhat-typechain-0.3.5.tgz#8e50616a9da348b33bd001168c8fda9c66b7b4af"
   integrity sha512-w9lm8sxqTJACY+V7vijiH+NkPExnmtiQEjsV9JKD1KgMdVk2q8y+RhvU/c4B7+7b1+HylRUCxpOIvFuB3rE4+w==
 
-hardhat@^2.2.0:
-  version "2.9.1"
-  resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.9.1.tgz#f69f82bb4d98e28744584779483caa7c5cfbde8b"
-  integrity sha512-q0AkYXV7R26RzyAkHGQRhhQjk508pseVvH3wSwZwwPUbvA+tjl0vMIrD4aFQDonRXkrnXX4+5KglozzjSd0//Q==
+hardhat@^2.9.3-eips.0:
+  version "2.9.3-eips.0"
+  resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.9.3-eips.0.tgz#d448712b8cfd8638c393edd62c52abeb6dccc367"
+  integrity sha512-Q4r4aWiId3hDRiZV8ryDbiqkiwbFqSHErd1tXH6nwlSWGpYZ+boPSmlxsHX++08hsveyOzs5trAFYNQbpGGP9w==
   dependencies:
     "@ethereumjs/block" "^3.6.0"
     "@ethereumjs/blockchain" "^5.5.0"
@@ -6555,10 +6555,22 @@ merkle-patricia-tree@^2.1.2, merkle-patricia-tree@^2.3.2:
     rlp "^2.0.0"
     semaphore ">=1.0.1"
 
-merkle-patricia-tree@^4.2.2, merkle-patricia-tree@^4.2.3:
+merkle-patricia-tree@^4.2.2:
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/merkle-patricia-tree/-/merkle-patricia-tree-4.2.3.tgz#b4e5d485d231f02b255ed79a7852f9d12ee0c09f"
   integrity sha512-S4xevdXl5KvdBGgUxhQcxoep0onqXiIhzfwZp4M78kIuJH3Pu9o9IUgqhzSFOR2ykLO6t265026Xb6PY0q2UFQ==
+  dependencies:
+    "@types/levelup" "^4.3.0"
+    ethereumjs-util "^7.1.4"
+    level-mem "^5.0.1"
+    level-ws "^2.0.0"
+    readable-stream "^3.6.0"
+    semaphore-async-await "^1.5.1"
+
+merkle-patricia-tree@^4.2.4:
+  version "4.2.4"
+  resolved "https://registry.yarnpkg.com/merkle-patricia-tree/-/merkle-patricia-tree-4.2.4.tgz#ff988d045e2bf3dfa2239f7fabe2d59618d57413"
+  integrity sha512-eHbf/BG6eGNsqqfbLED9rIqbsF4+sykEaBn6OLNs71tjclbMcMOk1tEPmJKcNcNCLkvbpY/lwyOlizWsqPNo8w==
   dependencies:
     "@types/levelup" "^4.3.0"
     ethereumjs-util "^7.1.4"
