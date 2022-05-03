@@ -11,6 +11,7 @@ import {
   PoolManagerReentrancyTest,
   PoolDonateTest,
 } from '../typechain'
+import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
@@ -195,6 +196,66 @@ describe('PoolManager', () => {
         })
       )
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+    })
+
+    it('can be initialized with MAX_TICK_SPACING', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: MAX_TICK_SPACING,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.not.be.reverted
+    })
+
+    it('fails if tickSpacing is too large', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: MAX_TICK_SPACING + 1,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooLarge()')
+    })
+
+    it('fails if tickSpacing is 0', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 0,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooSmall()')
+    })
+
+    it('fails if tickSpacing is negative', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: -1,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooSmall()')
     })
 
     it('gas cost', async () => {
