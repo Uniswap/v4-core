@@ -1092,6 +1092,7 @@ describe('PoolManager', () => {
           // TODO: precision off by 4 and 3 wei respectively
           expect(actualBalance0).to.eq(expectedBalance0.sub(4))
           expect(actualBalance1).to.eq(expectedBalance1.sub(3))
+          expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('247353758214811852542653279391')
         })
 
         it('balances clear properly w/ token0 excess', async () => {
@@ -1142,6 +1143,7 @@ describe('PoolManager', () => {
           // TODO: precision off by 5 and 6 respectively
           expect(actualBalance0).to.eq(expectedBalance0.sub(5))
           expect(actualBalance1).to.eq(expectedBalance1.sub(6))
+          expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('25377021884322435403827716101')
         })
       })
 
@@ -1229,6 +1231,7 @@ describe('PoolManager', () => {
           // TODO: precision off by 3 and 4 respectively
           expect(actualBalance0).to.eq(expectedBalance0.sub(3))
           expect(actualBalance1).to.eq(expectedBalance1.sub(4))
+          expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('250075469252697290162438233664')
         })
       })
 
@@ -1290,7 +1293,7 @@ describe('PoolManager', () => {
             await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
             const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
 
-            const { sqrtPriceX96 } = await manager.slot0(getPoolId(key))
+            expect(expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('79228162514264337593543950336'))
           })
         })
       })
