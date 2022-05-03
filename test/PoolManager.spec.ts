@@ -980,7 +980,7 @@ describe('PoolManager', () => {
       let orderKey1: OrderKey
       let liquidityBalance: BigNumber
 
-      describe('when TWAMM crosses a tick', () => {
+      describe.only('when TWAMM crosses a tick', () => {
         beforeEach('set up pool', async () => {
           const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
           const amountLiquidity = expandTo18Decimals(1)
@@ -1041,7 +1041,7 @@ describe('PoolManager', () => {
 
           await ethers.provider.send('evm_mine', [start])
           await ethers.provider.send('evm_setAutomine', [true])
-          await ethers.provider.send('evm_setNextBlockTimestamp', [expiration])
+          await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 500])
 
           expect(await tokens.token0.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO0))
           expect(await tokens.token1.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO1))
@@ -1091,7 +1091,7 @@ describe('PoolManager', () => {
 
           await ethers.provider.send('evm_mine', [start])
           await ethers.provider.send('evm_setAutomine', [true])
-          await ethers.provider.send('evm_setNextBlockTimestamp', [expiration])
+          await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
 
           expect(await tokens.token0.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO0))
           expect(await tokens.token1.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO1))
@@ -1117,6 +1117,13 @@ describe('PoolManager', () => {
 
           const expectedBalance1 = liquidityBalance.add(swapDelta1)
           const actualBalance1 = await tokens.token1.balanceOf(manager.address)
+
+          console.log('==========')
+          console.log(expectedBalance0.toString())
+          console.log(actualBalance0.toString())
+          console.log(expectedBalance1.toString())
+          console.log(actualBalance1.toString())
+          console.log('==========')
 
           // TODO: precision off by 5 and 6 respectively
           expect(actualBalance0).to.eq(expectedBalance0.sub(5))
