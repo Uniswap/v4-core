@@ -54,14 +54,6 @@
     "typechain": "^4.0.0",
     "typescript": "^3.7.3"
   },
-  "resolutions": {
-    "@ethereumjs/vm": "link:../ethereumjs-monorepo/packages/vm",
-    "@ethereumjs/block": "link:../ethereumjs-monorepo/packages/block",
-    "@ethereumjs/blockchain": "link:../ethereumjs-monorepo/packages/blockchain",
-    "@ethereumjs/common": "link:../ethereumjs-monorepo/packages/common",
-    "@ethereumjs/ethash": "link:../ethereumjs-monorepo/packages/ethash",
-    "@ethereumjs/tx": "link:../ethereumjs-monorepo/packages/tx"
-  },
   "scripts": {
     "compile": "hardhat compile",
     "compile-tsp": "./bin/solc --strict-assembly contracts/libraries/TransientStorageProxy.yul",
