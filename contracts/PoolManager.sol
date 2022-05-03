@@ -24,14 +24,12 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
+    /// @inheritdoc IPoolManager
+    int24 public constant override MIN_TICK_SPACING = 1;
+
     mapping(bytes32 => Pool.State) public pools;
 
     constructor() ERC1155('') {}
-
-    /// @dev For mocking in unit tests
-    function _blockTimestamp() internal view virtual returns (uint32) {
-        return uint32(block.timestamp);
-    }
 
     function _getPool(IPoolManager.PoolKey memory key) private view returns (Pool.State storage) {
         return pools[keccak256(abi.encode(key))];
@@ -58,6 +56,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
+        if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
 
         if (key.hooks.shouldCallBeforeInitialize()) {
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);

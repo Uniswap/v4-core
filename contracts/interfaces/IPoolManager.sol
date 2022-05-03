@@ -24,6 +24,8 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
+    /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
+    error TickSpacingTooSmall();
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -41,6 +43,9 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
+
+    /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
+    function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
