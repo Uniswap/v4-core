@@ -4,4 +4,4 @@ out = 'foundry-out'
 solc_version = '0.8.13'
 optimizer_runs = 800
 
-# See more config options https://github.com/gakonst/foundry/tree/master/config
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
