@@ -1,17 +1,17 @@
 pragma solidity ^0.8.13;
 
-import {DSTest} from './ds-test/forge-test-helper.sol';
-import {Vm} from './ds-test/forge-vm-cheats.sol';
+import {DSTest} from '../foundry/testdata/lib/ds-test/src/test.sol';
+import {Cheats} from '../foundry/testdata/cheats/Cheats.sol';
 import {SafeCast} from '../contracts/libraries/SafeCast.sol';
 
 contract SafeCastTest is DSTest {
-    Vm vm = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+    Cheats vm = Cheats(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
 
     function testToUint160(uint256 x) public {
         if (x <= type(uint160).max) {
             assertEq(uint256(SafeCast.toUint160(x)), x);
         } else {
-            vm.expectRevert('');
+            vm.expectRevert();
             SafeCast.toUint160(x);
         }
     }
@@ -20,7 +20,7 @@ contract SafeCastTest is DSTest {
         if (x <= type(int128).max && x >= type(int128).min) {
             assertEq(int256(SafeCast.toInt128(x)), x);
         } else {
-            vm.expectRevert('');
+            vm.expectRevert();
             SafeCast.toInt128(x);
         }
     }
@@ -29,7 +29,7 @@ contract SafeCastTest is DSTest {
         if (x <= uint256(type(int256).max)) {
             assertEq(uint256(SafeCast.toInt256(x)), x);
         } else {
-            vm.expectRevert('');
+            vm.expectRevert();
             SafeCast.toInt256(x);
         }
     }
@@ -38,7 +38,7 @@ contract SafeCastTest is DSTest {
         if (x <= type(int248).max && x >= type(int248).min) {
             assertEq(int256(SafeCast.toInt248(x)), x);
         } else {
-            vm.expectRevert('');
+            vm.expectRevert();
             SafeCast.toInt248(x);
         }
     }
