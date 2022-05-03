@@ -1,4 +1,4 @@
-import { Wallet } from 'ethers'
+import { BigNumber, Wallet } from 'ethers'
 import hre from 'hardhat'
 import { ethers, waffle } from 'hardhat'
 import {
@@ -9,7 +9,9 @@ import {
   PoolModifyPositionTest,
   EmptyTestHooks,
   PoolManagerReentrancyTest,
+  PoolDonateTest,
 } from '../typechain'
+import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
@@ -29,18 +31,20 @@ describe('PoolManager', () => {
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
   let modifyPositionTest: PoolModifyPositionTest
+  let donateTest: PoolDonateTest
   let hooksMock: MockedContract
   let testHooksEmpty: EmptyTestHooks
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
 
   const fixture = async () => {
-    const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
+    const poolManagerFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
+    const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
-    const manager = (await singletonPoolFactory.deploy()) as PoolManager
+    const manager = (await poolManagerFactory.deploy()) as PoolManager
 
     // Deploy hooks to addresses with leading 1111 to enable all of them.
     const mockHooksAddress = '0xFF00000000000000000000000000000000000000'
@@ -60,13 +64,14 @@ describe('PoolManager', () => {
       lockTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
+      donateTest: (await donateTestFactory.deploy(manager.address)) as PoolDonateTest,
       tokens,
       hooksMock,
       testHooksEmpty,
     }
 
     for (const token of [tokens.token0, tokens.token1, tokens.token2]) {
-      for (const spender of [result.swapTest, result.modifyPositionTest]) {
+      for (const spender of [result.swapTest, result.modifyPositionTest, result.donateTest]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
       }
     }
@@ -82,9 +87,8 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, hooksMock, testHooksEmpty } = await loadFixture(
-      fixture
-    ))
+    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, donateTest, hooksMock, testHooksEmpty } =
+      await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
@@ -192,6 +196,66 @@ describe('PoolManager', () => {
         })
       )
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+    })
+
+    it('can be initialized with MAX_TICK_SPACING', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: MAX_TICK_SPACING,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.not.be.reverted
+    })
+
+    it('fails if tickSpacing is too large', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: MAX_TICK_SPACING + 1,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooLarge()')
+    })
+
+    it('fails if tickSpacing is 0', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 0,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooSmall()')
+    })
+
+    it('fails if tickSpacing is negative', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: -1,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooSmall()')
     })
 
     it('gas cost', async () => {
@@ -387,6 +451,10 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
           }
         )
       ).to.be.revertedWith('I')
@@ -414,6 +482,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: false,
+          settleUsingTransfer: false,
         }
       )
     })
@@ -440,6 +512,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: false,
+          settleUsingTransfer: false,
         }
       )
 
@@ -492,6 +568,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
         }
       )
 
@@ -508,6 +588,10 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
+          },
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: false,
           }
         )
       )
@@ -536,6 +620,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
         }
       )
 
@@ -552,9 +640,142 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
           }
         )
       )
+    })
+    it('mints erc1155s if the output token isnt taken', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await modifyPositionTest.modifyPosition(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(1),
+        }
+      )
+
+      await expect(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: true,
+          }
+        )
+      ).to.emit(manager, 'TransferSingle')
+
+      const erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
+      expect(erc1155Balance).to.be.eq(98)
+    })
+    it('uses 1155s as input from an account that owns them', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        encodeSqrtPriceX96(1, 1)
+      )
+      await modifyPositionTest.modifyPosition(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(1),
+        }
+      )
+
+      // perform a swap and claim 1155s from it, so that they can be used in another trade
+      await expect(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: true,
+          }
+        )
+      ).to.emit(manager, 'TransferSingle')
+
+      let erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
+      expect(erc1155Balance).to.be.eq(98)
+
+      // give permission for swapTest to burn the 1155s
+      await manager.setApprovalForAll(swapTest.address, true)
+
+      // now swap from token1 to token0 again, using 1155s as input tokens
+      await expect(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: -25,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(4, 1),
+            zeroForOne: false,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: false,
+          }
+        )
+      ).to.emit(manager, 'TransferSingle')
+
+      erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
+      expect(erc1155Balance).to.be.eq(71)
     })
     it('gas cost for swap against liquidity', async () => {
       await manager.initialize(
@@ -594,6 +815,10 @@ describe('PoolManager', () => {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
         }
       )
 
@@ -610,9 +835,85 @@ describe('PoolManager', () => {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
           }
         )
       )
+    })
+  })
+
+  describe('#donate', () => {
+    it('fails if not initialized', async () => {
+      await expect(
+        donateTest.donate(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: 100,
+            hooks: ADDRESS_ZERO,
+            tickSpacing: 10,
+          },
+          100,
+          100
+        )
+      ).to.be.revertedWith('NoLiquidityToReceiveFees()')
+    })
+
+    it('fails if initialized with no liquidity', async () => {
+      const key = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: 100,
+        hooks: ADDRESS_ZERO,
+        tickSpacing: 10,
+      }
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await expect(donateTest.donate(key, 100, 100)).to.be.revertedWith('NoLiquidityToReceiveFees()')
+    })
+
+    it('succeeds if has liquidity', async () => {
+      const key = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: 100,
+        hooks: ADDRESS_ZERO,
+        tickSpacing: 10,
+      }
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: -60,
+        tickUpper: 60,
+        liquidityDelta: 100,
+      })
+
+      await expect(donateTest.donate(key, 100, 200)).to.be.not.be.reverted
+      const { feeGrowthGlobal0X128, feeGrowthGlobal1X128 } = await manager.pools(getPoolId(key))
+      expect(feeGrowthGlobal0X128).to.eq(BigNumber.from('340282366920938463463374607431768211456')) // 100 << 128 divided by liquidity
+      expect(feeGrowthGlobal1X128).to.eq(BigNumber.from('680564733841876926926749214863536422912')) // 200 << 128 divided by liquidity
+    })
+
+    describe('hooks', () => {
+      it('calls beforeDonate and afterDonate', async () => {
+        const key = {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: 100,
+          hooks: hooksMock.address,
+          tickSpacing: 10,
+        }
+        await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: -60,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        })
+        await donateTest.donate(key, 100, 200)
+        expect(await hooksMock.calledWith('beforeDonate', [donateTest.address, key, 100, 200])).to.be.true
+        expect(await hooksMock.calledWith('afterDonate', [donateTest.address, key, 100, 200])).to.be.true
+      })
     })
   })
 })

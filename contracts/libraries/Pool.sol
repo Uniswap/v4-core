@@ -5,7 +5,6 @@ import {SafeCast} from './SafeCast.sol';
 import {Tick} from './Tick.sol';
 import {TickBitmap} from './TickBitmap.sol';
 import {Position} from './Position.sol';
-import {Oracle} from './Oracle.sol';
 import {FullMath} from './FullMath.sol';
 import {FixedPoint128} from './FixedPoint128.sol';
 import {TickMath} from './TickMath.sol';
@@ -19,7 +18,6 @@ library Pool {
     using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
-    using Oracle for Oracle.Observation[65535];
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -33,6 +31,9 @@ library Pool {
     /// @notice Thrown when tickUpper exceeds max tick
     /// @param tickUpper The invalid tickUpper
     error TickUpperOutOfBounds(int24 tickUpper);
+
+    /// @notice For the tick spacing, the tick has too much liquidity
+    error TickLiquidityOverflow(int24 tick);
 
     /// @notice Thrown when interacting with an uninitialized tick that must be initialized
     /// @param tick The uninitialized tick
@@ -56,17 +57,15 @@ library Pool {
     /// @param sqrtPriceLimitX96 The invalid, out-of-bounds sqrtPriceLimitX96
     error PriceLimitOutOfBounds(uint160 sqrtPriceLimitX96);
 
+    /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
+    error NoLiquidityToReceiveFees();
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
         // the current tick
         int24 tick;
-        // the most-recently updated index of the observations array
-        uint16 observationIndex;
-        // the current maximum number of observations that are being stored
-        uint16 observationCardinality;
-        // the next maximum number of observations to store, triggered in observations.write
-        uint16 observationCardinalityNext;
+        // 72 bits left!
     }
 
     /// @dev The state of a pool
@@ -78,7 +77,6 @@ library Pool {
         mapping(int24 => Tick.Info) ticks;
         mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
-        Oracle.Observation[65535] observations;
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -88,144 +86,12 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    struct SnapshotCumulativesInsideState {
-        int56 tickCumulativeLower;
-        int56 tickCumulativeUpper;
-        uint160 secondsPerLiquidityOutsideLowerX128;
-        uint160 secondsPerLiquidityOutsideUpperX128;
-        uint32 secondsOutsideLower;
-        uint32 secondsOutsideUpper;
-    }
-
-    struct Snapshot {
-        int56 tickCumulativeInside;
-        uint160 secondsPerLiquidityInsideX128;
-        uint32 secondsInside;
-    }
-
-    /// @dev Take a snapshot of the cumulative values inside a tick range, only consistent as long as a position has non-zero liquidity
-    function snapshotCumulativesInside(
-        State storage self,
-        int24 tickLower,
-        int24 tickUpper,
-        uint32 time
-    ) internal view returns (Snapshot memory result) {
-        checkTicks(tickLower, tickUpper);
-
-        SnapshotCumulativesInsideState memory state;
-        {
-            Tick.Info storage lower = self.ticks[tickLower];
-            Tick.Info storage upper = self.ticks[tickUpper];
-            bool initializedLower;
-            (
-                state.tickCumulativeLower,
-                state.secondsPerLiquidityOutsideLowerX128,
-                state.secondsOutsideLower,
-                initializedLower
-            ) = (
-                lower.tickCumulativeOutside,
-                lower.secondsPerLiquidityOutsideX128,
-                lower.secondsOutside,
-                lower.initialized
-            );
-            if (!initializedLower) revert TickNotInitialized(tickLower);
-
-            bool initializedUpper;
-            (
-                state.tickCumulativeUpper,
-                state.secondsPerLiquidityOutsideUpperX128,
-                state.secondsOutsideUpper,
-                initializedUpper
-            ) = (
-                upper.tickCumulativeOutside,
-                upper.secondsPerLiquidityOutsideX128,
-                upper.secondsOutside,
-                upper.initialized
-            );
-            if (!initializedUpper) revert TickNotInitialized(tickUpper);
-        }
-
-        Slot0 memory _slot0 = self.slot0;
-
-        unchecked {
-            if (_slot0.tick < tickLower) {
-                result.tickCumulativeInside = state.tickCumulativeLower - state.tickCumulativeUpper;
-                result.secondsPerLiquidityInsideX128 =
-                    state.secondsPerLiquidityOutsideLowerX128 -
-                    state.secondsPerLiquidityOutsideUpperX128;
-                result.secondsInside = state.secondsOutsideLower - state.secondsOutsideUpper;
-            } else if (_slot0.tick < tickUpper) {
-                (int56 tickCumulative, uint160 secondsPerLiquidityCumulativeX128) = self.observations.observeSingle(
-                    time,
-                    0,
-                    _slot0.tick,
-                    _slot0.observationIndex,
-                    self.liquidity,
-                    _slot0.observationCardinality
-                );
-                result.tickCumulativeInside = tickCumulative - state.tickCumulativeLower - state.tickCumulativeUpper;
-                result.secondsPerLiquidityInsideX128 =
-                    secondsPerLiquidityCumulativeX128 -
-                    state.secondsPerLiquidityOutsideLowerX128 -
-                    state.secondsPerLiquidityOutsideUpperX128;
-                result.secondsInside = time - state.secondsOutsideLower - state.secondsOutsideUpper;
-            } else {
-                result.tickCumulativeInside = state.tickCumulativeUpper - state.tickCumulativeLower;
-                result.secondsPerLiquidityInsideX128 =
-                    state.secondsPerLiquidityOutsideUpperX128 -
-                    state.secondsPerLiquidityOutsideLowerX128;
-                result.secondsInside = state.secondsOutsideUpper - state.secondsOutsideLower;
-            }
-        }
-    }
-
-    function observe(
-        State storage self,
-        uint32 time,
-        uint32[] calldata secondsAgos
-    ) internal view returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) {
-        return
-            self.observations.observe(
-                time,
-                secondsAgos,
-                self.slot0.tick,
-                self.slot0.observationIndex,
-                self.liquidity,
-                self.slot0.observationCardinality
-            );
-    }
-
-    function initialize(
-        State storage self,
-        uint32 time,
-        uint160 sqrtPriceX96
-    ) internal returns (int24 tick) {
+    function initialize(State storage self, uint160 sqrtPriceX96) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        (uint16 cardinality, uint16 cardinalityNext) = self.observations.initialize(time);
-
-        self.slot0 = Slot0({
-            sqrtPriceX96: sqrtPriceX96,
-            tick: tick,
-            observationIndex: 0,
-            observationCardinality: cardinality,
-            observationCardinalityNext: cardinalityNext
-        });
-    }
-
-    /// @dev Increase the number of stored observations
-    function increaseObservationCardinalityNext(State storage self, uint16 observationCardinalityNext)
-        internal
-        returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew)
-    {
-        observationCardinalityNextOld = self.slot0.observationCardinalityNext;
-        observationCardinalityNextNew = self.observations.grow(
-            observationCardinalityNextOld,
-            observationCardinalityNext
-        );
-        self.slot0.observationCardinalityNext = observationCardinalityNextNew;
+        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick});
     }
 
     struct ModifyPositionParams {
@@ -236,19 +102,15 @@ library Pool {
         int24 tickUpper;
         // any change in liquidity
         int128 liquidityDelta;
-        // current time
-        uint32 time;
-        // the max liquidity per tick
-        uint128 maxLiquidityPerTick;
         // the spacing between ticks
         int24 tickSpacing;
     }
 
     struct ModifyPositionState {
-        int56 tickCumulative;
-        uint160 secondsPerLiquidityCumulativeX128;
         bool flippedLower;
+        uint128 liquidityGrossAfterLower;
         bool flippedUpper;
+        uint128 liquidityGrossAfterUpper;
         uint256 feeGrowthInside0X128;
         uint256 feeGrowthInside1X128;
     }
@@ -268,39 +130,30 @@ library Pool {
             ModifyPositionState memory state;
             // if we need to update the ticks, do it
             if (params.liquidityDelta != 0) {
-                (state.tickCumulative, state.secondsPerLiquidityCumulativeX128) = self.observations.observeSingle(
-                    params.time,
-                    0,
-                    self.slot0.tick,
-                    self.slot0.observationIndex,
-                    self.liquidity,
-                    self.slot0.observationCardinality
-                );
-
-                state.flippedLower = self.ticks.update(
+                (state.flippedLower, state.liquidityGrossAfterLower) = self.ticks.update(
                     params.tickLower,
                     self.slot0.tick,
                     params.liquidityDelta,
                     self.feeGrowthGlobal0X128,
                     self.feeGrowthGlobal1X128,
-                    state.secondsPerLiquidityCumulativeX128,
-                    state.tickCumulative,
-                    params.time,
-                    false,
-                    params.maxLiquidityPerTick
+                    false
                 );
-                state.flippedUpper = self.ticks.update(
+                (state.flippedUpper, state.liquidityGrossAfterUpper) = self.ticks.update(
                     params.tickUpper,
                     self.slot0.tick,
                     params.liquidityDelta,
                     self.feeGrowthGlobal0X128,
                     self.feeGrowthGlobal1X128,
-                    state.secondsPerLiquidityCumulativeX128,
-                    state.tickCumulative,
-                    params.time,
-                    true,
-                    params.maxLiquidityPerTick
+                    true
                 );
+
+                if (params.liquidityDelta > 0) {
+                    uint128 maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
+                    if (state.liquidityGrossAfterLower > maxLiquidityPerTick)
+                        revert TickLiquidityOverflow(params.tickLower);
+                    if (state.liquidityGrossAfterUpper > maxLiquidityPerTick)
+                        revert TickLiquidityOverflow(params.tickUpper);
+                }
 
                 if (state.flippedLower) {
                     self.tickBitmap.flipTick(params.tickLower, params.tickSpacing);
@@ -346,17 +199,6 @@ library Pool {
                     params.liquidityDelta
                 );
             } else if (self.slot0.tick < params.tickUpper) {
-                // current tick is inside the passed range, must modify liquidity
-                // write an oracle entry
-                (self.slot0.observationIndex, self.slot0.observationCardinality) = self.observations.write(
-                    self.slot0.observationIndex,
-                    params.time,
-                    self.slot0.tick,
-                    self.liquidity,
-                    self.slot0.observationCardinality,
-                    self.slot0.observationCardinalityNext
-                );
-
                 result.amount0 += SqrtPriceMath.getAmount0Delta(
                     self.slot0.sqrtPriceX96,
                     TickMath.getSqrtRatioAtTick(params.tickUpper),
@@ -386,12 +228,6 @@ library Pool {
     struct SwapCache {
         // liquidity at the beginning of the swap
         uint128 liquidityStart;
-        // the current value of the tick accumulator, computed only if we cross an initialized tick
-        int56 tickCumulative;
-        // the current value of seconds per liquidity accumulator, computed only if we cross an initialized tick
-        uint160 secondsPerLiquidityCumulativeX128;
-        // whether we've computed and cached the above two accumulators
-        bool computedLatestObservation;
     }
 
     // the top level state of the swap, the results of which are recorded in storage at the end
@@ -430,7 +266,6 @@ library Pool {
     struct SwapParams {
         uint24 fee;
         int24 tickSpacing;
-        uint32 time;
         bool zeroForOne;
         int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
@@ -457,12 +292,7 @@ library Pool {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
         }
 
-        SwapCache memory cache = SwapCache({
-            liquidityStart: self.liquidity,
-            secondsPerLiquidityCumulativeX128: 0,
-            tickCumulative: 0,
-            computedLatestObservation: false
-        });
+        SwapCache memory cache = SwapCache({liquidityStart: self.liquidity});
 
         bool exactInput = params.amountSpecified > 0;
 
@@ -536,29 +366,10 @@ library Pool {
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
-                    // check for the placeholder value, which we replace with the actual value the first time the swap
-                    // crosses an initialized tick
-                    if (!cache.computedLatestObservation) {
-                        (cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128) = self
-                            .observations
-                            .observeSingle(
-                                params.time,
-                                0,
-                                slot0Start.tick,
-                                slot0Start.observationIndex,
-                                cache.liquidityStart,
-                                slot0Start.observationCardinality
-                            );
-                        cache.computedLatestObservation = true;
-                    }
-
                     int128 liquidityNet = self.ticks.cross(
                         step.tickNext,
                         (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
-                        (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128),
-                        cache.secondsPerLiquidityCumulativeX128,
-                        cache.tickCumulative,
-                        params.time
+                        (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
                     );
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
@@ -580,21 +391,7 @@ library Pool {
             }
         }
 
-        // update tick and write an oracle entry if the tick change
-        if (state.tick != slot0Start.tick) {
-            (self.slot0.observationIndex, self.slot0.observationCardinality) = self.observations.write(
-                slot0Start.observationIndex,
-                params.time,
-                slot0Start.tick,
-                cache.liquidityStart,
-                slot0Start.observationCardinality,
-                slot0Start.observationCardinalityNext
-            );
-            (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
-        } else {
-            // otherwise just update the price
-            self.slot0.sqrtPriceX96 = state.sqrtPriceX96;
-        }
+        (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
 
         // update liquidity if it changed
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
@@ -610,6 +407,23 @@ library Pool {
             (result.amount0, result.amount1) = params.zeroForOne == exactInput
                 ? (params.amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
+        }
+    }
+
+    /// @notice Donates the given amount of token0 and token1 to the pool
+    function donate(
+        State storage state,
+        uint256 amount0,
+        uint256 amount1
+    ) internal returns (IPoolManager.BalanceDelta memory delta) {
+        if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
+        delta.amount0 = amount0.toInt256();
+        delta.amount1 = amount1.toInt256();
+        unchecked {
+            if (amount0 > 0)
+                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
+            if (amount1 > 0)
+                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
         }
     }
 }

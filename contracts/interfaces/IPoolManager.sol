@@ -3,9 +3,10 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import {IHooks} from './IHooks.sol';
 
-interface IPoolManager {
+interface IPoolManager is IERC1155 {
     /// @notice Thrown when tokens touched has exceeded max of 256
     error MaxTokensTouched();
 
@@ -17,6 +18,14 @@ interface IPoolManager {
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
     error LockedBy(address locker);
+
+    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
+    error NotPoolManagerToken();
+
+    /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
+    error TickSpacingTooLarge();
+    /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
+    error TickSpacingTooSmall();
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -32,6 +41,18 @@ interface IPoolManager {
         IHooks hooks;
     }
 
+    /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
+    function MAX_TICK_SPACING() external view returns (int24);
+
+    /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
+    function MIN_TICK_SPACING() external view returns (int24);
+
+    /// @notice Get the current value in slot0 of the given pool
+    function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
+
+    /// @notice Get the current value of liquidity of the given pool
+    function getLiquidity(IPoolManager.PoolKey memory key) external view returns (uint128 liquidity);
+
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
     struct BalanceDelta {
@@ -44,11 +65,6 @@ interface IPoolManager {
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
-
-    /// @notice Increase the maximum number of stored observations for the pool's oracle
-    function increaseObservationCardinalityNext(PoolKey memory key, uint16 observationCardinalityNext)
-        external
-        returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew);
 
     /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
     /// @param index The index of the locker, also known as the id of the locker
@@ -69,9 +85,9 @@ interface IPoolManager {
     /// @notice Get the current delta for a given token, and its position in the tokens touched array
     /// @param id The ID of the locker
     /// @param token The token for which to lookup the delta
-    /// @return slot The slot of the tokens touched array for the given ID where the token is stored in the list of tokens
+    /// @return index The index of the tokens touched array for the given ID where the token is stored in the list of tokens
     /// @return delta The unresolved delta of the pool manager's token balance
-    function getTokenDelta(uint256 id, IERC20Minimal token) external returns (uint256 slot, int248 delta);
+    function getTokenDelta(uint256 id, IERC20Minimal token) external returns (uint256 index, int248 delta);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
@@ -89,7 +105,7 @@ interface IPoolManager {
     /// @notice Modify the position for the given pool
     function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
         external
-        returns (IPoolManager.BalanceDelta memory delta);
+        returns (BalanceDelta memory delta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -98,9 +114,14 @@ interface IPoolManager {
     }
 
     /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params)
-        external
-        returns (IPoolManager.BalanceDelta memory delta);
+    function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta memory delta);
+
+    /// @notice Donate the given token amounts to the pool with the given pool key
+    function donate(
+        PoolKey memory key,
+        uint256 amount0,
+        uint256 amount1
+    ) external returns (BalanceDelta memory delta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
@@ -110,19 +131,13 @@ interface IPoolManager {
         uint256 amount
     ) external;
 
+    /// @notice Called by the user to move value into ERC1155 balance
+    function mint(
+        IERC20Minimal token,
+        address to,
+        uint256 amount
+    ) external;
+
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
-
-    /// @notice Observe a past state of a pool
-    function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
-        external
-        view
-        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s);
-
-    /// @notice Get the snapshot of the cumulative values of a tick range
-    function snapshotCumulativesInside(
-        PoolKey calldata key,
-        int24 tickLower,
-        int24 tickUpper
-    ) external view returns (Pool.Snapshot memory);
 }

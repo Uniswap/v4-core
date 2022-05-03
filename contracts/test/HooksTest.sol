@@ -34,6 +34,14 @@ contract HooksTest {
         return IHooks(hookAddress).shouldCallAfterModifyPosition();
     }
 
+    function shouldCallBeforeDonate(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallBeforeDonate();
+    }
+
+    function shouldCallAfterDonate(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallAfterDonate();
+    }
+
     function getGasCostOfShouldCall(address hookAddress) external view returns (uint256) {
         uint256 gasBefore = gasleft();
         IHooks(hookAddress).shouldCallBeforeSwap();
