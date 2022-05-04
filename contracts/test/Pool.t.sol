@@ -33,28 +33,31 @@ contract PoolTest is DSTest {
         int24 tickUpper,
         int128 liquidityDelta,
         int24 tickSpacing
-    ) public returns (bool) {
-        if (testInitialize(sqrtPriceX96)) {
-            if (tickLower >= tickUpper) {
-                vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, tickLower, tickUpper));
-            } else if (tickLower < TickMath.MIN_TICK) {
-                vm.expectRevert(abi.encodeWithSelector(Pool.TickLowerOutOfBounds.selector, tickLower));
-            } else if (tickUpper > TickMath.MAX_TICK) {
-                vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, tickUpper));
-            }
-
-            state.modifyPosition(
-                Pool.ModifyPositionParams({
-                    owner: address(this),
-                    tickLower: tickLower,
-                    tickUpper: tickUpper,
-                    liquidityDelta: liquidityDelta,
-                    tickSpacing: tickSpacing
-                })
-            );
-
-            return true;
+    ) public returns (bool result) {
+        if (!(result = testInitialize(sqrtPriceX96))) {
+            vm.expectRevert(Pool.PoolNotInitialized.selector);
+        } else if (tickLower >= tickUpper) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, tickLower, tickUpper));
+        } else if (tickLower < TickMath.MIN_TICK) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickLowerOutOfBounds.selector, tickLower));
+        } else if (tickUpper > TickMath.MAX_TICK) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, tickUpper));
+        } else if (liquidityDelta < 0) {
+            vm.expectRevert();
+        } else {
+            result = true;
         }
-        return false;
+
+        state.modifyPosition(
+            Pool.ModifyPositionParams({
+                owner: address(this),
+                tickLower: tickLower,
+                tickUpper: tickUpper,
+                liquidityDelta: liquidityDelta,
+                tickSpacing: tickSpacing
+            })
+        );
+
+        return result;
     }
 }
