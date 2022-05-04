@@ -14,8 +14,6 @@ import {SwapMath} from './SwapMath.sol';
 import {TWAMM} from './TWAMM/TWAMM.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
-import 'hardhat/console.sol';
-
 library Pool {
     using SafeCast for *;
     using Tick for mapping(int24 => Tick.Info);

@@ -13,8 +13,6 @@ import {SwapMath} from '../SwapMath.sol';
 import {SafeCast} from '../SafeCast.sol';
 import {Pool} from '../Pool.sol';
 
-import 'hardhat/console.sol';
-
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
@@ -316,8 +314,8 @@ library TWAMM {
                     )
                 );
                 unchecked {
-                    totalEarnings += params.sellIndex == 0 ? uint256(deltas.amount1) : uint256(deltas.amount0);
-                    amountSelling -= params.sellIndex == 0 ? uint256(-deltas.amount0) : uint256(-deltas.amount1);
+                    totalEarnings += params.sellIndex == 0 ? uint256(-deltas.amount1) : uint256(-deltas.amount0);
+                    amountSelling -= params.sellIndex == 0 ? uint256(deltas.amount0) : uint256(deltas.amount1);
                 }
             } else {
                 uint256 earnings;
