@@ -14,9 +14,8 @@ library TwammMath {
 
     // ABDKMathQuad FixedPoint96.Q96.fromUInt()
     bytes16 constant Q96 = 0x405f0000000000000000000000000000;
-
-    // (type(uint160).max).fromUInt()
-    bytes16 constant MAX_PRICE = 0x409effffffffffffffffffffffffffff;
+    // TickMath.MAX_SQRT_RATIO.fromUInt();
+    bytes16 constant MAX_PRICE = 0x409efffb12c7dfa3f8d4a0c91092bb2a;
 
     struct ParamsBytes16 {
         bytes16 sqrtPriceX96;
@@ -37,8 +36,8 @@ library TwammMath {
         view
         returns (
             uint160 sqrtPriceX96,
-            uint256 earningsPool0,
-            uint256 earningsPool1
+            uint256 earningsFactorPool0,
+            uint256 earningsFactorPool1
         )
     {
         // https://www.desmos.com/calculator/yr3qvkafvy
@@ -75,10 +74,28 @@ library TwammMath {
         });
 
         sqrtPriceX96 = newSqrtPriceX96 > MAX_PRICE
-            ? MAX_PRICE.toUInt().toUint160()
+            ? MAX_PRICE.toUInt().toUint160() - 1
             : newSqrtPriceX96.toUInt().toUint160();
-        earningsPool0 = getEarningsAmountPool0(earningsFactorParams).toUInt();
-        earningsPool1 = getEarningsAmountPool1(earningsFactorParams).toUInt();
+
+        if (newSqrtPriceX96 > MAX_PRICE) {
+            bytes16 sellRatioX96 = sellRatio.mul(Q96);
+            // amountToken1 / sellRateToken1
+            earningsFactorPool0 = earningsFactorParams
+                .secondsElapsedX96
+                .mul(sellRatioX96)
+                .div(params.sellRateCurrent1)
+                .toUInt();
+
+            // amountToken0 / sellRateToken0bytes
+            earningsFactorPool1 = earningsFactorParams
+                .secondsElapsedX96
+                .div(sellRatioX96)
+                .div(params.sellRateCurrent0)
+                .toUInt();
+        } else {
+            earningsFactorPool0 = getEarningsFactorPool0(earningsFactorParams).toUInt();
+            earningsFactorPool1 = getEarningsFactorPool1(earningsFactorParams).toUInt();
+        }
     }
 
     struct calculateTimeBetweenTicksParams {
@@ -130,7 +147,7 @@ library TwammMath {
         bytes16 liquidity;
     }
 
-    function getEarningsAmountPool0(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
+    function getEarningsFactorPool0(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
         bytes16 minuend = params.sellRatio.mul(Q96).mul(params.secondsElapsedX96).div(Q96);
         bytes16 subtrahend = params
             .liquidity
@@ -140,7 +157,7 @@ library TwammMath {
         return minuend.sub(subtrahend);
     }
 
-    function getEarningsAmountPool1(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
+    function getEarningsFactorPool1(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
         bytes16 minuend = params.secondsElapsedX96.div(Q96).div(params.sellRatio);
         bytes16 subtrahend = params
             .liquidity

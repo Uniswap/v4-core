@@ -417,7 +417,10 @@ library TWAMM {
             );
         }
 
-        uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateCurrent;
+        uint256 sellRateInEarningsToken = params.sellIndex == 0
+            ? self.orderPools[1].sellRateCurrent
+            : self.orderPools[0].sellRateCurrent;
+        uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateInEarningsToken;
         if (params.nextTimestamp % self.expirationInterval == 0) {
             self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, accruedEarningsFactor);
         } else {

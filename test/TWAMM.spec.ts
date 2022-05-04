@@ -228,7 +228,7 @@ describe('TWAMM', () => {
     })
   })
 
-  describe('Multiple pool twamm trades on illiquid pools', () => {
+  describe.only('Multiple pool twamm trades on illiquid pools', () => {
     let blocktime: number
     let timestamp1: number
     let timestamp2: number
@@ -264,7 +264,7 @@ describe('TWAMM', () => {
     })
     // Currently overflow issues when updating the state.
     // TODO: figure out the expected behavior when trading with a very illiquid pool
-    it.skip('should handle the overflow', async () => {
+    it('should handle the overflow', async () => {
       await ethers.provider.send('evm_mine', [timestamp3])
       await twamm.executeTWAMMOrders(poolParams)
       await twamm.callStatic.claimEarnings({
