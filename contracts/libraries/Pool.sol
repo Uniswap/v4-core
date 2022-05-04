@@ -460,8 +460,6 @@ library Pool {
         unchecked {
             // executeTWAMM on every interval with expiring orders
             while (nextExpirationTimestamp <= block.timestamp && self.twamm.hasOutstandingOrders()) {
-                console.log('expiration interval');
-                console.log(finalSqrtPriceX96);
                 if (
                     self.twamm.orderPools[0].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                     self.twamm.orderPools[1].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
@@ -497,8 +495,6 @@ library Pool {
 
             // if we haven't caught up to the current block.timestamp, execute orders until current time
             if (prevTimestamp < block.timestamp && self.twamm.hasOutstandingOrders()) {
-              console.log('current time');
-              console.log(finalSqrtPriceX96);
                 if (self.twamm.orderPools[0].sellRateCurrent != 0 && self.twamm.orderPools[1].sellRateCurrent != 0) {
                     finalSqrtPriceX96 = self.twamm.advanceToNewTimestamp(
                         TWAMM.AdvanceParams(

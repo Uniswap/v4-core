@@ -1140,13 +1140,6 @@ describe('PoolManager', () => {
           const expectedBalance1 = liquidityBalance.add(swapDelta1)
           const actualBalance1 = await tokens.token1.balanceOf(manager.address)
 
-          console.log('==========')
-          console.log(expectedBalance0.toString())
-          console.log(actualBalance0.toString())
-          console.log(expectedBalance1.toString())
-          console.log(actualBalance1.toString())
-          console.log('==========')
-
           // TODO: precision off by 5 and 6 respectively
           expect(actualBalance0).to.eq(expectedBalance0.sub(5))
           expect(actualBalance1).to.eq(expectedBalance1.sub(6))
@@ -1281,6 +1274,12 @@ describe('PoolManager', () => {
             tickUpper: 3000,
             liquidityDelta: amountLiquidity,
           })
+          await modifyPositionTest.modifyPosition(key, {
+            tickLower: -3100,
+            tickUpper: 3100,
+            liquidityDelta: amountLiquidity,
+          })
+
         })
 
         describe('when crossing two ticks', () => {
@@ -1295,7 +1294,7 @@ describe('PoolManager', () => {
             await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
             const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
 
-            expect(expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('79228162514264337593543950336'))
+            expect(expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('67085732017841699729721115252'))
           })
         })
       })
