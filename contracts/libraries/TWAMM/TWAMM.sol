@@ -310,7 +310,6 @@ library TWAMM {
                     Pool.SwapParams(
                         params.fee,
                         params.tickSpacing,
-                        uint32(block.timestamp),
                         params.sellIndex == 0,
                         int256(amountSelling),
                         TickMath.getSqrtRatioAtTick(tick)
@@ -391,7 +390,6 @@ library TWAMM {
             Pool.SwapParams(
                 params.fee,
                 params.tickSpacing,
-                uint32(block.timestamp),
                 initializedSqrtPrice < pool.slot0.sqrtPriceX96,
                 type(int256).max,
                 initializedSqrtPrice

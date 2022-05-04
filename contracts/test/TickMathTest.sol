@@ -31,4 +31,12 @@ contract TickMathTest {
     function MAX_SQRT_RATIO() external pure returns (uint160) {
         return TickMath.MAX_SQRT_RATIO;
     }
+
+    function MIN_TICK() external pure returns (int24) {
+        return TickMath.MIN_TICK;
+    }
+
+    function MAX_TICK() external pure returns (int24) {
+        return TickMath.MAX_TICK;
+    }
 }
