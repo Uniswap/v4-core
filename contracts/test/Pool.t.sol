@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 import {DSTest} from '../../foundry/testdata/lib/ds-test/src/test.sol';
 import {Cheats} from '../../foundry/testdata/cheats/Cheats.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {Position} from '../libraries/Position.sol';
 import {TickMath} from '../libraries/TickMath.sol';
 
 contract PoolTest is DSTest {
@@ -43,7 +44,9 @@ contract PoolTest is DSTest {
         } else if (tickUpper > TickMath.MAX_TICK) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, tickUpper));
         } else if (liquidityDelta < 0) {
-            vm.expectRevert();
+            vm.expectRevert(abi.encodeWithSignature('Panic(uint256)', 0x11));
+        } else if (liquidityDelta == 0) {
+            vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         } else {
             result = true;
         }
