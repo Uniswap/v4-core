@@ -63,3 +63,5 @@ jobs:
 
       - name: Run tests
         run: yarn test-forge -vvv
+        env:
+          FOUNDRY_PROFILE: ci
