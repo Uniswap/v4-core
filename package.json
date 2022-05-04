@@ -43,6 +43,7 @@
     "ethers": "^5.0.8",
     "hardhat": "^2.2.0",
     "hardhat-typechain": "^0.3.5",
+    "import-toml": "1.0.0",
     "mocha": "^6.2.2",
     "mocha-chai-jest-snapshot": "^1.1.0",
     "prettier": "^2.0.5",
@@ -56,6 +57,8 @@
   },
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "compile-forge": "forge build",
+    "test-forge": "forge test"
   }
 }
