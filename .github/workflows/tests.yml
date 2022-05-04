@@ -8,7 +8,7 @@ on:
 
 jobs:
   unit-tests:
-    name: Unit Tests
+    name: Hardhat Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -36,3 +36,27 @@ jobs:
 
       - name: Run unit tests
         run: yarn test
+
+  forge-tests:
+    name: Forge Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'yarn'
+
+      - run: yarn
+
+      - name: Install Foundry
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run tests
+        run: yarn test-forge -vvv
