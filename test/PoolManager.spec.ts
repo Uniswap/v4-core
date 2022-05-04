@@ -1293,7 +1293,7 @@ describe('PoolManager', () => {
             await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
             const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
 
-            expect(expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('79228162514264337593543950336'))
+            expect(expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('67085732017841699729721115252'))
           })
         })
       })

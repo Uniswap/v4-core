@@ -423,6 +423,7 @@ library TWAMM {
         } else {
             self.orderPools[params.sellIndex].advanceToCurrentTime(accruedEarningsFactor);
         }
+        return params.pool;
     }
 
     function swapToTargetOrInitializedTick(
