@@ -15,6 +15,12 @@ contract TickTest {
         return Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
     }
 
+    function getGasCostOfTickSpacingToMaxLiquidityPerTick(int24 tickSpacing) external view returns (uint256) {
+        uint256 gasBefore = gasleft();
+        uint128 maxLiquidity = Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        return gasBefore - gasleft();
+    }
+
     function setTick(int24 tick, Tick.Info memory info) external {
         ticks[tick] = info;
     }
@@ -35,25 +41,9 @@ contract TickTest {
         int128 liquidityDelta,
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128,
-        uint160 secondsPerLiquidityCumulativeX128,
-        int56 tickCumulative,
-        uint32 time,
-        bool upper,
-        uint128 maxLiquidity
-    ) external returns (bool flipped) {
-        return
-            ticks.update(
-                tick,
-                tickCurrent,
-                liquidityDelta,
-                feeGrowthGlobal0X128,
-                feeGrowthGlobal1X128,
-                secondsPerLiquidityCumulativeX128,
-                tickCumulative,
-                time,
-                upper,
-                maxLiquidity
-            );
+        bool upper
+    ) external returns (bool flipped, uint128 liquidityGrossAfter) {
+        return ticks.update(tick, tickCurrent, liquidityDelta, feeGrowthGlobal0X128, feeGrowthGlobal1X128, upper);
     }
 
     function clear(int24 tick) external {
@@ -61,12 +51,20 @@ contract TickTest {
     }
 
     function cross(
-        Tick.TickCross memory tickCross
+        int24 tick,
+        uint256 feeGrowthGlobal0X128,
+        uint256 feeGrowthGlobal1X128,
+        int24 tickSpacing,
+        bool leftToRight
     ) external returns (int128 liquidityNet) {
         return
             ticks.cross(
                 cycles,
-                tickCross
+                tick,
+                feeGrowthGlobal0X128,
+                feeGrowthGlobal1X128,
+                tickSpacing,
+                leftToRight
             );
     }
 }

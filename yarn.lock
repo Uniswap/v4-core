@@ -1009,6 +1009,11 @@
     "@ethersproject/properties" "^5.5.0"
     "@ethersproject/strings" "^5.5.0"
 
+"@iarna/toml@^2.2.5":
+  version "2.2.5"
+  resolved "https://registry.yarnpkg.com/@iarna/toml/-/toml-2.2.5.tgz#b32366c89b43c6f8cefbdefac778b9c828e3ba8c"
+  integrity sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==
+
 "@istanbuljs/load-nyc-config@^1.0.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@istanbuljs/load-nyc-config/-/load-nyc-config-1.1.0.tgz#fd3db1d59ecf7cf121e80650bb86712f9b55eced"
@@ -5257,6 +5262,13 @@ import-fresh@^3.0.0:
   dependencies:
     parent-module "^1.0.0"
     resolve-from "^4.0.0"
+
+import-toml@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/import-toml/-/import-toml-1.0.0.tgz#e5057c3ae694cc98cc9bf4c099222c20480765fb"
+  integrity sha512-TkYSG1Rs9GiKk+hE/+yzugkmB6RY6llF2BgfxjLMZEg1QV36WUxrqnGWzb+ZdU61v5Hn3UWk7ePADdymFERpvA==
+  dependencies:
+    "@iarna/toml" "^2.2.5"
 
 imurmurhash@^0.1.4:
   version "0.1.4"

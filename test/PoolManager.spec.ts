@@ -11,6 +11,7 @@ import {
   PoolManagerReentrancyTest,
   PoolDonateTest,
 } from '../typechain'
+import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
@@ -36,14 +37,14 @@ describe('PoolManager', () => {
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
 
   const fixture = async () => {
-    const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
+    const poolManagerFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
-    const manager = (await singletonPoolFactory.deploy()) as PoolManager
+    const manager = (await poolManagerFactory.deploy()) as PoolManager
 
     // Deploy hooks to addresses with leading 1111 to enable all of them.
     const mockHooksAddress = '0xFF00000000000000000000000000000000000000'
@@ -195,6 +196,66 @@ describe('PoolManager', () => {
         })
       )
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+    })
+
+    it('can be initialized with MAX_TICK_SPACING', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: MAX_TICK_SPACING,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.not.be.reverted
+    })
+
+    it('fails if tickSpacing is too large', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: MAX_TICK_SPACING + 1,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooLarge()')
+    })
+
+    it('fails if tickSpacing is 0', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 0,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooSmall()')
+    })
+
+    it('fails if tickSpacing is negative', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: -1,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooSmall()')
     })
 
     it('gas cost', async () => {
@@ -832,6 +893,27 @@ describe('PoolManager', () => {
       const { feeGrowthGlobal0X128, feeGrowthGlobal1X128 } = await manager.pools(getPoolId(key))
       expect(feeGrowthGlobal0X128).to.eq(BigNumber.from('340282366920938463463374607431768211456')) // 100 << 128 divided by liquidity
       expect(feeGrowthGlobal1X128).to.eq(BigNumber.from('680564733841876926926749214863536422912')) // 200 << 128 divided by liquidity
+    })
+
+    describe('hooks', () => {
+      it('calls beforeDonate and afterDonate', async () => {
+        const key = {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: 100,
+          hooks: hooksMock.address,
+          tickSpacing: 10,
+        }
+        await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: -60,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        })
+        await donateTest.donate(key, 100, 200)
+        expect(await hooksMock.calledWith('beforeDonate', [donateTest.address, key, 100, 200])).to.be.true
+        expect(await hooksMock.calledWith('afterDonate', [donateTest.address, key, 100, 200])).to.be.true
+      })
     })
   })
 })
