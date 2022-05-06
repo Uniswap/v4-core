@@ -65,7 +65,11 @@ library Pool {
         uint160 sqrtPriceX96;
         // the current tick
         int24 tick;
-        // 72 bits left!
+        // the current protocol fee as a percentage of the swap fee taken on withdrawal
+        // represented as an integer denominator (1/x)%
+        // First 4 bits are the fee for trading 1 for 0, and the latter 4 for 0 for 1
+        uint8 protocolFee;
+        // 64 bits left!
     }
 
     /// @dev The state of a pool
@@ -91,7 +95,11 @@ library Pool {
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick});
+        self.slot0 = Slot0({
+            sqrtPriceX96: sqrtPriceX96,
+            tick: tick,
+            protocolFee: 0
+        });
     }
 
     struct ModifyPositionParams {
@@ -228,6 +236,8 @@ library Pool {
     struct SwapCache {
         // liquidity at the beginning of the swap
         uint128 liquidityStart;
+        // the protocol fee for the input token
+        uint8 protocolFee;
     }
 
     // the top level state of the swap, the results of which are recorded in storage at the end
@@ -242,6 +252,8 @@ library Pool {
         int24 tick;
         // the global fee growth of the input token
         uint256 feeGrowthGlobalX128;
+        // amount of input token paid as protocol fee
+        uint128 feeForProtocol;
         // the current liquidity in range
         uint128 liquidity;
     }
@@ -274,7 +286,7 @@ library Pool {
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (IPoolManager.BalanceDelta memory result)
+        returns (IPoolManager.BalanceDelta memory result, uint256 finalFeeForProtocol)
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
@@ -292,7 +304,11 @@ library Pool {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
         }
 
-        SwapCache memory cache = SwapCache({liquidityStart: self.liquidity});
+        SwapCache memory cache =
+            SwapCache({
+                liquidityStart: self.liquidity,
+                protocolFee: params.zeroForOne ? (slot0Start.protocolFee % 16) : (slot0Start.protocolFee >> 4)
+            });
 
         bool exactInput = params.amountSpecified > 0;
 
@@ -302,6 +318,7 @@ library Pool {
             sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
             feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
+            feeForProtocol: 0,
             liquidity: cache.liquidityStart
         });
 
@@ -353,6 +370,15 @@ library Pool {
                     state.amountSpecifiedRemaining += step.amountOut.toInt256();
                 }
                 state.amountCalculated = state.amountCalculated + (step.amountIn + step.feeAmount).toInt256();
+            }
+
+            // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
+            if (cache.protocolFee > 0) {
+                // A: calculate the amount of the fee that should go to the protocol
+                uint256 delta = step.feeAmount / cache.protocolFee;
+                // A: subtract it from the regular fee and add it to the protocol fee
+                step.feeAmount -= delta;
+                state.feeForProtocol += uint128(delta);
             }
 
             // update global fee tracker
@@ -408,6 +434,7 @@ library Pool {
                 ? (params.amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
         }
+        finalFeeForProtocol = state.feeForProtocol;
     }
 
     /// @notice Donates the given amount of token0 and token1 to the pool

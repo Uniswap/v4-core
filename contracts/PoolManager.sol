@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import {TransferHelper} from './libraries/TransferHelper.sol';
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
@@ -28,6 +29,8 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     int24 public constant override MIN_TICK_SPACING = 1;
 
     mapping(bytes32 => Pool.State) public pools;
+
+    mapping(address => uint256) public override protocolFeesAccrued;
 
     constructor() ERC1155('') {}
 
@@ -216,7 +219,8 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
             key.hooks.beforeSwap(msg.sender, key, params);
         }
 
-        delta = _getPool(key).swap(
+        uint256 feeForProtocol;
+        (delta, feeForProtocol) = _getPool(key).swap(
             Pool.SwapParams({
                 fee: key.fee,
                 tickSpacing: key.tickSpacing,
@@ -227,6 +231,8 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         );
 
         _accountPoolBalanceDelta(key, delta);
+        // the fee is on the input token
+        protocolFeesAccrued[params.zeroForOne ? address(key.token0) : address(key.token1)] += feeForProtocol;
 
         if (key.hooks.shouldCallAfterSwap()) {
             key.hooks.afterSwap(msg.sender, key, params, delta);
@@ -314,5 +320,20 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
             }
         }
         return IERC1155Receiver.onERC1155BatchReceived.selector;
+    }
+
+    // THIS NEEDS RESTRICTED PERMISSIONS
+    function collectProtocolFees(
+        address recipient,
+        address[] calldata tokens,
+        uint256[] calldata amounts
+    ) external {
+        if (amounts.length != tokens.length) revert DifferingArrayLengths();
+
+        // This will revert if any amount is larger than the protocol's balance
+        for (uint256 i; i < tokens.length; i++) {
+            protocolFeesAccrued[tokens[i]] -= amounts[i];
+            TransferHelper.safeTransfer(tokens[i], recipient, amounts[i]);
+        }
     }
 }
