@@ -5,6 +5,7 @@ import {Cheats} from '../../foundry/testdata/cheats/Cheats.sol';
 import {Pool} from '../libraries/Pool.sol';
 import {Position} from '../libraries/Position.sol';
 import {TickMath} from '../libraries/TickMath.sol';
+import {Tick} from '../libraries/Tick.sol';
 
 contract PoolTest is DSTest {
     using Pool for Pool.State;
@@ -35,6 +36,14 @@ contract PoolTest is DSTest {
         int128 liquidityDelta,
         int24 tickSpacing
     ) public returns (bool result) {
+        if (tickSpacing < 1 || tickSpacing > 32767) {
+            tickSpacing = tickSpacing < 0
+                ? (tickSpacing == type(int24).min ? type(int24).min + 1 : tickSpacing) * -1
+                : tickSpacing;
+            // bounds it between 1 and max tick spacing
+            tickSpacing = (tickSpacing % 32767) + 1;
+        }
+
         if (!(result = testInitialize(sqrtPriceX96))) {
             vm.expectRevert(Pool.PoolNotInitialized.selector);
         } else if (tickLower >= tickUpper) {
@@ -47,6 +56,8 @@ contract PoolTest is DSTest {
             vm.expectRevert(abi.encodeWithSignature('Panic(uint256)', 0x11));
         } else if (liquidityDelta == 0) {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
+        } else if (liquidityDelta > int128(Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing))) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, tickLower));
         } else {
             result = true;
         }
