@@ -287,6 +287,22 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         _accountDelta(IERC20Minimal(token), -(amount.toInt256()));
     }
 
+    function placeLimitOrder(
+        IPoolManager.PoolKey memory key,
+        bool zeroForOne,
+        address recipient,
+        int24 tick,
+        uint128 amount
+    ) external override noDelegateCall onlyByLocker {
+        _getPool(key).placeLimitOrder(
+            zeroForOne,
+            recipient,
+            tick,
+            amount
+        );
+        _accountDelta(zeroForOne ? key.token0 : key.token1, amount.toInt256());
+    }
+
     function onERC1155Received(
         address,
         address,

@@ -5,6 +5,7 @@ import {SafeCast} from './SafeCast.sol';
 import {Tick} from './Tick.sol';
 import {TickBitmap} from './TickBitmap.sol';
 import {Position} from './Position.sol';
+import {LimitOrder} from './LimitOrder.sol';
 import {Cycle} from './Cycle.sol';
 import {Oracle} from './Oracle.sol';
 import {FullMath} from './FullMath.sol';
@@ -16,10 +17,16 @@ import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 library Pool {
     using SafeCast for *;
+
     using Tick for mapping(int24 => Tick.Info);
-    using TickBitmap for mapping(int16 => uint256);
+    using Cycle for mapping(bytes32 => Cycle.Info);
+    using LimitOrder for mapping(bytes32 => LimitOrder.Info);
     using Position for mapping(bytes32 => Position.Info);
+    using TickBitmap for mapping(int16 => uint256);
+
     using Position for Position.Info;
+    using LimitOrder for LimitOrder.Info;
+    using Cycle for Cycle.Info;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -62,6 +69,9 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
+    // The price of the pool is currently on the wrong side of the limit order price
+    error LimitOrderPriceNotPossible();
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
@@ -79,7 +89,7 @@ library Pool {
         mapping(int24 => Tick.Info) ticks;
         mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
-        mapping(bytes32 => Position.Info) limitPositions;
+        mapping(bytes32 => LimitOrder.Info) limitOrders;
         mapping(bytes32 => Cycle.Info) cycles;
     }
 
@@ -226,6 +236,31 @@ library Pool {
                     params.liquidityDelta
                 );
             }
+        }
+    }
+
+    function placeLimitOrder(
+        State storage self,
+        bool zeroForOne,
+        address recipient,
+        int24 targetTick,
+        uint128 amount
+    ) internal {
+        // if (targetTick == self.tick) // deal with this case!
+        
+        // The we can only accept limit orders in 1 direction for each token
+        bool targetGT = targetTick > self.slot0.tick;
+        if ((zeroForOne && targetGT) || (!zeroForOne && !targetGT))
+            revert LimitOrderPriceNotPossible();
+        
+        Tick.Info memory tick = self.ticks[targetTick];
+        if (!tick.initialized) {
+            // initialise tick with this liquidity
+        } else {
+            Cycle.Info storage cycle = self.cycles.get(targetTick, tick.cycle);
+            cycle.addLiquidity(amount);
+            LimitOrder.Info storage limitOrder = self.limitOrders.get(recipient, targetTick, tick.cycle);
+            limitOrder.addLiquidity(amount);
         }
     }
 

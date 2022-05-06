@@ -105,6 +105,14 @@ interface IPoolManager is IERC1155 {
         external
         returns (BalanceDelta memory delta);
 
+    function placeLimitOrder(
+        PoolKey memory key,
+        bool zeroForOne,
+        address recipient,
+        int24 tick,
+        uint128 amount
+    ) external;
+
     struct SwapParams {
         bool zeroForOne;
         int256 amountSpecified;

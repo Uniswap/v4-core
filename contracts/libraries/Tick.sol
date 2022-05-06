@@ -51,7 +51,7 @@ library Tick {
     /// @return feeGrowthInside0X128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
     /// @return feeGrowthInside1X128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
     function getFeeGrowthInside(
-        mapping(int24 => Tick.Info) storage self,
+        mapping(int24 => Info) storage self,
         int24 tickLower,
         int24 tickUpper,
         int24 tickCurrent,
@@ -100,7 +100,7 @@ library Tick {
     /// @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
     /// @return liquidityGrossAfter The total amount of  liquidity for all positions that references the tick after the update
     function update(
-        mapping(int24 => Tick.Info) storage self,
+        mapping(int24 => Info) storage self,
         int24 tick,
         int24 tickCurrent,
         int128 liquidityDelta,
@@ -108,7 +108,7 @@ library Tick {
         uint256 feeGrowthGlobal1X128,
         bool upper
     ) internal returns (bool flipped, uint128 liquidityGrossAfter) {
-        Tick.Info storage info = self[tick];
+        Info storage info = self[tick];
 
         uint128 liquidityGrossBefore = info.liquidityGross;
         liquidityGrossAfter = liquidityDelta < 0
@@ -138,7 +138,7 @@ library Tick {
     /// @notice Clears tick data
     /// @param self The mapping containing all initialized tick information for initialized ticks
     /// @param tick The tick that will be cleared
-    function clear(mapping(int24 => Tick.Info) storage self, int24 tick) internal {
+    function clear(mapping(int24 => Info) storage self, int24 tick) internal {
         delete self[tick];
     }
 
@@ -149,7 +149,7 @@ library Tick {
     /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
     /// @return liquidityNet The amount of liquidity added (subtracted) when tick is crossed from left to right (right to left)
     function cross(
-        mapping(int24 => Tick.Info) storage self,
+        mapping(int24 => Info) storage self,
         mapping(bytes32 => Cycle.Info) storage cycles,
         int24 tick,
         uint256 feeGrowthGlobal0X128,
@@ -157,7 +157,7 @@ library Tick {
         int24 tickSpacing,
         bool leftToRight
     ) internal returns (int128 liquidityNet) {
-        Tick.Info storage info = self[tick];
+        Info storage info = self[tick];
         unchecked {
             info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
             info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
@@ -166,7 +166,7 @@ library Tick {
         
         Cycle.Info storage cycleInfo = Cycle.get(cycles, tick, info.cycle);
         if (cycleInfo.limitLiquidity > 0) {
-                Tick.Info storage nextTickInfo = self[tick+tickSpacing];
+            Info storage nextTickInfo = self[tick+tickSpacing];
             if (leftToRight) {
                 info.liquidityNet -= int128(cycleInfo.limitLiquidity);
                 nextTickInfo.liquidityNet += int128(cycleInfo.limitLiquidity);

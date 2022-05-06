@@ -18,8 +18,15 @@ library Cycle {
         mapping(bytes32 => Info) storage self,
         int24 tick,
         uint128 cycleNumber
-    ) internal view returns (Cycle.Info storage cycle) {
+    ) internal view returns (Info storage cycle) {
         cycle = self[keccak256(abi.encodePacked(tick, cycleNumber))];
+    }
+
+    function addLiquidity(
+        Info storage cycle,
+        uint128 amount 
+    ) internal {
+        cycle.limitLiquidity += amount;
     }
 
 }

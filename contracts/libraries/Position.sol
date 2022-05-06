@@ -31,7 +31,7 @@ library Position {
         address owner,
         int24 tickLower,
         int24 tickUpper
-    ) internal view returns (Position.Info storage position) {
+    ) internal view returns (Info storage position) {
         position = self[keccak256(abi.encodePacked(owner, tickLower, tickUpper))];
     }
 
