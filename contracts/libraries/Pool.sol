@@ -90,16 +90,16 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint8 protocolFee) internal returns (int24 tick) {
+    function initialize(
+        State storage self,
+        uint160 sqrtPriceX96,
+        uint8 protocolFee
+    ) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        self.slot0 = Slot0({
-            sqrtPriceX96: sqrtPriceX96,
-            tick: tick,
-            protocolFee: protocolFee
-        });
+        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee});
     }
 
     function setProtocolFee(State storage self, uint8 newProtocolFee) internal {
