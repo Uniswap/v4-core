@@ -993,7 +993,7 @@ describe('PoolManager', () => {
       })
     })
 
-    describe('end-to-end integration', () => {
+    describe.only('end-to-end integration', () => {
       let start: number
       let expiration: number
       let key: any
@@ -1001,297 +1001,301 @@ describe('PoolManager', () => {
       let orderKey1: OrderKey
       let liquidityBalance: BigNumber
 
-      describe('when TWAMM crosses a tick', () => {
-        beforeEach('set up pool', async () => {
-          const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-          const amountLiquidity = expandTo18Decimals(1)
+      for (const fee of [0, 10000]) {
+        describe(`with ${fee.toString()} fee`, () => {
+          describe('when TWAMM crosses a tick', () => {
+            beforeEach('set up pool', async () => {
+              const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+              const amountLiquidity = expandTo18Decimals(1)
 
-          start = nIntervalsFrom(latestTimestamp, 10_000, 1)
-          expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+              start = nIntervalsFrom(latestTimestamp, 10_000, 1)
+              expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
 
-          orderKey0 = {
-            zeroForOne: true,
-            owner: wallet.address,
-            expiration,
-          }
-          orderKey1 = {
-            zeroForOne: false,
-            owner: wallet.address,
-            expiration,
-          }
+              orderKey0 = {
+                zeroForOne: true,
+                owner: wallet.address,
+                expiration,
+              }
+              orderKey1 = {
+                zeroForOne: false,
+                owner: wallet.address,
+                expiration,
+              }
 
-          key = {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: 0,
-            hooks: ADDRESS_ZERO,
-            tickSpacing: 10,
-          }
-          await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+              key = {
+                token0: tokens.token0.address,
+                token1: tokens.token1.address,
+                fee,
+                hooks: ADDRESS_ZERO,
+                tickSpacing: 10,
+              }
+              await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
 
-          // 1) Add liquidity balances to AMM
-          await modifyPositionTest.modifyPosition(key, {
-            tickLower: getMinTick(10),
-            tickUpper: getMaxTick(10),
-            liquidityDelta: amountLiquidity,
-          })
-          await modifyPositionTest.modifyPosition(key, {
-            tickLower: -20000,
-            tickUpper: 20000,
-            liquidityDelta: amountLiquidity,
-          })
+              // 1) Add liquidity balances to AMM
+              await modifyPositionTest.modifyPosition(key, {
+                tickLower: getMinTick(10),
+                tickUpper: getMaxTick(10),
+                liquidityDelta: amountLiquidity,
+              })
+              await modifyPositionTest.modifyPosition(key, {
+                tickLower: -20000,
+                tickUpper: 20000,
+                liquidityDelta: amountLiquidity,
+              })
 
-          liquidityBalance = await tokens.token0.balanceOf(manager.address)
-        })
-
-        it('balances clear properly w/ token1 excess', async () => {
-          const amountLTO0 = expandTo18Decimals(1)
-          const amountLTO1 = expandTo18Decimals(10)
-
-          await ethers.provider.send('evm_setAutomine', [false])
-
-          // 2) Add order balances to TWAMM
-          await twammTest.submitLongTermOrder(key, {
-            amountIn: amountLTO0,
-            ...orderKey0,
-          })
-          await twammTest.submitLongTermOrder(key, {
-            amountIn: amountLTO1,
-            ...orderKey1,
-          })
-
-          await ethers.provider.send('evm_mine', [start])
-          await ethers.provider.send('evm_setAutomine', [true])
-          await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 500])
-
-          expect(await tokens.token0.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO0))
-          expect(await tokens.token1.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO1))
-
-          // 3) Execute TWAMM which will perform a swap on the AMM
-          const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
-          const events = receipt.logs.map((log) => manager.interface.parseLog(log))
-
-          const swapDelta0 = events.reduce((accum, event) => accum.add(event.args.amount0), BigNumber.from(0))
-          const swapDelta1 = events.reduce((accum, event) => accum.add(event.args.amount1), BigNumber.from(0))
-
-          const claimedEarnings1 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
-          const claimedEarnings0 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
-
-          // 4) Pull all earnings from TWAMM now TWAMM should have no liquidity in it.
-          await twammTest.claimEarningsOnLongTermOrder(key, orderKey0)
-          await twammTest.claimEarningsOnLongTermOrder(key, orderKey1)
-
-          // 5) The AMM balance should consist of original liquidity plus deltas from the single swap
-          // that happened during TWAMM execution
-          const expectedBalance0 = liquidityBalance.add(swapDelta0)
-          const actualBalance0 = await tokens.token0.balanceOf(manager.address)
-
-          const expectedBalance1 = liquidityBalance.add(swapDelta1)
-          const actualBalance1 = await tokens.token1.balanceOf(manager.address)
-
-          // TODO: precision off by 4 and 3 wei respectively
-          expect(actualBalance0).to.eq(expectedBalance0.sub(4))
-          expect(actualBalance1).to.eq(expectedBalance1.sub(3))
-          expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('247353758214811852542653279391')
-        })
-
-        it('balances clear properly w/ token0 excess', async () => {
-          const amountLTO0 = expandTo18Decimals(10)
-          const amountLTO1 = expandTo18Decimals(1)
-
-          await ethers.provider.send('evm_setAutomine', [false])
-
-          // 2) Add order balances to TWAMM
-          await twammTest.submitLongTermOrder(key, {
-            amountIn: amountLTO0,
-            ...orderKey0,
-          })
-          await twammTest.submitLongTermOrder(key, {
-            amountIn: amountLTO1,
-            ...orderKey1,
-          })
-
-          await ethers.provider.send('evm_mine', [start])
-          await ethers.provider.send('evm_setAutomine', [true])
-          await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
-
-          expect(await tokens.token0.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO0))
-          expect(await tokens.token1.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO1))
-
-          // 3) Execute TWAMM which will perform a swap on the AMM
-          const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
-          const events = receipt.logs.map((log) => manager.interface.parseLog(log))
-
-          const swapDelta0 = events.reduce((accum, event) => accum.add(event.args.amount0), BigNumber.from(0))
-          const swapDelta1 = events.reduce((accum, event) => accum.add(event.args.amount1), BigNumber.from(0))
-
-          const claimedEarnings1 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
-          const claimedEarnings0 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
-
-          // 4) Pull all earnings from TWAMM now TWAMM should have no liquidity in it.
-          await twammTest.claimEarningsOnLongTermOrder(key, orderKey0)
-          await twammTest.claimEarningsOnLongTermOrder(key, orderKey1)
-
-          // 5) The AMM balance should consist of original liquidity plus deltas from the single swap
-          // that happened during TWAMM execution
-          const expectedBalance0 = liquidityBalance.add(swapDelta0)
-          const actualBalance0 = await tokens.token0.balanceOf(manager.address)
-
-          const expectedBalance1 = liquidityBalance.add(swapDelta1)
-          const actualBalance1 = await tokens.token1.balanceOf(manager.address)
-
-          // TODO: precision off by 5 and 6 respectively
-          expect(actualBalance0).to.eq(expectedBalance0.sub(5))
-          expect(actualBalance1).to.eq(expectedBalance1.sub(6))
-          expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('25377021884322435403827716101')
-        })
-      })
-
-      describe('when TWAMM crosses no ticks', () => {
-        it('token 1 excess: clears all balances appropriately when trading against a 0 fee AMM', async () => {
-          const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-          const amountLiquidity = expandTo18Decimals(1)
-          const amountLTO0 = expandTo18Decimals(1)
-          const amountLTO1 = expandTo18Decimals(10)
-
-          const start = nIntervalsFrom(latestTimestamp, 10_000, 1)
-          const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
-
-          const orderKey0 = {
-            zeroForOne: true,
-            owner: wallet.address,
-            expiration,
-          }
-          const orderKey1 = {
-            zeroForOne: false,
-            owner: wallet.address,
-            expiration,
-          }
-
-          const key = {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: 0,
-            hooks: ADDRESS_ZERO,
-            tickSpacing: 10,
-          }
-          await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
-
-          // 1) Add liquidity balances to AMM
-          await modifyPositionTest.modifyPosition(key, {
-            tickLower: getMinTick(10),
-            tickUpper: getMaxTick(10),
-            liquidityDelta: amountLiquidity,
-          })
-
-          expect(await tokens.token0.balanceOf(manager.address)).to.eq(amountLiquidity)
-          expect(await tokens.token1.balanceOf(manager.address)).to.eq(amountLiquidity)
-
-          await ethers.provider.send('evm_setAutomine', [false])
-
-          // 2) Add order balances to TWAMM
-          await twammTest.submitLongTermOrder(key, {
-            amountIn: amountLTO0,
-            ...orderKey0,
-          })
-          await twammTest.submitLongTermOrder(key, {
-            amountIn: amountLTO1,
-            ...orderKey1,
-          })
-
-          await ethers.provider.send('evm_mine', [start])
-          await ethers.provider.send('evm_setAutomine', [true])
-          await ethers.provider.send('evm_setNextBlockTimestamp', [expiration])
-
-          expect(await tokens.token0.balanceOf(manager.address)).to.eq(amountLiquidity.add(amountLTO0))
-          expect(await tokens.token1.balanceOf(manager.address)).to.eq(amountLiquidity.add(amountLTO1))
-
-          // 3) Execute TWAMM which will perform a swap on the AMM
-          const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
-          const events = receipt.logs.map((log) => manager.interface.parseLog(log))
-
-          const swapDelta0 = events[0].args.amount0
-          const swapDelta1 = events[0].args.amount1
-
-          const claimedEarnings1 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
-          const claimedEarnings0 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
-
-          // 4) Pull all earnings from TWAMM now TWAMM should have no liquidity in it.
-          await twammTest.claimEarningsOnLongTermOrder(key, orderKey0)
-          await twammTest.claimEarningsOnLongTermOrder(key, orderKey1)
-
-          // 5) The AMM balance should consist of original liquidity plus deltas from the single swap
-          // that happened during TWAMM execution
-          const expectedBalance0 = amountLiquidity.add(swapDelta0)
-          const actualBalance0 = await tokens.token0.balanceOf(manager.address)
-
-          const expectedBalance1 = amountLiquidity.add(swapDelta1)
-          const actualBalance1 = await tokens.token1.balanceOf(manager.address)
-
-          // TODO: precision off by 3 and 4 respectively
-          expect(actualBalance0).to.eq(expectedBalance0.sub(3))
-          expect(actualBalance1).to.eq(expectedBalance1.sub(4))
-          expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('250075469252697290162438233664')
-        })
-      })
-
-      describe('single pool sell', () => {
-        beforeEach('set up pool', async () => {
-          const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-          const amountLiquidity = expandTo18Decimals(1)
-
-          start = nIntervalsFrom(latestTimestamp, 10_000, 1)
-          expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
-
-          orderKey0 = {
-            zeroForOne: true,
-            owner: wallet.address,
-            expiration,
-          }
-
-          key = {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: 0,
-            hooks: ADDRESS_ZERO,
-            tickSpacing: 10,
-          }
-          await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
-
-          // 1) Add liquidity balances to AMM
-          await modifyPositionTest.modifyPosition(key, {
-            tickLower: getMinTick(10),
-            tickUpper: getMaxTick(10),
-            liquidityDelta: amountLiquidity,
-          })
-          await modifyPositionTest.modifyPosition(key, {
-            tickLower: -2000,
-            tickUpper: 2000,
-            liquidityDelta: amountLiquidity,
-          })
-          await modifyPositionTest.modifyPosition(key, {
-            tickLower: -3000,
-            tickUpper: 3000,
-            liquidityDelta: amountLiquidity,
-          })
-        })
-
-        describe('when crossing two ticks', () => {
-          it('crosses both ticks properly', async () => {
-            await ethers.provider.send('evm_setNextBlockTimestamp', [start])
-
-            await twammTest.submitLongTermOrder(key, {
-              amountIn: expandTo18Decimals(1),
-              ...orderKey0,
+              liquidityBalance = await tokens.token0.balanceOf(manager.address)
             })
 
-            await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
-            const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
+            it('balances clear properly w/ token1 excess', async () => {
+              const amountLTO0 = expandTo18Decimals(1)
+              const amountLTO1 = expandTo18Decimals(10)
 
-            expect(expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('45717107618561577229535588723'))
+              await ethers.provider.send('evm_setAutomine', [false])
+
+              // 2) Add order balances to TWAMM
+              await twammTest.submitLongTermOrder(key, {
+                amountIn: amountLTO0,
+                ...orderKey0,
+              })
+              await twammTest.submitLongTermOrder(key, {
+                amountIn: amountLTO1,
+                ...orderKey1,
+              })
+
+              await ethers.provider.send('evm_mine', [start])
+              await ethers.provider.send('evm_setAutomine', [true])
+              await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 500])
+
+              expect(await tokens.token0.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO0))
+              expect(await tokens.token1.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO1))
+
+              // 3) Execute TWAMM which will perform a swap on the AMM
+              const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
+              const events = receipt.logs.map((log) => manager.interface.parseLog(log))
+
+              const swapDelta0 = events.reduce((accum, event) => accum.add(event.args.amount0), BigNumber.from(0))
+              const swapDelta1 = events.reduce((accum, event) => accum.add(event.args.amount1), BigNumber.from(0))
+
+              const claimedEarnings1 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
+              const claimedEarnings0 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
+
+              // 4) Pull all earnings from TWAMM now TWAMM should have no liquidity in it.
+              await twammTest.claimEarningsOnLongTermOrder(key, orderKey0)
+              await twammTest.claimEarningsOnLongTermOrder(key, orderKey1)
+
+              // 5) The AMM balance should consist of original liquidity plus deltas from the single swap
+              // that happened during TWAMM execution
+              const expectedBalance0 = liquidityBalance.add(swapDelta0)
+              const actualBalance0 = await tokens.token0.balanceOf(manager.address)
+
+              const expectedBalance1 = liquidityBalance.add(swapDelta1)
+              const actualBalance1 = await tokens.token1.balanceOf(manager.address)
+
+              // TODO: precision off by 4 and 3 wei respectively
+              expect(actualBalance0).to.eq(expectedBalance0.sub(4))
+              expect(actualBalance1).to.eq(expectedBalance1.sub(3))
+              expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('247353758214811852542653279391')
+            })
+
+            it('balances clear properly w/ token0 excess', async () => {
+              const amountLTO0 = expandTo18Decimals(10)
+              const amountLTO1 = expandTo18Decimals(1)
+
+              await ethers.provider.send('evm_setAutomine', [false])
+
+              // 2) Add order balances to TWAMM
+              await twammTest.submitLongTermOrder(key, {
+                amountIn: amountLTO0,
+                ...orderKey0,
+              })
+              await twammTest.submitLongTermOrder(key, {
+                amountIn: amountLTO1,
+                ...orderKey1,
+              })
+
+              await ethers.provider.send('evm_mine', [start])
+              await ethers.provider.send('evm_setAutomine', [true])
+              await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
+
+              expect(await tokens.token0.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO0))
+              expect(await tokens.token1.balanceOf(manager.address)).to.eq(liquidityBalance.add(amountLTO1))
+
+              // 3) Execute TWAMM which will perform a swap on the AMM
+              const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
+              const events = receipt.logs.map((log) => manager.interface.parseLog(log))
+
+              const swapDelta0 = events.reduce((accum, event) => accum.add(event.args.amount0), BigNumber.from(0))
+              const swapDelta1 = events.reduce((accum, event) => accum.add(event.args.amount1), BigNumber.from(0))
+
+              const claimedEarnings1 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
+              const claimedEarnings0 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
+
+              // 4) Pull all earnings from TWAMM now TWAMM should have no liquidity in it.
+              await twammTest.claimEarningsOnLongTermOrder(key, orderKey0)
+              await twammTest.claimEarningsOnLongTermOrder(key, orderKey1)
+
+              // 5) The AMM balance should consist of original liquidity plus deltas from the single swap
+              // that happened during TWAMM execution
+              const expectedBalance0 = liquidityBalance.add(swapDelta0)
+              const actualBalance0 = await tokens.token0.balanceOf(manager.address)
+
+              const expectedBalance1 = liquidityBalance.add(swapDelta1)
+              const actualBalance1 = await tokens.token1.balanceOf(manager.address)
+
+              // TODO: precision off by 5 and 6 respectively
+              expect(actualBalance0).to.eq(expectedBalance0.sub(5))
+              expect(actualBalance1).to.eq(expectedBalance1.sub(6))
+              expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('25377021884322435403827716101')
+            })
+          })
+
+          describe('when TWAMM crosses no ticks', () => {
+            it('token 1 excess: clears all balances appropriately when trading against a 0 fee AMM', async () => {
+              const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+              const amountLiquidity = expandTo18Decimals(1)
+              const amountLTO0 = expandTo18Decimals(1)
+              const amountLTO1 = expandTo18Decimals(10)
+
+              const start = nIntervalsFrom(latestTimestamp, 10_000, 1)
+              const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+
+              const orderKey0 = {
+                zeroForOne: true,
+                owner: wallet.address,
+                expiration,
+              }
+              const orderKey1 = {
+                zeroForOne: false,
+                owner: wallet.address,
+                expiration,
+              }
+
+              const key = {
+                token0: tokens.token0.address,
+                token1: tokens.token1.address,
+                fee,
+                hooks: ADDRESS_ZERO,
+                tickSpacing: 10,
+              }
+              await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+
+              // 1) Add liquidity balances to AMM
+              await modifyPositionTest.modifyPosition(key, {
+                tickLower: getMinTick(10),
+                tickUpper: getMaxTick(10),
+                liquidityDelta: amountLiquidity,
+              })
+
+              expect(await tokens.token0.balanceOf(manager.address)).to.eq(amountLiquidity)
+              expect(await tokens.token1.balanceOf(manager.address)).to.eq(amountLiquidity)
+
+              await ethers.provider.send('evm_setAutomine', [false])
+
+              // 2) Add order balances to TWAMM
+              await twammTest.submitLongTermOrder(key, {
+                amountIn: amountLTO0,
+                ...orderKey0,
+              })
+              await twammTest.submitLongTermOrder(key, {
+                amountIn: amountLTO1,
+                ...orderKey1,
+              })
+
+              await ethers.provider.send('evm_mine', [start])
+              await ethers.provider.send('evm_setAutomine', [true])
+              await ethers.provider.send('evm_setNextBlockTimestamp', [expiration])
+
+              expect(await tokens.token0.balanceOf(manager.address)).to.eq(amountLiquidity.add(amountLTO0))
+              expect(await tokens.token1.balanceOf(manager.address)).to.eq(amountLiquidity.add(amountLTO1))
+
+              // 3) Execute TWAMM which will perform a swap on the AMM
+              const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
+              const events = receipt.logs.map((log) => manager.interface.parseLog(log))
+
+              const swapDelta0 = events[0].args.amount0
+              const swapDelta1 = events[0].args.amount1
+
+              const claimedEarnings1 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
+              const claimedEarnings0 = await twammTest.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
+
+              // 4) Pull all earnings from TWAMM now TWAMM should have no liquidity in it.
+              await twammTest.claimEarningsOnLongTermOrder(key, orderKey0)
+              await twammTest.claimEarningsOnLongTermOrder(key, orderKey1)
+
+              // 5) The AMM balance should consist of original liquidity plus deltas from the single swap
+              // that happened during TWAMM execution
+              const expectedBalance0 = amountLiquidity.add(swapDelta0)
+              const actualBalance0 = await tokens.token0.balanceOf(manager.address)
+
+              const expectedBalance1 = amountLiquidity.add(swapDelta1)
+              const actualBalance1 = await tokens.token1.balanceOf(manager.address)
+
+              // TODO: precision off by 3 and 4 respectively
+              expect(actualBalance0).to.eq(expectedBalance0.sub(3))
+              expect(actualBalance1).to.eq(expectedBalance1.sub(4))
+              expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('250075469252697290162438233664')
+            })
+          })
+
+          describe('single pool sell', () => {
+            beforeEach('set up pool', async () => {
+              const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+              const amountLiquidity = expandTo18Decimals(1)
+
+              start = nIntervalsFrom(latestTimestamp, 10_000, 1)
+              expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+
+              orderKey0 = {
+                zeroForOne: true,
+                owner: wallet.address,
+                expiration,
+              }
+
+              key = {
+                token0: tokens.token0.address,
+                token1: tokens.token1.address,
+                fee,
+                hooks: ADDRESS_ZERO,
+                tickSpacing: 10,
+              }
+              await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+
+              // 1) Add liquidity balances to AMM
+              await modifyPositionTest.modifyPosition(key, {
+                tickLower: getMinTick(10),
+                tickUpper: getMaxTick(10),
+                liquidityDelta: amountLiquidity,
+              })
+              await modifyPositionTest.modifyPosition(key, {
+                tickLower: -2000,
+                tickUpper: 2000,
+                liquidityDelta: amountLiquidity,
+              })
+              await modifyPositionTest.modifyPosition(key, {
+                tickLower: -3000,
+                tickUpper: 3000,
+                liquidityDelta: amountLiquidity,
+              })
+            })
+
+            describe('when crossing two ticks', () => {
+              it('crosses both ticks properly', async () => {
+                await ethers.provider.send('evm_setNextBlockTimestamp', [start])
+
+                await twammTest.submitLongTermOrder(key, {
+                  amountIn: expandTo18Decimals(1),
+                  ...orderKey0,
+                })
+
+                await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
+                const receipt = await (await twammTest.executeTWAMMOrders(key)).wait()
+
+                expect(expect((await manager.getSlot0(key)).sqrtPriceX96).to.eq('45717107618561577229535588723'))
+              })
+            })
           })
         })
-      })
+      }
     })
   })
 })

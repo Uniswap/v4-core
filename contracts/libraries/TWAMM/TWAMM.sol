@@ -9,10 +9,12 @@ import {OrderPool} from './OrderPool.sol';
 import {TwammMath} from './TwammMath.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
+import {FullMath} from '../FullMath.sol';
 import {SwapMath} from '../SwapMath.sol';
 import {SafeCast} from '../SafeCast.sol';
 import {Pool} from '../Pool.sol';
 
+import 'hardhat/console.sol';
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
@@ -226,6 +228,11 @@ library TWAMM {
         Pool.State storage pool
     ) internal returns (uint160 finalSqrtPriceX96) {
         while (true) {
+            console.log(params.fee);
+            console.log(self.orderPools[0].sellRateCurrent);
+            console.log(FullMath.mulDiv(self.orderPools[0].sellRateCurrent, 1e6 - params.fee, 1e6));
+            console.log(self.orderPools[1].sellRateCurrent);
+            console.log(FullMath.mulDiv(self.orderPools[1].sellRateCurrent, 1e6 - params.fee, 1e6));
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
             (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
