@@ -308,11 +308,10 @@ library Pool {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
         }
 
-        SwapCache memory cache =
-            SwapCache({
-                liquidityStart: self.liquidity,
-                protocolFee: params.zeroForOne ? (slot0Start.protocolFee % 16) : (slot0Start.protocolFee >> 4)
-            });
+        SwapCache memory cache = SwapCache({
+            liquidityStart: self.liquidity,
+            protocolFee: params.zeroForOne ? (slot0Start.protocolFee % 16) : (slot0Start.protocolFee >> 4)
+        });
 
         bool exactInput = params.amountSpecified > 0;
 
