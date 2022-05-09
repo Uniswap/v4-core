@@ -29,6 +29,20 @@ contract PoolTest is DSTest {
         }
     }
 
+    function boundTickSpacing(int24 unbound) private returns (int24) {
+        int24 tickSpacing = unbound;
+        if (tickSpacing < 0) {
+            tickSpacing -= type(int24).min;
+        }
+        return (tickSpacing % 32767) + 1;
+    }
+
+    function testBoundTickSpacing(int24 tickSpacing) external {
+        int24 bound = boundTickSpacing(tickSpacing);
+        assertGt(bound, 0);
+        assertLt(bound, 32768);
+    }
+
     function testModifyPosition(
         uint160 sqrtPriceX96,
         int24 tickLower,
@@ -36,13 +50,7 @@ contract PoolTest is DSTest {
         int128 liquidityDelta,
         int24 tickSpacing
     ) public returns (bool result) {
-        if (tickSpacing < 1 || tickSpacing > 32767) {
-            tickSpacing = tickSpacing < 0
-                ? (tickSpacing == type(int24).min ? type(int24).min + 1 : tickSpacing) * -1
-                : tickSpacing;
-            // bounds it between 1 and max tick spacing
-            tickSpacing = (tickSpacing % 32767) + 1;
-        }
+        tickSpacing = boundTickSpacing(tickSpacing);
 
         if (!(result = testInitialize(sqrtPriceX96))) {
             vm.expectRevert(Pool.PoolNotInitialized.selector);
