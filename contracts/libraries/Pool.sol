@@ -90,7 +90,7 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96) internal returns (int24 tick) {
+    function initialize(State storage self, uint160 sqrtPriceX96, uint8 protocolFee) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
@@ -98,8 +98,12 @@ library Pool {
         self.slot0 = Slot0({
             sqrtPriceX96: sqrtPriceX96,
             tick: tick,
-            protocolFee: 0
+            protocolFee: protocolFee
         });
+    }
+
+    function setProtocolFee(State storage self, uint8 newProtocolFee) internal {
+        self.slot0.protocolFee = newProtocolFee;
     }
 
     struct ModifyPositionParams {

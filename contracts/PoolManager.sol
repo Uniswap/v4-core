@@ -57,7 +57,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
+    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96, uint8 protocolFee) external override returns (int24 tick) {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
@@ -66,7 +66,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
 
-        tick = _getPool(key).initialize(sqrtPriceX96);
+        tick = _getPool(key).initialize(sqrtPriceX96, protocolFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
@@ -321,6 +321,40 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
         return IERC1155Receiver.onERC1155BatchReceived.selector;
+    }
+
+    function setPoolProtocolFee(
+        IPoolManager.PoolKey memory key,
+        uint8 newProtocolFee
+    ) external onlyOwner {
+        _setPoolProtocolFee(key, newProtocolFee);
+    }
+
+    function propogateProtocolFee(
+        IPoolManager.PoolKey memory fromKey,
+        IPoolManager.PoolKey memory toKey
+    ) external {
+        // only propogates the protocol fee if the pool's total fee is within 10%
+        require(fromKey.fee == 0 && toKey.fee != 0);
+
+        (uint24 smallerFee, uint24 largerFee) =
+            (fromKey.fee > toKey.fee) ?
+            (toKey.fee, fromKey.fee) :
+            (fromKey.fee, toKey.fee);
+        
+        require((10 * uint256(largerFee - smallerFee)) / smallerFee == 0);
+            
+        _setPoolProtocolFee(
+            toKey,
+            _getPool(fromKey).slot0.protocolFee
+        );
+    }
+
+    function _setPoolProtocolFee(
+        IPoolManager.PoolKey memory key,
+        uint8 newProtocolFee
+    ) internal {
+        _getPool(key).setProtocolFee(newProtocolFee);
     }
 
     function collectProtocolFees(
