@@ -15,6 +15,7 @@ import {SafeCast} from '../SafeCast.sol';
 import {Pool} from '../Pool.sol';
 
 import 'hardhat/console.sol';
+
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
