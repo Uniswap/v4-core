@@ -2,7 +2,6 @@
 pragma solidity =0.8.13;
 
 contract Owned {
-
     address public owner;
 
     /// @notice Emitted when the owner of the factory is changed
