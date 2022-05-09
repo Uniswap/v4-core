@@ -49,7 +49,7 @@ interface IPoolManager is IERC1155 {
     function MIN_TICK_SPACING() external view returns (int24);
 
     // @notice Given a token address, returns the protocol fees accrued in that token
-    function protocolFeesAccrued(address) external view returns (uint256);
+    function protocolFeesAccrued(IERC20Minimal) external view returns (uint256);
 
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);

@@ -9,6 +9,7 @@ import {SafeCast} from './libraries/SafeCast.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
+import {Owned} from './Owned.sol';
 import {IHooks} from './interfaces/IHooks.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
@@ -17,7 +18,7 @@ import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver {
+contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
@@ -30,7 +31,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
     mapping(bytes32 => Pool.State) public pools;
 
-    mapping(address => uint256) public override protocolFeesAccrued;
+    mapping(IERC20Minimal => uint256) public override protocolFeesAccrued;
 
     constructor() ERC1155('') {}
 
@@ -232,7 +233,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
         _accountPoolBalanceDelta(key, delta);
         // the fee is on the input token
-        protocolFeesAccrued[params.zeroForOne ? address(key.token0) : address(key.token1)] += feeForProtocol;
+        protocolFeesAccrued[params.zeroForOne ? key.token0 : key.token1] += feeForProtocol;
 
         if (key.hooks.shouldCallAfterSwap()) {
             key.hooks.afterSwap(msg.sender, key, params, delta);
@@ -322,12 +323,11 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
-    // THIS NEEDS RESTRICTED PERMISSIONS
     function collectProtocolFees(
         address recipient,
-        address[] calldata tokens,
+        IERC20Minimal[] calldata tokens,
         uint256[] calldata amounts
-    ) external {
+    ) external onlyOwner {
         if (amounts.length != tokens.length) revert DifferingArrayLengths();
 
         // This will revert if any amount is larger than the protocol's balance
