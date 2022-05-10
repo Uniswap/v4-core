@@ -14,6 +14,10 @@ function divX96(n: BigNumber): string {
   return (parseInt(n.toString()) / 2 ** 96).toFixed(7).toString()
 }
 
+// TODO: fix precision in quad lib, should be
+// MAX_SQRT_PRICE
+const MAX_WITH_LOSS = BigNumber.from('1461446703485210103287273052203988790139028504575')
+
 describe('TWAMMMath', () => {
   let twamm: TWAMMTest
   let wallet: Wallet, other: Wallet
@@ -42,8 +46,10 @@ describe('TWAMMMath', () => {
     let sellRateCurrent0: BigNumberish
     let sellRateCurrent1: BigNumberish
 
+    const fixedPoint = BigNumber.from(2).pow(96)
+
     beforeEach(async () => {
-      secondsElapsed = BigNumber.from(3600).mul(BigNumber.from(2).pow(96))
+      secondsElapsed = BigNumber.from(3600).mul(fixedPoint)
       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       liquidity = '1000000000000000000000000'
       fee = '3000'
@@ -230,11 +236,10 @@ describe('TWAMMMath', () => {
     })
 
     // TODO:
-
-    it.only('TWAMM trades pushes the price to the max part of the curve', async () => {
+    it('TWAMM trades against itself when low liquidity', async () => {
       // set low liquidity
       liquidity = '1000000'
-      // todo to push price to max part of the curve, sell lots of token1
+
       sellRateCurrent0 = toWei('4')
       sellRateCurrent1 = toWei('4')
 
@@ -244,16 +249,59 @@ describe('TWAMMMath', () => {
         { sellRateCurrent0, sellRateCurrent1 }
       )
 
-      // TODO: fix precision in quad lib, should be
-      // MAX_SQRT_RATIO
-      const MAX_WITH_LOSS = BigNumber.from('1461446703485210103287273052203988790139028504575')
       expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
 
-      // expect(results.earningsPool0).to.eq()
-      // expect(results.earningsPool1).to.eq()
+      const expectedAmount = sellRateCurrent0.mul(secondsElapsed).div(fixedPoint)
+      console.log(expectedAmount.toString())
+
+      expect(results.earningsAmount0).to.eq(expectedAmount)
+      expect(results.earningsAmount1).to.eq(expectedAmount)
     })
 
-    it('TWAMM trades pushes the price to the min part of the curve')
+    it.only('TWAMM trades pushes the price to the max part of the curve', async () => {
+      // set low liquidity
+      liquidity = '1000000'
+      // to push price to max part of the curve, sell lots of token1
+      sellRateCurrent0 = toWei('1')
+      sellRateCurrent1 = toWei('4')
+
+      const results = await twamm.callStatic.calculateExecutionUpdates(
+        secondsElapsed,
+        { sqrtPriceX96, liquidity, fee, tickSpacing },
+        { sellRateCurrent0, sellRateCurrent1 }
+      )
+      // twamm is trading with itself bc liquidity low
+      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsed).div(fixedPoint)
+      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsed).div(fixedPoint)
+
+      expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
+      expect(results.earningsAmount0).to.eq(expectedAmount0)
+      expect(results.earningsAmount1).to.eq(expectedAmount1)
+    })
+
+    // TODO: Even though the price should fall to the min, it overflows.
+    it.only('TWAMM trades pushes the price to the min part of the curve', async () => {
+      // set low liquidity
+      liquidity = '100000000000000000000'
+      // todo to push price to lowest part of the curve, sell lots of token0
+      sellRateCurrent0 = toWei('30000')
+      sellRateCurrent1 = toWei('1')
+
+      console.log(sqrtPriceX96.toString())
+
+      const results = await twamm.callStatic.calculateExecutionUpdates(
+        secondsElapsed,
+        { sqrtPriceX96, liquidity, fee, tickSpacing },
+        { sellRateCurrent0, sellRateCurrent1 }
+      )
+
+      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsed).div(fixedPoint)
+      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsed).div(fixedPoint)
+
+      expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
+      // expect(results.earningsAmount0).to.eq(expectedAmount0)
+      // expect(results.earningsAmount1).to.eq(expectedAmount1)
+    })
 
     it('orderPool1 has a 0 sell rate')
 

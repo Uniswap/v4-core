@@ -18,6 +18,8 @@ library TwammMath {
     bytes16 constant Q96 = 0x405f0000000000000000000000000000;
     // TickMath.MAX_SQRT_RATIO.fromUInt();
     bytes16 constant MAX_PRICE = 0x409efffb12c7dfa3f8d4a0c91092bb2a;
+    // TickMath.MIN_SQRT_RATIO.fromUInt();
+    // bytes16 constant MIN_PRICE = 0x401f000276a300000000000000000000;
 
     struct ParamsBytes16 {
         bytes16 sqrtPriceX96;
@@ -54,7 +56,6 @@ library TwammMath {
         });
 
         bytes16 sellRatio = params.sellRateCurrent1.div(params.sellRateCurrent0);
-        bytes16 sellRatioReciprocal = reciprocal(sellRatio);
 
         bytes16 sqrtSellRatioX96 = sellRatio.sqrt().mul(Q96);
 
@@ -76,30 +77,16 @@ library TwammMath {
             liquidity: params.liquidity
         });
 
+        // TODO set min price
         sqrtPriceX96 = newSqrtPriceX96 > MAX_PRICE
             ? MAX_PRICE.toUInt().toUint160() - 1
             : newSqrtPriceX96.toUInt().toUint160();
 
         if (newSqrtPriceX96 > MAX_PRICE) {
-            bytes16 sellRatioX96 = sellRatio.mul(Q96);
-            bytes16 sellRatioReciprocalX96 = sellRatioReciprocal.mul(Q96);
             // amountToken1 / sellRateToken0
-            earningsFactorPool0 = earningsFactorParams.secondsElapsedX96.mul(sellRatioX96).toUInt();
-
-            // overflow or underflow
-            // uint256 earnings0 = (earningsFactorPool0 * orderPoolParams.sellRateCurrent0) >> FixedPoint96.RESOLUTION;
-            // console.log('earnings amount 0');
-            // console.log(earnings0);
-
+            earningsFactorPool0 = earningsFactorParams.secondsElapsedX96.mul(sellRatio).toUInt();
             // amountToken0 / sellRateToken1
-
-            // taking the reciprocal of a fixed point number is not commutative
-            earningsFactorPool1 = earningsFactorParams.secondsElapsedX96.mul(sellRatioReciprocalX96).toUInt();
-
-            // overflow or underflow
-            // uint256 earnings1 = (earningsFactorPool1 * orderPoolParams.sellRateCurrent1) >> FixedPoint96.RESOLUTION;
-            // console.log('earnigns amount 1');
-            // console.log(earnings1);
+            earningsFactorPool1 = earningsFactorParams.secondsElapsedX96.mul(reciprocal(sellRatio)).toUInt();
         } else {
             earningsFactorPool0 = getEarningsFactorPool0(earningsFactorParams).toUInt();
             earningsFactorPool1 = getEarningsFactorPool1(earningsFactorParams).toUInt();

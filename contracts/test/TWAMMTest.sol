@@ -7,6 +7,7 @@ import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {Tick} from '../libraries/Tick.sol';
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
 import {FixedPoint96} from '../libraries/FixedPoint96.sol';
+import 'hardhat/console.sol';
 
 contract TWAMMTest {
     using TWAMM for TWAMM.State;
@@ -60,7 +61,9 @@ contract TWAMMTest {
         returns (
             uint160 sqrtPriceX96,
             uint256 earningsPool0,
-            uint256 earningsPool1
+            uint256 earningsPool1,
+            uint256 earningsAmount0,
+            uint256 earningsAmount1
         )
     {
         (sqrtPriceX96, earningsPool0, earningsPool1) = TwammMath.calculateExecutionUpdates(
@@ -68,6 +71,9 @@ contract TWAMMTest {
             poolParams,
             orderPoolParams
         );
+
+        earningsAmount0 = (earningsPool0 * orderPoolParams.sellRateCurrent0) >> FixedPoint96.RESOLUTION;
+        earningsAmount1 = (earningsPool1 * orderPoolParams.sellRateCurrent1) >> FixedPoint96.RESOLUTION;
     }
 
     function calculateTimeBetweenTicks(
