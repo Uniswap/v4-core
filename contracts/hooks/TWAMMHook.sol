@@ -8,6 +8,7 @@ import {ITWAMM} from '../interfaces/ITWAMM.sol';
 import {Hooks} from '../libraries/Hooks.sol';
 import {TickMath} from '../libraries/TickMath.sol';
 import {TWAMM} from '../libraries/TWAMM/TWAMM.sol';
+import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {BaseHook} from './base/BaseHook.sol';
 
 contract TWAMMHook is BaseHook {
@@ -29,6 +30,11 @@ contract TWAMMHook is BaseHook {
                 afterDonate: false
             })
         );
+    }
+
+    function getOrderPool(uint8 index) external view returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent) {
+        OrderPool.State storage orderPool = twamm.orderPools[index];
+        return (orderPool.sellRateCurrent, orderPool.earningsFactorCurrent);
     }
 
     function beforeInitialize(
@@ -55,6 +61,12 @@ contract TWAMMHook is BaseHook {
         executeTWAMMOrders(key);
     }
 
+    struct CallbackData {
+        address sender;
+        IPoolManager.PoolKey key;
+        IPoolManager.SwapParams params;
+    }
+
     function executeTWAMMOrders(IPoolManager.PoolKey memory key) public {
         (uint160 sqrtPriceX96, ) = poolManager.getSlot0(key);
         (bool zeroForOne, uint160 sqrtPriceLimitX96) = twamm.executeTWAMMOrders(
@@ -63,9 +75,9 @@ contract TWAMMHook is BaseHook {
         );
 
         if (sqrtPriceLimitX96 != 0 && sqrtPriceLimitX96 != sqrtPriceX96) {
-            IPoolManager.BalanceDelta memory delta = poolManager.swap(
-                key,
-                IPoolManager.SwapParams(zeroForOne, type(int256).max, sqrtPriceLimitX96)
+            IPoolManager.BalanceDelta memory delta = abi.decode(
+                poolManager.lock(abi.encode(IPoolManager.SwapParams(zeroForOne, type(int256).max, sqrtPriceLimitX96))),
+                (IPoolManager.BalanceDelta)
             );
         }
     }
@@ -74,6 +86,7 @@ contract TWAMMHook is BaseHook {
         executeTWAMMOrders(twamm.poolKey);
         orderId = twamm.submitLongTermOrder(params);
         IERC20Minimal token = params.zeroForOne ? twamm.poolKey.token0 : twamm.poolKey.token1;
+        token.transferFrom(params.owner, address(this), params.amountIn);
     }
 
     function modifyLongTermOrder(TWAMM.OrderKey memory orderKey, int128 amountDelta)
@@ -96,5 +109,31 @@ contract TWAMMHook is BaseHook {
         uint8 sellTokenIndex;
         (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderKey);
         IERC20Minimal buyToken = sellTokenIndex == 0 ? twamm.poolKey.token1 : twamm.poolKey.token0;
+    }
+
+    function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
+        IPoolManager.SwapParams memory swapParams = abi.decode(rawData, (IPoolManager.SwapParams));
+
+        IPoolManager.BalanceDelta memory delta = poolManager.swap(twamm.poolKey, swapParams);
+
+        if (swapParams.zeroForOne) {
+            if (delta.amount0 > 0) {
+                twamm.poolKey.token0.transfer(address(poolManager), uint256(delta.amount0));
+                poolManager.settle(twamm.poolKey.token0);
+            }
+            if (delta.amount1 < 0) {
+                poolManager.take(twamm.poolKey.token1, address(this), uint256(-delta.amount1));
+            }
+        } else {
+            if (delta.amount1 > 0) {
+                twamm.poolKey.token1.transfer(address(poolManager), uint256(delta.amount1));
+                poolManager.settle(twamm.poolKey.token1);
+            }
+            if (delta.amount0 < 0) {
+                poolManager.take(twamm.poolKey.token0, address(this), uint256(-delta.amount0));
+            }
+        }
+
+        return abi.encode(delta);
     }
 }

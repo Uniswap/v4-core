@@ -74,7 +74,7 @@ describe('TWAMM Hook', () => {
     const modifyPositionTest = (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest
 
     for (const token of [tokens.token0, tokens.token1]) {
-      for (const spender of [swapTest, modifyPositionTest]) {
+      for (const spender of [swapTest, modifyPositionTest, twamm]) {
         await token.connect(wallet).approve(spender.address, ethers.constants.MaxUint256)
       }
     }
@@ -137,7 +137,7 @@ describe('TWAMM Hook', () => {
   })
 
   describe('#beforeInitialize', async () => {
-    it('allows initialize of free max range pool', async () => {
+    it('initializes the twamm', async () => {
       expect((await twamm.twamm()).expirationInterval).to.equal(0)
       expect((await twamm.twamm()).lastVirtualOrderTimestamp).to.equal(0)
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1), 10_000)
@@ -161,7 +161,7 @@ describe('TWAMM Hook', () => {
         token0: token0.address,
         token1: token1.address,
         fee: 0,
-        hooks: ethers.constants.AddressZero,
+        hooks: twamm.address,
         tickSpacing: 10,
       }
       orderKey0 = {
@@ -245,6 +245,7 @@ describe('TWAMM Hook', () => {
       })
       await ethers.provider.send('evm_mine', [latestTimestamp + 100])
       await ethers.provider.send('evm_setAutomine', [true])
+
       await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
       await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
     })
