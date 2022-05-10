@@ -327,8 +327,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         _setPoolProtocolFee(key, newProtocolFee);
     }
 
-    function propogateProtocolFee(IPoolManager.PoolKey memory fromKey, IPoolManager.PoolKey memory toKey) external {
-        // only propogates the protocol fee if the pool's total fee is within 10%
+    function propagateProtocolFee(IPoolManager.PoolKey memory fromKey, IPoolManager.PoolKey memory toKey) external {
+        // only propagates the protocol fee if the pool's total fee is within 10%
         require(fromKey.fee == 0 && toKey.fee != 0);
 
         (uint24 smallerFee, uint24 largerFee) = (fromKey.fee > toKey.fee)
