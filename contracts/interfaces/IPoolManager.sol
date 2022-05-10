@@ -51,7 +51,7 @@ interface IPoolManager is IERC1155 {
     /// @notice Get tick info for a given tick
     function getTick(PoolKey memory key, int24 tick) external view returns (Tick.Info memory);
 
-      /// @notice Get next initialized tick within one word
+    /// @notice Get next initialized tick within one word
     function nextInitializedTickWithinOneWord(
         IPoolManager.PoolKey memory key,
         int24 tick,

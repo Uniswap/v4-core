@@ -69,7 +69,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         IPoolManager.PoolKey memory key,
         int24 tick,
         bool lte
-    ) external override view returns (int24 next, bool initialized) {
+    ) external view override returns (int24 next, bool initialized) {
         return _getPool(key).tickBitmap.nextInitializedTickWithinOneWord(tick, key.tickSpacing, lte);
     }
 

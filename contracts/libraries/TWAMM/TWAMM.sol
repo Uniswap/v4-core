@@ -97,10 +97,15 @@ library TWAMM {
 
     /// @notice Initialize TWAMM state
     /// @param expirationInterval Time interval on which orders can expire
-    function initialize(State storage self, uint256 expirationInterval) internal {
+    function initialize(
+        State storage self,
+        uint256 expirationInterval,
+        IPoolManager.PoolKey memory key
+    ) internal {
         // TODO: could enforce a 1 time call...but redundant in the context of Pool
         self.expirationInterval = expirationInterval;
         self.lastVirtualOrderTimestamp = block.timestamp;
+        self.poolKey = key;
     }
 
     struct LongTermOrderParams {
@@ -328,9 +333,13 @@ library TWAMM {
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
             (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
-                params.secondsElapsedX96,
-                params.pool,
-                OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent)
+                TwammMath.ExecutionUpdateParams(
+                    params.secondsElapsedX96,
+                    params.pool.sqrtPriceX96,
+                    params.pool.liquidity,
+                    self.orderPools[0].sellRateCurrent,
+                    self.orderPools[1].sellRateCurrent
+                )
             );
 
             (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
@@ -476,9 +485,13 @@ library TWAMM {
         // TODO: nextSqrtPriceX96 off by 1 wei (hence using the initializedSqrtPrice (l:331) param instead)
         (uint160 nextSqrtPriceX96, uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath
             .calculateExecutionUpdates(
-                secondsUntilCrossingX96,
-                params.pool,
-                OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent)
+                TwammMath.ExecutionUpdateParams(
+                    params.secondsElapsedX96,
+                    params.pool.sqrtPriceX96,
+                    params.pool.liquidity,
+                    self.orderPools[0].sellRateCurrent,
+                    self.orderPools[1].sellRateCurrent
+                )
             );
         self.orderPools[0].advanceToCurrentTime(earningsFactorPool0);
         self.orderPools[1].advanceToCurrentTime(earningsFactorPool1);

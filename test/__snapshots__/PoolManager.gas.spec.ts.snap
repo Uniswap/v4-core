@@ -3,125 +3,125 @@
 exports[`PoolManager gas tests #mint above current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 181193,
+  "gasUsed": 181130,
 }
 `;
 
 exports[`PoolManager gas tests #mint above current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 240734,
+  "gasUsed": 240671,
 }
 `;
 
 exports[`PoolManager gas tests #mint above current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 181193,
+  "gasUsed": 181130,
 }
 `;
 
 exports[`PoolManager gas tests #mint around current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 249688,
+  "gasUsed": 249615,
 }
 `;
 
 exports[`PoolManager gas tests #mint around current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 358932,
+  "gasUsed": 358860,
 }
 `;
 
 exports[`PoolManager gas tests #mint around current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 249688,
+  "gasUsed": 249615,
 }
 `;
 
 exports[`PoolManager gas tests #mint below current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 181870,
+  "gasUsed": 181807,
 }
 `;
 
 exports[`PoolManager gas tests #mint below current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 305779,
+  "gasUsed": 305716,
 }
 `;
 
 exports[`PoolManager gas tests #mint below current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 181870,
+  "gasUsed": 181807,
 }
 `;
 
 exports[`PoolManager gas tests #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 239665,
+  "gasUsed": 230744,
 }
 `;
 
 exports[`PoolManager gas tests #swapExact0For1 first swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 233771,
+  "gasUsed": 224849,
 }
 `;
 
 exports[`PoolManager gas tests #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 258623,
+  "gasUsed": 249692,
 }
 `;
 
 exports[`PoolManager gas tests #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 300658,
+  "gasUsed": 291736,
 }
 `;
 
 exports[`PoolManager gas tests #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 251651,
+  "gasUsed": 242729,
 }
 `;
 
 exports[`PoolManager gas tests #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 239665,
+  "gasUsed": 230744,
 }
 `;
 
 exports[`PoolManager gas tests #swapExact0For1 second swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 233860,
+  "gasUsed": 224938,
 }
 `;
 
 exports[`PoolManager gas tests #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 252846,
+  "gasUsed": 243915,
 }
 `;
 
 exports[`PoolManager gas tests #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 294856,
+  "gasUsed": 285933,
 }
 `;

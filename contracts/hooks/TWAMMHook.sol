@@ -13,7 +13,7 @@ import {BaseHook} from './base/BaseHook.sol';
 contract TWAMMHook is BaseHook {
     using TWAMM for TWAMM.State;
 
-    TWAMM.State twamm;
+    TWAMM.State public twamm;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
         Hooks.validateHookAddress(
@@ -35,10 +35,8 @@ contract TWAMMHook is BaseHook {
         address,
         IPoolManager.PoolKey calldata key,
         uint160
-    ) external view override poolManagerOnly {
-        twamm.expirationInterval = 10000;
-        twamm.lastVirtualOrderTimestamp = block.timestamp;
-        twamm.poolKey = key;
+    ) external virtual override poolManagerOnly {
+        twamm.initialize(10000, key);
     }
 
     function beforeModifyPosition(
