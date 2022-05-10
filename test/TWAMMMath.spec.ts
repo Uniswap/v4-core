@@ -4,7 +4,7 @@ import { ethers, waffle } from 'hardhat'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
+import { encodeSqrtPriceX96, MaxUint128, MAX_SQRT_RATIO } from './shared/utilities'
 
 function toWei(n: string): BigNumber {
   return ethers.utils.parseEther(n)
@@ -231,7 +231,27 @@ describe('TWAMMMath', () => {
 
     // TODO:
 
-    it('TWAMM trades pushes the price to the max part of the curve')
+    it.only('TWAMM trades pushes the price to the max part of the curve', async () => {
+      // set low liquidity
+      liquidity = '1000000'
+      // todo to push price to max part of the curve, sell lots of token1
+      sellRateCurrent0 = toWei('4')
+      sellRateCurrent1 = toWei('4')
+
+      const results = await twamm.callStatic.calculateExecutionUpdates(
+        secondsElapsed,
+        { sqrtPriceX96, liquidity, fee, tickSpacing },
+        { sellRateCurrent0, sellRateCurrent1 }
+      )
+
+      // TODO: fix precision in quad lib, should be
+      // MAX_SQRT_RATIO
+      const MAX_WITH_LOSS = BigNumber.from('1461446703485210103287273052203988790139028504575')
+      expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
+
+      // expect(results.earningsPool0).to.eq()
+      // expect(results.earningsPool1).to.eq()
+    })
 
     it('TWAMM trades pushes the price to the min part of the curve')
 

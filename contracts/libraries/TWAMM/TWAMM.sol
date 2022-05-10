@@ -10,6 +10,7 @@ import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
 import {SafeCast} from '../SafeCast.sol';
+import 'hardhat/console.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -384,6 +385,7 @@ library TWAMM {
         mapping(int24 => Tick.Info) storage ticks
     ) private returns (PoolParamsOnExecute memory) {
         uint256 sellRateCurrent = self.orderPools[params.sellIndex].sellRateCurrent;
+
         uint256 amountSelling = sellRateCurrent * params.secondsElapsed;
         uint256 totalEarnings;
 
@@ -420,7 +422,10 @@ library TWAMM {
         uint256 sellRateInEarningsToken = params.sellIndex == 0
             ? self.orderPools[1].sellRateCurrent
             : self.orderPools[0].sellRateCurrent;
-        uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateInEarningsToken;
+
+        // TODO
+        // uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateInEarningsToken;
+        uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateCurrent;
         if (params.nextTimestamp % self.expirationInterval == 0) {
             self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, accruedEarningsFactor);
         } else {

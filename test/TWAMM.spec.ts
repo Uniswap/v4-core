@@ -228,7 +228,7 @@ describe('TWAMM', () => {
     })
   })
 
-  describe.only('Multiple pool twamm trades on illiquid pools', () => {
+  describe('Multiple pool twamm trades on illiquid pools', () => {
     let blocktime: number
     let timestamp1: number
     let timestamp2: number

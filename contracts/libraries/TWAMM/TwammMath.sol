@@ -6,6 +6,8 @@ import {TWAMM} from './TWAMM.sol';
 import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';
+import {TickMath} from '../TickMath.sol';
+import 'hardhat/console.sol';
 
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {
@@ -52,6 +54,7 @@ library TwammMath {
         });
 
         bytes16 sellRatio = params.sellRateCurrent1.div(params.sellRateCurrent0);
+        bytes16 sellRatioReciprocal = reciprocal(sellRatio);
 
         bytes16 sqrtSellRatioX96 = sellRatio.sqrt().mul(Q96);
 
@@ -79,19 +82,24 @@ library TwammMath {
 
         if (newSqrtPriceX96 > MAX_PRICE) {
             bytes16 sellRatioX96 = sellRatio.mul(Q96);
-            // amountToken1 / sellRateToken1
-            earningsFactorPool0 = earningsFactorParams
-                .secondsElapsedX96
-                .mul(sellRatioX96)
-                .div(params.sellRateCurrent1)
-                .toUInt();
+            bytes16 sellRatioReciprocalX96 = sellRatioReciprocal.mul(Q96);
+            // amountToken1 / sellRateToken0
+            earningsFactorPool0 = earningsFactorParams.secondsElapsedX96.mul(sellRatioX96).toUInt();
 
-            // amountToken0 / sellRateToken0bytes
-            earningsFactorPool1 = earningsFactorParams
-                .secondsElapsedX96
-                .div(sellRatioX96)
-                .div(params.sellRateCurrent0)
-                .toUInt();
+            // overflow or underflow
+            // uint256 earnings0 = (earningsFactorPool0 * orderPoolParams.sellRateCurrent0) >> FixedPoint96.RESOLUTION;
+            // console.log('earnings amount 0');
+            // console.log(earnings0);
+
+            // amountToken0 / sellRateToken1
+
+            // taking the reciprocal of a fixed point number is not commutative
+            earningsFactorPool1 = earningsFactorParams.secondsElapsedX96.mul(sellRatioReciprocalX96).toUInt();
+
+            // overflow or underflow
+            // uint256 earnings1 = (earningsFactorPool1 * orderPoolParams.sellRateCurrent1) >> FixedPoint96.RESOLUTION;
+            // console.log('earnigns amount 1');
+            // console.log(earnings1);
         } else {
             earningsFactorPool0 = getEarningsFactorPool0(earningsFactorParams).toUInt();
             earningsFactorPool1 = getEarningsFactorPool1(earningsFactorParams).toUInt();
