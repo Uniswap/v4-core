@@ -123,7 +123,7 @@ describe('PoolManager gas tests', () => {
       })
     }
     const getSlot0 = async () => {
-      return await manager.slot0(getPoolId(poolKey))
+      return await manager.getSlot0(poolKey)
     }
 
     await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), 10_000)

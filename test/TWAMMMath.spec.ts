@@ -196,8 +196,6 @@ describe('TWAMMMath', () => {
           {
             sqrtPriceX96: testcase.inputs.sqrtPriceX96,
             liquidity,
-            fee,
-            tickSpacing,
           },
           {
             sellRateCurrent0: testcase.inputs.sellRate0,
@@ -218,8 +216,6 @@ describe('TWAMMMath', () => {
           {
             sqrtPriceX96,
             liquidity,
-            fee,
-            tickSpacing,
           },
           {
             sellRateCurrent0,
