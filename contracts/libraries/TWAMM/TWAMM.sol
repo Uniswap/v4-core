@@ -231,13 +231,14 @@ library TWAMM {
         while (true) {
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
+
             (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
                 TwammMath.ExecutionUpdateParams(
                     params.secondsElapsedX96,
                     pool.slot0.sqrtPriceX96,
                     pool.liquidity,
-                    self.orderPools[0].sellRateCurrent,
-                    self.orderPools[1].sellRateCurrent
+                    FullMath.mulDiv(self.orderPools[0].sellRateCurrent, 1e6 - params.fee, 1e6),
+                    FullMath.mulDiv(self.orderPools[1].sellRateCurrent, 1e6 - params.fee, 1e6)
                 )
             );
 
@@ -381,12 +382,11 @@ library TWAMM {
                     secondsUntilCrossingX96,
                     pool.slot0.sqrtPriceX96,
                     pool.liquidity,
-                    self.orderPools[0].sellRateCurrent,
-                    self.orderPools[1].sellRateCurrent
+                    FullMath.mulDiv(self.orderPools[0].sellRateCurrent, 1e6 - params.fee, 1e6),
+                    FullMath.mulDiv(self.orderPools[1].sellRateCurrent, 1e6 - params.fee, 1e6)
                 )
             );
-        self.orderPools[0].advanceToCurrentTime(earningsFactorPool0);
-        self.orderPools[1].advanceToCurrentTime(earningsFactorPool1);
+        pool.donate()
         pool.swap(
             Pool.SwapParams(
                 0,
