@@ -52,7 +52,9 @@ contract PoolTest is DSTest {
     ) public returns (bool result) {
         tickSpacing = boundTickSpacing(tickSpacing);
 
-        if (!(result = testInitialize(sqrtPriceX96))) {
+        result = testInitialize(sqrtPriceX96);
+
+        if (!result) {
             vm.expectRevert(Pool.PoolNotInitialized.selector);
         } else if (tickLower >= tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, tickLower, tickUpper));
@@ -66,6 +68,8 @@ contract PoolTest is DSTest {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         } else if (liquidityDelta > int128(Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing))) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, tickLower));
+        } else if (tickLower % tickSpacing != 0 || tickUpper % tickSpacing != 0) {
+            vm.expectRevert();
         } else {
             result = true;
         }
@@ -79,7 +83,5 @@ contract PoolTest is DSTest {
                 tickSpacing: tickSpacing
             })
         );
-
-        return result;
     }
 }
