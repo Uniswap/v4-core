@@ -223,11 +223,6 @@ library TWAMM {
         uint128 liquidity;
     }
 
-    struct OrderPoolParamsOnExecute {
-        uint256 sellRateCurrent0;
-        uint256 sellRateCurrent1;
-    }
-
     /// @notice Executes all existing long term orders in the TWAMM
     /// @param pool The relevant state of the pool
     function executeTWAMMOrders(

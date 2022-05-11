@@ -54,9 +54,7 @@ contract TWAMMTest {
     }
 
     function calculateExecutionUpdates(
-        uint256 secondsElapsed,
-        TWAMM.PoolParamsOnExecute memory poolParams,
-        TWAMM.OrderPoolParamsOnExecute memory orderPoolParams
+        TwammMath.ExecutionUpdateParams memory params
     )
         external
         returns (
@@ -67,11 +65,11 @@ contract TWAMMTest {
     {
         (sqrtPriceX96, earningsPool0, earningsPool1) = TwammMath.calculateExecutionUpdates(
             TwammMath.ExecutionUpdateParams(
-                secondsElapsed,
-                poolParams.sqrtPriceX96,
-                poolParams.liquidity,
-                orderPoolParams.sellRateCurrent0,
-                orderPoolParams.sellRateCurrent1
+                params.secondsElapsedX96,
+                params.sqrtPriceX96,
+                params.liquidity,
+                params.sellRateCurrent0,
+                params.sellRateCurrent1
             )
         );
     }
