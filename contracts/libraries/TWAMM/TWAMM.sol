@@ -229,11 +229,6 @@ library TWAMM {
         Pool.State storage pool
     ) internal returns (uint160 finalSqrtPriceX96) {
         while (true) {
-            console.log(params.fee);
-            console.log(self.orderPools[0].sellRateCurrent);
-            console.log(FullMath.mulDiv(self.orderPools[0].sellRateCurrent, 1e6 - params.fee, 1e6));
-            console.log(self.orderPools[1].sellRateCurrent);
-            console.log(FullMath.mulDiv(self.orderPools[1].sellRateCurrent, 1e6 - params.fee, 1e6));
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
             (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
@@ -314,7 +309,7 @@ library TWAMM {
             if (crossingInitializedTick) {
                 IPoolManager.BalanceDelta memory deltas = pool.swap(
                     Pool.SwapParams(
-                        params.fee,
+                        0,
                         params.tickSpacing,
                         params.sellIndex == 0,
                         int256(amountSelling),
@@ -394,7 +389,7 @@ library TWAMM {
         self.orderPools[1].advanceToCurrentTime(earningsFactorPool1);
         pool.swap(
             Pool.SwapParams(
-                params.fee,
+                0,
                 params.tickSpacing,
                 initializedSqrtPrice < pool.slot0.sqrtPriceX96,
                 type(int256).max,
