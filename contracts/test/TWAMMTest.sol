@@ -53,9 +53,7 @@ contract TWAMMTest {
         twamm.executeTWAMMOrders(IPoolManager(address(this)), poolParams);
     }
 
-    function calculateExecutionUpdates(
-        TwammMath.ExecutionUpdateParams memory params
-    )
+    function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
         external
         returns (
             uint160 sqrtPriceX96,
@@ -119,7 +117,7 @@ contract TWAMMTest {
     // Mocking IPoolManager functions here
     //////////////////////////////////////////////////////
 
-    function getTick(IPoolManager.PoolKey memory key, int24 tick) external view returns (Tick.Info memory) {
+    function getTickNetLiquidity(IPoolManager.PoolKey memory key, int24 tick) external view returns (Tick.Info memory) {
         return mockTicks[tick];
     }
 

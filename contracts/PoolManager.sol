@@ -61,8 +61,8 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     }
 
     /// @inheritdoc IPoolManager
-    function getTick(IPoolManager.PoolKey memory key, int24 tick) external view override returns (Tick.Info memory) {
-        return _getPool(key).ticks[tick];
+    function getTickNetLiquidity(IPoolManager.PoolKey memory key, int24 tick) external view override returns (int128) {
+        return _getPool(key).ticks[tick].liquidityNet;
     }
 
     function nextInitializedTickWithinOneWord(

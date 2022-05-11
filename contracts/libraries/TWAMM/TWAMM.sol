@@ -440,7 +440,7 @@ library TWAMM {
         (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(pool, poolManager, poolKey, targetPriceX96);
 
         if (crossingInitializedTick) {
-            int128 liquidityNet = poolManager.getTick(poolKey, tick).liquidityNet;
+            int128 liquidityNet = poolManager.getTickNetLiquidity(poolKey, tick);
             pool.sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
             pool.liquidity = liquidityNet < 0
                 ? pool.liquidity - uint128(-liquidityNet)
@@ -493,7 +493,7 @@ library TWAMM {
 
         unchecked {
             // update pool
-            int128 liquidityNet = poolManager.getTick(self.poolKey, params.initializedTick).liquidityNet;
+            int128 liquidityNet = poolManager.getTickNetLiquidity(self.poolKey, params.initializedTick);
             if (initializedSqrtPrice < params.pool.sqrtPriceX96) liquidityNet = -liquidityNet;
             params.pool.liquidity = liquidityNet < 0
                 ? params.pool.liquidity - uint128(-liquidityNet)

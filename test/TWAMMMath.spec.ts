@@ -191,15 +191,13 @@ describe('TWAMMMath', () => {
 
     for (let testcase of TEST_CASES) {
       it(testcase.title, async () => {
-        const results = await twamm.callStatic.calculateExecutionUpdates(
-          {
-            secondsElapsedX96,
-            sqrtPriceX96: testcase.inputs.sqrtPriceX96,
-            liquidity,
-            sellRateCurrent0: testcase.inputs.sellRate0,
-            sellRateCurrent1: testcase.inputs.sellRate1,
-          }
-        )
+        const results = await twamm.callStatic.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96: testcase.inputs.sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0: testcase.inputs.sellRate0,
+          sellRateCurrent1: testcase.inputs.sellRate1,
+        })
 
         expect(divX96(results.sqrtPriceX96)).to.eq(testcase.outputsDivX96.price)
         expect(divX96(results.earningsPool0)).to.eq(testcase.outputsDivX96.amountOut0)
@@ -209,15 +207,13 @@ describe('TWAMMMath', () => {
 
     it('gas', async () => {
       await snapshotGasCost(
-        twamm.calculateExecutionUpdates(
-          {
-            secondsElapsedX96,
-            sqrtPriceX96,
-            liquidity,
-            sellRateCurrent0,
-            sellRateCurrent1,
-          }
-        )
+        twamm.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0,
+          sellRateCurrent1,
+        })
       )
     })
 
