@@ -71,6 +71,7 @@ contract TWAMMHook is BaseHook {
         (uint160 sqrtPriceX96, ) = poolManager.getSlot0(key);
         (bool zeroForOne, uint160 sqrtPriceLimitX96) = twamm.executeTWAMMOrders(
             poolManager,
+            key,
             TWAMM.PoolParamsOnExecute(sqrtPriceX96, poolManager.getLiquidity(key))
         );
 
