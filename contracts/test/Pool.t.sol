@@ -29,7 +29,7 @@ contract PoolTest is DSTest {
         }
     }
 
-    function boundTickSpacing(int24 unbound) private returns (int24) {
+    function boundTickSpacing(int24 unbound) private pure returns (int24) {
         int24 tickSpacing = unbound;
         if (tickSpacing < 0) {
             tickSpacing -= type(int24).min;
