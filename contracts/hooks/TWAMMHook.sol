@@ -75,10 +75,7 @@ contract TWAMMHook is BaseHook {
         );
 
         if (sqrtPriceLimitX96 != 0 && sqrtPriceLimitX96 != sqrtPriceX96) {
-            IPoolManager.BalanceDelta memory delta = abi.decode(
-                poolManager.lock(abi.encode(IPoolManager.SwapParams(zeroForOne, type(int256).max, sqrtPriceLimitX96))),
-                (IPoolManager.BalanceDelta)
-            );
+            poolManager.lock(abi.encode(IPoolManager.SwapParams(zeroForOne, type(int256).max, sqrtPriceLimitX96)));
         }
     }
 
@@ -133,7 +130,5 @@ contract TWAMMHook is BaseHook {
                 poolManager.take(twamm.poolKey.token0, address(this), uint256(-delta.amount0));
             }
         }
-
-        return abi.encode(delta);
     }
 }
