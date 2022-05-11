@@ -52,7 +52,7 @@ interface IPoolManager is IERC1155 {
     function protocolFeesAccrued(IERC20Minimal) external view returns (uint256);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
+    function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(IPoolManager.PoolKey memory key) external view returns (uint128 liquidity);
@@ -142,4 +142,7 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
+
+    function setPoolProtocolFee(IPoolManager.PoolKey memory key, uint8 newProtocolFee) external;
+
 }

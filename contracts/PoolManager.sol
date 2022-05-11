@@ -11,6 +11,7 @@ import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {Owned} from './Owned.sol';
 import {IHooks} from './interfaces/IHooks.sol';
+import {IProtocolFeeController} from './interfaces/IProtocolFeeController.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
@@ -32,6 +33,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     mapping(bytes32 => Pool.State) public pools;
 
     mapping(IERC20Minimal => uint256) public override protocolFeesAccrued;
+    IProtocolFeeController public protocolFeeController;
 
     constructor() ERC1155('') {}
 
@@ -44,11 +46,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         external
         view
         override
-        returns (uint160 sqrtPriceX96, int24 tick)
+        returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee)
     {
         Pool.Slot0 memory slot0 = _getPool(key).slot0;
 
-        return (slot0.sqrtPriceX96, slot0.tick);
+        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee);
     }
 
     /// @inheritdoc IPoolManager
@@ -66,7 +68,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
 
-        tick = _getPool(key).initialize(sqrtPriceX96);
+        uint8 protocolFee;
+        if (address(protocolFeeController) != address(0)) protocolFee = protocolFeeController.fetchInitialFee(key);
+
+        tick = _getPool(key).initialize(sqrtPriceX96, protocolFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
@@ -323,24 +328,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
-    function setPoolProtocolFee(IPoolManager.PoolKey memory key, uint8 newProtocolFee) external onlyOwner {
-        _setPoolProtocolFee(key, newProtocolFee);
+    function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
+        protocolFeeController = controller;
     }
 
-    function propagateProtocolFee(IPoolManager.PoolKey memory fromKey, IPoolManager.PoolKey memory toKey) external {
-        // only propagates the protocol fee if the pool's total fee is within 10%
-        require(fromKey.fee == 0 && toKey.fee != 0);
-
-        (uint24 smallerFee, uint24 largerFee) = (fromKey.fee > toKey.fee)
-            ? (toKey.fee, fromKey.fee)
-            : (fromKey.fee, toKey.fee);
-
-        require((10 * uint256(largerFee - smallerFee)) / smallerFee == 0);
-
-        _setPoolProtocolFee(toKey, _getPool(fromKey).slot0.protocolFee);
-    }
-
-    function _setPoolProtocolFee(IPoolManager.PoolKey memory key, uint8 newProtocolFee) internal {
+    function setPoolProtocolFee(IPoolManager.PoolKey memory key, uint8 newProtocolFee) external {
+        require(msg.sender == owner || msg.sender == address(protocolFeeController));
         _getPool(key).setProtocolFee(newProtocolFee);
     }
 
