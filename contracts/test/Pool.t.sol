@@ -24,7 +24,7 @@ contract PoolTest is DSTest {
             assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
             assertEq(state.slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
             assertLt(state.slot0.tick, TickMath.MAX_TICK);
-            assertGt(state.slot0.tick, TickMath.MIN_TICK);
+            assertGt(state.slot0.tick, TickMath.MIN_TICK - 1);
             return true;
         }
     }
