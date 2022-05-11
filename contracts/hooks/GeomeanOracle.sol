@@ -95,7 +95,7 @@ contract GeomeanOracle is BaseHook {
 
     /// @dev Called before any action that potentially modifies pool price or liquidity, such as swap or modify position
     function _updatePool(IPoolManager.PoolKey memory key) private {
-        (, int24 tick,) = poolManager.getSlot0(key);
+        (, int24 tick, ) = poolManager.getSlot0(key);
 
         uint128 liquidity = poolManager.getLiquidity(key);
 
@@ -143,7 +143,7 @@ contract GeomeanOracle is BaseHook {
 
         ObservationState memory state = states[id];
 
-        (, int24 tick,) = poolManager.getSlot0(key);
+        (, int24 tick, ) = poolManager.getSlot0(key);
 
         uint128 liquidity = poolManager.getLiquidity(key);
 

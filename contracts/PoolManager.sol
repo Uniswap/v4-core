@@ -46,7 +46,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         external
         view
         override
-        returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee)
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint8 protocolFee
+        )
     {
         Pool.Slot0 memory slot0 = _getPool(key).slot0;
 

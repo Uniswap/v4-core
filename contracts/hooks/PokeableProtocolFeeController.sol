@@ -6,7 +6,6 @@ import {IPoolManager} from '../interfaces/IPoolManager.sol';
 import {Pool} from '../libraries/Pool.sol';
 
 contract PokeableProtocolFeeController is IProtocolFeeController {
-
     IPoolManager poolManager;
 
     constructor(IPoolManager _poolManager) {
@@ -36,5 +35,4 @@ contract PokeableProtocolFeeController is IProtocolFeeController {
 
         poolManager.setPoolProtocolFee(toKey, fromProtocolFee);
     }
-
 }
