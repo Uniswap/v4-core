@@ -519,14 +519,10 @@ library Pool {
         }
 
         if (finalSqrtPriceX96 != 0 && self.slot0.sqrtPriceX96 != finalSqrtPriceX96) {
-          if (params.fee > 0) {
-            // DUMB ARBITRARY NUMBERS FOR GAS CALCS
-            donate(
-              self,
-              10000,
-              10000
-            );
-          }
+            if (params.fee > 0) {
+                // DUMB ARBITRARY NUMBERS FOR GAS CALCS
+                donate(self, 10000, 10000);
+            }
             swap(
                 self,
                 Pool.SwapParams(

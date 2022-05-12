@@ -387,10 +387,10 @@ library TWAMM {
                 )
             );
         if (params.fee > 0) {
-          pool.donate(
-            self.orderPools[0].sellRateCurrent * secondsUntilCrossingX96 / params.fee,
-            self.orderPools[1].sellRateCurrent * secondsUntilCrossingX96 / params.fee
-          );
+            pool.donate(
+                (self.orderPools[0].sellRateCurrent * secondsUntilCrossingX96) / params.fee,
+                (self.orderPools[1].sellRateCurrent * secondsUntilCrossingX96) / params.fee
+            );
         }
         pool.swap(
             Pool.SwapParams(
