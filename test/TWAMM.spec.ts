@@ -212,6 +212,7 @@ describe('TWAMM', () => {
       orderKey = { owner, expiration: timestampInterval2, zeroForOne: true }
 
       await ethers.provider.send('evm_setAutomine', [false])
+      await twamm.executeTWAMMOrders(poolParams)
       await twamm.submitLongTermOrder({
         zeroForOne: true,
         owner,
