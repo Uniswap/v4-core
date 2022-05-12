@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.13;
 
-import {IHooks} from '../interfaces/IHooks.sol';
-import {IPoolManager} from '../interfaces/IPoolManager.sol';
-import {Hooks} from '../libraries/Hooks.sol';
-import {TickMath} from '../libraries/TickMath.sol';
-import {Oracle} from '../libraries/Oracle.sol';
-import {BaseHook} from './base/BaseHook.sol';
+import {IHooks} from '../../interfaces/IHooks.sol';
+import {IPoolManager} from '../../interfaces/IPoolManager.sol';
+import {Hooks} from '../../libraries/Hooks.sol';
+import {TickMath} from '../../libraries/TickMath.sol';
+import {Oracle} from '../../libraries/Oracle.sol';
+import {BaseHook} from '../base/BaseHook.sol';
 
 /// @notice A hook for a pool that allows a Uniswap pool to act as an oracle. Pools that use this hook must have full range
 ///     tick spacing and liquidity is always permanently locked in these pools. This is the suggested configuration
