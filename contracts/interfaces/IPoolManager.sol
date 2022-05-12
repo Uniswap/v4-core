@@ -47,11 +47,15 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
+    /// @notice Returns the pool ID for the given pool key
+    /// @dev Should be computed using the PoolId library, but present for use in testing
+    function getPoolId(PoolKey calldata key) external pure returns (bytes32);
+
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
+    function getSlot0(bytes32 id) external view returns (uint160 sqrtPriceX96, int24 tick);
 
     /// @notice Get the current value of liquidity of the given pool
-    function getLiquidity(IPoolManager.PoolKey memory key) external view returns (uint128 liquidity);
+    function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
 
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations

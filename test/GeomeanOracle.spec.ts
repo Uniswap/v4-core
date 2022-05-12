@@ -5,7 +5,7 @@ import { MockTimeGeomeanOracle, PoolManager, PoolModifyPositionTest, PoolSwapTes
 import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { createHookMask, encodeSqrtPriceX96, getMaxTick, getMinTick } from './shared/utilities'
+import { createHookMask, encodeSqrtPriceX96, getMaxTick, getMinTick, getPoolId } from './shared/utilities'
 
 describe('GeomeanOracle', () => {
   let wallets: Wallet[]
@@ -123,7 +123,7 @@ describe('GeomeanOracle', () => {
   let snapshotId: string
 
   beforeEach('check the pool is not initialized', async () => {
-    const { sqrtPriceX96 } = await poolManager.getSlot0(poolKey)
+    const { sqrtPriceX96 } = await poolManager.getSlot0(getPoolId(poolKey))
     expect(sqrtPriceX96, 'pool is not initialized').to.eq(0)
     // it seems like the waffle fixture is not working correctly (perhaps due to hardhat_setCode), and if we don't do this and revert in afterEach, the pool is already initialized
     snapshotId = await hre.network.provider.send('evm_snapshot')
