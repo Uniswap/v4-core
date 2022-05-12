@@ -346,10 +346,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256 amount;
     }
 
-    function collectProtocolFees(
-        address recipient,
-        TokenAmount[] memory tokenAmounts
-    ) external onlyOwner {
+    function collectProtocolFees(address recipient, TokenAmount[] memory tokenAmounts) external onlyOwner {
         // This will revert if any amount is larger than the protocol's balance
         uint256 amountsLength = tokenAmounts.length;
         for (uint256 i; i < amountsLength; i++) {
