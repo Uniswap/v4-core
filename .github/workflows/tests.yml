@@ -12,7 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
       - uses: actions/setup-node@v1
         with:
           node-version: 12.x
@@ -60,3 +63,5 @@ jobs:
 
       - name: Run tests
         run: yarn test-forge -vvv
+        env:
+          FOUNDRY_PROFILE: ci
