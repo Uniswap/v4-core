@@ -116,7 +116,6 @@ describe('GeomeanOracle', () => {
       hooks: oracle.address,
       tickSpacing: MAX_TICK_SPACING,
     }
-    // await oracle.setTime(1)
   })
 
   let snapshotId: string
