@@ -341,17 +341,20 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         _getPool(key).setProtocolFee(newProtocolFee);
     }
 
+    struct TokenAmount {
+        IERC20Minimal token;
+        uint256 amount;
+    }
+
     function collectProtocolFees(
         address recipient,
-        IERC20Minimal[] calldata tokens,
-        uint256[] calldata amounts
+        TokenAmount[] memory tokenAmounts
     ) external onlyOwner {
-        if (amounts.length != tokens.length) revert DifferingArrayLengths();
-
         // This will revert if any amount is larger than the protocol's balance
-        for (uint256 i; i < tokens.length; i++) {
-            protocolFeesAccrued[tokens[i]] -= amounts[i];
-            TransferHelper.safeTransfer(tokens[i], recipient, amounts[i]);
+        uint256 amountsLength = tokenAmounts.length;
+        for (uint256 i; i < amountsLength; i++) {
+            protocolFeesAccrued[tokenAmounts[i].token] -= tokenAmounts[i].amount;
+            TransferHelper.safeTransfer(tokenAmounts[i].token, recipient, tokenAmounts[i].amount);
         }
     }
 }

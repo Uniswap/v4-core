@@ -21,7 +21,6 @@ interface IPoolManager is IERC1155 {
 
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
-    error DifferingArrayLengths();
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
