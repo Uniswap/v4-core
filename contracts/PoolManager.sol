@@ -296,6 +296,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
                 if (feeAmount > 0) {
                     protocolFeesAccrued[token] += feeAmount;
+                    // TODO: calling this twice is not the most efficient way to do it, but we can't move the logic
+                    //    into the accountDelta function because it only applies when the tokens leave the contract
                     _accountDelta(token, feeAmount.toInt256());
                 }
             }
