@@ -993,7 +993,7 @@ describe('PoolManager', () => {
       })
     })
 
-    describe.only('end-to-end integration', () => {
+    describe('end-to-end integration', () => {
       let start: number
       let expiration: number
       let key: any

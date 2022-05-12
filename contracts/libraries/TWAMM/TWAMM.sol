@@ -310,7 +310,7 @@ library TWAMM {
             if (crossingInitializedTick) {
                 IPoolManager.BalanceDelta memory deltas = pool.swap(
                     Pool.SwapParams(
-                        0,
+                        params.fee,
                         params.tickSpacing,
                         params.sellIndex == 0,
                         int256(amountSelling),
@@ -371,8 +371,8 @@ library TWAMM {
             pool.liquidity,
             pool.slot0.sqrtPriceX96,
             initializedSqrtPrice,
-            self.orderPools[0].sellRateCurrent,
-            self.orderPools[1].sellRateCurrent
+            FullMath.mulDiv(self.orderPools[0].sellRateCurrent, 1e6 - params.fee, 1e6),
+            FullMath.mulDiv(self.orderPools[1].sellRateCurrent, 1e6 - params.fee, 1e6)
         );
 
         // TODO: nextSqrtPriceX96 off by 1 wei (hence using the initializedSqrtPrice (l:331) param instead)
@@ -386,7 +386,12 @@ library TWAMM {
                     FullMath.mulDiv(self.orderPools[1].sellRateCurrent, 1e6 - params.fee, 1e6)
                 )
             );
-        pool.donate()
+        if (params.fee > 0) {
+          pool.donate(
+            self.orderPools[0].sellRateCurrent * secondsUntilCrossingX96 / params.fee,
+            self.orderPools[1].sellRateCurrent * secondsUntilCrossingX96 / params.fee
+          );
+        }
         pool.swap(
             Pool.SwapParams(
                 0,
