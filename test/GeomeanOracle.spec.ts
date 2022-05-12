@@ -200,8 +200,6 @@ describe('GeomeanOracle', () => {
   })
 
   describe('#beforeModifyPosition', async () => {
-    beforeEach('initialize the pool', async () => {})
-
     it('modifyPosition cannot be called with tick ranges other than min/max tick', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
       await expect(
