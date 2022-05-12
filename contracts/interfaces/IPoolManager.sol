@@ -150,4 +150,10 @@ interface IPoolManager is IERC1155 {
     function settle(IERC20Minimal token) external returns (uint256 paid);
 
     function setPoolProtocolFee(IPoolManager.PoolKey memory key, uint8 newProtocolFee) external;
+
+    /// @notice Sets the flash loan fee for the given token to the given amount in pips
+    function setProtocolFlashLoanFee(IERC20Minimal token, uint256 fee) external;
+
+    /// @notice Returns the flash loan protocol fee in pips, i.e. 1/100th of a basis point
+    function flashLoanProtocolFeePips(IERC20Minimal token) external view returns (uint256);
 }

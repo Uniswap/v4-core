@@ -6,6 +6,7 @@ import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
+import {FullMath} from './libraries/FullMath.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
@@ -269,12 +270,38 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
+    mapping(IERC20Minimal => uint256) public override flashLoanProtocolFeePips;
+
+    /// @inheritdoc IPoolManager
+    function setProtocolFlashLoanFee(IERC20Minimal token, uint256 fee) external override onlyOwner {
+        flashLoanProtocolFeePips[token] = fee;
+    }
+
+    /// @inheritdoc IPoolManager
     function take(
         IERC20Minimal token,
         address to,
         uint256 amount
     ) external override noDelegateCall onlyByLocker {
         _accountDelta(token, amount.toInt256());
+        int248 deltaAfter = lockStates[lockedBy.length - 1].tokenDelta[token].delta;
+
+        // if delta is positive (tokens owed to singleton) after the #take, then the manager is owed fees
+        // the amount of fees that it's owed is equal to
+        if (deltaAfter > 0) {
+            uint256 unsignedDelta = uint256(int256(deltaAfter));
+            uint256 feeAmount = FullMath.mulDiv(
+                amount < unsignedDelta ? amount : unsignedDelta,
+                flashLoanProtocolFeePips[token],
+                1e6
+            );
+
+            if (feeAmount > 0) {
+                protocolFeesAccrued[token] += feeAmount;
+                _accountDelta(token, feeAmount.toInt256());
+            }
+        }
+
         reservesOf[token] -= amount;
         token.transfer(to, amount);
     }
