@@ -287,7 +287,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         int248 deltaAfter = lockStates[lockedBy.length - 1].tokenDelta[token].delta;
 
         // if delta is positive (tokens owed to singleton) after the #take, then the manager is owed fees
-        // the amount of fees that it's owed is equal to
+        // the amount of fees that it's owed is equal to the positive delta that is created by the take
         if (deltaAfter > 0) {
             uint256 unsignedDelta = uint256(int256(deltaAfter));
             uint256 feeAmount = FullMath.mulDiv(
