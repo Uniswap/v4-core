@@ -15,7 +15,11 @@ contract OwnedTest is DSTest {
         assertEq(x, owned.owner());
     }
 
-    function testSetOwner(address oldOwner, address nextOwner, bool oldOwnerCalls) public {
+    function testSetOwner(
+        address oldOwner,
+        address nextOwner,
+        bool oldOwnerCalls
+    ) public {
         // set the old owner as the owner
         vm.startPrank(oldOwner);
         owned = new Owned();
