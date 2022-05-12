@@ -143,7 +143,14 @@ contract GeomeanOracle is BaseHook {
         uint128 liquidity = poolManager.getLiquidity(key);
 
         return
-            observations[id].observe(uint32(block.timestamp), secondsAgos, tick, state.index, liquidity, state.cardinality);
+            observations[id].observe(
+                uint32(block.timestamp),
+                secondsAgos,
+                tick,
+                state.index,
+                liquidity,
+                state.cardinality
+            );
     }
 
     /// @notice Increase the cardinality target for the given pool

@@ -66,9 +66,7 @@ describe('GeomeanOracle', () => {
       await getDeployedGeomeanOracleCode(manager.address),
     ])
 
-    const geomeanOracle: GeomeanOracle = geomeanOracleFactory.attach(
-      geomeanOracleHookAddress
-    ) as GeomeanOracle
+    const geomeanOracle: GeomeanOracle = geomeanOracleFactory.attach(geomeanOracleHookAddress) as GeomeanOracle
 
     const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
     const modifyPositionTest = (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest
@@ -203,9 +201,7 @@ describe('GeomeanOracle', () => {
   })
 
   describe('#beforeModifyPosition', async () => {
-    beforeEach('initialize the pool', async () => {
-
-    })
+    beforeEach('initialize the pool', async () => {})
 
     it('modifyPosition cannot be called with tick ranges other than min/max tick', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
@@ -233,7 +229,7 @@ describe('GeomeanOracle', () => {
     })
 
     it('modifyPosition with no time change writes no observations', async () => {
-      await inOneBlock(await latestTimestamp() + 1, async () => {
+      await inOneBlock((await latestTimestamp()) + 1, async () => {
         await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
         await modifyPositionTest.modifyPosition(poolKey, {
           tickLower: getMinTick(MAX_TICK_SPACING),
@@ -257,7 +253,7 @@ describe('GeomeanOracle', () => {
 
     it('modifyPosition with time change writes an observation', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
-      await setNextBlocktime(await latestTimestamp() + 2)
+      await setNextBlocktime((await latestTimestamp()) + 2)
       await modifyPositionTest.modifyPosition(poolKey, {
         tickLower: getMinTick(MAX_TICK_SPACING),
         tickUpper: getMaxTick(MAX_TICK_SPACING),
@@ -280,7 +276,7 @@ describe('GeomeanOracle', () => {
     })
 
     it('modifyPosition with time change writes an observation and updates cardinality', async () => {
-      const initializeTimestamp = await latestTimestamp() + 1
+      const initializeTimestamp = (await latestTimestamp()) + 1
       const increaseCardinalityTimestamp = initializeTimestamp + 2
 
       await inOneBlock(initializeTimestamp, async () => {
