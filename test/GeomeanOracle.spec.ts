@@ -1,15 +1,16 @@
 import { createFixtureLoader } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import hre, { ethers } from 'hardhat'
-import { MockTimeGeomeanOracle, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
+import { GeomeanOracle, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
 import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import { createHookMask, encodeSqrtPriceX96, getMaxTick, getMinTick } from './shared/utilities'
+import { inOneBlock, latestTimestamp, setNextBlocktime } from './shared/evmHelpers'
 
 describe('GeomeanOracle', () => {
   let wallets: Wallet[]
-  let oracle: MockTimeGeomeanOracle
+  let oracle: GeomeanOracle
   let poolManager: PoolManager
   let swapTest: PoolSwapTest
   let modifyPositionTest: PoolModifyPositionTest
@@ -21,7 +22,7 @@ describe('GeomeanOracle', () => {
    * @param poolManagerAddress the address of the pool manager, the only immutable of the geomean oracle
    */
   async function getDeployedGeomeanOracleCode(poolManagerAddress: string): Promise<string> {
-    const artifact = await hre.artifacts.readArtifact('MockTimeGeomeanOracle')
+    const artifact = await hre.artifacts.readArtifact('GeomeanOracle')
     const fullyQualifiedName = `${artifact.sourceName}:${artifact.contractName}`
     const debugArtifact = await hre.artifacts.getBuildInfo(fullyQualifiedName)
     const immutableReferences =
@@ -41,7 +42,7 @@ describe('GeomeanOracle', () => {
   }
 
   const fixture = async ([wallet]: Wallet[]) => {
-    const geomeanOracleFactory = await ethers.getContractFactory('MockTimeGeomeanOracle')
+    const geomeanOracleFactory = await ethers.getContractFactory('GeomeanOracle')
 
     const poolManagerFactory = await ethers.getContractFactory('PoolManager')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
@@ -65,9 +66,9 @@ describe('GeomeanOracle', () => {
       await getDeployedGeomeanOracleCode(manager.address),
     ])
 
-    const geomeanOracle: MockTimeGeomeanOracle = geomeanOracleFactory.attach(
+    const geomeanOracle: GeomeanOracle = geomeanOracleFactory.attach(
       geomeanOracleHookAddress
-    ) as MockTimeGeomeanOracle
+    ) as GeomeanOracle
 
     const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
     const modifyPositionTest = (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest
@@ -117,7 +118,7 @@ describe('GeomeanOracle', () => {
       hooks: oracle.address,
       tickSpacing: MAX_TICK_SPACING,
     }
-    await oracle.setTime(1)
+    // await oracle.setTime(1)
   })
 
   let snapshotId: string
@@ -178,15 +179,18 @@ describe('GeomeanOracle', () => {
       expect(cardinality).to.eq(1)
       expect(cardinalityNext).to.eq(1)
     })
+
     it('initializes the observations array index 0', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
       const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
         await oracle.getObservation(poolKey, 0)
+      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       expect(initialized).to.be.true
-      expect(blockTimestamp, 'timestamp').to.eq(1)
+      expect(blockTimestamp, 'timestamp').to.eq(latestTimestamp)
       expect(tickCumulative, 'cumulative tick').to.eq(0)
       expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(0)
     })
+
     it('observe of 0', async () => {
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
       const {
@@ -200,10 +204,11 @@ describe('GeomeanOracle', () => {
 
   describe('#beforeModifyPosition', async () => {
     beforeEach('initialize the pool', async () => {
-      await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
+
     })
 
     it('modifyPosition cannot be called with tick ranges other than min/max tick', async () => {
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
       await expect(
         modifyPositionTest.modifyPosition(poolKey, {
           tickLower: -MAX_TICK_SPACING,
@@ -228,10 +233,13 @@ describe('GeomeanOracle', () => {
     })
 
     it('modifyPosition with no time change writes no observations', async () => {
-      await modifyPositionTest.modifyPosition(poolKey, {
-        tickLower: getMinTick(MAX_TICK_SPACING),
-        tickUpper: getMaxTick(MAX_TICK_SPACING),
-        liquidityDelta: 1000,
+      await inOneBlock(await latestTimestamp() + 1, async () => {
+        await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: getMinTick(MAX_TICK_SPACING),
+          tickUpper: getMaxTick(MAX_TICK_SPACING),
+          liquidityDelta: 1000,
+        })
       })
       const { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
       expect(index).to.eq(0)
@@ -240,19 +248,22 @@ describe('GeomeanOracle', () => {
 
       const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
         await oracle.getObservation(poolKey, 0)
+
       expect(initialized).to.be.true
-      expect(blockTimestamp, 'timestamp').to.eq(1)
+      expect(blockTimestamp, 'timestamp').to.eq(await latestTimestamp())
       expect(tickCumulative, 'cumulative tick').to.eq(0)
       expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(0)
     })
 
     it('modifyPosition with time change writes an observation', async () => {
-      await oracle.setTime(3) // advance 2 seconds
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
+      await setNextBlocktime(await latestTimestamp() + 2)
       await modifyPositionTest.modifyPosition(poolKey, {
         tickLower: getMinTick(MAX_TICK_SPACING),
         tickUpper: getMaxTick(MAX_TICK_SPACING),
         liquidityDelta: 1000,
       })
+
       const { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
       expect(index).to.eq(0)
       expect(cardinality).to.eq(1)
@@ -261,7 +272,7 @@ describe('GeomeanOracle', () => {
       const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
         await oracle.getObservation(poolKey, 0)
       expect(initialized).to.be.true
-      expect(blockTimestamp, 'timestamp').to.eq(3)
+      expect(blockTimestamp, 'timestamp').to.eq(await latestTimestamp())
       expect(tickCumulative, 'cumulative tick').to.eq(13862)
       expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(
         '680564733841876926926749214863536422912'
@@ -269,14 +280,20 @@ describe('GeomeanOracle', () => {
     })
 
     it('modifyPosition with time change writes an observation and updates cardinality', async () => {
-      await oracle.setTime(3) // advance 2 seconds
-      await oracle.increaseCardinalityNext(poolKey, 2)
+      const initializeTimestamp = await latestTimestamp() + 1
+      const increaseCardinalityTimestamp = initializeTimestamp + 2
+
+      await inOneBlock(initializeTimestamp, async () => {
+        await poolManager.initialize(poolKey, encodeSqrtPriceX96(2, 1))
+        await oracle.increaseCardinalityNext(poolKey, 2)
+      })
 
       let { index, cardinality, cardinalityNext } = await oracle.getState(poolKey)
       expect(index).to.eq(0)
       expect(cardinality).to.eq(1)
       expect(cardinalityNext).to.eq(2)
 
+      await setNextBlocktime(increaseCardinalityTimestamp)
       await modifyPositionTest.modifyPosition(poolKey, {
         tickLower: getMinTick(MAX_TICK_SPACING),
         tickUpper: getMaxTick(MAX_TICK_SPACING),
@@ -294,7 +311,7 @@ describe('GeomeanOracle', () => {
         const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
           await oracle.getObservation(poolKey, 0)
         expect(initialized).to.be.true
-        expect(blockTimestamp, 'timestamp').to.eq(1)
+        expect(blockTimestamp, 'timestamp').to.eq(initializeTimestamp)
         expect(tickCumulative, 'cumulative tick').to.eq(0)
         expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(0)
       }
@@ -303,7 +320,7 @@ describe('GeomeanOracle', () => {
         const { tickCumulative, secondsPerLiquidityCumulativeX128, blockTimestamp, initialized } =
           await oracle.getObservation(poolKey, 1)
         expect(initialized).to.be.true
-        expect(blockTimestamp, 'timestamp').to.eq(3)
+        expect(blockTimestamp, 'timestamp').to.eq(increaseCardinalityTimestamp)
         expect(tickCumulative, 'cumulative tick').to.eq(13862)
         expect(secondsPerLiquidityCumulativeX128, 'seconds per liquidity').to.eq(
           '680564733841876926926749214863536422912'

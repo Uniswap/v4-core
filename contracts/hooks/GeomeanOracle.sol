@@ -51,11 +51,6 @@ contract GeomeanOracle is BaseHook {
         state = states[keccak256(abi.encode(key))];
     }
 
-    /// @dev For mocking
-    function _blockTimestamp() internal view virtual returns (uint32) {
-        return uint32(block.timestamp);
-    }
-
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
         Hooks.validateHookAddress(
             this,
@@ -90,7 +85,7 @@ contract GeomeanOracle is BaseHook {
         int24
     ) external override poolManagerOnly {
         bytes32 id = keccak256(abi.encode(key));
-        (states[id].cardinality, states[id].cardinalityNext) = observations[id].initialize(_blockTimestamp());
+        (states[id].cardinality, states[id].cardinalityNext) = observations[id].initialize(uint32(block.timestamp));
     }
 
     /// @dev Called before any action that potentially modifies pool price or liquidity, such as swap or modify position
@@ -103,7 +98,7 @@ contract GeomeanOracle is BaseHook {
 
         (states[id].index, states[id].cardinality) = observations[id].write(
             states[id].index,
-            _blockTimestamp(),
+            uint32(block.timestamp),
             tick,
             liquidity,
             states[id].cardinality,
@@ -148,7 +143,7 @@ contract GeomeanOracle is BaseHook {
         uint128 liquidity = poolManager.getLiquidity(key);
 
         return
-            observations[id].observe(_blockTimestamp(), secondsAgos, tick, state.index, liquidity, state.cardinality);
+            observations[id].observe(uint32(block.timestamp), secondsAgos, tick, state.index, liquidity, state.cardinality);
     }
 
     /// @notice Increase the cardinality target for the given pool
