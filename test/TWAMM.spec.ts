@@ -46,7 +46,7 @@ const TICK_SPACING = 60
 const FEE = '3000'
 const MIN_INT128 = BigNumber.from('-170141183460469231731687303715884105728')
 
-describe.only('TWAMM', () => {
+describe('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
 
