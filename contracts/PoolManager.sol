@@ -274,6 +274,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @inheritdoc IPoolManager
     function setProtocolFlashLoanFee(IERC20Minimal token, uint256 feePips) external override onlyOwner {
+        if (feePips > 1e6) revert InvalidFlashLoanProtocolFee();
         flashLoanProtocolFeePips[token] = feePips;
     }
 
@@ -283,23 +284,24 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         address to,
         uint256 amount
     ) external override noDelegateCall onlyByLocker {
-        _accountDelta(token, amount.toInt256());
-        int248 deltaAfter = lockStates[lockedBy.length - 1].tokenDelta[token].delta;
+        if (amount == 0) revert CannotTakeZero();
 
-        // if delta is positive (tokens owed to singleton) after the #take, then the manager is owed fees
-        // the amount of fees that it's owed is equal to the positive delta that is created by the take
+        _accountDelta(token, amount.toInt256());
+
+        // we know index and delta is initialized because we accounted a non-zero delta above
+        IndexAndDelta storage id = lockStates[lockedBy.length - 1].tokenDelta[token];
+        int248 deltaAfter = id.delta;
+
+        // if delta is positive (tokens owed to singleton) after the #take, then it is effectively a flash borrow and
+        // the borrower must pay fees on the amount borrowed
         if (deltaAfter > 0) {
             uint256 feePips = flashLoanProtocolFeePips[token];
             if (feePips > 0) {
                 uint256 unsignedDelta = uint256(int256(deltaAfter));
                 uint256 feeAmount = FullMath.mulDiv(amount < unsignedDelta ? amount : unsignedDelta, feePips, 1e6);
 
-                if (feeAmount > 0) {
-                    protocolFeesAccrued[token] += feeAmount;
-                    // TODO: calling this twice is not the most efficient way to do it, but we can't move the logic
-                    //    into the accountDelta function because it only applies when the tokens leave the contract
-                    _accountDelta(token, feeAmount.toInt256());
-                }
+                protocolFeesAccrued[token] += feeAmount;
+                id.delta += feeAmount.toInt248();
             }
         }
 

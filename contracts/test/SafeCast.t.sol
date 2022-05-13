@@ -34,6 +34,15 @@ contract SafeCastTest is DSTest {
         }
     }
 
+    function testToInt248(uint256 x) public {
+        if (x <= uint256(int256(type(int248).max))) {
+            assertEq(uint248(SafeCast.toInt248(x)), x);
+        } else {
+            vm.expectRevert();
+            SafeCast.toInt248(x);
+        }
+    }
+
     function testToInt248(int256 x) public {
         if (x <= type(int248).max && x >= type(int248).min) {
             assertEq(int256(SafeCast.toInt248(x)), x);

@@ -27,6 +27,12 @@ interface IPoolManager is IERC1155 {
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
     error TickSpacingTooSmall();
 
+    /// @notice Thrown if the protocol fee for flash loaning tokens is invalid
+    error InvalidFlashLoanProtocolFee();
+
+    /// @notice Thrown if take is called with 0 amount
+    error CannotTakeZero();
+
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower token of the pool, sorted numerically
