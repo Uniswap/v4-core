@@ -85,7 +85,7 @@ contract GeomeanOracle is BaseHook {
         int24
     ) external override poolManagerOnly {
         bytes32 id = keccak256(abi.encode(key));
-        (states[id].cardinality, states[id].cardinalityNext) = observations[id].initialize(uint32(block.timestamp));
+        (states[id].cardinality, states[id].cardinalityNext) = observations[id].initialize();
     }
 
     /// @dev Called before any action that potentially modifies pool price or liquidity, such as swap or modify position
