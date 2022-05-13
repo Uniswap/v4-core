@@ -242,7 +242,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         _accountPoolBalanceDelta(key, delta);
         // the fee is on the input token
-        protocolFeesAccrued[params.zeroForOne ? key.token0 : key.token1] += feeForProtocol;
+       
+        unchecked {
+             if (feeForProtocol > 0) protocolFeesAccrued[params.zeroForOne ? key.token0 : key.token1] += feeForProtocol;
+        }
 
         if (key.hooks.shouldCallAfterSwap()) {
             key.hooks.afterSwap(msg.sender, key, params, delta);

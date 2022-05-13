@@ -258,8 +258,6 @@ library Pool {
         int24 tick;
         // the global fee growth of the input token
         uint256 feeGrowthGlobalX128;
-        // amount of input token paid as protocol fee
-        uint128 feeForProtocol;
         // the current liquidity in range
         uint128 liquidity;
     }
@@ -292,7 +290,7 @@ library Pool {
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (IPoolManager.BalanceDelta memory result, uint256 finalFeeForProtocol)
+        returns (IPoolManager.BalanceDelta memory result, uint256 feeForProtocol)
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
@@ -323,7 +321,6 @@ library Pool {
             sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
             feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
-            feeForProtocol: 0,
             liquidity: cache.liquidityStart
         });
 
@@ -382,8 +379,10 @@ library Pool {
                 // A: calculate the amount of the fee that should go to the protocol
                 uint256 delta = step.feeAmount / cache.protocolFee;
                 // A: subtract it from the regular fee and add it to the protocol fee
-                step.feeAmount -= delta;
-                state.feeForProtocol += uint128(delta);
+                unchecked {
+                    step.feeAmount -= delta;
+                    feeForProtocol += delta;
+                }
             }
 
             // update global fee tracker
@@ -439,7 +438,6 @@ library Pool {
                 ? (params.amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
                 : (state.amountCalculated, params.amountSpecified - state.amountSpecifiedRemaining);
         }
-        finalFeeForProtocol = state.feeForProtocol;
     }
 
     /// @notice Donates the given amount of token0 and token1 to the pool
