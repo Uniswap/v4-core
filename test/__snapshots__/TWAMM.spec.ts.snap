@@ -3,41 +3,41 @@
 exports[`TWAMM #claimEarnings gas 1`] = `
 Object {
   "calldataByteLength": 100,
-  "gasUsed": 35877,
+  "gasUsed": 35903,
 }
 `;
 
 exports[`TWAMM #executeTWAMMOrders gas 1`] = `
 Object {
-  "calldataByteLength": 132,
-  "gasUsed": 366126,
+  "calldataByteLength": 68,
+  "gasUsed": 378201,
 }
 `;
 
 exports[`TWAMM #modifyLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 40833,
+  "gasUsed": 40893,
 }
 `;
 
 exports[`TWAMM #submitLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 123258,
+  "gasUsed": 123229,
 }
 `;
 
 exports[`TWAMM single pool sell tests gas 1`] = `
 Object {
-  "calldataByteLength": 132,
-  "gasUsed": 97871,
+  "calldataByteLength": 68,
+  "gasUsed": 105797,
 }
 `;
 
 exports[`TWAMM single pool sell tests gas zeroForOne=false 1`] = `
 Object {
-  "calldataByteLength": 132,
-  "gasUsed": 107839,
+  "calldataByteLength": 68,
+  "gasUsed": 113787,
 }
 `;

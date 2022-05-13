@@ -79,7 +79,6 @@ library Pool {
         mapping(int24 => Tick.Info) ticks;
         mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
-        TWAMM.State twamm;
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -99,7 +98,6 @@ library Pool {
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
         self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick});
-        self.twamm.initialize(twammExpiryInterval);
     }
 
     struct ModifyPositionParams {

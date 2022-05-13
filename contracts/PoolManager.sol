@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
+import {TickBitmap} from './libraries/TickBitmap.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 import {TWAMM} from './libraries/TWAMM/TWAMM.sol';
 
@@ -18,19 +19,15 @@ import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Re
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver {
-    using TWAMM for TWAMM.State;
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
+    using TickBitmap for mapping(int16 => uint256);
 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
-    mapping(bytes32 => Pool.State) internal pools; // TODO: Private rn because public disallows nested mappings
-
-    function slot0(bytes32 poolId) public view returns (Pool.Slot0 memory) {
-        return pools[poolId].slot0;
-    }
+    mapping(bytes32 => Pool.State) public pools;
 
     function feeGrowthGlobalX128(bytes32 poolId)
         public
@@ -38,10 +35,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         returns (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128)
     {
         return (pools[poolId].feeGrowthGlobal0X128, pools[poolId].feeGrowthGlobal1X128);
-    }
-
-    function liquidity(bytes32 poolId) public view returns (uint128) {
-        return pools[poolId].liquidity;
     }
 
     constructor() ERC1155('') {}
@@ -65,6 +58,19 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         Pool.Slot0 memory slot0 = _getPool(key).slot0;
 
         return (slot0.sqrtPriceX96, slot0.tick);
+    }
+
+    /// @inheritdoc IPoolManager
+    function getTickNetLiquidity(IPoolManager.PoolKey memory key, int24 tick) external view override returns (int128) {
+        return _getPool(key).ticks[tick].liquidityNet;
+    }
+
+    function nextInitializedTickWithinOneWord(
+        IPoolManager.PoolKey memory key,
+        int24 tick,
+        bool lte
+    ) external view override returns (int24 next, bool initialized) {
+        return _getPool(key).tickBitmap.nextInitializedTickWithinOneWord(tick, key.tickSpacing, lte);
     }
 
     /// @inheritdoc IPoolManager
@@ -235,8 +241,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         onlyByLocker
         returns (IPoolManager.BalanceDelta memory delta)
     {
-        executeTWAMMOrders(key);
-
         if (key.hooks.shouldCallBeforeSwap()) {
             key.hooks.beforeSwap(msg.sender, key, params);
         }
@@ -312,64 +316,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     function _burnAndAccount(IERC20Minimal token, uint256 amount) internal {
         _burn(address(this), uint256(uint160(address((token)))), amount);
         _accountDelta(IERC20Minimal(token), -(amount.toInt256()));
-    }
-
-    function submitLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.LongTermOrderParams calldata params)
-        external
-        onlyByLocker
-        returns (bytes32 orderId)
-    {
-        executeTWAMMOrders(key);
-        orderId = _getPool(key).twamm.submitLongTermOrder(params);
-        IERC20Minimal token = params.zeroForOne ? key.token0 : key.token1;
-        _accountDelta(token, int256(params.amountIn));
-    }
-
-    function modifyLongTermOrder(
-        IPoolManager.PoolKey calldata key,
-        TWAMM.OrderKey calldata orderKey,
-        int128 amountDelta
-    ) external onlyByLocker returns (uint256 amountOut0, uint256 amountOut1) {
-        executeTWAMMOrders(key);
-
-        (amountOut0, amountOut1) = _getPool(key).twamm.modifyLongTermOrder(orderKey, amountDelta);
-
-        IPoolManager.BalanceDelta memory delta = IPoolManager.BalanceDelta({
-            amount0: -(amountOut0.toInt256()),
-            amount1: -(amountOut1.toInt256())
-        });
-        _accountPoolBalanceDelta(key, delta);
-    }
-
-    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
-        external
-        returns (uint256 earningsAmount)
-    {
-        executeTWAMMOrders(key);
-
-        uint8 sellTokenIndex;
-        (earningsAmount, sellTokenIndex) = _getPool(key).twamm.claimEarnings(orderKey);
-        IERC20Minimal buyToken = sellTokenIndex == 0 ? key.token1 : key.token0;
-        _accountDelta(buyToken, -(earningsAmount.toInt256()));
-    }
-
-    function executeTWAMMOrders(IPoolManager.PoolKey memory key)
-        public
-        onlyByLocker
-        returns (IPoolManager.BalanceDelta memory delta)
-    {
-        Pool.State storage pool = _getPool(key);
-        (bool zeroForOne, uint160 sqrtPriceLimitX96) = pool.twamm.executeTWAMMOrders(
-            TWAMM.PoolParamsOnExecute(pool.slot0.sqrtPriceX96, pool.liquidity, key.fee, key.tickSpacing),
-            pool.ticks,
-            pool.tickBitmap
-        );
-
-        if (sqrtPriceLimitX96 != 0 && sqrtPriceLimitX96 != pool.slot0.sqrtPriceX96) {
-            delta = swap(key, SwapParams(zeroForOne, type(int256).max, sqrtPriceLimitX96));
-            _accountDelta(key.token0, -delta.amount0);
-            _accountDelta(key.token1, -delta.amount1);
-        }
     }
 
     function onERC1155Received(

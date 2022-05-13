@@ -3,7 +3,7 @@
 exports[`PoolManager #initialize gas cost 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 93445,
+  "gasUsed": 49212,
 }
 `;
 
@@ -17,57 +17,36 @@ Object {
 exports[`PoolManager #mint gas cost 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 287384,
+  "gasUsed": 287363,
 }
 `;
 
 exports[`PoolManager #mint gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 287393,
+  "gasUsed": 287372,
 }
 `;
 
 exports[`PoolManager #swap gas cost 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 94521,
+  "gasUsed": 85652,
 }
 `;
 
 exports[`PoolManager #swap gas cost for swap against liquidity 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 234134,
+  "gasUsed": 225264,
 }
 `;
 
 exports[`PoolManager #swap gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 98663,
+  "gasUsed": 89784,
 }
 `;
 
-exports[`PoolManager TWAMM #executeTWAMMOrders gas crossing 1 initialized tick 1`] = `
-Object {
-  "calldataByteLength": 164,
-  "gasUsed": 499565,
-}
-`;
-
-exports[`PoolManager TWAMM #executeTWAMMOrders gas crossing 2 initialized ticks 1`] = `
-Object {
-  "calldataByteLength": 164,
-  "gasUsed": 642692,
-}
-`;
-
-exports[`PoolManager TWAMM #executeTWAMMOrders gas with no initialized ticks 1`] = `
-Object {
-  "calldataByteLength": 164,
-  "gasUsed": 369050,
-}
-`;
-
-exports[`PoolManager bytecode size 1`] = `39902`;
+exports[`PoolManager bytecode size 1`] = `23804`;

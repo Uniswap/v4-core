@@ -3,11 +3,12 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {Tick} from '../libraries/Tick.sol';
 import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import {IHooks} from './IHooks.sol';
 import {ITWAMM} from './ITWAMM.sol';
 
-interface IPoolManager is ITWAMM, IERC1155 {
+interface IPoolManager is IERC1155 {
     /// @notice Thrown when tokens touched has exceeded max of 256
     error MaxTokensTouched();
 
@@ -46,6 +47,16 @@ interface IPoolManager is ITWAMM, IERC1155 {
 
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
+
+    /// @notice Get tick info for a given tick
+    function getTickNetLiquidity(PoolKey memory key, int24 tick) external view returns (int128);
+
+    /// @notice Get next initialized tick within one word
+    function nextInitializedTickWithinOneWord(
+        IPoolManager.PoolKey memory key,
+        int24 tick,
+        bool lte
+    ) external view returns (int24 next, bool initialized);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(IPoolManager.PoolKey memory key) external view returns (uint128 liquidity);

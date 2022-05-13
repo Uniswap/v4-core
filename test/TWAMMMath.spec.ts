@@ -34,7 +34,7 @@ describe('TWAMMMath', () => {
   })
 
   describe('#calculateExecutionUpdates outputs the correct results when', () => {
-    let secondsElapsed: BigNumberish
+    let secondsElapsedX96: BigNumberish
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
     let fee: BigNumberish
@@ -43,7 +43,7 @@ describe('TWAMMMath', () => {
     let sellRateCurrent1: BigNumberish
 
     beforeEach(async () => {
-      secondsElapsed = BigNumber.from(3600).mul(BigNumber.from(2).pow(96))
+      secondsElapsedX96 = BigNumber.from(3600).mul(BigNumber.from(2).pow(96))
       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       liquidity = '1000000000000000000000000'
       fee = '3000'
@@ -191,19 +191,13 @@ describe('TWAMMMath', () => {
 
     for (let testcase of TEST_CASES) {
       it(testcase.title, async () => {
-        const results = await twamm.callStatic.calculateExecutionUpdates(
-          secondsElapsed,
-          {
-            sqrtPriceX96: testcase.inputs.sqrtPriceX96,
-            liquidity,
-            fee,
-            tickSpacing,
-          },
-          {
-            sellRateCurrent0: testcase.inputs.sellRate0,
-            sellRateCurrent1: testcase.inputs.sellRate1,
-          }
-        )
+        const results = await twamm.callStatic.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96: testcase.inputs.sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0: testcase.inputs.sellRate0,
+          sellRateCurrent1: testcase.inputs.sellRate1,
+        })
 
         expect(divX96(results.sqrtPriceX96)).to.eq(testcase.outputsDivX96.price)
         expect(divX96(results.earningsPool0)).to.eq(testcase.outputsDivX96.amountOut0)
@@ -213,19 +207,13 @@ describe('TWAMMMath', () => {
 
     it('gas', async () => {
       await snapshotGasCost(
-        twamm.calculateExecutionUpdates(
-          secondsElapsed,
-          {
-            sqrtPriceX96,
-            liquidity,
-            fee,
-            tickSpacing,
-          },
-          {
-            sellRateCurrent0,
-            sellRateCurrent1,
-          }
-        )
+        twamm.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0,
+          sellRateCurrent1,
+        })
       )
     })
 
