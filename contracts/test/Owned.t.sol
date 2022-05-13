@@ -22,7 +22,6 @@ contract OwnedTest is DSTest {
         vm.prank(oldOwner);
         owned.setOwner(nextOwner);
         assertEq(nextOwner, owned.owner());
-
     }
 
     function testSetOwnerFromNonOwner(address oldOwner, address nextOwner) public {
