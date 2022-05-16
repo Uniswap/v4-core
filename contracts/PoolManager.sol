@@ -348,7 +348,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    function collectProtocolFees(address recipient, IERC20Minimal token, uint256 amount) external onlyOwner {
+    function collectProtocolFees(
+        address recipient,
+        IERC20Minimal token,
+        uint256 amount
+    ) external onlyOwner {
         protocolFeesAccrued[token] -= amount;
         TransferHelper.safeTransfer(token, recipient, amount);
     }
