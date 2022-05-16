@@ -72,10 +72,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
 
-        uint8 protocolFee;
-        if (address(protocolFeeController) != address(0)) protocolFee = protocolFeeController.fetchInitialFee(key);
-
-        tick = _getPool(key).initialize(sqrtPriceX96, protocolFee);
+        tick = _getPool(key).initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
@@ -339,22 +336,20 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         protocolFeeController = controller;
     }
 
-    function setPoolProtocolFee(IPoolManager.PoolKey memory key, uint8 newProtocolFee) external {
-        require(msg.sender == owner || msg.sender == address(protocolFeeController));
-        _getPool(key).setProtocolFee(newProtocolFee);
+    function setPoolProtocolFee(IPoolManager.PoolKey memory key) external {
+        _getPool(key).setProtocolFee(fetchPoolProtocolFee(key));
     }
 
-    struct TokenAmount {
-        IERC20Minimal token;
-        uint256 amount;
-    }
-
-    function collectProtocolFees(address recipient, TokenAmount[] memory tokenAmounts) external onlyOwner {
-        // This will revert if any amount is larger than the protocol's balance
-        uint256 amountsLength = tokenAmounts.length;
-        for (uint256 i; i < amountsLength; i++) {
-            protocolFeesAccrued[tokenAmounts[i].token] -= tokenAmounts[i].amount;
-            TransferHelper.safeTransfer(tokenAmounts[i].token, recipient, tokenAmounts[i].amount);
+    function fetchPoolProtocolFee(IPoolManager.PoolKey memory key) internal view returns (uint8 protocolFee) {
+        if (address(protocolFeeController) != address(0)) {
+            try protocolFeeController.protocolFeeForPool{gas: 50000}(key) returns (uint8 updatedProtocolFee) {
+                protocolFee = updatedProtocolFee;
+            } catch {}
         }
+    }
+
+    function collectProtocolFees(address recipient, IERC20Minimal token, uint256 amount) external onlyOwner {
+        protocolFeesAccrued[token] -= amount;
+        TransferHelper.safeTransfer(token, recipient, amount);
     }
 }
