@@ -126,7 +126,7 @@ describe('PoolManager gas tests', () => {
       return await manager.getSlot0(poolKey)
     }
 
-    await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), 10_000)
+    await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
 
     await modifyPosition(minTick, maxTick, expandTo18Decimals(2))
 

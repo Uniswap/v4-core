@@ -6,8 +6,6 @@ import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {TickBitmap} from './libraries/TickBitmap.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
-import {TWAMM} from './libraries/TWAMM/TWAMM.sol';
-
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IHooks} from './interfaces/IHooks.sol';
@@ -77,11 +75,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(
-        IPoolManager.PoolKey memory key,
-        uint160 sqrtPriceX96,
-        uint256 twammExpiryInterval
-    ) external override returns (int24 tick) {
+    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
@@ -90,7 +84,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
 
-        tick = _getPool(key).initialize(sqrtPriceX96, twammExpiryInterval);
+        tick = _getPool(key).initialize(sqrtPriceX96);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);

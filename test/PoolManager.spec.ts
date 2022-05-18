@@ -126,8 +126,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await modifyPositionTest.modifyPosition(
@@ -165,8 +164,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(10, 1),
-        10_000
+        encodeSqrtPriceX96(10, 1)
       )
 
       const { sqrtPriceX96 } = await manager.getSlot0({
@@ -188,8 +186,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: hooksMock.address,
         },
-        encodeSqrtPriceX96(10, 1),
-        10_000
+        encodeSqrtPriceX96(10, 1)
       )
 
       const { sqrtPriceX96 } = await manager.getSlot0({
@@ -212,8 +209,7 @@ describe('PoolManager', () => {
             tickSpacing: MAX_TICK_SPACING,
             hooks: ADDRESS_ZERO,
           },
-          encodeSqrtPriceX96(10, 1),
-          10_000
+          encodeSqrtPriceX96(10, 1)
         )
       ).to.not.be.reverted
     })
@@ -228,8 +224,7 @@ describe('PoolManager', () => {
             tickSpacing: MAX_TICK_SPACING + 1,
             hooks: ADDRESS_ZERO,
           },
-          encodeSqrtPriceX96(10, 1),
-          10_000
+          encodeSqrtPriceX96(10, 1)
         )
       ).to.be.revertedWith('TickSpacingTooLarge()')
     })
@@ -244,8 +239,7 @@ describe('PoolManager', () => {
             tickSpacing: 0,
             hooks: ADDRESS_ZERO,
           },
-          encodeSqrtPriceX96(10, 1),
-          10_000
+          encodeSqrtPriceX96(10, 1)
         )
       ).to.be.revertedWith('TickSpacingTooSmall()')
     })
@@ -260,8 +254,7 @@ describe('PoolManager', () => {
             tickSpacing: -1,
             hooks: ADDRESS_ZERO,
           },
-          encodeSqrtPriceX96(10, 1),
-          10_000
+          encodeSqrtPriceX96(10, 1)
         )
       ).to.be.revertedWith('TickSpacingTooSmall()')
     })
@@ -276,8 +269,7 @@ describe('PoolManager', () => {
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
           },
-          encodeSqrtPriceX96(10, 1),
-          10_000
+          encodeSqrtPriceX96(10, 1)
         )
       )
     })
@@ -312,8 +304,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await modifyPositionTest.modifyPosition(
@@ -341,8 +332,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: hooksMock.address,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await modifyPositionTest.modifyPosition(
@@ -395,8 +385,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await snapshotGasCost(
@@ -426,8 +415,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await snapshotGasCost(
@@ -481,8 +469,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await swapTest.swap(
         {
@@ -512,8 +499,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: hooksMock.address,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await swapTest.swap(
         {
@@ -568,8 +554,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await swapTest.swap(
@@ -621,8 +606,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await swapTest.swap(
@@ -674,8 +658,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await modifyPositionTest.modifyPosition(
         {
@@ -725,8 +708,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await modifyPositionTest.modifyPosition(
         {
@@ -805,8 +787,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await modifyPositionTest.modifyPosition(
         {
@@ -890,7 +871,7 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
       }
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
       await expect(donateTest.donate(key, 100, 100)).to.be.revertedWith('NoLiquidityToReceiveFees()')
     })
 
@@ -902,7 +883,7 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
       }
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
       await modifyPositionTest.modifyPosition(key, {
         tickLower: -60,
         tickUpper: 60,
@@ -924,7 +905,7 @@ describe('PoolManager', () => {
           hooks: hooksMock.address,
           tickSpacing: 10,
         }
-        await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+        await manager.initialize(key, encodeSqrtPriceX96(1, 1))
         await modifyPositionTest.modifyPosition(key, {
           tickLower: -60,
           tickUpper: 60,
