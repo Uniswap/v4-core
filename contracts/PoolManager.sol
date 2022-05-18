@@ -35,7 +35,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     mapping(IERC20Minimal => uint256) public override protocolFeesAccrued;
     IProtocolFeeController public protocolFeeController;
 
-    constructor() ERC1155('') {}
+    uint256 private immutable controllerGasLimit;
+
+    constructor(uint256 _controllerGasLimit) ERC1155('') {
+        controllerGasLimit = _controllerGasLimit;
+    }
 
     function _getPool(IPoolManager.PoolKey memory key) private view returns (Pool.State storage) {
         return pools[keccak256(abi.encode(key))];
@@ -342,7 +346,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function fetchPoolProtocolFee(IPoolManager.PoolKey memory key) internal view returns (uint8 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
-            try protocolFeeController.protocolFeeForPool{gas: 50000}(key) returns (uint8 updatedProtocolFee) {
+            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (uint8 updatedProtocolFee) {
                 protocolFee = updatedProtocolFee;
             } catch {}
         }
