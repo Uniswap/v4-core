@@ -2,7 +2,7 @@ pragma solidity ^0.8.13;
 
 import {DSTest} from '../../foundry/testdata/lib/ds-test/src/test.sol';
 import {Cheats} from '../../foundry/testdata/cheats/Cheats.sol';
-import {Owned} from '../Owned.sol';
+import {Owned} from '../../contracts/Owned.sol';
 
 contract OwnedTest is DSTest {
     Cheats vm = Cheats(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
