@@ -141,7 +141,7 @@ describe('TWAMM Hook', () => {
     it('initializes the twamm', async () => {
       expect((await twamm.twamm()).expirationInterval).to.equal(0)
       expect((await twamm.twamm()).lastVirtualOrderTimestamp).to.equal(0)
-      await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1), 10_000)
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
       expect((await twamm.twamm()).expirationInterval).to.equal(10_000)
       expect((await twamm.twamm()).lastVirtualOrderTimestamp).to.equal(
         (await ethers.provider.getBlock('latest')).timestamp
@@ -177,7 +177,7 @@ describe('TWAMM Hook', () => {
       }
 
       await ethers.provider.send('evm_setNextBlockTimestamp', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
-      await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1), 10_000)
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
 
       await modifyPositionTest.modifyPosition(poolKey, {

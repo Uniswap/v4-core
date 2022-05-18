@@ -11,6 +11,7 @@ import {
   PoolManagerReentrancyTest,
   PoolDonateTest,
 } from '../typechain'
+import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
@@ -125,8 +126,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await modifyPositionTest.modifyPosition(
@@ -164,8 +164,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(10, 1),
-        10_000
+        encodeSqrtPriceX96(10, 1)
       )
 
       const { sqrtPriceX96 } = await manager.getSlot0({
@@ -187,8 +186,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: hooksMock.address,
         },
-        encodeSqrtPriceX96(10, 1),
-        10_000
+        encodeSqrtPriceX96(10, 1)
       )
 
       const { sqrtPriceX96 } = await manager.getSlot0({
@@ -201,6 +199,66 @@ describe('PoolManager', () => {
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
     })
 
+    it('can be initialized with MAX_TICK_SPACING', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: MAX_TICK_SPACING,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.not.be.reverted
+    })
+
+    it('fails if tickSpacing is too large', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: MAX_TICK_SPACING + 1,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooLarge()')
+    })
+
+    it('fails if tickSpacing is 0', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 0,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooSmall()')
+    })
+
+    it('fails if tickSpacing is negative', async () => {
+      await expect(
+        manager.initialize(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: -1,
+            hooks: ADDRESS_ZERO,
+          },
+          encodeSqrtPriceX96(10, 1)
+        )
+      ).to.be.revertedWith('TickSpacingTooSmall()')
+    })
+
     it('gas cost', async () => {
       await snapshotGasCost(
         manager.initialize(
@@ -211,8 +269,7 @@ describe('PoolManager', () => {
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
           },
-          encodeSqrtPriceX96(10, 1),
-          10_000
+          encodeSqrtPriceX96(10, 1)
         )
       )
     })
@@ -247,8 +304,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await modifyPositionTest.modifyPosition(
@@ -276,8 +332,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: hooksMock.address,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await modifyPositionTest.modifyPosition(
@@ -330,8 +385,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await snapshotGasCost(
@@ -361,8 +415,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await snapshotGasCost(
@@ -416,8 +469,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await swapTest.swap(
         {
@@ -447,8 +499,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: hooksMock.address,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await swapTest.swap(
         {
@@ -503,8 +554,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await swapTest.swap(
@@ -556,8 +606,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
 
       await swapTest.swap(
@@ -609,8 +658,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await modifyPositionTest.modifyPosition(
         {
@@ -660,8 +708,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await modifyPositionTest.modifyPosition(
         {
@@ -740,8 +787,7 @@ describe('PoolManager', () => {
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
         },
-        encodeSqrtPriceX96(1, 1),
-        10_000
+        encodeSqrtPriceX96(1, 1)
       )
       await modifyPositionTest.modifyPosition(
         {
@@ -825,7 +871,7 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
       }
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
       await expect(donateTest.donate(key, 100, 100)).to.be.revertedWith('NoLiquidityToReceiveFees()')
     })
 
@@ -837,7 +883,7 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
       }
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
       await modifyPositionTest.modifyPosition(key, {
         tickLower: -60,
         tickUpper: 60,
@@ -859,7 +905,7 @@ describe('PoolManager', () => {
           hooks: hooksMock.address,
           tickSpacing: 10,
         }
-        await manager.initialize(key, encodeSqrtPriceX96(1, 1), 10_000)
+        await manager.initialize(key, encodeSqrtPriceX96(1, 1))
         await modifyPositionTest.modifyPosition(key, {
           tickLower: -60,
           tickUpper: 60,

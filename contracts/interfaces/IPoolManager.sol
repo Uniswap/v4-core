@@ -25,6 +25,8 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
+    /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
+    error TickSpacingTooSmall();
 
     event Swap(int256 amount0, int256 amount1);
 
@@ -44,6 +46,9 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
+
+    /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
+    function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
@@ -74,8 +79,7 @@ interface IPoolManager is IERC1155 {
     /// @notice Initialize the state for a given pool ID
     function initialize(
         PoolKey memory key,
-        uint160 sqrtPriceX96,
-        uint256 twammExpiryInterval
+        uint160 sqrtPriceX96
     ) external returns (int24 tick);
 
     /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack

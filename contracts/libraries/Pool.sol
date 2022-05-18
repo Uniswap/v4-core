@@ -10,7 +10,6 @@ import {FixedPoint128} from './FixedPoint128.sol';
 import {TickMath} from './TickMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
 import {SwapMath} from './SwapMath.sol';
-import {TWAMM} from './TWAMM/TWAMM.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 library Pool {
@@ -19,7 +18,6 @@ library Pool {
     using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
-    using TWAMM for TWAMM.State;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -90,8 +88,7 @@ library Pool {
 
     function initialize(
         State storage self,
-        uint160 sqrtPriceX96,
-        uint256 twammExpiryInterval
+        uint160 sqrtPriceX96
     ) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 

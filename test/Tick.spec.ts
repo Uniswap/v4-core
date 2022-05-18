@@ -2,7 +2,7 @@ import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { TickTest } from '../typechain/TickTest'
-import { MAX_TICK, MAX_TICK_SPACING, MIN_TICK } from './shared/constants'
+import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { FeeAmount, getMaxTick, getMinTick, TICK_SPACINGS } from './shared/utilities'
 

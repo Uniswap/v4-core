@@ -6,8 +6,6 @@ import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {TickBitmap} from './libraries/TickBitmap.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
-import {TWAMM} from './libraries/TWAMM/TWAMM.sol';
-
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IHooks} from './interfaces/IHooks.sol';
@@ -27,6 +25,9 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
+    /// @inheritdoc IPoolManager
+    int24 public constant override MIN_TICK_SPACING = 1;
+
     mapping(bytes32 => Pool.State) public pools;
 
     function feeGrowthGlobalX128(bytes32 poolId)
@@ -38,11 +39,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     }
 
     constructor() ERC1155('') {}
-
-    /// @dev For mocking in unit tests
-    function _blockTimestamp() internal view virtual returns (uint32) {
-        return uint32(block.timestamp);
-    }
 
     function _getPool(IPoolManager.PoolKey memory key) private view returns (Pool.State storage) {
         return pools[keccak256(abi.encode(key))];
@@ -81,17 +77,17 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     /// @inheritdoc IPoolManager
     function initialize(
         IPoolManager.PoolKey memory key,
-        uint160 sqrtPriceX96,
-        uint256 twammExpiryInterval
+        uint160 sqrtPriceX96
     ) external override returns (int24 tick) {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
+        if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
 
         if (key.hooks.shouldCallBeforeInitialize()) {
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
 
-        tick = _getPool(key).initialize(sqrtPriceX96, twammExpiryInterval);
+        tick = _getPool(key).initialize(sqrtPriceX96);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
