@@ -34,6 +34,7 @@ type AsyncReturnType<T extends (...args: any) => any> = T extends (...args: any)
 describe('PoolManager gas tests', () => {
   let wallet: Wallet, other: Wallet
 
+
   let loadFixture: ReturnType<typeof createFixtureLoader>
 
   before('create fixture loader', async () => {
@@ -54,7 +55,8 @@ describe('PoolManager gas tests', () => {
     const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
-    const manager = (await singletonPoolFactory.deploy()) as PoolManager
+    const CONTROLLER_GAS_LIMIT = 50000
+    const manager = (await singletonPoolFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
 
     const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
     const modifyPositionTest = (await mintTestFactory.deploy(manager.address)) as PoolModifyPositionTest

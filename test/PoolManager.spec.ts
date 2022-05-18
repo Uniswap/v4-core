@@ -44,7 +44,8 @@ describe('PoolManager', () => {
     const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
-    const manager = (await poolManagerFactory.deploy()) as PoolManager
+    const CONTROLLER_GAS_LIMIT = 50000
+    const manager = (await poolManagerFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
 
     // Deploy hooks to addresses with leading 1111 to enable all of them.
     const mockHooksAddress = '0xFF00000000000000000000000000000000000000'
