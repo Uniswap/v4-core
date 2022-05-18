@@ -34,7 +34,6 @@ type AsyncReturnType<T extends (...args: any) => any> = T extends (...args: any)
 describe('PoolManager gas tests', () => {
   let wallet: Wallet, other: Wallet
 
-
   let loadFixture: ReturnType<typeof createFixtureLoader>
 
   before('create fixture loader', async () => {
