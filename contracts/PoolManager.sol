@@ -346,7 +346,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function fetchPoolProtocolFee(IPoolManager.PoolKey memory key) internal view returns (uint8 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
-            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (uint8 updatedProtocolFee) {
+            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (
+                uint8 updatedProtocolFee
+            ) {
                 protocolFee = updatedProtocolFee;
             } catch {}
         }
