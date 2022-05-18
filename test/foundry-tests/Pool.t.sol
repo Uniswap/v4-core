@@ -2,10 +2,10 @@ pragma solidity ^0.8.13;
 
 import {DSTest} from '../../foundry/testdata/lib/ds-test/src/test.sol';
 import {Cheats} from '../../foundry/testdata/cheats/Cheats.sol';
-import {Pool} from '../libraries/Pool.sol';
-import {Position} from '../libraries/Position.sol';
-import {TickMath} from '../libraries/TickMath.sol';
-import {Tick} from '../libraries/Tick.sol';
+import {Pool} from '../../contracts/libraries/Pool.sol';
+import {Position} from '../../contracts/libraries/Position.sol';
+import {TickMath} from '../../contracts/libraries/TickMath.sol';
+import {Tick} from '../../contracts/libraries/Tick.sol';
 
 contract PoolTest is DSTest {
     using Pool for Pool.State;
