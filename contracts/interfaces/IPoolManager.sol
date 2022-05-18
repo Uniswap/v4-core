@@ -77,10 +77,7 @@ interface IPoolManager is IERC1155 {
     function reservesOf(IERC20Minimal token) external view returns (uint256);
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(
-        PoolKey memory key,
-        uint160 sqrtPriceX96
-    ) external returns (int24 tick);
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
     /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
     /// @param index The index of the locker, also known as the id of the locker

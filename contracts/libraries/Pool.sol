@@ -86,10 +86,7 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(
-        State storage self,
-        uint160 sqrtPriceX96
-    ) internal returns (int24 tick) {
+    function initialize(State storage self, uint160 sqrtPriceX96) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);

@@ -75,10 +75,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(
-        IPoolManager.PoolKey memory key,
-        uint160 sqrtPriceX96
-    ) external override returns (int24 tick) {
+    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
