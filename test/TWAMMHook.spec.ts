@@ -167,10 +167,9 @@ describe('TWAMM Hook', () => {
       // now try to initialize another pool(token0, other) with the same twamm
       const otherPoolKey = poolKey
       otherPoolKey.token1 = wallets[4].address
-      await expect(
-        poolManager.initialize(otherPoolKey, encodeSqrtPriceX96(1, 1))
-      ).to.be.revertedWith('HookAlreadyInitialized()')
-
+      await expect(poolManager.initialize(otherPoolKey, encodeSqrtPriceX96(1, 1))).to.be.revertedWith(
+        'HookAlreadyInitialized()'
+      )
     })
   })
 
