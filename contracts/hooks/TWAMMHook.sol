@@ -16,6 +16,9 @@ contract TWAMMHook is BaseHook {
 
     TWAMM.State public twamm;
 
+    // @notice To prevent the hook contract being used by multiple pools
+    error HookAlreadyInitialized();
+
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
         Hooks.validateHookAddress(
             this,
@@ -42,6 +45,7 @@ contract TWAMMHook is BaseHook {
         IPoolManager.PoolKey calldata key,
         uint160
     ) external virtual override poolManagerOnly {
+        if (address(twamm.poolKey.token0) != address(0)) revert HookAlreadyInitialized();
         twamm.initialize(10000, key);
     }
 

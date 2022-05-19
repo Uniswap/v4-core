@@ -23,6 +23,8 @@ describe('TWAMM Hook', () => {
   let token0: TestERC20
   let token1: TestERC20
 
+  const ZERO_ADDR = ethers.constants.AddressZero
+
   /**
    * We are using hardhat_setCode to deploy the geomean oracle, so we need to replace all the immutable references
    * @param poolManagerAddress the address of the pool manager, the only immutable of the geomean oracle
@@ -141,11 +143,34 @@ describe('TWAMM Hook', () => {
     it('initializes the twamm', async () => {
       expect((await twamm.twamm()).expirationInterval).to.equal(0)
       expect((await twamm.twamm()).lastVirtualOrderTimestamp).to.equal(0)
+      expect((await twamm.twamm()).poolKey.token1).to.equal(ZERO_ADDR)
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
       expect((await twamm.twamm()).expirationInterval).to.equal(10_000)
       expect((await twamm.twamm()).lastVirtualOrderTimestamp).to.equal(
         (await ethers.provider.getBlock('latest')).timestamp
       )
+      expect((await twamm.twamm()).poolKey.token1).to.equal(poolKey.token1)
+    })
+
+    it('doesnt allow another pool to re-initialize the same twamm', async () => {
+      // initialize the original twamm for pool(token0, token1)
+      expect((await twamm.twamm()).expirationInterval).to.equal(0)
+      expect((await twamm.twamm()).lastVirtualOrderTimestamp).to.equal(0)
+      expect((await twamm.twamm()).poolKey.token1).to.equal(ZERO_ADDR)
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      expect((await twamm.twamm()).expirationInterval).to.equal(10_000)
+      expect((await twamm.twamm()).lastVirtualOrderTimestamp).to.equal(
+        (await ethers.provider.getBlock('latest')).timestamp
+      )
+      expect((await twamm.twamm()).poolKey.token1).to.equal(poolKey.token1)
+
+      // now try to initialize another pool(token0, other) with the same twamm
+      const otherPoolKey = poolKey
+      otherPoolKey.token1 = wallets[4].address
+      await expect(
+        poolManager.initialize(otherPoolKey, encodeSqrtPriceX96(1, 1))
+      ).to.be.revertedWith('HookAlreadyInitialized()')
+
     })
   })
 
