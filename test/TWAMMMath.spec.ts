@@ -237,12 +237,12 @@ describe('TWAMMMath', () => {
 
     // TODO: Calculating the time to p_target (required when we reach the max price) does not work when we push the price to an edge.
     // Desmos also shows undefined or negative so may need a new formula here?
-    it.skip('TWAMM trades against itself when low liquidity', async () => {
-      // set low liquidity
-      liquidity = '1000000'
+    it.only('TWAMM trades against itself when low liquidity', async () => {
+      // set low liquidity to push price
+      liquidity = '1000000000000000000'
 
-      sellRateCurrent0 = toWei('5')
-      sellRateCurrent1 = toWei('4')
+      sellRateCurrent0 = toWei('10')
+      sellRateCurrent1 = toWei('1')
 
       const results = await twamm.callStatic.calculateExecutionUpdates(
         secondsElapsed,

@@ -48,13 +48,19 @@ library TwammMath {
         bytes16 newSqrtPriceBytesX96 = calculateNewSqrtPriceX96(params);
 
         bool isOverflow;
+        bool isUnderflow;
         // TODO: cleanup with abdk
+        //uint256 exponent = (uint128(newSqrtPriceBytesX96) >> 112) & 0x7FFF;
         unchecked {
             uint256 exponent = (uint128(newSqrtPriceBytesX96) >> 112) & 0x7FFF;
-            isOverflow = exponent > 16638; // Overflow
+            if (exponent < 16383) {
+                isUnderflow = true;
+            } else {
+                isOverflow = exponent > 16638;
+            }
         }
 
-        // TODO: What is the condition for the min?
+        // TODO: Set condition for min.
         newSqrtPriceX96 = isOverflow ? (TickMath.MAX_SQRT_RATIO - 1) : newSqrtPriceBytesX96.toUInt().toUint160();
     }
 
