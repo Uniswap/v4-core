@@ -66,14 +66,24 @@ contract TWAMMTest {
             uint256 earningsAmount1
         )
     {
-        (sqrtPriceX96, earningsPool0, earningsPool1) = TwammMath.calculateExecutionUpdates(
+        uint160 finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(
             secondsElapsed,
-            poolParams,
+            poolParams.sqrtPriceX96,
+            poolParams.liquidity,
+            orderPoolParams
+        );
+        (earningsPool0, earningsPool1) = TwammMath.calculateEarningsUpdates(
+            secondsElapsed,
+            poolParams.sqrtPriceX96,
+            finalSqrtPriceX96,
+            poolParams.liquidity,
             orderPoolParams
         );
 
         earningsAmount0 = (earningsPool0 * orderPoolParams.sellRateCurrent0) >> FixedPoint96.RESOLUTION;
         earningsAmount1 = (earningsPool1 * orderPoolParams.sellRateCurrent1) >> FixedPoint96.RESOLUTION;
+
+        return (finalSqrtPriceX96, earningsPool0, earningsPool1, earningsAmount0, earningsAmount1);
     }
 
     function calculateTimeBetweenTicks(

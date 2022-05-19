@@ -335,10 +335,17 @@ library TWAMM {
         while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
-            (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
+
+            OrderPoolParamsOnExecute memory orderParams = OrderPoolParamsOnExecute(
+                self.orderPools[0].sellRateCurrent,
+                self.orderPools[1].sellRateCurrent
+            );
+
+            finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(
                 params.secondsElapsedX96,
-                params.pool,
-                OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent)
+                params.pool.sqrtPriceX96,
+                params.pool.liquidity,
+                orderParams
             );
 
             (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
@@ -356,6 +363,14 @@ library TWAMM {
                     );
                     params.secondsElapsedX96 = params.secondsElapsedX96 - secondsUntilCrossingX96;
                 } else {
+                    (earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateEarningsUpdates(
+                        params.secondsElapsedX96,
+                        params.pool.sqrtPriceX96,
+                        finalSqrtPriceX96,
+                        params.pool.liquidity,
+                        orderParams
+                    );
+
                     if (params.nextTimestamp % self.expirationInterval == 0) {
                         self.orderPools[0].advanceToInterval(params.nextTimestamp, earningsFactorPool0);
                         self.orderPools[1].advanceToInterval(params.nextTimestamp, earningsFactorPool1);
@@ -423,8 +438,6 @@ library TWAMM {
             ? self.orderPools[1].sellRateCurrent
             : self.orderPools[0].sellRateCurrent;
 
-        // TODO
-        // uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateInEarningsToken;
         uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateCurrent;
         if (params.nextTimestamp % self.expirationInterval == 0) {
             self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, accruedEarningsFactor);
@@ -486,14 +499,29 @@ library TWAMM {
             self.orderPools[0].sellRateCurrent,
             self.orderPools[1].sellRateCurrent
         );
+        OrderPoolParamsOnExecute memory orderParams = OrderPoolParamsOnExecute(
+            self.orderPools[0].sellRateCurrent,
+            self.orderPools[1].sellRateCurrent
+        );
 
         // TODO: nextSqrtPriceX96 off by 1 wei (hence using the initializedSqrtPrice (l:331) param instead)
-        (uint160 nextSqrtPriceX96, uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath
-            .calculateExecutionUpdates(
-                secondsUntilCrossingX96,
-                params.pool,
-                OrderPoolParamsOnExecute(self.orderPools[0].sellRateCurrent, self.orderPools[1].sellRateCurrent)
-            );
+        // nextSqrtPriceX96 should be the initializedSqrtPrice
+
+        uint160 nextSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(
+            secondsUntilCrossingX96,
+            params.pool.sqrtPriceX96,
+            params.pool.liquidity,
+            orderParams
+        );
+
+        (uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath.calculateEarningsUpdates(
+            secondsUntilCrossingX96,
+            params.pool.sqrtPriceX96,
+            nextSqrtPriceX96,
+            params.pool.liquidity,
+            orderParams
+        );
+
         self.orderPools[0].advanceToCurrentTime(earningsFactorPool0);
         self.orderPools[1].advanceToCurrentTime(earningsFactorPool1);
 
@@ -504,6 +532,8 @@ library TWAMM {
             params.pool.liquidity = liquidityNet < 0
                 ? params.pool.liquidity - uint128(-liquidityNet)
                 : params.pool.liquidity + uint128(liquidityNet);
+            // should this be the init or the nextSqrtPrice ... under what conditions are they different
+            // TODO: fix bc the nextSqrtPriceX96 might not necessarily be the initSqrtPrice if we've reached the bounds of the liquidity
             params.pool.sqrtPriceX96 = initializedSqrtPrice;
         }
         return (params.pool, secondsUntilCrossingX96);

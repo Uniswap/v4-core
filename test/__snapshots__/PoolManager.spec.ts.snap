@@ -52,22 +52,22 @@ Object {
 exports[`PoolManager TWAMM #executeTWAMMOrders gas crossing 1 initialized tick 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 510417,
+  "gasUsed": 501808,
 }
 `;
 
 exports[`PoolManager TWAMM #executeTWAMMOrders gas crossing 2 initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 661682,
+  "gasUsed": 634285,
 }
 `;
 
 exports[`PoolManager TWAMM #executeTWAMMOrders gas with no initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 374644,
+  "gasUsed": 379200,
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `45345`;
+exports[`PoolManager bytecode size 1`] = `45816`;

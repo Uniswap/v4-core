@@ -16,80 +16,93 @@ library TwammMath {
 
     // ABDKMathQuad FixedPoint96.Q96.fromUInt()
     bytes16 constant Q96 = 0x405f0000000000000000000000000000;
-    // TickMath.MAX_SQRT_RATIO.fromUInt();
-    bytes16 constant MAX_PRICE = 0x409efffb12c7dfa3f8d4a0c91092bb2a;
-    // TickMath.MIN_SQRT_RATIO.fromUInt();
-    // bytes16 constant MIN_PRICE = 0x401f000276a300000000000000000000;
 
-    struct ParamsBytes16 {
+    struct PriceParamsBytes16 {
+        bytes16 sqrtSellRatioX96;
+        bytes16 sqrtSellRate;
+        bytes16 secondsElapsed;
         bytes16 sqrtPriceX96;
         bytes16 liquidity;
-        bytes16 sellRateCurrent0;
-        bytes16 sellRateCurrent1;
-        bytes16 secondsElapsed;
     }
 
-    /// @notice Calculation used incrementally (b/w expiration intervals or initialized ticks)
-    ///    to calculate earnings rewards and the amm price change resulting from executing TWAMM orders
-    function calculateExecutionUpdates(
+    function getNewSqrtPriceX96(
         uint256 secondsElapsed,
-        TWAMM.PoolParamsOnExecute memory poolParams,
-        TWAMM.OrderPoolParamsOnExecute memory orderPoolParams
-    )
-        internal
-        view
-        returns (
-            uint160 sqrtPriceX96,
-            uint256 earningsFactorPool0,
-            uint256 earningsFactorPool1
-        )
-    {
-        // https://www.desmos.com/calculator/yr3qvkafvy
-        // https://www.desmos.com/calculator/rjcdwnaoja -- tracks some intermediate calcs
+        uint160 sqrtPriceX96,
+        uint128 liquidity,
+        TWAMM.OrderPoolParamsOnExecute memory orderParams
+    ) internal view returns (uint160 newSqrtPriceX96) {
+        bytes16 sellRateBytes0 = orderParams.sellRateCurrent0.fromUInt();
+        bytes16 sellRateBytes1 = orderParams.sellRateCurrent1.fromUInt();
 
-        ParamsBytes16 memory params = ParamsBytes16({
-            sqrtPriceX96: poolParams.sqrtPriceX96.fromUInt(),
-            liquidity: poolParams.liquidity.fromUInt(),
-            sellRateCurrent0: orderPoolParams.sellRateCurrent0.fromUInt(),
-            sellRateCurrent1: orderPoolParams.sellRateCurrent1.fromUInt(),
-            secondsElapsed: secondsElapsed.fromUInt()
+        bytes16 sqrtSellRatioX96 = sellRateBytes1.div(sellRateBytes0).sqrt().mul(Q96);
+        bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
+
+        PriceParamsBytes16 memory params = PriceParamsBytes16({
+            sqrtSellRatioX96: sqrtSellRatioX96,
+            sqrtSellRate: sqrtSellRate,
+            secondsElapsed: secondsElapsed.fromUInt(),
+            sqrtPriceX96: sqrtPriceX96.fromUInt(),
+            liquidity: liquidity.fromUInt()
         });
 
-        bytes16 sellRatio = params.sellRateCurrent1.div(params.sellRateCurrent0);
+        bytes16 newSqrtPriceBytesX96 = calculateNewSqrtPriceX96(params);
 
-        bytes16 sqrtSellRatioX96 = sellRatio.sqrt().mul(Q96);
+        bool isOverflow;
+        // TODO: cleanup with abdk
+        unchecked {
+            uint256 exponent = (uint128(newSqrtPriceBytesX96) >> 112) & 0x7FFF;
+            isOverflow = exponent > 16638; // Overflow
+        }
 
-        bytes16 sqrtSellRate = params.sellRateCurrent0.mul(params.sellRateCurrent1).sqrt();
+        // TODO: What is the condition for the min?
+        newSqrtPriceX96 = isOverflow ? (TickMath.MAX_SQRT_RATIO - 1) : newSqrtPriceBytesX96.toUInt().toUint160();
+    }
 
-        bytes16 newSqrtPriceX96 = calculateNewSqrtPriceX96(
-            sqrtSellRatioX96,
-            sqrtSellRate,
-            params.secondsElapsed,
-            params
-        );
+    function calculateEarningsUpdates(
+        uint256 secondsElapsed,
+        uint160 sqrtPriceX96,
+        uint160 finalSqrtPriceX96,
+        uint128 liquidity,
+        TWAMM.OrderPoolParamsOnExecute memory orderParams
+    ) internal view returns (uint256 earningsFactorPool0, uint256 earningsFactorPool1) {
+        bytes16 sellRateBytes0 = orderParams.sellRateCurrent0.fromUInt();
+        bytes16 sellRateBytes1 = orderParams.sellRateCurrent1.fromUInt();
+
+        bytes16 sellRatio = sellRateBytes1.div(sellRateBytes0);
+        bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
+
+        uint256 totalSecondsElapsed = secondsElapsed;
+        // TODO check the min.
+        if (finalSqrtPriceX96 == (TickMath.MAX_SQRT_RATIO - 1)) {
+            // recalculate seconds to final price
+            secondsElapsed = calculateTimeBetweenTicks(
+                liquidity,
+                sqrtPriceX96,
+                finalSqrtPriceX96,
+                orderParams.sellRateCurrent0,
+                orderParams.sellRateCurrent1
+            );
+        }
 
         EarningsFactorParams memory earningsFactorParams = EarningsFactorParams({
-            secondsElapsedX96: params.secondsElapsed,
+            secondsElapsedX96: secondsElapsed.fromUInt(),
             sellRatio: sellRatio,
             sqrtSellRate: sqrtSellRate,
-            prevSqrtPriceX96: params.sqrtPriceX96,
-            newSqrtPriceX96: newSqrtPriceX96,
-            liquidity: params.liquidity
+            prevSqrtPriceX96: sqrtPriceX96.fromUInt(),
+            newSqrtPriceX96: finalSqrtPriceX96.fromUInt(),
+            liquidity: liquidity.fromUInt()
         });
 
-        // TODO set min price
-        sqrtPriceX96 = newSqrtPriceX96 > MAX_PRICE
-            ? MAX_PRICE.toUInt().toUint160() - 1
-            : newSqrtPriceX96.toUInt().toUint160();
+        // Trade the amm orders.
+        // If liquidity is 0, it trades the twamm orders against eachother for the time duration.
+        earningsFactorPool0 = getEarningsFactorPool0(earningsFactorParams).toUInt();
+        earningsFactorPool1 = getEarningsFactorPool1(earningsFactorParams).toUInt();
 
-        if (newSqrtPriceX96 > MAX_PRICE) {
-            // amountToken1 / sellRateToken0
-            earningsFactorPool0 = earningsFactorParams.secondsElapsedX96.mul(sellRatio).toUInt();
-            // amountToken0 / sellRateToken1
-            earningsFactorPool1 = earningsFactorParams.secondsElapsedX96.mul(reciprocal(sellRatio)).toUInt();
-        } else {
-            earningsFactorPool0 = getEarningsFactorPool0(earningsFactorParams).toUInt();
-            earningsFactorPool1 = getEarningsFactorPool1(earningsFactorParams).toUInt();
+        // If there are still more seconds, trade the twamm orders against eachother for secondsRemaining.
+        uint256 secondsRemaining = totalSecondsElapsed - secondsElapsed;
+        if (secondsRemaining > 0) {
+            earningsFactorPool0 += secondsRemaining.fromUInt().mul(sellRatio).toUInt();
+            earningsFactorPool1 += secondsRemaining.fromUInt().mul(reciprocal(sellRatio)).toUInt();
         }
     }
 
@@ -103,6 +116,8 @@ library TwammMath {
 
     /// @notice Used when crossing an initialized tick. Can extract the amount of seconds it took to cross
     ///   the tick, and recalibrate the calculation from there to accommodate liquidity changes
+    // todo: this does not work when we push the price to the edge.
+    // desmos returning undefined or negative
     function calculateTimeBetweenTicks(
         uint256 liquidity,
         uint160 sqrtPriceStartX96,
@@ -123,6 +138,8 @@ library TwammMath {
         return numerator.mul(Q96).div(denominator).toUInt();
     }
 
+    // todo: this does not work when we push the price to the edge.
+    // desmos returning undefined or negative
     function getTimeBetweenTicksMultiple(
         bytes16 sqrtSellRatioX96,
         bytes16 sqrtPriceStartX96,
@@ -162,15 +179,17 @@ library TwammMath {
         return minuend.sub(subtrahend).mul(Q96);
     }
 
-    function calculateNewSqrtPriceX96(
-        bytes16 sqrtSellRatioX96,
-        bytes16 sqrtSellRate,
-        bytes16 secondsElapsed,
-        ParamsBytes16 memory params
-    ) private view returns (bytes16 newSqrtPriceX96) {
-        bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(secondsElapsed).div(params.liquidity).div(Q96);
-        bytes16 c = sqrtSellRatioX96.sub(params.sqrtPriceX96).div(sqrtSellRatioX96.add(params.sqrtPriceX96));
-        newSqrtPriceX96 = sqrtSellRatioX96.mul(pow.exp().sub(c)).div(pow.exp().add(c));
+    function calculateNewSqrtPriceX96(PriceParamsBytes16 memory params) private view returns (bytes16 newSqrtPriceX96) {
+        bytes16 pow = uint256(2)
+            .fromUInt()
+            .mul(params.sqrtSellRate)
+            .mul(params.secondsElapsed)
+            .div(params.liquidity)
+            .div(Q96);
+        bytes16 c = params.sqrtSellRatioX96.sub(params.sqrtPriceX96).div(
+            params.sqrtSellRatioX96.add(params.sqrtPriceX96)
+        );
+        newSqrtPriceX96 = params.sqrtSellRatioX96.mul(pow.exp().sub(c)).div(pow.exp().add(c));
     }
 
     function reciprocal(bytes16 n) private pure returns (bytes16) {

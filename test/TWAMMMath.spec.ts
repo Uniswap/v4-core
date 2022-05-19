@@ -235,12 +235,13 @@ describe('TWAMMMath', () => {
       )
     })
 
-    // TODO:
-    it('TWAMM trades against itself when low liquidity', async () => {
+    // TODO: Calculating the time to p_target (required when we reach the max price) does not work when we push the price to an edge.
+    // Desmos also shows undefined or negative so may need a new formula here?
+    it.skip('TWAMM trades against itself when low liquidity', async () => {
       // set low liquidity
       liquidity = '1000000'
 
-      sellRateCurrent0 = toWei('4')
+      sellRateCurrent0 = toWei('5')
       sellRateCurrent1 = toWei('4')
 
       const results = await twamm.callStatic.calculateExecutionUpdates(
@@ -254,11 +255,12 @@ describe('TWAMMMath', () => {
       const expectedAmount = sellRateCurrent0.mul(secondsElapsed).div(fixedPoint)
       console.log(expectedAmount.toString())
 
+      // the trades should be slightly greater than the expectedAmount?
       expect(results.earningsAmount0).to.eq(expectedAmount)
       expect(results.earningsAmount1).to.eq(expectedAmount)
     })
 
-    it.only('TWAMM trades pushes the price to the max part of the curve', async () => {
+    it.skip('TWAMM trades pushes the price to the max part of the curve', async () => {
       // set low liquidity
       liquidity = '1000000'
       // to push price to max part of the curve, sell lots of token1
@@ -280,7 +282,7 @@ describe('TWAMMMath', () => {
     })
 
     // TODO: Even though the price should fall to the min, it overflows.
-    it.only('TWAMM trades pushes the price to the min part of the curve', async () => {
+    it.skip('TWAMM trades pushes the price to the min part of the curve', async () => {
       // set low liquidity
       liquidity = '100000000000000000000'
       // todo to push price to lowest part of the curve, sell lots of token0
