@@ -6,7 +6,14 @@ import { TWAMMHook, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20
 import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { createHookMask, encodeSqrtPriceX96, expandTo18Decimals, getMaxTick, getMinTick, getPoolId } from './shared/utilities'
+import {
+  createHookMask,
+  encodeSqrtPriceX96,
+  expandTo18Decimals,
+  getMaxTick,
+  getMinTick,
+  getPoolId,
+} from './shared/utilities'
 import { inOneBlock } from './shared/inOneBlock'
 
 function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
@@ -187,20 +194,14 @@ describe('TWAMM Hook', () => {
 
     it('gas with no initialized ticks', async () => {
       await inOneBlock(latestTimestamp + 100, async () => {
-        await twamm.submitLongTermOrder(
-          poolKey,
-          {
-            amountIn: expandTo18Decimals(1),
-            ...orderKey0,
-          }
-        )
-        await twamm.submitLongTermOrder(
-          poolKey,
-          {
-            amountIn: expandTo18Decimals(10),
-            ...orderKey1,
-          }
-        )
+        await twamm.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(1),
+          ...orderKey0,
+        })
+        await twamm.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(10),
+          ...orderKey1,
+        })
       })
       await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
       await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
@@ -213,20 +214,14 @@ describe('TWAMM Hook', () => {
         liquidityDelta: expandTo18Decimals(1),
       })
       await inOneBlock(latestTimestamp + 100, async () => {
-        await twamm.submitLongTermOrder(
-          poolKey,
-          {
-            amountIn: expandTo18Decimals(1),
-            ...orderKey0,
-          }
-        )
-        await twamm.submitLongTermOrder(
-          poolKey,
-          {
-            amountIn: expandTo18Decimals(10),
-            ...orderKey1,
-          }
-        )
+        await twamm.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(1),
+          ...orderKey0,
+        })
+        await twamm.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(10),
+          ...orderKey1,
+        })
       })
       await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
       await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
@@ -245,20 +240,14 @@ describe('TWAMM Hook', () => {
       })
 
       await inOneBlock(latestTimestamp + 100, async () => {
-        await twamm.submitLongTermOrder(
-          poolKey,
-          {
-            amountIn: expandTo18Decimals(1),
-            ...orderKey0,
-          }
-        )
-        await twamm.submitLongTermOrder(
-          poolKey,
-          {
-            amountIn: expandTo18Decimals(10),
-            ...orderKey1,
-          }
-        )
+        await twamm.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(1),
+          ...orderKey0,
+        })
+        await twamm.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(10),
+          ...orderKey1,
+        })
       })
 
       await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])

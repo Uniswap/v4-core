@@ -32,7 +32,11 @@ contract TWAMMHook is BaseHook {
         );
     }
 
-    function getOrderPool(IPoolManager.PoolKey calldata key, uint8 index) external view returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent) {
+    function getOrderPool(IPoolManager.PoolKey calldata key, uint8 index)
+        external
+        view
+        returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent)
+    {
         OrderPool.State storage orderPool = getTWAMM(key).orderPools[index];
         return (orderPool.sellRateCurrent, orderPool.earningsFactorCurrent);
     }
@@ -82,7 +86,10 @@ contract TWAMMHook is BaseHook {
         }
     }
 
-    function submitLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.LongTermOrderParams memory params) external returns (bytes32 orderId) {
+    function submitLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.LongTermOrderParams memory params)
+        external
+        returns (bytes32 orderId)
+    {
         TWAMM.State storage twamm = getTWAMM(key);
         executeTWAMMOrders(key);
         orderId = twamm.submitLongTermOrder(params);
@@ -90,10 +97,11 @@ contract TWAMMHook is BaseHook {
         token.transferFrom(params.owner, address(this), params.amountIn);
     }
 
-    function modifyLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.OrderKey memory orderKey, int128 amountDelta)
-        external
-        returns (uint256 amountOut0, uint256 amountOut1)
-    {
+    function modifyLongTermOrder(
+        IPoolManager.PoolKey memory key,
+        TWAMM.OrderKey memory orderKey,
+        int128 amountDelta
+    ) external returns (uint256 amountOut0, uint256 amountOut1) {
         executeTWAMMOrders(key);
 
         (amountOut0, amountOut1) = getTWAMM(key).modifyLongTermOrder(orderKey, amountDelta);
@@ -104,7 +112,10 @@ contract TWAMMHook is BaseHook {
         // });
     }
 
-    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.OrderKey memory orderKey) external returns (uint256 earningsAmount) {
+    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.OrderKey memory orderKey)
+        external
+        returns (uint256 earningsAmount)
+    {
         executeTWAMMOrders(key);
 
         uint8 sellTokenIndex;
@@ -113,7 +124,10 @@ contract TWAMMHook is BaseHook {
     }
 
     function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
-        (IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory swapParams) = abi.decode(rawData, (IPoolManager.PoolKey, IPoolManager.SwapParams));
+        (IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory swapParams) = abi.decode(
+            rawData,
+            (IPoolManager.PoolKey, IPoolManager.SwapParams)
+        );
 
         IPoolManager.BalanceDelta memory delta = poolManager.swap(key, swapParams);
 
