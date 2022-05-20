@@ -57,7 +57,7 @@ contract LimitOrders is BaseHook {
         epochs[keccak256(abi.encode(key, tickLower, zeroForOne))] = epochToSet;
     }
 
-    function getTick(IPoolManager.PoolKey calldata key) private view returns (int24 tick) {
+    function getTick(IPoolManager.PoolKey memory key) private view returns (int24 tick) {
         (, tick) = poolManager.getSlot0(key);
     }
 
@@ -79,8 +79,7 @@ contract LimitOrders is BaseHook {
     struct FillData {
         IPoolManager.PoolKey key;
         int24 tickLower;
-        int256 liquidityDelta;
-        bool zeroForOne;
+        uint256 epoch;
     }
 
     function afterSwap(
@@ -116,15 +115,13 @@ contract LimitOrders is BaseHook {
                 if (epoch != 0) {
                     poolManager.lock(
                         abi.encode(
-                            FillData({
-                                key: key,
-                                tickLower: tickLower,
-                                liquidityDelta: -int256(uint256(epochInfos[tickEpoch].liquidityTotal)),
-                                zeroForOne: zeroForOne
+                            LimitOrderData({
+                                limitOrderType: LimitOrderType.Place,
+                                data: abi.encode(FillData({key: key, tickLower: lower, epoch: tickEpoch}))
                             })
                         )
                     );
-                    setEpoch(key, tickLower, zeroForOne, 0);
+                    setEpoch(key, lower, zeroForOne, 0);
                 }
             }
         }
@@ -137,7 +134,6 @@ contract LimitOrders is BaseHook {
         IPoolManager.PoolKey key;
         int24 tickLower;
         int256 liquidityDelta;
-        bool zeroForOne;
     }
 
     function place(
@@ -147,18 +143,20 @@ contract LimitOrders is BaseHook {
     ) external onlyValidPools(key.hooks) returns (IPoolManager.BalanceDelta memory) {
         if (liquidity == 0) revert ZeroLiquidity();
 
-        int24 tick = getTick(key);
-
         return
             abi.decode(
                 poolManager.lock(
                     abi.encode(
-                        PlaceData({
-                            owner: msg.sender,
-                            key: key,
-                            tickLower: tickLower,
-                            liquidityDelta: int256(uint256(liquidity)),
-                            zeroForOne: tick >= tickLower
+                        LimitOrderData({
+                            limitOrderType: LimitOrderType.Place,
+                            data: abi.encode(
+                                PlaceData({
+                                    owner: msg.sender,
+                                    key: key,
+                                    tickLower: tickLower,
+                                    liquidityDelta: int256(uint256(liquidity))
+                                })
+                            )
                         })
                     )
                 ),
@@ -166,13 +164,33 @@ contract LimitOrders is BaseHook {
             );
     }
 
-    function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
-        if (rawData.length == 123) {
-            PlaceData memory data = abi.decode(rawData, (PlaceData));
+    // function kill()
 
-            uint256 tickEpoch = getEpoch(data.key, data.tickLower, false);
+    // function withdraw()
+
+    enum LimitOrderType {
+        Place,
+        Fill,
+        Kill
+    }
+
+    struct LimitOrderData {
+        LimitOrderType limitOrderType;
+        bytes data;
+    }
+
+    function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
+        LimitOrderData memory limitOrderData = abi.decode(rawData, (LimitOrderData));
+
+        if (limitOrderData.limitOrderType == LimitOrderType.Place) {
+            PlaceData memory data = abi.decode(limitOrderData.data, (PlaceData));
+
+            int24 tick = getTick(data.key);
+            bool zeroForOne = tick >= data.tickLower;
+
+            uint256 tickEpoch = getEpoch(data.key, data.tickLower, zeroForOne);
             if (tickEpoch == 0) {
-                setEpoch(data.key, data.tickLower, data.zeroForOne, tickEpoch = ++epoch);
+                setEpoch(data.key, data.tickLower, zeroForOne, tickEpoch = ++epoch);
             }
 
             IPoolManager.BalanceDelta memory delta = poolManager.modifyPosition(
@@ -202,11 +220,36 @@ contract LimitOrders is BaseHook {
                 poolManager.settle(data.key.token1);
             }
 
-            // emit event here for tracking
+            // emit event here
 
             return abi.encode(delta);
         } else {
-            revert NotImplemented();
+            FillData memory data = abi.decode(limitOrderData.data, (FillData));
+
+            EpochInfo storage epochInfo = epochInfos[data.epoch];
+
+            IPoolManager.BalanceDelta memory delta = poolManager.modifyPosition(
+                data.key,
+                IPoolManager.ModifyPositionParams({
+                    tickLower: data.tickLower,
+                    tickUpper: data.tickLower + data.key.tickSpacing,
+                    liquidityDelta: -int256(uint256(epochInfo.liquidityTotal))
+                })
+            );
+
+            if (delta.amount0 < 0) {
+                uint256 amount = uint256(-delta.amount0);
+                poolManager.mint(data.key.token0, address(this), amount);
+                epochInfo.token0 += amount;
+            } else if (delta.amount1 < 0) {
+                uint256 amount = uint256(-delta.amount1);
+                poolManager.mint(data.key.token0, address(this), amount);
+                epochInfo.token1 += amount;
+            }
+
+            // emit event here
+
+            return abi.encode(delta);
         }
     }
 }
