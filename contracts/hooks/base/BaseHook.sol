@@ -6,8 +6,8 @@ import {IHooks} from '../../interfaces/IHooks.sol';
 
 abstract contract BaseHook is IHooks {
     error NotPoolManager();
+    error InvalidPool();
     error HookNotImplemented();
-    error PoolNotInitialized();
 
     /// @notice The address of the pool manager
     IPoolManager public immutable poolManager;
@@ -19,6 +19,12 @@ abstract contract BaseHook is IHooks {
     /// @dev Only the pool manager may call this function
     modifier poolManagerOnly() {
         if (msg.sender != address(poolManager)) revert NotPoolManager();
+        _;
+    }
+
+    /// @dev Only pools with hooks set to this contract may call this function
+    modifier onlyValidPools(IHooks hooks) {
+        if (hooks != this) revert InvalidPool();
         _;
     }
 
