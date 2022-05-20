@@ -3,11 +3,12 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
+import {Tick} from '../libraries/Tick.sol';
 import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import {IHooks} from './IHooks.sol';
 import {ITWAMM} from './ITWAMM.sol';
 
-interface IPoolManager is ITWAMM, IERC1155 {
+interface IPoolManager is IERC1155 {
     /// @notice Thrown when tokens touched has exceeded max of 256
     error MaxTokensTouched();
 
@@ -22,8 +23,12 @@ interface IPoolManager is ITWAMM, IERC1155 {
 
     error NotPoolManagerToken();
 
+    /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
+    error TickSpacingTooLarge();
+    /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
+    error TickSpacingTooSmall();
+
     event Swap(int256 amount0, int256 amount1);
-    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -39,6 +44,28 @@ interface IPoolManager is ITWAMM, IERC1155 {
         IHooks hooks;
     }
 
+    /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
+    function MAX_TICK_SPACING() external view returns (int24);
+
+    /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
+    function MIN_TICK_SPACING() external view returns (int24);
+
+    /// @notice Get the current value in slot0 of the given pool
+    function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
+
+    /// @notice Get tick info for a given tick
+    function getTickNetLiquidity(PoolKey memory key, int24 tick) external view returns (int128);
+
+    /// @notice Get next initialized tick within one word
+    function nextInitializedTickWithinOneWord(
+        IPoolManager.PoolKey memory key,
+        int24 tick,
+        bool lte
+    ) external view returns (int24 next, bool initialized);
+
+    /// @notice Get the current value of liquidity of the given pool
+    function getLiquidity(IPoolManager.PoolKey memory key) external view returns (uint128 liquidity);
+
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
     struct BalanceDelta {
@@ -50,16 +77,7 @@ interface IPoolManager is ITWAMM, IERC1155 {
     function reservesOf(IERC20Minimal token) external view returns (uint256);
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(
-        PoolKey memory key,
-        uint160 sqrtPriceX96,
-        uint256 twammExpiryInterval
-    ) external returns (int24 tick);
-
-    /// @notice Increase the maximum number of stored observations for the pool's oracle
-    function increaseObservationCardinalityNext(PoolKey memory key, uint16 observationCardinalityNext)
-        external
-        returns (uint16 observationCardinalityNextOld, uint16 observationCardinalityNextNew);
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
     /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
     /// @param index The index of the locker, also known as the id of the locker
@@ -133,17 +151,4 @@ interface IPoolManager is ITWAMM, IERC1155 {
 
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
-
-    /// @notice Observe a past state of a pool
-    function observe(PoolKey calldata key, uint32[] calldata secondsAgos)
-        external
-        view
-        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s);
-
-    /// @notice Get the snapshot of the cumulative values of a tick range
-    function snapshotCumulativesInside(
-        PoolKey calldata key,
-        int24 tickLower,
-        int24 tickUpper
-    ) external view returns (Pool.Snapshot memory);
 }

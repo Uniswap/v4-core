@@ -5,6 +5,11 @@ pragma solidity ^0.8.13;
 /// @notice Computes sqrt price for ticks of size 1.0001, i.e. sqrt(1.0001^tick) as fixed point Q64.96 numbers. Supports
 /// prices between 2**-128 and 2**128
 library TickMath {
+    /// @notice Thrown when the tick passed to #getSqrtRatioAtTick is not between MIN_TICK and MAX_TICK
+    error InvalidTick();
+    /// @notice Thrown when the ratio passed to #getTickAtSqrtRatio does not correspond to a price between MIN_TICK and MAX_TICK
+    error InvalidSqrtRatio();
+
     /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
@@ -15,6 +20,20 @@ library TickMath {
     /// @dev The maximum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MAX_TICK)
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
+    /// @notice Given a tickSpacing, compute the maximum usable tick
+    function maxUsableTick(int24 tickSpacing) internal pure returns (int24) {
+        unchecked {
+            return (MAX_TICK / tickSpacing) * tickSpacing;
+        }
+    }
+
+    /// @notice Given a tickSpacing, compute the minimum usable tick
+    function minUsableTick(int24 tickSpacing) internal pure returns (int24) {
+        unchecked {
+            return (MIN_TICK / tickSpacing) * tickSpacing;
+        }
+    }
+
     /// @notice Calculates sqrt(1.0001^tick) * 2^96
     /// @dev Throws if |tick| > max tick
     /// @param tick The input tick for the above formula
@@ -23,7 +42,7 @@ library TickMath {
     function getSqrtRatioAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
         unchecked {
             uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
-            require(absTick <= uint256(int256(MAX_TICK)), 'T');
+            if (absTick > uint256(int256(MAX_TICK))) revert InvalidTick();
 
             uint256 ratio = absTick & 0x1 != 0
                 ? 0xfffcb933bd6fad37aa2d162d1a594001
@@ -65,7 +84,7 @@ library TickMath {
     function getTickAtSqrtRatio(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
         unchecked {
             // second inequality must be < because the price can never reach the price at the max tick
-            require(sqrtPriceX96 >= MIN_SQRT_RATIO && sqrtPriceX96 < MAX_SQRT_RATIO, 'R');
+            if (sqrtPriceX96 < MIN_SQRT_RATIO || sqrtPriceX96 >= MAX_SQRT_RATIO) revert InvalidSqrtRatio();
             uint256 ratio = uint256(sqrtPriceX96) << 32;
 
             uint256 r = ratio;

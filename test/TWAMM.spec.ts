@@ -5,6 +5,7 @@ import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
+import { inOneBlock } from './shared/inOneBlock'
 
 async function mineNextBlock(time: number) {
   await ethers.provider.send('evm_mine', [time])
@@ -14,8 +15,8 @@ async function setNextBlocktime(time: number) {
   await ethers.provider.send('evm_setNextBlockTimestamp', [time])
 }
 
-async function setAutomine(autmine: boolean) {
-  await ethers.provider.send('evm_setAutomine', [autmine])
+async function setAutomine(b: boolean) {
+  await ethers.provider.send('evm_setAutomine', [b])
 }
 
 function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
@@ -36,6 +37,17 @@ type OrderKey = {
   zeroForOne: boolean
 }
 
+type PoolParams = {
+  feeProtocol: number
+  sqrtPriceX96: BigNumber
+  fee: string
+  liquidity: string
+  tickSpacing: number
+}
+
+const ZERO_ADDR = ethers.constants.AddressZero
+const TICK_SPACING = 60
+const FEE = '3000'
 const MIN_INT128 = BigNumber.from('-170141183460469231731687303715884105728')
 
 describe('TWAMM', () => {
@@ -55,6 +67,13 @@ describe('TWAMM', () => {
     return nextExpirationTimestamp
   }
 
+  async function executeTwammAndThen(timestamp: number, poolParams: PoolParams, fn: () => void) {
+    await inOneBlock(timestamp, async () => {
+      await twamm.executeTWAMMOrders(poolParams)
+      await fn()
+    })
+  }
+
   beforeEach(async () => {
     twamm = await loadFixture(twammFixture)
   })
@@ -70,7 +89,8 @@ describe('TWAMM', () => {
       expect(expirationInterval).to.equal(0)
       expect(lastVirtualOrderTimestamp).to.equal(0)
 
-      await twamm.initialize(10_000)
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
+      await twamm.initialize(10_000, poolKey)
       ;({ expirationInterval, lastVirtualOrderTimestamp } = await twamm.getState())
       expect(expirationInterval).to.equal(10_000)
       expect(lastVirtualOrderTimestamp).to.equal((await ethers.provider.getBlock('latest')).timestamp)
@@ -88,7 +108,9 @@ describe('TWAMM', () => {
     beforeEach('deploy test twamm', async () => {
       zeroForOne = true
       owner = wallet.address
-      ;(amountIn = toWei('1')), await twamm.initialize(10_000)
+      amountIn = toWei('1')
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
+      await twamm.initialize(10_000, poolKey)
       const blocktime = (await ethers.provider.getBlock('latest')).timestamp
       nonIntervalExpiration = blocktime
       prevTimeExpiration = findExpiryTime(blocktime, -1, 10000)
@@ -190,13 +212,14 @@ describe('TWAMM', () => {
     const halfAmount = amountIn.div(2)
 
     beforeEach('Initialize a single pool sell', async () => {
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
       blocktime = (await ethers.provider.getBlock('latest')).timestamp
       submission = nIntervalsFrom(blocktime, interval, 1)
 
       midPointTime = nIntervalsFrom(blocktime, interval, 3)
       expiration = nIntervalsFrom(blocktime, interval, 5)
 
-      await twamm.initialize(interval)
+      await twamm.initialize(interval, poolKey)
 
       const zeroForOneOrder = { zeroForOne, owner: wallet.address, amountIn, expiration }
       await setAutomine(false)
@@ -248,12 +271,13 @@ describe('TWAMM', () => {
     const halfAmount = amountIn.div(2)
 
     beforeEach('Initialize two orders', async () => {
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
       blocktime = (await ethers.provider.getBlock('latest')).timestamp
       timestamp1 = nIntervalsFrom(blocktime, interval, 1)
       timestamp2 = nIntervalsFrom(blocktime, interval, 3)
       timestamp3 = nIntervalsFrom(blocktime, interval, 5)
 
-      await twamm.initialize(interval)
+      await twamm.initialize(interval, poolKey)
       await twamm.executeTWAMMOrders(poolParams)
 
       const zeroForOneOrder = { zeroForOne, owner: wallet.address, amountIn, expiration: timestamp3 }
@@ -283,7 +307,7 @@ describe('TWAMM', () => {
   describe('#modifyLongTermOrder', () => {
     let orderKey: OrderKey
     let interval: number
-    let poolParams: any
+    let poolParams: PoolParams
     let sellAmount: BigNumber
     let timestampInterval0: number
     let timestampInterval1: number
@@ -312,25 +336,25 @@ describe('TWAMM', () => {
       // always start on an interval for consistent timeframes on test runs
       await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval0])
 
-      twamm.initialize(interval)
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
+      await twamm.initialize(interval, poolKey)
 
       orderKey = { owner, expiration: timestampInterval2, zeroForOne: true }
 
-      await ethers.provider.send('evm_setAutomine', [false])
-      await twamm.submitLongTermOrder({
-        zeroForOne: true,
-        owner,
-        amountIn: toWei('3'),
-        expiration: timestampInterval2,
+      await executeTwammAndThen(timestampInterval1, poolParams, async () => {
+        await twamm.submitLongTermOrder({
+          zeroForOne: true,
+          owner,
+          amountIn: toWei('3'),
+          expiration: timestampInterval2,
+        })
+        await twamm.submitLongTermOrder({
+          zeroForOne: false,
+          owner,
+          amountIn: toWei('3'),
+          expiration: timestampInterval2,
+        })
       })
-      await twamm.submitLongTermOrder({
-        zeroForOne: false,
-        owner,
-        amountIn: toWei('3'),
-        expiration: timestampInterval2,
-      })
-      await ethers.provider.send('evm_setAutomine', [true])
-      await ethers.provider.send('evm_mine', [timestampInterval1])
     })
 
     describe('when cancelling the remaining order', () => {
@@ -367,11 +391,9 @@ describe('TWAMM', () => {
       })
 
       it('claims half the earnings at midpoint', async () => {
-        await ethers.provider.send('evm_setAutomine', [false])
-        await twamm.executeTWAMMOrders(poolParams)
-        await twamm.modifyLongTermOrder(orderKey, MIN_INT128)
-        // update state and cancel the order at the midpoint
-        await ethers.provider.send('evm_mine', [timestampInterval2 - 5_000])
+        await executeTwammAndThen(timestampInterval2 - 5_000, poolParams, async () => {
+          await twamm.modifyLongTermOrder(orderKey, MIN_INT128)
+        })
 
         const order = await twamm.getOrder(orderKey)
 
@@ -400,7 +422,8 @@ describe('TWAMM', () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       await ethers.provider.send('evm_setNextBlockTimestamp', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
 
-      await twamm.initialize(10_000)
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
+      await twamm.initialize(10_000, poolKey)
 
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       timestampInterval1 = nIntervalsFrom(latestTimestamp, 10_000, 1)
@@ -408,38 +431,36 @@ describe('TWAMM', () => {
       timestampInterval3 = nIntervalsFrom(latestTimestamp, 10_000, 3)
       timestampInterval4 = nIntervalsFrom(latestTimestamp, 10_000, 4)
 
-      await ethers.provider.send('evm_setAutomine', [false])
+      await inOneBlock(timestampInterval1, async () => {
+        await twamm.submitLongTermOrder({
+          zeroForOne: true,
+          owner: wallet.address,
+          amountIn: toWei('1'),
+          expiration: timestampInterval2,
+        })
 
-      await twamm.submitLongTermOrder({
-        zeroForOne: true,
-        owner: wallet.address,
-        amountIn: toWei('1'),
-        expiration: timestampInterval2,
-      })
+        await twamm.submitLongTermOrder({
+          zeroForOne: false,
+          owner: wallet.address,
+          amountIn: toWei('5'),
+          expiration: timestampInterval3,
+        })
 
-      await twamm.submitLongTermOrder({
-        zeroForOne: false,
-        owner: wallet.address,
-        amountIn: toWei('5'),
-        expiration: timestampInterval3,
-      })
+        // set two more expiry's so its never 0, logic isn't there yet
+        await twamm.submitLongTermOrder({
+          zeroForOne: false,
+          owner: wallet.address,
+          amountIn: toWei('2'),
+          expiration: timestampInterval4,
+        })
 
-      // set two more expiry's so its never 0, logic isn't there yet
-      await twamm.submitLongTermOrder({
-        zeroForOne: false,
-        owner: wallet.address,
-        amountIn: toWei('2'),
-        expiration: timestampInterval4,
+        await twamm.submitLongTermOrder({
+          zeroForOne: true,
+          owner: wallet.address,
+          amountIn: toWei('2'),
+          expiration: timestampInterval4,
+        })
       })
-
-      await twamm.submitLongTermOrder({
-        zeroForOne: true,
-        owner: wallet.address,
-        amountIn: toWei('2'),
-        expiration: timestampInterval4,
-      })
-      await ethers.provider.send('evm_setAutomine', [true])
-      await ethers.provider.send('evm_mine', [timestampInterval1])
     })
 
     it('updates all the necessarily intervals', async () => {
@@ -458,7 +479,7 @@ describe('TWAMM', () => {
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval4)).to.eq(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval4)).to.eq(0)
 
-      await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee, tickSpacing })
+      await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity })
 
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.eq(0)
       expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.eq(0)
@@ -479,50 +500,44 @@ describe('TWAMM', () => {
       const fee = 3000
       const tickSpacing = 60
       await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval3 + 5_000])
-      await snapshotGasCost(twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity, fee, tickSpacing }))
+      await snapshotGasCost(twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity }))
     })
   })
 
   describe('#claimEarnings', () => {
     let orderKey: OrderKey
     const mockTicks = {}
-    const poolParams = {
+    const poolParams: PoolParams = {
       feeProtocol: 0,
       sqrtPriceX96: encodeSqrtPriceX96(1, 1),
       fee: '3000',
-      tickSpacing: '60',
+      tickSpacing: 60,
       liquidity: '14496800315719602540',
     }
     let expiration: number
     const interval = 10_000
 
     beforeEach('create new longTermOrders', async () => {
-      await twamm.initialize(interval)
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
+      await twamm.initialize(interval, poolKey)
 
       const timestamp = (await ethers.provider.getBlock('latest')).timestamp
       const startTime = findExpiryTime(timestamp, 1, interval)
       expiration = findExpiryTime(timestamp, 2, interval)
-
-      await ethers.provider.send('evm_setAutomine', [false])
-
       orderKey = { owner: wallet.address, expiration, zeroForOne: true }
-
       const ltoParams = { owner: wallet.address, expiration, amountIn: toWei('2') }
-      await twamm.executeTWAMMOrders(poolParams)
-      await twamm.submitLongTermOrder({ ...ltoParams, zeroForOne: true })
-      await twamm.submitLongTermOrder({ ...ltoParams, zeroForOne: false })
 
-      await ethers.provider.send('evm_setAutomine', [true])
-      await ethers.provider.send('evm_mine', [startTime])
+      await executeTwammAndThen(startTime, poolParams, async () => {
+        await twamm.submitLongTermOrder({ ...ltoParams, zeroForOne: true })
+        await twamm.submitLongTermOrder({ ...ltoParams, zeroForOne: false })
+      })
     })
 
     it('returns the correct amount if there are claimed but uncollected earnings', async () => {
-      await setAutomine(false)
-      await twamm.executeTWAMMOrders(poolParams)
-      // cache uncollected earnings with modify order
-      await twamm.modifyLongTermOrder(orderKey, 0)
-      await mineNextBlock(expiration - interval / 2)
-      await setAutomine(true)
+      await executeTwammAndThen(expiration - interval / 2, poolParams, async () => {
+        // cache uncollected earnings with modify order
+        await twamm.modifyLongTermOrder(orderKey, 0)
+      })
 
       await setNextBlocktime(expiration + 20_000)
       await twamm.executeTWAMMOrders(poolParams)
@@ -589,7 +604,8 @@ describe('TWAMM', () => {
     const liquidity = '1000000000000000000000000'
     const fee = '3000'
     const tickSpacing = 60
-    const poolParams = { sqrtPriceX96, liquidity, fee, tickSpacing }
+    const feeProtocol = 0
+    const poolParams = { feeProtocol, sqrtPriceX96, liquidity, fee, tickSpacing }
 
     const error = 5
     const fullSellAmount = toWei('5')
@@ -600,7 +616,8 @@ describe('TWAMM', () => {
     const fullSellAmountOverError = fullSellAmount.add(fullSellAmount.div(error))
 
     beforeEach('submit a single long term order', async () => {
-      await twamm.initialize(interval)
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
+      await twamm.initialize(interval, poolKey)
 
       blocktime = (await ethers.provider.getBlock('latest')).timestamp
       startTime = findExpiryTime(blocktime, 1, interval)
@@ -608,19 +625,15 @@ describe('TWAMM', () => {
       expiryTime = findExpiryTime(blocktime, 3, interval)
 
       orderKey = { owner: wallet.address, expiration: expiryTime, zeroForOne: true }
-      // Submit the order at the startTime.
-      // advanceTime(startTime)
-      await ethers.provider.send('evm_setAutomine', [false])
-      await twamm.executeTWAMMOrders(poolParams)
-      await twamm.submitLongTermOrder({
-        zeroForOne,
-        owner: wallet.address,
-        amountIn: fullSellAmount,
-        expiration: expiryTime,
-      })
 
-      await ethers.provider.send('evm_mine', [startTime])
-      await ethers.provider.send('evm_setAutomine', [true])
+      await executeTwammAndThen(startTime, poolParams, async () => {
+        await twamm.submitLongTermOrder({
+          zeroForOne,
+          owner: wallet.address,
+          amountIn: fullSellAmount,
+          expiration: expiryTime,
+        })
+      })
 
       blocktime = (await ethers.provider.getBlock('latest')).timestamp
       const expectedSellRate = fullSellAmount.div(expiryTime - blocktime)
@@ -705,59 +718,55 @@ describe('TWAMM', () => {
       const sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       const liquidity = '1000000000000000000000000'
       const fee = '3000'
-      const tickSpacing = '60'
+      const tickSpacing = 60
+      const feeProtocol = 0
 
-      const fullSellAmount = toWei('5')
-      const halfSellAmount = toWei('2.5')
+      const poolParams = { feeProtocol, sqrtPriceX96, liquidity, fee, tickSpacing }
 
-      const poolParams = { sqrtPriceX96, liquidity, fee, tickSpacing }
-
-      await twamm.initialize(10_000)
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
+      await twamm.initialize(10_000, poolKey)
 
       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       const timestampInterval1 = nIntervalsFrom(latestTimestamp, 10_000, 1)
       const timestampInterval2 = nIntervalsFrom(latestTimestamp, 10_000, 3)
       const timestampInterval3 = nIntervalsFrom(latestTimestamp, 10_000, 4)
 
+      const halfSellAmount = toWei('2.5')
+      const fullSellAmount = toWei('5')
+      const fullSellRate = fullSellAmount.div(timestampInterval2 - timestampInterval1)
+
       const owner = wallet.address
       const expiration = timestampInterval2
-
-      await ethers.provider.send('evm_setAutomine', [false])
-
-      await twamm.executeTWAMMOrders(poolParams)
-
       const orderKey1 = { owner, expiration, zeroForOne: true }
-      await twamm.submitLongTermOrder({
-        zeroForOne: true,
-        owner,
-        amountIn: halfSellAmount,
-        expiration: timestampInterval2,
-      })
-
       const orderKey2 = { owner, expiration, zeroForOne: true }
-      await twamm.submitLongTermOrder({
-        zeroForOne: true,
-        owner: other.address,
-        amountIn: halfSellAmount,
-        expiration: timestampInterval2,
-      })
-
       const orderKey3 = { owner, expiration, zeroForOne: false }
-      await twamm.submitLongTermOrder({
-        zeroForOne: false,
-        owner,
-        amountIn: fullSellAmount,
-        expiration: timestampInterval2,
-      })
 
       expect((await twamm.getOrderPool(0)).sellRate).to.eq(0)
       expect((await twamm.getOrderPool(1)).sellRate).to.eq(0)
 
-      await ethers.provider.send('evm_setAutomine', [true])
-      await ethers.provider.send('evm_mine', [timestampInterval1])
+      await executeTwammAndThen(timestampInterval1, poolParams, async () => {
+        await twamm.submitLongTermOrder({
+          zeroForOne: true,
+          owner,
+          amountIn: halfSellAmount,
+          expiration: timestampInterval2,
+        })
+        await twamm.submitLongTermOrder({
+          zeroForOne: true,
+          owner: other.address,
+          amountIn: halfSellAmount,
+          expiration: timestampInterval2,
+        })
+        await twamm.submitLongTermOrder({
+          zeroForOne: false,
+          owner,
+          amountIn: fullSellAmount,
+          expiration: timestampInterval2,
+        })
+      })
 
-      expect((await twamm.getOrderPool(0)).sellRate).to.eq('250000000000000')
-      expect((await twamm.getOrderPool(1)).sellRate).to.eq('250000000000000')
+      expect((await twamm.getOrderPool(0)).sellRate).to.eq(fullSellRate)
+      expect((await twamm.getOrderPool(1)).sellRate).to.eq(fullSellRate)
       expect((await twamm.getOrderPool(0)).earningsFactor).to.eq('0')
       expect((await twamm.getOrderPool(1)).earningsFactor).to.eq('0')
 

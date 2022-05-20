@@ -4,7 +4,9 @@ pragma solidity =0.8.13;
 import {TWAMM} from '../libraries/TWAMM/TWAMM.sol';
 import {TwammMath} from '../libraries/TWAMM/TwammMath.sol';
 import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
+import {IPoolManager} from '../interfaces/IPoolManager.sol';
 import {Tick} from '../libraries/Tick.sol';
+import {TickBitmap} from '../libraries/TickBitmap.sol';
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
 import {FixedPoint96} from '../libraries/FixedPoint96.sol';
 import 'hardhat/console.sol';
@@ -17,8 +19,8 @@ contract TWAMMTest {
     mapping(int24 => Tick.Info) mockTicks;
     mapping(int16 => uint256) mockTickBitmap;
 
-    function initialize(uint256 orderInterval) external {
-        twamm.initialize(orderInterval);
+    function initialize(uint256 orderInterval, IPoolManager.PoolKey memory poolKey) external {
+        twamm.initialize(orderInterval, poolKey);
     }
 
     function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
@@ -49,14 +51,10 @@ contract TWAMMTest {
     }
 
     function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
-        twamm.executeTWAMMOrders(poolParams, mockTicks, mockTickBitmap);
+        twamm.executeTWAMMOrders(IPoolManager(address(this)), twamm.poolKey, poolParams);
     }
 
-    function calculateExecutionUpdates(
-        uint256 secondsElapsed,
-        TWAMM.PoolParamsOnExecute memory poolParams,
-        TWAMM.OrderPoolParamsOnExecute memory orderPoolParams
-    )
+    function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
         external
         returns (
             uint160 sqrtPriceX96,
@@ -66,22 +64,11 @@ contract TWAMMTest {
             uint256 earningsAmount1
         )
     {
-        uint160 finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(
-            secondsElapsed,
-            poolParams.sqrtPriceX96,
-            poolParams.liquidity,
-            orderPoolParams
-        );
-        (earningsPool0, earningsPool1) = TwammMath.calculateEarningsUpdates(
-            secondsElapsed,
-            poolParams.sqrtPriceX96,
-            finalSqrtPriceX96,
-            poolParams.liquidity,
-            orderPoolParams
-        );
+        uint160 finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(params);
+        (earningsPool0, earningsPool1) = TwammMath.calculateEarningsUpdates(params, finalSqrtPriceX96);
 
-        earningsAmount0 = (earningsPool0 * orderPoolParams.sellRateCurrent0) >> FixedPoint96.RESOLUTION;
-        earningsAmount1 = (earningsPool1 * orderPoolParams.sellRateCurrent1) >> FixedPoint96.RESOLUTION;
+        earningsAmount0 = (earningsPool0 * params.sellRateCurrent0) >> FixedPoint96.RESOLUTION;
+        earningsAmount1 = (earningsPool1 * params.sellRateCurrent1) >> FixedPoint96.RESOLUTION;
 
         return (finalSqrtPriceX96, earningsPool0, earningsPool1, earningsAmount0, earningsAmount1);
     }
@@ -125,5 +112,23 @@ contract TWAMMTest {
     function getState() external view returns (uint256 expirationInterval, uint256 lastVirtualOrderTimestamp) {
         expirationInterval = twamm.expirationInterval;
         lastVirtualOrderTimestamp = twamm.lastVirtualOrderTimestamp;
+    }
+
+    //////////////////////////////////////////////////////
+    // Mocking IPoolManager functions here
+    //////////////////////////////////////////////////////
+
+    function getTickNetLiquidity(IPoolManager.PoolKey memory key, int24 tick) external view returns (Tick.Info memory) {
+        return mockTicks[tick];
+    }
+
+    using TickBitmap for mapping(int16 => uint256);
+
+    function nextInitializedTickWithinOneWord(
+        IPoolManager.PoolKey memory key,
+        int24 tick,
+        bool lte
+    ) external view returns (int24 next, bool initialized) {
+        return mockTickBitmap.nextInitializedTickWithinOneWord(tick, key.tickSpacing, lte);
     }
 }

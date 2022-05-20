@@ -2,14 +2,14 @@
 
 exports[`TWAMMMath #calculateExecutionUpdates outputs the correct results when gas 1`] = `
 Object {
-  "calldataByteLength": 228,
-  "gasUsed": 77181,
+  "calldataByteLength": 164,
+  "gasUsed": 73795,
 }
 `;
 
 exports[`TWAMMMath #calculateTimeBetweenTicks outputs the correct results when gas 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 56986,
+  "gasUsed": 57008,
 }
 `;

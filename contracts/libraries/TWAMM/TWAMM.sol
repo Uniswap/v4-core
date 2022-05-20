@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Tick} from '../Tick.sol';
 import {TickBitmap} from '../TickBitmap.sol';
+import {IPoolManager} from '../../interfaces/IPoolManager.sol';
 import {TickMath} from '../TickMath.sol';
 import {OrderPool} from './OrderPool.sol';
 import {TwammMath} from './TwammMath.sol';
@@ -56,12 +57,14 @@ library TWAMM {
     error InvalidAmountDelta(bytes32 orderId, uint256 unsoldAmount, int256 amountDelta);
 
     /// @notice Contains full state related to the TWAMM
+    /// @member poolKey
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
     /// @member lastVirtualOrderTimestamp Last timestamp in which virtual orders were executed
     /// @member orderPools Mapping from token index (0 and 1) to OrderPool that is selling that token
     /// @member orders Mapping of orderId to individual orders
     /// @member nextId Id for next submitted order
     struct State {
+        IPoolManager.PoolKey poolKey;
         uint256 expirationInterval;
         uint256 lastVirtualOrderTimestamp;
         mapping(uint8 => OrderPool.State) orderPools;
@@ -95,10 +98,15 @@ library TWAMM {
 
     /// @notice Initialize TWAMM state
     /// @param expirationInterval Time interval on which orders can expire
-    function initialize(State storage self, uint256 expirationInterval) internal {
+    function initialize(
+        State storage self,
+        uint256 expirationInterval,
+        IPoolManager.PoolKey memory key
+    ) internal {
         // TODO: could enforce a 1 time call...but redundant in the context of Pool
         self.expirationInterval = expirationInterval;
         self.lastVirtualOrderTimestamp = block.timestamp;
+        self.poolKey = key;
     }
 
     struct LongTermOrderParams {
@@ -214,23 +222,15 @@ library TWAMM {
     struct PoolParamsOnExecute {
         uint160 sqrtPriceX96;
         uint128 liquidity;
-        uint24 fee;
-        int24 tickSpacing;
-    }
-
-    struct OrderPoolParamsOnExecute {
-        uint256 sellRateCurrent0;
-        uint256 sellRateCurrent1;
     }
 
     /// @notice Executes all existing long term orders in the TWAMM
     /// @param pool The relevant state of the pool
-    /// @param ticks Points to tick information on the pool
     function executeTWAMMOrders(
         State storage self,
-        PoolParamsOnExecute memory pool,
-        mapping(int24 => Tick.Info) storage ticks,
-        mapping(int16 => uint256) storage tickBitmap
+        IPoolManager poolManager,
+        IPoolManager.PoolKey memory key,
+        PoolParamsOnExecute memory pool
     ) internal returns (bool zeroForOne, uint160 newSqrtPriceX96) {
         if (!_hasOutstandingOrders(self)) {
             self.lastVirtualOrderTimestamp = block.timestamp;
@@ -241,16 +241,16 @@ library TWAMM {
         uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +
             (self.expirationInterval - (self.lastVirtualOrderTimestamp % self.expirationInterval));
 
-        return _executeTWAMMOrders(self, pool, nextExpirationTimestamp, prevTimestamp, ticks, tickBitmap);
+        return _executeTWAMMOrders(self, poolManager, key, pool, nextExpirationTimestamp, prevTimestamp);
     }
 
     function _executeTWAMMOrders(
         State storage self,
+        IPoolManager poolManager,
+        IPoolManager.PoolKey memory key,
         PoolParamsOnExecute memory pool,
         uint256 nextExpirationTimestamp,
-        uint256 prevTimestamp,
-        mapping(int24 => Tick.Info) storage ticks,
-        mapping(int16 => uint256) storage tickBitmap
+        uint256 prevTimestamp
     ) private returns (bool zeroForOne, uint160 newSqrtPriceX96) {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
 
@@ -263,25 +263,25 @@ library TWAMM {
                     if (self.orderPools[0].sellRateCurrent != 0 && self.orderPools[1].sellRateCurrent != 0) {
                         pool = advanceToNewTimestamp(
                             self,
+                            poolManager,
+                            key,
                             AdvanceParams(
                                 nextExpirationTimestamp,
                                 (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96,
                                 pool
-                            ),
-                            ticks,
-                            tickBitmap
+                            )
                         );
                     } else {
                         pool = advanceTimestampForSinglePoolSell(
                             self,
+                            poolManager,
+                            key,
                             AdvanceSingleParams(
                                 nextExpirationTimestamp,
                                 nextExpirationTimestamp - prevTimestamp,
                                 pool,
                                 self.orderPools[0].sellRateCurrent == 0 ? 1 : 0
-                            ),
-                            tickBitmap,
-                            ticks
+                            )
                         );
                     }
                     prevTimestamp = nextExpirationTimestamp;
@@ -293,21 +293,21 @@ library TWAMM {
                 if (self.orderPools[0].sellRateCurrent != 0 && self.orderPools[1].sellRateCurrent != 0) {
                     pool = advanceToNewTimestamp(
                         self,
-                        AdvanceParams(block.timestamp, (block.timestamp - prevTimestamp) * FixedPoint96.Q96, pool),
-                        ticks,
-                        tickBitmap
+                        poolManager,
+                        key,
+                        AdvanceParams(block.timestamp, (block.timestamp - prevTimestamp) * FixedPoint96.Q96, pool)
                     );
                 } else {
                     pool = advanceTimestampForSinglePoolSell(
                         self,
+                        poolManager,
+                        key,
                         AdvanceSingleParams(
                             block.timestamp,
                             block.timestamp - prevTimestamp,
                             pool,
                             self.orderPools[0].sellRateCurrent == 0 ? 1 : 0
-                        ),
-                        tickBitmap,
-                        ticks
+                        )
                     );
                 }
             }
@@ -326,9 +326,9 @@ library TWAMM {
 
     function advanceToNewTimestamp(
         State storage self,
-        AdvanceParams memory params,
-        mapping(int24 => Tick.Info) storage ticks,
-        mapping(int16 => uint256) storage tickBitmap
+        IPoolManager poolManager,
+        IPoolManager.PoolKey memory key,
+        AdvanceParams memory params
     ) private returns (PoolParamsOnExecute memory) {
         uint160 finalSqrtPriceX96;
 
@@ -336,41 +336,36 @@ library TWAMM {
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
 
-            OrderPoolParamsOnExecute memory orderParams = OrderPoolParamsOnExecute(
+            TwammMath.ExecutionUpdateParams memory executionParams = TwammMath.ExecutionUpdateParams(
+                params.secondsElapsedX96,
+                params.pool.sqrtPriceX96,
+                params.pool.liquidity,
                 self.orderPools[0].sellRateCurrent,
                 self.orderPools[1].sellRateCurrent
             );
 
-            finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(
-                params.secondsElapsedX96,
-                params.pool.sqrtPriceX96,
-                params.pool.liquidity,
-                orderParams
-            );
+            finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(executionParams);
 
             (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
                 params.pool,
-                finalSqrtPriceX96,
-                tickBitmap
+                poolManager,
+                key,
+                finalSqrtPriceX96
             );
             unchecked {
                 if (crossingInitializedTick) {
                     uint256 secondsUntilCrossingX96;
                     (params.pool, secondsUntilCrossingX96) = advanceTimeThroughTickCrossing(
                         self,
-                        TickCrossingParams(tick, params.nextTimestamp, params.secondsElapsedX96, params.pool),
-                        ticks
+                        poolManager,
+                        TickCrossingParams(tick, params.nextTimestamp, params.secondsElapsedX96, params.pool)
                     );
                     params.secondsElapsedX96 = params.secondsElapsedX96 - secondsUntilCrossingX96;
                 } else {
                     (earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateEarningsUpdates(
-                        params.secondsElapsedX96,
-                        params.pool.sqrtPriceX96,
-                        finalSqrtPriceX96,
-                        params.pool.liquidity,
-                        orderParams
+                        executionParams,
+                        finalSqrtPriceX96
                     );
-
                     if (params.nextTimestamp % self.expirationInterval == 0) {
                         self.orderPools[0].advanceToInterval(params.nextTimestamp, earningsFactorPool0);
                         self.orderPools[1].advanceToInterval(params.nextTimestamp, earningsFactorPool1);
@@ -395,9 +390,9 @@ library TWAMM {
 
     function advanceTimestampForSinglePoolSell(
         State storage self,
-        AdvanceSingleParams memory params,
-        mapping(int16 => uint256) storage tickBitmap,
-        mapping(int24 => Tick.Info) storage ticks
+        IPoolManager poolManager,
+        IPoolManager.PoolKey memory key,
+        AdvanceSingleParams memory params
     ) private returns (PoolParamsOnExecute memory) {
         uint256 sellRateCurrent = self.orderPools[params.sellIndex].sellRateCurrent;
 
@@ -416,9 +411,9 @@ library TWAMM {
             uint256 swapDelta1;
             (params.pool, swapDelta0, swapDelta1) = swapToTargetOrInitializedTick(
                 params.pool,
-                finalSqrtPriceX96,
-                tickBitmap,
-                ticks
+                poolManager,
+                key,
+                finalSqrtPriceX96
             );
             unchecked {
                 totalEarnings += params.sellIndex == 0 ? swapDelta1 : swapDelta0;
@@ -444,13 +439,14 @@ library TWAMM {
         } else {
             self.orderPools[params.sellIndex].advanceToCurrentTime(accruedEarningsFactor);
         }
+        return params.pool;
     }
 
     function swapToTargetOrInitializedTick(
         PoolParamsOnExecute memory pool,
-        uint160 targetPriceX96,
-        mapping(int16 => uint256) storage tickBitmap,
-        mapping(int24 => Tick.Info) storage ticks
+        IPoolManager poolManager,
+        IPoolManager.PoolKey memory poolKey,
+        uint160 targetPriceX96
     )
         internal
         returns (
@@ -460,10 +456,10 @@ library TWAMM {
         )
     {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
-        (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(pool, targetPriceX96, tickBitmap);
+        (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(pool, poolManager, poolKey, targetPriceX96);
 
         if (crossingInitializedTick) {
-            int128 liquidityNet = ticks[tick].liquidityNet;
+            int128 liquidityNet = poolManager.getTickNetLiquidity(poolKey, tick);
             pool.sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
             pool.liquidity = liquidityNet < 0
                 ? pool.liquidity - uint128(-liquidityNet)
@@ -488,8 +484,8 @@ library TWAMM {
 
     function advanceTimeThroughTickCrossing(
         State storage self,
-        TickCrossingParams memory params,
-        mapping(int24 => Tick.Info) storage ticks
+        IPoolManager poolManager,
+        TickCrossingParams memory params
     ) private returns (PoolParamsOnExecute memory, uint256) {
         uint160 initializedSqrtPrice = params.initializedTick.getSqrtRatioAtTick();
         uint256 secondsUntilCrossingX96 = TwammMath.calculateTimeBetweenTicks(
@@ -499,27 +495,23 @@ library TWAMM {
             self.orderPools[0].sellRateCurrent,
             self.orderPools[1].sellRateCurrent
         );
-        OrderPoolParamsOnExecute memory orderParams = OrderPoolParamsOnExecute(
-            self.orderPools[0].sellRateCurrent,
-            self.orderPools[1].sellRateCurrent
-        );
 
         // TODO: nextSqrtPriceX96 off by 1 wei (hence using the initializedSqrtPrice (l:331) param instead)
         // nextSqrtPriceX96 should be the initializedSqrtPrice
 
-        uint160 nextSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(
+        TwammMath.ExecutionUpdateParams memory executionParams = TwammMath.ExecutionUpdateParams(
             secondsUntilCrossingX96,
             params.pool.sqrtPriceX96,
             params.pool.liquidity,
-            orderParams
+            self.orderPools[0].sellRateCurrent,
+            self.orderPools[1].sellRateCurrent
         );
 
+        uint160 nextSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(executionParams);
+
         (uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath.calculateEarningsUpdates(
-            secondsUntilCrossingX96,
-            params.pool.sqrtPriceX96,
-            nextSqrtPriceX96,
-            params.pool.liquidity,
-            orderParams
+            executionParams,
+            nextSqrtPriceX96
         );
 
         self.orderPools[0].advanceToCurrentTime(earningsFactorPool0);
@@ -527,7 +519,7 @@ library TWAMM {
 
         unchecked {
             // update pool
-            int128 liquidityNet = ticks[params.initializedTick].liquidityNet;
+            int128 liquidityNet = poolManager.getTickNetLiquidity(self.poolKey, params.initializedTick);
             if (initializedSqrtPrice < params.pool.sqrtPriceX96) liquidityNet = -liquidityNet;
             params.pool.liquidity = liquidityNet < 0
                 ? params.pool.liquidity - uint128(-liquidityNet)
@@ -541,8 +533,9 @@ library TWAMM {
 
     function getNextInitializedTick(
         PoolParamsOnExecute memory pool,
-        uint160 nextSqrtPriceX96,
-        mapping(int16 => uint256) storage tickBitmap
+        IPoolManager poolManager,
+        IPoolManager.PoolKey memory poolKey,
+        uint160 nextSqrtPriceX96
     ) private returns (bool initialized, int24 nextTickInit) {
         // use current price as a starting point for nextTickInit
         nextTickInit = pool.sqrtPriceX96.getTickAtSqrtRatio();
@@ -553,9 +546,9 @@ library TWAMM {
             unchecked {
                 if (searchingLeft) nextTickInit -= 1;
             }
-            (nextTickInit, initialized) = tickBitmap.nextInitializedTickWithinOneWord(
+            (nextTickInit, initialized) = poolManager.nextInitializedTickWithinOneWord(
+                poolKey,
                 nextTickInit,
-                pool.tickSpacing,
                 searchingLeft
             );
             if (initialized == true) break;

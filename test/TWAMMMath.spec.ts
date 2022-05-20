@@ -38,7 +38,7 @@ describe('TWAMMMath', () => {
   })
 
   describe('#calculateExecutionUpdates outputs the correct results when', () => {
-    let secondsElapsed: BigNumberish
+    let secondsElapsedX96: BigNumberish
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
     let fee: BigNumberish
@@ -49,7 +49,7 @@ describe('TWAMMMath', () => {
     const fixedPoint = BigNumber.from(2).pow(96)
 
     beforeEach(async () => {
-      secondsElapsed = BigNumber.from(3600).mul(fixedPoint)
+      secondsElapsedX96 = BigNumber.from(3600).mul(fixedPoint)
       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       liquidity = '1000000000000000000000000'
       fee = '3000'
@@ -197,19 +197,13 @@ describe('TWAMMMath', () => {
 
     for (let testcase of TEST_CASES) {
       it(testcase.title, async () => {
-        const results = await twamm.callStatic.calculateExecutionUpdates(
-          secondsElapsed,
-          {
-            sqrtPriceX96: testcase.inputs.sqrtPriceX96,
-            liquidity,
-            fee,
-            tickSpacing,
-          },
-          {
-            sellRateCurrent0: testcase.inputs.sellRate0,
-            sellRateCurrent1: testcase.inputs.sellRate1,
-          }
-        )
+        const results = await twamm.callStatic.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96: testcase.inputs.sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0: testcase.inputs.sellRate0,
+          sellRateCurrent1: testcase.inputs.sellRate1,
+        })
 
         expect(divX96(results.sqrtPriceX96)).to.eq(testcase.outputsDivX96.price)
         expect(divX96(results.earningsPool0)).to.eq(testcase.outputsDivX96.amountOut0)
@@ -219,40 +213,36 @@ describe('TWAMMMath', () => {
 
     it('gas', async () => {
       await snapshotGasCost(
-        twamm.calculateExecutionUpdates(
-          secondsElapsed,
-          {
-            sqrtPriceX96,
-            liquidity,
-            fee,
-            tickSpacing,
-          },
-          {
-            sellRateCurrent0,
-            sellRateCurrent1,
-          }
-        )
+        twamm.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0,
+          sellRateCurrent1,
+        })
       )
     })
 
     // TODO: Calculating the time to p_target (required when we reach the max price) does not work when we push the price to an edge.
     // Desmos also shows undefined or negative so may need a new formula here?
-    it.only('TWAMM trades against itself when low liquidity', async () => {
+    it.skip('TWAMM trades against itself when low liquidity', async () => {
       // set low liquidity to push price
       liquidity = '1000000000000000000'
 
       sellRateCurrent0 = toWei('10')
       sellRateCurrent1 = toWei('1')
 
-      const results = await twamm.callStatic.calculateExecutionUpdates(
-        secondsElapsed,
-        { sqrtPriceX96, liquidity, fee, tickSpacing },
-        { sellRateCurrent0, sellRateCurrent1 }
-      )
+      const results = await twamm.callStatic.calculateExecutionUpdates({
+        secondsElapsedX96,
+        sqrtPriceX96,
+        liquidity,
+        sellRateCurrent0,
+        sellRateCurrent1,
+      })
 
       expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
 
-      const expectedAmount = sellRateCurrent0.mul(secondsElapsed).div(fixedPoint)
+      const expectedAmount = sellRateCurrent0.mul(secondsElapsedX96).div(fixedPoint)
       console.log(expectedAmount.toString())
 
       // the trades should be slightly greater than the expectedAmount?
@@ -267,14 +257,16 @@ describe('TWAMMMath', () => {
       sellRateCurrent0 = toWei('1')
       sellRateCurrent1 = toWei('4')
 
-      const results = await twamm.callStatic.calculateExecutionUpdates(
-        secondsElapsed,
-        { sqrtPriceX96, liquidity, fee, tickSpacing },
-        { sellRateCurrent0, sellRateCurrent1 }
-      )
+      const results = await twamm.callStatic.calculateExecutionUpdates({
+        secondsElapsedX96,
+        sqrtPriceX96,
+        liquidity,
+        sellRateCurrent0,
+        sellRateCurrent1,
+      })
       // twamm is trading with itself bc liquidity low
-      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsed).div(fixedPoint)
-      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsed).div(fixedPoint)
+      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsedX96).div(fixedPoint)
+      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsedX96).div(fixedPoint)
 
       expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
       expect(results.earningsAmount0).to.eq(expectedAmount0)
@@ -291,14 +283,16 @@ describe('TWAMMMath', () => {
 
       console.log(sqrtPriceX96.toString())
 
-      const results = await twamm.callStatic.calculateExecutionUpdates(
-        secondsElapsed,
-        { sqrtPriceX96, liquidity, fee, tickSpacing },
-        { sellRateCurrent0, sellRateCurrent1 }
-      )
+      const results = await twamm.callStatic.calculateExecutionUpdates({
+        secondsElapsedX96,
+        sqrtPriceX96,
+        liquidity,
+        sellRateCurrent0,
+        sellRateCurrent1,
+      })
 
-      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsed).div(fixedPoint)
-      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsed).div(fixedPoint)
+      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsedX96).div(fixedPoint)
+      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsedX96).div(fixedPoint)
 
       expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
       // expect(results.earningsAmount0).to.eq(expectedAmount0)
