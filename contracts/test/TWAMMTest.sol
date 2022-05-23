@@ -37,11 +37,11 @@ contract TWAMMTest {
         external
         returns (
             uint256 earningsAmount,
-            uint8 sellTokenIndex,
+            bool zeroForOne,
             uint256 unclaimedEarningsAmount
         )
     {
-        (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderKey);
+        (earningsAmount, zeroForOne) = twamm.claimEarnings(orderKey);
         // unclaimedEarningsFactor is a fixed point
         uint256 sellRateCurrent = twamm._getOrder(orderKey).sellRate;
         unclaimedEarningsAmount =
@@ -86,26 +86,26 @@ contract TWAMMTest {
         return twamm._getOrder(orderKey);
     }
 
-    function getOrderPool(uint8 index) external view returns (uint256 sellRate, uint256 earningsFactor) {
-        OrderPool.State storage orderPool = twamm.orderPools[index];
+    function getOrderPool(bool zeroForOne) external view returns (uint256 sellRate, uint256 earningsFactor) {
+        OrderPool.State storage orderPool = twamm.orderPools[zeroForOne];
         sellRate = orderPool.sellRateCurrent;
         earningsFactor = orderPool.earningsFactorCurrent;
     }
 
-    function getOrderPoolSellRateEndingPerInterval(uint8 sellTokenIndex, uint256 timestamp)
+    function getOrderPoolSellRateEndingPerInterval(bool zeroForOne, uint256 timestamp)
         external
         view
         returns (uint256 sellRate)
     {
-        return twamm.orderPools[sellTokenIndex].sellRateEndingAtInterval[timestamp];
+        return twamm.orderPools[zeroForOne].sellRateEndingAtInterval[timestamp];
     }
 
-    function getOrderPoolEarningsFactorAtInterval(uint8 sellTokenIndex, uint256 timestamp)
+    function getOrderPoolEarningsFactorAtInterval(bool zeroForOne, uint256 timestamp)
         external
         view
         returns (uint256 sellRate)
     {
-        return twamm.orderPools[sellTokenIndex].earningsFactorAtInterval[timestamp];
+        return twamm.orderPools[zeroForOne].earningsFactorAtInterval[timestamp];
     }
 
     function getState() external view returns (uint256 expirationInterval, uint256 lastVirtualOrderTimestamp) {

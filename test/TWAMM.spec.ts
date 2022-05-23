@@ -45,6 +45,8 @@ const ZERO_ADDR = ethers.constants.AddressZero
 const TICK_SPACING = 60
 const FEE = '3000'
 const MIN_INT128 = BigNumber.from('-170141183460469231731687303715884105728')
+const ZERO_FOR_ONE = true;
+const ONE_FOR_ZERO = false;
 
 describe('TWAMM', () => {
   let wallet: Wallet, other: Wallet
@@ -147,7 +149,7 @@ describe('TWAMM', () => {
 
       const newOrder = await twamm.getOrder(orderKey)
 
-      expect(newOrder.sellTokenIndex).to.equal(0)
+      expect(newOrder.zeroForOne).to.equal(true)
       expect(newOrder.sellRate).to.equal(sellRate)
       expect(newOrder.expiration).to.equal(expiration)
     })
@@ -155,9 +157,9 @@ describe('TWAMM', () => {
     it('increases the sellRate and sellRateEndingPerInterval of the corresponding OrderPool', async () => {
       const orderKey = { owner, expiration, zeroForOne }
 
-      let orderPool = await twamm.getOrderPool(0)
+      let orderPool = await twamm.getOrderPool(true)
       expect(orderPool.sellRate).to.equal(0)
-      expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(0)
+      expect(await twamm.getOrderPoolSellRateEndingPerInterval(true, expiration)).to.equal(0)
 
       await twamm.submitLongTermOrder({
         zeroForOne,
@@ -169,9 +171,9 @@ describe('TWAMM', () => {
       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       const sellRate = amountIn.div(expiration - latestTimestamp)
 
-      orderPool = await twamm.getOrderPool(0)
+      orderPool = await twamm.getOrderPool(true)
       expect(orderPool.sellRate).to.equal(sellRate)
-      expect(await twamm.getOrderPoolSellRateEndingPerInterval(0, expiration)).to.equal(sellRate)
+      expect(await twamm.getOrderPoolSellRateEndingPerInterval(true, expiration)).to.equal(sellRate)
     })
 
     it('gas', async () => {
@@ -259,7 +261,7 @@ describe('TWAMM', () => {
       it('updates the unclaimedEarningsFactor to the current earningsFactor accumulator', async () => {
         await twamm.executeTWAMMOrders(poolParams)
         await twamm.modifyLongTermOrder(orderKey, MIN_INT128)
-        const orderPool = await twamm.getOrderPool(0)
+        const orderPool = await twamm.getOrderPool(true)
         expect((await twamm.getOrder(orderKey)).unclaimedEarningsFactor).to.eq(orderPool.earningsFactor)
       })
 
@@ -352,25 +354,25 @@ describe('TWAMM', () => {
       const tickSpacing = 60
       await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval3 + 5_000])
 
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval2)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval2)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval3)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval3)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval4)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval4)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval1)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval1)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval2)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval2)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval3)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval3)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval4)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval4)).to.eq(0)
 
       await twamm.executeTWAMMOrders({ sqrtPriceX96, liquidity })
 
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval1)).to.be.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval1)).to.be.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval2)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval2)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval3)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval3)).to.be.gt(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(0, timestampInterval4)).to.eq(0)
-      expect(await twamm.getOrderPoolEarningsFactorAtInterval(1, timestampInterval4)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval1)).to.be.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval1)).to.be.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval2)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval2)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval3)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval3)).to.be.gt(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval4)).to.eq(0)
+      expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval4)).to.eq(0)
     })
 
     it('updates all necessary intervals when block is mined exactly on an interval')
@@ -606,8 +608,8 @@ describe('TWAMM', () => {
       const orderKey2 = { owner, expiration, zeroForOne: true }
       const orderKey3 = { owner, expiration, zeroForOne: false }
 
-      expect((await twamm.getOrderPool(0)).sellRate).to.eq(0)
-      expect((await twamm.getOrderPool(1)).sellRate).to.eq(0)
+      expect((await twamm.getOrderPool(true)).sellRate).to.eq(0)
+      expect((await twamm.getOrderPool(false)).sellRate).to.eq(0)
 
       await executeTwammAndThen(timestampInterval1, poolParams, async () => {
         await twamm.submitLongTermOrder({
@@ -630,26 +632,26 @@ describe('TWAMM', () => {
         })
       })
 
-      expect((await twamm.getOrderPool(0)).sellRate).to.eq(fullSellRate)
-      expect((await twamm.getOrderPool(1)).sellRate).to.eq(fullSellRate)
-      expect((await twamm.getOrderPool(0)).earningsFactor).to.eq('0')
-      expect((await twamm.getOrderPool(1)).earningsFactor).to.eq('0')
+      expect((await twamm.getOrderPool(true)).sellRate).to.eq(fullSellRate)
+      expect((await twamm.getOrderPool(false)).sellRate).to.eq(fullSellRate)
+      expect((await twamm.getOrderPool(true)).earningsFactor).to.eq('0')
+      expect((await twamm.getOrderPool(false)).earningsFactor).to.eq('0')
 
       await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval2])
       await twamm.executeTWAMMOrders(poolParams)
 
-      expect((await twamm.callStatic.getOrderPool(0)).sellRate).to.eq('0')
-      expect((await twamm.callStatic.getOrderPool(1)).sellRate).to.eq('0')
-      expect((await twamm.callStatic.getOrderPool(0)).earningsFactor).to.eq('1584563250285286751870879006720000')
-      expect((await twamm.callStatic.getOrderPool(1)).earningsFactor).to.eq('1584563250285286751870879006720000')
+      expect((await twamm.callStatic.getOrderPool(true)).sellRate).to.eq('0')
+      expect((await twamm.callStatic.getOrderPool(false)).sellRate).to.eq('0')
+      expect((await twamm.callStatic.getOrderPool(true)).earningsFactor).to.eq('1584563250285286751870879006720000')
+      expect((await twamm.callStatic.getOrderPool(false)).earningsFactor).to.eq('1584563250285286751870879006720000')
 
       await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval3])
       await twamm.executeTWAMMOrders(poolParams)
 
-      expect((await twamm.getOrderPool(0)).sellRate).to.eq('0')
-      expect((await twamm.getOrderPool(1)).sellRate).to.eq('0')
-      expect((await twamm.getOrderPool(0)).earningsFactor).to.eq('1584563250285286751870879006720000')
-      expect((await twamm.getOrderPool(1)).earningsFactor).to.eq('1584563250285286751870879006720000')
+      expect((await twamm.getOrderPool(true)).sellRate).to.eq('0')
+      expect((await twamm.getOrderPool(false)).sellRate).to.eq('0')
+      expect((await twamm.getOrderPool(true)).earningsFactor).to.eq('1584563250285286751870879006720000')
+      expect((await twamm.getOrderPool(false)).earningsFactor).to.eq('1584563250285286751870879006720000')
 
       expect((await twamm.getOrder(orderKey1)).sellRate).to.eq(halfSellAmount.div(20_000))
       expect((await twamm.getOrder(orderKey2)).sellRate).to.eq(halfSellAmount.div(20_000))

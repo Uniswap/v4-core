@@ -32,12 +32,8 @@ contract TWAMMHook is BaseHook {
         );
     }
 
-    function getOrderPool(IPoolManager.PoolKey calldata key, uint8 index)
-        external
-        view
-        returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent)
-    {
-        OrderPool.State storage orderPool = getTWAMM(key).orderPools[index];
+    function getOrderPool(IPoolManager.PoolKey calldata key, bool zeroForOne) external view returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent) {
+        OrderPool.State storage orderPool = getTWAMM(key).orderPools[zeroForOne];
         return (orderPool.sellRateCurrent, orderPool.earningsFactorCurrent);
     }
 
@@ -118,9 +114,9 @@ contract TWAMMHook is BaseHook {
     {
         executeTWAMMOrders(key);
 
-        uint8 sellTokenIndex;
-        (earningsAmount, sellTokenIndex) = getTWAMM(key).claimEarnings(orderKey);
-        IERC20Minimal buyToken = sellTokenIndex == 0 ? key.token1 : key.token0;
+        bool zeroForOne;
+        (earningsAmount, zeroForOne) = getTWAMM(key).claimEarnings(orderKey);
+        IERC20Minimal buyToken = zeroForOne == 0 ? key.token1 : key.token0;
     }
 
     function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
