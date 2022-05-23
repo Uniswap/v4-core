@@ -45,8 +45,8 @@ const ZERO_ADDR = ethers.constants.AddressZero
 const TICK_SPACING = 60
 const FEE = '3000'
 const MIN_INT128 = BigNumber.from('-170141183460469231731687303715884105728')
-const ZERO_FOR_ONE = true;
-const ONE_FOR_ZERO = false;
+const ZERO_FOR_ONE = true
+const ONE_FOR_ZERO = false
 
 describe('TWAMM', () => {
   let wallet: Wallet, other: Wallet

@@ -259,7 +259,10 @@ library TWAMM {
                     self.orderPools[ZERO_FOR_ONE].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                     self.orderPools[ONE_FOR_ZERO].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
                 ) {
-                    if (self.orderPools[ZERO_FOR_ONE].sellRateCurrent != 0 && self.orderPools[ONE_FOR_ZERO].sellRateCurrent != 0) {
+                    if (
+                        self.orderPools[ZERO_FOR_ONE].sellRateCurrent != 0 &&
+                        self.orderPools[ONE_FOR_ZERO].sellRateCurrent != 0
+                    ) {
                         pool = advanceToNewTimestamp(
                             self,
                             poolManager,
@@ -289,7 +292,10 @@ library TWAMM {
             }
 
             if (prevTimestamp < block.timestamp && _hasOutstandingOrders(self)) {
-                if (self.orderPools[ZERO_FOR_ONE].sellRateCurrent != 0 && self.orderPools[ONE_FOR_ZERO].sellRateCurrent != 0) {
+                if (
+                    self.orderPools[ZERO_FOR_ONE].sellRateCurrent != 0 &&
+                    self.orderPools[ONE_FOR_ZERO].sellRateCurrent != 0
+                ) {
                     pool = advanceToNewTimestamp(
                         self,
                         poolManager,
@@ -546,6 +552,7 @@ library TWAMM {
     }
 
     function _hasOutstandingOrders(State storage self) internal view returns (bool) {
-        return !(self.orderPools[ZERO_FOR_ONE].sellRateCurrent == 0 && self.orderPools[ONE_FOR_ZERO].sellRateCurrent == 0);
+        return
+            !(self.orderPools[ZERO_FOR_ONE].sellRateCurrent == 0 && self.orderPools[ONE_FOR_ZERO].sellRateCurrent == 0);
     }
 }
