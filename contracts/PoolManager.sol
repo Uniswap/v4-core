@@ -5,6 +5,7 @@ import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
+import {TransferHelper} from './libraries/TransferHelper.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
@@ -20,6 +21,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
+    using TransferHelper for IERC20Minimal;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
@@ -260,7 +262,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     ) external override noDelegateCall onlyByLocker {
         _accountDelta(token, amount.toInt256());
         reservesOf[token] -= amount;
-        token.transfer(to, amount);
+        token.safeTransfer(to, amount);
     }
 
     /// @inheritdoc IPoolManager

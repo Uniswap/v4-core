@@ -38,7 +38,7 @@ Object {
 exports[`PoolManager #swap gas cost for swap against liquidity 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 224157,
+  "gasUsed": 224692,
 }
 `;
 
@@ -49,4 +49,4 @@ Object {
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `23344`;
+exports[`PoolManager bytecode size 1`] = `23548`;
