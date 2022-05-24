@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BitMathVyper #mostSignificantBit gas cost of max uint128 1`] = `600`;
+
+exports[`BitMathVyper #mostSignificantBit gas cost of max uint256 1`] = `636`;
+
+exports[`BitMathVyper #mostSignificantBit gas cost of smaller number 1`] = `456`;

@@ -2,6 +2,7 @@ import 'hardhat-typechain'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import '@nomiclabs/hardhat-etherscan'
+import '@nomiclabs/hardhat-vyper'
 
 const importToml = require('import-toml')
 const foundryConfig = importToml.sync('foundry.toml')
@@ -31,6 +32,9 @@ export default {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
     apiKey: process.env.ETHERSCAN_API_KEY,
+  },
+  vyper: {
+    version: '0.3.3',
   },
   solidity: {
     version: foundryConfig.default.solc_version,
