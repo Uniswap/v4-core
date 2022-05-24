@@ -8,6 +8,7 @@ import {BaseHook} from './base/BaseHook.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 contract LimitOrders is BaseHook {
+    error GenericLockFailure();
     error ZeroLiquidity();
     error InRange();
     error NotImplemented();
@@ -82,12 +83,6 @@ contract LimitOrders is BaseHook {
         tickLowerLast = getTickLower(tick, key.tickSpacing);
     }
 
-    struct FillData {
-        IPoolManager.PoolKey key;
-        int24 tickLower;
-        uint256 epoch;
-    }
-
     function afterSwap(
         address,
         IPoolManager.PoolKey calldata key,
@@ -119,14 +114,7 @@ contract LimitOrders is BaseHook {
             for (; lower <= upper; lower += key.tickSpacing) {
                 uint256 tickEpoch = getEpoch(key, lower, zeroForOne);
                 if (epoch != 0) {
-                    poolManager.lock(
-                        abi.encode(
-                            LimitOrderData({
-                                limitOrderType: LimitOrderType.Place,
-                                data: abi.encode(FillData({key: key, tickLower: lower, epoch: tickEpoch}))
-                            })
-                        )
-                    );
+                    poolManager.lock(abi.encodeCall(this.lockAcquiredFill, (key, lower, tickEpoch)));
                     setEpoch(key, lower, zeroForOne, 0);
                 }
             }
@@ -135,201 +123,99 @@ contract LimitOrders is BaseHook {
         tickLowerLast = tickLower;
     }
 
-    struct PlaceData {
-        address owner;
-        IPoolManager.PoolKey key;
-        int24 tickLower;
-        int256 liquidityDelta;
-    }
-
     function place(
         IPoolManager.PoolKey calldata key,
         int24 tickLower,
-        uint128 liquidity
+        uint256 liquidity
     ) external onlyValidPools(key.hooks) returns (IPoolManager.BalanceDelta memory) {
         if (liquidity == 0) revert ZeroLiquidity();
 
         return
             abi.decode(
                 poolManager.lock(
-                    abi.encode(
-                        LimitOrderData({
-                            limitOrderType: LimitOrderType.Place,
-                            data: abi.encode(
-                                PlaceData({
-                                    owner: msg.sender,
-                                    key: key,
-                                    tickLower: tickLower,
-                                    liquidityDelta: int256(uint256(liquidity))
-                                })
-                            )
-                        })
-                    )
+                    abi.encodeCall(this.lockAcquiredPlace, (msg.sender, key, tickLower, int256(liquidity)))
                 ),
                 (IPoolManager.BalanceDelta)
             );
     }
 
-    enum LimitOrderType {
-        Place,
-        Fill,
-        Kill,
-        Withdraw
-    }
+    function lockAcquiredPlace(
+        address owner,
+        IPoolManager.PoolKey calldata key,
+        int24 tickLower,
+        int256 liquidityDelta
+    ) external selfOnly returns (IPoolManager.BalanceDelta memory) {
+        int24 tick = getTick(key);
+        bool zeroForOne = tick >= tickLower;
 
-    struct LimitOrderData {
-        LimitOrderType limitOrderType;
-        bytes data;
-    }
-
-    function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
-        LimitOrderData memory limitOrderData = abi.decode(rawData, (LimitOrderData));
-
-        if (limitOrderData.limitOrderType == LimitOrderType.Place) {
-            PlaceData memory data = abi.decode(limitOrderData.data, (PlaceData));
-
-            int24 tick = getTick(data.key);
-            bool zeroForOne = tick >= data.tickLower;
-
-            uint256 tickEpoch = getEpoch(data.key, data.tickLower, zeroForOne);
-            EpochInfo storage epochInfo;
-            if (tickEpoch == 0) {
-                setEpoch(data.key, data.tickLower, zeroForOne, tickEpoch = ++epoch);
-                epochInfo = epochInfos[tickEpoch];
-                epochInfo.token0 = data.key.token0;
-                epochInfo.token1 = data.key.token1;
-            } else {
-                epochInfo = epochInfos[tickEpoch];
-            }
-
-            IPoolManager.BalanceDelta memory delta = poolManager.modifyPosition(
-                data.key,
-                IPoolManager.ModifyPositionParams({
-                    tickLower: data.tickLower,
-                    tickUpper: data.tickLower + data.key.tickSpacing,
-                    liquidityDelta: data.liquidityDelta
-                })
-            );
-
-            uint128 liquidity = uint128(uint256(data.liquidityDelta));
-            // neither of the following can overflow by assumption
-            unchecked {
-                epochInfo.liquidityTotal += liquidity;
-                epochInfo.liquidity[data.owner] += liquidity;
-            }
-
-            if (delta.amount0 > 0) {
-                if (delta.amount1 != 0) revert InRange();
-                data.key.token0.transferFrom(data.owner, address(poolManager), uint256(delta.amount0));
-                poolManager.settle(data.key.token0);
-            } else {
-                if (delta.amount0 != 0) revert InRange();
-                data.key.token1.transferFrom(data.owner, address(poolManager), uint256(delta.amount1));
-                poolManager.settle(data.key.token1);
-            }
-
-            // emit event here
-
-            return abi.encode(delta);
-        } else if (limitOrderData.limitOrderType == LimitOrderType.Fill) {
-            FillData memory data = abi.decode(limitOrderData.data, (FillData));
-
-            EpochInfo storage epochInfo = epochInfos[data.epoch];
-
-            IPoolManager.BalanceDelta memory delta = poolManager.modifyPosition(
-                data.key,
-                IPoolManager.ModifyPositionParams({
-                    tickLower: data.tickLower,
-                    tickUpper: data.tickLower + data.key.tickSpacing,
-                    liquidityDelta: -int256(uint256(epochInfo.liquidityTotal))
-                })
-            );
-
-            uint256 amount0 = uint256(-delta.amount0);
-            poolManager.mint(data.key.token0, address(this), amount0);
-            epochInfo.token0Total += amount0;
-            uint256 amount1 = uint256(-delta.amount1);
-            poolManager.mint(data.key.token1, address(this), amount1);
-            epochInfo.token1Total += amount1;
-
-            // emit event here
-
-            return abi.encode(delta);
-        } else if (limitOrderData.limitOrderType == LimitOrderType.Kill) {
-            KillData memory data = abi.decode(limitOrderData.data, (KillData));
-
-            EpochInfo storage epochInfo = epochInfos[data.epoch];
-
-            // annoying, we have to collect fee revenue first, to prevent abuse
-            // TODO if the caller is the only lp in the epoch, we don't have to do this
-            // and should branch here
-            IPoolManager.BalanceDelta memory feeDelta = poolManager.modifyPosition(
-                data.key,
-                IPoolManager.ModifyPositionParams({
-                    tickLower: data.tickLower,
-                    tickUpper: data.tickLower + data.key.tickSpacing,
-                    liquidityDelta: 0
-                })
-            );
-
-            IPoolManager.BalanceDelta memory delta = poolManager.modifyPosition(
-                data.key,
-                IPoolManager.ModifyPositionParams({
-                    tickLower: data.tickLower,
-                    tickUpper: data.tickLower + data.key.tickSpacing,
-                    liquidityDelta: data.liquidityDelta
-                })
-            );
-
-            // add the fee revenue to token totals for other LPs
-            uint256 feeAmount0 = uint256(-feeDelta.amount0);
-            poolManager.mint(data.key.token0, address(this), feeAmount0);
-            epochInfo.token0Total += feeAmount0;
-            uint256 feeAmount1 = uint256(-feeDelta.amount1);
-            poolManager.mint(data.key.token1, address(this), feeAmount1);
-            epochInfo.token1Total += feeAmount1;
-
-            uint256[] memory ids = new uint256[](2);
-            ids[0] = uint256(uint160(address(data.key.token0)));
-            ids[1] = uint256(uint160(address(data.key.token1)));
-
-            uint256[] memory amounts = new uint256[](2);
-            ids[0] = uint256(-delta.amount0);
-            ids[1] = uint256(-delta.amount1);
-
-            // this burns the tokens and credits us with a delta
-            poolManager.safeBatchTransferFrom(address(this), address(poolManager), ids, amounts, '');
-            poolManager.take(data.key.token0, data.to, amounts[0]);
-            poolManager.take(data.key.token1, data.to, amounts[1]);
-
-            // emit event here
-
-            return abi.encode(delta);
-        } else if (limitOrderData.limitOrderType == LimitOrderType.Withdraw) {
-            WithdrawData memory data = abi.decode(limitOrderData.data, (WithdrawData));
-
-            uint256[] memory ids = new uint256[](2);
-            ids[0] = uint256(uint160(address(data.token0)));
-            ids[1] = uint256(uint160(address(data.token1)));
-
-            uint256[] memory amounts = new uint256[](2);
-            ids[0] = data.token0Amount;
-            ids[1] = data.token1Amount;
-
-            // this burns the tokens and credits us with a delta
-            poolManager.safeBatchTransferFrom(address(this), address(poolManager), ids, amounts, '');
-            poolManager.take(data.token0, data.to, data.token0Amount);
-            poolManager.take(data.token1, data.to, data.token1Amount);
+        uint256 tickEpoch = getEpoch(key, tickLower, zeroForOne);
+        EpochInfo storage epochInfo;
+        if (tickEpoch == 0) {
+            setEpoch(key, tickLower, zeroForOne, tickEpoch = ++epoch);
+            epochInfo = epochInfos[tickEpoch];
+            epochInfo.token0 = key.token0;
+            epochInfo.token1 = key.token1;
+        } else {
+            epochInfo = epochInfos[tickEpoch];
         }
-        return '';
+
+        IPoolManager.BalanceDelta memory delta = poolManager.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams({
+                tickLower: tickLower,
+                tickUpper: tickLower + key.tickSpacing,
+                liquidityDelta: liquidityDelta
+            })
+        );
+
+        uint128 liquidity = uint128(uint256(liquidityDelta));
+        // neither of the following can overflow by assumption
+        unchecked {
+            epochInfo.liquidityTotal += liquidity;
+            epochInfo.liquidity[owner] += liquidity;
+        }
+
+        if (delta.amount0 > 0) {
+            if (delta.amount1 != 0) revert InRange();
+            key.token0.transferFrom(owner, address(poolManager), uint256(delta.amount0));
+            poolManager.settle(key.token0);
+        } else {
+            if (delta.amount0 != 0) revert InRange();
+            key.token1.transferFrom(owner, address(poolManager), uint256(delta.amount1));
+            poolManager.settle(key.token1);
+        }
+
+        // emit event here
+
+        return delta;
     }
 
-    struct KillData {
-        uint256 epoch;
-        IPoolManager.PoolKey key;
-        int24 tickLower;
-        address to;
-        int256 liquidityDelta;
+    function lockAcquiredFill(
+        IPoolManager.PoolKey calldata key,
+        int24 tickLower,
+        uint256 _epoch
+    ) external selfOnly returns (IPoolManager.BalanceDelta memory) {
+        EpochInfo storage epochInfo = epochInfos[_epoch];
+
+        IPoolManager.BalanceDelta memory delta = poolManager.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams({
+                tickLower: tickLower,
+                tickUpper: tickLower + key.tickSpacing,
+                liquidityDelta: -int256(uint256(epochInfo.liquidityTotal))
+            })
+        );
+
+        uint256 amount0 = uint256(-delta.amount0);
+        poolManager.mint(key.token0, address(this), amount0);
+        epochInfo.token0Total += amount0;
+        uint256 amount1 = uint256(-delta.amount1);
+        poolManager.mint(key.token1, address(this), amount1);
+        epochInfo.token1Total += amount1;
+
+        // emit event here
+
+        return delta;
     }
 
     function kill(
@@ -349,29 +235,64 @@ contract LimitOrders is BaseHook {
         epochInfo.liquidityTotal = liquidityTotal - liquidity;
 
         poolManager.lock(
-            abi.encode(
-                LimitOrderData({
-                    limitOrderType: LimitOrderType.Place,
-                    data: abi.encode(
-                        KillData({
-                            epoch: tickEpoch,
-                            key: key,
-                            tickLower: tickLower,
-                            to: to,
-                            liquidityDelta: -int256(uint256(liquidity))
-                        })
-                    )
-                })
-            )
+            abi.encodeCall(this.lockAcquiredKill, (tickEpoch, key, tickLower, to, -int256(uint256(liquidity))))
         );
     }
 
-    struct WithdrawData {
-        IERC20Minimal token0;
-        IERC20Minimal token1;
-        uint256 token0Amount;
-        uint256 token1Amount;
-        address to;
+    function lockAcquiredKill(
+        uint256 _epoch,
+        IPoolManager.PoolKey calldata key,
+        int24 tickLower,
+        address to,
+        int256 liquidityDelta
+    ) external selfOnly returns (IPoolManager.BalanceDelta memory) {
+        EpochInfo storage epochInfo = epochInfos[_epoch];
+
+        // annoying, we have to collect fee revenue first, to prevent abuse
+        // TODO if the caller is the only lp in the epoch, we don't have to do this
+        // and should branch here
+        IPoolManager.BalanceDelta memory feeDelta = poolManager.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams({
+                tickLower: tickLower,
+                tickUpper: tickLower + key.tickSpacing,
+                liquidityDelta: 0
+            })
+        );
+
+        IPoolManager.BalanceDelta memory delta = poolManager.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams({
+                tickLower: tickLower,
+                tickUpper: tickLower + key.tickSpacing,
+                liquidityDelta: liquidityDelta
+            })
+        );
+
+        // add the fee revenue to token totals for other LPs
+        uint256 feeAmount0 = uint256(-feeDelta.amount0);
+        poolManager.mint(key.token0, address(this), feeAmount0);
+        epochInfo.token0Total += feeAmount0;
+        uint256 feeAmount1 = uint256(-feeDelta.amount1);
+        poolManager.mint(key.token1, address(this), feeAmount1);
+        epochInfo.token1Total += feeAmount1;
+
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = uint256(uint160(address(key.token0)));
+        ids[1] = uint256(uint160(address(key.token1)));
+
+        uint256[] memory amounts = new uint256[](2);
+        ids[0] = uint256(-delta.amount0);
+        ids[1] = uint256(-delta.amount1);
+
+        // this burns the tokens and credits us with a delta
+        poolManager.safeBatchTransferFrom(address(this), address(poolManager), ids, amounts, '');
+        poolManager.take(key.token0, to, amounts[0]);
+        poolManager.take(key.token1, to, amounts[1]);
+
+        // emit event here
+
+        return delta;
     }
 
     function withdraw(uint256 tickEpoch, address to) external {
@@ -392,20 +313,31 @@ contract LimitOrders is BaseHook {
         epochInfo.liquidityTotal = liquidityTotal - liquidity;
 
         poolManager.lock(
-            abi.encode(
-                LimitOrderData({
-                    limitOrderType: LimitOrderType.Withdraw,
-                    data: abi.encode(
-                        WithdrawData({
-                            token0: epochInfo.token0,
-                            token1: epochInfo.token1,
-                            token0Amount: token0Amount,
-                            token1Amount: token1Amount,
-                            to: to
-                        })
-                    )
-                })
+            abi.encodeCall(
+                this.lockAcquiredWithdraw,
+                (epochInfo.token0, epochInfo.token1, token0Amount, token1Amount, to)
             )
         );
+    }
+
+    function lockAcquiredWithdraw(
+        IERC20Minimal token0,
+        IERC20Minimal token1,
+        uint256 token0Amount,
+        uint256 token1Amount,
+        address to
+    ) external selfOnly {
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = uint256(uint160(address(token0)));
+        ids[1] = uint256(uint160(address(token1)));
+
+        uint256[] memory amounts = new uint256[](2);
+        ids[0] = token0Amount;
+        ids[1] = token1Amount;
+
+        // this burns the tokens and credits us with a delta
+        poolManager.safeBatchTransferFrom(address(this), address(poolManager), ids, amounts, '');
+        poolManager.take(token0, to, token0Amount);
+        poolManager.take(token1, to, token1Amount);
     }
 }
