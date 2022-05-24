@@ -90,8 +90,17 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, feeControllerTest, donateTest, hooksMock, testHooksEmpty } =
-      await loadFixture(fixture))
+    ;({
+      manager,
+      tokens,
+      lockTest,
+      modifyPositionTest,
+      swapTest,
+      feeControllerTest,
+      donateTest,
+      hooksMock,
+      testHooksEmpty,
+    } = await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
@@ -166,16 +175,11 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
       }
 
-      await manager.initialize(
-        poolKey,
-        encodeSqrtPriceX96(10, 1)
-      )
+      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
       const {
         slot0: { sqrtPriceX96, protocolFee },
-      } = await manager.pools(
-        getPoolId(poolKey)
-      )
+      } = await manager.pools(getPoolId(poolKey))
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
       expect(protocolFee).to.eq(0)
     })
@@ -283,16 +287,11 @@ describe('PoolManager', () => {
       const poolID = getPoolId(poolKey)
       await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
 
-      await manager.initialize(
-        poolKey,
-        encodeSqrtPriceX96(10, 1)
-      )
+      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
       const {
         slot0: { sqrtPriceX96, protocolFee },
-      } = await manager.pools(
-        getPoolId(poolKey)
-      )
+      } = await manager.pools(getPoolId(poolKey))
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
       expect(protocolFee).to.eq(poolProtocolFee)
     })
@@ -969,16 +968,12 @@ describe('PoolManager', () => {
       }
       const poolID = getPoolId(poolKey)
 
-      await manager.initialize(
-        poolKey,
-        encodeSqrtPriceX96(10, 1)
-      )
+      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
       var protocolFee: number
-      ({
-        slot0: { protocolFee }} = await manager.pools(
-        getPoolId(poolKey)
-      ))
+      ;({
+        slot0: { protocolFee },
+      } = await manager.pools(getPoolId(poolKey)))
       expect(protocolFee).to.eq(0)
 
       await manager.setProtocolFeeController(feeControllerTest.address)
@@ -987,13 +982,10 @@ describe('PoolManager', () => {
       await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
 
       await manager.setPoolProtocolFee(poolID)
-
       ;({
-        slot0: { protocolFee }} = await manager.pools(
-        getPoolId(poolKey)
-      ))
+        slot0: { protocolFee },
+      } = await manager.pools(getPoolId(poolKey)))
       expect(protocolFee).to.eq(poolProtocolFee)
     })
   })
-
 })
