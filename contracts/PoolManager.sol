@@ -76,7 +76,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
 
-        tick = _getPool(key).initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
+        bytes32 keyHash = keccak256(abi.encode(key));
+        tick = pools[keyHash].initialize(sqrtPriceX96, fetchPoolProtocolFee(keyHash));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
@@ -340,11 +341,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         protocolFeeController = controller;
     }
 
-    function setPoolProtocolFee(IPoolManager.PoolKey memory key) external {
-        _getPool(key).setProtocolFee(fetchPoolProtocolFee(key));
+    function setPoolProtocolFee(bytes32 key) external {
+        pools[key].setProtocolFee(fetchPoolProtocolFee(key));
     }
 
-    function fetchPoolProtocolFee(IPoolManager.PoolKey memory key) internal view returns (uint8 protocolFee) {
+    function fetchPoolProtocolFee(bytes32 key) internal view returns (uint8 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
             try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (
                 uint8 updatedProtocolFee

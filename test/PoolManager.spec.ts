@@ -10,8 +10,9 @@ import {
   EmptyTestHooks,
   PoolManagerReentrancyTest,
   PoolDonateTest,
+  ProtocolFeeControllerTest,
 } from '../typechain'
-import { MAX_TICK_SPACING } from './shared/constants'
+import { MAX_TICK_SPACING, ADDRESS_ZERO } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
@@ -22,14 +23,13 @@ const createFixtureLoader = waffle.createFixtureLoader
 
 const { constants } = ethers
 
-const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
-
 describe('PoolManager', () => {
   let wallet: Wallet, other: Wallet
 
   let manager: PoolManager
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
+  let feeControllerTest: ProtocolFeeControllerTest
   let modifyPositionTest: PoolModifyPositionTest
   let donateTest: PoolDonateTest
   let hooksMock: MockedContract
@@ -40,6 +40,7 @@ describe('PoolManager', () => {
     const poolManagerFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
+    const feeControllerTestFactory = await ethers.getContractFactory('ProtocolFeeControllerTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
@@ -64,6 +65,7 @@ describe('PoolManager', () => {
       manager,
       lockTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
+      feeControllerTest: (await feeControllerTestFactory.deploy()) as ProtocolFeeControllerTest,
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       donateTest: (await donateTestFactory.deploy(manager.address)) as PoolDonateTest,
       tokens,
@@ -88,7 +90,7 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, donateTest, hooksMock, testHooksEmpty } =
+    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, feeControllerTest, donateTest, hooksMock, testHooksEmpty } =
       await loadFixture(fixture))
   })
 
@@ -146,31 +148,36 @@ describe('PoolManager', () => {
     })
   })
 
+  describe('#setProtocolFeeController', () => {
+    it('allows the owner to set a fee controller', async () => {
+      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
+      await manager.setProtocolFeeController(feeControllerTest.address)
+      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+    })
+  })
+
   describe('#initialize', async () => {
     it('initializes a pool', async () => {
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
       await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
+        poolKey,
         encodeSqrtPriceX96(10, 1)
       )
 
       const {
-        slot0: { sqrtPriceX96 },
+        slot0: { sqrtPriceX96, protocolFee },
       } = await manager.pools(
-        getPoolId({
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        })
+        getPoolId(poolKey)
       )
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(protocolFee).to.eq(0)
     })
 
     it('initializes a pool with hooks', async () => {
@@ -257,6 +264,37 @@ describe('PoolManager', () => {
           encodeSqrtPriceX96(10, 1)
         )
       ).to.be.revertedWith('TickSpacingTooSmall()')
+    })
+
+    it('fetches a fee for new pools when theres a fee controller', async () => {
+      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
+      await manager.setProtocolFeeController(feeControllerTest.address)
+      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      const poolProtocolFee = 4
+
+      const poolID = getPoolId(poolKey)
+      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+
+      await manager.initialize(
+        poolKey,
+        encodeSqrtPriceX96(10, 1)
+      )
+
+      const {
+        slot0: { sqrtPriceX96, protocolFee },
+      } = await manager.pools(
+        getPoolId(poolKey)
+      )
+      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(protocolFee).to.eq(poolProtocolFee)
     })
 
     it('gas cost', async () => {
@@ -917,4 +955,45 @@ describe('PoolManager', () => {
       })
     })
   })
+
+  describe('#setPoolProtocolFee', async () => {
+    it('updates the protocol fee for an initialised pool', async () => {
+      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
+
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      const poolID = getPoolId(poolKey)
+
+      await manager.initialize(
+        poolKey,
+        encodeSqrtPriceX96(10, 1)
+      )
+
+      var protocolFee: number
+      ({
+        slot0: { protocolFee }} = await manager.pools(
+        getPoolId(poolKey)
+      ))
+      expect(protocolFee).to.eq(0)
+
+      await manager.setProtocolFeeController(feeControllerTest.address)
+      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+      const poolProtocolFee = 4
+      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+
+      await manager.setPoolProtocolFee(poolID)
+
+      ;({
+        slot0: { protocolFee }} = await manager.pools(
+        getPoolId(poolKey)
+      ))
+      expect(protocolFee).to.eq(poolProtocolFee)
+    })
+  })
+
 })
