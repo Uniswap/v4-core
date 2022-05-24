@@ -1,9 +1,9 @@
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
 import { OracleTest } from '../typechain/OracleTest'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
-import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { MaxUint128 } from './shared/utilities'
 
 describe('Oracle', () => {
@@ -276,7 +276,7 @@ describe('Oracle', () => {
       }
 
       it('fails before initialize', async () => {
-        await expect(observeSingle(0)).to.be.revertedWith('OracleCardinalityCannotBeZero')
+        await expect(observeSingle(0)).to.be.revertedWith('OracleCardinalityCannotBeZero()')
       })
 
       it('fails if an older observation does not exist', async () => {
