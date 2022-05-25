@@ -46,6 +46,21 @@ describe('Hooks', () => {
         })
       ).to.eq('0xff00000000000000000000000000000000000000')
     })
+
+    it('called every other', () => {
+      expect(
+        createHookMask({
+          beforeInitialize: true,
+          afterInitialize: false,
+          beforeModifyPosition: true,
+          afterModifyPosition: false,
+          beforeSwap: true,
+          afterSwap: false,
+          afterDonate: true,
+          beforeDonate: false,
+        })
+      ).to.eq('0xaa00000000000000000000000000000000000000')
+    })
   })
 
   describe('#validateHookAddress', () => {
