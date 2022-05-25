@@ -1,22 +1,21 @@
+import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { BigNumber, Wallet } from 'ethers'
-import hre from 'hardhat'
-import { ethers, waffle } from 'hardhat'
+import hre, { ethers, waffle } from 'hardhat'
 import {
-  PoolManager,
-  TestERC20,
-  PoolManagerTest,
-  PoolSwapTest,
-  PoolModifyPositionTest,
   EmptyTestHooks,
-  PoolManagerReentrancyTest,
   PoolDonateTest,
+  PoolManager,
+  PoolManagerReentrancyTest,
+  PoolManagerTest,
+  PoolModifyPositionTest,
+  PoolSwapTest,
+  TestERC20,
 } from '../typechain'
 import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId } from './shared/utilities'
 import { deployMockContract, MockedContract } from './shared/mockContract'
+import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -366,10 +365,10 @@ describe('PoolManager', () => {
       ]
       const argsAfterModify = [...argsBeforeModify, { amount0: 1, amount1: 0 }]
 
-      expect(await hooksMock.calledWith('beforeModifyPosition', argsBeforeModify)).to.be.true
       expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.true
+      expect(await hooksMock.calledWith('beforeModifyPosition', argsBeforeModify)).to.be.true
+      expect(await hooksMock.calledOnce('afterModifyPosition')).to.be.true
       expect(await hooksMock.calledWith('afterModifyPosition', argsAfterModify)).to.be.true
-      expect(await hooksMock.called('afterModifyPosition')).to.be.true
 
       expect(await hooksMock.called('beforeSwap')).to.be.false
       expect(await hooksMock.called('afterSwap')).to.be.false
@@ -537,8 +536,9 @@ describe('PoolManager', () => {
 
       const argsAfterSwap = [...argsBeforeSwap, { amount0: 0, amount1: 0 }]
 
-      expect(await hooksMock.called('beforeModifyPosition')).to.be.false
-      expect(await hooksMock.called('afterModifyPosition')).to.be.false
+      expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.false
+      expect(await hooksMock.calledOnce('afterModifyPosition')).to.be.false
+
       expect(await hooksMock.calledOnce('beforeSwap')).to.be.true
       expect(await hooksMock.calledOnce('afterSwap')).to.be.true
       expect(await hooksMock.calledWith('beforeSwap', argsBeforeSwap)).to.be.true
