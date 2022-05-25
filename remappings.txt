@@ -1,5 +1,0 @@
-ds-test/=lib/ds-test/src/
-@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
-@uniswap/v3-core/=node_modules/@uniswap/v3-core/
-@uniswap/v3-periphery/=node_modules/@uniswap/v3-periphery/
-@uniswap/swap-router-contracts/=node_modules/@uniswap/swap-router-contracts/
