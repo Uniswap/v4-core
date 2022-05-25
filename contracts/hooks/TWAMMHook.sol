@@ -116,7 +116,7 @@ contract TWAMMHook is BaseHook {
 
         bool zeroForOne;
         (earningsAmount, zeroForOne) = getTWAMM(key).claimEarnings(orderKey);
-        IERC20Minimal buyToken = zeroForOne == 0 ? key.token1 : key.token0;
+        IERC20Minimal buyToken = zeroForOne ? key.token1 : key.token0;
     }
 
     function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
