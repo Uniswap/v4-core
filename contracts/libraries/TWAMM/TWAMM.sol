@@ -263,10 +263,7 @@ library TWAMM {
                     orderPool0For1.sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
                     orderPool1For0.sellRateEndingAtInterval[nextExpirationTimestamp] > 0
                 ) {
-                    if (
-                        orderPool0For1.sellRateCurrent != 0 &&
-                        orderPool1For0.sellRateCurrent != 0
-                    ) {
+                    if (orderPool0For1.sellRateCurrent != 0 && orderPool1For0.sellRateCurrent != 0) {
                         pool = advanceToNewTimestamp(
                             self,
                             poolManager,
@@ -296,10 +293,7 @@ library TWAMM {
             }
 
             if (prevTimestamp < block.timestamp && _hasOutstandingOrders(self)) {
-                if (
-                    orderPool0For1.sellRateCurrent != 0 &&
-                    orderPool1For0.sellRateCurrent != 0
-                ) {
+                if (orderPool0For1.sellRateCurrent != 0 && orderPool1For0.sellRateCurrent != 0) {
                     pool = advanceToNewTimestamp(
                         self,
                         poolManager,
