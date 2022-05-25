@@ -2,7 +2,7 @@ import { createFixtureLoader } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import hre, { ethers } from 'hardhat'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import { TWAMMHook, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
+import { TWAMMHookTest, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
 import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
@@ -23,7 +23,7 @@ function nIntervalsFrom(timestamp: number, interval: number, n: number): number 
 describe('TWAMM Hook', () => {
   let wallets: Wallet[]
   let wallet: Wallet
-  let twamm: TWAMMHook
+  let twamm: TWAMMHookTest
   let poolManager: PoolManager
   let modifyPositionTest: PoolModifyPositionTest
   let token0: TestERC20
@@ -34,7 +34,7 @@ describe('TWAMM Hook', () => {
    * @param poolManagerAddress the address of the pool manager, the only immutable of the geomean oracle
    */
   async function getDeployedTWAMMCode(poolManagerAddress: string): Promise<string> {
-    const artifact = await hre.artifacts.readArtifact('TWAMMHook')
+    const artifact = await hre.artifacts.readArtifact('TWAMMHookTest')
     const fullyQualifiedName = `${artifact.sourceName}:${artifact.contractName}`
     const debugArtifact = await hre.artifacts.getBuildInfo(fullyQualifiedName)
     const immutableReferences =
@@ -54,7 +54,7 @@ describe('TWAMM Hook', () => {
   }
 
   const fixture = async ([wallet]: Wallet[]) => {
-    const twammFactory = await ethers.getContractFactory('TWAMMHook')
+    const twammFactory = await ethers.getContractFactory('TWAMMHookTest')
 
     const poolManagerFactory = await ethers.getContractFactory('PoolManager')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
@@ -75,7 +75,7 @@ describe('TWAMM Hook', () => {
 
     await hre.network.provider.send('hardhat_setCode', [twammHookAddress, await getDeployedTWAMMCode(manager.address)])
 
-    const twamm: TWAMMHook = twammFactory.attach(twammHookAddress) as TWAMMHook
+    const twamm: TWAMMHookTest = twammFactory.attach(twammHookAddress) as TWAMMHookTest
 
     const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
     const modifyPositionTest = (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest
@@ -144,11 +144,11 @@ describe('TWAMM Hook', () => {
 
   describe('#beforeInitialize', async () => {
     it('initializes the twamm', async () => {
-      expect((await twamm.twammStates(getPoolId(poolKey))).expirationInterval).to.equal(0)
-      expect((await twamm.twammStates(getPoolId(poolKey))).lastVirtualOrderTimestamp).to.equal(0)
+      expect((await twamm.getTWAMMExpirationInterval(getPoolId(poolKey)))).to.equal(0)
+      expect((await twamm.getTWAMMLastVOTimestamp(getPoolId(poolKey)))).to.equal(0)
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-      expect((await twamm.twammStates(getPoolId(poolKey))).expirationInterval).to.equal(10_000)
-      expect((await twamm.twammStates(getPoolId(poolKey))).lastVirtualOrderTimestamp).to.equal(
+      expect((await twamm.getTWAMMExpirationInterval(getPoolId(poolKey)))).to.equal(10_000)
+      expect((await twamm.getTWAMMLastVOTimestamp(getPoolId(poolKey)))).to.equal(
         (await ethers.provider.getBlock('latest')).timestamp
       )
     })

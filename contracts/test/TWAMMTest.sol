@@ -14,7 +14,7 @@ contract TWAMMTest {
     using TWAMM for TWAMM.State;
     using ABDKMathQuad for *;
 
-    TWAMM.State public twamm;
+    TWAMM.State private twamm;
     mapping(int24 => Tick.Info) mockTicks;
     mapping(int16 => uint256) mockTickBitmap;
 
@@ -87,9 +87,10 @@ contract TWAMMTest {
     }
 
     function getOrderPool(bool zeroForOne) external view returns (uint256 sellRate, uint256 earningsFactor) {
-        OrderPool.State storage orderPool = twamm.orderPools[zeroForOne];
-        sellRate = orderPool.sellRateCurrent;
-        earningsFactor = orderPool.earningsFactorCurrent;
+        if (zeroForOne)
+            return (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent);
+        else
+            return (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
     }
 
     function getOrderPoolSellRateEndingPerInterval(bool zeroForOne, uint256 timestamp)
@@ -97,15 +98,21 @@ contract TWAMMTest {
         view
         returns (uint256 sellRate)
     {
-        return twamm.orderPools[zeroForOne].sellRateEndingAtInterval[timestamp];
+        if (zeroForOne)
+            return twamm.orderPool0For1.sellRateEndingAtInterval[timestamp];
+        else
+            return twamm.orderPool1For0.sellRateEndingAtInterval[timestamp];
     }
 
     function getOrderPoolEarningsFactorAtInterval(bool zeroForOne, uint256 timestamp)
         external
         view
-        returns (uint256 sellRate)
+        returns (uint256 earningsFactor)
     {
-        return twamm.orderPools[zeroForOne].earningsFactorAtInterval[timestamp];
+        if (zeroForOne)
+            return twamm.orderPool0For1.earningsFactorAtInterval[timestamp];
+        else
+            return twamm.orderPool1For0.earningsFactorAtInterval[timestamp];
     }
 
     function getState() external view returns (uint256 expirationInterval, uint256 lastVirtualOrderTimestamp) {

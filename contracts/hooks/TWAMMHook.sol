@@ -14,7 +14,7 @@ import {BaseHook} from './base/BaseHook.sol';
 contract TWAMMHook is BaseHook {
     using TWAMM for TWAMM.State;
 
-    mapping(bytes32 => TWAMM.State) public twammStates;
+    mapping(bytes32 => TWAMM.State) internal twammStates;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
         Hooks.validateHookAddress(
@@ -35,10 +35,13 @@ contract TWAMMHook is BaseHook {
     function getOrderPool(IPoolManager.PoolKey calldata key, bool zeroForOne)
         external
         view
-        returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent)
+        returns (uint256, uint256)
     {
-        OrderPool.State storage orderPool = getTWAMM(key).orderPools[zeroForOne];
-        return (orderPool.sellRateCurrent, orderPool.earningsFactorCurrent);
+        TWAMM.State storage twamm = getTWAMM(key);
+        if (zeroForOne)
+            return (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent);
+        else
+            return (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
     }
 
     function beforeInitialize(

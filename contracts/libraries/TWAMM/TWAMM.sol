@@ -68,7 +68,8 @@ library TWAMM {
         IPoolManager.PoolKey poolKey;
         uint256 expirationInterval;
         uint256 lastVirtualOrderTimestamp;
-        mapping(bool => OrderPool.State) orderPools;
+        OrderPool.State orderPool0For1;
+        OrderPool.State orderPool1For0;
         mapping(bytes32 => Order) orders;
     }
 
@@ -130,18 +131,19 @@ library TWAMM {
         if (self.orders[orderId].sellRate != 0) revert OrderAlreadyExists(orderId);
 
         uint256 sellRate;
+        OrderPool.State storage orderPool = zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
         unchecked {
             sellRate = params.amountIn / (params.expiration - block.timestamp);
-            self.orderPools[zeroForOne].sellRateCurrent += sellRate;
-            self.orderPools[zeroForOne].sellRateEndingAtInterval[params.expiration] += sellRate;
+            orderPool.sellRateCurrent += sellRate;
+            orderPool.sellRateEndingAtInterval[params.expiration] += sellRate;
         }
 
         self.orders[orderId] = Order({
             expiration: params.expiration,
             sellRate: sellRate,
             zeroForOne: zeroForOne,
-            unclaimedEarningsFactor: self.orderPools[zeroForOne].earningsFactorCurrent,
+            unclaimedEarningsFactor: orderPool.earningsFactorCurrent,
             uncollectedEarningsAmount: 0
         });
     }
@@ -162,7 +164,7 @@ library TWAMM {
         if (orderKey.owner != msg.sender) revert MustBeOwner(orderId, orderKey.owner, msg.sender);
         if (order.expiration <= block.timestamp) revert OrderAlreadyCompleted(orderId);
 
-        OrderPool.State storage orderPool = self.orderPools[order.zeroForOne];
+        OrderPool.State storage orderPool = order.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
         unchecked {
             // cache existing earnings
@@ -201,7 +203,7 @@ library TWAMM {
         bytes32 orderId = _orderId(orderKey);
         Order storage order = self.orders[orderId];
         zeroForOne = order.zeroForOne;
-        OrderPool.State storage orderPool = self.orderPools[zeroForOne];
+        OrderPool.State storage orderPool = zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
         unchecked {
             if (block.timestamp > order.expiration) {
@@ -254,8 +256,8 @@ library TWAMM {
     ) private returns (bool zeroForOne, uint160 newSqrtPriceX96) {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
 
-        OrderPool.State storage orderPool0For1 = self.orderPools[ZERO_FOR_ONE];
-        OrderPool.State storage orderPool1For0 = self.orderPools[ONE_FOR_ZERO];
+        OrderPool.State storage orderPool0For1 = self.orderPool0For1;
+        OrderPool.State storage orderPool1For0 = self.orderPool1For0;
 
         unchecked {
             while (nextExpirationTimestamp <= block.timestamp && _hasOutstandingOrders(self)) {
@@ -341,8 +343,8 @@ library TWAMM {
     ) private returns (PoolParamsOnExecute memory) {
         uint160 finalSqrtPriceX96;
 
-        OrderPool.State storage orderPool0For1 = self.orderPools[ZERO_FOR_ONE];
-        OrderPool.State storage orderPool1For0 = self.orderPools[ONE_FOR_ZERO];
+        OrderPool.State storage orderPool0For1 = self.orderPool0For1;
+        OrderPool.State storage orderPool1For0 = self.orderPool1For0;
 
         while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
             uint256 earningsFactorPool0;
@@ -402,8 +404,9 @@ library TWAMM {
         AdvanceSingleParams memory params
     ) private returns (PoolParamsOnExecute memory) {
         bool zeroForOne = params.zeroForOne;
+        OrderPool.State storage orderPool = zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
-        uint256 sellRateCurrent = self.orderPools[zeroForOne].sellRateCurrent;
+        uint256 sellRateCurrent = orderPool.sellRateCurrent;
         uint256 amountSelling = sellRateCurrent * params.secondsElapsed;
         uint256 totalEarnings;
 
@@ -439,9 +442,9 @@ library TWAMM {
 
         uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateCurrent;
         if (params.nextTimestamp % self.expirationInterval == 0) {
-            self.orderPools[zeroForOne].advanceToInterval(params.nextTimestamp, accruedEarningsFactor);
+            orderPool.advanceToInterval(params.nextTimestamp, accruedEarningsFactor);
         } else {
-            self.orderPools[params.zeroForOne].advanceToCurrentTime(accruedEarningsFactor);
+            orderPool.advanceToCurrentTime(accruedEarningsFactor);
         }
         return params.pool;
     }
@@ -493,8 +496,8 @@ library TWAMM {
     ) private returns (PoolParamsOnExecute memory, uint256) {
         uint160 initializedSqrtPrice = params.initializedTick.getSqrtRatioAtTick();
 
-        OrderPool.State storage orderPool0For1 = self.orderPools[ZERO_FOR_ONE];
-        OrderPool.State storage orderPool1For0 = self.orderPools[ONE_FOR_ZERO];
+        OrderPool.State storage orderPool0For1 = self.orderPool0For1;
+        OrderPool.State storage orderPool1For0 = self.orderPool1For0;
 
         uint256 secondsUntilCrossingX96 = TwammMath.calculateTimeBetweenTicks(
             params.pool.liquidity,
@@ -564,6 +567,6 @@ library TWAMM {
 
     function _hasOutstandingOrders(State storage self) internal view returns (bool) {
         return
-            !(self.orderPools[ZERO_FOR_ONE].sellRateCurrent == 0 && self.orderPools[ONE_FOR_ZERO].sellRateCurrent == 0);
+            !(self.orderPool0For1.sellRateCurrent == 0 && self.orderPool1For0.sellRateCurrent == 0);
     }
 }
