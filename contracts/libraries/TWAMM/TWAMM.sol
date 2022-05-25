@@ -254,15 +254,18 @@ library TWAMM {
     ) private returns (bool zeroForOne, uint160 newSqrtPriceX96) {
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
 
+        OrderPool.State storage orderPool0For1 = self.orderPools[ZERO_FOR_ONE];
+        OrderPool.State storage orderPool1For0 = self.orderPools[ONE_FOR_ZERO];
+
         unchecked {
             while (nextExpirationTimestamp <= block.timestamp && _hasOutstandingOrders(self)) {
                 if (
-                    self.orderPools[ZERO_FOR_ONE].sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
-                    self.orderPools[ONE_FOR_ZERO].sellRateEndingAtInterval[nextExpirationTimestamp] > 0
+                    orderPool0For1.sellRateEndingAtInterval[nextExpirationTimestamp] > 0 ||
+                    orderPool1For0.sellRateEndingAtInterval[nextExpirationTimestamp] > 0
                 ) {
                     if (
-                        self.orderPools[ZERO_FOR_ONE].sellRateCurrent != 0 &&
-                        self.orderPools[ONE_FOR_ZERO].sellRateCurrent != 0
+                        orderPool0For1.sellRateCurrent != 0 &&
+                        orderPool1For0.sellRateCurrent != 0
                     ) {
                         pool = advanceToNewTimestamp(
                             self,
@@ -283,7 +286,7 @@ library TWAMM {
                                 nextExpirationTimestamp,
                                 nextExpirationTimestamp - prevTimestamp,
                                 pool,
-                                self.orderPools[ZERO_FOR_ONE].sellRateCurrent != 0
+                                orderPool0For1.sellRateCurrent != 0
                             )
                         );
                     }
@@ -294,8 +297,8 @@ library TWAMM {
 
             if (prevTimestamp < block.timestamp && _hasOutstandingOrders(self)) {
                 if (
-                    self.orderPools[ZERO_FOR_ONE].sellRateCurrent != 0 &&
-                    self.orderPools[ONE_FOR_ZERO].sellRateCurrent != 0
+                    orderPool0For1.sellRateCurrent != 0 &&
+                    orderPool1For0.sellRateCurrent != 0
                 ) {
                     pool = advanceToNewTimestamp(
                         self,
@@ -312,7 +315,7 @@ library TWAMM {
                             block.timestamp,
                             block.timestamp - prevTimestamp,
                             pool,
-                            self.orderPools[ZERO_FOR_ONE].sellRateCurrent != 0
+                            orderPool0For1.sellRateCurrent != 0
                         )
                     );
                 }
@@ -338,6 +341,9 @@ library TWAMM {
     ) private returns (PoolParamsOnExecute memory) {
         uint160 finalSqrtPriceX96;
 
+        OrderPool.State storage orderPool0For1 = self.orderPools[ZERO_FOR_ONE];
+        OrderPool.State storage orderPool1For0 = self.orderPools[ONE_FOR_ZERO];
+
         while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
@@ -346,8 +352,8 @@ library TWAMM {
                     params.secondsElapsedX96,
                     params.pool.sqrtPriceX96,
                     params.pool.liquidity,
-                    self.orderPools[ZERO_FOR_ONE].sellRateCurrent,
-                    self.orderPools[ONE_FOR_ZERO].sellRateCurrent
+                    orderPool0For1.sellRateCurrent,
+                    orderPool1For0.sellRateCurrent
                 )
             );
 
@@ -368,11 +374,11 @@ library TWAMM {
                     params.secondsElapsedX96 = params.secondsElapsedX96 - secondsUntilCrossingX96;
                 } else {
                     if (params.nextTimestamp % self.expirationInterval == 0) {
-                        self.orderPools[ZERO_FOR_ONE].advanceToInterval(params.nextTimestamp, earningsFactorPool0);
-                        self.orderPools[ONE_FOR_ZERO].advanceToInterval(params.nextTimestamp, earningsFactorPool1);
+                        orderPool0For1.advanceToInterval(params.nextTimestamp, earningsFactorPool0);
+                        orderPool1For0.advanceToInterval(params.nextTimestamp, earningsFactorPool1);
                     } else {
-                        self.orderPools[ZERO_FOR_ONE].advanceToCurrentTime(earningsFactorPool0);
-                        self.orderPools[ONE_FOR_ZERO].advanceToCurrentTime(earningsFactorPool1);
+                        orderPool0For1.advanceToCurrentTime(earningsFactorPool0);
+                        orderPool1For0.advanceToCurrentTime(earningsFactorPool1);
                     }
                     params.pool.sqrtPriceX96 = finalSqrtPriceX96;
                 }
@@ -486,12 +492,16 @@ library TWAMM {
         TickCrossingParams memory params
     ) private returns (PoolParamsOnExecute memory, uint256) {
         uint160 initializedSqrtPrice = params.initializedTick.getSqrtRatioAtTick();
+
+        OrderPool.State storage orderPool0For1 = self.orderPools[ZERO_FOR_ONE];
+        OrderPool.State storage orderPool1For0 = self.orderPools[ONE_FOR_ZERO];
+
         uint256 secondsUntilCrossingX96 = TwammMath.calculateTimeBetweenTicks(
             params.pool.liquidity,
             params.pool.sqrtPriceX96,
             initializedSqrtPrice,
-            self.orderPools[ZERO_FOR_ONE].sellRateCurrent,
-            self.orderPools[ONE_FOR_ZERO].sellRateCurrent
+            orderPool0For1.sellRateCurrent,
+            orderPool1For0.sellRateCurrent
         );
 
         // TODO: nextSqrtPriceX96 off by 1 wei (hence using the initializedSqrtPrice (l:331) param instead)
@@ -501,12 +511,12 @@ library TWAMM {
                     params.secondsElapsedX96,
                     params.pool.sqrtPriceX96,
                     params.pool.liquidity,
-                    self.orderPools[ZERO_FOR_ONE].sellRateCurrent,
-                    self.orderPools[ONE_FOR_ZERO].sellRateCurrent
+                    orderPool0For1.sellRateCurrent,
+                    orderPool1For0.sellRateCurrent
                 )
             );
-        self.orderPools[ZERO_FOR_ONE].advanceToCurrentTime(earningsFactorPool0);
-        self.orderPools[ONE_FOR_ZERO].advanceToCurrentTime(earningsFactorPool1);
+        orderPool0For1.advanceToCurrentTime(earningsFactorPool0);
+        orderPool1For0.advanceToCurrentTime(earningsFactorPool1);
 
         unchecked {
             // update pool
