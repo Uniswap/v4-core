@@ -6,7 +6,14 @@ import { TWAMMHook, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20
 import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { createHookMask, encodeSqrtPriceX96, expandTo18Decimals, getMaxTick, getMinTick } from './shared/utilities'
+import {
+  createHookMask,
+  encodeSqrtPriceX96,
+  expandTo18Decimals,
+  getMaxTick,
+  getMinTick,
+  getPoolId,
+} from './shared/utilities'
 import { inOneBlock } from './shared/inOneBlock'
 
 function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
@@ -18,7 +25,6 @@ describe('TWAMM Hook', () => {
   let wallet: Wallet
   let twamm: TWAMMHook
   let poolManager: PoolManager
-  let swapTest: PoolSwapTest
   let modifyPositionTest: PoolModifyPositionTest
   let token0: TestERC20
   let token1: TestERC20
@@ -110,7 +116,6 @@ describe('TWAMM Hook', () => {
       twamm,
       manager: poolManager,
       tokens: { token0, token1 },
-      swapTest,
       modifyPositionTest,
     } = await loadFixture(fixture))
     poolKey = {
@@ -139,11 +144,11 @@ describe('TWAMM Hook', () => {
 
   describe('#beforeInitialize', async () => {
     it('initializes the twamm', async () => {
-      expect((await twamm.twamm()).expirationInterval).to.equal(0)
-      expect((await twamm.twamm()).lastVirtualOrderTimestamp).to.equal(0)
+      expect((await twamm.twammStates(getPoolId(poolKey))).expirationInterval).to.equal(0)
+      expect((await twamm.twammStates(getPoolId(poolKey))).lastVirtualOrderTimestamp).to.equal(0)
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-      expect((await twamm.twamm()).expirationInterval).to.equal(10_000)
-      expect((await twamm.twamm()).lastVirtualOrderTimestamp).to.equal(
+      expect((await twamm.twammStates(getPoolId(poolKey))).expirationInterval).to.equal(10_000)
+      expect((await twamm.twammStates(getPoolId(poolKey))).lastVirtualOrderTimestamp).to.equal(
         (await ethers.provider.getBlock('latest')).timestamp
       )
     })
@@ -189,11 +194,11 @@ describe('TWAMM Hook', () => {
 
     it('gas with no initialized ticks', async () => {
       await inOneBlock(latestTimestamp + 100, async () => {
-        await twamm.submitLongTermOrder({
+        await twamm.submitLongTermOrder(poolKey, {
           amountIn: expandTo18Decimals(1),
           ...orderKey0,
         })
-        await twamm.submitLongTermOrder({
+        await twamm.submitLongTermOrder(poolKey, {
           amountIn: expandTo18Decimals(10),
           ...orderKey1,
         })
@@ -209,11 +214,11 @@ describe('TWAMM Hook', () => {
         liquidityDelta: expandTo18Decimals(1),
       })
       await inOneBlock(latestTimestamp + 100, async () => {
-        await twamm.submitLongTermOrder({
+        await twamm.submitLongTermOrder(poolKey, {
           amountIn: expandTo18Decimals(1),
           ...orderKey0,
         })
-        await twamm.submitLongTermOrder({
+        await twamm.submitLongTermOrder(poolKey, {
           amountIn: expandTo18Decimals(10),
           ...orderKey1,
         })
@@ -235,11 +240,11 @@ describe('TWAMM Hook', () => {
       })
 
       await inOneBlock(latestTimestamp + 100, async () => {
-        await twamm.submitLongTermOrder({
+        await twamm.submitLongTermOrder(poolKey, {
           amountIn: expandTo18Decimals(1),
           ...orderKey0,
         })
-        await twamm.submitLongTermOrder({
+        await twamm.submitLongTermOrder(poolKey, {
           amountIn: expandTo18Decimals(10),
           ...orderKey1,
         })

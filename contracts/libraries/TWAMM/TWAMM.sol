@@ -102,7 +102,6 @@ library TWAMM {
         uint256 expirationInterval,
         IPoolManager.PoolKey memory key
     ) internal {
-        // TODO: could enforce a 1 time call...but redundant in the context of Pool
         self.expirationInterval = expirationInterval;
         self.lastVirtualOrderTimestamp = block.timestamp;
         self.poolKey = key;
@@ -516,7 +515,7 @@ library TWAMM {
         IPoolManager poolManager,
         IPoolManager.PoolKey memory poolKey,
         uint160 nextSqrtPriceX96
-    ) private returns (bool initialized, int24 nextTickInit) {
+    ) private view returns (bool initialized, int24 nextTickInit) {
         // use current price as a starting point for nextTickInit
         nextTickInit = pool.sqrtPriceX96.getTickAtSqrtRatio();
         bool searchingLeft = nextSqrtPriceX96 < pool.sqrtPriceX96;
@@ -536,10 +535,10 @@ library TWAMM {
     }
 
     function _getOrder(State storage self, OrderKey memory key) internal view returns (Order storage) {
-        return self.orders[keccak256(abi.encode(key))];
+        return self.orders[_orderId(key)];
     }
 
-    function _orderId(OrderKey memory key) private view returns (bytes32) {
+    function _orderId(OrderKey memory key) private pure returns (bytes32) {
         return keccak256(abi.encode(key));
     }
 
