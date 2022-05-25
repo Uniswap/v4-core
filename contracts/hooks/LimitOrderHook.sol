@@ -39,7 +39,7 @@ contract LimitOrderHook is BaseHook {
 
     uint232 constant EPOCH_DEFAULT = 0;
 
-    int24 public tickLowerLast;
+    mapping(bytes32 => int24) public tickLowerLasts;
     uint232 public epochNext = 1;
 
     struct EpochInfo {
@@ -68,6 +68,14 @@ contract LimitOrderHook is BaseHook {
                 afterDonate: false
             })
         );
+    }
+
+    function getTickLowerLast(IPoolManager.PoolKey memory key) public view returns (int24) {
+        return tickLowerLasts[keccak256(abi.encode(key))];
+    }
+
+    function setTickLowerLast(IPoolManager.PoolKey memory key, int24 tickLower) private {
+        tickLowerLasts[keccak256(abi.encode(key))] = tickLower;
     }
 
     function getEpoch(
@@ -103,7 +111,7 @@ contract LimitOrderHook is BaseHook {
         uint160,
         int24 tick
     ) external override poolManagerOnly {
-        tickLowerLast = getTickLower(tick, key.tickSpacing);
+        setTickLowerLast(key, getTickLower(tick, key.tickSpacing));
     }
 
     function afterSwap(
@@ -113,6 +121,7 @@ contract LimitOrderHook is BaseHook {
         IPoolManager.BalanceDelta calldata
     ) external override poolManagerOnly {
         int24 tickLower = getTickLower(getTick(key), key.tickSpacing);
+        int24 tickLowerLast = getTickLowerLast(key);
         if (tickLower == tickLowerLast) return;
 
         int24 lower;
