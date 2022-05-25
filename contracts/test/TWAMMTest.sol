@@ -57,6 +57,7 @@ contract TWAMMTest {
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
         external
         returns (
+            uint160 sqrtPrice,
             uint160 sqrtPriceX96,
             uint256 earningsPool0,
             uint256 earningsPool1,
@@ -69,8 +70,9 @@ contract TWAMMTest {
 
         earningsAmount0 = (earningsPool0 * params.sellRateCurrent0) >> FixedPoint96.RESOLUTION;
         earningsAmount1 = (earningsPool1 * params.sellRateCurrent1) >> FixedPoint96.RESOLUTION;
+        uint160 finalSqrtPrice = finalSqrtPriceX96 >> FixedPoint96.RESOLUTION;
 
-        return (finalSqrtPriceX96, earningsPool0, earningsPool1, earningsAmount0, earningsAmount1);
+        return (finalSqrtPrice, finalSqrtPriceX96, earningsPool0, earningsPool1, earningsAmount0, earningsAmount1);
     }
 
     function calculateTimeBetweenTicks(

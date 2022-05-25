@@ -1,10 +1,11 @@
 import { TWAMMTest } from '../typechain/TWAMMTest'
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, FixedNumber, Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, MaxUint128, MAX_SQRT_RATIO } from './shared/utilities'
+import bn from 'bignumber.js'
 
 function toWei(n: string): BigNumber {
   return ethers.utils.parseEther(n)
@@ -223,9 +224,7 @@ describe('TWAMMMath', () => {
       )
     })
 
-    // TODO: Calculating the time to p_target (required when we reach the max price) does not work when we push the price to an edge.
-    // Desmos also shows undefined or negative so may need a new formula here?
-    it.skip('TWAMM trades against itself when low liquidity', async () => {
+    it.only('TWAMM trades against itself when low liquidity', async () => {
       // set low liquidity to push price
       liquidity = '1000000000000000000'
 
@@ -240,7 +239,9 @@ describe('TWAMMMath', () => {
         sellRateCurrent1,
       })
 
-      expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
+      // The ending price should approach the sqrtSellRatio
+      // const expectedSqrtSellRatioX96 = sellRateCurrent1.div(sellRateCurrent0).mul(fixedPoint)
+      // expect(results.sqrtPriceX96).to.eq(expectedSqrtSellRatioX96)
 
       const expectedAmount = sellRateCurrent0.mul(secondsElapsedX96).div(fixedPoint)
       console.log(expectedAmount.toString())

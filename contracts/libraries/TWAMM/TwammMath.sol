@@ -37,6 +37,8 @@ library TwammMath {
         bytes16 sellRateBytes0 = params.sellRateCurrent0.fromUInt();
         bytes16 sellRateBytes1 = params.sellRateCurrent1.fromUInt();
 
+        bytes16 sqrtSellRateBytes = sellRateBytes1.div(sellRateBytes0).sqrt();
+
         bytes16 sqrtSellRatioX96 = sellRateBytes1.div(sellRateBytes0).sqrt().mul(Q96);
         bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
 
@@ -51,20 +53,15 @@ library TwammMath {
         bytes16 newSqrtPriceBytesX96 = calculateNewSqrtPriceX96(priceParams);
 
         bool isOverflow;
-        bool isUnderflow;
         // TODO: cleanup with abdk
-        //uint256 exponent = (uint128(newSqrtPriceBytesX96) >> 112) & 0x7FFF;
         unchecked {
             uint256 exponent = (uint128(newSqrtPriceBytesX96) >> 112) & 0x7FFF;
-            if (exponent < 16383) {
-                isUnderflow = true;
-            } else {
-                isOverflow = exponent > 16638;
-            }
+            isOverflow = exponent > 16638;
         }
 
-        // TODO: Set condition for min.
-        newSqrtPriceX96 = isOverflow ? (TickMath.MAX_SQRT_RATIO - 1) : newSqrtPriceBytesX96.toUInt().toUint160();
+        newSqrtPriceX96 = isOverflow
+            ? sqrtSellRatioX96.toUInt().toUint160()
+            : newSqrtPriceBytesX96.toUInt().toUint160();
     }
 
     function calculateEarningsUpdates(ExecutionUpdateParams memory params, uint160 finalSqrtPriceX96)
