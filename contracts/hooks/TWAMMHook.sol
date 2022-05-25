@@ -32,7 +32,11 @@ contract TWAMMHook is BaseHook {
         );
     }
 
-    function getOrderPool(IPoolManager.PoolKey calldata key, bool zeroForOne) external view returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent) {
+    function getOrderPool(IPoolManager.PoolKey calldata key, bool zeroForOne)
+        external
+        view
+        returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent)
+    {
         OrderPool.State storage orderPool = getTWAMM(key).orderPools[zeroForOne];
         return (orderPool.sellRateCurrent, orderPool.earningsFactorCurrent);
     }
