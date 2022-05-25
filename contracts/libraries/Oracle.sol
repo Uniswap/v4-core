@@ -59,10 +59,7 @@ library Oracle {
     /// @param time The time of the oracle initialization, via block.timestamp truncated to uint32
     /// @return cardinality The number of populated elements in the oracle array
     /// @return cardinalityNext The new length of the oracle array, independent of population
-    function initialize(Observation[65535] storage self)
-        internal
-        returns (uint16 cardinality, uint16 cardinalityNext)
-    {
+    function initialize(Observation[65535] storage self) internal returns (uint16 cardinality, uint16 cardinalityNext) {
         self[0] = Observation({
             blockTimestamp: uint32(block.timestamp),
             tickCumulative: 0,
