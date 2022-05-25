@@ -88,8 +88,8 @@ export type ModifyPositionFunction = (
 export function createHookMask({
   beforeInitialize,
   afterInitialize,
-  afterModifyPosition,
   beforeModifyPosition,
+  afterModifyPosition,
   beforeSwap,
   afterSwap,
   beforeDonate,
