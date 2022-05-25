@@ -166,8 +166,7 @@ library TWAMM {
 
         unchecked {
             // cache existing earnings
-            uint256 earningsFactor = orderPool.earningsFactorCurrent -
-                order.unclaimedEarningsFactor;
+            uint256 earningsFactor = orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor;
             order.uncollectedEarningsAmount += (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
             order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
 
