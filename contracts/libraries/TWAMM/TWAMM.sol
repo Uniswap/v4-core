@@ -64,7 +64,6 @@ library TWAMM {
     /// @member nextId Id for next submitted order
     struct State {
         IPoolManager.PoolKey poolKey;
-        uint256 expirationInterval;
         uint256 lastVirtualOrderTimestamp;
         mapping(uint8 => OrderPool.State) orderPools;
         mapping(bytes32 => Order) orders;
@@ -96,13 +95,8 @@ library TWAMM {
     }
 
     /// @notice Initialize TWAMM state
-    /// @param expirationInterval Time interval on which orders can expire
-    function initialize(
-        State storage self,
-        uint256 expirationInterval,
-        IPoolManager.PoolKey memory key
-    ) internal {
-        self.expirationInterval = expirationInterval;
+    /// @param key The key representing the pool for which to iniitalize a new TWAMM
+    function initialize(State storage self, IPoolManager.PoolKey memory key) internal {
         self.lastVirtualOrderTimestamp = block.timestamp;
         self.poolKey = key;
     }
@@ -116,13 +110,14 @@ library TWAMM {
 
     /// @notice Submits a new long term order into the TWAMM
     /// @param params All parameters to define the new order
-    function submitLongTermOrder(State storage self, LongTermOrderParams memory params)
-        internal
-        returns (bytes32 orderId)
-    {
-        if (self.expirationInterval == 0) revert NotInitialized();
+    function submitLongTermOrder(
+        State storage self,
+        LongTermOrderParams memory params,
+        uint256 expirationInterval
+    ) internal returns (bytes32 orderId) {
+        if (self.lastVirtualOrderTimestamp == 0) revert NotInitialized();
         if (params.expiration < block.timestamp) revert ExpirationLessThanBlocktime(params.expiration);
-        if (params.expiration % self.expirationInterval != 0) revert ExpirationNotOnInterval(params.expiration);
+        if (params.expiration % expirationInterval != 0) revert ExpirationNotOnInterval(params.expiration);
 
         orderId = _orderId(OrderKey(params.owner, params.expiration, params.zeroForOne));
         if (self.orders[orderId].sellRate != 0) revert OrderAlreadyExists(orderId);
@@ -226,6 +221,7 @@ library TWAMM {
     /// @param pool The relevant state of the pool
     function executeTWAMMOrders(
         State storage self,
+        uint256 expirationInterval,
         IPoolManager poolManager,
         IPoolManager.PoolKey memory key,
         PoolParamsOnExecute memory pool
@@ -237,9 +233,18 @@ library TWAMM {
 
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
         uint256 nextExpirationTimestamp = self.lastVirtualOrderTimestamp +
-            (self.expirationInterval - (self.lastVirtualOrderTimestamp % self.expirationInterval));
+            (expirationInterval - (self.lastVirtualOrderTimestamp % expirationInterval));
 
-        return _executeTWAMMOrders(self, poolManager, key, pool, nextExpirationTimestamp, prevTimestamp);
+        return
+            _executeTWAMMOrders(
+                self,
+                poolManager,
+                key,
+                pool,
+                expirationInterval,
+                nextExpirationTimestamp,
+                prevTimestamp
+            );
     }
 
     function _executeTWAMMOrders(
@@ -247,6 +252,7 @@ library TWAMM {
         IPoolManager poolManager,
         IPoolManager.PoolKey memory key,
         PoolParamsOnExecute memory pool,
+        uint256 expirationInterval,
         uint256 nextExpirationTimestamp,
         uint256 prevTimestamp
     ) private returns (bool zeroForOne, uint160 newSqrtPriceX96) {
@@ -264,6 +270,7 @@ library TWAMM {
                             poolManager,
                             key,
                             AdvanceParams(
+                                expirationInterval,
                                 nextExpirationTimestamp,
                                 (nextExpirationTimestamp - prevTimestamp) * FixedPoint96.Q96,
                                 pool
@@ -275,6 +282,7 @@ library TWAMM {
                             poolManager,
                             key,
                             AdvanceSingleParams(
+                                expirationInterval,
                                 nextExpirationTimestamp,
                                 nextExpirationTimestamp - prevTimestamp,
                                 pool,
@@ -284,7 +292,7 @@ library TWAMM {
                     }
                     prevTimestamp = nextExpirationTimestamp;
                 }
-                nextExpirationTimestamp += self.expirationInterval;
+                nextExpirationTimestamp += expirationInterval;
             }
 
             if (prevTimestamp < block.timestamp && _hasOutstandingOrders(self)) {
@@ -293,7 +301,12 @@ library TWAMM {
                         self,
                         poolManager,
                         key,
-                        AdvanceParams(block.timestamp, (block.timestamp - prevTimestamp) * FixedPoint96.Q96, pool)
+                        AdvanceParams(
+                            expirationInterval,
+                            block.timestamp,
+                            (block.timestamp - prevTimestamp) * FixedPoint96.Q96,
+                            pool
+                        )
                     );
                 } else {
                     pool = advanceTimestampForSinglePoolSell(
@@ -301,6 +314,7 @@ library TWAMM {
                         poolManager,
                         key,
                         AdvanceSingleParams(
+                            expirationInterval,
                             block.timestamp,
                             block.timestamp - prevTimestamp,
                             pool,
@@ -317,6 +331,7 @@ library TWAMM {
     }
 
     struct AdvanceParams {
+        uint256 expirationInterval;
         uint256 nextTimestamp;
         uint256 secondsElapsedX96;
         PoolParamsOnExecute pool;
@@ -359,7 +374,7 @@ library TWAMM {
                     );
                     params.secondsElapsedX96 = params.secondsElapsedX96 - secondsUntilCrossingX96;
                 } else {
-                    if (params.nextTimestamp % self.expirationInterval == 0) {
+                    if (params.nextTimestamp % params.expirationInterval == 0) {
                         self.orderPools[0].advanceToInterval(params.nextTimestamp, earningsFactorPool0);
                         self.orderPools[1].advanceToInterval(params.nextTimestamp, earningsFactorPool1);
                     } else {
@@ -375,6 +390,7 @@ library TWAMM {
     }
 
     struct AdvanceSingleParams {
+        uint256 expirationInterval;
         uint256 nextTimestamp;
         uint256 secondsElapsed;
         PoolParamsOnExecute pool;
@@ -422,7 +438,7 @@ library TWAMM {
         }
 
         uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateCurrent;
-        if (params.nextTimestamp % self.expirationInterval == 0) {
+        if (params.nextTimestamp % params.expirationInterval == 0) {
             self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, accruedEarningsFactor);
         } else {
             self.orderPools[params.sellIndex].advanceToCurrentTime(accruedEarningsFactor);
@@ -452,7 +468,6 @@ library TWAMM {
             updatedPool.liquidity = liquidityNet < 0
                 ? pool.liquidity - uint128(-liquidityNet)
                 : pool.liquidity + uint128(liquidityNet);
-
         } else {
             updatedPool.sqrtPriceX96 = targetPriceX96;
             updatedPool.liquidity = pool.liquidity;

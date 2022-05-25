@@ -15,9 +15,11 @@ import {BaseHook} from './base/BaseHook.sol';
 contract TWAMMHook is BaseHook {
     using TWAMM for TWAMM.State;
 
+    uint256 immutable expirationInterval;
     mapping(bytes32 => TWAMM.State) public twammStates;
 
-    constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
+    constructor(IPoolManager _poolManager, uint256 _expirationInterval) BaseHook(_poolManager) {
+        expirationInterval = _expirationInterval;
         Hooks.validateHookAddress(
             this,
             Hooks.Calls({
@@ -48,7 +50,7 @@ contract TWAMMHook is BaseHook {
         uint160
     ) external virtual override poolManagerOnly {
         // Dont need to enforce one-time as each pool can only be initialized once in the manager
-        getTWAMM(key).initialize(10000, key);
+        getTWAMM(key).initialize(key);
     }
 
     function beforeModifyPosition(
@@ -77,6 +79,7 @@ contract TWAMMHook is BaseHook {
         (uint160 sqrtPriceX96, ) = poolManager.getSlot0(key);
         TWAMM.State storage twamm = getTWAMM(key);
         (bool zeroForOne, uint160 sqrtPriceLimitX96) = twamm.executeTWAMMOrders(
+            expirationInterval,
             poolManager,
             key,
             TWAMM.PoolParamsOnExecute(sqrtPriceX96, poolManager.getLiquidity(key))
@@ -93,7 +96,7 @@ contract TWAMMHook is BaseHook {
     {
         TWAMM.State storage twamm = getTWAMM(key);
         executeTWAMMOrders(key);
-        orderId = twamm.submitLongTermOrder(params);
+        orderId = twamm.submitLongTermOrder(params, expirationInterval);
         IERC20Minimal token = params.zeroForOne ? key.token0 : key.token1;
         token.transferFrom(params.owner, address(this), params.amountIn);
     }
