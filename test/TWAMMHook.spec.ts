@@ -144,11 +144,11 @@ describe('TWAMM Hook', () => {
 
   describe('#beforeInitialize', async () => {
     it('initializes the twamm', async () => {
-      expect((await twamm.getTWAMMExpirationInterval(getPoolId(poolKey)))).to.equal(0)
-      expect((await twamm.getTWAMMLastVOTimestamp(getPoolId(poolKey)))).to.equal(0)
+      expect(await twamm.getTWAMMExpirationInterval(getPoolId(poolKey))).to.equal(0)
+      expect(await twamm.getTWAMMLastVOTimestamp(getPoolId(poolKey))).to.equal(0)
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-      expect((await twamm.getTWAMMExpirationInterval(getPoolId(poolKey)))).to.equal(10_000)
-      expect((await twamm.getTWAMMLastVOTimestamp(getPoolId(poolKey)))).to.equal(
+      expect(await twamm.getTWAMMExpirationInterval(getPoolId(poolKey))).to.equal(10_000)
+      expect(await twamm.getTWAMMLastVOTimestamp(getPoolId(poolKey))).to.equal(
         (await ethers.provider.getBlock('latest')).timestamp
       )
     })

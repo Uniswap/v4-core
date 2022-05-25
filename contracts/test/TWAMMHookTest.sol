@@ -5,7 +5,6 @@ import {TWAMMHook} from '../hooks/TWAMMHook.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 contract TWAMMHookTest is TWAMMHook {
-
     constructor(IPoolManager _poolManager) TWAMMHook(_poolManager) {}
 
     function getTWAMMExpirationInterval(bytes32 key) external view returns (uint256) {
