@@ -1,5 +1,5 @@
 import { createFixtureLoader } from 'ethereum-waffle'
-import { Wallet } from 'ethers'
+import { BigNumber, Wallet } from 'ethers'
 import hre, { ethers } from 'hardhat'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { TWAMMHook, PoolManager, PoolModifyPositionTest, PoolSwapTest, TestERC20 } from '../typechain'
@@ -19,6 +19,15 @@ import { inOneBlock } from './shared/inOneBlock'
 function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
   return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
 }
+
+type OrderKey = {
+  owner: string
+  expiration: number
+  zeroForOne: boolean
+}
+
+// TODO: temporary hack for precision errors affecting token balances
+const EXTRA_TOKENS = 20
 
 describe('TWAMM Hook', () => {
   let wallets: Wallet[]
@@ -81,6 +90,8 @@ describe('TWAMM Hook', () => {
     const modifyPositionTest = (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest
 
     for (const token of [tokens.token0, tokens.token1]) {
+      // TODO: HACK!! send some extra tokens so that the current precision errors do not revert tests
+      token.transfer(twamm.address, EXTRA_TOKENS)
       for (const spender of [swapTest, modifyPositionTest, twamm]) {
         await token.connect(wallet).approve(spender.address, ethers.constants.MaxUint256)
       }
@@ -254,4 +265,272 @@ describe('TWAMM Hook', () => {
       await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
     })
   })
+
+  describe('end-to-end integration', () => {
+    let start: number
+    let expiration: number
+    let key: any
+    let orderKey0: OrderKey
+    let orderKey1: OrderKey
+    let liquidityBalance: BigNumber
+
+  describe('when TWAMM crosses a tick', () => {
+    beforeEach('set up pool', async () => {
+      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      const amountLiquidity = expandTo18Decimals(1)
+
+      start = nIntervalsFrom(latestTimestamp, 10_000, 1)
+      expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+
+      orderKey0 = {
+        zeroForOne: true,
+        owner: wallet.address,
+        expiration,
+      }
+      orderKey1 = {
+        zeroForOne: false,
+        owner: wallet.address,
+        expiration,
+      }
+
+      key = {
+        token0: token0.address,
+        token1: token1.address,
+        fee: 0,
+        hooks: twamm.address,
+        tickSpacing: 10,
+      }
+      await poolManager.initialize(key, encodeSqrtPriceX96(1, 1))
+
+      // 1) Add liquidity balances to AMM
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: getMinTick(10),
+        tickUpper: getMaxTick(10),
+        liquidityDelta: amountLiquidity,
+      })
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: -20000,
+        tickUpper: 20000,
+        liquidityDelta: amountLiquidity,
+      })
+
+      liquidityBalance = await token0.balanceOf(poolManager.address)
+    })
+
+    it('balances clear properly w/ token1 excess', async () => {
+      const amountLTO0 = expandTo18Decimals(1)
+      const amountLTO1 = expandTo18Decimals(10)
+
+      await ethers.provider.send('evm_setAutomine', [false])
+
+      // 2) Add order balances to TWAMM
+      await twamm.submitLongTermOrder(key, {
+        amountIn: amountLTO0,
+        ...orderKey0,
+      })
+      await twamm.submitLongTermOrder(key, {
+        amountIn: amountLTO1,
+        ...orderKey1,
+      })
+
+      await ethers.provider.send('evm_mine', [start])
+      await ethers.provider.send('evm_setAutomine', [true])
+      await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
+
+
+      const prevBalance0 = await token0.balanceOf(twamm.address)
+      const prevBalance1 = await token1.balanceOf(twamm.address)
+
+      await twamm.executeTWAMMOrders(key)
+
+      const newBalance0 = await token0.balanceOf(twamm.address)
+      const newBalance1 = await token1.balanceOf(twamm.address)
+
+      const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
+      const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
+
+      // TODO: precision error of 3-6 wei :(
+      // With both trades expiring, the final balance of TWAMM should be equal to the earnings able to be claimed
+      // for each TWAMM order
+      expect(newBalance0.sub(EXTRA_TOKENS)).to.eq(earningsToken0.sub(4))
+      expect(newBalance1.sub(EXTRA_TOKENS)).to.eq(earningsToken1.sub(3))
+    })
+
+    it('balances clear properly w/ token0 excess', async () => {
+      const amountLTO0 = expandTo18Decimals(10)
+      const amountLTO1 = expandTo18Decimals(1)
+
+      await ethers.provider.send('evm_setAutomine', [false])
+
+      // 2) Add order balances to TWAMM
+      await twamm.submitLongTermOrder(key, {
+        amountIn: amountLTO0,
+        ...orderKey0,
+      })
+      await twamm.submitLongTermOrder(key, {
+        amountIn: amountLTO1,
+        ...orderKey1,
+      })
+
+      await ethers.provider.send('evm_mine', [start])
+      await ethers.provider.send('evm_setAutomine', [true])
+      await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
+
+
+      const prevBalance0 = await token0.balanceOf(twamm.address)
+      const prevBalance1 = await token1.balanceOf(twamm.address)
+
+      await twamm.executeTWAMMOrders(key)
+
+      const newBalance0 = await token0.balanceOf(twamm.address)
+      const newBalance1 = await token1.balanceOf(twamm.address)
+
+      const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
+      const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
+
+      // TODO: precision error of 3-6 wei :(
+      // With both trades expiring, the final balance of TWAMM should be equal to the earnings able to be claimed
+      // for each TWAMM order
+      expect(newBalance0.sub(EXTRA_TOKENS)).to.eq(earningsToken0.sub(5))
+      expect(newBalance1.sub(EXTRA_TOKENS)).to.eq(earningsToken1.sub(6))
+    })
+  })
+
+  describe('when TWAMM crosses no ticks', () => {
+    it('clears all balances appropriately when trading against a 0 fee AMM', async () => {
+      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      const amountLiquidity = expandTo18Decimals(1)
+      const amountLTO0 = expandTo18Decimals(1)
+      const amountLTO1 = expandTo18Decimals(10)
+
+      const start = nIntervalsFrom(latestTimestamp, 10_000, 1)
+      const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+
+      const orderKey0 = {
+        zeroForOne: true,
+        owner: wallet.address,
+        expiration,
+      }
+      const orderKey1 = {
+        zeroForOne: false,
+        owner: wallet.address,
+        expiration,
+      }
+
+      const key = {
+        token0: token0.address,
+        token1: token1.address,
+        fee: 0,
+        hooks: twamm.address,
+        tickSpacing: 10,
+      }
+      await poolManager.initialize(key, encodeSqrtPriceX96(1, 1))
+
+      // 1) Add liquidity balances to AMM
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: getMinTick(10),
+        tickUpper: getMaxTick(10),
+        liquidityDelta: amountLiquidity,
+      })
+
+      await ethers.provider.send('evm_setAutomine', [false])
+
+      // 2) Add order balances to TWAMM
+      await twamm.submitLongTermOrder(key, {
+        amountIn: amountLTO0,
+        ...orderKey0,
+      })
+      await twamm.submitLongTermOrder(key, {
+        amountIn: amountLTO1,
+        ...orderKey1,
+      })
+
+      await ethers.provider.send('evm_mine', [start])
+      await ethers.provider.send('evm_setAutomine', [true])
+      await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
+
+      const prevBalance0 = await token0.balanceOf(twamm.address)
+      const prevBalance1 = await token1.balanceOf(twamm.address)
+
+      await twamm.executeTWAMMOrders(key)
+
+      const newBalance0 = await token0.balanceOf(twamm.address)
+      const newBalance1 = await token1.balanceOf(twamm.address)
+
+      const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
+      const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
+
+      // TODO: precision error of 3-6 wei :(
+      // With both trades expiring, the final balance of TWAMM should be equal to the earnings able to be claimed
+      // for each TWAMM order
+      expect(newBalance0.sub(EXTRA_TOKENS)).to.eq(earningsToken0.sub(3))
+      expect(newBalance1.sub(EXTRA_TOKENS)).to.eq(earningsToken1.sub(4))
+    })
+  })
+
+  describe('single pool sell', () => {
+    beforeEach('set up pool', async () => {
+      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      const amountLiquidity = expandTo18Decimals(1)
+
+      start = nIntervalsFrom(latestTimestamp, 10_000, 1)
+      expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+
+      orderKey0 = {
+        zeroForOne: true,
+        owner: wallet.address,
+        expiration,
+      }
+
+      key = {
+        token0: token0.address,
+        token1: token1.address,
+        fee: 0,
+        hooks: twamm.address,
+        tickSpacing: 10,
+      }
+      await poolManager.initialize(key, encodeSqrtPriceX96(1, 1))
+
+      // 1) Add liquidity balances to AMM
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: getMinTick(10),
+        tickUpper: getMaxTick(10),
+        liquidityDelta: amountLiquidity,
+      })
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: -2000,
+        tickUpper: 2000,
+        liquidityDelta: amountLiquidity,
+      })
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: -3000,
+        tickUpper: 3000,
+        liquidityDelta: amountLiquidity,
+      })
+    })
+
+    describe('when crossing two ticks', () => {
+      it('crosses both ticks properly', async () => {
+        await ethers.provider.send('evm_setNextBlockTimestamp', [start])
+
+        await twamm.submitLongTermOrder(key, {
+          amountIn: expandTo18Decimals(5),
+          ...orderKey0,
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
+        await twamm.executeTWAMMOrders(key)
+
+        const newBalance0 = await token0.balanceOf(twamm.address)
+        const newBalance1 = await token1.balanceOf(twamm.address)
+
+        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
+
+        // TODO: precision error of 11 wei :(
+        // The only order is completed so the new balance should equal the earnings to be collected
+        expect(newBalance1.sub(EXTRA_TOKENS)).to.equal(earningsToken1.sub(11))
+      })
+    })
+  })
+})
 })

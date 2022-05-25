@@ -7,6 +7,7 @@ import {IPoolManager} from '../interfaces/IPoolManager.sol';
 import {ITWAMM} from '../interfaces/ITWAMM.sol';
 import {Hooks} from '../libraries/Hooks.sol';
 import {TickMath} from '../libraries/TickMath.sol';
+import {TransferHelper} from '../libraries/TransferHelper.sol';
 import {TWAMM} from '../libraries/TWAMM/TWAMM.sol';
 import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {BaseHook} from './base/BaseHook.sol';
@@ -121,6 +122,7 @@ contract TWAMMHook is BaseHook {
         uint8 sellTokenIndex;
         (earningsAmount, sellTokenIndex) = getTWAMM(key).claimEarnings(orderKey);
         IERC20Minimal buyToken = sellTokenIndex == 0 ? key.token1 : key.token0;
+        TransferHelper.safeTransfer(buyToken, orderKey.owner, earningsAmount);
     }
 
     function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {

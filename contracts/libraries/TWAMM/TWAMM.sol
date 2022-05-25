@@ -438,29 +438,29 @@ library TWAMM {
     )
         internal
         returns (
-            PoolParamsOnExecute memory,
+            PoolParamsOnExecute memory updatedPool,
             uint256 swapDelta0,
             uint256 swapDelta1
         )
     {
-        uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
         (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(pool, poolManager, poolKey, targetPriceX96);
 
         if (crossingInitializedTick) {
+            updatedPool.sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
             int128 liquidityNet = poolManager.getTickNetLiquidity(poolKey, tick);
-            pool.sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
-            pool.liquidity = liquidityNet < 0
+            if (pool.sqrtPriceX96 > updatedPool.sqrtPriceX96) liquidityNet = -liquidityNet;
+            updatedPool.liquidity = liquidityNet < 0
                 ? pool.liquidity - uint128(-liquidityNet)
                 : pool.liquidity + uint128(liquidityNet);
+
         } else {
-            pool.sqrtPriceX96 = targetPriceX96;
+            updatedPool.sqrtPriceX96 = targetPriceX96;
+            updatedPool.liquidity = pool.liquidity;
         }
 
         // update earnings and sell amounts
-        swapDelta0 = SqrtPriceMath.getAmount0Delta(initialSqrtPriceX96, pool.sqrtPriceX96, pool.liquidity, true);
-        swapDelta1 = SqrtPriceMath.getAmount1Delta(initialSqrtPriceX96, pool.sqrtPriceX96, pool.liquidity, true);
-
-        return (pool, swapDelta0, swapDelta1);
+        swapDelta0 = SqrtPriceMath.getAmount0Delta(updatedPool.sqrtPriceX96, pool.sqrtPriceX96, pool.liquidity, true);
+        swapDelta1 = SqrtPriceMath.getAmount1Delta(updatedPool.sqrtPriceX96, pool.sqrtPriceX96, pool.liquidity, true);
     }
 
     struct TickCrossingParams {
@@ -488,7 +488,7 @@ library TWAMM {
         (uint160 nextSqrtPriceX96, uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath
             .calculateExecutionUpdates(
                 TwammMath.ExecutionUpdateParams(
-                    params.secondsElapsedX96,
+                    secondsUntilCrossingX96,
                     params.pool.sqrtPriceX96,
                     params.pool.liquidity,
                     self.orderPools[0].sellRateCurrent,
