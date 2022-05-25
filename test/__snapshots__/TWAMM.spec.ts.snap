@@ -17,7 +17,7 @@ Object {
 exports[`TWAMM #modifyLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 39623,
+  "gasUsed": 39100,
 }
 `;
 

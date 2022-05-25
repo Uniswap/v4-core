@@ -162,12 +162,14 @@ library TWAMM {
         if (orderKey.owner != msg.sender) revert MustBeOwner(orderId, orderKey.owner, msg.sender);
         if (order.expiration <= block.timestamp) revert OrderAlreadyCompleted(orderId);
 
+        OrderPool.State storage orderPool = self.orderPools[order.zeroForOne];
+
         unchecked {
             // cache existing earnings
-            uint256 earningsFactor = self.orderPools[order.zeroForOne].earningsFactorCurrent -
+            uint256 earningsFactor = orderPool.earningsFactorCurrent -
                 order.unclaimedEarningsFactor;
             order.uncollectedEarningsAmount += (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
-            order.unclaimedEarningsFactor = self.orderPools[order.zeroForOne].earningsFactorCurrent;
+            order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
 
             uint256 unsoldAmount = order.sellRate * (order.expiration - block.timestamp);
             if (amountDelta == type(int128).min) amountDelta = -unsoldAmount.toInt256().toInt128();
@@ -179,13 +181,13 @@ library TWAMM {
             if (amountDelta < 0) {
                 uint256 sellRateDelta = order.sellRate - newSellRate;
                 uint256 amountOut = uint256(uint128(-amountDelta));
-                self.orderPools[order.zeroForOne].sellRateCurrent -= sellRateDelta;
-                self.orderPools[order.zeroForOne].sellRateEndingAtInterval[order.expiration] -= sellRateDelta;
+                orderPool.sellRateCurrent -= sellRateDelta;
+                orderPool.sellRateEndingAtInterval[order.expiration] -= sellRateDelta;
                 orderKey.zeroForOne ? amountOut0 = amountOut : amountOut1 = amountOut;
             } else {
                 uint256 sellRateDelta = newSellRate - order.sellRate;
-                self.orderPools[order.zeroForOne].sellRateCurrent += sellRateDelta;
-                self.orderPools[order.zeroForOne].sellRateEndingAtInterval[order.expiration] += sellRateDelta;
+                orderPool.sellRateCurrent += sellRateDelta;
+                orderPool.sellRateEndingAtInterval[order.expiration] += sellRateDelta;
             }
             order.sellRate = newSellRate;
         }
