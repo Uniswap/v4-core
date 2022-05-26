@@ -1,11 +1,11 @@
 import { Wallet } from 'ethers'
 import hre, { ethers, waffle } from 'hardhat'
-import { LimitOrderHook, PoolManager, PoolSwapTest, TestERC20 } from '../typechain'
+import { LimitOrderHook, PoolManager, PoolSwapTest, TestERC20, TickMathTest } from '../typechain'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { encodeSqrtPriceX96, FeeAmount, getWalletForDeployingHookMask } from './shared/utilities'
+import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getWalletForDeployingHookMask } from './shared/utilities'
 
-const { constants, utils } = ethers
+const { constants } = ethers
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -17,13 +17,14 @@ interface PoolKey {
   hooks: string
 }
 
-describe('LimitOrderHooks', () => {
+describe.only('LimitOrderHooks', () => {
   let wallet: Wallet, other: Wallet
 
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
   let manager: PoolManager
   let limitOrderHook: LimitOrderHook
   let swapTest: PoolSwapTest
+  let tickMath: TickMathTest
 
   const fixture = async () => {
     const tokens = await tokensFixture()
@@ -31,6 +32,7 @@ describe('LimitOrderHooks', () => {
     const poolManagerFactory = await ethers.getContractFactory('PoolManager')
     const limitOrderHookFactory = await ethers.getContractFactory('LimitOrderHook')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
+    const tickMathFactory = await ethers.getContractFactory('TickMathTest')
 
     const manager = (await poolManagerFactory.deploy()) as PoolManager
 
@@ -50,7 +52,7 @@ describe('LimitOrderHooks', () => {
     )
 
     ;[wallet] = await (ethers as any).getSigners()
-    await wallet.sendTransaction({ to: hookDeployer.address, value: utils.parseEther('1') })
+    await wallet.sendTransaction({ to: hookDeployer.address, value: expandTo18Decimals(1) })
 
     // deploy the hook and make a contract instance
     await hookDeployer
@@ -63,12 +65,13 @@ describe('LimitOrderHooks', () => {
       manager,
       limitOrderHook,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
+      tickMath: (await tickMathFactory.deploy()) as TickMathTest,
     }
 
     for (const token of [tokens.token0, tokens.token1, tokens.token2]) {
       for (const spender of [result.swapTest, limitOrderHook]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
-        await token.connect(wallet).transfer(other.address, utils.parseEther('1'))
+        await token.connect(wallet).transfer(other.address, expandTo18Decimals(1))
         await token.connect(other).approve(spender.address, constants.MaxUint256)
       }
     }
@@ -84,7 +87,7 @@ describe('LimitOrderHooks', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ tokens, manager, limitOrderHook, swapTest } = await loadFixture(fixture))
+    ;({ tokens, manager, limitOrderHook, swapTest, tickMath } = await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
@@ -218,6 +221,7 @@ describe('LimitOrderHooks', () => {
       expect(await limitOrderHook.getEpoch(key, tickLower, zeroForOne)).to.eq(1)
 
       const epochInfo = await limitOrderHook.epochInfos(1)
+      expect(epochInfo.filled).to.be.false
       expect(epochInfo.token0).to.eq(key.token0)
       expect(epochInfo.token1).to.eq(key.token1)
       expect(epochInfo.token0Total).to.eq(0)
@@ -226,6 +230,63 @@ describe('LimitOrderHooks', () => {
 
       expect(await limitOrderHook.getEpochLiquidity(1, wallet.address)).to.eq(liquidity)
       expect(await limitOrderHook.getEpochLiquidity(1, other.address)).to.eq(liquidity)
+    })
+  })
+
+  describe('#kill', async () => {
+    const tickLower = 0
+    const zeroForOne = true
+    const liquidity = 100
+
+    beforeEach('create limit order', async () => {
+      await limitOrderHook.place(key, tickLower, zeroForOne, liquidity)
+    })
+
+    it('works', async () => {
+      await limitOrderHook.kill(key, tickLower, zeroForOne, wallet.address)
+      expect(await limitOrderHook.getEpochLiquidity(1, wallet.address)).to.eq(0)
+    })
+  })
+
+  describe('#fill', async () => {
+    const tickLower = 0
+    const zeroForOne = true
+    const liquidity = 1000000
+    const expectedToken0Amount = 2996
+
+    beforeEach('create limit order', async () => {
+      await expect(limitOrderHook.place(key, tickLower, zeroForOne, liquidity))
+        .to.emit(tokens.token0, 'Transfer')
+        .withArgs(wallet.address, manager.address, expectedToken0Amount)
+    })
+
+    it('works', async () => {
+      await expect(
+        swapTest.swap(
+          key,
+          {
+            zeroForOne: false,
+            amountSpecified: expandTo18Decimals(1),
+            sqrtPriceLimitX96: await tickMath.getSqrtRatioAtTick(key.tickSpacing),
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
+          }
+        )
+      )
+        .to.emit(tokens.token1, 'Transfer')
+        .withArgs(wallet.address, manager.address, expectedToken0Amount + 19) // 3015, includes 19 wei of fees + price impact
+        .to.emit(tokens.token0, 'Transfer')
+        .withArgs(manager.address, wallet.address, expectedToken0Amount - 1) // 1 wei of dust
+
+      expect((await manager.getSlot0(key)).tick).to.eq(key.tickSpacing)
+
+      const epochInfo = await limitOrderHook.epochInfos(1)
+
+      expect(epochInfo.filled).to.be.true
+      expect(epochInfo.token0Total).to.eq(0)
+      expect(epochInfo.token1Total).to.eq(expectedToken0Amount + 17) // 3013, 2 wei of dust
     })
   })
 })

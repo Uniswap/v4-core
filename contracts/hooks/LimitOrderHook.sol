@@ -8,12 +8,17 @@ import {SafeCast} from '../libraries/SafeCast.sol';
 import {BaseHook} from './base/BaseHook.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
+import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
+
 contract LimitOrderHook is BaseHook {
     using SafeCast for uint256;
 
     error ZeroLiquidity();
     error InRange();
     error CrossedRange();
+    error Filled();
+    error NotFilled();
+    error NotPoolManagerToken();
 
     event Place(
         address indexed owner,
@@ -43,6 +48,7 @@ contract LimitOrderHook is BaseHook {
     uint232 public epochNext = 1;
 
     struct EpochInfo {
+        bool filled;
         IERC20Minimal token0;
         IERC20Minimal token1;
         uint256 token0Total;
@@ -146,6 +152,8 @@ contract LimitOrderHook is BaseHook {
             uint232 epoch = getEpoch(key, lower, zeroForOne);
             if (epoch != EPOCH_DEFAULT) {
                 EpochInfo storage epochInfo = epochInfos[epoch];
+
+                epochInfo.filled = true;
 
                 (uint256 amount0, uint256 amount1) = abi.decode(
                     poolManager.lock(
@@ -261,12 +269,12 @@ contract LimitOrderHook is BaseHook {
         uint232 epoch = getEpoch(key, tickLower, zeroForOne);
         EpochInfo storage epochInfo = epochInfos[epoch];
 
+        if (epochInfo.filled) revert Filled();
+
         uint128 liquidity = epochInfo.liquidity[msg.sender];
         if (liquidity == 0) revert ZeroLiquidity();
         delete epochInfo.liquidity[msg.sender];
-
-        uint128 liquidityTotal = epochInfo.liquidityTotal;
-        epochInfo.liquidityTotal = liquidityTotal - liquidity;
+        epochInfo.liquidityTotal -= liquidity;
 
         uint256 amount0Fee;
         uint256 amount1Fee;
@@ -324,6 +332,9 @@ contract LimitOrderHook is BaseHook {
 
     function withdraw(uint232 epoch, address to) external returns (uint256 amount0, uint256 amount1) {
         EpochInfo storage epochInfo = epochInfos[epoch];
+
+        if (!epochInfo.filled) revert NotFilled();
+
         uint128 liquidity = epochInfo.liquidity[msg.sender];
         if (liquidity == 0) revert ZeroLiquidity();
         delete epochInfo.liquidity[msg.sender];
@@ -365,5 +376,16 @@ contract LimitOrderHook is BaseHook {
         poolManager.safeBatchTransferFrom(address(this), address(poolManager), ids, amounts, '');
         poolManager.take(token0, to, token0Amount);
         poolManager.take(token1, to, token1Amount);
+    }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external view returns (bytes4) {
+        if (msg.sender != address(poolManager)) revert NotPoolManagerToken();
+        return IERC1155Receiver.onERC1155Received.selector;
     }
 }
