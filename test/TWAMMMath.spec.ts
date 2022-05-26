@@ -26,7 +26,7 @@ describe('TWAMMMath', () => {
 
   const twammFixture = async () => {
     const twammTestFactory = await ethers.getContractFactory('TWAMMTest')
-    return (await twammTestFactory.deploy()) as TWAMMTest
+    return (await twammTestFactory.deploy(10_000)) as TWAMMTest
   }
 
   before('create fixture loader', async () => {
@@ -224,7 +224,7 @@ describe('TWAMMMath', () => {
       )
     })
 
-    it.only('TWAMM trades against itself when low liquidity', async () => {
+    it.skip('TWAMM trades to the sqrtSellRatio when selling large token0', async () => {
       // set low liquidity to push price
       liquidity = '1000000000000000000'
 
@@ -239,50 +239,21 @@ describe('TWAMMMath', () => {
         sellRateCurrent1,
       })
 
+      // TODO
       // The ending price should approach the sqrtSellRatio
+
       // const expectedSqrtSellRatioX96 = sellRateCurrent1.div(sellRateCurrent0).mul(fixedPoint)
       // expect(results.sqrtPriceX96).to.eq(expectedSqrtSellRatioX96)
 
-      const expectedAmount = sellRateCurrent0.mul(secondsElapsedX96).div(fixedPoint)
-      console.log(expectedAmount.toString())
-
-      // the trades should be slightly greater than the expectedAmount?
-      expect(results.earningsAmount0).to.eq(expectedAmount)
-      expect(results.earningsAmount1).to.eq(expectedAmount)
+      // TODO
+      // check earnings amounts
     })
 
-    it.skip('TWAMM trades pushes the price to the max part of the curve', async () => {
-      // set low liquidity
-      liquidity = '1000000'
+    it.skip('TWAMM trades to the sqrtSellRatio when selling large token1', async () => {
+      liquidity = '1000000000000000000'
       // to push price to max part of the curve, sell lots of token1
       sellRateCurrent0 = toWei('1')
-      sellRateCurrent1 = toWei('4')
-
-      const results = await twamm.callStatic.calculateExecutionUpdates({
-        secondsElapsedX96,
-        sqrtPriceX96,
-        liquidity,
-        sellRateCurrent0,
-        sellRateCurrent1,
-      })
-      // twamm is trading with itself bc liquidity low
-      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsedX96).div(fixedPoint)
-      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsedX96).div(fixedPoint)
-
-      expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
-      expect(results.earningsAmount0).to.eq(expectedAmount0)
-      expect(results.earningsAmount1).to.eq(expectedAmount1)
-    })
-
-    // TODO: Even though the price should fall to the min, it overflows.
-    it.skip('TWAMM trades pushes the price to the min part of the curve', async () => {
-      // set low liquidity
-      liquidity = '100000000000000000000'
-      // todo to push price to lowest part of the curve, sell lots of token0
-      sellRateCurrent0 = toWei('30000')
-      sellRateCurrent1 = toWei('1')
-
-      console.log(sqrtPriceX96.toString())
+      sellRateCurrent1 = toWei('10')
 
       const results = await twamm.callStatic.calculateExecutionUpdates({
         secondsElapsedX96,
@@ -292,12 +263,14 @@ describe('TWAMMMath', () => {
         sellRateCurrent1,
       })
 
-      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsedX96).div(fixedPoint)
-      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsedX96).div(fixedPoint)
+      // TODO
+      // The ending price should approach the sqrtSellRatio
 
-      expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
-      // expect(results.earningsAmount0).to.eq(expectedAmount0)
-      // expect(results.earningsAmount1).to.eq(expectedAmount1)
+      // const expectedSqrtSellRatioX96 = sellRateCurrent1.div(sellRateCurrent0).mul(fixedPoint)
+      // expect(results.sqrtPriceX96).to.eq(expectedSqrtSellRatioX96)
+
+      // TODO
+      // check earnings amounts
     })
 
     it('orderPool1 has a 0 sell rate')
