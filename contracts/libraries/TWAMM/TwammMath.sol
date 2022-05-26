@@ -36,11 +36,9 @@ library TwammMath {
     function getNewSqrtPriceX96(ExecutionUpdateParams memory params) internal view returns (uint160 newSqrtPriceX96) {
         bytes16 sellRateBytes0 = params.sellRateCurrent0.fromUInt();
         bytes16 sellRateBytes1 = params.sellRateCurrent1.fromUInt();
-
         bytes16 sqrtSellRateBytes = sellRateBytes1.div(sellRateBytes0).sqrt();
-
+        bytes16 sqrtSellRate =      sellRateBytes0.mul(sellRateBytes1).sqrt();
         bytes16 sqrtSellRatioX96 = sellRateBytes1.div(sellRateBytes0).sqrt().mul(Q96);
-        bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
 
         PriceParamsBytes16 memory priceParams = PriceParamsBytes16({
             sqrtSellRatioX96: sqrtSellRatioX96,
@@ -52,12 +50,7 @@ library TwammMath {
 
         bytes16 newSqrtPriceBytesX96 = calculateNewSqrtPriceX96(priceParams);
 
-        bool isOverflow;
-        // TODO: cleanup with abdk
-        unchecked {
-            uint256 exponent = (uint128(newSqrtPriceBytesX96) >> 112) & 0x7FFF;
-            isOverflow = exponent > 16638;
-        }
+        bool isOverflow = newSqrtPriceBytesX96.isInfinity() || newSqrtPriceBytesX96.isNaN();
 
         newSqrtPriceX96 = isOverflow
             ? sqrtSellRatioX96.toUInt().toUint160()

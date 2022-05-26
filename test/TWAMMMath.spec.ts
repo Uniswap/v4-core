@@ -39,7 +39,7 @@ describe('TWAMMMath', () => {
   })
 
   describe('#calculateExecutionUpdates outputs the correct results when', () => {
-    let secondsElapsedX96: BigNumberish
+    let secondsElapsedX96: BigNumber
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
     let fee: BigNumberish
@@ -47,10 +47,10 @@ describe('TWAMMMath', () => {
     let sellRateCurrent0: BigNumberish
     let sellRateCurrent1: BigNumberish
 
-    const fixedPoint = BigNumber.from(2).pow(96)
+    const Q96 = BigNumber.from(2).pow(96)
 
     beforeEach(async () => {
-      secondsElapsedX96 = BigNumber.from(3600).mul(fixedPoint)
+      secondsElapsedX96 = BigNumber.from(3600).mul(Q96)
       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       liquidity = '1000000000000000000000000'
       fee = '3000'
@@ -71,8 +71,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '1.0000000',
-          amountOut0: '3600.0000000',
-          amountOut1: '3600.0000000',
+          earningsFactor0: '3600.0000000',
+          earningsFactor1: '3600.0000000',
         },
       },
       {
@@ -84,8 +84,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '0.9858549',
-          amountOut0: '3549.0165948',
-          amountOut1: '3651.9628500',
+          earningsFactor0: '3549.0165948',
+          earningsFactor1: '3651.9628500',
         },
       },
       {
@@ -97,8 +97,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '0.9687272',
-          amountOut0: '3487.2827245',
-          amountOut1: '3717.6111869',
+          earningsFactor0: '3487.2827245',
+          earningsFactor1: '3717.6111869',
         },
       },
       {
@@ -110,8 +110,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '1.0143480',
-          amountOut0: '3651.9628500',
-          amountOut1: '3549.0165948',
+          earningsFactor0: '3651.9628500',
+          earningsFactor1: '3549.0165948',
         },
       },
       {
@@ -123,8 +123,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '1.0322824',
-          amountOut0: '3717.6111869',
-          amountOut1: '3487.2827245',
+          earningsFactor0: '3717.6111869',
+          earningsFactor1: '3487.2827245',
         },
       },
       {
@@ -136,8 +136,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '155.1531845',
-          amountOut0: '196245875.5487389',
-          amountOut1: '0.0815851',
+          earningsFactor0: '196245875.5487389',
+          earningsFactor1: '0.0815851',
         },
       },
       {
@@ -149,8 +149,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '0.0002236',
-          amountOut0: '0.0101778',
-          amountOut1: '71105772809.0000916',
+          earningsFactor0: '0.0101778',
+          earningsFactor1: '71105772809.0000916',
         },
       },
       {
@@ -162,8 +162,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '4472.1359550',
-          amountOut0: '71105772809.0000916',
-          amountOut1: '0.0101778',
+          earningsFactor0: '71105772809.0000916',
+          earningsFactor1: '0.0101778',
         },
       },
       // TODO: not working - amounts out are incorrect from desmos, not enough precision??
@@ -176,8 +176,8 @@ describe('TWAMMMath', () => {
       //   },
       //   outputsDivX96: {
       //     price: '1.0000000',
-      //     amountOut0: '180.0000000',
-      //     amountOut1: '72000.0000000',
+      //     earningsFactor0: '180.0000000',
+      //     earningsFactor1: '72000.0000000',
       //   },
       // },
       // TODO: not working - desmos also is turning up invalid numbers (like negative earnings accumulators)
@@ -190,8 +190,8 @@ describe('TWAMMMath', () => {
       //   },
       //   outputsDivX96: {
       //     price: '1.0000000',
-      //     amountOut0: '184835683.94',
-      //     amountOut1: '-88816.04197',
+      //     earningsFactor0: '184835683.94',
+      //     earningsFactor1: '-88816.04197',
       //   },
       // },
     ]
@@ -207,8 +207,8 @@ describe('TWAMMMath', () => {
         })
 
         expect(divX96(results.sqrtPriceX96)).to.eq(testcase.outputsDivX96.price)
-        expect(divX96(results.earningsPool0)).to.eq(testcase.outputsDivX96.amountOut0)
-        expect(divX96(results.earningsPool1)).to.eq(testcase.outputsDivX96.amountOut1)
+        expect(divX96(results.earningsFactorPool0)).to.eq(testcase.outputsDivX96.earningsFactor0)
+        expect(divX96(results.earningsFactorPool1)).to.eq(testcase.outputsDivX96.earningsFactor1)
       })
     }
 
@@ -224,7 +224,24 @@ describe('TWAMMMath', () => {
       )
     })
 
-    it.skip('TWAMM trades to the sqrtSellRatio when selling large token0', async () => {
+    it('returns the sellRatio if pushed beyond the max price', async () => {
+      // set low liquidity to push price
+      liquidity = '1000000000000000000'
+      sellRateCurrent0 = toWei('1')
+      sellRateCurrent1 = toWei('10')
+
+      const results = await twamm.callStatic.calculateExecutionUpdates({
+        secondsElapsedX96,
+        sqrtPriceX96,
+        liquidity,
+        sellRateCurrent0,
+        sellRateCurrent1,
+      })
+
+
+    })
+
+    it('TWAMM trades to the sqrtSellRatio when pushed beyond min price', async () => {
       // set low liquidity to push price
       liquidity = '1000000000000000000'
 
@@ -241,16 +258,19 @@ describe('TWAMMMath', () => {
 
       // TODO
       // The ending price should approach the sqrtSellRatio
-
-      // const expectedSqrtSellRatioX96 = sellRateCurrent1.div(sellRateCurrent0).mul(fixedPoint)
+      // const expectedSqrtSellRatioX96 = sellRateCurrent1.div(sellRateCurrent0).mul(Q96)
       // expect(results.sqrtPriceX96).to.eq(expectedSqrtSellRatioX96)
 
-      // TODO
-      // check earnings amounts
+      const expectedAmount = sellRateCurrent0.mul(secondsElapsedX96).div(Q96)
+
+      // the trades should be slightly greater than the expectedAmount?
+      expect(results.earningsFactorPool0.mul(divX96(secondsElapsedX96))).to.eq(expectedAmount)
+      expect(results.earningsFactorPool1.mul(divX96(secondsElapsedX96))).to.eq(expectedAmount)
     })
 
-    it.skip('TWAMM trades to the sqrtSellRatio when selling large token1', async () => {
-      liquidity = '1000000000000000000'
+    it('TWAMM trades pushes the price to the max part of the curve', async () => {
+      // set low liquidity
+      liquidity = '1000000'
       // to push price to max part of the curve, sell lots of token1
       sellRateCurrent0 = toWei('1')
       sellRateCurrent1 = toWei('10')
@@ -268,14 +288,38 @@ describe('TWAMMMath', () => {
 
       // const expectedSqrtSellRatioX96 = sellRateCurrent1.div(sellRateCurrent0).mul(fixedPoint)
       // expect(results.sqrtPriceX96).to.eq(expectedSqrtSellRatioX96)
+      // twamm is trading with itself bc liquidity low
+      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsedX96).div(Q96)
+      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsedX96).div(Q96)
+
+      // expect(results.sqrtPriceX96).to.eq(MAX_WITH_LOSS)
+      // expect(results.earningsAmount0).to.eq(expectedAmount0)
+      // expect(results.earningsAmount1).to.eq(expectedAmount1)
+    })
+
+    // TODO: Even though the price should fall to the min, it overflows.
+    it('TWAMM trades pushes the price to the min part of the curve', async () => {
+      // set low liquidity
+      liquidity = '100000000000000000000'
+      // todo to push price to lowest part of the curve, sell lots of token0
+      sellRateCurrent0 = toWei('30000')
+      sellRateCurrent1 = toWei('1')
+
+
+      const results = await twamm.callStatic.calculateExecutionUpdates({
+        secondsElapsedX96,
+        sqrtPriceX96,
+        liquidity,
+        sellRateCurrent0,
+        sellRateCurrent1,
+      })
+
+      const expectedAmount0 = sellRateCurrent1.mul(secondsElapsedX96).div(Q96)
+      const expectedAmount1 = sellRateCurrent0.mul(secondsElapsedX96).div(Q96)
 
       // TODO
       // check earnings amounts
     })
-
-    it('orderPool1 has a 0 sell rate')
-
-    it('orderPool0 has a 0 sell rate')
   })
 
   describe('#calculateTimeBetweenTicks outputs the correct results when', () => {
