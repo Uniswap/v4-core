@@ -981,7 +981,7 @@ describe('PoolManager', () => {
       const poolProtocolFee = 4
       await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
 
-      await manager.setPoolProtocolFee(poolID)
+      await manager.setPoolProtocolFee(poolKey)
       ;({
         slot0: { protocolFee },
       } = await manager.pools(getPoolId(poolKey)))
