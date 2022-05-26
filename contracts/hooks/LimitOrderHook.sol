@@ -37,7 +37,7 @@ contract LimitOrderHook is BaseHook {
 
     event Withdraw(address indexed owner, uint232 indexed epoch, uint128 liquidity);
 
-    uint232 constant EPOCH_DEFAULT = 0;
+    uint232 private constant EPOCH_DEFAULT = 0;
 
     mapping(bytes32 => int24) public tickLowerLasts;
     uint232 public epochNext = 1;
@@ -93,6 +93,10 @@ contract LimitOrderHook is BaseHook {
         uint232 epoch
     ) private {
         epochs[keccak256(abi.encode(key, tickLower, zeroForOne))] = epoch;
+    }
+
+    function getEpochLiquidity(uint232 epoch, address owner) external view returns (uint256) {
+        return epochInfos[epoch].liquidity[owner];
     }
 
     function getTick(IPoolManager.PoolKey memory key) private view returns (int24 tick) {
@@ -234,14 +238,14 @@ contract LimitOrderHook is BaseHook {
         );
 
         if (delta.amount0 > 0) {
-            if (!zeroForOne) revert CrossedRange();
             if (delta.amount1 != 0) revert InRange();
+            if (!zeroForOne) revert CrossedRange();
             // TODO use safeTransferFrom
             key.token0.transferFrom(owner, address(poolManager), uint256(delta.amount0));
             poolManager.settle(key.token0);
         } else {
-            if (zeroForOne) revert CrossedRange();
             if (delta.amount0 != 0) revert InRange();
+            if (zeroForOne) revert CrossedRange();
             // TODO use safeTransferFrom
             key.token1.transferFrom(owner, address(poolManager), uint256(delta.amount1));
             poolManager.settle(key.token1);
