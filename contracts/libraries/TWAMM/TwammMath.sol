@@ -176,14 +176,8 @@ library TwammMath {
     }
 
     function calculateNewSqrtPrice(PriceParamsBytes16 memory params) private view returns (bytes16 newSqrtPrice) {
-        bytes16 pow = uint256(2)
-            .fromUInt()
-            .mul(params.sqrtSellRate)
-            .mul(params.secondsElapsed)
-            .div(params.liquidity);
-        bytes16 c = params.sqrtSellRatio.sub(params.sqrtPrice).div(
-            params.sqrtSellRatio.add(params.sqrtPrice)
-        );
+        bytes16 pow = uint256(2).fromUInt().mul(params.sqrtSellRate).mul(params.secondsElapsed).div(params.liquidity);
+        bytes16 c = params.sqrtSellRatio.sub(params.sqrtPrice).div(params.sqrtSellRatio.add(params.sqrtPrice));
         newSqrtPrice = params.sqrtSellRatio.mul(pow.exp().sub(c)).div(pow.exp().add(c));
     }
 

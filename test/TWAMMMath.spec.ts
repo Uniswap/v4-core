@@ -237,8 +237,6 @@ describe('TWAMMMath', () => {
         sellRateCurrent0,
         sellRateCurrent1,
       })
-
-
     })
 
     it('TWAMM trades to the sqrtSellRatio when pushed beyond min price', async () => {
@@ -304,7 +302,6 @@ describe('TWAMMMath', () => {
       // todo to push price to lowest part of the curve, sell lots of token0
       sellRateCurrent0 = toWei('30000')
       sellRateCurrent1 = toWei('1')
-
 
       const results = await twamm.callStatic.calculateExecutionUpdates({
         secondsElapsedX96,

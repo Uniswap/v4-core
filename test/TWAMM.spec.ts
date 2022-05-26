@@ -425,7 +425,7 @@ describe('TWAMM', () => {
           midPointTime = nIntervalsFrom(blocktime, interval, 3)
           expiration = nIntervalsFrom(blocktime, interval, 5)
 
-          await twamm.initialize( poolKey)
+          await twamm.initialize(poolKey)
 
           const zeroForOneOrder = { zeroForOne, owner: wallet.address, amountIn, expiration }
           await setAutomine(false)
