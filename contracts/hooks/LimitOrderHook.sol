@@ -364,18 +364,26 @@ contract LimitOrderHook is BaseHook {
         uint256 token1Amount,
         address to
     ) external selfOnly {
-        uint256[] memory ids = new uint256[](2);
-        ids[0] = uint256(uint160(address(token0)));
-        ids[1] = uint256(uint160(address(token1)));
-
-        uint256[] memory amounts = new uint256[](2);
-        ids[0] = token0Amount;
-        ids[1] = token1Amount;
-
-        // this burns the tokens and credits us with a delta
-        poolManager.safeBatchTransferFrom(address(this), address(poolManager), ids, amounts, '');
-        poolManager.take(token0, to, token0Amount);
-        poolManager.take(token1, to, token1Amount);
+        if (token0Amount > 0) {
+            poolManager.safeTransferFrom(
+                address(this),
+                address(poolManager),
+                uint256(uint160(address(token0))),
+                token0Amount,
+                ''
+            );
+            poolManager.take(token0, to, token0Amount);
+        }
+        if (token1Amount > 0) {
+            poolManager.safeTransferFrom(
+                address(this),
+                address(poolManager),
+                uint256(uint160(address(token1))),
+                token1Amount,
+                ''
+            );
+            poolManager.take(token1, to, token1Amount);
+        }
     }
 
     function onERC1155Received(

@@ -17,7 +17,7 @@ interface PoolKey {
   hooks: string
 }
 
-describe.only('LimitOrderHooks', () => {
+describe('LimitOrderHooks', () => {
   let wallet: Wallet, other: Wallet
 
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
@@ -248,7 +248,7 @@ describe.only('LimitOrderHooks', () => {
     })
   })
 
-  describe('#fill', async () => {
+  describe('swap across the range', async () => {
     const tickLower = 0
     const zeroForOne = true
     const liquidity = 1000000
@@ -260,7 +260,7 @@ describe.only('LimitOrderHooks', () => {
         .withArgs(wallet.address, manager.address, expectedToken0Amount)
     })
 
-    it('works', async () => {
+    beforeEach('swap', async () => {
       await expect(
         swapTest.swap(
           key,
@@ -281,12 +281,25 @@ describe.only('LimitOrderHooks', () => {
         .withArgs(manager.address, wallet.address, expectedToken0Amount - 1) // 1 wei of dust
 
       expect((await manager.getSlot0(key)).tick).to.eq(key.tickSpacing)
+    })
 
+    it('#fill', async () => {
       const epochInfo = await limitOrderHook.epochInfos(1)
 
       expect(epochInfo.filled).to.be.true
       expect(epochInfo.token0Total).to.eq(0)
       expect(epochInfo.token1Total).to.eq(expectedToken0Amount + 17) // 3013, 2 wei of dust
+    })
+
+    it('#withdraw', async () => {
+      await expect(limitOrderHook.withdraw(1, wallet.address))
+        .to.emit(tokens.token1, 'Transfer')
+        .withArgs(manager.address, wallet.address, expectedToken0Amount + 17)
+
+      const epochInfo = await limitOrderHook.epochInfos(1)
+
+      expect(epochInfo.token0Total).to.eq(0)
+      expect(epochInfo.token1Total).to.eq(0)
     })
   })
 })
