@@ -27,6 +27,10 @@ interface IPoolManager is IERC1155 {
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
     error TickSpacingTooSmall();
 
+    event PoolProtocolFeeUpdated(bytes32 poolKey, uint8 protocolFee);
+
+    event ProtocolFeeControllerUpdated(address protocolFeeController);
+
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower token of the pool, sorted numerically

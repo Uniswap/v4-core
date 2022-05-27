@@ -338,10 +338,15 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
         protocolFeeController = controller;
+        emit ProtocolFeeControllerUpdated(address(controller));
     }
 
     function setPoolProtocolFee(IPoolManager.PoolKey memory key) external {
-        _getPool(key).setProtocolFee(fetchPoolProtocolFee(key));
+        bytes32 poolHash = keccak256(abi.encode(key));
+        uint8 newProtocolFee = fetchPoolProtocolFee(key);
+
+        pools[poolHash].setProtocolFee(newProtocolFee);
+        emit PoolProtocolFeeUpdated(poolHash, newProtocolFee);
     }
 
     function fetchPoolProtocolFee(IPoolManager.PoolKey memory key) internal view returns (uint8 protocolFee) {
@@ -358,7 +363,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         address recipient,
         IERC20Minimal token,
         uint256 amount
-    ) external onlyOwner {
+    ) external {
+        if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
+
+        amount = (amount == 0) ? protocolFeesAccrued[token] : amount;
         protocolFeesAccrued[token] -= amount;
         TransferHelper.safeTransfer(token, recipient, amount);
     }
