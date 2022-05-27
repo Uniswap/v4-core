@@ -155,6 +155,19 @@ describe('PoolManager gas tests', () => {
       await loadFixture(gasTestFixture))
   })
 
+  describe('#initialize', () => {
+    it('initialize pool with no hooks and no protocol fee', async () => {
+      const altPoolKey = {
+        token0: wallet.address,
+        token1: other.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: '0x0000000000000000000000000000000000000000',
+      }
+      await snapshotGasCost(manager.initialize(altPoolKey, encodeSqrtPriceX96(1, 1)))
+    })
+  })
+
   describe('#swapExact0For1', () => {
     it('first swap in block with no tick movement', async () => {
       await snapshotGasCost(swapExact0For1(2000, wallet.address))
