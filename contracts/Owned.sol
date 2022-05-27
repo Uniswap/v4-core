@@ -12,7 +12,7 @@ contract Owned {
     event OwnerChanged(address indexed oldOwner, address indexed newOwner);
 
     modifier onlyOwner() {
-        if(msg.sender != owner) revert InvalidCaller();
+        if (msg.sender != owner) revert InvalidCaller();
         _;
     }
 
