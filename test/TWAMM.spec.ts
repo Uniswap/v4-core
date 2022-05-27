@@ -267,8 +267,8 @@ describe('TWAMM', () => {
         await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval2 - 5_000])
         await twamm.executeTWAMMOrders(poolParams)
 
-        const results = await twamm.callStatic.modifyLongTermOrder(orderKey, MIN_INT128)
-        expect(results.amountOut0).to.equal(sellAmount.div(2))
+        const amountOut = await twamm.callStatic.modifyLongTermOrder(orderKey, MIN_INT128)
+        expect(amountOut).to.equal(sellAmount.div(2))
       })
 
       it('claims half the earnings at midpoint', async () => {
