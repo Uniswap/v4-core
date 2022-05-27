@@ -30,7 +30,7 @@ contract OwnedTest is DSTest {
 
         if (oldOwner != nextOwner) {
             vm.startPrank(nextOwner);
-            vm.expectRevert();
+            vm.expectRevert(Owned.InvalidCaller.selector);
             owned.setOwner(nextOwner);
             vm.stopPrank();
         }
