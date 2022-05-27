@@ -11,7 +11,7 @@ import {
   PoolSwapTest,
   TestERC20,
 } from '../typechain'
-import { MAX_TICK_SPACING } from './shared/constants'
+import { MAX_TICK_SPACING, ADDRESS_ZERO } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import { deployMockContract, MockedContract } from './shared/mockContract'
@@ -20,8 +20,6 @@ import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId } from './
 const createFixtureLoader = waffle.createFixtureLoader
 
 const { constants } = ethers
-
-const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 
 describe('PoolManager', () => {
   let wallet: Wallet, other: Wallet
