@@ -48,7 +48,7 @@ contract PoolTakeTest is ILockCallback {
             manager.take(data.key.token1, data.sender, data.amount1);
             uint256 balAfter = data.key.token1.balanceOf(data.sender);
             require(balAfter - balBefore == data.amount1);
-            
+
             data.key.token1.transferFrom(data.sender, address(manager), uint256(data.amount1));
             manager.settle(data.key.token1);
         }
