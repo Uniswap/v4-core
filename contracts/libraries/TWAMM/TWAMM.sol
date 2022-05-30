@@ -11,6 +11,7 @@ import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
 import {SafeCast} from '../SafeCast.sol';
+import "hardhat/console.sol";
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -165,11 +166,11 @@ library TWAMM {
             order.unclaimedEarningsFactor = self.orderPools[order.sellTokenIndex].earningsFactorCurrent;
 
             uint256 unsoldAmount = order.sellRate * (order.expiration - block.timestamp);
-            if (amountDelta == type(int128).min) amountDelta = -unsoldAmount.toInt256().toInt128();
-            uint256 newSellAmount = uint256(int256(unsoldAmount) + amountDelta);
+            if (amountDelta == type(int128).min) amountDelta = -(unsoldAmount.toInt256().toInt128());
+            int256 newSellAmount = unsoldAmount.toInt256() + amountDelta;
             if (newSellAmount < 0) revert InvalidAmountDelta(orderId, unsoldAmount, amountDelta);
 
-            uint256 newSellRate = newSellAmount / (order.expiration - block.timestamp);
+            uint256 newSellRate = uint256(newSellAmount) / (order.expiration - block.timestamp);
 
             if (amountDelta < 0) {
                 uint256 sellRateDelta = order.sellRate - newSellRate;

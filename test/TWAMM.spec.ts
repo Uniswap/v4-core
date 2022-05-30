@@ -219,6 +219,7 @@ describe('TWAMM', () => {
 
       const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
       await twamm.initialize(poolKey)
+      latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
 
       orderKey = { owner, expiration: timestampInterval2, zeroForOne: true }
 
@@ -235,6 +236,40 @@ describe('TWAMM', () => {
           amountIn: toWei('3'),
           expiration: timestampInterval2,
         })
+      })
+      latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+    })
+
+
+    describe('when a portion of the order is removed', () => {
+      beforeEach(async () => {
+        // half of the order is now complete - so toWei('1.5') has been sold
+        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval2 - 5_000])
+      })
+
+      it('allows a portion of the order to be removed', async () => {
+        const orderBefore = await twamm.getOrder(orderKey)
+        const sellRateBefore = orderBefore.sellRate
+
+        // given toWei('1.5') has been sold, we are reducing the remaining to sell from 1.5 to 0.5
+        // this means the sell rate for the remaining time should divide by 3
+        await twamm.modifyLongTermOrder(orderKey, toWei('1').mul(-1))
+
+        const orderAfter = await twamm.getOrder(orderKey)
+        const sellRateAfter = orderAfter.sellRate
+
+        expect(sellRateBefore).to.be.eq(sellRateAfter.mul(3))
+      })
+
+      it('revert if more than the order is removed', async () => {
+        // given toWei('1.5') has been sold, we try to remove just more than 1.5
+        await expect(twamm.modifyLongTermOrder(orderKey, toWei('1.5').add(1).mul(-1))).to.be.revertedWith('InvalidAmountDelta')
+      })
+
+      it('does not revert if the exact amount is provided', async () => {
+        // given toWei('1.5') has been sold, we try to remove exactly 1.5 more
+        await twamm.modifyLongTermOrder(orderKey, toWei('1.5').mul(-1))
+        expect(parseInt((await twamm.getOrder(orderKey)).sellRate.toString())).to.be.eq(0)
       })
     })
 
