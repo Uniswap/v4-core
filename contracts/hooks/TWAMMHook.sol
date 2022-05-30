@@ -114,10 +114,8 @@ contract TWAMMHook is BaseHook {
 
         IERC20Minimal sellToken = orderKey.zeroForOne ? key.token0 : key.token1;
 
-        if (amountDelta > 0)
-            sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint128(amountDelta)));
-        else
-            sellToken.safeTransfer(orderKey.owner, amountOut);
+        if (amountDelta > 0) sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint128(amountDelta)));
+        else sellToken.safeTransfer(orderKey.owner, amountOut);
     }
 
     function claimEarningsOnLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.OrderKey memory orderKey)

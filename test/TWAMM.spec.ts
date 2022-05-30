@@ -240,7 +240,6 @@ describe('TWAMM', () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
     })
 
-
     describe('when a portion of the order is removed', () => {
       beforeEach(async () => {
         // half of the order is now complete - so toWei('1.5') has been sold
@@ -263,7 +262,9 @@ describe('TWAMM', () => {
 
       it('revert if more than the order is removed', async () => {
         // given toWei('1.5') has been sold, we try to remove just more than 1.5
-        await expect(twamm.modifyLongTermOrder(orderKey, toWei('1.5').add(1).mul(-1))).to.be.revertedWith('InvalidAmountDelta')
+        await expect(twamm.modifyLongTermOrder(orderKey, toWei('1.5').add(1).mul(-1))).to.be.revertedWith(
+          'InvalidAmountDelta'
+        )
       })
 
       it('does not revert if the exact amount is provided', async () => {
