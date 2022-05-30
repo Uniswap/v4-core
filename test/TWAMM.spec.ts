@@ -248,13 +248,17 @@ describe('TWAMM', () => {
 
       it('allows a portion of the order to be removed', async () => {
         const sellRateBefore = (await twamm.getOrder(orderKey)).sellRate
+        const poolSellRateBefore = (await twamm.getOrderPool(0)).sellRate
 
         // given toWei('1.5') has been sold, we are reducing the remaining to sell from 1.5 to 0.5
         // this means the sell rate for the remaining time should divide by 3
         await twamm.modifyLongTermOrder(orderKey, toWei('1').mul(-1))
 
         const sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
+        const poolSellRateAfter = (await twamm.getOrderPool(0)).sellRate
+
         expect(sellRateBefore).to.be.eq(sellRateAfter.mul(3))
+        expect(poolSellRateAfter).to.be.eq(poolSellRateBefore.sub(sellRateBefore).add(sellRateAfter))
       })
 
       it('revert if more than the order is removed', async () => {
@@ -270,15 +274,19 @@ describe('TWAMM', () => {
         expect(parseInt((await twamm.getOrder(orderKey)).sellRate.toString())).to.be.eq(0)
       })
 
-      it('allows the order to be increased halfway through', async () => {
+      it('allows the order size to be increased', async () => {
         const sellRateBefore = (await twamm.getOrder(orderKey)).sellRate
+        const poolSellRateBefore = (await twamm.getOrderPool(0)).sellRate
 
         // given toWei('1.5') has been sold, we are increasing the remaining to sell from 1.5 to 2.5
         // this means the sell rate for the remaining time should be (*5/3)
         await twamm.modifyLongTermOrder(orderKey, toWei('1'))
 
         const sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
+        const poolSellRateAfter = (await twamm.getOrderPool(0)).sellRate
+
         expect(sellRateBefore.mul(5).div(3)).to.be.eq(sellRateAfter)
+        expect(poolSellRateAfter).to.be.eq(poolSellRateBefore.sub(sellRateBefore).add(sellRateAfter))
       })
 
       it('alters an order multiple times', async () => {

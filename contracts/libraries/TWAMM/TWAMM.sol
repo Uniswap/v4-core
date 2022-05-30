@@ -172,8 +172,8 @@ library TWAMM {
             uint256 newSellRate = uint256(newSellAmount) / (order.expiration - block.timestamp);
 
             if (amountDelta < 0) {
-                uint256 sellRateDelta = order.sellRate - newSellRate;
                 amountOut = uint256(uint128(-amountDelta));
+                uint256 sellRateDelta = order.sellRate - newSellRate;
                 self.orderPools[order.sellTokenIndex].sellRateCurrent -= sellRateDelta;
                 self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= sellRateDelta;
             } else {
