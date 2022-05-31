@@ -21,7 +21,7 @@ describe('TWAMMMath', () => {
 
   const twammFixture = async () => {
     const twammTestFactory = await ethers.getContractFactory('TWAMMTest')
-    return (await twammTestFactory.deploy()) as TWAMMTest
+    return (await twammTestFactory.deploy(10_000)) as TWAMMTest
   }
 
   before('create fixture loader', async () => {

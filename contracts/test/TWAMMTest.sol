@@ -14,23 +14,32 @@ contract TWAMMTest {
     using TWAMM for TWAMM.State;
     using ABDKMathQuad for *;
 
+    uint256 public expirationInterval;
     TWAMM.State private twamm;
     mapping(int24 => Tick.Info) mockTicks;
     mapping(int16 => uint256) mockTickBitmap;
 
-    function initialize(uint256 orderInterval, IPoolManager.PoolKey memory poolKey) external {
-        twamm.initialize(orderInterval, poolKey);
+    constructor(uint256 _expirationInterval) {
+        expirationInterval = _expirationInterval;
+    }
+
+    function initialize(IPoolManager.PoolKey memory poolKey) external {
+        twamm.initialize(poolKey);
+    }
+
+    function lastVirtualOrderTimestamp() external view returns (uint256) {
+        return twamm.lastVirtualOrderTimestamp;
     }
 
     function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
-        orderId = twamm.submitLongTermOrder(params);
+        orderId = twamm.submitLongTermOrder(params, expirationInterval);
     }
 
     function modifyLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)
         external
-        returns (uint256 amountOut0, uint256 amountOut1)
+        returns (uint256 amountOut)
     {
-        (amountOut0, amountOut1) = twamm.modifyLongTermOrder(orderKey, amountDelta);
+        amountOut = twamm.modifyLongTermOrder(orderKey, amountDelta);
     }
 
     function claimEarnings(TWAMM.OrderKey calldata orderKey)
@@ -50,7 +59,7 @@ contract TWAMMTest {
     }
 
     function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
-        twamm.executeTWAMMOrders(IPoolManager(address(this)), twamm.poolKey, poolParams);
+        twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), twamm.poolKey, poolParams);
     }
 
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
@@ -107,11 +116,6 @@ contract TWAMMTest {
     {
         if (zeroForOne) return twamm.orderPool0For1.earningsFactorAtInterval[timestamp];
         else return twamm.orderPool1For0.earningsFactorAtInterval[timestamp];
-    }
-
-    function getState() external view returns (uint256 expirationInterval, uint256 lastVirtualOrderTimestamp) {
-        expirationInterval = twamm.expirationInterval;
-        lastVirtualOrderTimestamp = twamm.lastVirtualOrderTimestamp;
     }
 
     //////////////////////////////////////////////////////
