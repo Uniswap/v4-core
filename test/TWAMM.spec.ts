@@ -462,7 +462,7 @@ describe('TWAMM', () => {
 
       // moves time to 1/4 through the orders, 1.5 left to sell, 0.5 sold
       // calls modify order which caches the earnings so far
-      const oneQuarterTime = expiration - (3*EXPIRATION_INTERVAL/4)
+      const oneQuarterTime = expiration - (3 * EXPIRATION_INTERVAL) / 4
       await executeTwammAndThen(oneQuarterTime, poolParams, async () => {
         // cache uncollected earnings and modify order to have 1.8 more, total 3.3 remaining
         // increase the other order so it has something to trade against
@@ -474,7 +474,7 @@ describe('TWAMM', () => {
       expect(orderAfter.sellRate).to.be.eq(sellRateBefore.mul(33).div(15))
       expect(orderAfter.uncollectedEarningsAmount).to.be.eq(toWei('0.5'))
 
-      const threeQuarterTime = expiration - (EXPIRATION_INTERVAL/4)
+      const threeQuarterTime = expiration - EXPIRATION_INTERVAL / 4
       setNextBlocktime(threeQuarterTime)
 
       // the earnings should be 1/4 of 2 (0.5), uncollected from before
