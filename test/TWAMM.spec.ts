@@ -387,6 +387,7 @@ describe('TWAMM', () => {
 
   describe('#claimEarnings', () => {
     let orderKey: OrderKey
+    let counterOrderKey: OrderKey
     const poolParams: PoolParams = {
       feeProtocol: 0,
       sqrtPriceX96: encodeSqrtPriceX96(1, 1),
@@ -404,6 +405,7 @@ describe('TWAMM', () => {
       const startTime = findExpiryTime(timestamp, 1, EXPIRATION_INTERVAL)
       expiration = findExpiryTime(timestamp, 2, EXPIRATION_INTERVAL)
       orderKey = { owner: wallet.address, expiration, zeroForOne: true }
+      counterOrderKey = { owner: wallet.address, expiration, zeroForOne: false }
       const ltoParams = { owner: wallet.address, expiration, amountIn: toWei('2') }
 
       await executeTwammAndThen(startTime, poolParams, async () => {
@@ -452,8 +454,34 @@ describe('TWAMM', () => {
       const result = await twamm.callStatic.claimEarnings(orderKey)
 
       const earningsAmount = result.earningsAmount
-
       expect(earningsAmount).to.eq(toWei('1.5'))
+    })
+
+    it('claims a partial order, changes the order, and claims again at a different rate', async () => {
+      const sellRateBefore = (await twamm.getOrder(orderKey)).sellRate
+
+      // moves time to 1/4 through the orders, 1.5 left to sell, 0.5 sold
+      // calls modify order which caches the earnings so far
+      const oneQuarterTime = expiration - (3*EXPIRATION_INTERVAL/4)
+      await executeTwammAndThen(oneQuarterTime, poolParams, async () => {
+        // cache uncollected earnings and modify order to have 1.8 more, total 3.3 remaining
+        // increase the other order so it has something to trade against
+        await twamm.modifyLongTermOrder(orderKey, toWei('1.8'))
+        await twamm.modifyLongTermOrder(counterOrderKey, toWei('1.8'))
+      })
+
+      const orderAfter = await twamm.getOrder(orderKey)
+      expect(orderAfter.sellRate).to.be.eq(sellRateBefore.mul(33).div(15))
+      expect(orderAfter.uncollectedEarningsAmount).to.be.eq(toWei('0.5'))
+
+      const threeQuarterTime = expiration - (EXPIRATION_INTERVAL/4)
+      setNextBlocktime(threeQuarterTime)
+
+      // the earnings should be 1/4 of 2 (0.5), uncollected from before
+      // plus 2/3 of 3.3 (2.2) from this portion - so a total of 2.7
+      await twamm.executeTWAMMOrders(poolParams)
+      const result = await twamm.callStatic.claimEarnings(orderKey)
+      expect(result.earningsAmount).to.eq(toWei('2.7'))
     })
 
     it('gas', async () => {
