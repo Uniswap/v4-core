@@ -247,8 +247,14 @@ describe('TWAMMMath', () => {
             sellRateCurrent1,
           })
 
-          const earningsAmountPerSecondPool0 = results.earningsFactorPool0.mul(sellRateCurrent0).div(divX96(secondsElapsedX96, 0)).div(Q96)
-          const earningsAmountPerSecondPool1 = results.earningsFactorPool1.mul(sellRateCurrent1).div(divX96(secondsElapsedX96, 0)).div(Q96)
+          const earningsAmountPerSecondPool0 = results.earningsFactorPool0
+            .mul(sellRateCurrent0)
+            .div(divX96(secondsElapsedX96, 0))
+            .div(Q96)
+          const earningsAmountPerSecondPool1 = results.earningsFactorPool1
+            .mul(sellRateCurrent1)
+            .div(divX96(secondsElapsedX96, 0))
+            .div(Q96)
 
           // earnings should be approximately equal to the amounts selling of the respective token
           expect(earningsAmountPerSecondPool0).to.eq(sellRateCurrent1)
@@ -282,8 +288,14 @@ describe('TWAMMMath', () => {
             sellRateCurrent1,
           })
 
-          const earningsAmountPerSecondPool0 = results.earningsFactorPool0.mul(sellRateCurrent0).div(divX96(secondsElapsedX96, 0)).div(Q96)
-          const earningsAmountPerSecondPool1 = results.earningsFactorPool1.mul(sellRateCurrent1).div(divX96(secondsElapsedX96, 0)).div(Q96)
+          const earningsAmountPerSecondPool0 = results.earningsFactorPool0
+            .mul(sellRateCurrent0)
+            .div(divX96(secondsElapsedX96, 0))
+            .div(Q96)
+          const earningsAmountPerSecondPool1 = results.earningsFactorPool1
+            .mul(sellRateCurrent1)
+            .div(divX96(secondsElapsedX96, 0))
+            .div(Q96)
 
           // earnings should be approximately equal to the amounts selling of the respective token
           expect(earningsAmountPerSecondPool0).to.eq(sellRateCurrent1.sub(1))
