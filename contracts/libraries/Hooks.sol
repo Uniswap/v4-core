@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.5.0;
 import {IHooks} from '../interfaces/IHooks.sol';
+import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
 /// has leading bits '1001' which would cause the 'before initialize' and 'after swap' hooks to be used.
 library Hooks {
+    using Hooks for IHooks;
+
+    /// @notice Hook did not return its selector
+    error InvalidHookResponse();
+
     uint256 public constant BEFORE_INITIALIZE_FLAG = 1 << 159;
     uint256 public constant AFTER_INITIALIZE_FLAG = 1 << 158;
     uint256 public constant BEFORE_MODIFY_POSITION_FLAG = 1 << 157;
@@ -80,5 +86,177 @@ library Hooks {
 
     function shouldCallAfterDonate(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
+    }
+
+    /**
+     * @notice Runs beforeInitialize hook with validation checks
+     * @param self The hook to run
+     * @param sender The address calling initialize
+     * @param key The pool details
+     * @param sqrtPriceX96 Initial pool price
+     */
+    function safeBeforeInitialize(
+        IHooks self,
+        address sender,
+        IPoolManager.PoolKey memory key,
+        uint160 sqrtPriceX96
+    ) internal {
+        if (
+            self.shouldCallBeforeInitialize() &&
+            self.beforeInitialize(sender, key, sqrtPriceX96) != IHooks.beforeInitialize.selector
+        ) {
+            revert InvalidHookResponse();
+        }
+    }
+
+    /**
+     * @notice Runs afterInitialize hook with validation checks
+     * @param self The hook to run
+     * @param sender The address calling initialize
+     * @param key The pool details
+     * @param sqrtPriceX96 Initial pool price
+     * @param tick Initial tick
+     */
+    function safeAfterInitialize(
+        IHooks self,
+        address sender,
+        IPoolManager.PoolKey memory key,
+        uint160 sqrtPriceX96,
+        int24 tick
+    ) internal {
+        if (
+            self.shouldCallAfterInitialize() &&
+            self.afterInitialize(sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector
+        ) {
+            revert InvalidHookResponse();
+        }
+    }
+
+    /**
+     * @notice Runs beforeModifyPosition hook with validation checks
+     * @param self The hook to run
+     * @param sender The address calling initialize
+     * @param key The pool details
+     * @param params The modify position params
+     */
+    function safeBeforeModifyPosition(
+        IHooks self,
+        address sender,
+        IPoolManager.PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params
+    ) internal {
+        if (
+            self.shouldCallBeforeModifyPosition() &&
+            self.beforeModifyPosition(sender, key, params) != IHooks.beforeModifyPosition.selector
+        ) {
+            revert InvalidHookResponse();
+        }
+    }
+
+    /**
+     * @notice Runs afterModifyPosition hook with validation checks
+     * @param self The hook to run
+     * @param sender The address calling initialize
+     * @param key The pool details
+     * @param params The modify position params
+     * @param delta Change in balance after the position modification
+     */
+    function safeAfterModifyPosition(
+        IHooks self,
+        address sender,
+        IPoolManager.PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params,
+        IPoolManager.BalanceDelta memory delta
+    ) internal {
+        if (
+            self.shouldCallAfterModifyPosition() &&
+            self.afterModifyPosition(sender, key, params, delta) != IHooks.afterModifyPosition.selector
+        ) {
+            revert InvalidHookResponse();
+        }
+    }
+
+    /**
+     * @notice Runs beforeSwap hook with validation checks
+     * @param self The hook to run
+     * @param sender The address calling initialize
+     * @param key The pool details
+     * @param params The swap params
+     */
+    function safeBeforeSwap(
+        IHooks self,
+        address sender,
+        IPoolManager.PoolKey memory key,
+        IPoolManager.SwapParams memory params
+    ) internal {
+        if (self.shouldCallBeforeSwap() && self.beforeSwap(sender, key, params) != IHooks.beforeSwap.selector) {
+            revert InvalidHookResponse();
+        }
+    }
+
+    /**
+     * @notice Runs afterSwap hook with validation checks
+     * @param self The hook to run
+     * @param sender The address calling initialize
+     * @param key The pool details
+     * @param params The swap params
+     * @param delta Change in balance after the swap
+     */
+    function safeAfterSwap(
+        IHooks self,
+        address sender,
+        IPoolManager.PoolKey memory key,
+        IPoolManager.SwapParams memory params,
+        IPoolManager.BalanceDelta memory delta
+    ) internal {
+        if (self.shouldCallAfterSwap() && self.afterSwap(sender, key, params, delta) != IHooks.afterSwap.selector) {
+            revert InvalidHookResponse();
+        }
+    }
+
+    /**
+     * @notice Runs beforeDonate hook with validation checks
+     * @param self The hook to run
+     * @param sender The address calling initialize
+     * @param key The pool details
+     * @param amount0 amount of token0 donated
+     * @param amount1 amount of token1 donated
+     */
+    function safeBeforeDonate(
+        IHooks self,
+        address sender,
+        IPoolManager.PoolKey memory key,
+        uint256 amount0,
+        uint256 amount1
+    ) internal {
+        if (
+            self.shouldCallBeforeDonate() &&
+            self.beforeDonate(sender, key, amount0, amount1) != IHooks.beforeDonate.selector
+        ) {
+            revert InvalidHookResponse();
+        }
+    }
+
+    /**
+     * @notice Runs afterDonate hook with validation checks
+     * @param self The hook to run
+     * @param sender The address calling initialize
+     * @param key The pool details
+     * @param amount0 amount of token0 donated
+     * @param amount1 amount of token1 donated
+     */
+    function safeAfterDonate(
+        IHooks self,
+        address sender,
+        IPoolManager.PoolKey memory key,
+        uint256 amount0,
+        uint256 amount1
+    ) internal {
+        if (
+            self.shouldCallAfterDonate() &&
+            self.afterDonate(sender, key, amount0, amount1) != IHooks.afterDonate.selector
+        ) {
+            revert InvalidHookResponse();
+        }
     }
 }

@@ -9,13 +9,14 @@ export interface MockedContract {
   calledWith: (fn: string, params: any[]) => Promise<boolean>
 }
 
-export const deployMockContract = async (contractInterface: Interface, address: string): Promise<MockedContract> => {
-  await hre.network.provider.send('hardhat_setCode', [
-    address,
-    (await hre.artifacts.readArtifact('MockContract')).deployedBytecode,
-  ])
+export const deployMockContract = async (contractInterface: Interface, address: string, implAddress?: string): Promise<MockedContract> => {
+  await setCode(address, 'MockContract');
 
   const contractMock = (await ethers.getContractFactory('MockContract')).attach(address) as MockContract
+
+  if (implAddress) {
+    contractMock.setImplementation(implAddress);
+  }
 
   return {
     address,
@@ -31,4 +32,11 @@ export const deployMockContract = async (contractInterface: Interface, address: 
       return contractMock.calledWith(contractInterface.getFunction(fn).format(FormatTypes.sighash), paramsBytes)
     },
   }
+}
+
+export const setCode = async (address: string, artifactName: string) => {
+  await hre.network.provider.send('hardhat_setCode', [
+    address,
+    (await hre.artifacts.readArtifact(artifactName)).deployedBytecode,
+  ])
 }
