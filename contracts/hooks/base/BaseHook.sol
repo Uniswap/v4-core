@@ -52,7 +52,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         IPoolManager.ModifyPositionParams calldata,
         IPoolManager.BalanceDelta calldata
-    ) external override {
+    ) external virtual override {
         revert HookNotImplemented();
     }
 
