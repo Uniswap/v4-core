@@ -451,7 +451,6 @@ library TWAMM {
                     totalEarnings += zeroForOne ? swapDelta1 : swapDelta0;
                     amountSelling -= zeroForOne ? swapDelta0 : swapDelta1;
                 }
-
             } else {
                 if (zeroForOne) {
                     totalEarnings += SqrtPriceMath.getAmount1Delta(
@@ -482,7 +481,7 @@ library TWAMM {
         }
 
         return params.pool;
-      }
+    }
 
     struct TickCrossingParams {
         int24 initializedTick;
