@@ -219,6 +219,7 @@ describe('TWAMM', () => {
 
       const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
       await twamm.initialize(poolKey)
+      latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
 
       orderKey = { owner, expiration: timestampInterval2, zeroForOne: true }
 
@@ -235,6 +236,76 @@ describe('TWAMM', () => {
           amountIn: toWei('3'),
           expiration: timestampInterval2,
         })
+      })
+      latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+    })
+
+    describe('when a portion of the order is removed', () => {
+      beforeEach(async () => {
+        // half of the order is now complete - so toWei('1.5') has been sold
+        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval2 - 5_000])
+      })
+
+      it('allows a portion of the order to be removed', async () => {
+        const sellRateBefore = (await twamm.getOrder(orderKey)).sellRate
+        const poolSellRateBefore = (await twamm.getOrderPool(0)).sellRate
+
+        // given toWei('1.5') has been sold, we are reducing the remaining to sell from 1.5 to 0.5
+        // this means the sell rate for the remaining time should divide by 3
+        await twamm.modifyLongTermOrder(orderKey, toWei('1').mul(-1))
+
+        const sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
+        const poolSellRateAfter = (await twamm.getOrderPool(0)).sellRate
+
+        expect(sellRateBefore).to.be.eq(sellRateAfter.mul(3))
+        expect(poolSellRateAfter).to.be.eq(poolSellRateBefore.sub(sellRateBefore).add(sellRateAfter))
+      })
+
+      it('revert if more than the order is removed', async () => {
+        // given toWei('1.5') has been sold, we try to remove just more than 1.5
+        await expect(twamm.modifyLongTermOrder(orderKey, toWei('1.5').add(1).mul(-1))).to.be.revertedWith(
+          'InvalidAmountDelta'
+        )
+      })
+
+      it('does not revert if the exact amount is provided', async () => {
+        // given toWei('1.5') has been sold, we try to remove exactly 1.5 more
+        await twamm.modifyLongTermOrder(orderKey, toWei('1.5').mul(-1))
+        expect(parseInt((await twamm.getOrder(orderKey)).sellRate.toString())).to.be.eq(0)
+      })
+
+      it('allows the order size to be increased', async () => {
+        const sellRateBefore = (await twamm.getOrder(orderKey)).sellRate
+        const poolSellRateBefore = (await twamm.getOrderPool(0)).sellRate
+
+        // given toWei('1.5') has been sold, we are increasing the remaining to sell from 1.5 to 2.5
+        // this means the sell rate for the remaining time should be (*5/3)
+        await twamm.modifyLongTermOrder(orderKey, toWei('1'))
+
+        const sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
+        const poolSellRateAfter = (await twamm.getOrderPool(0)).sellRate
+
+        expect(sellRateBefore.mul(5).div(3)).to.be.eq(sellRateAfter)
+        expect(poolSellRateAfter).to.be.eq(poolSellRateBefore.sub(sellRateBefore).add(sellRateAfter))
+      })
+
+      it('alters an order multiple times', async () => {
+        var sellRateBefore = (await twamm.getOrder(orderKey)).sellRate
+
+        // given toWei('1.5') has been sold, we are increasing the remaining to sell from 1.5 to 5
+        // this means the sell rate for the remaining time should be (*2)
+        await twamm.modifyLongTermOrder(orderKey, toWei('1.5'))
+
+        var sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
+        expect(sellRateBefore.mul(2)).to.be.eq(sellRateAfter)
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval2 - 2_500])
+        // by this timestamp half of the 3 (since last alteration) have been sold
+        // we remove 1.2 of the 1.5 remaining, meaning a sell rate of 1/5th
+        sellRateBefore = sellRateAfter
+        await twamm.modifyLongTermOrder(orderKey, toWei('1.2').mul(-1))
+        sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
+        expect(sellRateBefore).to.be.eq(sellRateAfter.mul(5))
       })
     })
 
@@ -262,13 +333,12 @@ describe('TWAMM', () => {
         expect((await twamm.getOrder(orderKey)).unclaimedEarningsFactor).to.eq(orderPool.earningsFactor)
       })
 
-      it('claims half the amount at midpoint', async () => {
+      it('withdraws half the sell amount at midpoint', async () => {
         // update state and cancel the order at the midpoint
-        await ethers.provider.send('evm_setNextBlockTimestamp', [timestampInterval2 - 5_000])
         await twamm.executeTWAMMOrders(poolParams)
 
-        const results = await twamm.callStatic.modifyLongTermOrder(orderKey, MIN_INT128)
-        expect(results.amountOut0).to.equal(sellAmount.div(2))
+        const amountOut = await twamm.callStatic.modifyLongTermOrder(orderKey, MIN_INT128)
+        expect(amountOut).to.equal(sellAmount.div(2))
       })
 
       it('claims half the earnings at midpoint', async () => {

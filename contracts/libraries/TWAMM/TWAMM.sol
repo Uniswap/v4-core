@@ -145,11 +145,12 @@ library TWAMM {
     /// @param orderKey The OrderKey for which to identify the order
     /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
     ///    min value to remove full amount from order.
+    /// @return amountOut the amount of the order's sell token removed from the order
     function modifyLongTermOrder(
         State storage self,
         OrderKey memory orderKey,
         int128 amountDelta
-    ) internal returns (uint256 amountOut0, uint256 amountOut1) {
+    ) internal returns (uint256 amountOut) {
         bytes32 orderId = _orderId(orderKey);
         Order storage order = _getOrder(self, orderKey);
         if (orderKey.owner == address(0)) revert OrderDoesNotExist(orderId);
@@ -164,18 +165,17 @@ library TWAMM {
             order.unclaimedEarningsFactor = self.orderPools[order.sellTokenIndex].earningsFactorCurrent;
 
             uint256 unsoldAmount = order.sellRate * (order.expiration - block.timestamp);
-            if (amountDelta == type(int128).min) amountDelta = -unsoldAmount.toInt256().toInt128();
-            uint256 newSellAmount = uint256(int256(unsoldAmount) + amountDelta);
+            if (amountDelta == type(int128).min) amountDelta = -(unsoldAmount.toInt256().toInt128());
+            int256 newSellAmount = unsoldAmount.toInt256() + amountDelta;
             if (newSellAmount < 0) revert InvalidAmountDelta(orderId, unsoldAmount, amountDelta);
 
-            uint256 newSellRate = newSellAmount / (order.expiration - block.timestamp);
+            uint256 newSellRate = uint256(newSellAmount) / (order.expiration - block.timestamp);
 
             if (amountDelta < 0) {
+                amountOut = uint256(uint128(-amountDelta));
                 uint256 sellRateDelta = order.sellRate - newSellRate;
-                uint256 amountOut = uint256(uint128(-amountDelta));
                 self.orderPools[order.sellTokenIndex].sellRateCurrent -= sellRateDelta;
                 self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= sellRateDelta;
-                orderKey.zeroForOne ? amountOut0 = amountOut : amountOut1 = amountOut;
             } else {
                 uint256 sellRateDelta = newSellRate - order.sellRate;
                 self.orderPools[order.sellTokenIndex].sellRateCurrent += sellRateDelta;
