@@ -535,7 +535,7 @@ describe('TWAMM Hook', () => {
           const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
 
           // TODO: precision error of 8/11 wei :(
-          expect(newBalance0).to.equal(EXTRA_TOKENS.sub(8))
+          expect(newBalance0).to.equal(BigNumber.from(EXTRA_TOKENS).sub(8))
           expect(newBalance1.sub(EXTRA_TOKENS)).to.equal(earningsToken1.sub(11))
         })
       })
