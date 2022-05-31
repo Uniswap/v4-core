@@ -97,9 +97,7 @@ describe('TWAMM', () => {
       const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
       await twamm.initialize(poolKey)
 
-      expect(await twamm.lastVirtualOrderTimestamp()).to.equal(
-        (await ethers.provider.getBlock('latest')).timestamp
-      )
+      expect(await twamm.lastVirtualOrderTimestamp()).to.equal((await ethers.provider.getBlock('latest')).timestamp)
     })
   })
 

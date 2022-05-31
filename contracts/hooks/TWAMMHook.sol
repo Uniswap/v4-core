@@ -16,7 +16,7 @@ contract TWAMMHook is BaseHook {
     using TWAMM for TWAMM.State;
     using TransferHelper for IERC20Minimal;
 
-    uint256 immutable public expirationInterval;
+    uint256 public immutable expirationInterval;
     mapping(bytes32 => TWAMM.State) internal twammStates;
 
     constructor(IPoolManager _poolManager, uint256 _expirationInterval) BaseHook(_poolManager) {
