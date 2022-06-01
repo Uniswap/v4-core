@@ -3,20 +3,20 @@
 exports[`TWAMM Hook #executeTWAMMOrders gas crossing 1 initialized tick 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 569066,
+  "gasUsed": 569517,
 }
 `;
 
 exports[`TWAMM Hook #executeTWAMMOrders gas crossing 2 initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 731750,
+  "gasUsed": 732125,
 }
 `;
 
 exports[`TWAMM Hook #executeTWAMMOrders gas with no initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 427268,
+  "gasUsed": 427690,
 }
 `;

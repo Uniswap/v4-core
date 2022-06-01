@@ -33,9 +33,9 @@ contract TWAMMTest {
 
     function modifyLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)
         external
-        returns (uint256 amountOut0, uint256 amountOut1)
+        returns (uint256 amountOut)
     {
-        (amountOut0, amountOut1) = twamm.modifyLongTermOrder(orderKey, amountDelta);
+        amountOut = twamm.modifyLongTermOrder(orderKey, amountDelta);
     }
 
     function claimEarnings(TWAMM.OrderKey calldata orderKey)

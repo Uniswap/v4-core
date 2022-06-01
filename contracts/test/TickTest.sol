@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.13;
-pragma abicoder v2;
 
 import {Tick} from '../libraries/Tick.sol';
 
@@ -15,7 +14,7 @@ contract TickTest {
 
     function getGasCostOfTickSpacingToMaxLiquidityPerTick(int24 tickSpacing) external view returns (uint256) {
         uint256 gasBefore = gasleft();
-        uint128 maxLiquidity = Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
         return gasBefore - gasleft();
     }
 

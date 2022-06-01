@@ -10,14 +10,14 @@ Object {
 exports[`TWAMM #executeTWAMMOrders gas 1`] = `
 Object {
   "calldataByteLength": 68,
-  "gasUsed": 377547,
+  "gasUsed": 377085,
 }
 `;
 
 exports[`TWAMM #modifyLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 40915,
+  "gasUsed": 40922,
 }
 `;
 
@@ -31,13 +31,13 @@ Object {
 exports[`TWAMM single pool sell tests gas 1`] = `
 Object {
   "calldataByteLength": 68,
-  "gasUsed": 105375,
+  "gasUsed": 104175,
 }
 `;
 
 exports[`TWAMM single pool sell tests gas zeroForOne=false 1`] = `
 Object {
   "calldataByteLength": 68,
-  "gasUsed": 113207,
+  "gasUsed": 111635,
 }
 `;

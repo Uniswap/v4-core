@@ -145,11 +145,12 @@ library TWAMM {
     /// @param orderKey The OrderKey for which to identify the order
     /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
     ///    min value to remove full amount from order.
+    /// @return amountOut the amount of the order's sell token removed from the order
     function modifyLongTermOrder(
         State storage self,
         OrderKey memory orderKey,
         int128 amountDelta
-    ) internal returns (uint256 amountOut0, uint256 amountOut1) {
+    ) internal returns (uint256 amountOut) {
         bytes32 orderId = _orderId(orderKey);
         Order storage order = _getOrder(self, orderKey);
         if (orderKey.owner == address(0)) revert OrderDoesNotExist(orderId);
@@ -164,18 +165,17 @@ library TWAMM {
             order.unclaimedEarningsFactor = self.orderPools[order.sellTokenIndex].earningsFactorCurrent;
 
             uint256 unsoldAmount = order.sellRate * (order.expiration - block.timestamp);
-            if (amountDelta == type(int128).min) amountDelta = -unsoldAmount.toInt256().toInt128();
-            uint256 newSellAmount = uint256(int256(unsoldAmount) + amountDelta);
+            if (amountDelta == type(int128).min) amountDelta = -(unsoldAmount.toInt256().toInt128());
+            int256 newSellAmount = unsoldAmount.toInt256() + amountDelta;
             if (newSellAmount < 0) revert InvalidAmountDelta(orderId, unsoldAmount, amountDelta);
 
-            uint256 newSellRate = newSellAmount / (order.expiration - block.timestamp);
+            uint256 newSellRate = uint256(newSellAmount) / (order.expiration - block.timestamp);
 
             if (amountDelta < 0) {
+                amountOut = uint256(uint128(-amountDelta));
                 uint256 sellRateDelta = order.sellRate - newSellRate;
-                uint256 amountOut = uint256(uint128(-amountDelta));
                 self.orderPools[order.sellTokenIndex].sellRateCurrent -= sellRateDelta;
                 self.orderPools[order.sellTokenIndex].sellRateEndingAtInterval[order.expiration] -= sellRateDelta;
-                orderKey.zeroForOne ? amountOut0 = amountOut : amountOut1 = amountOut;
             } else {
                 uint256 sellRateDelta = newSellRate - order.sellRate;
                 self.orderPools[order.sellTokenIndex].sellRateCurrent += sellRateDelta;
@@ -345,7 +345,7 @@ library TWAMM {
     ) private returns (PoolParamsOnExecute memory) {
         uint160 finalSqrtPriceX96;
 
-        while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
+        while (true) {
             uint256 earningsFactorPool0;
             uint256 earningsFactorPool1;
             (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
@@ -382,6 +382,7 @@ library TWAMM {
                         self.orderPools[1].advanceToCurrentTime(earningsFactorPool1);
                     }
                     params.pool.sqrtPriceX96 = finalSqrtPriceX96;
+                    break;
                 }
             }
         }
@@ -403,79 +404,83 @@ library TWAMM {
         IPoolManager.PoolKey memory key,
         AdvanceSingleParams memory params
     ) private returns (PoolParamsOnExecute memory) {
+        bool zeroForOne = params.sellIndex == 0 ? true : false;
         uint256 sellRateCurrent = self.orderPools[params.sellIndex].sellRateCurrent;
         uint256 amountSelling = sellRateCurrent * params.secondsElapsed;
         uint256 totalEarnings;
 
-        uint160 finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
-            params.pool.sqrtPriceX96,
-            params.pool.liquidity,
-            amountSelling,
-            params.sellIndex == 0 ? true : false
-        );
+        while (true) {
+            uint160 finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
+                params.pool.sqrtPriceX96,
+                params.pool.liquidity,
+                amountSelling,
+                zeroForOne
+            );
 
-        while (params.pool.sqrtPriceX96 != finalSqrtPriceX96) {
-            uint256 swapDelta0;
-            uint256 swapDelta1;
-            (params.pool, swapDelta0, swapDelta1) = swapToTargetOrInitializedTick(
+            (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
                 params.pool,
                 poolManager,
                 key,
                 finalSqrtPriceX96
             );
-            unchecked {
-                totalEarnings += params.sellIndex == 0 ? swapDelta1 : swapDelta0;
-                amountSelling -= params.sellIndex == 0 ? swapDelta0 : swapDelta1;
+
+            if (crossingInitializedTick) {
+                uint160 initializedSqrtPrice = TickMath.getSqrtRatioAtTick(tick);
+
+                uint256 swapDelta0 = SqrtPriceMath.getAmount0Delta(
+                    params.pool.sqrtPriceX96,
+                    initializedSqrtPrice,
+                    params.pool.liquidity,
+                    true
+                );
+                uint256 swapDelta1 = SqrtPriceMath.getAmount1Delta(
+                    params.pool.sqrtPriceX96,
+                    initializedSqrtPrice,
+                    params.pool.liquidity,
+                    true
+                );
+
+                int128 liquidityNet = poolManager.getTickNetLiquidity(key, tick);
+                if (zeroForOne) liquidityNet = -liquidityNet;
+                params.pool.liquidity = zeroForOne
+                    ? params.pool.liquidity - uint128(-liquidityNet)
+                    : params.pool.liquidity + uint128(liquidityNet);
+                params.pool.sqrtPriceX96 = initializedSqrtPrice;
+
+                unchecked {
+                    totalEarnings += zeroForOne ? swapDelta1 : swapDelta0;
+                    amountSelling -= zeroForOne ? swapDelta0 : swapDelta1;
+                }
+            } else {
+                if (zeroForOne) {
+                    totalEarnings += SqrtPriceMath.getAmount1Delta(
+                        params.pool.sqrtPriceX96,
+                        finalSqrtPriceX96,
+                        params.pool.liquidity,
+                        true
+                    );
+                } else {
+                    totalEarnings += SqrtPriceMath.getAmount0Delta(
+                        params.pool.sqrtPriceX96,
+                        finalSqrtPriceX96,
+                        params.pool.liquidity,
+                        true
+                    );
+                }
+
+                uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateCurrent;
+
+                if (params.nextTimestamp % params.expirationInterval == 0) {
+                    self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, accruedEarningsFactor);
+                } else {
+                    self.orderPools[params.sellIndex].advanceToCurrentTime(accruedEarningsFactor);
+                }
+                params.pool.sqrtPriceX96 = finalSqrtPriceX96;
+                break;
             }
-
-            // Recalculate the final price based on the amount swapped at the tick
-            finalSqrtPriceX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
-                params.pool.sqrtPriceX96,
-                params.pool.liquidity,
-                amountSelling,
-                params.sellIndex == 0 ? true : false
-            );
         }
 
-        uint256 accruedEarningsFactor = (totalEarnings * FixedPoint96.Q96) / sellRateCurrent;
-        if (params.nextTimestamp % params.expirationInterval == 0) {
-            self.orderPools[params.sellIndex].advanceToInterval(params.nextTimestamp, accruedEarningsFactor);
-        } else {
-            self.orderPools[params.sellIndex].advanceToCurrentTime(accruedEarningsFactor);
-        }
         return params.pool;
-    }
-
-    function swapToTargetOrInitializedTick(
-        PoolParamsOnExecute memory pool,
-        IPoolManager poolManager,
-        IPoolManager.PoolKey memory poolKey,
-        uint160 targetPriceX96
-    )
-        internal
-        returns (
-            PoolParamsOnExecute memory updatedPool,
-            uint256 swapDelta0,
-            uint256 swapDelta1
-        )
-    {
-        (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(pool, poolManager, poolKey, targetPriceX96);
-
-        if (crossingInitializedTick) {
-            updatedPool.sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
-            int128 liquidityNet = poolManager.getTickNetLiquidity(poolKey, tick);
-            if (pool.sqrtPriceX96 > updatedPool.sqrtPriceX96) liquidityNet = -liquidityNet;
-            updatedPool.liquidity = liquidityNet < 0
-                ? pool.liquidity - uint128(-liquidityNet)
-                : pool.liquidity + uint128(liquidityNet);
-        } else {
-            updatedPool.sqrtPriceX96 = targetPriceX96;
-            updatedPool.liquidity = pool.liquidity;
-        }
-
-        // update earnings and sell amounts
-        swapDelta0 = SqrtPriceMath.getAmount0Delta(updatedPool.sqrtPriceX96, pool.sqrtPriceX96, pool.liquidity, true);
-        swapDelta1 = SqrtPriceMath.getAmount1Delta(updatedPool.sqrtPriceX96, pool.sqrtPriceX96, pool.liquidity, true);
     }
 
     struct TickCrossingParams {
