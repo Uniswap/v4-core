@@ -988,4 +988,81 @@ describe('PoolManager', () => {
       expect(protocolFee).to.eq(poolProtocolFee)
     })
   })
+
+  describe('#collectProtocolFees', async () => {
+    beforeEach('set the fee controller, initialize a pool with protocol fee', async () => {
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      // set the controller, and set the pool's protocol fee
+      await manager.setProtocolFeeController(feeControllerTest.address)
+      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+      const poolProtocolFee = 68 // 0x 0100 0100
+      const poolID = getPoolId(poolKey)
+      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+
+      // initialize the pool with the fee
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      const {
+        slot0: { protocolFee },
+      } = await manager.pools(getPoolId(poolKey))
+      expect(protocolFee).to.eq(poolProtocolFee)
+
+      // add liquidity around the initial price
+      await modifyPositionTest.modifyPosition(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(10),
+        }
+      )
+    })
+
+    it('allows the owner to collect accumulated fees', async () => {
+      await swapTest.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          amountSpecified: 10000,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
+        }
+      )
+
+      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(7))
+      expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+
+      // allows the owner to collect the fees
+      const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
+      const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
+      await manager.collectProtocolFees(other.address, tokens.token0.address, 7)
+      const recipientBalanceAfter = await tokens.token0.balanceOf(other.address)
+      const managerBalanceAfter = await tokens.token0.balanceOf(manager.address)
+
+      expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(7))
+      expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(7))
+
+      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(0))
+    })
+  })
 })
