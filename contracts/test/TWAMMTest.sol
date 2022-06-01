@@ -15,7 +15,8 @@ contract TWAMMTest {
     using ABDKMathQuad for *;
 
     uint256 public expirationInterval;
-    TWAMM.State private twamm;
+    IPoolManager.PoolKey public poolKey;
+    TWAMM.State internal twamm;
     mapping(int24 => Tick.Info) mockTicks;
     mapping(int16 => uint256) mockTickBitmap;
 
@@ -23,12 +24,13 @@ contract TWAMMTest {
         expirationInterval = _expirationInterval;
     }
 
-    function initialize(IPoolManager.PoolKey memory poolKey) external {
-        twamm.initialize(poolKey);
+    function initialize(IPoolManager.PoolKey memory _poolKey) external {
+        poolKey = _poolKey;
+        twamm.initialize();
     }
 
     function lastVirtualOrderTimestamp() external view returns (uint256) {
-        return twamm.lastVirtualOrderTimestamp;
+      return twamm.lastVirtualOrderTimestamp;
     }
 
     function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
@@ -59,7 +61,7 @@ contract TWAMMTest {
     }
 
     function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
-        twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), twamm.poolKey, poolParams);
+        twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), poolKey, poolParams);
     }
 
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)

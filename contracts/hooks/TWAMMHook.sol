@@ -52,7 +52,7 @@ contract TWAMMHook is BaseHook {
         uint160
     ) external virtual override poolManagerOnly {
         // Dont need to enforce one-time as each pool can only be initialized once in the manager
-        getTWAMM(key).initialize(key);
+        getTWAMM(key).initialize();
     }
 
     function beforeModifyPosition(

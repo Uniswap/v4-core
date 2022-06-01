@@ -65,7 +65,6 @@ library TWAMM {
     /// @member orderPools Mapping from bool zeroForOne to OrderPool that is selling zero for one or vice versa
     /// @member orders Mapping of orderId to individual orders
     struct State {
-        IPoolManager.PoolKey poolKey;
         uint256 lastVirtualOrderTimestamp;
         OrderPool.State orderPool0For1;
         OrderPool.State orderPool1For0;
@@ -97,10 +96,8 @@ library TWAMM {
     }
 
     /// @notice Initialize TWAMM state
-    /// @param key The key representing the pool for which to iniitalize a new TWAMM
-    function initialize(State storage self, IPoolManager.PoolKey memory key) internal {
+    function initialize(State storage self) internal {
         self.lastVirtualOrderTimestamp = block.timestamp;
-        self.poolKey = key;
     }
 
     struct LongTermOrderParams {
@@ -348,7 +345,7 @@ library TWAMM {
     function advanceToNewTimestamp(
         State storage self,
         IPoolManager poolManager,
-        IPoolManager.PoolKey memory key,
+        IPoolManager.PoolKey memory poolKey,
         AdvanceParams memory params
     ) private returns (PoolParamsOnExecute memory) {
         uint160 finalSqrtPriceX96;
@@ -372,7 +369,7 @@ library TWAMM {
             (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
                 params.pool,
                 poolManager,
-                key,
+                poolKey,
                 finalSqrtPriceX96
             );
             unchecked {
@@ -381,6 +378,7 @@ library TWAMM {
                     (params.pool, secondsUntilCrossingX96) = advanceTimeThroughTickCrossing(
                         self,
                         poolManager,
+                        poolKey,
                         TickCrossingParams(tick, params.nextTimestamp, params.secondsElapsedX96, params.pool)
                     );
                     params.secondsElapsedX96 = params.secondsElapsedX96 - secondsUntilCrossingX96;
@@ -412,7 +410,7 @@ library TWAMM {
     function advanceTimestampForSinglePoolSell(
         State storage self,
         IPoolManager poolManager,
-        IPoolManager.PoolKey memory key,
+        IPoolManager.PoolKey memory poolKey,
         AdvanceSingleParams memory params
     ) private returns (PoolParamsOnExecute memory) {
         OrderPool.State storage orderPool = params.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
@@ -431,7 +429,7 @@ library TWAMM {
             (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
                 params.pool,
                 poolManager,
-                key,
+                poolKey,
                 finalSqrtPriceX96
             );
 
@@ -451,7 +449,7 @@ library TWAMM {
                     true
                 );
 
-                int128 liquidityNet = poolManager.getTickNetLiquidity(key, tick);
+                int128 liquidityNet = poolManager.getTickNetLiquidity(poolKey, tick);
                 if (params.zeroForOne) liquidityNet = -liquidityNet;
                 params.pool.liquidity = params.zeroForOne
                     ? params.pool.liquidity - uint128(-liquidityNet)
@@ -504,6 +502,7 @@ library TWAMM {
     function advanceTimeThroughTickCrossing(
         State storage self,
         IPoolManager poolManager,
+        IPoolManager.PoolKey memory poolKey,
         TickCrossingParams memory params
     ) private returns (PoolParamsOnExecute memory, uint256) {
         uint160 initializedSqrtPrice = params.initializedTick.getSqrtRatioAtTick();
@@ -535,7 +534,7 @@ library TWAMM {
 
         unchecked {
             // update pool
-            int128 liquidityNet = poolManager.getTickNetLiquidity(self.poolKey, params.initializedTick);
+            int128 liquidityNet = poolManager.getTickNetLiquidity(poolKey, params.initializedTick);
             if (initializedSqrtPrice < params.pool.sqrtPriceX96) liquidityNet = -liquidityNet;
             params.pool.liquidity = liquidityNet < 0
                 ? params.pool.liquidity - uint128(-liquidityNet)
