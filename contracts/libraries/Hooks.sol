@@ -94,13 +94,11 @@ library Hooks {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
     }
 
-    /**
-     * @notice Runs beforeInitialize hook with validation checks
-     * @param self The hook to run
-     * @param sender The address calling initialize
-     * @param key The pool details
-     * @param sqrtPriceX96 Initial pool price
-     */
+    /// @notice Runs beforeInitialize hook with validation checks
+    /// @param self The hook to run
+    /// @param sender The address calling initialize
+    /// @param key The pool details
+    /// @param sqrtPriceX96 Initial pool price
     function safeBeforeInitialize(
         IHooks self,
         address sender,
@@ -115,14 +113,13 @@ library Hooks {
         }
     }
 
-    /**
-     * @notice Runs afterInitialize hook with validation checks
-     * @param self The hook to run
-     * @param sender The address calling initialize
-     * @param key The pool details
-     * @param sqrtPriceX96 Initial pool price
-     * @param tick Initial tick
-     */
+    
+    /// @notice Runs afterInitialize hook with validation checks
+    /// @param self The hook to run
+    /// @param sender The address calling initialize
+    /// @param key The pool details
+    /// @param sqrtPriceX96 Initial pool price
+    /// @param tick Initial tick
     function safeAfterInitialize(
         IHooks self,
         address sender,
@@ -132,19 +129,17 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallAfterInitialize() &&
-            self.afterInitialize(sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector
+                self.afterInitialize(sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector
         ) {
             revert InvalidHookResponse();
         }
     }
 
-    /**
-     * @notice Runs beforeModifyPosition hook with validation checks
-     * @param self The hook to run
-     * @param sender The address calling initialize
-     * @param key The pool details
-     * @param params The modify position params
-     */
+    /// @notice Runs beforeModifyPosition hook with validation checks
+    /// @param self The hook to run
+    /// @param sender The address calling initialize
+    /// @param key The pool details
+    /// @param params The modify position params
     function safeBeforeModifyPosition(
         IHooks self,
         address sender,
@@ -153,20 +148,18 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallBeforeModifyPosition() &&
-            self.beforeModifyPosition(sender, key, params) != IHooks.beforeModifyPosition.selector
+                self.beforeModifyPosition(sender, key, params) != IHooks.beforeModifyPosition.selector
         ) {
             revert InvalidHookResponse();
         }
     }
 
-    /**
-     * @notice Runs afterModifyPosition hook with validation checks
-     * @param self The hook to run
-     * @param sender The address calling initialize
-     * @param key The pool details
-     * @param params The modify position params
-     * @param delta Change in balance after the position modification
-     */
+    /// @notice Runs afterModifyPosition hook with validation checks
+    /// @param self The hook to run
+    /// @param sender The address calling initialize
+    /// @param key The pool details
+    /// @param params The modify position params
+    /// @param delta Change in balance after the position modification
     function safeAfterModifyPosition(
         IHooks self,
         address sender,
@@ -176,19 +169,17 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallAfterModifyPosition() &&
-            self.afterModifyPosition(sender, key, params, delta) != IHooks.afterModifyPosition.selector
+                self.afterModifyPosition(sender, key, params, delta) != IHooks.afterModifyPosition.selector
         ) {
             revert InvalidHookResponse();
         }
     }
 
-    /**
-     * @notice Runs beforeSwap hook with validation checks
-     * @param self The hook to run
-     * @param sender The address calling initialize
-     * @param key The pool details
-     * @param params The swap params
-     */
+    /// @notice Runs beforeSwap hook with validation checks
+    /// @param self The hook to run
+    /// @param sender The address calling initialize
+    /// @param key The pool details
+    /// @param params The swap params
     function safeBeforeSwap(
         IHooks self,
         address sender,
@@ -200,14 +191,12 @@ library Hooks {
         }
     }
 
-    /**
-     * @notice Runs afterSwap hook with validation checks
-     * @param self The hook to run
-     * @param sender The address calling initialize
-     * @param key The pool details
-     * @param params The swap params
-     * @param delta Change in balance after the swap
-     */
+    /// @notice Runs afterSwap hook with validation checks
+    /// @param self The hook to run
+    /// @param sender The address calling initialize
+    /// @param key The pool details
+    /// @param params The swap params
+    /// @param delta Change in balance after the swap
     function safeAfterSwap(
         IHooks self,
         address sender,
@@ -220,14 +209,12 @@ library Hooks {
         }
     }
 
-    /**
-     * @notice Runs beforeDonate hook with validation checks
-     * @param self The hook to run
-     * @param sender The address calling initialize
-     * @param key The pool details
-     * @param amount0 amount of token0 donated
-     * @param amount1 amount of token1 donated
-     */
+    /// @notice Runs beforeDonate hook with validation checks
+    /// @param self The hook to run
+    /// @param sender The address calling initialize
+    /// @param key The pool details
+    /// @param amount0 Amount of token0 donated
+    /// @param amount1 Amount of token1 donated
     function safeBeforeDonate(
         IHooks self,
         address sender,
@@ -237,20 +224,18 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallBeforeDonate() &&
-            self.beforeDonate(sender, key, amount0, amount1) != IHooks.beforeDonate.selector
+                self.beforeDonate(sender, key, amount0, amount1) != IHooks.beforeDonate.selector
         ) {
             revert InvalidHookResponse();
         }
     }
 
-    /**
-     * @notice Runs afterDonate hook with validation checks
-     * @param self The hook to run
-     * @param sender The address calling initialize
-     * @param key The pool details
-     * @param amount0 amount of token0 donated
-     * @param amount1 amount of token1 donated
-     */
+    /// @notice Runs afterDonate hook with validation checks
+    /// @param self The hook to run
+    /// @param sender The address calling initialize
+    /// @param key The pool details
+    /// @param amount0 Amount of token0 donated
+    /// @param amount1 Amount of token1 donated
     function safeAfterDonate(
         IHooks self,
         address sender,
@@ -260,7 +245,7 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallAfterDonate() &&
-            self.afterDonate(sender, key, amount0, amount1) != IHooks.afterDonate.selector
+                self.afterDonate(sender, key, amount0, amount1) != IHooks.afterDonate.selector
         ) {
             revert InvalidHookResponse();
         }

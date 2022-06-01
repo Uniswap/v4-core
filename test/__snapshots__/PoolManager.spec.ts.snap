@@ -24,7 +24,7 @@ Object {
 exports[`PoolManager #mint gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 291920,
+  "gasUsed": 291899,
 }
 `;
 

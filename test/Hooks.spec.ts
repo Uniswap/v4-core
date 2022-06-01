@@ -447,6 +447,7 @@ describe('Hooks', () => {
       expect(await hooks.isValidHookAddress('0x0800000000000000000000000000000000000000')).to.be.true
       expect(await hooks.isValidHookAddress('0x0200000000000000000000000000000000000000')).to.be.true
       expect(await hooks.isValidHookAddress('0x0100000000000000000000000000000000000000')).to.be.true
+      expect(await hooks.isValidHookAddress('0xf09840a85d5af5bf1d1762f925bdaddc4201f984')).to.be.true
     })
 
     it('valid for the 0 address', async () => {

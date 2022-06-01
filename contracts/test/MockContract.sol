@@ -2,11 +2,10 @@
 pragma solidity =0.8.13;
 import {Proxy} from '@openzeppelin/contracts/proxy/Proxy.sol';
 
-/**
- * @notice Mock contract that tracks the number of calls to various functions by selector
- * @dev allows for proxying to an implementation contract
- *  if real logic or return values are needed
- */
+
+/// @notice Mock contract that tracks the number of calls to various functions by selector
+/// @dev allows for proxying to an implementation contract
+///  if real logic or return values are needed
 contract MockContract is Proxy {
     mapping(bytes32 => uint256) public calls;
     mapping(bytes32 => mapping(bytes => uint256)) public callParams;
@@ -24,9 +23,7 @@ contract MockContract is Proxy {
         return callParams[selector][params[1:]] > 0; // Drop 0x byte string prefix
     }
 
-    /**
-     * @notice exposes implementation contract address
-     */
+    /// @notice exposes implementation contract address
     function _implementation() internal view override returns (address) {
         return impl;
     }
@@ -35,9 +32,7 @@ contract MockContract is Proxy {
         impl = _impl;
     }
 
-    /**
-     * @notice Captures calls by selector
-     */
+    /// @notice Captures calls by selector
     function _beforeFallback() internal override {
         bytes32 selector = bytes32(msg.data[:5]);
         bytes memory params = msg.data[5:];

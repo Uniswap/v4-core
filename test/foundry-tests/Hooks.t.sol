@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 import {DSTest} from '../../foundry/testdata/lib/ds-test/src/test.sol';
 import {Cheats} from '../../foundry/testdata/cheats/Cheats.sol';
 import {Hooks} from '../../contracts/libraries/Hooks.sol';
-import {MockHooks} from '../../contracts/test/TestHooksImpl.sol';
+import {MockHooks} from '../../contracts/test/MockHooks.sol';
 import {IPoolManager} from '../../contracts/interfaces/IPoolManager.sol';
 import {IHooks} from '../../contracts/interfaces/IHooks.sol';
 import {IERC20Minimal} from '../../contracts/interfaces/external/IERC20Minimal.sol';
