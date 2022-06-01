@@ -178,9 +178,11 @@ describe('TWAMM Hook', () => {
     let orderKey0: any
     let orderKey1: any
     let latestTimestamp: number
+    let expiration: number
 
     beforeEach(async () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
 
       poolKey = {
         token0: token0.address,
@@ -192,12 +194,12 @@ describe('TWAMM Hook', () => {
       orderKey0 = {
         zeroForOne: true,
         owner: wallet.address,
-        expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
+        expiration,
       }
       orderKey1 = {
         zeroForOne: false,
         owner: wallet.address,
-        expiration: nIntervalsFrom(latestTimestamp, 10_000, 3),
+        expiration,
       }
 
       await ethers.provider.send('evm_setNextBlockTimestamp', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
@@ -211,66 +213,128 @@ describe('TWAMM Hook', () => {
       })
     })
 
-    it('gas with no initialized ticks', async () => {
-      await inOneBlock(latestTimestamp + 100, async () => {
-        await twamm.submitLongTermOrder(poolKey, {
-          amountIn: expandTo18Decimals(1),
-          ...orderKey0,
+    describe('when both order pools are selling', async () => {
+      it('gas with no initialized ticks', async () => {
+        await inOneBlock(latestTimestamp + 100, async () => {
+          await twamm.submitLongTermOrder(poolKey, {
+            amountIn: expandTo18Decimals(1),
+            ...orderKey0,
+          })
+          await twamm.submitLongTermOrder(poolKey, {
+            amountIn: expandTo18Decimals(10),
+            ...orderKey1,
+          })
         })
-        await twamm.submitLongTermOrder(poolKey, {
-          amountIn: expandTo18Decimals(10),
-          ...orderKey1,
-        })
+        await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
+        await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
       })
-      await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
-      await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
+
+      it('gas crossing 1 initialized tick', async () => {
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -200,
+          tickUpper: 200,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+        await inOneBlock(latestTimestamp + 100, async () => {
+          await twamm.submitLongTermOrder(poolKey, {
+            amountIn: expandTo18Decimals(1),
+            ...orderKey0,
+          })
+          await twamm.submitLongTermOrder(poolKey, {
+            amountIn: expandTo18Decimals(10),
+            ...orderKey1,
+          })
+        })
+        await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
+        await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
+      })
+
+      it('gas crossing 2 initialized ticks', async () => {
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -200,
+          tickUpper: 200,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -2000,
+          tickUpper: 2000,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+
+        await inOneBlock(latestTimestamp + 100, async () => {
+          await twamm.submitLongTermOrder(poolKey, {
+            amountIn: expandTo18Decimals(1),
+            ...orderKey0,
+          })
+          await twamm.submitLongTermOrder(poolKey, {
+            amountIn: expandTo18Decimals(10),
+            ...orderKey1,
+          })
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
+        await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
+      })
     })
 
-    it('gas crossing 1 initialized tick', async () => {
-      await modifyPositionTest.modifyPosition(poolKey, {
-        tickLower: -200,
-        tickUpper: 200,
-        liquidityDelta: expandTo18Decimals(1),
+    describe('when only one pool is selling', () => {
+      beforeEach('set up pool', async () => {
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: getMinTick(10),
+          tickUpper: getMaxTick(10),
+          liquidityDelta: expandTo18Decimals(10),
+        })
       })
-      await inOneBlock(latestTimestamp + 100, async () => {
+
+      it('gas crossing no initialized tick', async () => {
+        await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 100])
         await twamm.submitLongTermOrder(poolKey, {
-          amountIn: expandTo18Decimals(1),
+          amountIn: expandTo18Decimals(7),
           ...orderKey0,
         })
-        await twamm.submitLongTermOrder(poolKey, {
-          amountIn: expandTo18Decimals(10),
-          ...orderKey1,
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
+        await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
+      })
+
+      it('gas crossing 1 initialized tick', async () => {
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -2000,
+          tickUpper: 2000,
+          liquidityDelta: expandTo18Decimals(1),
         })
-      })
-      await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
-      await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
-    })
 
-    it('gas crossing 2 initialized ticks', async () => {
-      await modifyPositionTest.modifyPosition(poolKey, {
-        tickLower: -200,
-        tickUpper: 200,
-        liquidityDelta: expandTo18Decimals(1),
-      })
-      await modifyPositionTest.modifyPosition(poolKey, {
-        tickLower: -2000,
-        tickUpper: 2000,
-        liquidityDelta: expandTo18Decimals(1),
-      })
-
-      await inOneBlock(latestTimestamp + 100, async () => {
+        await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 100])
         await twamm.submitLongTermOrder(poolKey, {
-          amountIn: expandTo18Decimals(1),
+          amountIn: expandTo18Decimals(7),
           ...orderKey0,
         })
-        await twamm.submitLongTermOrder(poolKey, {
-          amountIn: expandTo18Decimals(10),
-          ...orderKey1,
-        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
+        await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
       })
 
-      await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
-      await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
+      it('gas crossing 2 initialized ticks', async () => {
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -2000,
+          tickUpper: 2000,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -3000,
+          tickUpper: 3000,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 100])
+        await twamm.submitLongTermOrder(poolKey, {
+          amountIn: expandTo18Decimals(7),
+          ...orderKey0,
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
+        await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
+      })
     })
   })
 
