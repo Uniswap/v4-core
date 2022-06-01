@@ -30,7 +30,7 @@ contract TWAMMTest {
     }
 
     function lastVirtualOrderTimestamp() external view returns (uint256) {
-      return twamm.lastVirtualOrderTimestamp;
+        return twamm.lastVirtualOrderTimestamp;
     }
 
     function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
