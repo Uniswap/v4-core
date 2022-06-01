@@ -354,7 +354,7 @@ library TWAMM {
         OrderPool.State storage orderPool1For0 = self.orderPool1For0;
 
         while (true) {
-            TwammMath.ExecutionUpdateParams memory executionParams  = TwammMath.ExecutionUpdateParams(
+            TwammMath.ExecutionUpdateParams memory executionParams = TwammMath.ExecutionUpdateParams(
                 params.secondsElapsedX96,
                 params.pool.sqrtPriceX96,
                 params.pool.liquidity,
