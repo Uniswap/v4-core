@@ -15,7 +15,8 @@ contract TWAMMTest {
     using ABDKMathQuad for *;
 
     uint256 public expirationInterval;
-    TWAMM.State public twamm;
+    IPoolManager.PoolKey public poolKey;
+    TWAMM.State internal twamm;
     mapping(int24 => Tick.Info) mockTicks;
     mapping(int16 => uint256) mockTickBitmap;
 
@@ -23,8 +24,13 @@ contract TWAMMTest {
         expirationInterval = _expirationInterval;
     }
 
-    function initialize(IPoolManager.PoolKey memory poolKey) external {
-        twamm.initialize(poolKey);
+    function initialize(IPoolManager.PoolKey memory _poolKey) external {
+        poolKey = _poolKey;
+        twamm.initialize();
+    }
+
+    function lastVirtualOrderTimestamp() external view returns (uint256) {
+        return twamm.lastVirtualOrderTimestamp;
     }
 
     function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
@@ -33,20 +39,20 @@ contract TWAMMTest {
 
     function modifyLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)
         external
-        returns (uint256 amountOut0, uint256 amountOut1)
+        returns (uint256 amountOut)
     {
-        (amountOut0, amountOut1) = twamm.modifyLongTermOrder(orderKey, amountDelta);
+        amountOut = twamm.modifyLongTermOrder(orderKey, amountDelta);
     }
 
     function claimEarnings(TWAMM.OrderKey calldata orderKey)
         external
         returns (
             uint256 earningsAmount,
-            uint8 sellTokenIndex,
+            bool zeroForOne,
             uint256 unclaimedEarningsAmount
         )
     {
-        (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderKey);
+        (earningsAmount, zeroForOne) = twamm.claimEarnings(orderKey);
         // unclaimedEarningsFactor is a fixed point
         uint256 sellRateCurrent = twamm._getOrder(orderKey).sellRate;
         unclaimedEarningsAmount =
@@ -55,7 +61,7 @@ contract TWAMMTest {
     }
 
     function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
-        twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), twamm.poolKey, poolParams);
+        twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), poolKey, poolParams);
     }
 
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
@@ -86,26 +92,27 @@ contract TWAMMTest {
         return twamm._getOrder(orderKey);
     }
 
-    function getOrderPool(uint8 index) external view returns (uint256 sellRate, uint256 earningsFactor) {
-        OrderPool.State storage orderPool = twamm.orderPools[index];
-        sellRate = orderPool.sellRateCurrent;
-        earningsFactor = orderPool.earningsFactorCurrent;
+    function getOrderPool(bool zeroForOne) external view returns (uint256 sellRate, uint256 earningsFactor) {
+        if (zeroForOne) return (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent);
+        else return (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
     }
 
-    function getOrderPoolSellRateEndingPerInterval(uint8 sellTokenIndex, uint256 timestamp)
+    function getOrderPoolSellRateEndingPerInterval(bool zeroForOne, uint256 timestamp)
         external
         view
         returns (uint256 sellRate)
     {
-        return twamm.orderPools[sellTokenIndex].sellRateEndingAtInterval[timestamp];
+        if (zeroForOne) return twamm.orderPool0For1.sellRateEndingAtInterval[timestamp];
+        else return twamm.orderPool1For0.sellRateEndingAtInterval[timestamp];
     }
 
-    function getOrderPoolEarningsFactorAtInterval(uint8 sellTokenIndex, uint256 timestamp)
+    function getOrderPoolEarningsFactorAtInterval(bool zeroForOne, uint256 timestamp)
         external
         view
-        returns (uint256 sellRate)
+        returns (uint256 earningsFactor)
     {
-        return twamm.orderPools[sellTokenIndex].earningsFactorAtInterval[timestamp];
+        if (zeroForOne) return twamm.orderPool0For1.earningsFactorAtInterval[timestamp];
+        else return twamm.orderPool1For0.earningsFactorAtInterval[timestamp];
     }
 
     //////////////////////////////////////////////////////

@@ -1,22 +1,43 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`TWAMM Hook #executeTWAMMOrders gas crossing 1 initialized tick 1`] = `
+exports[`TWAMM Hook #executeTWAMMOrders when both order pools are selling gas crossing 1 initialized tick 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 559085,
+  "gasUsed": 553088,
 }
 `;
 
-exports[`TWAMM Hook #executeTWAMMOrders gas crossing 2 initialized ticks 1`] = `
+exports[`TWAMM Hook #executeTWAMMOrders when both order pools are selling gas crossing 2 initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 705974,
+  "gasUsed": 698162,
 }
 `;
 
-exports[`TWAMM Hook #executeTWAMMOrders gas with no initialized ticks 1`] = `
+exports[`TWAMM Hook #executeTWAMMOrders when both order pools are selling gas with no initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 431772,
+  "gasUsed": 431580,
+}
+`;
+
+exports[`TWAMM Hook #executeTWAMMOrders when only one pool is selling gas crossing 1 initialized tick 1`] = `
+Object {
+  "calldataByteLength": 164,
+  "gasUsed": 344344,
+}
+`;
+
+exports[`TWAMM Hook #executeTWAMMOrders when only one pool is selling gas crossing 2 initialized ticks 1`] = `
+Object {
+  "calldataByteLength": 164,
+  "gasUsed": 367388,
+}
+`;
+
+exports[`TWAMM Hook #executeTWAMMOrders when only one pool is selling gas crossing no initialized tick 1`] = `
+Object {
+  "calldataByteLength": 164,
+  "gasUsed": 319016,
 }
 `;

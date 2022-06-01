@@ -14,9 +14,10 @@ import {BaseHook} from './base/BaseHook.sol';
 
 contract TWAMMHook is BaseHook {
     using TWAMM for TWAMM.State;
+    using TransferHelper for IERC20Minimal;
 
-    uint256 immutable expirationInterval;
-    mapping(bytes32 => TWAMM.State) public twammStates;
+    uint256 public immutable expirationInterval;
+    mapping(bytes32 => TWAMM.State) internal twammStates;
 
     constructor(IPoolManager _poolManager, uint256 _expirationInterval) BaseHook(_poolManager) {
         expirationInterval = _expirationInterval;
@@ -35,13 +36,14 @@ contract TWAMMHook is BaseHook {
         );
     }
 
-    function getOrderPool(IPoolManager.PoolKey calldata key, uint8 index)
-        external
-        view
-        returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent)
-    {
-        OrderPool.State storage orderPool = getTWAMM(key).orderPools[index];
-        return (orderPool.sellRateCurrent, orderPool.earningsFactorCurrent);
+    function lastVirtualOrderTimestamp(bytes32 key) external view returns (uint256) {
+        return twammStates[key].lastVirtualOrderTimestamp;
+    }
+
+    function getOrderPool(IPoolManager.PoolKey calldata key, bool zeroForOne) external view returns (uint256, uint256) {
+        TWAMM.State storage twamm = getTWAMM(key);
+        if (zeroForOne) return (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent);
+        else return (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
     }
 
     function beforeInitialize(
@@ -50,7 +52,7 @@ contract TWAMMHook is BaseHook {
         uint160
     ) external virtual override poolManagerOnly {
         // Dont need to enforce one-time as each pool can only be initialized once in the manager
-        getTWAMM(key).initialize(key);
+        getTWAMM(key).initialize();
     }
 
     function beforeModifyPosition(
@@ -97,23 +99,24 @@ contract TWAMMHook is BaseHook {
         TWAMM.State storage twamm = getTWAMM(key);
         executeTWAMMOrders(key);
         orderId = twamm.submitLongTermOrder(params, expirationInterval);
-        IERC20Minimal token = params.zeroForOne ? key.token0 : key.token1;
-        token.transferFrom(params.owner, address(this), params.amountIn);
+        IERC20Minimal sellToken = params.zeroForOne ? key.token0 : key.token1;
+        sellToken.safeTransferFrom(params.owner, address(this), params.amountIn);
     }
 
     function modifyLongTermOrder(
         IPoolManager.PoolKey memory key,
         TWAMM.OrderKey memory orderKey,
         int128 amountDelta
-    ) external returns (uint256 amountOut0, uint256 amountOut1) {
+    ) external returns (uint256 amountOut) {
         executeTWAMMOrders(key);
 
-        (amountOut0, amountOut1) = getTWAMM(key).modifyLongTermOrder(orderKey, amountDelta);
+        // This call reverts if the caller is not the owner of the order
+        amountOut = getTWAMM(key).modifyLongTermOrder(orderKey, amountDelta);
 
-        // IPoolManager.BalanceDelta memory delta = IPoolManager.BalanceDelta({
-        //     amount0: -(amountOut0.toInt256()),
-        //     amount1: -(amountOut1.toInt256())
-        // });
+        IERC20Minimal sellToken = orderKey.zeroForOne ? key.token0 : key.token1;
+
+        if (amountDelta > 0) sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint128(amountDelta)));
+        else sellToken.safeTransfer(orderKey.owner, amountOut);
     }
 
     function claimEarningsOnLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.OrderKey memory orderKey)
@@ -122,10 +125,10 @@ contract TWAMMHook is BaseHook {
     {
         executeTWAMMOrders(key);
 
-        uint8 sellTokenIndex;
-        (earningsAmount, sellTokenIndex) = getTWAMM(key).claimEarnings(orderKey);
-        IERC20Minimal buyToken = sellTokenIndex == 0 ? key.token1 : key.token0;
-        TransferHelper.safeTransfer(buyToken, orderKey.owner, earningsAmount);
+        bool zeroForOne;
+        (earningsAmount, zeroForOne) = getTWAMM(key).claimEarnings(orderKey);
+        IERC20Minimal buyToken = zeroForOne ? key.token1 : key.token0;
+        buyToken.safeTransfer(orderKey.owner, earningsAmount);
     }
 
     function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
@@ -138,7 +141,7 @@ contract TWAMMHook is BaseHook {
 
         if (swapParams.zeroForOne) {
             if (delta.amount0 > 0) {
-                key.token0.transfer(address(poolManager), uint256(delta.amount0));
+                key.token0.safeTransfer(address(poolManager), uint256(delta.amount0));
                 poolManager.settle(key.token0);
             }
             if (delta.amount1 < 0) {
@@ -146,7 +149,7 @@ contract TWAMMHook is BaseHook {
             }
         } else {
             if (delta.amount1 > 0) {
-                key.token1.transfer(address(poolManager), uint256(delta.amount1));
+                key.token1.safeTransfer(address(poolManager), uint256(delta.amount1));
                 poolManager.settle(key.token1);
             }
             if (delta.amount0 < 0) {

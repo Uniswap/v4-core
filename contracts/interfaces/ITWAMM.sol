@@ -17,7 +17,7 @@ interface ITWAMM {
         IPoolManager.PoolKey calldata key,
         TWAMM.OrderKey calldata orderKey,
         int128 amountDelta
-    ) external returns (uint256 amountOut0, uint256 amountOut1);
+    ) external returns (uint256 amountOut);
 
     function executeTWAMMOrders(IPoolManager.PoolKey memory key)
         external
