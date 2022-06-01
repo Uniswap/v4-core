@@ -11,7 +11,6 @@ import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
 import {SafeCast} from '../SafeCast.sol';
-import 'hardhat/console.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -539,8 +538,7 @@ library TWAMM {
             params.pool.liquidity = liquidityNet < 0
                 ? params.pool.liquidity - uint128(-liquidityNet)
                 : params.pool.liquidity + uint128(liquidityNet);
-            // should this be the init or the nextSqrtPrice ... under what conditions are they different
-            // TODO: fix bc the nextSqrtPriceX96 might not necessarily be the initSqrtPrice if we've reached the bounds of the liquidity
+
             params.pool.sqrtPriceX96 = initializedSqrtPrice;
         }
         return (params.pool, secondsUntilCrossingX96);

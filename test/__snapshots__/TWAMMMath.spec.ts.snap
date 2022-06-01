@@ -3,7 +3,7 @@
 exports[`TWAMMMath #calculateExecutionUpdates outputs the correct results when gas 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 73710,
+  "gasUsed": 73439,
 }
 `;
 

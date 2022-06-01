@@ -9,7 +9,6 @@ import {Tick} from '../libraries/Tick.sol';
 import {TickBitmap} from '../libraries/TickBitmap.sol';
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
 import {FixedPoint96} from '../libraries/FixedPoint96.sol';
-import 'hardhat/console.sol';
 
 contract TWAMMTest {
     using TWAMM for TWAMM.State;

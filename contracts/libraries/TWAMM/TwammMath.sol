@@ -7,7 +7,6 @@ import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';
 import {TickMath} from '../TickMath.sol';
-import 'hardhat/console.sol';
 
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {
@@ -67,19 +66,6 @@ library TwammMath {
         bytes16 sellRatio = sellRateBytes1.div(sellRateBytes0);
         bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
 
-        uint256 totalSecondsElapsed = params.secondsElapsedX96;
-        // TODO check the min.
-        if (finalSqrtPriceX96 == (TickMath.MAX_SQRT_RATIO - 1)) {
-            // recalculate seconds to final price
-            params.secondsElapsedX96 = calculateTimeBetweenTicks(
-                params.liquidity,
-                params.sqrtPriceX96,
-                finalSqrtPriceX96,
-                params.sellRateCurrent0,
-                params.sellRateCurrent1
-            );
-        }
-
         EarningsFactorParams memory earningsFactorParams = EarningsFactorParams({
             secondsElapsed: params.secondsElapsedX96.fromUInt().div(Q96),
             sellRatio: sellRatio,
@@ -93,13 +79,6 @@ library TwammMath {
         // If liquidity is 0, it trades the twamm orders against eachother for the time duration.
         earningsFactorPool0 = getEarningsFactorPool0(earningsFactorParams).mul(Q96).toUInt();
         earningsFactorPool1 = getEarningsFactorPool1(earningsFactorParams).mul(Q96).toUInt();
-
-        // If there are still more seconds, trade the twamm orders against eachother for secondsRemaining.
-        uint256 secondsRemaining = totalSecondsElapsed - params.secondsElapsedX96;
-        if (secondsRemaining > 0) {
-            earningsFactorPool0 += secondsRemaining.fromUInt().mul(sellRatio).toUInt();
-            earningsFactorPool1 += secondsRemaining.fromUInt().mul(reciprocal(sellRatio)).toUInt();
-        }
     }
 
     struct calculateTimeBetweenTicksParams {
@@ -112,8 +91,6 @@ library TwammMath {
 
     /// @notice Used when crossing an initialized tick. Can extract the amount of seconds it took to cross
     ///   the tick, and recalibrate the calculation from there to accommodate liquidity changes
-    // todo: this does not work when we push the price to the edge.
-    // desmos returning undefined or negative
     function calculateTimeBetweenTicks(
         uint256 liquidity,
         uint160 sqrtPriceStartX96,
@@ -134,8 +111,6 @@ library TwammMath {
         return numerator.mul(Q96).div(denominator).toUInt();
     }
 
-    // todo: this does not work when we push the price to the edge.
-    // desmos returning undefined or negative
     function getTimeBetweenTicksMultiple(
         bytes16 sqrtSellRatioX96,
         bytes16 sqrtPriceStartX96,
