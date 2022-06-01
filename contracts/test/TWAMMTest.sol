@@ -15,7 +15,7 @@ contract TWAMMTest {
     using ABDKMathQuad for *;
 
     uint256 public expirationInterval;
-    TWAMM.State public twamm;
+    TWAMM.State private twamm;
     mapping(int24 => Tick.Info) mockTicks;
     mapping(int16 => uint256) mockTickBitmap;
 
@@ -25,6 +25,10 @@ contract TWAMMTest {
 
     function initialize(IPoolManager.PoolKey memory poolKey) external {
         twamm.initialize(poolKey);
+    }
+
+    function lastVirtualOrderTimestamp() external view returns (uint256) {
+        return twamm.lastVirtualOrderTimestamp;
     }
 
     function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
@@ -42,11 +46,11 @@ contract TWAMMTest {
         external
         returns (
             uint256 earningsAmount,
-            uint8 sellTokenIndex,
+            bool zeroForOne,
             uint256 unclaimedEarningsAmount
         )
     {
-        (earningsAmount, sellTokenIndex) = twamm.claimEarnings(orderKey);
+        (earningsAmount, zeroForOne) = twamm.claimEarnings(orderKey);
         // unclaimedEarningsFactor is a fixed point
         uint256 sellRateCurrent = twamm._getOrder(orderKey).sellRate;
         unclaimedEarningsAmount =
@@ -91,26 +95,27 @@ contract TWAMMTest {
         return twamm._getOrder(orderKey);
     }
 
-    function getOrderPool(uint8 index) external view returns (uint256 sellRate, uint256 earningsFactor) {
-        OrderPool.State storage orderPool = twamm.orderPools[index];
-        sellRate = orderPool.sellRateCurrent;
-        earningsFactor = orderPool.earningsFactorCurrent;
+    function getOrderPool(bool zeroForOne) external view returns (uint256 sellRate, uint256 earningsFactor) {
+        if (zeroForOne) return (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent);
+        else return (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
     }
 
-    function getOrderPoolSellRateEndingPerInterval(uint8 sellTokenIndex, uint256 timestamp)
+    function getOrderPoolSellRateEndingPerInterval(bool zeroForOne, uint256 timestamp)
         external
         view
         returns (uint256 sellRate)
     {
-        return twamm.orderPools[sellTokenIndex].sellRateEndingAtInterval[timestamp];
+        if (zeroForOne) return twamm.orderPool0For1.sellRateEndingAtInterval[timestamp];
+        else return twamm.orderPool1For0.sellRateEndingAtInterval[timestamp];
     }
 
-    function getOrderPoolEarningsFactorAtInterval(uint8 sellTokenIndex, uint256 timestamp)
+    function getOrderPoolEarningsFactorAtInterval(bool zeroForOne, uint256 timestamp)
         external
         view
-        returns (uint256 sellRate)
+        returns (uint256 earningsFactor)
     {
-        return twamm.orderPools[sellTokenIndex].earningsFactorAtInterval[timestamp];
+        if (zeroForOne) return twamm.orderPool0For1.earningsFactorAtInterval[timestamp];
+        else return twamm.orderPool1For0.earningsFactorAtInterval[timestamp];
     }
 
     //////////////////////////////////////////////////////
