@@ -113,7 +113,6 @@ library Hooks {
         }
     }
 
-    
     /// @notice Runs afterInitialize hook with validation checks
     /// @param self The hook to run
     /// @param sender The address calling initialize
@@ -129,7 +128,7 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallAfterInitialize() &&
-                self.afterInitialize(sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector
+            self.afterInitialize(sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector
         ) {
             revert InvalidHookResponse();
         }
@@ -148,7 +147,7 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallBeforeModifyPosition() &&
-                self.beforeModifyPosition(sender, key, params) != IHooks.beforeModifyPosition.selector
+            self.beforeModifyPosition(sender, key, params) != IHooks.beforeModifyPosition.selector
         ) {
             revert InvalidHookResponse();
         }
@@ -169,7 +168,7 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallAfterModifyPosition() &&
-                self.afterModifyPosition(sender, key, params, delta) != IHooks.afterModifyPosition.selector
+            self.afterModifyPosition(sender, key, params, delta) != IHooks.afterModifyPosition.selector
         ) {
             revert InvalidHookResponse();
         }
@@ -224,7 +223,7 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallBeforeDonate() &&
-                self.beforeDonate(sender, key, amount0, amount1) != IHooks.beforeDonate.selector
+            self.beforeDonate(sender, key, amount0, amount1) != IHooks.beforeDonate.selector
         ) {
             revert InvalidHookResponse();
         }
@@ -245,7 +244,7 @@ library Hooks {
     ) internal {
         if (
             self.shouldCallAfterDonate() &&
-                self.afterDonate(sender, key, amount0, amount1) != IHooks.afterDonate.selector
+            self.afterDonate(sender, key, amount0, amount1) != IHooks.afterDonate.selector
         ) {
             revert InvalidHookResponse();
         }

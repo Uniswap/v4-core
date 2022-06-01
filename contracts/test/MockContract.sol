@@ -2,7 +2,6 @@
 pragma solidity =0.8.13;
 import {Proxy} from '@openzeppelin/contracts/proxy/Proxy.sol';
 
-
 /// @notice Mock contract that tracks the number of calls to various functions by selector
 /// @dev allows for proxying to an implementation contract
 ///  if real logic or return values are needed

@@ -55,7 +55,7 @@ describe('PoolManager', () => {
     const testHooksEmptyAddress = '0xF000000000000000000000000000000000000000'
 
     const hookImplAddress = '0xFF00000000000000000000000000000000000001'
-    setCode(hookImplAddress, 'EmptyTestHooks');
+    setCode(hookImplAddress, 'EmptyTestHooks')
     hooksMock = await deployMockContract(hooksTestEmptyFactory.interface, mockHooksAddress, hookImplAddress)
 
     await hre.network.provider.send('hardhat_setCode', [

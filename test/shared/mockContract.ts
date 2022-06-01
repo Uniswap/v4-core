@@ -9,13 +9,17 @@ export interface MockedContract {
   calledWith: (fn: string, params: any[]) => Promise<boolean>
 }
 
-export const deployMockContract = async (contractInterface: Interface, address: string, implAddress?: string): Promise<MockedContract> => {
-  await setCode(address, 'MockContract');
+export const deployMockContract = async (
+  contractInterface: Interface,
+  address: string,
+  implAddress?: string
+): Promise<MockedContract> => {
+  await setCode(address, 'MockContract')
 
   const contractMock = (await ethers.getContractFactory('MockContract')).attach(address) as MockContract
 
   if (implAddress) {
-    contractMock.setImplementation(implAddress);
+    contractMock.setImplementation(implAddress)
   }
 
   return {
