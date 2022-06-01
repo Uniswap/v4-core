@@ -159,7 +159,8 @@ describe('PoolManager', () => {
   describe('#setProtocolFeeController', () => {
     it('allows the owner to set a fee controller', async () => {
       expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
-      await manager.setProtocolFeeController(feeControllerTest.address)
+      await expect(manager.setProtocolFeeController(feeControllerTest.address))
+        .to.emit(manager, 'ProtocolFeeControllerUpdated')
       expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
     })
   })
@@ -981,7 +982,7 @@ describe('PoolManager', () => {
       const poolProtocolFee = 4
       await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
 
-      await manager.setPoolProtocolFee(poolKey)
+      await expect(manager.setPoolProtocolFee(poolKey)).to.emit(manager, 'PoolProtocolFeeUpdated')
       ;({
         slot0: { protocolFee },
       } = await manager.pools(getPoolId(poolKey)))
