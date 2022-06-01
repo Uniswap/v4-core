@@ -15,6 +15,10 @@ async function setNextBlocktime(time: number) {
   await ethers.provider.send('evm_setNextBlockTimestamp', [time])
 }
 
+async function setAutomine(b: boolean) {
+  await ethers.provider.send('evm_setAutomine', [b])
+}
+
 function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
   return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)
 }
@@ -656,6 +660,22 @@ describe('TWAMM', () => {
       // There should be no unclaimed since we've sold the full amount.
       expect(parseInt(unclaimedAmount.toString())).to.be.eq(0)
     })
+    it('should update state exactly to the expiry', async () => {
+      setNextBlocktime(expiryTime)
+      await twamm.executeTWAMMOrders(poolParams)
+      const blocktime = (await ethers.provider.getBlock('latest')).timestamp
+      const newExpiry = findExpiryTime(blocktime, 3, EXPIRATION_INTERVAL)
+      await twamm.submitLongTermOrder({
+        zeroForOne: false,
+        owner: wallet.address,
+        amountIn: fullSellAmount,
+        expiration: newExpiry,
+      })
+      const orderPool0 = await twamm.getOrderPool(true)
+      const orderPool1 = await twamm.getOrderPool(false)
+      expect(orderPool0.sellRate.toNumber()).to.eq(0)
+      expect(orderPool1.sellRate.toNumber()).to.be.greaterThan(0)
+    })
 
     it('gas', async () => {
       mineNextBlock(expiryTime)
@@ -663,7 +683,7 @@ describe('TWAMM', () => {
     })
 
     it('gas zeroForOne=false', async () => {
-      mineNextBlock(expiryTime + 1)
+      mineNextBlock(expiryTime)
       blocktime = (await ethers.provider.getBlock('latest')).timestamp
       const newExpiryTime = findExpiryTime(blocktime, 3, EXPIRATION_INTERVAL)
       await twamm.executeTWAMMOrders(poolParams)

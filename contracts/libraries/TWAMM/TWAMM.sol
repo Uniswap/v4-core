@@ -354,17 +354,15 @@ library TWAMM {
         OrderPool.State storage orderPool1For0 = self.orderPool1For0;
 
         while (true) {
-            uint256 earningsFactorPool0;
-            uint256 earningsFactorPool1;
-            (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateExecutionUpdates(
-                TwammMath.ExecutionUpdateParams(
-                    params.secondsElapsedX96,
-                    params.pool.sqrtPriceX96,
-                    params.pool.liquidity,
-                    orderPool0For1.sellRateCurrent,
-                    orderPool1For0.sellRateCurrent
-                )
+            TwammMath.ExecutionUpdateParams memory executionParams = TwammMath.ExecutionUpdateParams(
+                params.secondsElapsedX96,
+                params.pool.sqrtPriceX96,
+                params.pool.liquidity,
+                orderPool0For1.sellRateCurrent,
+                orderPool1For0.sellRateCurrent
             );
+
+            finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(executionParams);
 
             (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
                 params.pool,
@@ -383,6 +381,11 @@ library TWAMM {
                     );
                     params.secondsElapsedX96 = params.secondsElapsedX96 - secondsUntilCrossingX96;
                 } else {
+                    (uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath.calculateEarningsUpdates(
+                        executionParams,
+                        finalSqrtPriceX96
+                    );
+
                     if (params.nextTimestamp % params.expirationInterval == 0) {
                         orderPool0For1.advanceToInterval(params.nextTimestamp, earningsFactorPool0);
                         orderPool1For0.advanceToInterval(params.nextTimestamp, earningsFactorPool1);
@@ -519,16 +522,21 @@ library TWAMM {
         );
 
         // TODO: nextSqrtPriceX96 off by 1 wei (hence using the initializedSqrtPrice (l:331) param instead)
-        (uint160 nextSqrtPriceX96, uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath
-            .calculateExecutionUpdates(
-                TwammMath.ExecutionUpdateParams(
-                    secondsUntilCrossingX96,
-                    params.pool.sqrtPriceX96,
-                    params.pool.liquidity,
-                    orderPool0For1.sellRateCurrent,
-                    orderPool1For0.sellRateCurrent
-                )
-            );
+        TwammMath.ExecutionUpdateParams memory executionParams = TwammMath.ExecutionUpdateParams(
+            secondsUntilCrossingX96,
+            params.pool.sqrtPriceX96,
+            params.pool.liquidity,
+            orderPool0For1.sellRateCurrent,
+            orderPool1For0.sellRateCurrent
+        );
+
+        uint160 nextSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(executionParams);
+
+        (uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath.calculateEarningsUpdates(
+            executionParams,
+            nextSqrtPriceX96
+        );
+
         orderPool0For1.advanceToCurrentTime(earningsFactorPool0);
         orderPool1For0.advanceToCurrentTime(earningsFactorPool1);
 
@@ -539,6 +547,7 @@ library TWAMM {
             params.pool.liquidity = liquidityNet < 0
                 ? params.pool.liquidity - uint128(-liquidityNet)
                 : params.pool.liquidity + uint128(liquidityNet);
+
             params.pool.sqrtPriceX96 = initializedSqrtPrice;
         }
         return (params.pool, secondsUntilCrossingX96);

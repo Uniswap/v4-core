@@ -6,6 +6,7 @@ import {TWAMM} from './TWAMM.sol';
 import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';
+import {TickMath} from '../TickMath.sol';
 
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {
@@ -15,12 +16,12 @@ library TwammMath {
     // ABDKMathQuad FixedPoint96.Q96.fromUInt()
     bytes16 constant Q96 = 0x405f0000000000000000000000000000;
 
-    struct ParamsBytes16 {
-        bytes16 sqrtPriceX96;
+    struct PriceParamsBytes16 {
+        bytes16 sqrtSellRatio;
+        bytes16 sqrtSellRate;
+        bytes16 secondsElapsed;
+        bytes16 sqrtPrice;
         bytes16 liquidity;
-        bytes16 sellRateCurrent0;
-        bytes16 sellRateCurrent1;
-        bytes16 secondsElapsedX96;
     }
 
     struct ExecutionUpdateParams {
@@ -31,53 +32,53 @@ library TwammMath {
         uint256 sellRateCurrent1;
     }
 
-    /// @notice Calculation used incrementally (b/w expiration intervals or initialized ticks)
-    ///    to calculate earnings rewards and the amm price change resulting from executing TWAMM orders
-    function calculateExecutionUpdates(ExecutionUpdateParams memory params)
+    function getNewSqrtPriceX96(ExecutionUpdateParams memory params) internal view returns (uint160 newSqrtPriceX96) {
+        bytes16 sellRateBytes0 = params.sellRateCurrent0.fromUInt();
+        bytes16 sellRateBytes1 = params.sellRateCurrent1.fromUInt();
+        bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
+        bytes16 sqrtSellRatio = sellRateBytes1.div(sellRateBytes0).sqrt();
+
+        PriceParamsBytes16 memory priceParams = PriceParamsBytes16({
+            sqrtSellRatio: sqrtSellRatio,
+            sqrtSellRate: sqrtSellRate,
+            secondsElapsed: params.secondsElapsedX96.fromUInt().div(Q96),
+            sqrtPrice: params.sqrtPriceX96.fromUInt().div(Q96),
+            liquidity: params.liquidity.fromUInt()
+        });
+
+        bytes16 newSqrtPriceBytes = calculateNewSqrtPrice(priceParams);
+
+        bool isOverflow = newSqrtPriceBytes.isInfinity() || newSqrtPriceBytes.isNaN();
+
+        newSqrtPriceX96 = isOverflow
+            ? sqrtSellRatio.mul(Q96).toUInt().toUint160()
+            : newSqrtPriceBytes.mul(Q96).toUInt().toUint160();
+    }
+
+    function calculateEarningsUpdates(ExecutionUpdateParams memory params, uint160 finalSqrtPriceX96)
         internal
         view
-        returns (
-            uint160 sqrtPriceX96,
-            uint256 earningsPool0,
-            uint256 earningsPool1
-        )
+        returns (uint256 earningsFactorPool0, uint256 earningsFactorPool1)
     {
-        // https://www.desmos.com/calculator/yr3qvkafvy
-        // https://www.desmos.com/calculator/rjcdwnaoja -- tracks some intermediate calcs
+        bytes16 sellRateBytes0 = params.sellRateCurrent0.fromUInt();
+        bytes16 sellRateBytes1 = params.sellRateCurrent1.fromUInt();
 
-        ParamsBytes16 memory bytesParams = ParamsBytes16({
-            sqrtPriceX96: params.sqrtPriceX96.fromUInt(),
-            liquidity: params.liquidity.fromUInt(),
-            sellRateCurrent0: params.sellRateCurrent0.fromUInt(),
-            sellRateCurrent1: params.sellRateCurrent1.fromUInt(),
-            secondsElapsedX96: params.secondsElapsedX96.fromUInt()
-        });
-
-        bytes16 sellRatio = bytesParams.sellRateCurrent1.div(bytesParams.sellRateCurrent0);
-
-        bytes16 sqrtSellRatioX96 = sellRatio.sqrt().mul(Q96);
-
-        bytes16 sqrtSellRate = bytesParams.sellRateCurrent0.mul(bytesParams.sellRateCurrent1).sqrt();
-
-        bytes16 newSqrtPriceX96 = calculateNewSqrtPriceX96(
-            sqrtSellRatioX96,
-            sqrtSellRate,
-            bytesParams.secondsElapsedX96,
-            bytesParams
-        );
+        bytes16 sellRatio = sellRateBytes1.div(sellRateBytes0);
+        bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
 
         EarningsFactorParams memory earningsFactorParams = EarningsFactorParams({
-            secondsElapsedX96: bytesParams.secondsElapsedX96,
+            secondsElapsed: params.secondsElapsedX96.fromUInt().div(Q96),
             sellRatio: sellRatio,
             sqrtSellRate: sqrtSellRate,
-            prevSqrtPriceX96: bytesParams.sqrtPriceX96,
-            newSqrtPriceX96: newSqrtPriceX96,
-            liquidity: bytesParams.liquidity
+            prevSqrtPrice: params.sqrtPriceX96.fromUInt().div(Q96),
+            newSqrtPrice: finalSqrtPriceX96.fromUInt().div(Q96),
+            liquidity: params.liquidity.fromUInt()
         });
 
-        sqrtPriceX96 = newSqrtPriceX96.toUInt().toUint160();
-        earningsPool0 = getEarningsAmountPool0(earningsFactorParams).toUInt();
-        earningsPool1 = getEarningsAmountPool1(earningsFactorParams).toUInt();
+        // Trade the amm orders.
+        // If liquidity is 0, it trades the twamm orders against eachother for the time duration.
+        earningsFactorPool0 = getEarningsFactorPool0(earningsFactorParams).mul(Q96).toUInt();
+        earningsFactorPool1 = getEarningsFactorPool1(earningsFactorParams).mul(Q96).toUInt();
     }
 
     struct calculateTimeBetweenTicksParams {
@@ -121,43 +122,38 @@ library TwammMath {
     }
 
     struct EarningsFactorParams {
-        bytes16 secondsElapsedX96;
+        bytes16 secondsElapsed;
         bytes16 sellRatio;
         bytes16 sqrtSellRate;
-        bytes16 prevSqrtPriceX96;
-        bytes16 newSqrtPriceX96;
+        bytes16 prevSqrtPrice;
+        bytes16 newSqrtPrice;
         bytes16 liquidity;
     }
 
-    function getEarningsAmountPool0(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
-        bytes16 minuend = params.sellRatio.mul(Q96).mul(params.secondsElapsedX96).div(Q96);
+    function getEarningsFactorPool0(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
+        bytes16 minuend = params.sellRatio.mul(params.secondsElapsed);
         bytes16 subtrahend = params
             .liquidity
             .mul(params.sellRatio.sqrt())
-            .mul(params.newSqrtPriceX96.sub(params.prevSqrtPriceX96))
+            .mul(params.newSqrtPrice.sub(params.prevSqrtPrice))
             .div(params.sqrtSellRate);
         return minuend.sub(subtrahend);
     }
 
-    function getEarningsAmountPool1(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
-        bytes16 minuend = params.secondsElapsedX96.div(Q96).div(params.sellRatio);
+    function getEarningsFactorPool1(EarningsFactorParams memory params) private pure returns (bytes16 earningsFactor) {
+        bytes16 minuend = params.secondsElapsed.div(params.sellRatio);
         bytes16 subtrahend = params
             .liquidity
             .mul(reciprocal(params.sellRatio.sqrt()))
-            .mul(reciprocal(params.newSqrtPriceX96).mul(Q96).sub(reciprocal(params.prevSqrtPriceX96).mul(Q96)))
+            .mul(reciprocal(params.newSqrtPrice).sub(reciprocal(params.prevSqrtPrice)))
             .div(params.sqrtSellRate);
-        return minuend.sub(subtrahend).mul(Q96);
+        return minuend.sub(subtrahend);
     }
 
-    function calculateNewSqrtPriceX96(
-        bytes16 sqrtSellRatioX96,
-        bytes16 sqrtSellRate,
-        bytes16 secondsElapsedX96,
-        ParamsBytes16 memory params
-    ) private view returns (bytes16 newSqrtPriceX96) {
-        bytes16 pow = uint256(2).fromUInt().mul(sqrtSellRate).mul(secondsElapsedX96).div(params.liquidity).div(Q96);
-        bytes16 c = sqrtSellRatioX96.sub(params.sqrtPriceX96).div(sqrtSellRatioX96.add(params.sqrtPriceX96));
-        newSqrtPriceX96 = sqrtSellRatioX96.mul(pow.exp().sub(c)).div(pow.exp().add(c));
+    function calculateNewSqrtPrice(PriceParamsBytes16 memory params) private view returns (bytes16 newSqrtPrice) {
+        bytes16 pow = uint256(2).fromUInt().mul(params.sqrtSellRate).mul(params.secondsElapsed).div(params.liquidity);
+        bytes16 c = params.sqrtSellRatio.sub(params.sqrtPrice).div(params.sqrtSellRatio.add(params.sqrtPrice));
+        newSqrtPrice = params.sqrtSellRatio.mul(pow.exp().sub(c)).div(pow.exp().add(c));
     }
 
     function reciprocal(bytes16 n) private pure returns (bytes16) {

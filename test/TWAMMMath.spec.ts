@@ -1,17 +1,18 @@
 import { TWAMMTest } from '../typechain/TWAMMTest'
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, FixedNumber, Wallet } from 'ethers'
 import { ethers, waffle } from 'hardhat'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
+import { encodeSqrtPriceX96, MaxUint128, MAX_SQRT_RATIO } from './shared/utilities'
+import bn from 'bignumber.js'
 
 function toWei(n: string): BigNumber {
   return ethers.utils.parseEther(n)
 }
 
-function divX96(n: BigNumber): string {
-  return (parseInt(n.toString()) / 2 ** 96).toFixed(7).toString()
+function divX96(n: BigNumber, precision: number = 7): string {
+  return (parseInt(n.toString()) / 2 ** 96).toFixed(precision).toString()
 }
 
 describe('TWAMMMath', () => {
@@ -34,7 +35,7 @@ describe('TWAMMMath', () => {
   })
 
   describe('#calculateExecutionUpdates outputs the correct results when', () => {
-    let secondsElapsedX96: BigNumberish
+    let secondsElapsedX96: BigNumber
     let sqrtPriceX96: BigNumberish
     let liquidity: BigNumberish
     let fee: BigNumberish
@@ -42,8 +43,10 @@ describe('TWAMMMath', () => {
     let sellRateCurrent0: BigNumberish
     let sellRateCurrent1: BigNumberish
 
+    const Q96 = BigNumber.from(2).pow(96)
+
     beforeEach(async () => {
-      secondsElapsedX96 = BigNumber.from(3600).mul(BigNumber.from(2).pow(96))
+      secondsElapsedX96 = BigNumber.from(3600).mul(Q96)
       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       liquidity = '1000000000000000000000000'
       fee = '3000'
@@ -64,8 +67,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '1.0000000',
-          amountOut0: '3600.0000000',
-          amountOut1: '3600.0000000',
+          earningsFactor0: '3600.0000000',
+          earningsFactor1: '3600.0000000',
         },
       },
       {
@@ -77,8 +80,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '0.9858549',
-          amountOut0: '3549.0165948',
-          amountOut1: '3651.9628500',
+          earningsFactor0: '3549.0165948',
+          earningsFactor1: '3651.9628500',
         },
       },
       {
@@ -90,8 +93,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '0.9687272',
-          amountOut0: '3487.2827245',
-          amountOut1: '3717.6111869',
+          earningsFactor0: '3487.2827245',
+          earningsFactor1: '3717.6111869',
         },
       },
       {
@@ -103,8 +106,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '1.0143480',
-          amountOut0: '3651.9628500',
-          amountOut1: '3549.0165948',
+          earningsFactor0: '3651.9628500',
+          earningsFactor1: '3549.0165948',
         },
       },
       {
@@ -116,8 +119,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '1.0322824',
-          amountOut0: '3717.6111869',
-          amountOut1: '3487.2827245',
+          earningsFactor0: '3717.6111869',
+          earningsFactor1: '3487.2827245',
         },
       },
       {
@@ -129,8 +132,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '155.1531845',
-          amountOut0: '196245875.5487389',
-          amountOut1: '0.0815851',
+          earningsFactor0: '196245875.5487389',
+          earningsFactor1: '0.0815851',
         },
       },
       {
@@ -142,8 +145,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '0.0002236',
-          amountOut0: '0.0101778',
-          amountOut1: '71105772809.0000916',
+          earningsFactor0: '0.0101778',
+          earningsFactor1: '71105772809.0000916',
         },
       },
       {
@@ -155,8 +158,8 @@ describe('TWAMMMath', () => {
         },
         outputsDivX96: {
           price: '4472.1359550',
-          amountOut0: '71105772809.0000916',
-          amountOut1: '0.0101778',
+          earningsFactor0: '71105772809.0000916',
+          earningsFactor1: '0.0101778',
         },
       },
       // TODO: not working - amounts out are incorrect from desmos, not enough precision??
@@ -169,8 +172,8 @@ describe('TWAMMMath', () => {
       //   },
       //   outputsDivX96: {
       //     price: '1.0000000',
-      //     amountOut0: '180.0000000',
-      //     amountOut1: '72000.0000000',
+      //     earningsFactor0: '180.0000000',
+      //     earningsFactor1: '72000.0000000',
       //   },
       // },
       // TODO: not working - desmos also is turning up invalid numbers (like negative earnings accumulators)
@@ -183,8 +186,8 @@ describe('TWAMMMath', () => {
       //   },
       //   outputsDivX96: {
       //     price: '1.0000000',
-      //     amountOut0: '184835683.94',
-      //     amountOut1: '-88816.04197',
+      //     earningsFactor0: '184835683.94',
+      //     earningsFactor1: '-88816.04197',
       //   },
       // },
     ]
@@ -200,8 +203,8 @@ describe('TWAMMMath', () => {
         })
 
         expect(divX96(results.sqrtPriceX96)).to.eq(testcase.outputsDivX96.price)
-        expect(divX96(results.earningsPool0)).to.eq(testcase.outputsDivX96.amountOut0)
-        expect(divX96(results.earningsPool1)).to.eq(testcase.outputsDivX96.amountOut1)
+        expect(divX96(results.earningsFactorPool0)).to.eq(testcase.outputsDivX96.earningsFactor0)
+        expect(divX96(results.earningsFactorPool1)).to.eq(testcase.outputsDivX96.earningsFactor1)
       })
     }
 
@@ -217,15 +220,89 @@ describe('TWAMMMath', () => {
       )
     })
 
-    // TODO:
+    describe('with insufficient liquidity', () => {
+      describe('excess token0', () => {
+        const liquidity = '100'
+        const sellRateCurrent0 = toWei('10')
+        const sellRateCurrent1 = toWei('1')
 
-    it('TWAMM trades pushes the price to the max part of the curve')
+        it('returns the sellRatio as the new sqrtPriceX96', async () => {
+          const results = await twamm.callStatic.calculateExecutionUpdates({
+            secondsElapsedX96,
+            sqrtPriceX96,
+            liquidity,
+            sellRateCurrent0,
+            sellRateCurrent1,
+          })
 
-    it('TWAMM trades pushes the price to the min part of the curve')
+          expect(results.sqrtPriceX96).to.equal(encodeSqrtPriceX96(sellRateCurrent1, sellRateCurrent0))
+        })
 
-    it('orderPool1 has a 0 sell rate')
+        it('returns earnings roughly equal to the amount of tokens selling', async () => {
+          const results = await twamm.callStatic.calculateExecutionUpdates({
+            secondsElapsedX96,
+            sqrtPriceX96,
+            liquidity,
+            sellRateCurrent0,
+            sellRateCurrent1,
+          })
 
-    it('orderPool0 has a 0 sell rate')
+          const earningsAmountPerSecondPool0 = results.earningsFactorPool0
+            .mul(sellRateCurrent0)
+            .div(divX96(secondsElapsedX96, 0))
+            .div(Q96)
+          const earningsAmountPerSecondPool1 = results.earningsFactorPool1
+            .mul(sellRateCurrent1)
+            .div(divX96(secondsElapsedX96, 0))
+            .div(Q96)
+
+          // earnings should be approximately equal to the amounts selling of the respective token
+          expect(earningsAmountPerSecondPool0).to.eq(sellRateCurrent1)
+          expect(earningsAmountPerSecondPool1).to.eq(sellRateCurrent0.sub(1))
+        })
+      })
+
+      describe('excess token0', () => {
+        const liquidity = '100'
+        const sellRateCurrent0 = toWei('1')
+        const sellRateCurrent1 = toWei('10')
+
+        it('returns the sellRatio as the new sqrtPriceX96', async () => {
+          const results = await twamm.callStatic.calculateExecutionUpdates({
+            secondsElapsedX96,
+            sqrtPriceX96,
+            liquidity,
+            sellRateCurrent0,
+            sellRateCurrent1,
+          })
+
+          expect(results.sqrtPriceX96).to.equal(encodeSqrtPriceX96(sellRateCurrent1, sellRateCurrent0))
+        })
+
+        it('returns earnings roughly equal to the amount of tokens selling', async () => {
+          const results = await twamm.callStatic.calculateExecutionUpdates({
+            secondsElapsedX96,
+            sqrtPriceX96,
+            liquidity,
+            sellRateCurrent0,
+            sellRateCurrent1,
+          })
+
+          const earningsAmountPerSecondPool0 = results.earningsFactorPool0
+            .mul(sellRateCurrent0)
+            .div(divX96(secondsElapsedX96, 0))
+            .div(Q96)
+          const earningsAmountPerSecondPool1 = results.earningsFactorPool1
+            .mul(sellRateCurrent1)
+            .div(divX96(secondsElapsedX96, 0))
+            .div(Q96)
+
+          // earnings should be approximately equal to the amounts selling of the respective token
+          expect(earningsAmountPerSecondPool0).to.eq(sellRateCurrent1.sub(1))
+          expect(earningsAmountPerSecondPool1).to.eq(sellRateCurrent0)
+        })
+      })
+    })
   })
 
   describe('#calculateTimeBetweenTicks outputs the correct results when', () => {
