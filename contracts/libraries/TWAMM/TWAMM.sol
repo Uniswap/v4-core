@@ -197,7 +197,7 @@ library TWAMM {
         OrderPool.State storage orderPool = self.orderPools[sellTokenIndex];
 
         unchecked {
-            if (block.timestamp > order.expiration) {
+            if (block.timestamp >= order.expiration) {
                 uint256 earningsFactor = orderPool.earningsFactorAtInterval[order.expiration] -
                     order.unclaimedEarningsFactor;
                 earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
