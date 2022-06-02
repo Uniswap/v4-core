@@ -24,10 +24,9 @@ library TWAMM {
     bool constant ONE_FOR_ZERO = false;
 
     /// @notice Thrown when account other than owner attempts to interact with an order
-    /// @param orderId The orderId
     /// @param owner The owner of the order
     /// @param currentAccount The invalid account attempting to interact with the order
-    error MustBeOwner(bytes32 orderId, address owner, address currentAccount);
+    error MustBeOwner(address owner, address currentAccount);
 
     /// @notice Thrown when trying to cancel an already completed order
     /// @param orderId The orderId
@@ -82,14 +81,11 @@ library TWAMM {
     }
 
     /// @notice Information associated with a long term order
-    /// @member zeroForOne Index of sell token, 0 for token0, 1 for token1
-    /// @member expiration Timestamp when the order expires
     /// @member sellRate Amount of tokens sold per interval
     /// @member unclaimedEarningsFactor The accrued earnings factor from which to start claiming owed earnings for this order
     /// @member uncollectedEarningsAmount Earnings amount claimed thus far, but not yet transferred to the owner.
     struct Order {
-        uint160 expiration;
-        bool zeroForOne;
+        bool exists;
         uint256 sellRate;
         uint256 unclaimedEarningsFactor;
         uint256 uncollectedEarningsAmount;
@@ -108,6 +104,7 @@ library TWAMM {
     }
 
     /// @notice Submits a new long term order into the TWAMM
+    /// @dev executeTWAMMOrders must be executed up to current timestamp before calling submitLongTermOrder
     /// @param params All parameters to define the new order
     function submitLongTermOrder(
         State storage self,
@@ -132,15 +129,15 @@ library TWAMM {
         }
 
         self.orders[orderId] = Order({
-            expiration: params.expiration,
+            exists: true,
             sellRate: sellRate,
-            zeroForOne: zeroForOne,
             unclaimedEarningsFactor: orderPool.earningsFactorCurrent,
             uncollectedEarningsAmount: 0
         });
     }
 
     /// @notice Modify an existing long term order with a new sellAmount
+    /// @dev executeTWAMMOrders must be executed up to current timestamp before calling modifyLongTermOrder
     /// @param self The TWAMM State
     /// @param orderKey The OrderKey for which to identify the order
     /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
@@ -153,11 +150,12 @@ library TWAMM {
     ) internal returns (uint256 amountOut) {
         bytes32 orderId = _orderId(orderKey);
         Order storage order = _getOrder(self, orderKey);
-        if (orderKey.owner == address(0)) revert OrderDoesNotExist(orderId);
-        if (orderKey.owner != msg.sender) revert MustBeOwner(orderId, orderKey.owner, msg.sender);
-        if (order.expiration <= block.timestamp) revert OrderAlreadyCompleted(orderId);
 
-        OrderPool.State storage orderPool = order.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
+        if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
+        if (!order.exists) revert OrderDoesNotExist(_orderId(orderKey));
+        if (orderKey.expiration <= block.timestamp) revert OrderAlreadyCompleted(orderId);
+
+        OrderPool.State storage orderPool = orderKey.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
         unchecked {
             // cache existing earnings
@@ -165,42 +163,47 @@ library TWAMM {
             order.uncollectedEarningsAmount += (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
             order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
 
-            uint256 unsoldAmount = order.sellRate * (order.expiration - block.timestamp);
+            uint256 unsoldAmount = order.sellRate * (orderKey.expiration - block.timestamp);
             if (amountDelta == type(int128).min) amountDelta = -(unsoldAmount.toInt256().toInt128());
             int256 newSellAmount = unsoldAmount.toInt256() + amountDelta;
             if (newSellAmount < 0) revert InvalidAmountDelta(orderId, unsoldAmount, amountDelta);
 
-            uint256 newSellRate = uint256(newSellAmount) / (order.expiration - block.timestamp);
+            uint256 newSellRate = uint256(newSellAmount) / (orderKey.expiration - block.timestamp);
 
             if (amountDelta < 0) {
                 amountOut = uint256(uint128(-amountDelta));
                 uint256 sellRateDelta = order.sellRate - newSellRate;
                 uint256 amountOut = uint256(uint128(-amountDelta));
                 orderPool.sellRateCurrent -= sellRateDelta;
-                orderPool.sellRateEndingAtInterval[order.expiration] -= sellRateDelta;
+                orderPool.sellRateEndingAtInterval[orderKey.expiration] -= sellRateDelta;
             } else {
                 uint256 sellRateDelta = newSellRate - order.sellRate;
                 orderPool.sellRateCurrent += sellRateDelta;
-                orderPool.sellRateEndingAtInterval[order.expiration] += sellRateDelta;
+                orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRateDelta;
             }
             order.sellRate = newSellRate;
         }
     }
 
     /// @notice Claim earnings from an ongoing or expired order
+    /// @dev executeTWAMMOrders must be executed up to current timestamp before calling claimEarnings
     /// @param orderKey The key of the order to be claimed
     function claimEarnings(State storage self, OrderKey memory orderKey)
         internal
-        returns (uint256 earningsAmount, bool zeroForOne)
+
+        returns (uint256 earningsAmount)
     {
         bytes32 orderId = _orderId(orderKey);
         Order storage order = self.orders[orderId];
-        zeroForOne = order.zeroForOne;
-        OrderPool.State storage orderPool = zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
+
+        if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
+        if (!order.exists) revert OrderDoesNotExist(_orderId(orderKey));
+
+        OrderPool.State storage orderPool = orderKey.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
         unchecked {
-            if (block.timestamp >= order.expiration) {
-                uint256 earningsFactor = orderPool.earningsFactorAtInterval[order.expiration] -
+            if (block.timestamp >= orderKey.expiration) {
+                uint256 earningsFactor = orderPool.earningsFactorAtInterval[orderKey.expiration] -
                     order.unclaimedEarningsFactor;
                 earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
                 order.sellRate = 0;

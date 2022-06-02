@@ -126,8 +126,8 @@ contract TWAMMHook is BaseHook {
         executeTWAMMOrders(key);
 
         bool zeroForOne;
-        (earningsAmount, zeroForOne) = getTWAMM(key).claimEarnings(orderKey);
-        IERC20Minimal buyToken = zeroForOne ? key.token1 : key.token0;
+        earningsAmount = getTWAMM(key).claimEarnings(orderKey);
+        IERC20Minimal buyToken = orderKey.zeroForOne ? key.token1 : key.token0;
         buyToken.safeTransfer(orderKey.owner, earningsAmount);
     }
 

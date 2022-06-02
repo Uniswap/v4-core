@@ -48,11 +48,10 @@ contract TWAMMTest {
         external
         returns (
             uint256 earningsAmount,
-            bool zeroForOne,
             uint256 unclaimedEarningsAmount
         )
     {
-        (earningsAmount, zeroForOne) = twamm.claimEarnings(orderKey);
+        earningsAmount = twamm.claimEarnings(orderKey);
         // unclaimedEarningsFactor is a fixed point
         uint256 sellRateCurrent = twamm._getOrder(orderKey).sellRate;
         unclaimedEarningsAmount =

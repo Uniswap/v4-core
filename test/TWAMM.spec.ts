@@ -159,9 +159,8 @@ describe('TWAMM', () => {
 
       const newOrder = await twamm.getOrder(orderKey)
 
-      expect(newOrder.zeroForOne).to.equal(true)
+      expect(newOrder.exists).to.equal(true)
       expect(newOrder.sellRate).to.equal(sellRate)
-      expect(newOrder.expiration).to.equal(expiration)
     })
 
     it('increases the sellRate and sellRateEndingPerInterval of the corresponding OrderPool', async () => {
@@ -568,8 +567,7 @@ describe('TWAMM', () => {
     })
 
     it('gas', async () => {
-      const expiration = (await twamm.getOrder(orderKey)).expiration.toNumber()
-      const afterExpiration = expiration + EXPIRATION_INTERVAL / 2
+      const afterExpiration = orderKey.expiration + EXPIRATION_INTERVAL / 2
 
       mineNextBlock(afterExpiration)
 
