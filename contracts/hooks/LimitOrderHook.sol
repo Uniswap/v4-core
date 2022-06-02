@@ -190,10 +190,8 @@ contract LimitOrderHook is BaseHook {
             })
         );
 
-        amount0 = uint256(-delta.amount0);
-        amount1 = uint256(-delta.amount1);
-        poolManager.mint(key.token0, address(this), amount0);
-        poolManager.mint(key.token1, address(this), amount1);
+        if (delta.amount0 < 0) poolManager.mint(key.token0, address(this), amount0 = uint256(-delta.amount0));
+        if (delta.amount1 < 0) poolManager.mint(key.token1, address(this), amount1 = uint256(-delta.amount1));
     }
 
     function place(
