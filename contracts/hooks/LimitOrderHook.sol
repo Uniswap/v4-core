@@ -127,7 +127,7 @@ contract LimitOrderHook is BaseHook {
     function afterSwap(
         address,
         IPoolManager.PoolKey calldata key,
-        IPoolManager.SwapParams calldata,
+        IPoolManager.SwapParams calldata params,
         IPoolManager.BalanceDelta calldata
     ) external override poolManagerOnly {
         int24 tickLower = getTickLower(getTick(key), key.tickSpacing);
@@ -136,20 +136,20 @@ contract LimitOrderHook is BaseHook {
 
         int24 lower;
         int24 upper;
-        bool zeroForOne;
         if (tickLower < tickLowerLast) {
-            // we've moved left, meaning we've traded token1 for token0 (no need to set zeroForOne)
+            // we've moved left, meaning we've traded token1 for token0
             lower = tickLower + key.tickSpacing;
             upper = tickLowerLast;
         } else {
             // we've moved right, meaning we've traded token0 for token1
             lower = tickLowerLast;
             upper = tickLower - key.tickSpacing;
-            zeroForOne = true;
         }
 
+        // note that a zeroForOne swap is the _opposite_ of a zeroForOne limit order fill,
+        // hence the inversion seen below whenever we access params.zeroForOne
         for (; lower <= upper; lower += key.tickSpacing) {
-            uint232 epoch = getEpoch(key, lower, zeroForOne);
+            uint232 epoch = getEpoch(key, lower, !params.zeroForOne);
             if (epoch != EPOCH_DEFAULT) {
                 EpochInfo storage epochInfo = epochInfos[epoch];
 
@@ -167,9 +167,9 @@ contract LimitOrderHook is BaseHook {
                     epochInfo.token1Total += amount1;
                 }
 
-                setEpoch(key, lower, zeroForOne, EPOCH_DEFAULT);
+                setEpoch(key, lower, !params.zeroForOne, EPOCH_DEFAULT);
 
-                emit Fill(epoch, key, lower, zeroForOne);
+                emit Fill(epoch, key, lower, !params.zeroForOne);
             }
         }
 
