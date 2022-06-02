@@ -125,7 +125,7 @@ contract TWAMMTest {
 
     using TickBitmap for mapping(int16 => uint256);
 
-    function nextInitializedTickWithinOneWord(
+    function getNextInitializedTickWithinOneWord(
         IPoolManager.PoolKey memory key,
         int24 tick,
         bool lte

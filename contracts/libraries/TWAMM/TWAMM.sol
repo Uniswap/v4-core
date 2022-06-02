@@ -568,7 +568,7 @@ library TWAMM {
             unchecked {
                 if (searchingLeft) nextTickInit -= 1;
             }
-            (nextTickInit, initialized) = poolManager.nextInitializedTickWithinOneWord(
+            (nextTickInit, initialized) = poolManager.getNextInitializedTickWithinOneWord(
                 poolKey,
                 nextTickInit,
                 searchingLeft

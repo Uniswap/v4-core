@@ -891,7 +891,7 @@ describe('PoolManager', () => {
       })
 
       await expect(donateTest.donate(key, 100, 200)).to.be.not.be.reverted
-      const { feeGrowthGlobal0X128, feeGrowthGlobal1X128 } = await manager.feeGrowthGlobalX128(getPoolId(key))
+      const { feeGrowthGlobal0X128, feeGrowthGlobal1X128 } = await manager.pools(getPoolId(key))
       expect(feeGrowthGlobal0X128).to.eq(BigNumber.from('340282366920938463463374607431768211456')) // 100 << 128 divided by liquidity
       expect(feeGrowthGlobal1X128).to.eq(BigNumber.from('680564733841876926926749214863536422912')) // 200 << 128 divided by liquidity
     })
