@@ -62,6 +62,7 @@ contract TWAMMTest {
 
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
         external
+        pure
         returns (
             uint160 sqrtPriceX96,
             uint256 earningsFactorPool0,
@@ -74,14 +75,37 @@ contract TWAMMTest {
         return (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1);
     }
 
+    function gasSnapshotCalculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 gasLeftBefore = gasleft();
+        uint160 finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(params);
+        TwammMath.calculateEarningsUpdates(params, finalSqrtPriceX96);
+        return gasLeftBefore - gasleft();
+    }
+
     function calculateTimeBetweenTicks(
         uint256 liquidity,
         uint160 sqrtPriceStartX96,
         uint160 sqrtPriceEndX96,
         uint256 sellRate0,
         uint256 sellRate1
-    ) external returns (uint256) {
+    ) external pure returns (uint256) {
         return TwammMath.calculateTimeBetweenTicks(liquidity, sqrtPriceStartX96, sqrtPriceEndX96, sellRate0, sellRate1);
+    }
+
+    function gasSnapshotCalculateTimeBetweenTicks(
+        uint256 liquidity,
+        uint160 sqrtPriceStartX96,
+        uint160 sqrtPriceEndX96,
+        uint256 sellRate0,
+        uint256 sellRate1
+    ) external view returns (uint256) {
+        uint256 gasLeftBefore = gasleft();
+        TwammMath.calculateTimeBetweenTicks(liquidity, sqrtPriceStartX96, sqrtPriceEndX96, sellRate0, sellRate1);
+        return gasLeftBefore - gasleft();
     }
 
     function getOrder(TWAMM.OrderKey calldata orderKey) external view returns (TWAMM.Order memory) {
@@ -115,7 +139,7 @@ contract TWAMMTest {
     // Mocking IPoolManager functions here
     //////////////////////////////////////////////////////
 
-    function getTickNetLiquidity(IPoolManager.PoolKey memory key, int24 tick) external view returns (Tick.Info memory) {
+    function getTickNetLiquidity(IPoolManager.PoolKey memory, int24 tick) external view returns (Tick.Info memory) {
         return mockTicks[tick];
     }
 

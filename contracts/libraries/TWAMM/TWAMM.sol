@@ -173,7 +173,6 @@ library TWAMM {
             if (amountDelta < 0) {
                 amountOut = uint256(uint128(-amountDelta));
                 uint256 sellRateDelta = order.sellRate - newSellRate;
-                uint256 amountOut = uint256(uint128(-amountDelta));
                 orderPool.sellRateCurrent -= sellRateDelta;
                 orderPool.sellRateEndingAtInterval[orderKey.expiration] -= sellRateDelta;
             } else {

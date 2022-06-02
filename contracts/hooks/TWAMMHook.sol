@@ -125,7 +125,6 @@ contract TWAMMHook is BaseHook {
     {
         executeTWAMMOrders(key);
 
-        bool zeroForOne;
         earningsAmount = getTWAMM(key).claimEarnings(orderKey);
         IERC20Minimal buyToken = orderKey.zeroForOne ? key.token1 : key.token0;
         buyToken.safeTransfer(orderKey.owner, earningsAmount);
@@ -156,6 +155,7 @@ contract TWAMMHook is BaseHook {
                 poolManager.take(key.token0, address(this), uint256(-delta.amount0));
             }
         }
+        return bytes('');
     }
 
     function getTWAMM(IPoolManager.PoolKey memory key) private view returns (TWAMM.State storage) {
