@@ -188,11 +188,7 @@ library TWAMM {
     /// @notice Claim earnings from an ongoing or expired order
     /// @dev executeTWAMMOrders must be executed up to current timestamp before calling claimEarnings
     /// @param orderKey The key of the order to be claimed
-    function claimEarnings(State storage self, OrderKey memory orderKey)
-        internal
-
-        returns (uint256 earningsAmount)
-    {
+    function claimEarnings(State storage self, OrderKey memory orderKey) internal returns (uint256 earningsAmount) {
         bytes32 orderId = _orderId(orderKey);
         Order storage order = self.orders[orderId];
 

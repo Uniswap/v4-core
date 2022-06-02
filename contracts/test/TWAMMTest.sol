@@ -46,10 +46,7 @@ contract TWAMMTest {
 
     function claimEarnings(TWAMM.OrderKey calldata orderKey)
         external
-        returns (
-            uint256 earningsAmount,
-            uint256 unclaimedEarningsAmount
-        )
+        returns (uint256 earningsAmount, uint256 unclaimedEarningsAmount)
     {
         earningsAmount = twamm.claimEarnings(orderKey);
         // unclaimedEarningsFactor is a fixed point
