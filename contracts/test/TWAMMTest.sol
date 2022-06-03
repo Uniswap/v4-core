@@ -44,16 +44,8 @@ contract TWAMMTest {
         amountOut = twamm.modifyLongTermOrder(orderKey, amountDelta);
     }
 
-    function claimEarnings(TWAMM.OrderKey calldata orderKey)
-        external
-        returns (uint256 earningsAmount, uint256 unclaimedEarningsAmount)
-    {
+    function claimEarnings(TWAMM.OrderKey calldata orderKey) external returns (uint256 earningsAmount) {
         earningsAmount = twamm.claimEarnings(orderKey);
-        // unclaimedEarningsFactor is a fixed point
-        uint256 sellRateCurrent = twamm._getOrder(orderKey).sellRate;
-        unclaimedEarningsAmount =
-            (twamm._getOrder(orderKey).unclaimedEarningsFactor * sellRateCurrent) >>
-            FixedPoint96.RESOLUTION;
     }
 
     function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
