@@ -105,27 +105,27 @@ library TWAMM {
 
     /// @notice Submits a new long term order into the TWAMM
     /// @dev executeTWAMMOrders must be executed up to current timestamp before calling submitLongTermOrder
-    /// @param params All parameters to define the new order
+    /// @param orderKey The OrderKey for the new order
     function submitLongTermOrder(
         State storage self,
-        LongTermOrderParams memory params,
+        OrderKey memory orderKey,
+        uint256 amountIn,
         uint256 expirationInterval
     ) internal returns (bytes32 orderId) {
         if (self.lastVirtualOrderTimestamp == 0) revert NotInitialized();
-        if (params.expiration < block.timestamp) revert ExpirationLessThanBlocktime(params.expiration);
-        if (params.expiration % expirationInterval != 0) revert ExpirationNotOnInterval(params.expiration);
+        if (orderKey.expiration < block.timestamp) revert ExpirationLessThanBlocktime(orderKey.expiration);
+        if (orderKey.expiration % expirationInterval != 0) revert ExpirationNotOnInterval(orderKey.expiration);
 
-        bool zeroForOne = params.zeroForOne;
-        orderId = _orderId(OrderKey(params.owner, params.expiration, zeroForOne));
+        orderId = _orderId(orderKey);
         if (self.orders[orderId].sellRate != 0) revert OrderAlreadyExists(orderId);
 
         uint256 sellRate;
-        OrderPool.State storage orderPool = zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
+        OrderPool.State storage orderPool = orderKey.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
         unchecked {
-            sellRate = params.amountIn / (params.expiration - block.timestamp);
+            sellRate = amountIn / (orderKey.expiration - block.timestamp);
             orderPool.sellRateCurrent += sellRate;
-            orderPool.sellRateEndingAtInterval[params.expiration] += sellRate;
+            orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRate;
         }
 
         self.orders[orderId] = Order({

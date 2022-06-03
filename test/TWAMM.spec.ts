@@ -127,32 +127,34 @@ describe('TWAMM', () => {
     })
 
     it('reverts if expiry is not on an interval', async () => {
-      await expect(twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: nonIntervalExpiration })).to.be
+      await expect(twamm.submitLongTermOrder({ zeroForOne, owner, expiration: nonIntervalExpiration }, amountIn)).to.be
         .reverted
     })
 
     it('reverts if not initialized', async () => {
       const twammUnitialized = await loadFixture(twammFixture)
       await expect(
-        twammUnitialized.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration })
+        twammUnitialized.submitLongTermOrder({ zeroForOne, owner, expiration }, amountIn)
       ).to.be.revertedWith('NotInitialized()')
     })
 
     it('reverts if expiry is in the past', async () => {
       await expect(
-        twamm.submitLongTermOrder({ zeroForOne, owner, amountIn, expiration: prevTimeExpiration })
+        twamm.submitLongTermOrder({ zeroForOne, owner, expiration: prevTimeExpiration }, amountIn)
       ).to.be.revertedWith(`ExpirationLessThanBlocktime(${prevTimeExpiration})`)
     })
 
     it('stores the new long term order', async () => {
       const orderKey = { owner, expiration, zeroForOne }
       // TODO: if the twamm is not initialized, should revert
-      await twamm.submitLongTermOrder({
-        zeroForOne,
-        owner,
-        amountIn,
-        expiration,
-      })
+      await twamm.submitLongTermOrder(
+        {
+          zeroForOne,
+          owner,
+          expiration,
+        },
+        amountIn
+      )
 
       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       const sellRate = amountIn.div(expiration - latestTimestamp)
@@ -170,12 +172,14 @@ describe('TWAMM', () => {
       expect(orderPool.sellRate).to.equal(0)
       expect(await twamm.getOrderPoolSellRateEndingPerInterval(true, expiration)).to.equal(0)
 
-      await twamm.submitLongTermOrder({
-        zeroForOne,
-        owner,
-        amountIn,
-        expiration,
-      })
+      await twamm.submitLongTermOrder(
+        {
+          zeroForOne,
+          owner,
+          expiration,
+        },
+        amountIn
+      )
 
       const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       const sellRate = amountIn.div(expiration - latestTimestamp)
@@ -187,12 +191,14 @@ describe('TWAMM', () => {
 
     it('gas', async () => {
       await snapshotGasCost(
-        twamm.submitLongTermOrder({
-          zeroForOne,
-          owner,
-          amountIn,
-          expiration,
-        })
+        twamm.submitLongTermOrder(
+          {
+            zeroForOne,
+            owner,
+            expiration,
+          },
+          amountIn
+        )
       )
     })
   })
@@ -236,18 +242,22 @@ describe('TWAMM', () => {
       orderKey = { owner, expiration: timestampInterval2, zeroForOne: true }
 
       await executeTwammAndThen(timestampInterval1, poolParams, async () => {
-        await twamm.submitLongTermOrder({
-          zeroForOne: true,
-          owner,
-          amountIn: toWei('3'),
-          expiration: timestampInterval2,
-        })
-        await twamm.submitLongTermOrder({
-          zeroForOne: false,
-          owner,
-          amountIn: toWei('3'),
-          expiration: timestampInterval2,
-        })
+        await twamm.submitLongTermOrder(
+          {
+            zeroForOne: true,
+            owner,
+            expiration: timestampInterval2,
+          },
+          toWei('3')
+        )
+        await twamm.submitLongTermOrder(
+          {
+            zeroForOne: false,
+            owner,
+            expiration: timestampInterval2,
+          },
+          toWei('3')
+        )
       })
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
     })
@@ -397,33 +407,41 @@ describe('TWAMM', () => {
         await twamm.initialize(poolKey)
 
         await inOneBlock(timestampInterval1, async () => {
-          await twamm.submitLongTermOrder({
-            zeroForOne: true,
-            owner: wallet.address,
-            amountIn: toWei('1'),
-            expiration: timestampInterval2,
-          })
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: true,
+              owner: wallet.address,
+              expiration: timestampInterval2,
+            },
+            toWei('1')
+          )
 
-          await twamm.submitLongTermOrder({
-            zeroForOne: false,
-            owner: wallet.address,
-            amountIn: toWei('5'),
-            expiration: timestampInterval3,
-          })
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: false,
+              owner: wallet.address,
+              expiration: timestampInterval3,
+            },
+            toWei('5')
+          )
 
-          await twamm.submitLongTermOrder({
-            zeroForOne: false,
-            owner: wallet.address,
-            amountIn: toWei('2'),
-            expiration: timestampInterval4,
-          })
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: false,
+              owner: wallet.address,
+              expiration: timestampInterval4,
+            },
+            toWei('2')
+          )
 
-          await twamm.submitLongTermOrder({
-            zeroForOne: true,
-            owner: wallet.address,
-            amountIn: toWei('2'),
-            expiration: timestampInterval4,
-          })
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: true,
+              owner: wallet.address,
+              expiration: timestampInterval4,
+            },
+            toWei('2')
+          )
         })
       })
 
@@ -494,26 +512,32 @@ describe('TWAMM', () => {
         await twamm.initialize(poolKey)
 
         await inOneBlock(timestampInterval1, async () => {
-          await twamm.submitLongTermOrder({
-            zeroForOne: true,
-            owner: wallet.address,
-            amountIn: toWei('1'),
-            expiration: timestampInterval2,
-          })
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: true,
+              owner: wallet.address,
+              expiration: timestampInterval2,
+            },
+            toWei('1')
+          )
 
-          await twamm.submitLongTermOrder({
-            zeroForOne: true,
-            owner: wallet.address,
-            amountIn: toWei('5'),
-            expiration: timestampInterval3,
-          })
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: true,
+              owner: wallet.address,
+              expiration: timestampInterval3,
+            },
+            toWei('5')
+          )
 
-          await twamm.submitLongTermOrder({
-            zeroForOne: true,
-            owner: wallet.address,
-            amountIn: toWei('2'),
-            expiration: timestampInterval4,
-          })
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: true,
+              owner: wallet.address,
+              expiration: timestampInterval4,
+            },
+            toWei('2')
+          )
         })
       })
 
@@ -561,11 +585,11 @@ describe('TWAMM', () => {
       expiration = findExpiryTime(timestamp, 2, EXPIRATION_INTERVAL)
       orderKey = { owner: wallet.address, expiration, zeroForOne: true }
       counterOrderKey = { owner: wallet.address, expiration, zeroForOne: false }
-      const ltoParams = { owner: wallet.address, expiration, amountIn: toWei('2') }
+      const ltoParams = { owner: wallet.address, expiration }
 
       await executeTwammAndThen(startTime, poolParams, async () => {
-        await twamm.submitLongTermOrder({ ...ltoParams, zeroForOne: true })
-        await twamm.submitLongTermOrder({ ...ltoParams, zeroForOne: false })
+        await twamm.submitLongTermOrder({ ...ltoParams, zeroForOne: true }, toWei('2'))
+        await twamm.submitLongTermOrder({ ...ltoParams, zeroForOne: false }, toWei('2'))
       })
     })
 
@@ -673,24 +697,30 @@ describe('TWAMM', () => {
         expect((await twamm.getOrderPool(false)).sellRate).to.eq(0)
 
         await executeTwammAndThen(timestampInterval1, poolParams, async () => {
-          await twamm.submitLongTermOrder({
-            zeroForOne: true,
-            owner,
-            amountIn: halfSellAmount,
-            expiration: timestampInterval2,
-          })
-          await twamm.submitLongTermOrder({
-            zeroForOne: true,
-            owner: other.address,
-            amountIn: halfSellAmount,
-            expiration: timestampInterval2,
-          })
-          await twamm.submitLongTermOrder({
-            zeroForOne: false,
-            owner,
-            amountIn: fullSellAmount,
-            expiration: timestampInterval2,
-          })
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: true,
+              owner,
+              expiration: timestampInterval2,
+            },
+            halfSellAmount
+          )
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: true,
+              owner: other.address,
+              expiration: timestampInterval2,
+            },
+            halfSellAmount
+          )
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne: false,
+              owner,
+              expiration: timestampInterval2,
+            },
+            fullSellAmount
+          )
         })
 
         expect((await twamm.getOrderPool(true)).sellRate).to.eq(fullSellRate)
@@ -761,12 +791,14 @@ describe('TWAMM', () => {
         orderKey = { owner: wallet.address, expiration: expiryTime, zeroForOne: true }
 
         await executeTwammAndThen(startTime, poolParams, async () => {
-          await twamm.submitLongTermOrder({
-            zeroForOne,
-            owner: wallet.address,
-            amountIn: fullSellAmount,
-            expiration: expiryTime,
-          })
+          await twamm.submitLongTermOrder(
+            {
+              zeroForOne,
+              owner: wallet.address,
+              expiration: expiryTime,
+            },
+            fullSellAmount
+          )
         })
 
         const expectedSellRate = fullSellAmount.div(expiryTime - startTime)
@@ -809,12 +841,14 @@ describe('TWAMM', () => {
         await twamm.executeTWAMMOrders(poolParams)
         const blocktime = (await ethers.provider.getBlock('latest')).timestamp
         const newExpiry = findExpiryTime(blocktime, 3, EXPIRATION_INTERVAL)
-        await twamm.submitLongTermOrder({
-          zeroForOne: false,
-          owner: wallet.address,
-          amountIn: fullSellAmount,
-          expiration: newExpiry,
-        })
+        await twamm.submitLongTermOrder(
+          {
+            zeroForOne: false,
+            owner: wallet.address,
+            expiration: newExpiry,
+          },
+          fullSellAmount
+        )
         const orderPool0 = await twamm.getOrderPool(true)
         const orderPool1 = await twamm.getOrderPool(false)
         expect(orderPool0.sellRate.toNumber()).to.eq(0)
@@ -831,12 +865,14 @@ describe('TWAMM', () => {
         blocktime = (await ethers.provider.getBlock('latest')).timestamp
         const newExpiryTime = findExpiryTime(blocktime, 3, EXPIRATION_INTERVAL)
         await twamm.executeTWAMMOrders(poolParams)
-        await twamm.submitLongTermOrder({
-          zeroForOne: false,
-          owner: wallet.address,
-          amountIn: fullSellAmount,
-          expiration: newExpiryTime,
-        })
+        await twamm.submitLongTermOrder(
+          {
+            zeroForOne: false,
+            owner: wallet.address,
+            expiration: newExpiryTime,
+          },
+          fullSellAmount
+        )
         mineNextBlock(newExpiryTime)
         await snapshotGasCost(twamm.executeTWAMMOrders(poolParams))
       })

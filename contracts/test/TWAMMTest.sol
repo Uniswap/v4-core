@@ -33,8 +33,11 @@ contract TWAMMTest {
         return twamm.lastVirtualOrderTimestamp;
     }
 
-    function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
-        orderId = twamm.submitLongTermOrder(params, expirationInterval);
+    function submitLongTermOrder(TWAMM.OrderKey calldata orderKey, uint256 amountIn)
+        external
+        returns (bytes32 orderId)
+    {
+        orderId = twamm.submitLongTermOrder(orderKey, amountIn, expirationInterval);
     }
 
     function modifyLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)

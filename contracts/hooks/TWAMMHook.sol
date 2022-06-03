@@ -92,15 +92,16 @@ contract TWAMMHook is BaseHook {
         }
     }
 
-    function submitLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.LongTermOrderParams memory params)
-        external
-        returns (bytes32 orderId)
-    {
+    function submitLongTermOrder(
+        IPoolManager.PoolKey calldata key,
+        TWAMM.OrderKey memory orderKey,
+        uint256 amountIn
+    ) external returns (bytes32 orderId) {
         TWAMM.State storage twamm = getTWAMM(key);
         executeTWAMMOrders(key);
-        orderId = twamm.submitLongTermOrder(params, expirationInterval);
-        IERC20Minimal sellToken = params.zeroForOne ? key.token0 : key.token1;
-        sellToken.safeTransferFrom(params.owner, address(this), params.amountIn);
+        orderId = twamm.submitLongTermOrder(orderKey, amountIn, expirationInterval);
+        IERC20Minimal sellToken = orderKey.zeroForOne ? key.token0 : key.token1;
+        sellToken.safeTransferFrom(orderKey.owner, address(this), amountIn);
     }
 
     function modifyLongTermOrder(
