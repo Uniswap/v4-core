@@ -11,6 +11,7 @@ import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
 import {SafeCast} from '../SafeCast.sol';
+import 'hardhat/console.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -558,7 +559,7 @@ library TWAMM {
         IPoolManager poolManager,
         IPoolManager.PoolKey memory poolKey,
         uint160 nextSqrtPriceX96
-    ) private view returns (bool initialized, int24 nextTickInit) {
+    ) internal view returns (bool initialized, int24 nextTickInit) {
         // use current price as a starting point for nextTickInit
         nextTickInit = pool.sqrtPriceX96.getTickAtSqrtRatio();
         bool searchingLeft = nextSqrtPriceX96 < pool.sqrtPriceX96;

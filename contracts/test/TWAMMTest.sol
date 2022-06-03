@@ -9,16 +9,22 @@ import {Tick} from '../libraries/Tick.sol';
 import {TickBitmap} from '../libraries/TickBitmap.sol';
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
 import {FixedPoint96} from '../libraries/FixedPoint96.sol';
+import 'hardhat/console.sol';
 
 contract TWAMMTest {
     using TWAMM for TWAMM.State;
     using ABDKMathQuad for *;
+    using TickBitmap for mapping(int16 => uint256);
 
     uint256 public expirationInterval;
     IPoolManager.PoolKey public poolKey;
     TWAMM.State internal twamm;
     mapping(int24 => Tick.Info) mockTicks;
     mapping(int16 => uint256) mockTickBitmap;
+
+    function flipTick(int24 tick, int24 tickSpacing) external {
+        mockTickBitmap.flipTick(tick, tickSpacing);
+    }
 
     constructor(uint256 _expirationInterval) {
         expirationInterval = _expirationInterval;
@@ -42,6 +48,19 @@ contract TWAMMTest {
         returns (uint256 amountOut)
     {
         amountOut = twamm.modifyLongTermOrder(orderKey, amountDelta);
+    }
+
+    // dont return true if the init tick is directly after the target price
+    function getNextInitializedTick(TWAMM.PoolParamsOnExecute memory pool, uint160 nextSqrtPriceX96)
+        external
+        returns (bool initialized, int24 nextTickInit)
+    {
+        (initialized, nextTickInit) = TWAMM.getNextInitializedTick(
+            pool,
+            IPoolManager(address(this)),
+            poolKey,
+            nextSqrtPriceX96
+        );
     }
 
     function claimEarnings(TWAMM.OrderKey calldata orderKey)

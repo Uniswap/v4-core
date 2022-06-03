@@ -6,6 +6,7 @@ import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
 import { inOneBlock } from './shared/inOneBlock'
+import { TickMathTest } from '../typechain/TickMathTest'
 
 async function mineNextBlock(time: number) {
   await ethers.provider.send('evm_mine', [time])
@@ -85,6 +86,12 @@ describe('TWAMM', () => {
     })
   }
 
+  async function initTicks(ticks: number[], tickSpacing: number): Promise<void> {
+    for (const tick of ticks) {
+      await twamm.flipTick(tick, tickSpacing)
+    }
+  }
+
   beforeEach(async () => {
     twamm = await loadFixture(twammFixture)
   })
@@ -102,6 +109,79 @@ describe('TWAMM', () => {
       await twamm.initialize(poolKey)
 
       expect(await twamm.lastVirtualOrderTimestamp()).to.equal((await ethers.provider.getBlock('latest')).timestamp)
+    })
+  })
+
+  describe('#getNextInitialilzedTicks', () => {
+    let poolParams: PoolParams
+    let tickMath: TickMathTest
+
+    before('deploy TickMathTest', async () => {
+      const factory = await ethers.getContractFactory('TickMathTest')
+      tickMath = (await factory.deploy()) as TickMathTest
+    })
+    beforeEach('sets the initial state of the twamm', async () => {
+      poolParams = {
+        feeProtocol: 0,
+        sqrtPriceX96: encodeSqrtPriceX96(1, 1),
+        fee: '3000',
+        liquidity: '1000000000000000000000000',
+        tickSpacing: 60,
+      }
+      const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
+
+      expect(await twamm.lastVirtualOrderTimestamp()).to.equal(0)
+      await twamm.initialize(poolKey)
+    })
+
+    it('returns false when swapping to the same prices', async () => {
+      // set the ticks
+      await initTicks([-60, 60], TICK_SPACING)
+      const nextPrice = encodeSqrtPriceX96(1, 1)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, nextPrice)
+
+      expect(results.initialized).to.be.false
+      expect(results.nextTickInit).to.equal(0)
+    })
+
+    it('returns true when swapping to the right', async () => {
+      // set the ticks
+      await initTicks([60], TICK_SPACING)
+      // token1 increases
+      const nextPrice = encodeSqrtPriceX96(2, 1)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, nextPrice)
+
+      expect(results.initialized).to.be.true
+
+      expect(results.nextTickInit).to.equal(60)
+    })
+
+    it('returns true when swapping to the left', async () => {
+      // set the ticks
+      await initTicks([-60], TICK_SPACING)
+      // token0 increases
+      const nextPrice = encodeSqrtPriceX96(1, 2)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, nextPrice)
+
+      expect(results.initialized).to.be.true
+
+      expect(results.nextTickInit).to.equal(-60)
+    })
+
+    it.only('returns false when swapping right and tick is after the target price', async () => {
+      // token1 increases
+      const nextPrice = encodeSqrtPriceX96(2, 1)
+      const tickAtPrice = await tickMath.getTickAtSqrtRatio(nextPrice)
+      const roundedTick = Math.ceil(tickAtPrice / TICK_SPACING) * TICK_SPACING
+
+      const upperTick = roundedTick + 1 * TICK_SPACING
+      // the tick at the target price is 6931, rounded to the nearest tick w/respect to tick spacing that is 6960
+      // we initialize tick 7020 (one tick greater than 6960) but we are returning true in getNextInitializedTick
+      await initTicks([upperTick], TICK_SPACING)
+
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, nextPrice)
+      // initialized returns true
+      // expect(results.initialized).to.be.false
     })
   })
 
