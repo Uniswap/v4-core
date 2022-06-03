@@ -15,7 +15,6 @@ contract TWAMMTest {
     using ABDKMathQuad for *;
 
     uint256 public expirationInterval;
-    IPoolManager.PoolKey public poolKey;
     TWAMM.State internal twamm;
     mapping(int24 => Tick.Info) mockTicks;
     mapping(int16 => uint256) mockTickBitmap;
@@ -24,8 +23,7 @@ contract TWAMMTest {
         expirationInterval = _expirationInterval;
     }
 
-    function initialize(IPoolManager.PoolKey memory _poolKey) external {
-        poolKey = _poolKey;
+    function initialize() external {
         twamm.initialize();
     }
 
@@ -51,7 +49,7 @@ contract TWAMMTest {
         earningsAmount = twamm.claimEarnings(orderKey);
     }
 
-    function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
+    function executeTWAMMOrders(IPoolManager.PoolKey calldata poolKey, TWAMM.PoolParamsOnExecute memory poolParams) external {
         twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), poolKey, poolParams);
     }
 
