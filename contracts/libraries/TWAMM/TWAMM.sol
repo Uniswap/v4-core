@@ -588,6 +588,6 @@ library TWAMM {
     }
 
     function _hasOutstandingOrders(State storage self) internal view returns (bool) {
-        return !(self.orderPool0For1.sellRateCurrent == 0 && self.orderPool1For0.sellRateCurrent == 0);
+        return self.orderPool0For1.sellRateCurrent != 0 || self.orderPool1For0.sellRateCurrent != 0;
     }
 }
