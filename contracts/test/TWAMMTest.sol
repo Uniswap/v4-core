@@ -49,7 +49,9 @@ contract TWAMMTest {
         earningsAmount = twamm.claimEarnings(orderKey);
     }
 
-    function executeTWAMMOrders(IPoolManager.PoolKey calldata poolKey, TWAMM.PoolParamsOnExecute memory poolParams) external {
+    function executeTWAMMOrders(IPoolManager.PoolKey calldata poolKey, TWAMM.PoolParamsOnExecute memory poolParams)
+        external
+    {
         twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), poolKey, poolParams);
     }
 
