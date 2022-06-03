@@ -386,6 +386,7 @@ describe('TWAMM', () => {
 
   describe('#executeTWAMMOrders', () => {
     let latestTimestamp: number
+    let timestampInitialize: number
     let timestampInterval1: number
     let timestampInterval2: number
     let timestampInterval3: number
@@ -393,15 +394,16 @@ describe('TWAMM', () => {
 
     beforeEach(async () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      timestampInterval1 = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1)
-      timestampInterval2 = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 2)
-      timestampInterval3 = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
-      timestampInterval4 = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 4)
+      timestampInitialize = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1)
+      timestampInterval1 = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 2)
+      timestampInterval2 = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
+      timestampInterval3 = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 4)
+      timestampInterval4 = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 5)
     })
 
     describe('both pools selling', () => {
       beforeEach(async () => {
-        await setNextBlocktime(timestampInterval1 - 1_000)
+        await setNextBlocktime(timestampInitialize)
 
         const poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
         await twamm.initialize()
@@ -464,19 +466,19 @@ describe('TWAMM', () => {
         expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval1)).to.be.eq(0)
         expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval1)).to.be.eq(0)
         expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval2)).to.eq(
-          '1004694595288647610935233377361989'
+          '1994006903617166884240785113028529'
         )
         expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval2)).to.eq(
-          '760121486939620053863646259796728'
+          '1274791212190872404935371267515656'
         )
         expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval3)).to.eq(
-          '2238418640851846206315209762374183'
+          '3371273930125135653759633453292465'
         )
         expect(await twamm.getOrderPoolEarningsFactorAtInterval(false, timestampInterval3)).to.eq(
-          '1273914162198458794225939691864726'
+          '1734117616897553517344907099974480'
         )
         expect(await twamm.getOrderPoolEarningsFactorAtInterval(true, timestampInterval4)).to.eq(
-          '3627422259524519727470246474735635'
+          '4887459849016401416285295160076330'
         )
       })
 
