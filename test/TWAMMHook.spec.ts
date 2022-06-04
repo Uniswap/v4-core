@@ -37,7 +37,7 @@ type PoolKey = {
 // TODO: temporary hack for precision errors affecting token balances
 const EXTRA_TOKENS = 20
 
-describe.only('TWAMM Hook', () => {
+describe('TWAMM Hook', () => {
   let wallets: Wallet[]
   let wallet: Wallet
   let twamm: TWAMMHook

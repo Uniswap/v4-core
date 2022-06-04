@@ -55,7 +55,7 @@ contract TWAMMTest {
         TWAMM.PoolParamsOnExecute memory pool,
         IPoolManager.PoolKey calldata poolKey,
         uint160 nextSqrtPriceX96
-    ) external returns (bool initialized, int24 nextTickInit) {
+    ) external view returns (bool initialized, int24 nextTickInit) {
         (initialized, nextTickInit) = TWAMM.isCrossingInitializedTick(
             pool,
             IPoolManager(address(this)),

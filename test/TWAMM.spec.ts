@@ -63,7 +63,7 @@ const ZERO_FOR_ONE = true
 const ONE_FOR_ZERO = false
 const POOL_KEY = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
 
-describe.only('TWAMM', () => {
+describe('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
   let tickMath: TickMathTest
@@ -143,7 +143,7 @@ describe.only('TWAMM', () => {
       const results = await twamm.callStatic.isCrossingInitializedTick(poolParams, poolKey, nextPrice)
 
       expect(results.initialized).to.be.false
-      expect(results.nextTickInit).to.equal(0)
+      expect(results.nextTickInit).to.equal(60)
     })
 
     it('returns true when swapping to the right', async () => {

@@ -559,11 +559,13 @@ library TWAMM {
     ) internal view returns (bool crossingInitializedTick, int24 nextTickInit) {
         // use current price as a starting point for nextTickInit
         nextTickInit = pool.sqrtPriceX96.getTickAtSqrtRatio();
-        bool searchingLeft = nextSqrtPriceX96 < pool.sqrtPriceX96;
         int24 targetTick = nextSqrtPriceX96.getTickAtSqrtRatio();
-        bool nextTickInitFurtherThanTarget = searchingLeft ? nextTickInit > targetTick : nextTickInit < targetTick;
+        bool searchingLeft = nextSqrtPriceX96 < pool.sqrtPriceX96;
+        bool nextTickInitFurtherThanTarget = false; // initialize as false
 
-        while (nextTickInitFurtherThanTarget) {
+        // nextTickInit returns the furthest tick within one word if no tick within that word is initialized
+        // so we must keep iterating if we haven't reached a tick further than our target tick
+        while (!nextTickInitFurtherThanTarget) {
             unchecked {
                 if (searchingLeft) nextTickInit -= 1;
             }
@@ -572,13 +574,10 @@ library TWAMM {
                 nextTickInit,
                 searchingLeft
             );
-            nextTickInitFurtherThanTarget = searchingLeft ? nextTickInit > targetTick : nextTickInit < targetTick;
-            if (!nextTickInitFurtherThanTarget) {
-                crossingInitializedTick = false;
-                break;
-            }
+            nextTickInitFurtherThanTarget = searchingLeft ? nextTickInit < targetTick : nextTickInit > targetTick;
             if (crossingInitializedTick == true) break;
         }
+        if (nextTickInitFurtherThanTarget) crossingInitializedTick = false;
     }
 
     function _getOrder(State storage self, OrderKey memory key) internal view returns (Order storage) {
