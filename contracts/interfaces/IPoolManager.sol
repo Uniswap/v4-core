@@ -3,10 +3,8 @@ pragma solidity >=0.6.2;
 
 import {IERC20Minimal} from './external/IERC20Minimal.sol';
 import {Pool} from '../libraries/Pool.sol';
-import {Tick} from '../libraries/Tick.sol';
 import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import {IHooks} from './IHooks.sol';
-import {ITWAMM} from './ITWAMM.sol';
 
 interface IPoolManager is IERC1155 {
     /// @notice Thrown when tokens touched has exceeded max of 256
@@ -27,8 +25,6 @@ interface IPoolManager is IERC1155 {
     error TickSpacingTooLarge();
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
     error TickSpacingTooSmall();
-
-    event Swap(int256 amount0, int256 amount1);
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -57,7 +53,7 @@ interface IPoolManager is IERC1155 {
     function getTickNetLiquidity(PoolKey memory key, int24 tick) external view returns (int128);
 
     /// @notice Get next initialized tick within one word
-    function nextInitializedTickWithinOneWord(
+    function getNextInitializedTickWithinOneWord(
         IPoolManager.PoolKey memory key,
         int24 tick,
         bool lte

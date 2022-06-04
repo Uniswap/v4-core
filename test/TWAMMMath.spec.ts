@@ -210,7 +210,7 @@ describe('TWAMMMath', () => {
 
     it('gas', async () => {
       await snapshotGasCost(
-        twamm.calculateExecutionUpdates({
+        twamm.gasSnapshotCalculateExecutionUpdates({
           secondsElapsedX96,
           sqrtPriceX96,
           liquidity,
@@ -335,7 +335,7 @@ describe('TWAMMMath', () => {
 
     it('gas', async () => {
       await snapshotGasCost(
-        twamm.calculateTimeBetweenTicks(
+        twamm.gasSnapshotCalculateTimeBetweenTicks(
           liquidity,
           sqrtPriceStartX96,
           sqrtPriceEndX96,

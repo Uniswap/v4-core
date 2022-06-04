@@ -5,9 +5,11 @@ import {TWAMM} from '../libraries/TWAMM/TWAMM.sol';
 import {IPoolManager} from './IPoolManager.sol';
 
 interface ITWAMM {
-    function submitLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.LongTermOrderParams calldata params)
-        external
-        returns (bytes32 orderId);
+    function submitLongTermOrder(
+        IPoolManager.PoolKey calldata key,
+        TWAMM.OrderKey calldata orderKey,
+        uint256 amountIn
+    ) external returns (bytes32 orderId);
 
     function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
         external

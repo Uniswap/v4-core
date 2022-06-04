@@ -30,14 +30,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
     mapping(bytes32 => Pool.State) public pools;
 
-    function feeGrowthGlobalX128(bytes32 poolId)
-        public
-        view
-        returns (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128)
-    {
-        return (pools[poolId].feeGrowthGlobal0X128, pools[poolId].feeGrowthGlobal1X128);
-    }
-
     constructor() ERC1155('') {}
 
     function _getPool(IPoolManager.PoolKey memory key) private view returns (Pool.State storage) {
@@ -57,21 +49,21 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     }
 
     /// @inheritdoc IPoolManager
+    function getLiquidity(IPoolManager.PoolKey memory key) external view override returns (uint128 liquidity) {
+        return _getPool(key).liquidity;
+    }
+
+    /// @inheritdoc IPoolManager
     function getTickNetLiquidity(IPoolManager.PoolKey memory key, int24 tick) external view override returns (int128) {
         return _getPool(key).ticks[tick].liquidityNet;
     }
 
-    function nextInitializedTickWithinOneWord(
+    function getNextInitializedTickWithinOneWord(
         IPoolManager.PoolKey memory key,
         int24 tick,
         bool lte
     ) external view override returns (int24 next, bool initialized) {
         return _getPool(key).tickBitmap.nextInitializedTickWithinOneWord(tick, key.tickSpacing, lte);
-    }
-
-    /// @inheritdoc IPoolManager
-    function getLiquidity(IPoolManager.PoolKey memory key) external view override returns (uint128 liquidity) {
-        return _getPool(key).liquidity;
     }
 
     /// @inheritdoc IPoolManager
@@ -228,7 +220,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
     /// @inheritdoc IPoolManager
     function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
-        public
+        external
         override
         noDelegateCall
         onlyByLocker
@@ -249,8 +241,6 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         );
 
         _accountPoolBalanceDelta(key, delta);
-
-        emit Swap(delta.amount0, delta.amount1);
 
         if (key.hooks.shouldCallAfterSwap()) {
             key.hooks.afterSwap(msg.sender, key, params, delta);

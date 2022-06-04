@@ -16,7 +16,6 @@ contract TWAMMTest {
     using TickBitmap for mapping(int16 => uint256);
 
     uint256 public expirationInterval;
-    IPoolManager.PoolKey public poolKey;
     TWAMM.State internal twamm;
     mapping(int24 => Tick.Info) mockTicks;
     mapping(int16 => uint256) mockTickBitmap;
@@ -29,8 +28,7 @@ contract TWAMMTest {
         expirationInterval = _expirationInterval;
     }
 
-    function initialize(IPoolManager.PoolKey memory _poolKey) external {
-        poolKey = _poolKey;
+    function initialize() external {
         twamm.initialize();
     }
 
@@ -38,8 +36,11 @@ contract TWAMMTest {
         return twamm.lastVirtualOrderTimestamp;
     }
 
-    function submitLongTermOrder(TWAMM.LongTermOrderParams calldata params) external returns (bytes32 orderId) {
-        orderId = twamm.submitLongTermOrder(params, expirationInterval);
+    function submitLongTermOrder(TWAMM.OrderKey calldata orderKey, uint256 amountIn)
+        external
+        returns (bytes32 orderId)
+    {
+        orderId = twamm.submitLongTermOrder(orderKey, amountIn, expirationInterval);
     }
 
     function modifyLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)
@@ -50,10 +51,11 @@ contract TWAMMTest {
     }
 
     // dont return true if the init tick is directly after the target price
-    function getNextInitializedTick(TWAMM.PoolParamsOnExecute memory pool, uint160 nextSqrtPriceX96)
-        external
-        returns (bool initialized, int24 nextTickInit)
-    {
+    function getNextInitializedTick(
+        TWAMM.PoolParamsOnExecute memory pool,
+        IPoolManager.PoolKey calldata poolKey,
+        uint160 nextSqrtPriceX96
+    ) external returns (bool initialized, int24 nextTickInit) {
         (initialized, nextTickInit) = TWAMM.getNextInitializedTick(
             pool,
             IPoolManager(address(this)),
@@ -62,28 +64,19 @@ contract TWAMMTest {
         );
     }
 
-    function claimEarnings(TWAMM.OrderKey calldata orderKey)
-        external
-        returns (
-            uint256 earningsAmount,
-            bool zeroForOne,
-            uint256 unclaimedEarningsAmount
-        )
-    {
-        (earningsAmount, zeroForOne) = twamm.claimEarnings(orderKey);
-        // unclaimedEarningsFactor is a fixed point
-        uint256 sellRateCurrent = twamm._getOrder(orderKey).sellRate;
-        unclaimedEarningsAmount =
-            (twamm._getOrder(orderKey).unclaimedEarningsFactor * sellRateCurrent) >>
-            FixedPoint96.RESOLUTION;
+    function claimEarnings(TWAMM.OrderKey calldata orderKey) external returns (uint256 earningsAmount) {
+        earningsAmount = twamm.claimEarnings(orderKey);
     }
 
-    function executeTWAMMOrders(TWAMM.PoolParamsOnExecute memory poolParams) external {
+    function executeTWAMMOrders(IPoolManager.PoolKey calldata poolKey, TWAMM.PoolParamsOnExecute memory poolParams)
+        external
+    {
         twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), poolKey, poolParams);
     }
 
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
         external
+        pure
         returns (
             uint160 sqrtPriceX96,
             uint256 earningsFactorPool0,
@@ -96,14 +89,37 @@ contract TWAMMTest {
         return (finalSqrtPriceX96, earningsFactorPool0, earningsFactorPool1);
     }
 
+    function gasSnapshotCalculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 gasLeftBefore = gasleft();
+        uint160 finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(params);
+        TwammMath.calculateEarningsUpdates(params, finalSqrtPriceX96);
+        return gasLeftBefore - gasleft();
+    }
+
     function calculateTimeBetweenTicks(
         uint256 liquidity,
         uint160 sqrtPriceStartX96,
         uint160 sqrtPriceEndX96,
         uint256 sellRate0,
         uint256 sellRate1
-    ) external returns (uint256) {
+    ) external pure returns (uint256) {
         return TwammMath.calculateTimeBetweenTicks(liquidity, sqrtPriceStartX96, sqrtPriceEndX96, sellRate0, sellRate1);
+    }
+
+    function gasSnapshotCalculateTimeBetweenTicks(
+        uint256 liquidity,
+        uint160 sqrtPriceStartX96,
+        uint160 sqrtPriceEndX96,
+        uint256 sellRate0,
+        uint256 sellRate1
+    ) external view returns (uint256) {
+        uint256 gasLeftBefore = gasleft();
+        TwammMath.calculateTimeBetweenTicks(liquidity, sqrtPriceStartX96, sqrtPriceEndX96, sellRate0, sellRate1);
+        return gasLeftBefore - gasleft();
     }
 
     function getOrder(TWAMM.OrderKey calldata orderKey) external view returns (TWAMM.Order memory) {
@@ -137,13 +153,13 @@ contract TWAMMTest {
     // Mocking IPoolManager functions here
     //////////////////////////////////////////////////////
 
-    function getTickNetLiquidity(IPoolManager.PoolKey memory key, int24 tick) external view returns (Tick.Info memory) {
+    function getTickNetLiquidity(IPoolManager.PoolKey memory, int24 tick) external view returns (Tick.Info memory) {
         return mockTicks[tick];
     }
 
     using TickBitmap for mapping(int16 => uint256);
 
-    function nextInitializedTickWithinOneWord(
+    function getNextInitializedTickWithinOneWord(
         IPoolManager.PoolKey memory key,
         int24 tick,
         bool lte

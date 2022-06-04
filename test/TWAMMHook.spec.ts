@@ -224,14 +224,8 @@ describe('TWAMM Hook', () => {
     describe('when both order pools are selling', async () => {
       it('gas with no initialized ticks', async () => {
         await inOneBlock(latestTimestamp + 100, async () => {
-          await twamm.submitLongTermOrder(poolKey, {
-            amountIn: expandTo18Decimals(1),
-            ...orderKey0,
-          })
-          await twamm.submitLongTermOrder(poolKey, {
-            amountIn: expandTo18Decimals(10),
-            ...orderKey1,
-          })
+          await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(1))
+          await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))
         })
         await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
         await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
@@ -244,14 +238,8 @@ describe('TWAMM Hook', () => {
           liquidityDelta: expandTo18Decimals(1),
         })
         await inOneBlock(latestTimestamp + 100, async () => {
-          await twamm.submitLongTermOrder(poolKey, {
-            amountIn: expandTo18Decimals(1),
-            ...orderKey0,
-          })
-          await twamm.submitLongTermOrder(poolKey, {
-            amountIn: expandTo18Decimals(10),
-            ...orderKey1,
-          })
+          await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(1))
+          await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))
         })
         await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
         await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
@@ -270,14 +258,8 @@ describe('TWAMM Hook', () => {
         })
 
         await inOneBlock(latestTimestamp + 100, async () => {
-          await twamm.submitLongTermOrder(poolKey, {
-            amountIn: expandTo18Decimals(1),
-            ...orderKey0,
-          })
-          await twamm.submitLongTermOrder(poolKey, {
-            amountIn: expandTo18Decimals(10),
-            ...orderKey1,
-          })
+          await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(1))
+          await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))
         })
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 10_000])
@@ -296,10 +278,7 @@ describe('TWAMM Hook', () => {
 
       it('gas crossing no initialized tick', async () => {
         await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 100])
-        await twamm.submitLongTermOrder(poolKey, {
-          amountIn: expandTo18Decimals(7),
-          ...orderKey0,
-        })
+        await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(7))
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
         await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
@@ -313,10 +292,7 @@ describe('TWAMM Hook', () => {
         })
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 100])
-        await twamm.submitLongTermOrder(poolKey, {
-          amountIn: expandTo18Decimals(7),
-          ...orderKey0,
-        })
+        await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(7))
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
         await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
@@ -335,10 +311,7 @@ describe('TWAMM Hook', () => {
         })
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [latestTimestamp + 100])
-        await twamm.submitLongTermOrder(poolKey, {
-          amountIn: expandTo18Decimals(7),
-          ...orderKey0,
-        })
+        await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(7))
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
         await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
@@ -404,14 +377,8 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setAutomine', [false])
 
         // 2) Add order balances to TWAMM
-        await twamm.submitLongTermOrder(key, {
-          amountIn: amountSell0,
-          ...orderKey0,
-        })
-        await twamm.submitLongTermOrder(key, {
-          amountIn: amountSell1,
-          ...orderKey1,
-        })
+        await twamm.submitLongTermOrder(key, orderKey0, amountSell0)
+        await twamm.submitLongTermOrder(key, orderKey1, amountSell1)
 
         await ethers.provider.send('evm_mine', [start])
         await ethers.provider.send('evm_setAutomine', [true])
@@ -440,14 +407,8 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setAutomine', [false])
 
         // 2) Add order balances to TWAMM
-        await twamm.submitLongTermOrder(key, {
-          amountIn: amountSell0,
-          ...orderKey0,
-        })
-        await twamm.submitLongTermOrder(key, {
-          amountIn: amountSell1,
-          ...orderKey1,
-        })
+        await twamm.submitLongTermOrder(key, orderKey0, amountSell0)
+        await twamm.submitLongTermOrder(key, orderKey1, amountSell1)
 
         await ethers.provider.send('evm_mine', [start])
         await ethers.provider.send('evm_setAutomine', [true])
@@ -510,14 +471,8 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setAutomine', [false])
 
         // 2) Add order balances to TWAMM
-        await twamm.submitLongTermOrder(key, {
-          amountIn: amountSell0,
-          ...orderKey0,
-        })
-        await twamm.submitLongTermOrder(key, {
-          amountIn: amountSell1,
-          ...orderKey1,
-        })
+        await twamm.submitLongTermOrder(key, orderKey0, amountSell0)
+        await twamm.submitLongTermOrder(key, orderKey1, amountSell1)
 
         await ethers.provider.send('evm_mine', [start])
         await ethers.provider.send('evm_setAutomine', [true])
@@ -585,10 +540,7 @@ describe('TWAMM Hook', () => {
         it('receives the predicted earnings from the amm', async () => {
           await ethers.provider.send('evm_setNextBlockTimestamp', [start])
 
-          await twamm.submitLongTermOrder(key, {
-            amountIn: expandTo18Decimals(5),
-            ...orderKey0,
-          })
+          await twamm.submitLongTermOrder(key, orderKey0, expandTo18Decimals(5))
 
           await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 300])
           await twamm.executeTWAMMOrders(key)
@@ -648,14 +600,8 @@ describe('TWAMM Hook', () => {
           const amountSell1 = expandTo18Decimals(10)
 
           await inOneBlock(submitTimestamp, async () => {
-            await twamm.submitLongTermOrder(poolKey, {
-              amountIn: amountSell0,
-              ...orderKey0,
-            })
-            await twamm.submitLongTermOrder(poolKey, {
-              amountIn: amountSell1,
-              ...orderKey1,
-            })
+            await twamm.submitLongTermOrder(poolKey, orderKey0, amountSell0)
+            await twamm.submitLongTermOrder(poolKey, orderKey1, amountSell1)
           })
 
           await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
@@ -682,14 +628,8 @@ describe('TWAMM Hook', () => {
           const amountSell1 = expandTo18Decimals(1)
 
           await inOneBlock(submitTimestamp, async () => {
-            await twamm.submitLongTermOrder(poolKey, {
-              amountIn: amountSell0,
-              ...orderKey0,
-            })
-            await twamm.submitLongTermOrder(poolKey, {
-              amountIn: amountSell1,
-              ...orderKey1,
-            })
+            await twamm.submitLongTermOrder(poolKey, orderKey0, amountSell0)
+            await twamm.submitLongTermOrder(poolKey, orderKey1, amountSell1)
           })
 
           await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
@@ -715,10 +655,7 @@ describe('TWAMM Hook', () => {
           const amountSell0 = expandTo18Decimals(1)
 
           await inOneBlock(submitTimestamp, async () => {
-            await twamm.submitLongTermOrder(poolKey, {
-              amountIn: amountSell0,
-              ...orderKey0,
-            })
+            await twamm.submitLongTermOrder(poolKey, orderKey0, amountSell0)
           })
 
           await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
