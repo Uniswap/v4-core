@@ -63,7 +63,7 @@ const ZERO_FOR_ONE = true
 const ONE_FOR_ZERO = false
 const POOL_KEY = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
 
-describe('TWAMM', () => {
+describe.only('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
   let tickMath: TickMathTest
@@ -119,7 +119,7 @@ describe('TWAMM', () => {
     })
   })
 
-  describe('#getNextInitialilzedTicks', () => {
+  describe('#isCrossingInitializedTicks', () => {
     let poolParams: PoolParams
     let poolKey: PoolKey
     beforeEach('sets the initial state of the twamm', async () => {
@@ -140,7 +140,7 @@ describe('TWAMM', () => {
       // set the ticks
       await initTicks([-60, 60], TICK_SPACING)
       const nextPrice = encodeSqrtPriceX96(1, 1)
-      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, nextPrice)
+      const results = await twamm.callStatic.isCrossingInitializedTick(poolParams, poolKey, nextPrice)
 
       expect(results.initialized).to.be.false
       expect(results.nextTickInit).to.equal(0)
@@ -151,7 +151,7 @@ describe('TWAMM', () => {
       await initTicks([60], TICK_SPACING)
       // token1 increases
       const nextPrice = encodeSqrtPriceX96(2, 1)
-      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, nextPrice)
+      const results = await twamm.callStatic.isCrossingInitializedTick(poolParams, poolKey, nextPrice)
 
       expect(results.initialized).to.be.true
       expect(results.nextTickInit).to.equal(60)
@@ -162,7 +162,7 @@ describe('TWAMM', () => {
       await initTicks([-60], TICK_SPACING)
       // token0 increases
       const nextPrice = encodeSqrtPriceX96(1, 2)
-      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, nextPrice)
+      const results = await twamm.callStatic.isCrossingInitializedTick(poolParams, poolKey, nextPrice)
 
       expect(results.initialized).to.be.true
       expect(results.nextTickInit).to.equal(-60)
@@ -174,7 +174,7 @@ describe('TWAMM', () => {
       const priceAtTick = await tickMath.getSqrtRatioAtTick(targetTick)
 
       await initTicks([nextInitializedTick], TICK_SPACING)
-      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, priceAtTick)
+      const results = await twamm.callStatic.isCrossingInitializedTick(poolParams, poolKey, priceAtTick)
 
       expect(results.initialized).to.be.false
     })
@@ -185,7 +185,7 @@ describe('TWAMM', () => {
       const priceAtTick = await tickMath.getSqrtRatioAtTick(targetTick)
 
       await initTicks([nextInitializedTick], TICK_SPACING)
-      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, priceAtTick)
+      const results = await twamm.callStatic.isCrossingInitializedTick(poolParams, poolKey, priceAtTick)
 
       expect(results.initialized).to.be.false
     })
@@ -196,7 +196,7 @@ describe('TWAMM', () => {
       const priceAtTick = await tickMath.getSqrtRatioAtTick(targetTick)
 
       await initTicks([nextInitializedTick], TICK_SPACING)
-      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, priceAtTick)
+      const results = await twamm.callStatic.isCrossingInitializedTick(poolParams, poolKey, priceAtTick)
 
       expect(results.initialized).to.be.false
     })
@@ -207,7 +207,7 @@ describe('TWAMM', () => {
       const priceAtTick = await tickMath.getSqrtRatioAtTick(targetTick)
 
       await initTicks([nextInitializedTick], TICK_SPACING)
-      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, priceAtTick)
+      const results = await twamm.callStatic.isCrossingInitializedTick(poolParams, poolKey, priceAtTick)
 
       expect(results.initialized).to.be.false
     })

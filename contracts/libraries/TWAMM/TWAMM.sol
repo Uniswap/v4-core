@@ -362,7 +362,7 @@ library TWAMM {
 
             finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(executionParams);
 
-            (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
+            (bool crossingInitializedTick, int24 tick) = isCrossingInitializedTick(
                 params.pool,
                 poolManager,
                 poolKey,
@@ -427,7 +427,7 @@ library TWAMM {
                 params.zeroForOne
             );
 
-            (bool crossingInitializedTick, int24 tick) = getNextInitializedTick(
+            (bool crossingInitializedTick, int24 tick) = isCrossingInitializedTick(
                 params.pool,
                 poolManager,
                 poolKey,
@@ -551,31 +551,33 @@ library TWAMM {
         return (params.pool, secondsUntilCrossingX96);
     }
 
-    function getNextInitializedTick(
+    function isCrossingInitializedTick(
         PoolParamsOnExecute memory pool,
         IPoolManager poolManager,
         IPoolManager.PoolKey memory poolKey,
         uint160 nextSqrtPriceX96
-    ) internal view returns (bool initialized, int24 nextTickInit) {
+    ) internal view returns (bool crossingInitializedTick, int24 nextTickInit) {
         // use current price as a starting point for nextTickInit
         nextTickInit = pool.sqrtPriceX96.getTickAtSqrtRatio();
         bool searchingLeft = nextSqrtPriceX96 < pool.sqrtPriceX96;
         int24 targetTick = nextSqrtPriceX96.getTickAtSqrtRatio();
+        bool nextTickInitFurtherThanTarget = searchingLeft ? nextTickInit > targetTick : nextTickInit < targetTick;
 
-        while (!searchingLeft ? nextTickInit < targetTick : nextTickInit > targetTick) {
+        while (nextTickInitFurtherThanTarget) {
             unchecked {
                 if (searchingLeft) nextTickInit -= 1;
             }
-            (nextTickInit, initialized) = poolManager.getNextInitializedTickWithinOneWord(
+            (nextTickInit, crossingInitializedTick) = poolManager.getNextInitializedTickWithinOneWord(
                 poolKey,
                 nextTickInit,
                 searchingLeft
             );
-            if ((!searchingLeft && nextTickInit > targetTick) || (searchingLeft && nextTickInit < targetTick)) {
-                initialized = false;
+            nextTickInitFurtherThanTarget = searchingLeft ? nextTickInit > targetTick : nextTickInit < targetTick;
+            if (!nextTickInitFurtherThanTarget) {
+                crossingInitializedTick = false;
                 break;
             }
-            if (initialized == true) break;
+            if (crossingInitializedTick == true) break;
         }
     }
 

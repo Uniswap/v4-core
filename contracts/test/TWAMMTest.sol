@@ -51,12 +51,12 @@ contract TWAMMTest {
     }
 
     // dont return true if the init tick is directly after the target price
-    function getNextInitializedTick(
+    function isCrossingInitializedTick(
         TWAMM.PoolParamsOnExecute memory pool,
         IPoolManager.PoolKey calldata poolKey,
         uint160 nextSqrtPriceX96
     ) external returns (bool initialized, int24 nextTickInit) {
-        (initialized, nextTickInit) = TWAMM.getNextInitializedTick(
+        (initialized, nextTickInit) = TWAMM.isCrossingInitializedTick(
             pool,
             IPoolManager(address(this)),
             poolKey,
