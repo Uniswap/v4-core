@@ -11,7 +11,6 @@ import {FixedPoint96} from '../FixedPoint96.sol';
 import {SqrtPriceMath} from '../SqrtPriceMath.sol';
 import {SwapMath} from '../SwapMath.sol';
 import {SafeCast} from '../SafeCast.sol';
-import 'hardhat/console.sol';
 
 /// @title TWAMM - Time Weighted Average Market Maker
 /// @notice TWAMM represents long term orders in a pool
@@ -574,6 +573,10 @@ library TWAMM {
                 nextTickInit,
                 searchingLeft
             );
+            if ((!searchingLeft && nextTickInit > targetTick) || (searchingLeft && nextTickInit < targetTick)) {
+                initialized = false;
+                break;
+            }
             if (initialized == true) break;
         }
     }
