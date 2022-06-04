@@ -469,7 +469,6 @@ describe('TWAMM Hook', () => {
         }
       })
 
-
       it('clears all balances appropriately when trading against a 0 fee AMM', async () => {
         await poolManager.initialize(key, encodeSqrtPriceX96(1, 1))
 
