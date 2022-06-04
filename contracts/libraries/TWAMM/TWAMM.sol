@@ -556,7 +556,7 @@ library TWAMM {
         IPoolManager poolManager,
         IPoolManager.PoolKey memory poolKey,
         uint160 nextSqrtPriceX96
-    ) private view returns (bool initialized, int24 nextTickInit) {
+    ) internal view returns (bool initialized, int24 nextTickInit) {
         // use current price as a starting point for nextTickInit
         nextTickInit = pool.sqrtPriceX96.getTickAtSqrtRatio();
         bool searchingLeft = nextSqrtPriceX96 < pool.sqrtPriceX96;
@@ -571,6 +571,10 @@ library TWAMM {
                 nextTickInit,
                 searchingLeft
             );
+            if ((!searchingLeft && nextTickInit > targetTick) || (searchingLeft && nextTickInit < targetTick)) {
+                initialized = false;
+                break;
+            }
             if (initialized == true) break;
         }
     }

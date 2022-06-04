@@ -6,6 +6,7 @@ import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, MaxUint128 } from './shared/utilities'
 import { inOneBlock } from './shared/inOneBlock'
+import { TickMathTest } from '../typechain/TickMathTest'
 
 async function mineNextBlock(time: number) {
   await ethers.provider.send('evm_mine', [time])
@@ -65,11 +66,17 @@ const POOL_KEY = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACI
 describe('TWAMM', () => {
   let wallet: Wallet, other: Wallet
   let twamm: TWAMMTest
+  let tickMath: TickMathTest
 
   let loadFixture: ReturnType<typeof waffle.createFixtureLoader>
   before('create fixture loader', async () => {
     ;[wallet, other] = await (ethers as any).getSigners()
     loadFixture = waffle.createFixtureLoader([wallet, other])
+  })
+
+  before('deploy TickMathTest', async () => {
+    const factory = await ethers.getContractFactory('TickMathTest')
+    tickMath = (await factory.deploy()) as TickMathTest
   })
 
   // Finds the time that is numIntervals away from the timestamp.
@@ -84,6 +91,12 @@ describe('TWAMM', () => {
       await twamm.executeTWAMMOrders(POOL_KEY, poolParams)
       await fn()
     })
+  }
+
+  async function initTicks(ticks: number[], tickSpacing: number): Promise<void> {
+    for (const tick of ticks) {
+      await twamm.flipTick(tick, tickSpacing)
+    }
   }
 
   beforeEach(async () => {
@@ -103,6 +116,100 @@ describe('TWAMM', () => {
       await twamm.initialize()
 
       expect(await twamm.lastVirtualOrderTimestamp()).to.equal((await ethers.provider.getBlock('latest')).timestamp)
+    })
+  })
+
+  describe('#getNextInitialilzedTicks', () => {
+    let poolParams: PoolParams
+    let poolKey: PoolKey
+    beforeEach('sets the initial state of the twamm', async () => {
+      poolParams = {
+        feeProtocol: 0,
+        sqrtPriceX96: encodeSqrtPriceX96(1, 1),
+        fee: '3000',
+        liquidity: '1000000000000000000000000',
+        tickSpacing: 60,
+      }
+      poolKey = { token0: ZERO_ADDR, token1: ZERO_ADDR, tickSpacing: TICK_SPACING, fee: FEE, hooks: ZERO_ADDR }
+
+      expect(await twamm.lastVirtualOrderTimestamp()).to.equal(0)
+      await twamm.initialize()
+    })
+
+    it('returns false when swapping to the same prices', async () => {
+      // set the ticks
+      await initTicks([-60, 60], TICK_SPACING)
+      const nextPrice = encodeSqrtPriceX96(1, 1)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, nextPrice)
+
+      expect(results.initialized).to.be.false
+      expect(results.nextTickInit).to.equal(0)
+    })
+
+    it('returns true when swapping to the right', async () => {
+      // set the ticks
+      await initTicks([60], TICK_SPACING)
+      // token1 increases
+      const nextPrice = encodeSqrtPriceX96(2, 1)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, nextPrice)
+
+      expect(results.initialized).to.be.true
+      expect(results.nextTickInit).to.equal(60)
+    })
+
+    it('returns true when swapping to the left', async () => {
+      // set the ticks
+      await initTicks([-60], TICK_SPACING)
+      // token0 increases
+      const nextPrice = encodeSqrtPriceX96(1, 2)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, nextPrice)
+
+      expect(results.initialized).to.be.true
+      expect(results.nextTickInit).to.equal(-60)
+    })
+
+    it('returns false when swapping right and tick is after the target price', async () => {
+      const targetTick = 60
+      const nextInitializedTick = 120
+      const priceAtTick = await tickMath.getSqrtRatioAtTick(targetTick)
+
+      await initTicks([nextInitializedTick], TICK_SPACING)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, priceAtTick)
+
+      expect(results.initialized).to.be.false
+    })
+
+    it('returns false when swapping right, tick is after the target price, tick is not on tickSpacing', async () => {
+      const targetTick = 119
+      const nextInitializedTick = 120
+      const priceAtTick = await tickMath.getSqrtRatioAtTick(targetTick)
+
+      await initTicks([nextInitializedTick], TICK_SPACING)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, priceAtTick)
+
+      expect(results.initialized).to.be.false
+    })
+
+    it('returns false when swapping left and tick is after the target price', async () => {
+      const targetTick = -60
+      const nextInitializedTick = -120
+      const priceAtTick = await tickMath.getSqrtRatioAtTick(targetTick)
+
+      await initTicks([nextInitializedTick], TICK_SPACING)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, priceAtTick)
+
+      expect(results.initialized).to.be.false
+    })
+
+    it('returns false when swapping left, tick is after the target price, tick is not on tickSpacing', async () => {
+      const targetTick = -100
+      const nextInitializedTick = -120
+      const priceAtTick = await tickMath.getSqrtRatioAtTick(targetTick)
+
+      await initTicks([nextInitializedTick], TICK_SPACING)
+      const results = await twamm.callStatic.getNextInitializedTick(poolParams, poolKey, priceAtTick)
+
+      expect(results.initialized).to.be.false
     })
   })
 
