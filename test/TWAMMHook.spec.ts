@@ -432,33 +432,45 @@ describe('TWAMM Hook', () => {
     })
 
     describe('when TWAMM crosses no ticks', () => {
-      it('clears all balances appropriately when trading against a 0 fee AMM', async () => {
-        const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-        const amountLiquidity = expandTo18Decimals(1)
-        const amountSell0 = expandTo18Decimals(1)
-        const amountSell1 = expandTo18Decimals(10)
+      let latestTimestamp: number
+      let amountLiquidity: BigNumber
+      let amountSell0: BigNumber
+      let amountSell1: BigNumber
+      let start: number
+      let expiration: number
+      let orderKey0: OrderKey
+      let orderKey1: OrderKey
+      let key: PoolKey
 
-        const start = nIntervalsFrom(latestTimestamp, 10_000, 1)
-        const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+      beforeEach(async () => {
+        latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+        amountLiquidity = expandTo18Decimals(1)
+        amountSell0 = expandTo18Decimals(1)
+        amountSell1 = expandTo18Decimals(10)
 
-        const orderKey0 = {
+        start = nIntervalsFrom(latestTimestamp, 10_000, 1)
+        expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+        orderKey0 = {
           zeroForOne: true,
           owner: wallet.address,
           expiration,
         }
-        const orderKey1 = {
+        orderKey1 = {
           zeroForOne: false,
           owner: wallet.address,
           expiration,
         }
-
-        const key = {
+        key = {
           token0: token0.address,
           token1: token1.address,
           fee: 0,
           hooks: twamm.address,
           tickSpacing: 10,
         }
+      })
+
+
+      it('clears all balances appropriately when trading against a 0 fee AMM', async () => {
         await poolManager.initialize(key, encodeSqrtPriceX96(1, 1))
 
         // 1) Add liquidity balances to AMM
@@ -468,14 +480,12 @@ describe('TWAMM Hook', () => {
           liquidityDelta: amountLiquidity,
         })
 
-        await ethers.provider.send('evm_setAutomine', [false])
-
         // 2) Add order balances to TWAMM
-        await twamm.submitLongTermOrder(key, orderKey0, amountSell0)
-        await twamm.submitLongTermOrder(key, orderKey1, amountSell1)
+        await inOneBlock(start, async () => {
+          await twamm.submitLongTermOrder(key, orderKey0, amountSell0)
+          await twamm.submitLongTermOrder(key, orderKey1, amountSell1)
+        })
 
-        await ethers.provider.send('evm_mine', [start])
-        await ethers.provider.send('evm_setAutomine', [true])
         await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
 
         const prevBalance0 = await token0.balanceOf(twamm.address)
@@ -492,6 +502,60 @@ describe('TWAMM Hook', () => {
         // TODO: precision error of 3-4 wei :(
         expect(newBalance0.sub(EXTRA_TOKENS)).to.eq(earningsToken0.sub(3))
         expect(newBalance1.sub(EXTRA_TOKENS)).to.eq(earningsToken1.sub(4))
+      })
+
+      it('trades properly with initialized ticks just past the the target price moving right', async () => {
+        await poolManager.initialize(key, encodeSqrtPriceX96(1, 1))
+
+        // 1) Add liquidity balances to AMM
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: getMinTick(10),
+          tickUpper: getMaxTick(10),
+          liquidityDelta: amountLiquidity,
+        })
+        // Add initialized ticks closely past targetPrice
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: 23000,
+          tickUpper: 23100,
+          liquidityDelta: amountLiquidity,
+        })
+
+        // 2) Add order balances to TWAMM
+        await inOneBlock(start, async () => {
+          await twamm.submitLongTermOrder(key, orderKey0, amountSell0)
+          await twamm.submitLongTermOrder(key, orderKey1, amountSell1)
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
+        await twamm.executeTWAMMOrders(key)
+        expect((await poolManager.getSlot0(key)).tick).to.eq(22989)
+      })
+
+      it('trades properly with initialized ticks just past the the target price moving left', async () => {
+        await poolManager.initialize(key, encodeSqrtPriceX96(1, 1))
+
+        // 1) Add liquidity balances to AMM
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: getMinTick(10),
+          tickUpper: getMaxTick(10),
+          liquidityDelta: amountLiquidity,
+        })
+        // Add initialized ticks closely past targetPrice
+        await modifyPositionTest.modifyPosition(key, {
+          tickLower: -23100,
+          tickUpper: -23000,
+          liquidityDelta: amountLiquidity,
+        })
+
+        // 2) Add order balances to TWAMM
+        await inOneBlock(start, async () => {
+          await twamm.submitLongTermOrder(key, orderKey0, amountSell1)
+          await twamm.submitLongTermOrder(key, orderKey1, amountSell0)
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
+        await twamm.executeTWAMMOrders(key)
+        expect((await poolManager.getSlot0(key)).tick).to.eq(-22990)
       })
     })
 
