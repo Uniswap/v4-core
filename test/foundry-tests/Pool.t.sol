@@ -2,12 +2,18 @@ pragma solidity ^0.8.15;
 
 import {Test} from 'forge-std/Test.sol';
 import {Vm} from 'forge-std/Vm.sol';
+import {IPoolManager} from '../../contracts/interfaces/IPoolManager.sol';
 import {Pool} from '../../contracts/libraries/Pool.sol';
 import {Position} from '../../contracts/libraries/Position.sol';
 import {TickMath} from '../../contracts/libraries/TickMath.sol';
+import {Random} from './utils/Random.sol';
+import {Num} from './utils/Num.sol';
+import {PoolSimulation} from './utils/PoolSimulation.sol';
 
 contract PoolTest is Test {
     using Pool for Pool.State;
+    using Random for Random.Rand;
+    using Num for uint256;
 
     Pool.State state;
 
@@ -37,6 +43,14 @@ contract PoolTest is Test {
         int24 bound = boundTickSpacing(tickSpacing);
         assertGt(bound, 0);
         assertLt(bound, 32768);
+    }
+
+    function testRandomTick(uint256 seed, uint128 salt) external {
+        Random.Rand memory rand = Random.Rand(seed, salt);
+        int24 spacing = rand.tickSpacing();
+        int24 bound = rand.tick(spacing);
+        assertGe(bound, TickMath.MIN_TICK);
+        assertLe(bound, TickMath.MAX_TICK);
     }
 
     function testModifyPosition(
@@ -75,5 +89,45 @@ contract PoolTest is Test {
                 tickSpacing: tickSpacing
             })
         );
+    }
+
+    /// Test random set of modifyPosition and swap calls
+    /// ensuring that all positions can be closed at the end
+    function testRandomAddAndSwap(uint256 seed, uint256 numActions) public {
+        Random.Rand memory rand = Random.Rand(seed, 0);
+        // can increase max numActions at cost of test suite runtime
+        numActions = uint8(numActions.bound(1, 16));
+        uint160 sqrtPrice = rand.sqrtPrice();
+        int24 tickSpacing = rand.tickSpacing();
+        state.initialize(sqrtPrice, 0);
+
+        Pool.ModifyPositionParams[] memory positions = new Pool.ModifyPositionParams[](numActions);
+
+        for (uint256 i = 0; i < numActions; i++) {
+            uint8 action = uint8(rand.u256().bound(0, 2));
+            if (action == 0) {
+                // add liquidity
+                Pool.ModifyPositionParams memory params = PoolSimulation.addLiquidity(
+                    state,
+                    rand,
+                    tickSpacing,
+                    address(this)
+                );
+                positions[i] = params;
+                state.modifyPosition(params);
+            } else if (action == 1) {
+                // swap
+                state.swap(PoolSimulation.swap(state, rand, tickSpacing));
+            }
+        }
+
+        for (uint256 i = 0; i < numActions; i++) {
+            Pool.ModifyPositionParams memory position = positions[i];
+            // some indices will be empty if they were used for another action
+            if (position.liquidityDelta != 0) {
+                position.liquidityDelta = -position.liquidityDelta;
+                state.modifyPosition(position);
+            }
+        }
     }
 }
