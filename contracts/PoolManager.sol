@@ -253,7 +253,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         onlyByLocker
         returns (IPoolManager.BalanceDelta memory delta)
     {
-        if (key.hooks.shouldCallBeforeSwap() && key.hooks.beforeSwap(msg.sender, key, params) != IHooks.beforeSwap.selector) {
+        if (
+            key.hooks.shouldCallBeforeSwap() &&
+            key.hooks.beforeSwap(msg.sender, key, params) != IHooks.beforeSwap.selector
+        ) {
             revert Hooks.InvalidHookResponse();
         }
 
@@ -275,7 +278,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             if (feeForProtocol > 0) protocolFeesAccrued[params.zeroForOne ? key.token0 : key.token1] += feeForProtocol;
         }
 
-        if (key.hooks.shouldCallAfterSwap() && key.hooks.afterSwap(msg.sender, key, params, delta) != IHooks.afterSwap.selector) {
+        if (
+            key.hooks.shouldCallAfterSwap() &&
+            key.hooks.afterSwap(msg.sender, key, params, delta) != IHooks.afterSwap.selector
+        ) {
             revert Hooks.InvalidHookResponse();
         }
     }
