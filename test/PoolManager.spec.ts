@@ -10,12 +10,13 @@ import {
   PoolModifyPositionTest,
   PoolSwapTest,
   TestERC20,
+  PoolTakeTest,
 } from '../typechain'
 import { MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
+import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId, MaxUint128 } from './shared/utilities'
 import { deployMockContract, MockedContract } from './shared/mockContract'
-import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -31,6 +32,7 @@ describe('PoolManager', () => {
   let swapTest: PoolSwapTest
   let modifyPositionTest: PoolModifyPositionTest
   let donateTest: PoolDonateTest
+  let takeTest: PoolTakeTest
   let hooksMock: MockedContract
   let testHooksEmpty: EmptyTestHooks
   let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
@@ -41,6 +43,7 @@ describe('PoolManager', () => {
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
+    const takeTestFactory = await ethers.getContractFactory('PoolTakeTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
     const manager = (await poolManagerFactory.deploy()) as PoolManager
@@ -64,13 +67,14 @@ describe('PoolManager', () => {
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       donateTest: (await donateTestFactory.deploy(manager.address)) as PoolDonateTest,
+      takeTest: (await takeTestFactory.deploy(manager.address)) as PoolTakeTest,
       tokens,
       hooksMock,
       testHooksEmpty,
     }
 
     for (const token of [tokens.token0, tokens.token1, tokens.token2]) {
-      for (const spender of [result.swapTest, result.modifyPositionTest, result.donateTest]) {
+      for (const spender of [result.swapTest, result.modifyPositionTest, result.donateTest, result.takeTest]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
       }
     }
@@ -86,7 +90,7 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, donateTest, hooksMock, testHooksEmpty } =
+    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, donateTest, takeTest, hooksMock, testHooksEmpty } =
       await loadFixture(fixture))
   })
 
@@ -842,6 +846,72 @@ describe('PoolManager', () => {
           }
         )
       )
+    })
+  })
+
+  describe('#take', () => {
+    it('fails if no liquidity', async () => {
+      await tokens.token0.connect(wallet).transfer(ADDRESS_ZERO, constants.MaxUint256.div(2))
+      await expect(
+        takeTest.connect(wallet).take(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: 100,
+            hooks: ADDRESS_ZERO,
+            tickSpacing: 10,
+          },
+          100,
+          0
+        )
+      ).to.be.reverted
+    })
+
+    it('fails for invalid tokens that dont return true on transfer', async () => {
+      const tokenFactory = await ethers.getContractFactory('TestInvalidERC20')
+      const invalidToken = (await tokenFactory.deploy(BigNumber.from(2).pow(255))) as TestERC20
+      const token0Invalid = invalidToken.address.toLowerCase() < tokens.token0.address.toLowerCase()
+      const key = {
+        token0: token0Invalid ? invalidToken.address : tokens.token0.address,
+        token1: token0Invalid ? tokens.token0.address : invalidToken.address,
+        fee: 100,
+        hooks: ADDRESS_ZERO,
+        tickSpacing: 10,
+      }
+      await invalidToken.approve(modifyPositionTest.address, constants.MaxUint256)
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: -60,
+        tickUpper: 60,
+        liquidityDelta: 100,
+      })
+
+      await tokens.token0.connect(wallet).approve(takeTest.address, MaxUint128)
+      await invalidToken.connect(wallet).approve(takeTest.address, MaxUint128)
+
+      await expect(takeTest.connect(wallet).take(key, token0Invalid ? 1 : 0, token0Invalid ? 0 : 1)).to.be.reverted
+      await expect(takeTest.connect(wallet).take(key, token0Invalid ? 0 : 1, token0Invalid ? 1 : 0)).to.not.be.reverted
+    })
+
+    it('succeeds if has liquidity', async () => {
+      const key = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: 100,
+        hooks: ADDRESS_ZERO,
+        tickSpacing: 10,
+      }
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: -60,
+        tickUpper: 60,
+        liquidityDelta: 100,
+      })
+
+      await tokens.token0.connect(wallet).approve(takeTest.address, MaxUint128)
+
+      await expect(takeTest.connect(wallet).take(key, 1, 0)).to.be.not.be.reverted
+      await expect(takeTest.connect(wallet).take(key, 0, 1)).to.be.not.be.reverted
     })
   })
 
