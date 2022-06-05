@@ -21,14 +21,14 @@ Object {
 }
 `;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost for entire word 1`] = `2572`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost for entire word 1`] = `2569`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost just below boundary 1`] = `2572`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost just below boundary 1`] = `2569`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost on boundary 1`] = `2572`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost on boundary 1`] = `2569`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost for entire word 1`] = `2570`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost for entire word 1`] = `2567`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost just below boundary 1`] = `2880`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost just below boundary 1`] = `2877`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost on boundary 1`] = `2570`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost on boundary 1`] = `2567`;
