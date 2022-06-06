@@ -158,7 +158,7 @@ contract TWAMMHook is BaseHook {
         buyToken.safeTransfer(orderKey.owner, earningsAmount);
     }
 
-    function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external override poolManagerOnly returns (bytes memory) {
         (IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory swapParams) = abi.decode(
             rawData,
             (IPoolManager.PoolKey, IPoolManager.SwapParams)
