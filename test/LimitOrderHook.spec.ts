@@ -140,18 +140,34 @@ describe('LimitOrderHooks', () => {
 
     describe('zeroForOne = true', async () => {
       const zeroForOne = true
-      const liquidity = 100
+      const liquidity = 1000000
 
       it('works from the right boundary of the current range', async () => {
         const tickLower = key.tickSpacing
         await limitOrderHook.place(key, tickLower, zeroForOne, liquidity)
         expect(await limitOrderHook.getEpoch(key, tickLower, zeroForOne)).to.eq(1)
+        expect(
+          await manager['getLiquidity((address,address,uint24,int24,address),address,int24,int24)'](
+            key,
+            limitOrderHook.address,
+            tickLower,
+            tickLower + key.tickSpacing
+          )
+        ).to.eq(liquidity)
       })
 
       it('works from the left boundary of the current range', async () => {
         const tickLower = 0
         await limitOrderHook.place(key, tickLower, zeroForOne, liquidity)
         expect(await limitOrderHook.getEpoch(key, tickLower, zeroForOne)).to.eq(1)
+        expect(
+          await manager['getLiquidity((address,address,uint24,int24,address),address,int24,int24)'](
+            key,
+            limitOrderHook.address,
+            tickLower,
+            tickLower + key.tickSpacing
+          )
+        ).to.eq(liquidity)
       })
 
       it('#CrossedRange', async () => {
@@ -180,12 +196,20 @@ describe('LimitOrderHooks', () => {
 
     describe('zeroForOne = false', async () => {
       const zeroForOne = false
-      const liquidity = 100
+      const liquidity = 1000000
 
       it('works up until the left boundary of the current range', async () => {
         const tickLower = -key.tickSpacing
         await limitOrderHook.place(key, tickLower, zeroForOne, liquidity)
         expect(await limitOrderHook.getEpoch(key, tickLower, zeroForOne)).to.eq(1)
+        expect(
+          await manager['getLiquidity((address,address,uint24,int24,address),address,int24,int24)'](
+            key,
+            limitOrderHook.address,
+            tickLower,
+            tickLower + key.tickSpacing
+          )
+        ).to.eq(liquidity)
       })
 
       it('#CrossedRange', async () => {
@@ -215,10 +239,19 @@ describe('LimitOrderHooks', () => {
     it('works with different LPs', async () => {
       const tickLower = key.tickSpacing
       const zeroForOne = true
-      const liquidity = 100
+      const liquidity = 1000000
       await limitOrderHook.place(key, tickLower, zeroForOne, liquidity)
       await limitOrderHook.connect(other).place(key, tickLower, zeroForOne, liquidity)
       expect(await limitOrderHook.getEpoch(key, tickLower, zeroForOne)).to.eq(1)
+
+      expect(
+        await manager['getLiquidity((address,address,uint24,int24,address),address,int24,int24)'](
+          key,
+          limitOrderHook.address,
+          tickLower,
+          tickLower + key.tickSpacing
+        )
+      ).to.eq(liquidity * 2)
 
       const epochInfo = await limitOrderHook.epochInfos(1)
       expect(epochInfo.filled).to.be.false
@@ -236,14 +269,17 @@ describe('LimitOrderHooks', () => {
   describe('#kill', async () => {
     const tickLower = 0
     const zeroForOne = true
-    const liquidity = 100
+    const liquidity = 1000000
 
     beforeEach('create limit order', async () => {
       await limitOrderHook.place(key, tickLower, zeroForOne, liquidity)
     })
 
     it('works', async () => {
-      await limitOrderHook.kill(key, tickLower, zeroForOne, wallet.address)
+      await expect(limitOrderHook.kill(key, tickLower, zeroForOne, wallet.address))
+        .to.emit(tokens.token0, 'Transfer')
+        .withArgs(manager.address, wallet.address, 2995)
+
       expect(await limitOrderHook.getEpochLiquidity(1, wallet.address)).to.eq(0)
     })
   })
@@ -280,6 +316,8 @@ describe('LimitOrderHooks', () => {
         .to.emit(tokens.token0, 'Transfer')
         .withArgs(manager.address, wallet.address, expectedToken0Amount - 1) // 1 wei of dust
 
+      expect(await limitOrderHook.getTickLowerLast(key)).to.be.eq(key.tickSpacing)
+
       expect((await manager.getSlot0(key)).tick).to.eq(key.tickSpacing)
     })
 
@@ -289,6 +327,15 @@ describe('LimitOrderHooks', () => {
       expect(epochInfo.filled).to.be.true
       expect(epochInfo.token0Total).to.eq(0)
       expect(epochInfo.token1Total).to.eq(expectedToken0Amount + 17) // 3013, 2 wei of dust
+
+      expect(
+        await manager['getLiquidity((address,address,uint24,int24,address),address,int24,int24)'](
+          key,
+          limitOrderHook.address,
+          tickLower,
+          tickLower + key.tickSpacing
+        )
+      ).to.eq(0)
     })
 
     it('#withdraw', async () => {

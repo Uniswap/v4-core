@@ -152,19 +152,20 @@ contract LimitOrderHook is BaseHook {
         int24 lower;
         int24 upper;
         if (tickLower < tickLowerLast) {
-            // we've moved left, meaning we've traded token1 for token0
+            // the pool has moved "left", meaning it's traded token1 for token0,
             lower = tickLower + key.tickSpacing;
             upper = tickLowerLast;
         } else {
-            // we've moved right, meaning we've traded token0 for token1
+            // the pool has moved "right", meaning it's traded token0 for token1
             lower = tickLowerLast;
             upper = tickLower - key.tickSpacing;
         }
 
-        // note that a zeroForOne swap is the _opposite_ of a zeroForOne limit order fill,
-        // hence the inversion seen below whenever we access params.zeroForOne
+        // note that a zeroForOne swap means that the pool is actually gaining token0, so limit
+        // order fills are the opposite of swap fills, hence the inversion below
+        bool zeroForOne = !params.zeroForOne;
         for (; lower <= upper; lower += key.tickSpacing) {
-            Epoch epoch = getEpoch(key, lower, !params.zeroForOne);
+            Epoch epoch = getEpoch(key, lower, zeroForOne);
             if (!epoch.equals(EPOCH_DEFAULT)) {
                 EpochInfo storage epochInfo = epochInfos[epoch];
 
@@ -182,13 +183,13 @@ contract LimitOrderHook is BaseHook {
                     epochInfo.token1Total += amount1;
                 }
 
-                setEpoch(key, lower, !params.zeroForOne, EPOCH_DEFAULT);
+                setEpoch(key, lower, zeroForOne, EPOCH_DEFAULT);
 
-                emit Fill(epoch, key, lower, !params.zeroForOne);
+                emit Fill(epoch, key, lower, zeroForOne);
             }
         }
 
-        tickLowerLast = tickLower;
+        setTickLowerLast(key, tickLower);
     }
 
     function lockAcquiredFill(
@@ -291,12 +292,18 @@ contract LimitOrderHook is BaseHook {
         uint128 liquidity = epochInfo.liquidity[msg.sender];
         if (liquidity == 0) revert ZeroLiquidity();
         delete epochInfo.liquidity[msg.sender];
-        epochInfo.liquidityTotal -= liquidity;
+        uint128 liquidityTotal = epochInfo.liquidityTotal;
+        epochInfo.liquidityTotal = liquidityTotal - liquidity;
 
         uint256 amount0Fee;
         uint256 amount1Fee;
         (amount0, amount1, amount0Fee, amount1Fee) = abi.decode(
-            poolManager.lock(abi.encodeCall(this.lockAcquiredKill, (key, tickLower, -int256(uint256(liquidity)), to))),
+            poolManager.lock(
+                abi.encodeCall(
+                    this.lockAcquiredKill,
+                    (key, tickLower, -int256(uint256(liquidity)), to, liquidity == liquidityTotal)
+                )
+            ),
             (uint256, uint256, uint256, uint256)
         );
 
@@ -312,7 +319,8 @@ contract LimitOrderHook is BaseHook {
         IPoolManager.PoolKey calldata key,
         int24 tickLower,
         int256 liquidityDelta,
-        address to
+        address to,
+        bool removingAllLiquidity
     )
         external
         selfOnly
@@ -324,15 +332,22 @@ contract LimitOrderHook is BaseHook {
         )
     {
         int24 tickUpper = tickLower + key.tickSpacing;
-        // we have to collect fee revenue first, to prevent abuse
-        // TODO don't have to do this if the caller is the only lp in the epoch
-        IPoolManager.BalanceDelta memory deltaFee = poolManager.modifyPosition(
-            key,
-            IPoolManager.ModifyPositionParams({tickLower: tickLower, tickUpper: tickUpper, liquidityDelta: 0})
-        );
 
-        if (deltaFee.amount0 < 0) poolManager.mint(key.token0, address(this), amount0Fee = uint256(-deltaFee.amount0));
-        if (deltaFee.amount1 < 0) poolManager.mint(key.token1, address(this), amount1Fee = uint256(-deltaFee.amount1));
+        // because `modifyPosition` includes not just principal value but also fees, we cannot allocate
+        // the proceeds pro-rata. if we were to do so, users who have been in a limit order that's partially filled
+        // could be unfairly diluted by a user sychronously placing then killing a limit order to skim off fees.
+        // to prevent this, we allocate all fee revenue to remaining limit order placers, unless this is the last order.
+        if (!removingAllLiquidity) {
+            IPoolManager.BalanceDelta memory deltaFee = poolManager.modifyPosition(
+                key,
+                IPoolManager.ModifyPositionParams({tickLower: tickLower, tickUpper: tickUpper, liquidityDelta: 0})
+            );
+
+            if (deltaFee.amount0 < 0)
+                poolManager.mint(key.token0, address(this), amount0Fee = uint256(-deltaFee.amount0));
+            if (deltaFee.amount1 < 0)
+                poolManager.mint(key.token1, address(this), amount1Fee = uint256(-deltaFee.amount1));
+        }
 
         IPoolManager.BalanceDelta memory delta = poolManager.modifyPosition(
             key,
