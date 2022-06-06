@@ -4,7 +4,7 @@ import { ethers, waffle } from 'hardhat'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import{ encodeSqrtPriceX96, expandTo18Decimals,MaxUint128, MAX_SQRT_RATIO } from './shared/utilities'
+import { encodeSqrtPriceX96, expandTo18Decimals, MaxUint128, MAX_SQRT_RATIO } from './shared/utilities'
 import bn from 'bignumber.js'
 
 function divX96(n: BigNumber, precision: number = 7): string {
