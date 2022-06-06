@@ -6,6 +6,8 @@ import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {TickBitmap} from './libraries/TickBitmap.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
+import {TransferHelper} from './libraries/TransferHelper.sol';
+
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {IHooks} from './interfaces/IHooks.sol';
@@ -20,6 +22,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
+    using TransferHelper for IERC20Minimal;
     using TickBitmap for mapping(int16 => uint256);
 
     /// @inheritdoc IPoolManager
@@ -274,7 +277,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     ) external override noDelegateCall onlyByLocker {
         _accountDelta(token, amount.toInt256());
         reservesOf[token] -= amount;
-        token.transfer(to, amount);
+        token.safeTransfer(to, amount);
     }
 
     /// @inheritdoc IPoolManager
