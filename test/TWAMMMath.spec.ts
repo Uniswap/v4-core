@@ -158,34 +158,34 @@ describe('TWAMMMath', () => {
           earningsFactor1: '0.0101778',
         },
       },
-      // TODO: not working - amounts out are incorrect from desmos, not enough precision??
-      // {
-      //   title: 'sell rates are extremely low compared to pool liquidity',
-      //   inputs: {
-      //     sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-      //     sellRate0: '10000',
-      //     sellRate1: '500',
-      //   },
-      //   outputsDivX96: {
-      //     price: '1.0000000',
-      //     earningsFactor0: '180.0000000',
-      //     earningsFactor1: '72000.0000000',
-      //   },
-      // },
-      // TODO: not working - desmos also is turning up invalid numbers (like negative earnings accumulators)
-      // {
-      //   title: 'sell rate of 1 wei in a pool with liquidity amounts that accommodates 18 token decimals',
-      //   inputs: {
-      //     sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-      //     sellRate0: '5',
-      //     sellRate1: '10000',
-      //   },
-      //   outputsDivX96: {
-      //     price: '1.0000000',
-      //     earningsFactor0: '184835683.94',
-      //     earningsFactor1: '-88816.04197',
-      //   },
-      // },
+      // TODO: last 2 tests slightly off from Wolfram (desmos fails to be able to handle these numbers). Write
+      // integration tests for these
+      {
+        title: 'sell rates are extremely low compared to pool liquidity',
+        inputs: {
+          sqrtPriceX96: encodeSqrtPriceX96(1, 1),
+          sellRate0: '10000',
+          sellRate1: '5',
+        },
+        outputsDivX96: {
+          price: '1.0000000',
+          earningsFactor0: '3600.0000000',
+          earningsFactor1: '3599.9999981',
+        },
+      },
+      {
+        title: 'sell rate of 1 wei in a pool with liquidity amounts that accommodates 18 token decimals',
+        inputs: {
+          sqrtPriceX96: encodeSqrtPriceX96(1, 1),
+          sellRate0: '5',
+          sellRate1: '10000',
+        },
+        outputsDivX96: {
+          price: '1.0000000',
+          earningsFactor0: '3600.0000007',
+          earningsFactor1: '3600.0000000',
+        },
+      },
     ]
 
     for (let testcase of TEST_CASES) {
