@@ -37,7 +37,7 @@ contract HooksTest is Test, Deployers {
 
     function testInitializeSucceedsWithHook() public {
         (PoolManager _manager, IPoolManager.PoolKey memory _key) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
-        (uint160 sqrtPriceX96,) = _manager.getSlot0(_key); 
+        (uint160 sqrtPriceX96, ) = _manager.getSlot0(_key);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
     }
 
@@ -74,21 +74,33 @@ contract HooksTest is Test, Deployers {
     function testSwapSucceedsWithHook() public {
         TestERC20(address(key.token0)).mint(address(this), 10**18);
         key.token0.approve(address(swapRouter), 10**18);
-        swapRouter.swap(key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false));
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            PoolSwapTest.TestSettings(false, false)
+        );
     }
 
     function testFailBeforeSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
         TestERC20(address(key.token0)).mint(address(this), 10**18);
         key.token0.approve(address(swapRouter), 10**18);
-        swapRouter.swap(key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false));
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            PoolSwapTest.TestSettings(false, false)
+        );
     }
 
     function testFailAfterSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, bytes4(0xdeadbeef));
         TestERC20(address(key.token0)).mint(address(this), 10**18);
         key.token0.approve(address(swapRouter), 10**18);
-        swapRouter.swap(key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false));
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            PoolSwapTest.TestSettings(false, false)
+        );
     }
 
     function testDonateSucceedsWithHook() public {
@@ -117,7 +129,11 @@ contract HooksTest is Test, Deployers {
         donateRouter.donate(key, 100, 200);
     }
 
-    function addLiquidity(int24 tickLower, int24 tickUpper, int256 amount) internal {
+    function addLiquidity(
+        int24 tickLower,
+        int24 tickUpper,
+        int256 amount
+    ) internal {
         TestERC20(address(key.token0)).mint(address(this), 10**18);
         TestERC20(address(key.token1)).mint(address(this), 10**18);
         key.token0.approve(address(modifyPositionRouter), 10**18);

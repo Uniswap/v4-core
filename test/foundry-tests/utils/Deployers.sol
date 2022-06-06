@@ -14,7 +14,11 @@ contract Deployers {
         }
     }
 
-    function createPool(PoolManager manager, IHooks hooks, uint160 sqrtPriceX96) public returns (IPoolManager.PoolKey memory key) {
+    function createPool(
+        PoolManager manager,
+        IHooks hooks,
+        uint160 sqrtPriceX96
+    ) public returns (IPoolManager.PoolKey memory key) {
         TestERC20[] memory tokens = deployTokens(2, 2**255);
         key = IPoolManager.PoolKey(
             IERC20Minimal(address(tokens[0])),
@@ -26,7 +30,10 @@ contract Deployers {
         manager.initialize(key, sqrtPriceX96);
     }
 
-    function createFreshPool(IHooks hooks, uint160 sqrtPriceX96) public returns (PoolManager manager, IPoolManager.PoolKey memory key) {
+    function createFreshPool(IHooks hooks, uint160 sqrtPriceX96)
+        public
+        returns (PoolManager manager, IPoolManager.PoolKey memory key)
+    {
         manager = new PoolManager();
         key = createPool(manager, hooks, sqrtPriceX96);
         return (manager, key);
