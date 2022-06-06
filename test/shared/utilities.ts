@@ -134,6 +134,9 @@ export function getWalletForDeployingHookMask(hookMask: HookMask, mnemonic?: str
     if (prospectiveContractAddress.slice(0, 4).toLowerCase() === startingString) {
       contractAddress = prospectiveContractAddress
     } else {
+      // if, for whatever reason, we generate a bad address but a mnemonic was provided,
+      // it's stale and we surface the error
+      if (mnemonic) throw Error('Stale mnemonic')
       wallet = ethers.Wallet.createRandom()
     }
   }
