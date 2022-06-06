@@ -8,8 +8,6 @@ import {IPoolManager} from '../interfaces/IPoolManager.sol';
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
 /// has leading bits '1001' which would cause the 'before initialize' and 'after swap' hooks to be used.
 library Hooks {
-    using Hooks for IHooks;
-
     uint256 public constant BEFORE_INITIALIZE_FLAG = 1 << 159;
     uint256 public constant AFTER_INITIALIZE_FLAG = 1 << 158;
     uint256 public constant BEFORE_MODIFY_POSITION_FLAG = 1 << 157;

@@ -1010,7 +1010,6 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
       }
-      console.log(encodeSqrtPriceX96(1, 1));
       await manager.initialize(key, encodeSqrtPriceX96(1, 1))
       await expect(donateTest.donate(key, 100, 100)).to.be.revertedWith('NoLiquidityToReceiveFees()')
     })
