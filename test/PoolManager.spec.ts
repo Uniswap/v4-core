@@ -25,8 +25,6 @@ import {
   MaxUint128,
 } from './shared/utilities'
 import { deployMockContract, MockedContract } from './shared/mockContract'
-import { TickMath } from '@uniswap/v3-sdk'
-import JSBI from 'jsbi'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
