@@ -5,6 +5,7 @@ import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
+import {Position} from './libraries/Position.sol';
 import {TransferHelper} from './libraries/TransferHelper.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
@@ -21,6 +22,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
+    using Position for mapping(bytes32 => Position.Info);
     using TransferHelper for IERC20Minimal;
 
     /// @inheritdoc IPoolManager
@@ -50,8 +52,18 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(IPoolManager.PoolKey memory key) external view override returns (uint128 liquidity) {
+    function getLiquidity(IPoolManager.PoolKey calldata key) external view override returns (uint128 liquidity) {
         return _getPool(key).liquidity;
+    }
+
+    /// @inheritdoc IPoolManager
+    function getLiquidity(
+        IPoolManager.PoolKey calldata key,
+        address owner,
+        int24 tickLower,
+        int24 tickUpper
+    ) external view override returns (uint128 liquidity) {
+        return _getPool(key).positions.get(owner, tickLower, tickUpper).liquidity;
     }
 
     /// @inheritdoc IPoolManager
