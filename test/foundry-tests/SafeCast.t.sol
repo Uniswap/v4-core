@@ -1,12 +1,10 @@
 pragma solidity ^0.8.13;
 
-import {DSTest} from '../../foundry/testdata/lib/ds-test/src/test.sol';
-import {Cheats} from '../../foundry/testdata/cheats/Cheats.sol';
+import {Test} from 'forge-std/Test.sol';
+import {Vm} from 'forge-std/Vm.sol';
 import {SafeCast} from '../../contracts/libraries/SafeCast.sol';
 
-contract SafeCastTest is DSTest {
-    Cheats vm = Cheats(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
-
+contract SafeCastTest is Test {
     function testToUint160(uint256 x) public {
         if (x <= type(uint160).max) {
             assertEq(uint256(SafeCast.toUint160(x)), x);

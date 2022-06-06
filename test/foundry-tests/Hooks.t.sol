@@ -1,7 +1,7 @@
 pragma solidity ^0.8.13;
 
-import {Test} from '../../lib/Test.sol';
-import {Cheats} from '../../foundry/testdata/cheats/Cheats.sol';
+import {Test} from 'forge-std/Test.sol';
+import {Vm} from 'forge-std/Vm.sol';
 import {Hooks} from '../../contracts/libraries/Hooks.sol';
 import {MockHooks} from '../../contracts/test/MockHooks.sol';
 import {IPoolManager} from '../../contracts/interfaces/IPoolManager.sol';
@@ -11,8 +11,7 @@ import {IERC20Minimal} from '../../contracts/interfaces/external/IERC20Minimal.s
 import {PoolManager} from '../../contracts/PoolManager.sol';
 import {Deployers} from './utils/Deployers.sol';
 
-contract HooksTest is DSTest {
-    Cheats vm = Cheats(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+contract HooksTest is Test {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
     MockHooks mockHooks;
 
