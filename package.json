@@ -19,8 +19,7 @@
   "files": [
     "contracts/interfaces",
     "contracts/libraries",
-    "artifacts/contracts/PoolFactory.sol/PoolFactory.json",
-    "artifacts/contracts/Pool.sol/Pool.json",
+    "artifacts/contracts/PoolManager.sol/PoolManager.json",
     "artifacts/contracts/interfaces/**/*.json",
     "!artifacts/contracts/interfaces/**/*.dbg.json"
   ],
