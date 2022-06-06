@@ -527,6 +527,7 @@ describe('TWAMM Hook', () => {
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
         await twamm.executeTWAMMOrders(key)
+        // ensure we've swapped to the correct tick
         expect((await poolManager.getSlot0(key)).tick).to.eq(22989)
       })
 
@@ -554,6 +555,7 @@ describe('TWAMM Hook', () => {
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [expiration + 1000])
         await twamm.executeTWAMMOrders(key)
+        // ensure we've swapped to the correct tick
         expect((await poolManager.getSlot0(key)).tick).to.eq(-22990)
       })
     })
