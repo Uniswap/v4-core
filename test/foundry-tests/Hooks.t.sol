@@ -9,166 +9,119 @@ import {TestERC20} from '../../contracts/test/TestERC20.sol';
 import {IHooks} from '../../contracts/interfaces/IHooks.sol';
 import {IERC20Minimal} from '../../contracts/interfaces/external/IERC20Minimal.sol';
 import {PoolManager} from '../../contracts/PoolManager.sol';
+import {SqrtPriceMath} from '../../contracts/libraries/SqrtPriceMath.sol';
+import {PoolModifyPositionTest} from '../../contracts/test/PoolModifyPositionTest.sol';
+import {PoolSwapTest} from '../../contracts/test/PoolSwapTest.sol';
+import {PoolDonateTest} from '../../contracts/test/PoolDonateTest.sol';
 import {Deployers} from './utils/Deployers.sol';
 
-contract HooksTest is Test {
+contract HooksTest is Test, Deployers {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
+    uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
     MockHooks mockHooks;
+    PoolManager manager;
+    IPoolManager.PoolKey key;
+    PoolModifyPositionTest modifyPositionRouter;
+    PoolSwapTest swapRouter;
+    PoolDonateTest donateRouter;
 
     function setUp() public {
         MockHooks impl = new MockHooks();
         vm.etch(ALL_HOOKS_ADDRESS, address(impl).code);
         mockHooks = MockHooks(ALL_HOOKS_ADDRESS);
-    }
-
-    function testStuff() public {
-        uint256 a = 6;
-        assertEq(a, 1);
+        (manager, key) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        modifyPositionRouter = new PoolModifyPositionTest(IPoolManager(address(manager)));
+        swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
+        donateRouter = new PoolDonateTest(IPoolManager(address(manager)));
     }
 
     function testInitializeSucceedsWithHook() public {
-        (PoolManager manager, IPoolManager.PoolKey memory key) = Deployers.createFreshPool(mockHooks, 1);
-        (uint160 sqrtPriceX96,) = manager.getSlot0(key); 
-        assertEq(sqrtPriceX96, 1);
+        (PoolManager _manager, IPoolManager.PoolKey memory _key) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        (uint160 sqrtPriceX96,) = _manager.getSlot0(_key); 
+        assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
     }
 
-    function testBeforeInitializeInvalidReturn() public {
-        vm.expectRevert(Hooks.InvalidHookResponse.selector);
+    function testFailBeforeInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
-        Deployers.createFreshPool(mockHooks, 1);
+        Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
     }
 
-    function testAfterInitializeInvalidReturn() public {
-        vm.expectRevert(Hooks.InvalidHookResponse.selector);
+    function testFailAfterInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
-        Deployers.createFreshPool(mockHooks, 1);
+        Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
     }
 
-    //function testSafeBeforeModifyPosition() public {
-        //Hooks.safeBeforeModifyPosition(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //IPoolManager.ModifyPositionParams(1, 1, 1)
-        //);
-    //}
+    function testModifyPositionSucceedsWithHook() public {
+        TestERC20(address(key.token0)).mint(address(this), 10**18);
+        key.token0.approve(address(modifyPositionRouter), 10**18);
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
+    }
 
-    //function testFailSafeBeforeModifyPositionInvalidReturn() public {
-        //mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, bytes4(0xdeadbeef));
+    function testFailBeforeModifyPositionInvalidReturn() public {
+        mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, bytes4(0xdeadbeef));
+        TestERC20(address(key.token0)).mint(address(this), 10**18);
+        key.token0.approve(address(modifyPositionRouter), 10**18);
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
+    }
 
-        //Hooks.safeBeforeModifyPosition(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //IPoolManager.ModifyPositionParams(1, 1, 1)
-        //);
-    //}
+    function testFailAfterModifyPositionInvalidReturn() public {
+        mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, bytes4(0xdeadbeef));
+        TestERC20(address(key.token0)).mint(address(this), 10**18);
+        key.token0.approve(address(modifyPositionRouter), 10**18);
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
+    }
 
-    //function testSafeAfterModifyPosition() public {
-        //Hooks.safeAfterModifyPosition(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //IPoolManager.ModifyPositionParams(1, 1, 1),
-            //IPoolManager.BalanceDelta(1, 1)
-        //);
-    //}
+    function testSwapSucceedsWithHook() public {
+        TestERC20(address(key.token0)).mint(address(this), 10**18);
+        key.token0.approve(address(swapRouter), 10**18);
+        swapRouter.swap(key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false));
+    }
 
-    //function testFailSafeAfterModifyPositionInvalidReturn() public {
-        //mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, bytes4(0xdeadbeef));
+    function testFailBeforeSwapInvalidReturn() public {
+        mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
+        TestERC20(address(key.token0)).mint(address(this), 10**18);
+        key.token0.approve(address(swapRouter), 10**18);
+        swapRouter.swap(key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false));
+    }
 
-        //Hooks.safeAfterModifyPosition(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //IPoolManager.ModifyPositionParams(1, 1, 1),
-            //IPoolManager.BalanceDelta(1, 1)
-        //);
-    //}
+    function testFailAfterSwapInvalidReturn() public {
+        mockHooks.setReturnValue(mockHooks.afterSwap.selector, bytes4(0xdeadbeef));
+        TestERC20(address(key.token0)).mint(address(this), 10**18);
+        key.token0.approve(address(swapRouter), 10**18);
+        swapRouter.swap(key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false));
+    }
 
-    //function testSafeBeforeSwap() public {
-        //Hooks.safeBeforeSwap(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //IPoolManager.SwapParams(true, 1, 1)
-        //);
-    //}
+    function testDonateSucceedsWithHook() public {
+        addLiquidity(0, 60, 100);
 
-    //function testFailSafeBeforeSwapInvalidReturn() public {
-        //mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
+        key.token0.approve(address(donateRouter), 100);
+        key.token1.approve(address(donateRouter), 200);
+        donateRouter.donate(key, 100, 200);
+    }
 
-        //Hooks.safeBeforeSwap(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //IPoolManager.SwapParams(true, 1, 1)
-        //);
-    //}
+    function testFailBeforeDonateInvalidReturn() public {
+        mockHooks.setReturnValue(mockHooks.beforeDonate.selector, bytes4(0xdeadbeef));
+        addLiquidity(0, 60, 100);
 
-    //function testSafeAfterSwap() public {
-        //Hooks.safeAfterSwap(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //IPoolManager.SwapParams(true, 1, 1),
-            //IPoolManager.BalanceDelta(1, 1)
-        //);
-    //}
+        key.token0.approve(address(donateRouter), 100);
+        key.token1.approve(address(donateRouter), 200);
+        donateRouter.donate(key, 100, 200);
+    }
 
-    //function testFailSafeAfterSwapInvalidReturn() public {
-        //mockHooks.setReturnValue(mockHooks.afterSwap.selector, bytes4(0xdeadbeef));
+    function testFailAfterDonateInvalidReturn() public {
+        mockHooks.setReturnValue(mockHooks.beforeDonate.selector, bytes4(0xdeadbeef));
+        addLiquidity(0, 60, 100);
 
-        //Hooks.safeAfterSwap(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //IPoolManager.SwapParams(true, 1, 1),
-            //IPoolManager.BalanceDelta(1, 1)
-        //);
-    //}
+        key.token0.approve(address(donateRouter), 100);
+        key.token1.approve(address(donateRouter), 200);
+        donateRouter.donate(key, 100, 200);
+    }
 
-    //function testSafeBeforeDonate() public {
-        //Hooks.safeBeforeDonate(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //1,
-            //1
-        //);
-    //}
-
-    //function testFailSafeBeforeDonateSwapInvalidReturn() public {
-        //mockHooks.setReturnValue(mockHooks.beforeDonate.selector, bytes4(0xdeadbeef));
-
-        //Hooks.safeBeforeDonate(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //1,
-            //1
-        //);
-    //}
-
-    //function testSafeAfterDonate() public {
-        //Hooks.safeAfterDonate(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //1,
-            //1
-        //);
-    //}
-
-    //function testFailSafeAfterDonateSwapInvalidReturn() public {
-        //mockHooks.setReturnValue(mockHooks.afterDonate.selector, bytes4(0xdeadbeef));
-
-        //Hooks.safeAfterDonate(
-            //IHooks(mockHooks),
-            //address(this),
-            //IPoolManager.PoolKey(IERC20Minimal(address(this)), IERC20Minimal(address(this)), 1, 1, IHooks(mockHooks)),
-            //1,
-            //1
-        //);
-    //}
+    function addLiquidity(int24 tickLower, int24 tickUpper, int256 amount) internal {
+        TestERC20(address(key.token0)).mint(address(this), 10**18);
+        TestERC20(address(key.token1)).mint(address(this), 10**18);
+        key.token0.approve(address(modifyPositionRouter), 10**18);
+        key.token1.approve(address(modifyPositionRouter), 10**18);
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(tickLower, tickUpper, amount));
+    }
 }

@@ -6,7 +6,7 @@ import {IERC20Minimal} from '../../../contracts/interfaces/external/IERC20Minima
 import {IPoolManager} from '../../../contracts/interfaces/IPoolManager.sol';
 import {PoolManager} from '../../../contracts/PoolManager.sol';
 
-library Deployers {
+contract Deployers {
     function deployTokens(uint8 count, uint256 totalSupply) public returns (TestERC20[] memory tokens) {
         tokens = new TestERC20[](count);
         for (uint8 i = 0; i < count; i++) {
