@@ -1,4 +1,5 @@
 import bn from 'bignumber.js'
+import { ethers } from 'hardhat'
 import { BigNumber, BigNumberish, Contract, ContractTransaction, utils, Wallet } from 'ethers'
 
 export const MaxUint128 = BigNumber.from(2).pow(128).sub(1)
@@ -21,8 +22,8 @@ export const TICK_SPACINGS: { [amount in FeeAmount]: number } = {
   [FeeAmount.HIGH]: 200,
 }
 
-export function expandTo18Decimals(n: number): BigNumber {
-  return BigNumber.from(n).mul(BigNumber.from(10).pow(18))
+export function expandTo18Decimals(n: number | string): BigNumber {
+  return ethers.utils.parseEther(n.toString())
 }
 
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 })

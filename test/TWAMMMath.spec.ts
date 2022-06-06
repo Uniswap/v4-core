@@ -4,12 +4,8 @@ import { ethers, waffle } from 'hardhat'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import { encodeSqrtPriceX96, MaxUint128, MAX_SQRT_RATIO } from './shared/utilities'
+import{ encodeSqrtPriceX96, expandTo18Decimals,MaxUint128, MAX_SQRT_RATIO } from './shared/utilities'
 import bn from 'bignumber.js'
-
-function toWei(n: string): BigNumber {
-  return ethers.utils.parseEther(n)
-}
 
 function divX96(n: BigNumber, precision: number = 7): string {
   return (parseInt(n.toString()) / 2 ** 96).toFixed(precision).toString()
@@ -51,8 +47,8 @@ describe('TWAMMMath', () => {
       liquidity = '1000000000000000000000000'
       fee = '3000'
       tickSpacing = '60'
-      sellRateCurrent0 = toWei('1')
-      sellRateCurrent1 = toWei('1')
+      sellRateCurrent0 = expandTo18Decimals(1)
+      sellRateCurrent1 = expandTo18Decimals(1)
     })
 
     // Outputting results without FixedPointX96 format to compare more easily with desmos
@@ -62,8 +58,8 @@ describe('TWAMMMath', () => {
         title: 'price is one, sell rates are equal',
         inputs: {
           sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-          sellRate0: toWei('1'),
-          sellRate1: toWei('1'),
+          sellRate0: expandTo18Decimals(1),
+          sellRate1: expandTo18Decimals(1),
         },
         outputsDivX96: {
           price: '1.0000000',
@@ -75,8 +71,8 @@ describe('TWAMMMath', () => {
         title: 'price is one, sell rate is 5',
         inputs: {
           sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-          sellRate0: toWei('5'),
-          sellRate1: toWei('1'),
+          sellRate0: expandTo18Decimals(5),
+          sellRate1: expandTo18Decimals(1),
         },
         outputsDivX96: {
           price: '0.9858549',
@@ -88,8 +84,8 @@ describe('TWAMMMath', () => {
         title: 'price is one, sell rate is 10',
         inputs: {
           sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-          sellRate0: toWei('10'),
-          sellRate1: toWei('1'),
+          sellRate0: expandTo18Decimals(10),
+          sellRate1: expandTo18Decimals(1),
         },
         outputsDivX96: {
           price: '0.9687272',
@@ -101,8 +97,8 @@ describe('TWAMMMath', () => {
         title: 'price is one, sell rate is 1/5',
         inputs: {
           sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-          sellRate0: toWei('1'),
-          sellRate1: toWei('5'),
+          sellRate0: expandTo18Decimals(1),
+          sellRate1: expandTo18Decimals(5),
         },
         outputsDivX96: {
           price: '1.0143480',
@@ -114,8 +110,8 @@ describe('TWAMMMath', () => {
         title: 'price is one, sell rate is 1/10',
         inputs: {
           sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-          sellRate0: toWei('1'),
-          sellRate1: toWei('10'),
+          sellRate0: expandTo18Decimals(1),
+          sellRate1: expandTo18Decimals(10),
         },
         outputsDivX96: {
           price: '1.0322824',
@@ -127,8 +123,8 @@ describe('TWAMMMath', () => {
         title: 'price is high, sell rate is 1/10',
         inputs: {
           sqrtPriceX96: encodeSqrtPriceX96(123456, 1),
-          sellRate0: toWei('1'),
-          sellRate1: toWei('10'),
+          sellRate0: expandTo18Decimals(1),
+          sellRate1: expandTo18Decimals(10),
         },
         outputsDivX96: {
           price: '155.1531845',
@@ -140,8 +136,8 @@ describe('TWAMMMath', () => {
         title: 'sell rate is extremely large',
         inputs: {
           sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-          sellRate0: toWei('100000000'),
-          sellRate1: toWei('5'),
+          sellRate0: expandTo18Decimals(100000000),
+          sellRate1: expandTo18Decimals(5),
         },
         outputsDivX96: {
           price: '0.0002236',
@@ -153,8 +149,8 @@ describe('TWAMMMath', () => {
         title: 'when sell rate is extremely small',
         inputs: {
           sqrtPriceX96: encodeSqrtPriceX96(1, 1),
-          sellRate0: toWei('5'),
-          sellRate1: toWei('100000000'),
+          sellRate0: expandTo18Decimals(5),
+          sellRate1: expandTo18Decimals(100000000),
         },
         outputsDivX96: {
           price: '4472.1359550',
@@ -223,8 +219,8 @@ describe('TWAMMMath', () => {
     describe('with insufficient liquidity', () => {
       describe('excess token0', () => {
         const liquidity = '100'
-        const sellRateCurrent0 = toWei('10')
-        const sellRateCurrent1 = toWei('1')
+        const sellRateCurrent0 = expandTo18Decimals(10)
+        const sellRateCurrent1 = expandTo18Decimals(1)
 
         it('returns the sellRatio as the new sqrtPriceX96', async () => {
           const results = await twamm.callStatic.calculateExecutionUpdates({
@@ -264,8 +260,8 @@ describe('TWAMMMath', () => {
 
       describe('excess token0', () => {
         const liquidity = '100'
-        const sellRateCurrent0 = toWei('1')
-        const sellRateCurrent1 = toWei('10')
+        const sellRateCurrent0 = expandTo18Decimals(1)
+        const sellRateCurrent1 = expandTo18Decimals(10)
 
         it('returns the sellRatio as the new sqrtPriceX96', async () => {
           const results = await twamm.callStatic.calculateExecutionUpdates({
@@ -316,8 +312,8 @@ describe('TWAMMMath', () => {
       sqrtPriceStartX96 = encodeSqrtPriceX96(1, 1)
       sqrtPriceEndX96 = encodeSqrtPriceX96(2, 1)
       liquidity = BigNumber.from('1000000000000000000000000')
-      sellRateCurrent0 = toWei('1')
-      sellRateCurrent1 = toWei('100')
+      sellRateCurrent0 = expandTo18Decimals(1)
+      sellRateCurrent1 = expandTo18Decimals(100)
     })
 
     it('returns the correct result', async () => {
