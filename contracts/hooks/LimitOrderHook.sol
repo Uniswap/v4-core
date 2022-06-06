@@ -10,8 +10,23 @@ import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
 
+type Epoch is uint232;
+
+library EpochLibrary {
+    function equals(Epoch a, Epoch b) internal pure returns (bool) {
+        return Epoch.unwrap(a) == Epoch.unwrap(b);
+    }
+
+    function unsafeIncrement(Epoch a) internal pure returns (Epoch) {
+        unchecked {
+            return Epoch.wrap(Epoch.unwrap(a) + 1);
+        }
+    }
+}
+
 contract LimitOrderHook is BaseHook {
     using SafeCast for uint256;
+    using EpochLibrary for Epoch;
 
     error ZeroLiquidity();
     error InRange();
@@ -22,30 +37,30 @@ contract LimitOrderHook is BaseHook {
 
     event Place(
         address indexed owner,
-        uint232 indexed epoch,
+        Epoch indexed epoch,
         IPoolManager.PoolKey key,
         int24 tickLower,
         bool zeroForOne,
         uint128 liquidity
     );
 
-    event Fill(uint232 indexed epoch, IPoolManager.PoolKey key, int24 tickLower, bool zeroForOne);
+    event Fill(Epoch indexed epoch, IPoolManager.PoolKey key, int24 tickLower, bool zeroForOne);
 
     event Kill(
         address indexed owner,
-        uint232 indexed epoch,
+        Epoch indexed epoch,
         IPoolManager.PoolKey key,
         int24 tickLower,
         bool zeroForOne,
         uint128 liquidity
     );
 
-    event Withdraw(address indexed owner, uint232 indexed epoch, uint128 liquidity);
+    event Withdraw(address indexed owner, Epoch indexed epoch, uint128 liquidity);
 
-    uint232 private constant EPOCH_DEFAULT = 0;
+    Epoch private constant EPOCH_DEFAULT = Epoch.wrap(0);
 
     mapping(bytes32 => int24) public tickLowerLasts;
-    uint232 public epochNext = 1;
+    Epoch public epochNext = Epoch.wrap(1);
 
     struct EpochInfo {
         bool filled;
@@ -57,8 +72,8 @@ contract LimitOrderHook is BaseHook {
         mapping(address => uint128) liquidity;
     }
 
-    mapping(bytes32 => uint232) public epochs;
-    mapping(uint232 => EpochInfo) public epochInfos;
+    mapping(bytes32 => Epoch) public epochs;
+    mapping(Epoch => EpochInfo) public epochInfos;
 
     constructor(IPoolManager _poolManager) BaseHook(_poolManager) {
         Hooks.validateHookAddress(
@@ -88,7 +103,7 @@ contract LimitOrderHook is BaseHook {
         IPoolManager.PoolKey memory key,
         int24 tickLower,
         bool zeroForOne
-    ) public view returns (uint232) {
+    ) public view returns (Epoch) {
         return epochs[keccak256(abi.encode(key, tickLower, zeroForOne))];
     }
 
@@ -96,12 +111,12 @@ contract LimitOrderHook is BaseHook {
         IPoolManager.PoolKey memory key,
         int24 tickLower,
         bool zeroForOne,
-        uint232 epoch
+        Epoch epoch
     ) private {
         epochs[keccak256(abi.encode(key, tickLower, zeroForOne))] = epoch;
     }
 
-    function getEpochLiquidity(uint232 epoch, address owner) external view returns (uint256) {
+    function getEpochLiquidity(Epoch epoch, address owner) external view returns (uint256) {
         return epochInfos[epoch].liquidity[owner];
     }
 
@@ -149,8 +164,8 @@ contract LimitOrderHook is BaseHook {
         // note that a zeroForOne swap is the _opposite_ of a zeroForOne limit order fill,
         // hence the inversion seen below whenever we access params.zeroForOne
         for (; lower <= upper; lower += key.tickSpacing) {
-            uint232 epoch = getEpoch(key, lower, !params.zeroForOne);
-            if (epoch != EPOCH_DEFAULT) {
+            Epoch epoch = getEpoch(key, lower, !params.zeroForOne);
+            if (!epoch.equals(EPOCH_DEFAULT)) {
                 EpochInfo storage epochInfo = epochInfos[epoch];
 
                 epochInfo.filled = true;
@@ -207,10 +222,14 @@ contract LimitOrderHook is BaseHook {
         );
 
         EpochInfo storage epochInfo;
-        uint232 epoch = getEpoch(key, tickLower, zeroForOne);
-        if (epoch == EPOCH_DEFAULT) {
+        Epoch epoch = getEpoch(key, tickLower, zeroForOne);
+        if (epoch.equals(EPOCH_DEFAULT)) {
             unchecked {
-                setEpoch(key, tickLower, zeroForOne, epoch = epochNext++);
+                setEpoch(key, tickLower, zeroForOne, epoch = epochNext);
+                // since epoch was just assigned the current value of epochNext,
+                // this is equivalent to epochNext++, which is what's intended,
+                // and it saves an SLOAD
+                epochNext = epoch.unsafeIncrement();
             }
             epochInfo = epochInfos[epoch];
             epochInfo.token0 = key.token0;
@@ -264,7 +283,7 @@ contract LimitOrderHook is BaseHook {
         bool zeroForOne,
         address to
     ) external returns (uint256 amount0, uint256 amount1) {
-        uint232 epoch = getEpoch(key, tickLower, zeroForOne);
+        Epoch epoch = getEpoch(key, tickLower, zeroForOne);
         EpochInfo storage epochInfo = epochInfos[epoch];
 
         if (epochInfo.filled) revert Filled();
@@ -328,7 +347,7 @@ contract LimitOrderHook is BaseHook {
         if (delta.amount1 < 0) poolManager.take(key.token1, to, amount1 = uint256(-delta.amount1));
     }
 
-    function withdraw(uint232 epoch, address to) external returns (uint256 amount0, uint256 amount1) {
+    function withdraw(Epoch epoch, address to) external returns (uint256 amount0, uint256 amount1) {
         EpochInfo storage epochInfo = epochInfos[epoch];
 
         if (!epochInfo.filled) revert NotFilled();
