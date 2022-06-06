@@ -9,6 +9,7 @@ import {Tick} from '../libraries/Tick.sol';
 import {TickBitmap} from '../libraries/TickBitmap.sol';
 import {ABDKMathQuad} from 'abdk-libraries-solidity/ABDKMathQuad.sol';
 import {FixedPoint96} from '../libraries/FixedPoint96.sol';
+import 'hardhat/console.sol';
 
 contract TWAMMTest {
     using TWAMM for TWAMM.State;
@@ -74,15 +75,19 @@ contract TWAMMTest {
         twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), poolKey, poolParams);
     }
 
+    // change to pure
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
         external
-        pure
+        view
         returns (
             uint160 sqrtPriceX96,
             uint256 earningsFactorPool0,
             uint256 earningsFactorPool1
         )
     {
+        console.log('sell rate 0 and 1');
+        console.log(params.sellRateCurrent0);
+        console.log(params.sellRateCurrent1);
         uint160 finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(params);
         (earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateEarningsUpdates(params, finalSqrtPriceX96);
 

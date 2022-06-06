@@ -7,6 +7,7 @@ import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';
 import {TickMath} from '../TickMath.sol';
+import 'hardhat/console.sol';
 
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {
@@ -32,7 +33,8 @@ library TwammMath {
         uint256 sellRateCurrent1;
     }
 
-    function getNewSqrtPriceX96(ExecutionUpdateParams memory params) internal pure returns (uint160 newSqrtPriceX96) {
+    // change to pure
+    function getNewSqrtPriceX96(ExecutionUpdateParams memory params) internal view returns (uint160 newSqrtPriceX96) {
         bytes16 sellRateBytes0 = params.sellRateCurrent0.fromUInt();
         bytes16 sellRateBytes1 = params.sellRateCurrent1.fromUInt();
         bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();

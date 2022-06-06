@@ -13,6 +13,7 @@ import {
   getMaxTick,
   getMinTick,
   getPoolId,
+  MAX_SQRT_RATIO,
 } from './shared/utilities'
 import { inOneBlock } from './shared/inOneBlock'
 
@@ -619,6 +620,102 @@ describe('TWAMM Hook', () => {
           expect(newBalance0).to.equal(BigNumber.from(EXTRA_TOKENS).sub(8))
           expect(newBalance1.sub(EXTRA_TOKENS)).to.equal(earningsToken1.sub(11))
         })
+      })
+    })
+
+    describe.only('twamm math resolves when the sell ratio is close to the max/min', async () => {
+      let poolKey: PoolKey
+      let orderKey0: OrderKey
+      let orderKey1: OrderKey
+      let submitTimestamp: number
+      let expirationTimestamp: number
+
+      beforeEach(async () => {
+        const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+        const interval = 10_000
+        submitTimestamp = nIntervalsFrom(latestTimestamp, interval, 1)
+        expirationTimestamp = nIntervalsFrom(latestTimestamp, interval, 2)
+        orderKey0 = {
+          zeroForOne: true,
+          owner: wallet.address,
+          expiration: expirationTimestamp,
+        }
+        orderKey1 = {
+          zeroForOne: false,
+          owner: wallet.address,
+          expiration: expirationTimestamp,
+        }
+        poolKey = {
+          token0: token0.address,
+          token1: token1.address,
+          fee: 0,
+          hooks: twamm.address,
+          tickSpacing: 10,
+        }
+
+        await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: getMinTick(10),
+          tickUpper: getMaxTick(10),
+          liquidityDelta: expandTo18Decimals(1),
+        })
+      })
+
+      it('sets the end price to the max price', async () => {
+        const amountSell0 = '100000'
+        const amountSell1 = '34025678683638809405905696563977446090000000'
+        // the amountSelling creates max sqrt sell ratio
+
+        await inOneBlock(submitTimestamp, async () => {
+          await twamm.submitLongTermOrder(poolKey, orderKey0, amountSell0)
+          await twamm.submitLongTermOrder(poolKey, orderKey1, amountSell1)
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
+        await twamm.executeTWAMMOrders(poolKey)
+
+        const newBalance0 = await token0.balanceOf(twamm.address)
+        const newBalance1 = await token1.balanceOf(twamm.address)
+
+        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
+        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+
+        const sqrtX96SellRate = encodeSqrtPriceX96(amountSell1, amountSell0)
+
+        expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(sqrtX96SellRate)
+
+        // TODO: precision error of 8 wei :(
+        // expect(newBalance0.sub(EXTRA_TOKENS)).to.eq(earningsToken0.sub(4))
+        // expect(newBalance1.sub(EXTRA_TOKENS)).to.eq(earningsToken1.sub(3))
+      })
+
+      it('sets the end price to the min price', async () => {
+        // sqrtSellRatioX96 - 4295760037
+        //              min - 4295128739
+        const amountSell0 = '34015678683638809405905696563977446090000000'
+        const amountSell1 = '100000'
+
+        await inOneBlock(submitTimestamp, async () => {
+          await twamm.submitLongTermOrder(poolKey, orderKey0, amountSell0)
+          await twamm.submitLongTermOrder(poolKey, orderKey1, amountSell1)
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
+        await twamm.executeTWAMMOrders(poolKey)
+
+        const newBalance0 = await token0.balanceOf(twamm.address)
+        const newBalance1 = await token1.balanceOf(twamm.address)
+
+        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
+        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+
+        const sqrtX96SellRate = encodeSqrtPriceX96(amountSell1, amountSell0)
+
+        expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(sqrtX96SellRate)
+
+        // TODO: precision error of 8 wei :(
+        // expect(newBalance0.sub(EXTRA_TOKENS)).to.eq(earningsToken0.sub(4))
+        // expect(newBalance1.sub(EXTRA_TOKENS)).to.eq(earningsToken1.sub(3))
       })
     })
 
