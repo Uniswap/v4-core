@@ -181,7 +181,38 @@ describe('TWAMM Hook', () => {
     })
   })
 
-  describe('#executeTWAMMOrders', async () => {
+  describe('#submitLongTermOrder', () => {
+    it('gas', async () => {
+      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+
+      const poolKey = {
+        token0: token0.address,
+        token1: token1.address,
+        fee: 0,
+        hooks: twamm.address,
+        tickSpacing: 10,
+      }
+      const orderKey0 = {
+        zeroForOne: true,
+        owner: wallet.address,
+        expiration,
+      }
+
+      await ethers.provider.send('evm_setNextBlockTimestamp', [nIntervalsFrom(latestTimestamp, 10_000, 1)])
+      await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+      await modifyPositionTest.modifyPosition(poolKey, {
+        tickLower: getMinTick(10),
+        tickUpper: getMaxTick(10),
+        liquidityDelta: expandTo18Decimals(1),
+      })
+
+      await snapshotGasCost(twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10)))
+    })
+  })
+
+  describe('#executeTWAMMOrders', () => {
     let poolKey: PoolKey
     let orderKey0: OrderKey
     let orderKey1: OrderKey

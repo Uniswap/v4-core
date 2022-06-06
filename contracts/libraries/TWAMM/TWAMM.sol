@@ -57,6 +57,9 @@ library TWAMM {
     /// @param amountDelta The amount delta for the order
     error InvalidAmountDelta(bytes32 orderId, uint256 unsoldAmount, int256 amountDelta);
 
+    /// @notice Thrown when submitting an order with a sellRate of 0
+    error SellRateCannotBeZero();
+
     /// @notice Contains full state related to the TWAMM
     /// @member poolKey
     /// @member expirationInterval Interval in seconds between valid order expiration timestamps
@@ -109,21 +112,20 @@ library TWAMM {
     function submitLongTermOrder(
         State storage self,
         OrderKey memory orderKey,
-        uint256 amountIn,
+        uint256 sellRate,
         uint256 expirationInterval
     ) internal returns (bytes32 orderId) {
         if (self.lastVirtualOrderTimestamp == 0) revert NotInitialized();
         if (orderKey.expiration < block.timestamp) revert ExpirationLessThanBlocktime(orderKey.expiration);
+        if (sellRate == 0) revert SellRateCannotBeZero();
         if (orderKey.expiration % expirationInterval != 0) revert ExpirationNotOnInterval(orderKey.expiration);
 
         orderId = _orderId(orderKey);
-        if (self.orders[orderId].sellRate != 0) revert OrderAlreadyExists(orderId);
+        if (self.orders[orderId].exists) revert OrderAlreadyExists(orderId);
 
-        uint256 sellRate;
         OrderPool.State storage orderPool = orderKey.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
         unchecked {
-            sellRate = amountIn / (orderKey.expiration - block.timestamp);
             orderPool.sellRateCurrent += sellRate;
             orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRate;
         }
@@ -142,12 +144,12 @@ library TWAMM {
     /// @param orderKey The OrderKey for which to identify the order
     /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
     ///    min value to remove full amount from order.
-    /// @return amountOut the amount of the order's sell token removed from the order
+    /// @return finalAmountDelta the amount of the order's sell token to be added or removed from the order
     function modifyLongTermOrder(
         State storage self,
         OrderKey memory orderKey,
         int128 amountDelta
-    ) internal returns (uint256 amountOut) {
+    ) internal returns (int256 finalAmountDelta) {
         bytes32 orderId = _orderId(orderKey);
         Order storage order = _getOrder(self, orderKey);
 
@@ -163,15 +165,15 @@ library TWAMM {
             order.uncollectedEarningsAmount += (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
             order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
 
-            uint256 unsoldAmount = order.sellRate * (orderKey.expiration - block.timestamp);
+            uint256 duration = orderKey.expiration - block.timestamp;
+            uint256 unsoldAmount = order.sellRate * duration;
             if (amountDelta == type(int128).min) amountDelta = -(unsoldAmount.toInt256().toInt128());
             int256 newSellAmount = unsoldAmount.toInt256() + amountDelta;
             if (newSellAmount < 0) revert InvalidAmountDelta(orderId, unsoldAmount, amountDelta);
 
-            uint256 newSellRate = uint256(newSellAmount) / (orderKey.expiration - block.timestamp);
+            uint256 newSellRate = uint256(newSellAmount) / duration;
 
             if (amountDelta < 0) {
-                amountOut = uint256(uint128(-amountDelta));
                 uint256 sellRateDelta = order.sellRate - newSellRate;
                 orderPool.sellRateCurrent -= sellRateDelta;
                 orderPool.sellRateEndingAtInterval[orderKey.expiration] -= sellRateDelta;
@@ -181,6 +183,7 @@ library TWAMM {
                 orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRateDelta;
             }
             order.sellRate = newSellRate;
+            finalAmountDelta = amountDelta;
         }
     }
 
@@ -201,14 +204,15 @@ library TWAMM {
                 uint256 earningsFactor = orderPool.earningsFactorAtInterval[orderKey.expiration] -
                     order.unclaimedEarningsFactor;
                 earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
-                order.sellRate = 0;
+                earningsAmount += order.uncollectedEarningsAmount;
+                delete self.orders[orderId];
             } else {
                 uint256 earningsFactor = orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor;
                 earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
+                earningsAmount += order.uncollectedEarningsAmount;
                 order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
+                order.uncollectedEarningsAmount = 0;
             }
-            earningsAmount += order.uncollectedEarningsAmount;
-            order.uncollectedEarningsAmount = 0;
         }
     }
 

@@ -462,8 +462,8 @@ describe('TWAMM', () => {
         // update state and cancel the order at the midpoint
         await twamm.executeTWAMMOrders(POOL_KEY, poolParams)
 
-        const amountOut = await twamm.callStatic.modifyLongTermOrder(orderKey, MIN_INT128)
-        expect(amountOut).to.equal(sellAmount.div(2))
+        const amountDelta = await twamm.callStatic.modifyLongTermOrder(orderKey, MIN_INT128)
+        expect(amountDelta).to.equal(sellAmount.div(2).mul(-1))
       })
 
       it('claims half the earnings at midpoint', async () => {

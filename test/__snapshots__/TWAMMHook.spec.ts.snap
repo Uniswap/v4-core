@@ -41,3 +41,10 @@ Object {
   "gasUsed": 317004,
 }
 `;
+
+exports[`TWAMM Hook #submitLongTermOrder gas 1`] = `
+Object {
+  "calldataByteLength": 292,
+  "gasUsed": 163676,
+}
+`;
