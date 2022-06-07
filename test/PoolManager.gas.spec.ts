@@ -273,8 +273,12 @@ describe('PoolManager gas tests', () => {
   })
 
   describe('#donate', () => {
-    it('donation of 1 token', async () => {
+    it('donation of 2 tokens', async () => {
       await snapshotGasCost(donate(100, 200))
+    })
+
+    it('donation of 1 token', async () => {
+      await snapshotGasCost(donate(100, 0))
     })
   })
 

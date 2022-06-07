@@ -3,6 +3,13 @@
 exports[`PoolManager gas tests #donate donation of 1 token 1`] = `
 Object {
   "calldataByteLength": 228,
+  "gasUsed": 150960,
+}
+`;
+
+exports[`PoolManager gas tests #donate donation of 2 tokens 1`] = `
+Object {
+  "calldataByteLength": 228,
   "gasUsed": 218051,
 }
 `;
