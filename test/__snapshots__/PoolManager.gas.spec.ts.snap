@@ -3,7 +3,7 @@
 exports[`PoolManager gas tests #initialize initialize pool with no hooks and no protocol fee 1`] = `
 Object {
   "calldataByteLength": 196,
-  "gasUsed": 51050,
+  "gasUsed": 51172,
 }
 `;
 

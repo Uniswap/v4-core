@@ -437,4 +437,27 @@ describe('Hooks', () => {
       await snapshotGasCost(hooks.getGasCostOfShouldCall(ADDRESS_ZERO))
     })
   })
+
+  describe('#isValidHookAddress', () => {
+    it('valid if one flag is on', async () => {
+      expect(await hooks.isValidHookAddress('0x8000000000000000000000000000000000000000')).to.be.true
+      expect(await hooks.isValidHookAddress('0x4000000000000000000000000000000000000000')).to.be.true
+      expect(await hooks.isValidHookAddress('0x2000000000000000000000000000000000000000')).to.be.true
+      expect(await hooks.isValidHookAddress('0x1000000000000000000000000000000000000000')).to.be.true
+      expect(await hooks.isValidHookAddress('0x0800000000000000000000000000000000000000')).to.be.true
+      expect(await hooks.isValidHookAddress('0x0200000000000000000000000000000000000000')).to.be.true
+      expect(await hooks.isValidHookAddress('0x0100000000000000000000000000000000000000')).to.be.true
+      expect(await hooks.isValidHookAddress('0xf09840a85d5af5bf1d1762f925bdaddc4201f984')).to.be.true
+    })
+
+    it('valid for the 0 address', async () => {
+      expect(await hooks.isValidHookAddress('0x0000000000000000000000000000000000000000')).to.be.true
+    })
+
+    it('invalid if no flags are on', async () => {
+      expect(await hooks.isValidHookAddress('0x0000000000000000000000000000000000000001')).to.be.false
+      expect(await hooks.isValidHookAddress('0x0010000000000000000000000000000000000001')).to.be.false
+      expect(await hooks.isValidHookAddress('0x009840a85d5af5bf1d1762f925bdaddc4201f984')).to.be.false
+    })
+  })
 })
