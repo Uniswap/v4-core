@@ -5,20 +5,8 @@ import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import { encodeSqrtPriceX96, expandTo18Decimals, MaxUint128 } from './shared/utilities'
-import { inOneBlock } from './shared/inOneBlock'
+import { inOneBlock, mineNextBlock, setNextBlocktime } from './shared/evmHelpers'
 import { TickMathTest } from '../typechain/TickMathTest'
-
-async function mineNextBlock(time: number) {
-  await ethers.provider.send('evm_mine', [time])
-}
-
-async function setNextBlocktime(time: number) {
-  await ethers.provider.send('evm_setNextBlockTimestamp', [time])
-}
-
-async function setAutomine(b: boolean) {
-  await ethers.provider.send('evm_setAutomine', [b])
-}
 
 function nIntervalsFrom(timestamp: number, interval: number, n: number): number {
   return timestamp + (interval - (timestamp % interval)) + interval * (n - 1)

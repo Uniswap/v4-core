@@ -139,7 +139,10 @@ contract TWAMMHook is BaseHook {
         if (finalAmountDelta > 0) {
             sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint128(amountDelta)));
         } else {
-            sellToken.safeTransfer(orderKey.owner, uint256(uint128(amountDelta)));
+            uint256 currentBalance = sellToken.balanceOf(address(this));
+            uint256 amountOut = uint256(uint128(amountDelta));
+            if (currentBalance < amountOut) amountOut = currentBalance;
+            sellToken.safeTransfer(orderKey.owner, amountOut);
         }
     }
 
@@ -155,6 +158,8 @@ contract TWAMMHook is BaseHook {
 
         earningsAmount = getTWAMM(key).claimEarnings(orderKey);
         IERC20Minimal buyToken = orderKey.zeroForOne ? key.token1 : key.token0;
+        uint256 currentBalance = buyToken.balanceOf(address(this));
+        if (currentBalance < earningsAmount) earningsAmount = currentBalance;
         buyToken.safeTransfer(orderKey.owner, earningsAmount);
     }
 
