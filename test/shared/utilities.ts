@@ -1,5 +1,6 @@
 import bn from 'bignumber.js'
 import { BigNumber, BigNumberish, Contract, ContractTransaction, utils, Wallet } from 'ethers'
+import { ethers } from 'hardhat'
 
 export const MaxUint128 = BigNumber.from(2).pow(128).sub(1)
 
@@ -82,6 +83,17 @@ export type ModifyPositionFunction = (
   liquidityDelta: BigNumberish
 ) => Promise<ContractTransaction>
 
+interface HookMask {
+  beforeInitialize: boolean
+  afterInitialize: boolean
+  beforeModifyPosition: boolean
+  afterModifyPosition: boolean
+  beforeSwap: boolean
+  afterSwap: boolean
+  beforeDonate: boolean
+  afterDonate: boolean
+}
+
 /**
  * Creates a 20 byte mask for the given hook configuration
  */
@@ -94,16 +106,7 @@ export function createHookMask({
   afterSwap,
   beforeDonate,
   afterDonate,
-}: {
-  beforeInitialize: boolean
-  afterInitialize: boolean
-  beforeModifyPosition: boolean
-  afterModifyPosition: boolean
-  beforeSwap: boolean
-  afterSwap: boolean
-  beforeDonate: boolean
-  afterDonate: boolean
-}): string {
+}: HookMask): string {
   let result: BigNumber = BigNumber.from(0)
   if (beforeInitialize) result = result.add(BigNumber.from(1).shl(159))
   if (afterInitialize) result = result.add(BigNumber.from(1).shl(158))
@@ -114,4 +117,29 @@ export function createHookMask({
   if (beforeDonate) result = result.add(BigNumber.from(1).shl(153))
   if (afterDonate) result = result.add(BigNumber.from(1).shl(152))
   return utils.hexZeroPad(result.toHexString(), 20)
+}
+
+/**
+ * Returns a wallet whose first transaction will create a contract satisfying the leading
+ * bytes required by hookMask. If provided, the mnemonic argument short-circuits our search
+ * to save time.
+ */
+export function getWalletForDeployingHookMask(hookMask: HookMask, mnemonic?: string): [Wallet, string] {
+  const startingString = createHookMask(hookMask).slice(0, 4)
+  let wallet: Wallet = mnemonic ? ethers.Wallet.fromMnemonic(mnemonic) : ethers.Wallet.createRandom()
+  let contractAddress: string | undefined
+
+  while (contractAddress === undefined) {
+    const prospectiveContractAddress = utils.getContractAddress({ from: wallet.address, nonce: 0 })
+    if (prospectiveContractAddress.slice(0, 4).toLowerCase() === startingString) {
+      contractAddress = prospectiveContractAddress
+    } else {
+      // if, for whatever reason, we generate a bad address but a mnemonic was provided,
+      // it's stale and we surface the error
+      if (mnemonic) throw Error('Stale mnemonic')
+      wallet = ethers.Wallet.createRandom()
+    }
+  }
+
+  return [wallet, contractAddress]
 }

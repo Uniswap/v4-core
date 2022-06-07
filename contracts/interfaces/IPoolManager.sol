@@ -65,7 +65,15 @@ interface IPoolManager is IERC1155 {
         );
 
     /// @notice Get the current value of liquidity of the given pool
-    function getLiquidity(IPoolManager.PoolKey memory key) external view returns (uint128 liquidity);
+    function getLiquidity(IPoolManager.PoolKey calldata key) external view returns (uint128 liquidity);
+
+    /// @notice Get the current value of liquidity for the specified pool and position
+    function getLiquidity(
+        IPoolManager.PoolKey calldata key,
+        address owner,
+        int24 tickLower,
+        int24 tickUpper
+    ) external view returns (uint128 liquidity);
 
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
