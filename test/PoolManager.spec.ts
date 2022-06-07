@@ -93,8 +93,18 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, feeControllerTest, donateTest, takeTest, hooksMock, testHooksEmpty } =
-      await loadFixture(fixture))
+    ;({
+      manager,
+      tokens,
+      lockTest,
+      modifyPositionTest,
+      swapTest,
+      feeControllerTest,
+      donateTest,
+      takeTest,
+      hooksMock,
+      testHooksEmpty,
+    } = await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
