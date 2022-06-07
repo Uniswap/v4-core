@@ -449,9 +449,7 @@ library Pool {
         if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
         delta.amount0 = amount0.toInt256();
         delta.amount1 = amount1.toInt256();
-        if (amount0 > 0)
-            state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
-        if (amount1 > 0)
-            state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
+        if (amount0 > 0) state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
+        if (amount1 > 0) state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
     }
 }
