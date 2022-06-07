@@ -34,7 +34,7 @@ contract Deployers {
         public
         returns (PoolManager manager, IPoolManager.PoolKey memory key)
     {
-        manager = new PoolManager();
+        manager = new PoolManager(500000);
         key = createPool(manager, hooks, sqrtPriceX96);
         return (manager, key);
     }

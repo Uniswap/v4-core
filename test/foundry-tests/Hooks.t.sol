@@ -37,7 +37,7 @@ contract HooksTest is Test, Deployers {
 
     function testInitializeSucceedsWithHook() public {
         (PoolManager _manager, IPoolManager.PoolKey memory _key) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
-        (uint160 sqrtPriceX96, ) = _manager.getSlot0(_key);
+        (uint160 sqrtPriceX96,,) = _manager.getSlot0(_key);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
     }
 
