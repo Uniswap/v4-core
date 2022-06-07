@@ -1122,7 +1122,7 @@ describe('PoolManager', () => {
           settleUsingTransfer: true,
         }
       )
-      
+
       const expectedFees = 7
       expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(expectedFees))
       expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
@@ -1130,7 +1130,7 @@ describe('PoolManager', () => {
       // allows the owner to collect the fees
       const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
       const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
-      
+
       // get the returned value, then actually execute
       const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 7)
       await manager.collectProtocolFees(other.address, tokens.token0.address, expectedFees)
@@ -1172,7 +1172,7 @@ describe('PoolManager', () => {
       // allows the owner to collect the fees
       const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
       const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
-      
+
       // get the returned value, then actually execute
       const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 0)
       await manager.collectProtocolFees(other.address, tokens.token0.address, 0)
