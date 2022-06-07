@@ -85,9 +85,6 @@ contract TWAMMTest {
             uint256 earningsFactorPool1
         )
     {
-        console.log('sell rate 0 and 1');
-        console.log(params.sellRateCurrent0);
-        console.log(params.sellRateCurrent1);
         uint160 finalSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(params);
         (earningsFactorPool0, earningsFactorPool1) = TwammMath.calculateEarningsUpdates(params, finalSqrtPriceX96);
 
@@ -105,13 +102,14 @@ contract TWAMMTest {
         return gasLeftBefore - gasleft();
     }
 
+    // change to pure
     function calculateTimeBetweenTicks(
         uint256 liquidity,
         uint160 sqrtPriceStartX96,
         uint160 sqrtPriceEndX96,
         uint256 sellRate0,
         uint256 sellRate1
-    ) external pure returns (uint256) {
+    ) external view returns (uint256) {
         return TwammMath.calculateTimeBetweenTicks(liquidity, sqrtPriceStartX96, sqrtPriceEndX96, sellRate0, sellRate1);
     }
 

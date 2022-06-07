@@ -4,7 +4,7 @@ import { ethers, waffle } from 'hardhat'
 import checkObservationEquals from './shared/checkObservationEquals'
 import { expect } from './shared/expect'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
-import { encodeSqrtPriceX96, expandTo18Decimals, MaxUint128, MAX_SQRT_RATIO } from './shared/utilities'
+import { encodeSqrtPriceX96, expandTo18Decimals, MaxUint128, MAX_SQRT_RATIO, MIN_SQRT_RATIO } from './shared/utilities'
 import bn from 'bignumber.js'
 
 function divX96(n: BigNumber, precision: number = 7): string {
@@ -214,6 +214,111 @@ describe('TWAMMMath', () => {
           sellRateCurrent1,
         })
       )
+    })
+
+    describe.only('#calculateExecutionUpdates with extreme sell ratios', async () => {
+      secondsElapsedX96 = BigNumber.from(3600).mul(Q96)
+      sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
+      fee = '3000'
+      tickSpacing = '60'
+      let sellRateCurrent0: BigNumber
+      let sellRateCurrent1: BigNumber
+      let liquidity: string
+      it('sells large amounts of token1', async () => {
+        liquidity = '1000000000000000000000000'
+        sellRateCurrent0 = BigNumber.from('1')
+        sellRateCurrent1 = BigNumber.from('340256786836388094059056965639774460900')
+
+        const results = await twamm.callStatic.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0,
+          sellRateCurrent1,
+        })
+        // TODO error
+        const error = 60
+        expect(divX96(results.sqrtPriceX96, 0)).to.eql(BigNumber.from('1223127075048864708').add(error).toString())
+        // wolfram
+        // 1223127075048864708.72893792449
+      })
+      it('sells large amounts of token0', async () => {
+        liquidity = '1000000000000000000000000'
+        sellRateCurrent0 = BigNumber.from('340256786836388094059056965639774460900')
+        sellRateCurrent1 = BigNumber.from('1')
+        const results = await twamm.callStatic.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0,
+          sellRateCurrent1,
+        })
+        expect(divX96(results.sqrtPriceX96)).to.eql('0.0000000')
+        // wolfram
+        // 0.000000000000000000817576
+        // basically 0
+      })
+      it('sets the end price to the max price', async () => {
+        liquidity = '1000000000000000000000000'
+        // the sqrtSellRatio is greater than the maxEndPrice
+        sellRateCurrent0 = BigNumber.from('1')
+        sellRateCurrent1 = BigNumber.from('6402567868363880940590569656397744609000')
+        const results = await twamm.callStatic.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0,
+          sellRateCurrent1,
+        })
+        const maxPrice = divX96(MAX_SQRT_RATIO)
+        expect(divX96(results.sqrtPriceX96)).to.eql(maxPrice)
+      })
+
+      it('sets the end price to the min price', async () => {
+        liquidity = '1000000000000000000000000'
+        // the sqrtSellRatio is less than the min price
+        sellRateCurrent0 = BigNumber.from('6402567868363880940590569656397744609000')
+        sellRateCurrent1 = BigNumber.from('1')
+        const results = await twamm.callStatic.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0,
+          sellRateCurrent1,
+        })
+        const minPrice = divX96(MIN_SQRT_RATIO)
+        expect(divX96(results.sqrtPriceX96)).to.eql(minPrice)
+      })
+      it('sets the end price to the max price instead of the sqrtSellRatio when low liquidity', async () => {
+        liquidity = '1000000'
+        // the sqrtSellRatio is greater than the max price
+        sellRateCurrent0 = BigNumber.from('1')
+        sellRateCurrent1 = BigNumber.from('6402567868363880940590569656397744609000')
+        const results = await twamm.callStatic.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0,
+          sellRateCurrent1,
+        })
+        const maxPrice = divX96(MAX_SQRT_RATIO)
+        expect(divX96(results.sqrtPriceX96)).to.eql(maxPrice)
+      })
+      it('sets the end price to the min price instead of the sqrtSellRatio when low liquidity', async () => {
+        liquidity = '1000000'
+        // the sqrtSellRatio is less than the min price
+        sellRateCurrent0 = BigNumber.from('6402567868363880940590569656397744609000')
+        sellRateCurrent1 = BigNumber.from('1')
+        const results = await twamm.callStatic.calculateExecutionUpdates({
+          secondsElapsedX96,
+          sqrtPriceX96,
+          liquidity,
+          sellRateCurrent0,
+          sellRateCurrent1,
+        })
+        const minPrice = divX96(MIN_SQRT_RATIO)
+        expect(divX96(results.sqrtPriceX96)).to.eql(minPrice)
+      })
     })
 
     describe('with insufficient liquidity', () => {
