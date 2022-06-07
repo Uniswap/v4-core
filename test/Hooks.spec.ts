@@ -3,6 +3,7 @@ import { ethers, waffle } from 'hardhat'
 import { HooksTest } from '../typechain/HooksTest'
 import { expect } from './shared/expect'
 import { createHookMask } from './shared/utilities'
+import { ADDRESS_ZERO } from './shared/constants'
 
 describe('Hooks', () => {
   let hooks: HooksTest
@@ -30,7 +31,7 @@ describe('Hooks', () => {
           beforeDonate: false,
           afterDonate: false,
         })
-      ).to.eq('0x0000000000000000000000000000000000000000')
+      ).to.eq(ADDRESS_ZERO)
     })
     it('called everywhere', () => {
       expect(
@@ -66,7 +67,7 @@ describe('Hooks', () => {
   describe('#validateHookAddress', () => {
     it('succeeds', async () => {
       expect(
-        await hooks.validateHookAddress('0x0000000000000000000000000000000000000000', {
+        await hooks.validateHookAddress(ADDRESS_ZERO, {
           beforeInitialize: false,
           afterInitialize: false,
           beforeModifyPosition: false,
@@ -353,7 +354,7 @@ describe('Hooks', () => {
 
     it('gas cost of validateHookAddress', async () => {
       await snapshotGasCost(
-        hooks.getGasCostOfValidateHookAddress('0x0000000000000000000000000000000000000000', {
+        hooks.getGasCostOfValidateHookAddress(ADDRESS_ZERO, {
           beforeInitialize: false,
           afterInitialize: false,
           beforeModifyPosition: false,
@@ -408,13 +409,13 @@ describe('Hooks', () => {
       expect(await hooks.shouldCallBeforeDonate('0x0200000000000000000000000000000000000000')).to.be.true
     })
     it('fails for shouldCallBeforeDonate', async () => {
-      expect(await hooks.shouldCallBeforeDonate('0x0000000000000000000000000000000000000000')).to.be.false
+      expect(await hooks.shouldCallBeforeDonate(ADDRESS_ZERO)).to.be.false
     })
     it('succeeds for shouldCallAfterDonate', async () => {
       expect(await hooks.shouldCallAfterDonate('0x0100000000000000000000000000000000000000')).to.be.true
     })
     it('fails for shouldCallAfterDonate', async () => {
-      expect(await hooks.shouldCallAfterDonate('0x0000000000000000000000000000000000000000')).to.be.false
+      expect(await hooks.shouldCallAfterDonate(ADDRESS_ZERO)).to.be.false
     })
     it('succeeds for all hooks', async () => {
       expect(await hooks.shouldCallBeforeInitialize('0xFF00000000000000000000000000000000000000')).to.be.true
@@ -425,15 +426,15 @@ describe('Hooks', () => {
       expect(await hooks.shouldCallAfterModifyPosition('0xFF00000000000000000000000000000000000000')).to.be.true
     })
     it('succeeds for no hooks', async () => {
-      expect(await hooks.shouldCallBeforeInitialize('0x0000000000000000000000000000000000000000')).to.be.false
-      expect(await hooks.shouldCallAfterInitialize('0x0000000000000000000000000000000000000000')).to.be.false
-      expect(await hooks.shouldCallBeforeSwap('0x0000000000000000000000000000000000000000')).to.be.false
-      expect(await hooks.shouldCallAfterSwap('0x0000000000000000000000000000000000000000')).to.be.false
-      expect(await hooks.shouldCallBeforeModifyPosition('0x0000000000000000000000000000000000000000')).to.be.false
-      expect(await hooks.shouldCallAfterModifyPosition('0x0000000000000000000000000000000000000000')).to.be.false
+      expect(await hooks.shouldCallBeforeInitialize(ADDRESS_ZERO)).to.be.false
+      expect(await hooks.shouldCallAfterInitialize(ADDRESS_ZERO)).to.be.false
+      expect(await hooks.shouldCallBeforeSwap(ADDRESS_ZERO)).to.be.false
+      expect(await hooks.shouldCallAfterSwap(ADDRESS_ZERO)).to.be.false
+      expect(await hooks.shouldCallBeforeModifyPosition(ADDRESS_ZERO)).to.be.false
+      expect(await hooks.shouldCallAfterModifyPosition(ADDRESS_ZERO)).to.be.false
     })
     it('gas cost of shouldCall', async () => {
-      await snapshotGasCost(hooks.getGasCostOfShouldCall('0x0000000000000000000000000000000000000000'))
+      await snapshotGasCost(hooks.getGasCostOfShouldCall(ADDRESS_ZERO))
     })
   })
 })

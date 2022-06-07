@@ -2,6 +2,7 @@ import { ethers, waffle } from 'hardhat'
 import { Wallet } from 'ethers'
 import { PoolManager, PoolSwapTest, PoolModifyPositionTest } from '../typechain'
 import { expect } from './shared/expect'
+import { ADDRESS_ZERO } from './shared/constants'
 
 import { tokensFixture } from './shared/fixtures'
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
@@ -71,7 +72,7 @@ describe('PoolManager gas tests', () => {
       token1: token1.address,
       fee: FeeAmount.MEDIUM,
       tickSpacing: 60,
-      hooks: '0x0000000000000000000000000000000000000000',
+      hooks: ADDRESS_ZERO,
     }
 
     const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
