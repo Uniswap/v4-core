@@ -8,11 +8,12 @@ import {
   PoolManagerReentrancyTest,
   PoolManagerTest,
   PoolModifyPositionTest,
+  ProtocolFeeControllerTest,
   PoolSwapTest,
   TestERC20,
   PoolTakeTest,
 } from '../typechain'
-import { MAX_TICK_SPACING } from './shared/constants'
+import { MAX_TICK_SPACING, ADDRESS_ZERO } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId, MaxUint128 } from './shared/utilities'
@@ -22,14 +23,13 @@ const createFixtureLoader = waffle.createFixtureLoader
 
 const { constants } = ethers
 
-const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
-
 describe('PoolManager', () => {
   let wallet: Wallet, other: Wallet
 
   let manager: PoolManager
   let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
+  let feeControllerTest: ProtocolFeeControllerTest
   let modifyPositionTest: PoolModifyPositionTest
   let donateTest: PoolDonateTest
   let takeTest: PoolTakeTest
@@ -41,12 +41,14 @@ describe('PoolManager', () => {
     const poolManagerFactory = await ethers.getContractFactory('PoolManager')
     const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
+    const feeControllerTestFactory = await ethers.getContractFactory('ProtocolFeeControllerTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
     const takeTestFactory = await ethers.getContractFactory('PoolTakeTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
-    const manager = (await poolManagerFactory.deploy()) as PoolManager
+    const CONTROLLER_GAS_LIMIT = 50000
+    const manager = (await poolManagerFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
 
     // Deploy hooks to addresses with leading 1111 to enable all of them.
     const mockHooksAddress = '0xFF00000000000000000000000000000000000000'
@@ -65,6 +67,7 @@ describe('PoolManager', () => {
       manager,
       lockTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
+      feeControllerTest: (await feeControllerTestFactory.deploy()) as ProtocolFeeControllerTest,
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       donateTest: (await donateTestFactory.deploy(manager.address)) as PoolDonateTest,
       takeTest: (await takeTestFactory.deploy(manager.address)) as PoolTakeTest,
@@ -90,8 +93,18 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({ manager, tokens, lockTest, modifyPositionTest, swapTest, donateTest, takeTest, hooksMock, testHooksEmpty } =
-      await loadFixture(fixture))
+    ;({
+      manager,
+      tokens,
+      lockTest,
+      modifyPositionTest,
+      swapTest,
+      feeControllerTest,
+      donateTest,
+      takeTest,
+      hooksMock,
+      testHooksEmpty,
+    } = await loadFixture(fixture))
   })
 
   it('bytecode size', async () => {
@@ -148,31 +161,34 @@ describe('PoolManager', () => {
     })
   })
 
+  describe('#setProtocolFeeController', () => {
+    it('allows the owner to set a fee controller', async () => {
+      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
+      await expect(manager.setProtocolFeeController(feeControllerTest.address)).to.emit(
+        manager,
+        'ProtocolFeeControllerUpdated'
+      )
+      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+    })
+  })
+
   describe('#initialize', async () => {
     it('initializes a pool', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        encodeSqrtPriceX96(10, 1)
-      )
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
       const {
-        slot0: { sqrtPriceX96 },
-      } = await manager.pools(
-        getPoolId({
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        })
-      )
+        slot0: { sqrtPriceX96, protocolFee },
+      } = await manager.pools(getPoolId(poolKey))
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(protocolFee).to.eq(0)
     })
 
     it('initializes a pool with hooks', async () => {
@@ -259,6 +275,32 @@ describe('PoolManager', () => {
           encodeSqrtPriceX96(10, 1)
         )
       ).to.be.revertedWith('TickSpacingTooSmall()')
+    })
+
+    it('fetches a fee for new pools when theres a fee controller', async () => {
+      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
+      await manager.setProtocolFeeController(feeControllerTest.address)
+      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      const poolProtocolFee = 4
+
+      const poolID = getPoolId(poolKey)
+      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
+
+      const {
+        slot0: { sqrtPriceX96, protocolFee },
+      } = await manager.pools(getPoolId(poolKey))
+      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(protocolFee).to.eq(poolProtocolFee)
     })
 
     it('gas cost', async () => {
@@ -984,6 +1026,165 @@ describe('PoolManager', () => {
         expect(await hooksMock.calledWith('beforeDonate', [donateTest.address, key, 100, 200])).to.be.true
         expect(await hooksMock.calledWith('afterDonate', [donateTest.address, key, 100, 200])).to.be.true
       })
+    })
+  })
+
+  describe('#setPoolProtocolFee', async () => {
+    it('updates the protocol fee for an initialised pool', async () => {
+      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
+
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      const poolID = getPoolId(poolKey)
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
+
+      var protocolFee: number
+      ;({
+        slot0: { protocolFee },
+      } = await manager.pools(getPoolId(poolKey)))
+      expect(protocolFee).to.eq(0)
+
+      await manager.setProtocolFeeController(feeControllerTest.address)
+      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+      const poolProtocolFee = 4
+      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+
+      await expect(manager.setPoolProtocolFee(poolKey)).to.emit(manager, 'PoolProtocolFeeUpdated')
+      ;({
+        slot0: { protocolFee },
+      } = await manager.pools(getPoolId(poolKey)))
+      expect(protocolFee).to.eq(poolProtocolFee)
+    })
+  })
+
+  describe('#collectProtocolFees', async () => {
+    beforeEach('set the fee controller, initialize a pool with protocol fee', async () => {
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      // set the controller, and set the pool's protocol fee
+      await manager.setProtocolFeeController(feeControllerTest.address)
+      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+      const poolProtocolFee = 68 // 0x 0100 0100
+      const poolID = getPoolId(poolKey)
+      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+
+      // initialize the pool with the fee
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      const {
+        slot0: { protocolFee },
+      } = await manager.pools(getPoolId(poolKey))
+      expect(protocolFee).to.eq(poolProtocolFee)
+
+      // add liquidity around the initial price
+      await modifyPositionTest.modifyPosition(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(10),
+        }
+      )
+    })
+
+    it('allows the owner to collect accumulated fees', async () => {
+      await swapTest.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          amountSpecified: 10000,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
+        }
+      )
+
+      const expectedFees = 7
+      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(expectedFees))
+      expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+
+      // allows the owner to collect the fees
+      const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
+      const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
+
+      // get the returned value, then actually execute
+      const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 7)
+      await manager.collectProtocolFees(other.address, tokens.token0.address, expectedFees)
+
+      const recipientBalanceAfter = await tokens.token0.balanceOf(other.address)
+      const managerBalanceAfter = await tokens.token0.balanceOf(manager.address)
+
+      expect(amount).to.be.eq(expectedFees)
+      expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
+      expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
+
+      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(0))
+    })
+
+    it('returns all fees if 0 is provided', async () => {
+      await swapTest.swap(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        },
+        {
+          amountSpecified: 10000,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
+        }
+      )
+
+      const expectedFees = 7
+      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(expectedFees))
+      expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+
+      // allows the owner to collect the fees
+      const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
+      const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
+
+      // get the returned value, then actually execute
+      const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 0)
+      await manager.collectProtocolFees(other.address, tokens.token0.address, 0)
+
+      const recipientBalanceAfter = await tokens.token0.balanceOf(other.address)
+      const managerBalanceAfter = await tokens.token0.balanceOf(manager.address)
+
+      expect(amount).to.be.eq(expectedFees)
+      expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
+      expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
+
+      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(0))
     })
   })
 })

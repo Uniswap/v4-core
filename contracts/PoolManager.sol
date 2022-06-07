@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import {TransferHelper} from './libraries/TransferHelper.sol';
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
@@ -10,7 +11,9 @@ import {TransferHelper} from './libraries/TransferHelper.sol';
 
 import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
+import {Owned} from './Owned.sol';
 import {IHooks} from './interfaces/IHooks.sol';
+import {IProtocolFeeController} from './interfaces/IProtocolFeeController.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
@@ -18,7 +21,7 @@ import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver {
+contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
@@ -33,7 +36,14 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
 
     mapping(bytes32 => Pool.State) public pools;
 
-    constructor() ERC1155('') {}
+    mapping(IERC20Minimal => uint256) public override protocolFeesAccrued;
+    IProtocolFeeController public protocolFeeController;
+
+    uint256 private immutable controllerGasLimit;
+
+    constructor(uint256 _controllerGasLimit) ERC1155('') {
+        controllerGasLimit = _controllerGasLimit;
+    }
 
     function _getPool(IPoolManager.PoolKey memory key) private view returns (Pool.State storage) {
         return pools[keccak256(abi.encode(key))];
@@ -44,11 +54,15 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         external
         view
         override
-        returns (uint160 sqrtPriceX96, int24 tick)
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint8 protocolFee
+        )
     {
         Pool.Slot0 memory slot0 = _getPool(key).slot0;
 
-        return (slot0.sqrtPriceX96, slot0.tick);
+        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee);
     }
 
     /// @inheritdoc IPoolManager
@@ -76,7 +90,7 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
             key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
         }
 
-        tick = _getPool(key).initialize(sqrtPriceX96);
+        tick = _getPool(key).initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
@@ -230,7 +244,8 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
             key.hooks.beforeSwap(msg.sender, key, params);
         }
 
-        delta = _getPool(key).swap(
+        uint256 feeForProtocol;
+        (delta, feeForProtocol) = _getPool(key).swap(
             Pool.SwapParams({
                 fee: key.fee,
                 tickSpacing: key.tickSpacing,
@@ -241,6 +256,11 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
         );
 
         _accountPoolBalanceDelta(key, delta);
+        // the fee is on the input token
+
+        unchecked {
+            if (feeForProtocol > 0) protocolFeesAccrued[params.zeroForOne ? key.token0 : key.token1] += feeForProtocol;
+        }
 
         if (key.hooks.shouldCallAfterSwap()) {
             key.hooks.afterSwap(msg.sender, key, params, delta);
@@ -328,5 +348,42 @@ contract PoolManager is IPoolManager, NoDelegateCall, ERC1155, IERC1155Receiver 
             }
         }
         return IERC1155Receiver.onERC1155BatchReceived.selector;
+    }
+
+    function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
+        protocolFeeController = controller;
+        emit ProtocolFeeControllerUpdated(address(controller));
+    }
+
+    function setPoolProtocolFee(IPoolManager.PoolKey memory key) external {
+        bytes32 poolHash = keccak256(abi.encode(key));
+        uint8 newProtocolFee = fetchPoolProtocolFee(key);
+
+        pools[poolHash].setProtocolFee(newProtocolFee);
+        emit PoolProtocolFeeUpdated(poolHash, newProtocolFee);
+    }
+
+    function fetchPoolProtocolFee(IPoolManager.PoolKey memory key) internal view returns (uint8 protocolFee) {
+        if (address(protocolFeeController) != address(0)) {
+            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (
+                uint8 updatedProtocolFee
+            ) {
+                protocolFee = updatedProtocolFee;
+            } catch {}
+        }
+    }
+
+    function collectProtocolFees(
+        address recipient,
+        IERC20Minimal token,
+        uint256 amount
+    ) external returns (uint256) {
+        if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
+
+        amount = (amount == 0) ? protocolFeesAccrued[token] : amount;
+        protocolFeesAccrued[token] -= amount;
+        TransferHelper.safeTransfer(token, recipient, amount);
+
+        return amount;
     }
 }
