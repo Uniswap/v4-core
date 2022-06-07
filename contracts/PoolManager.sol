@@ -377,11 +377,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         address recipient,
         IERC20Minimal token,
         uint256 amount
-    ) external {
+    ) external returns (uint256) {
         if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
 
         amount = (amount == 0) ? protocolFeesAccrued[token] : amount;
         protocolFeesAccrued[token] -= amount;
         TransferHelper.safeTransfer(token, recipient, amount);
+
+        return amount;
     }
 }
