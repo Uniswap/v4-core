@@ -78,7 +78,7 @@ contract TWAMMHook is BaseHook {
     }
 
     function executeTWAMMOrders(IPoolManager.PoolKey memory key) public {
-        (uint160 sqrtPriceX96, ) = poolManager.getSlot0(key);
+        (uint160 sqrtPriceX96, ,) = poolManager.getSlot0(key);
         TWAMM.State storage twamm = getTWAMM(key);
         (bool zeroForOne, uint160 sqrtPriceLimitX96) = twamm.executeTWAMMOrders(
             expirationInterval,

@@ -36,6 +36,7 @@ type PoolKey = {
 
 // TODO: temporary hack for precision errors affecting token balances
 const EXTRA_TOKENS = 20
+const CONTROLLER_GAS_LIMIT = 50000
 
 describe('TWAMM Hook', () => {
   let wallets: Wallet[]
@@ -84,7 +85,7 @@ describe('TWAMM Hook', () => {
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const tokens = await tokensFixture()
-    const manager = (await poolManagerFactory.deploy()) as PoolManager
+    const manager = (await poolManagerFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
 
     const twammHookAddress = createHookMask({
       beforeInitialize: true,
