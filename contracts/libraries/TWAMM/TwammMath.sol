@@ -7,7 +7,6 @@ import {Tick} from '../Tick.sol';
 import {FixedPoint96} from '../FixedPoint96.sol';
 import {SafeCast} from '../SafeCast.sol';
 import {TickMath} from '../TickMath.sol';
-import 'hardhat/console.sol';
 
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {

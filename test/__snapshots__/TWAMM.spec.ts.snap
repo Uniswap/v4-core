@@ -10,42 +10,42 @@ Object {
 exports[`TWAMM #executeTWAMMOrders both pools selling one interval gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 269053,
+  "gasUsed": 275557,
 }
 `;
 
 exports[`TWAMM #executeTWAMMOrders both pools selling three intervals gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 427410,
+  "gasUsed": 437169,
 }
 `;
 
 exports[`TWAMM #executeTWAMMOrders both pools selling two intervals gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 387304,
+  "gasUsed": 397063,
 }
 `;
 
 exports[`TWAMM #executeTWAMMOrders single pool sell one interval gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 111455,
+  "gasUsed": 111473,
 }
 `;
 
 exports[`TWAMM #executeTWAMMOrders single pool sell three intervals gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 167641,
+  "gasUsed": 167662,
 }
 `;
 
 exports[`TWAMM #executeTWAMMOrders single pool sell two intervals gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 146275,
+  "gasUsed": 146302,
 }
 `;
 
@@ -59,7 +59,7 @@ Object {
 exports[`TWAMM #submitLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 123037,
+  "gasUsed": 123049,
 }
 `;
 
@@ -73,6 +73,6 @@ Object {
 exports[`TWAMM end-to-end simulation single pool sell tests gas zeroForOne=true 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 98168,
+  "gasUsed": 98171,
 }
 `;

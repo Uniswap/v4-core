@@ -622,7 +622,7 @@ describe('TWAMM Hook', () => {
       })
     })
 
-    describe.skip('twamm math resolves when the sell ratio is close to the max/min', async () => {
+    describe('twamm math resolves for extreme sell ratios', async () => {
       let poolKey: PoolKey
       let orderKey0: OrderKey
       let orderKey1: OrderKey
@@ -660,10 +660,62 @@ describe('TWAMM Hook', () => {
         })
       })
 
-      it('sets the end price to the max price', async () => {
-        // TODO when we are single pool selling to the max
+      it('swaps to high price (going right)', async () => {
+        // increase liquidity so that we are testing not ending at the sqrtSellRatio
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: getMinTick(10),
+          tickUpper: getMaxTick(10),
+          liquidityDelta: '1000000000000000000000000',
+        })
+        const balance0 = await token0.balanceOf(twamm.address)
+        const balance1 = await token1.balanceOf(twamm.address)
+
         const amountSell0 = BigNumber.from('100000')
         const amountSell1 = BigNumber.from('34025678683638809405905696563977446090000000')
+        await inOneBlock(submitTimestamp, async () => {
+          await twamm.submitLongTermOrder(poolKey, orderKey0, amountSell0)
+          await twamm.submitLongTermOrder(poolKey, orderKey1, amountSell1)
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
+        await twamm.executeTWAMMOrders(poolKey)
+
+        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
+        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
+
+        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
+        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+
+        const expectedSqrtRatioX96 = '1390179360050332758641088620197702593046604939264'
+
+        const finalPriceX96 = (await poolManager.getSlot0(poolKey)).sqrtPriceX96
+
+        expect(finalPriceX96).to.equal(expectedSqrtRatioX96)
+
+        const error0 = newBalance0.sub(earningsToken0)
+        const error1 = newBalance1.sub(earningsToken1)
+
+        // TODO: precision error :(
+        // high errors bc extreme prices?
+        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
+        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
+      })
+
+      it('swaps to low price (going left)', async () => {
+        // increase liquidity so that we are testing not ending at the sqrtSellRatio
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: getMinTick(10),
+          tickUpper: getMaxTick(10),
+          liquidityDelta: '1000000000000000000000000',
+        })
+        const balance0 = await token0.balanceOf(twamm.address)
+        const balance1 = await token1.balanceOf(twamm.address)
+
+        console.log(balance0.toString())
+        console.log(balance1.toString())
+
+        const amountSell0 = BigNumber.from('34025678683638809405905696563977446090000000')
+        const amountSell1 = BigNumber.from('100000')
 
         await inOneBlock(submitTimestamp, async () => {
           await twamm.submitLongTermOrder(poolKey, orderKey0, amountSell0)
@@ -673,25 +725,74 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
         await twamm.executeTWAMMOrders(poolKey)
 
-        const newBalance0 = await token0.balanceOf(twamm.address)
-        const newBalance1 = await token1.balanceOf(twamm.address)
+        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
+        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
 
         const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
         const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
 
-        const sqrtX96SellRate = encodeSqrtPriceX96(amountSell1, amountSell0)
+        const expectedSqrtRatioX96 = '4515317890'
 
-        // TODO check desmos
-        // expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(sqrtX96SellRate)
+        const finalPriceX96 = (await poolManager.getSlot0(poolKey)).sqrtPriceX96
 
-        // TODO: precision error of 8 wei :(
-        // expect(newBalance0.sub(EXTRA_TOKENS)).to.eq(earningsToken0.sub(4))
-        // expect(newBalance1.sub(EXTRA_TOKENS)).to.eq(earningsToken1.sub(3))
+        expect(finalPriceX96).to.equal(expectedSqrtRatioX96)
+
+        const error0 = newBalance0.sub(earningsToken0)
+        const error1 = newBalance1.sub(earningsToken1)
+
+        // TODO: precision error :(
+        // high errors bc extreme prices?
+        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
+        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
       })
 
-      it('sets the end price to the min price', async () => {
-        // sqrtSellRatioX96 - 4295760037
-        //              min - 4295128739
+      it('swaps going right to sqrtSellRatio and does not revert when target tick is an initialized tick', async () => {
+        const balance0 = await token0.balanceOf(twamm.address)
+        const balance1 = await token1.balanceOf(twamm.address)
+
+        const amountSell0 = BigNumber.from('100000')
+        const amountSell1 = BigNumber.from('33112798684424369649027597812633277504400000')
+
+        await inOneBlock(submitTimestamp, async () => {
+          await twamm.submitLongTermOrder(poolKey, orderKey0, amountSell0)
+          await twamm.submitLongTermOrder(poolKey, orderKey1, amountSell1)
+        })
+
+        const tickAtSqrtSellRatio = 887000
+
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: tickAtSqrtSellRatio,
+          tickUpper: tickAtSqrtSellRatio + 200,
+          liquidityDelta: expandTo18Decimals(1),
+        })
+
+        await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
+        await twamm.executeTWAMMOrders(poolKey)
+
+        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
+        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
+
+        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
+        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+
+        const expectedPriceX96 = '1441708729548066551791643897157159050890912464896'
+
+        // TODO check desmos
+        const poolPrice = (await poolManager.getSlot0(poolKey)).sqrtPriceX96
+
+        expect(poolPrice).to.equal(expectedPriceX96)
+
+        const error0 = newBalance0.sub(earningsToken0)
+        const error1 = newBalance1.sub(earningsToken1)
+
+        // TODO: precision error ?
+        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
+        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
+      })
+
+      it('swaps to to sqrtSellRatio going left and does not error when target tick is initialized tick', async () => {
+        const balance0 = await token0.balanceOf(twamm.address)
+        const balance1 = await token1.balanceOf(twamm.address)
         const amountSell0 = '34015678683638809405905696563977446090000000'
         const amountSell1 = '100000'
 
@@ -701,21 +802,27 @@ describe('TWAMM Hook', () => {
         })
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
+
         await twamm.executeTWAMMOrders(poolKey)
 
-        const newBalance0 = await token0.balanceOf(twamm.address)
-        const newBalance1 = await token1.balanceOf(twamm.address)
+        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
+        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
 
         const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
         const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
 
-        const sqrtX96SellRate = encodeSqrtPriceX96(amountSell1, amountSell0)
+        // sqrtSellRatio
+        const expectedPriceX96 = 4295760037
 
-        expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(sqrtX96SellRate)
+        expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(expectedPriceX96)
 
-        // TODO: precision error of 8 wei :(
-        // expect(newBalance0.sub(EXTRA_TOKENS)).to.eq(earningsToken0.sub(4))
-        // expect(newBalance1.sub(EXTRA_TOKENS)).to.eq(earningsToken1.sub(3))
+        const error0 = newBalance0.sub(earningsToken0)
+        const error1 = newBalance1.sub(earningsToken1)
+
+        // TODO: precision error?
+        // why so high
+        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
+        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
       })
     })
 

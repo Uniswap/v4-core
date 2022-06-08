@@ -216,7 +216,7 @@ describe('TWAMMMath', () => {
       )
     })
 
-    describe.only('#calculateExecutionUpdates with extreme sell ratios', async () => {
+    describe('#calculateExecutionUpdates with extreme sell ratios', async () => {
       secondsElapsedX96 = BigNumber.from(3600).mul(Q96)
       sqrtPriceX96 = encodeSqrtPriceX96(1, 1)
       fee = '3000'
