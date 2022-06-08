@@ -107,6 +107,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        emit PoolInitialized(address(key.token0), address(key.token1), key.fee, key.tickSpacing, address(key.hooks));
     }
 
     /// @inheritdoc IPoolManager
@@ -246,6 +248,14 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        emit ModifyPosition(
+            key,
+            msg.sender,
+            params.tickLower,
+            params.tickUpper,
+            params.liquidityDelta
+        );
     }
 
     /// @inheritdoc IPoolManager
@@ -285,6 +295,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        emit Swap(
+            key,
+            msg.sender,
+            delta.amount0,
+            delta.amount1
+        );
     }
 
     /// @inheritdoc IPoolManager
