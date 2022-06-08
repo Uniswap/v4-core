@@ -523,20 +523,15 @@ library TWAMM {
             orderPool1For0.sellRateCurrent
         );
 
-        // TODO: nextSqrtPriceX96 off by 1 wei (hence using the initializedSqrtPrice (l:331) param instead)
-        TwammMath.ExecutionUpdateParams memory executionParams = TwammMath.ExecutionUpdateParams(
-            secondsUntilCrossingX96,
-            params.pool.sqrtPriceX96,
-            params.pool.liquidity,
-            orderPool0For1.sellRateCurrent,
-            orderPool1For0.sellRateCurrent
-        );
-
-        uint160 nextSqrtPriceX96 = TwammMath.getNewSqrtPriceX96(executionParams);
-
         (uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath.calculateEarningsUpdates(
-            executionParams,
-            nextSqrtPriceX96
+            TwammMath.ExecutionUpdateParams(
+                secondsUntilCrossingX96,
+                params.pool.sqrtPriceX96,
+                params.pool.liquidity,
+                orderPool0For1.sellRateCurrent,
+                orderPool1For0.sellRateCurrent
+            ),
+            initializedSqrtPrice
         );
 
         orderPool0For1.advanceToCurrentTime(earningsFactorPool0);
