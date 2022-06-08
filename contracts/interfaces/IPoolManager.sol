@@ -26,6 +26,10 @@ interface IPoolManager is IERC1155 {
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
     error TickSpacingTooSmall();
 
+    event PoolProtocolFeeUpdated(bytes32 poolKey, uint8 protocolFee);
+
+    event ProtocolFeeControllerUpdated(address protocolFeeController);
+
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower token of the pool, sorted numerically
@@ -46,8 +50,18 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
+    // @notice Given a token address, returns the protocol fees accrued in that token
+    function protocolFeesAccrued(IERC20Minimal) external view returns (uint256);
+
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(PoolKey memory key) external view returns (uint160 sqrtPriceX96, int24 tick);
+    function getSlot0(PoolKey memory key)
+        external
+        view
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint8 protocolFee
+        );
 
     /// @notice Get tick info for a given tick
     function getTickNetLiquidity(PoolKey memory key, int24 tick) external view returns (int128);
@@ -60,7 +74,15 @@ interface IPoolManager is IERC1155 {
     ) external view returns (int24 next, bool initialized);
 
     /// @notice Get the current value of liquidity of the given pool
-    function getLiquidity(IPoolManager.PoolKey memory key) external view returns (uint128 liquidity);
+    function getLiquidity(IPoolManager.PoolKey calldata key) external view returns (uint128 liquidity);
+
+    /// @notice Get the current value of liquidity for the specified pool and position
+    function getLiquidity(
+        IPoolManager.PoolKey calldata key,
+        address owner,
+        int24 tickLower,
+        int24 tickUpper
+    ) external view returns (uint128 liquidity);
 
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
@@ -147,4 +169,6 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
+
+    function setPoolProtocolFee(PoolKey memory key) external;
 }

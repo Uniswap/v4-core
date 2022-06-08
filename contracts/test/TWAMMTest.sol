@@ -40,14 +40,20 @@ contract TWAMMTest {
         external
         returns (bytes32 orderId)
     {
-        orderId = twamm.submitLongTermOrder(orderKey, amountIn, expirationInterval);
+        unchecked {
+            orderId = twamm.submitLongTermOrder(
+                orderKey,
+                amountIn / (orderKey.expiration - block.timestamp),
+                expirationInterval
+            );
+        }
     }
 
     function modifyLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)
         external
-        returns (uint256 amountOut)
+        returns (int256 finalAmountDelta)
     {
-        amountOut = twamm.modifyLongTermOrder(orderKey, amountDelta);
+        finalAmountDelta = twamm.modifyLongTermOrder(orderKey, amountDelta);
     }
 
     // dont return true if the init tick is directly after the target price

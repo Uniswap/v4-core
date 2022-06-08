@@ -78,7 +78,7 @@ contract TWAMMHook is BaseHook {
     }
 
     function executeTWAMMOrders(IPoolManager.PoolKey memory key) public {
-        (uint160 sqrtPriceX96, ) = poolManager.getSlot0(key);
+        (uint160 sqrtPriceX96, , ) = poolManager.getSlot0(key);
         TWAMM.State storage twamm = getTWAMM(key);
         (bool zeroForOne, uint160 sqrtPriceLimitX96) = twamm.executeTWAMMOrders(
             expirationInterval,
@@ -92,6 +92,12 @@ contract TWAMMHook is BaseHook {
         }
     }
 
+    /// @notice Submits a new long term order into the TWAMM. Also executes TWAMM orders if not up to date.
+    /// @param key The PoolKey for which to identify the amm pool of the order
+    /// @param orderKey The OrderKey for the new order
+    /// @param amountIn The amount of sell token to add to the order. Some precision on amountIn may be lost up to the
+    /// magnitude of (orderKey.expiration - block.timestamp)
+    /// @return orderId The bytes32 ID of the order
     function submitLongTermOrder(
         IPoolManager.PoolKey calldata key,
         TWAMM.OrderKey memory orderKey,
@@ -99,27 +105,51 @@ contract TWAMMHook is BaseHook {
     ) external returns (bytes32 orderId) {
         TWAMM.State storage twamm = getTWAMM(key);
         executeTWAMMOrders(key);
-        orderId = twamm.submitLongTermOrder(orderKey, amountIn, expirationInterval);
-        IERC20Minimal sellToken = orderKey.zeroForOne ? key.token0 : key.token1;
-        sellToken.safeTransferFrom(orderKey.owner, address(this), amountIn);
+
+        unchecked {
+            // checks done in TWAMM library
+            uint256 sellRate = amountIn / (orderKey.expiration - block.timestamp);
+            orderId = twamm.submitLongTermOrder(orderKey, sellRate, expirationInterval);
+            IERC20Minimal(orderKey.zeroForOne ? key.token0 : key.token1).safeTransferFrom(
+                orderKey.owner,
+                address(this),
+                sellRate * (orderKey.expiration - block.timestamp)
+            );
+        }
     }
 
+    /// @notice Modify an existing long term order with a new sellAmount
+    /// @param key The PoolKey for which to identify the amm pool of the order
+    /// @param orderKey The OrderKey for which to identify the order
+    /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
+    ///    min value to remove full amount from order.
+    /// @return finalAmountDelta the amount of the order's sell token added or removed from the order
     function modifyLongTermOrder(
         IPoolManager.PoolKey memory key,
         TWAMM.OrderKey memory orderKey,
         int128 amountDelta
-    ) external returns (uint256 amountOut) {
+    ) external returns (int256 finalAmountDelta) {
         executeTWAMMOrders(key);
 
         // This call reverts if the caller is not the owner of the order
-        amountOut = getTWAMM(key).modifyLongTermOrder(orderKey, amountDelta);
+        finalAmountDelta = getTWAMM(key).modifyLongTermOrder(orderKey, amountDelta);
 
         IERC20Minimal sellToken = orderKey.zeroForOne ? key.token0 : key.token1;
 
-        if (amountDelta > 0) sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint128(amountDelta)));
-        else sellToken.safeTransfer(orderKey.owner, amountOut);
+        if (finalAmountDelta > 0) {
+            sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint128(amountDelta)));
+        } else {
+            uint256 currentBalance = sellToken.balanceOf(address(this));
+            uint256 amountOut = uint256(uint128(amountDelta));
+            if (currentBalance < amountOut) amountOut = currentBalance;
+            sellToken.safeTransfer(orderKey.owner, amountOut);
+        }
     }
 
+    /// @notice Claim earnings from an ongoing or expired order
+    /// @param key The PoolKey for which to identify the amm pool of the order
+    /// @param orderKey The OrderKey for which to identify the order
+    /// @return earningsAmount The total earnings to be collected at this point in time
     function claimEarningsOnLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.OrderKey memory orderKey)
         external
         returns (uint256 earningsAmount)
@@ -128,10 +158,12 @@ contract TWAMMHook is BaseHook {
 
         earningsAmount = getTWAMM(key).claimEarnings(orderKey);
         IERC20Minimal buyToken = orderKey.zeroForOne ? key.token1 : key.token0;
+        uint256 currentBalance = buyToken.balanceOf(address(this));
+        if (currentBalance < earningsAmount) earningsAmount = currentBalance;
         buyToken.safeTransfer(orderKey.owner, earningsAmount);
     }
 
-    function lockAcquired(bytes calldata rawData) external poolManagerOnly returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external override poolManagerOnly returns (bytes memory) {
         (IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory swapParams) = abi.decode(
             rawData,
             (IPoolManager.PoolKey, IPoolManager.SwapParams)

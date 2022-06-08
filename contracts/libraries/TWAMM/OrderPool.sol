@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 /// @title TWAMM OrderPool - Represents an OrderPool inside of a TWAMM
 library OrderPool {
     /// @notice Information related to a long term order pool.
-    /// @member sellRateCurrent The total current sell rate among all orders
+    /// @member sellRateCurrent The total current sell rate (sellAmount / second) among all orders
     /// @member sellRateEndingAtInterval Mapping (timestamp => sellRate) The amount of expiring sellRate at this interval
     /// @member earningsFactor Sum of (salesEarnings_k / salesRate_k) over every period k. Stored as Fixed Point X96.
     /// @member earningsFactorAtInterval Mapping (timestamp => sellRate) The earnings factor accrued by a certain time interval. Stored as Fixed Point X96.

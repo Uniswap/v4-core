@@ -6,8 +6,10 @@ import {IHooks} from '../../interfaces/IHooks.sol';
 
 abstract contract BaseHook is IHooks {
     error NotPoolManager();
+    error NotSelf();
+    error InvalidPool();
+    error LockFailure();
     error HookNotImplemented();
-    error PoolNotInitialized();
 
     /// @notice The address of the pool manager
     IPoolManager public immutable poolManager;
@@ -22,11 +24,34 @@ abstract contract BaseHook is IHooks {
         _;
     }
 
+    /// @dev Only this address may call this function
+    modifier selfOnly() {
+        if (msg.sender != address(this)) revert NotSelf();
+        _;
+    }
+
+    /// @dev Only pools with hooks set to this contract may call this function
+    modifier onlyValidPools(IHooks hooks) {
+        if (hooks != this) revert InvalidPool();
+        _;
+    }
+
+    function lockAcquired(bytes calldata data) external virtual poolManagerOnly returns (bytes memory) {
+        (bool success, bytes memory returnData) = address(this).call(data);
+        if (success) return returnData;
+        if (returnData.length == 0) revert LockFailure();
+        // if the call failed, bubble up the reason
+        /// @solidity memory-safe-assembly
+        assembly {
+            revert(add(returnData, 32), mload(returnData))
+        }
+    }
+
     function beforeInitialize(
         address,
         IPoolManager.PoolKey calldata,
         uint160
-    ) external virtual override {
+    ) external virtual {
         revert HookNotImplemented();
     }
 
@@ -35,7 +60,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         uint160,
         int24
-    ) external virtual override {
+    ) external virtual {
         revert HookNotImplemented();
     }
 
@@ -43,7 +68,7 @@ abstract contract BaseHook is IHooks {
         address,
         IPoolManager.PoolKey calldata,
         IPoolManager.ModifyPositionParams calldata
-    ) external virtual override {
+    ) external virtual {
         revert HookNotImplemented();
     }
 
@@ -52,7 +77,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         IPoolManager.ModifyPositionParams calldata,
         IPoolManager.BalanceDelta calldata
-    ) external virtual override {
+    ) external virtual {
         revert HookNotImplemented();
     }
 
@@ -60,7 +85,7 @@ abstract contract BaseHook is IHooks {
         address,
         IPoolManager.PoolKey calldata,
         IPoolManager.SwapParams calldata
-    ) external virtual override {
+    ) external virtual {
         revert HookNotImplemented();
     }
 
@@ -69,7 +94,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         IPoolManager.SwapParams calldata,
         IPoolManager.BalanceDelta calldata
-    ) external virtual override {
+    ) external virtual {
         revert HookNotImplemented();
     }
 
@@ -78,7 +103,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         uint256,
         uint256
-    ) external virtual override {
+    ) external virtual {
         revert HookNotImplemented();
     }
 
@@ -87,7 +112,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         uint256,
         uint256
-    ) external virtual override {
+    ) external virtual {
         revert HookNotImplemented();
     }
 }

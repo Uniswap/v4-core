@@ -63,7 +63,7 @@ library TwammMath {
 
     function getSqrtPriceWithinBounds(bool zeroForOne, bytes16 desiredPriceX96)
         internal
-        view
+        pure
         returns (bytes16 newSqrtPriceX96)
     {
         bytes16 maxPriceBytesX96 = TickMath.MAX_SQRT_RATIO.fromUInt();
