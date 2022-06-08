@@ -224,6 +224,7 @@ describe('TWAMMMath', () => {
       let sellRateCurrent0: BigNumber
       let sellRateCurrent1: BigNumber
       let liquidity: string
+
       it('sells large amounts of token1', async () => {
         liquidity = '1000000000000000000000000'
         sellRateCurrent0 = BigNumber.from('1')
@@ -242,6 +243,7 @@ describe('TWAMMMath', () => {
         // wolfram
         // 1223127075048864708.72893792449
       })
+
       it('sells large amounts of token0', async () => {
         liquidity = '1000000000000000000000000'
         sellRateCurrent0 = BigNumber.from('340256786836388094059056965639774460900')
@@ -258,6 +260,7 @@ describe('TWAMMMath', () => {
         // 0.000000000000000000817576
         // basically 0
       })
+
       it('sets the end price to the max price', async () => {
         liquidity = '1000000000000000000000000'
         // the sqrtSellRatio is greater than the maxEndPrice
@@ -289,6 +292,7 @@ describe('TWAMMMath', () => {
         const minPrice = divX96(MIN_SQRT_RATIO)
         expect(divX96(results.sqrtPriceX96)).to.eql(minPrice)
       })
+
       it('sets the end price to the max price instead of the sqrtSellRatio when low liquidity', async () => {
         liquidity = '1000000'
         // the sqrtSellRatio is greater than the max price
@@ -304,6 +308,7 @@ describe('TWAMMMath', () => {
         const maxPrice = divX96(MAX_SQRT_RATIO)
         expect(divX96(results.sqrtPriceX96)).to.eql(maxPrice)
       })
+
       it('sets the end price to the min price instead of the sqrtSellRatio when low liquidity', async () => {
         liquidity = '1000000'
         // the sqrtSellRatio is less than the min price

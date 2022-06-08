@@ -32,8 +32,7 @@ library TwammMath {
         uint256 sellRateCurrent1;
     }
 
-    // change to pure
-    function getNewSqrtPriceX96(ExecutionUpdateParams memory params) internal view returns (uint160 newSqrtPriceX96) {
+    function getNewSqrtPriceX96(ExecutionUpdateParams memory params) internal pure returns (uint160 newSqrtPriceX96) {
         bool zeroForOne = params.sellRateCurrent0 > params.sellRateCurrent1;
 
         bytes16 sellRateBytes0 = params.sellRateCurrent0.fromUInt();
@@ -115,14 +114,13 @@ library TwammMath {
 
     /// @notice Used when crossing an initialized tick. Can extract the amount of seconds it took to cross
     ///   the tick, and recalibrate the calculation from there to accommodate liquidity changes
-    // change to pure
     function calculateTimeBetweenTicks(
         uint256 liquidity,
         uint160 sqrtPriceStartX96,
         uint160 sqrtPriceEndX96,
         uint256 sellRate0,
         uint256 sellRate1
-    ) internal view returns (uint256 secondsBetween) {
+    ) internal pure returns (uint256 secondsBetween) {
         bytes16 sellRate0Bytes = sellRate0.fromUInt();
         bytes16 sellRate1Bytes = sellRate1.fromUInt();
         bytes16 sqrtPriceStartX96Bytes = sqrtPriceStartX96.fromUInt();
@@ -136,12 +134,11 @@ library TwammMath {
         return numerator.mul(Q96).div(denominator).toUInt();
     }
 
-    // change to pure
     function getTimeBetweenTicksMultiple(
         bytes16 sqrtSellRatioX96,
         bytes16 sqrtPriceStartX96,
         bytes16 sqrtPriceEndX96
-    ) private view returns (bytes16 multiple) {
+    ) private pure returns (bytes16 multiple) {
         bytes16 multiple1 = sqrtSellRatioX96.add(sqrtPriceEndX96).div(sqrtSellRatioX96.sub(sqrtPriceEndX96));
         bytes16 multiple2 = sqrtSellRatioX96.sub(sqrtPriceStartX96).div(sqrtSellRatioX96.add(sqrtPriceStartX96));
         return multiple1.mul(multiple2).ln();

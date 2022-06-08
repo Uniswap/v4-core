@@ -74,10 +74,9 @@ contract TWAMMTest {
         twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), poolKey, poolParams);
     }
 
-    // change to pure
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
         external
-        view
+        pure
         returns (
             uint160 sqrtPriceX96,
             uint256 earningsFactorPool0,
@@ -101,14 +100,13 @@ contract TWAMMTest {
         return gasLeftBefore - gasleft();
     }
 
-    // change to pure
     function calculateTimeBetweenTicks(
         uint256 liquidity,
         uint160 sqrtPriceStartX96,
         uint160 sqrtPriceEndX96,
         uint256 sellRate0,
         uint256 sellRate1
-    ) external view returns (uint256) {
+    ) external pure returns (uint256) {
         return TwammMath.calculateTimeBetweenTicks(liquidity, sqrtPriceStartX96, sqrtPriceEndX96, sellRate0, sellRate1);
     }
 

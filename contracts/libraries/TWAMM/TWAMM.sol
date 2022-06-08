@@ -368,7 +368,6 @@ library TWAMM {
                 poolKey,
                 finalSqrtPriceX96
             );
-
             unchecked {
                 if (crossingInitializedTick) {
                     uint256 secondsUntilCrossingX96;
@@ -512,7 +511,6 @@ library TWAMM {
         OrderPool.State storage orderPool0For1 = self.orderPool0For1;
         OrderPool.State storage orderPool1For0 = self.orderPool1For0;
 
-        // this errors when going to min price
         uint256 secondsUntilCrossingX96 = TwammMath.calculateTimeBetweenTicks(
             params.pool.liquidity,
             params.pool.sqrtPriceX96,
@@ -579,7 +577,6 @@ library TWAMM {
             nextTickInitFurtherThanTarget = searchingLeft ? nextTickInit <= targetTick : nextTickInit > targetTick;
             if (crossingInitializedTick == true) break;
         }
-
         if (nextTickInitFurtherThanTarget) crossingInitializedTick = false;
     }
 
