@@ -60,7 +60,8 @@ interface IPoolManager is IERC1155 {
     /// @param sender The address that initiated the swap call, and that received the callback
     /// @param amount0 The delta of the token0 balance of the pool
     /// @param amount1 The delta of the token1 balance of the pool
-    event Swap(PoolKey indexed poolKey, address indexed sender, int256 amount0, int256 amount1);
+    /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
+    event Swap(PoolKey indexed poolKey, address indexed sender, int256 amount0, int256 amount1, uint160 sqrtPriceX96);
 
     event PoolProtocolFeeUpdated(bytes32 poolKey, uint8 protocolFee);
 

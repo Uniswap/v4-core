@@ -128,10 +128,14 @@ exports[`PoolManager gas tests #swapExact0For1 first swap in block moves tick, n
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 229884,
 =======
   "gasUsed": 231763,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 232020,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
@@ -139,10 +143,14 @@ exports[`PoolManager gas tests #swapExact0For1 first swap in block with no tick 
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 223962,
 =======
   "gasUsed": 225840,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 226098,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
@@ -150,10 +158,14 @@ exports[`PoolManager gas tests #swapExact0For1 first swap in block, large swap c
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 248860,
 =======
   "gasUsed": 250740,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 251014,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
@@ -161,10 +173,14 @@ exports[`PoolManager gas tests #swapExact0For1 first swap in block, large swap c
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 290988,
 =======
   "gasUsed": 292868,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 293192,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
@@ -172,10 +188,14 @@ exports[`PoolManager gas tests #swapExact0For1 first swap in block, large swap, 
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 241926,
 =======
   "gasUsed": 243804,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 244062,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
@@ -183,10 +203,14 @@ exports[`PoolManager gas tests #swapExact0For1 second swap in block moves tick, 
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 229884,
 =======
   "gasUsed": 231763,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 232020,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
@@ -194,10 +218,14 @@ exports[`PoolManager gas tests #swapExact0For1 second swap in block with no tick
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 224051,
 =======
   "gasUsed": 225929,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 226187,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
@@ -205,10 +233,14 @@ exports[`PoolManager gas tests #swapExact0For1 second swap in block, large swap 
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 243055,
 =======
   "gasUsed": 244934,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 245208,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
@@ -216,9 +248,13 @@ exports[`PoolManager gas tests #swapExact0For1 second swap in block, large swap 
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 285157,
 =======
   "gasUsed": 287036,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 287361,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;

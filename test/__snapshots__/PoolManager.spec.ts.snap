@@ -44,10 +44,14 @@ exports[`PoolManager #swap gas cost 1`] = `
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 84823,
 =======
   "gasUsed": 86711,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 86968,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
@@ -55,16 +59,21 @@ exports[`PoolManager #swap gas cost for swap against liquidity 1`] = `
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 224316,
 =======
   "gasUsed": 226204,
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 226461,
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
 }
 `;
 
 exports[`PoolManager #swap gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
 <<<<<<< HEAD
   "gasUsed": 84852,
 }
@@ -78,3 +87,10 @@ exports[`PoolManager bytecode size 1`] = `25638`;
 
 exports[`PoolManager bytecode size 1`] = `26248`;
 >>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
+=======
+  "gasUsed": 86997,
+}
+`;
+
+exports[`PoolManager bytecode size 1`] = `26281`;
+>>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)

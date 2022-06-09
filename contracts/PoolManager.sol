@@ -267,7 +267,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         uint256 feeForProtocol;
-        (delta, feeForProtocol) = _getPool(key).swap(
+        uint160 sqrtPriceX96;
+        (delta, feeForProtocol, sqrtPriceX96) = _getPool(key).swap(
             Pool.SwapParams({
                 fee: key.fee,
                 tickSpacing: key.tickSpacing,
@@ -290,7 +291,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit Swap(key, msg.sender, delta.amount0, delta.amount1);
+        emit Swap(key, msg.sender, delta.amount0, delta.amount1, sqrtPriceX96);
     }
 
     /// @inheritdoc IPoolManager
