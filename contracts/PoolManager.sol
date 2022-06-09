@@ -108,7 +108,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit PoolInitialized(address(key.token0), address(key.token1), key.fee, key.tickSpacing, address(key.hooks));
+        emit Initialize(key.token0, key.token1, key.fee, key.tickSpacing, key.hooks);
     }
 
     /// @inheritdoc IPoolManager

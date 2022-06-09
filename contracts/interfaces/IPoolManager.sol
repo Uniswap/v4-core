@@ -33,16 +33,16 @@ interface IPoolManager is IERC1155 {
     /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
-    event PoolInitialized(
-        address indexed token0,
-        address indexed token1,
+    event Initialize(
+        IERC20Minimal indexed token0,
+        IERC20Minimal indexed token1,
         uint24 indexed fee,
         int24 tickSpacing,
-        address hooks
+        IHooks hooks
     );
 
     /// @notice Emitted when a liquidity position is modified
-    /// @param poolKey The key of the pool that was modified
+    /// @param poolKey The abi encoded hash of the pool key struct for the pool that was modified
     /// @param sender The address that modified the pool
     /// @param tickLower The lower tick of the position
     /// @param tickUpper The upper tick of the position
@@ -56,7 +56,7 @@ interface IPoolManager is IERC1155 {
     );
 
     /// @notice Emitted for swaps between token0 and token1
-    /// @param poolKey The key of the pool that was modified
+    /// @param poolKey The abi encoded hash of the pool key struct for the pool that was modified
     /// @param sender The address that initiated the swap call, and that received the callback
     /// @param amount0 The delta of the token0 balance of the pool
     /// @param amount1 The delta of the token1 balance of the pool

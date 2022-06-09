@@ -185,7 +185,7 @@ describe('PoolManager', () => {
       }
 
       await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
-        .to.emit(manager, 'PoolInitialized')
+        .to.emit(manager, 'Initialize')
         .withArgs(poolKey.token0, poolKey.token1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
 
       const {
