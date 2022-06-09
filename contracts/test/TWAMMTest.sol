@@ -77,7 +77,7 @@ contract TWAMMTest {
     function executeTWAMMOrders(IPoolManager.PoolKey calldata poolKey, TWAMM.PoolParamsOnExecute memory poolParams)
         external
     {
-        twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), poolKey, poolParams);
+        twamm.executeTWAMMOrders(IPoolManager(address(this)), poolKey, poolParams, expirationInterval);
     }
 
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
