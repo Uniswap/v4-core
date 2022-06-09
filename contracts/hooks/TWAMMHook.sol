@@ -50,25 +50,28 @@ contract TWAMMHook is BaseHook {
         address,
         IPoolManager.PoolKey calldata key,
         uint160
-    ) external virtual override poolManagerOnly {
+    ) external virtual override poolManagerOnly returns (bytes4) {
         // Dont need to enforce one-time as each pool can only be initialized once in the manager
         getTWAMM(key).initialize();
+        return BaseHook.beforeInitialize.selector;
     }
 
     function beforeModifyPosition(
         address,
         IPoolManager.PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata
-    ) external override poolManagerOnly {
+    ) external override poolManagerOnly returns (bytes4) {
         executeTWAMMOrders(key);
+        return BaseHook.beforeModifyPosition.selector;
     }
 
     function beforeSwap(
         address,
         IPoolManager.PoolKey calldata key,
         IPoolManager.SwapParams calldata
-    ) external override poolManagerOnly {
+    ) external override poolManagerOnly returns (bytes4) {
         executeTWAMMOrders(key);
+        return BaseHook.beforeSwap.selector;
     }
 
     struct CallbackData {
