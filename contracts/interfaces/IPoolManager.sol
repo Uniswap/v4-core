@@ -48,7 +48,7 @@ interface IPoolManager is IERC1155 {
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
     event ModifyPosition(
-        PoolKey indexed poolKey,
+        bytes32 indexed poolKey,
         address indexed sender,
         int24 tickLower,
         int24 tickUpper,
@@ -61,7 +61,7 @@ interface IPoolManager is IERC1155 {
     /// @param amount0 The delta of the token0 balance of the pool
     /// @param amount1 The delta of the token1 balance of the pool
     /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
-    event Swap(PoolKey indexed poolKey, address indexed sender, int256 amount0, int256 amount1, uint160 sqrtPriceX96);
+    event Swap(bytes32 indexed poolKey, address indexed sender, int256 amount0, int256 amount1, uint160 sqrtPriceX96);
 
     event PoolProtocolFeeUpdated(bytes32 poolKey, uint8 protocolFee);
 

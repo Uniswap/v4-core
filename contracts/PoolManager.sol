@@ -231,7 +231,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        delta = _getPool(key).modifyPosition(
+        bytes32 poolId = _getPoolId(key);
+        delta = pools[poolId].modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -249,7 +250,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit ModifyPosition(key, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
+        emit ModifyPosition(poolId, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
 
     /// @inheritdoc IPoolManager
@@ -268,7 +269,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         uint256 feeForProtocol;
         uint160 sqrtPriceX96;
-        (delta, feeForProtocol, sqrtPriceX96) = _getPool(key).swap(
+        bytes32 poolId = _getPoolId(key);
+        (delta, feeForProtocol, sqrtPriceX96) = pools[poolId].swap(
             Pool.SwapParams({
                 fee: key.fee,
                 tickSpacing: key.tickSpacing,
@@ -291,7 +293,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit Swap(key, msg.sender, delta.amount0, delta.amount1, sqrtPriceX96);
+        emit Swap(poolId, msg.sender, delta.amount0, delta.amount1, sqrtPriceX96);
     }
 
     /// @inheritdoc IPoolManager
