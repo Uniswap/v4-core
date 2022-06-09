@@ -20,6 +20,13 @@ library TickMath {
     /// @dev The maximum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MAX_TICK)
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
+    //// @dev The minimum value that a pool price can equal, represented in bytes.
+    // (TickMath.MIN_SQRT_RATIO + 1).fromUInt()
+    bytes16 internal constant MIN_SQRT_RATIO_BYTES = 0x401f000276a400000000000000000000;
+    //// @dev The maximum value that a pool price can equal, represented in bytes.
+    // (MAX_SQRT_RATIO - 1).fromUInt()
+    bytes16 internal constant MAX_SQRT_RATIO_BYTES = 0x409efffb12c7dfa3f8d4a0c91092bb2a;
+
     /// @notice Given a tickSpacing, compute the maximum usable tick
     function maxUsableTick(int24 tickSpacing) internal pure returns (int24) {
         unchecked {

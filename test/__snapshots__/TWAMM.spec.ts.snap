@@ -10,21 +10,21 @@ Object {
 exports[`TWAMM #executeTWAMMOrders both pools selling one interval gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 275557,
+  "gasUsed": 273529,
 }
 `;
 
 exports[`TWAMM #executeTWAMMOrders both pools selling three intervals gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 437169,
+  "gasUsed": 434127,
 }
 `;
 
 exports[`TWAMM #executeTWAMMOrders both pools selling two intervals gas 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 397063,
+  "gasUsed": 394021,
 }
 `;
 

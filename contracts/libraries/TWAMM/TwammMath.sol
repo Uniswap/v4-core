@@ -66,8 +66,8 @@ library TwammMath {
         pure
         returns (bytes16 newSqrtPriceX96)
     {
-        bytes16 maxPriceBytesX96 = TickMath.MAX_SQRT_RATIO.fromUInt();
-        bytes16 minPriceBytesX96 = TickMath.MIN_SQRT_RATIO.fromUInt();
+        bytes16 maxPriceBytesX96 = TickMath.MAX_SQRT_RATIO_BYTES;
+        bytes16 minPriceBytesX96 = TickMath.MIN_SQRT_RATIO_BYTES;
 
         if (zeroForOne) {
             int8 isLessThanMinimum = minPriceBytesX96.cmp(desiredPriceX96);
