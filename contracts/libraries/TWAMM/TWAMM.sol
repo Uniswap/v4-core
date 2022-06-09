@@ -237,8 +237,7 @@ library TWAMM {
 
         uint160 initialSqrtPriceX96 = pool.sqrtPriceX96;
         uint256 prevTimestamp = self.lastVirtualOrderTimestamp;
-        uint256 nextExpirationTimestamp = prevTimestamp +
-            (expirationInterval - (prevTimestamp % expirationInterval));
+        uint256 nextExpirationTimestamp = prevTimestamp + (expirationInterval - (prevTimestamp % expirationInterval));
 
         OrderPool.State storage orderPool0For1 = self.orderPool0For1;
         OrderPool.State storage orderPool1For0 = self.orderPool1For0;
