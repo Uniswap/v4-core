@@ -151,7 +151,7 @@ library TWAMM {
         OrderKey memory orderKey,
         int256 amountDelta
     ) internal returns (int256 finalAmountDelta) {
-        Order storage order = _getOrder(self, orderKey);
+        Order storage order = getOrder(self, orderKey);
 
         if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
         if (!order.exists) revert OrderDoesNotExist(orderKey);
@@ -553,7 +553,7 @@ library TWAMM {
         if (nextTickInitFurtherThanTarget) crossingInitializedTick = false;
     }
 
-    function _getOrder(State storage self, OrderKey memory key) internal view returns (Order storage) {
+    function getOrder(State storage self, OrderKey memory key) internal view returns (Order storage) {
         return self.orders[_orderId(key)];
     }
 

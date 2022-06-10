@@ -3,7 +3,7 @@
 exports[`TWAMM Hook #claimEarnings gas 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 451216,
+  "gasUsed": 212676,
 }
 `;
 

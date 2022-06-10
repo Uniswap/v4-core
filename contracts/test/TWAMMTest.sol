@@ -129,7 +129,7 @@ contract TWAMMTest {
     }
 
     function getOrder(TWAMM.OrderKey calldata orderKey) external view returns (TWAMM.Order memory) {
-        return twamm._getOrder(orderKey);
+        return twamm.getOrder(orderKey);
     }
 
     function getOrderPool(bool zeroForOne) external view returns (uint256 sellRate, uint256 earningsFactor) {

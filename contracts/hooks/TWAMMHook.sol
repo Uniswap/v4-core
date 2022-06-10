@@ -40,10 +40,24 @@ contract TWAMMHook is BaseHook {
         return twammStates[key].lastVirtualOrderTimestamp;
     }
 
-    function getOrderPool(IPoolManager.PoolKey calldata key, bool zeroForOne) external view returns (uint256, uint256) {
+    function getOrder(IPoolManager.PoolKey calldata poolKey, TWAMM.OrderKey calldata orderKey)
+        external
+        view
+        returns (TWAMM.Order memory)
+    {
+        return twammStates[keccak256(abi.encode(poolKey))].getOrder(orderKey);
+    }
+
+    function getOrderPool(IPoolManager.PoolKey calldata key, bool zeroForOne)
+        external
+        view
+        returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent)
+    {
         TWAMM.State storage twamm = getTWAMM(key);
-        if (zeroForOne) return (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent);
-        else return (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
+        return
+            zeroForOne
+                ? (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent)
+                : (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
     }
 
     function beforeInitialize(
@@ -197,13 +211,5 @@ contract TWAMMHook is BaseHook {
 
     function getTWAMM(IPoolManager.PoolKey memory key) private view returns (TWAMM.State storage) {
         return twammStates[keccak256(abi.encode(key))];
-    }
-
-    function getOrder(IPoolManager.PoolKey calldata poolKey, TWAMM.OrderKey calldata orderKey)
-        external
-        view
-        returns (TWAMM.Order memory)
-    {
-        return twammStates[keccak256(abi.encode(poolKey))].orders[keccak256(abi.encode(orderKey))];
     }
 }
