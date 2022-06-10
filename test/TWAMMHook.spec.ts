@@ -315,7 +315,9 @@ describe('TWAMM Hook', () => {
         await twamm.modifyLongTermOrder(poolKey, orderKey0, amountDelta.mul(-1))
         const ownerBalanceNew = await token0.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey0)
+        const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
 
+        expect(order.unclaimedEarningsFactor).to.eq(earningsFactorCurrent)
         expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(200000000000000)
         expect(order.exists).to.eq(true)
@@ -328,7 +330,9 @@ describe('TWAMM Hook', () => {
         await twamm.modifyLongTermOrder(poolKey, orderKey0, -1)
         const ownerBalanceNew = await token0.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey0)
+        const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
 
+        expect(order.unclaimedEarningsFactor).to.eq(earningsFactorCurrent)
         expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(0)
         expect(order.exists).to.eq(true)
@@ -341,7 +345,9 @@ describe('TWAMM Hook', () => {
         await twamm.modifyLongTermOrder(poolKey, orderKey0, orderAmount)
         const ownerBalanceNew = await token0.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey0)
+        const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
 
+        expect(order.unclaimedEarningsFactor).to.eq(earningsFactorCurrent)
         expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(orderAmount.div(40_000).add(orderAmount.div(20_000)))
         expect(order.exists).to.eq(true)
@@ -357,7 +363,9 @@ describe('TWAMM Hook', () => {
         await twamm.modifyLongTermOrder(poolKey, orderKey1, amountDelta.mul(-1))
         const ownerBalanceNew = await token1.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey1)
+        const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
 
+        expect(order.unclaimedEarningsFactor).to.eq(earningsFactorCurrent)
         expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(200000000000000)
         expect(order.exists).to.eq(true)
@@ -370,7 +378,9 @@ describe('TWAMM Hook', () => {
         await twamm.modifyLongTermOrder(poolKey, orderKey1, -1)
         const ownerBalanceNew = await token1.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey1)
+        const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
 
+        expect(order.unclaimedEarningsFactor).to.eq(earningsFactorCurrent)
         expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(0)
         expect(order.exists).to.eq(true)
@@ -383,7 +393,9 @@ describe('TWAMM Hook', () => {
         await twamm.modifyLongTermOrder(poolKey, orderKey1, orderAmount)
         const ownerBalanceNew = await token1.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey1)
+        const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
 
+        expect(order.unclaimedEarningsFactor).to.eq(earningsFactorCurrent)
         expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(orderAmount.div(40_000).add(orderAmount.div(20_000)))
         expect(order.exists).to.eq(true)
@@ -451,9 +463,9 @@ describe('TWAMM Hook', () => {
           await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
           await twamm.claimEarningsOnLongTermOrder(poolKey, orderKey0)
           const ownerBalanceNew = await token1.balanceOf(wallet.address)
-
           const order = await twamm.getOrder(poolKey, orderKey0)
           const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
+
           expect(order.unclaimedEarningsFactor).to.eq(earningsFactorCurrent)
           expect(order.uncollectedEarningsAmount).to.eq(0)
           expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount.div(2))
@@ -466,9 +478,8 @@ describe('TWAMM Hook', () => {
           await setNextBlocktime(expiration + 500)
           await twamm.claimEarningsOnLongTermOrder(poolKey, orderKey0)
           const ownerBalanceNew = await token1.balanceOf(wallet.address)
-
           const order = await twamm.getOrder(poolKey, orderKey0)
-          const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
+
           expect(order.sellRate).to.eq(0)
           expect(order.unclaimedEarningsFactor).to.eq(0)
           expect(order.uncollectedEarningsAmount).to.eq(0)
@@ -484,9 +495,9 @@ describe('TWAMM Hook', () => {
           await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
           await twamm.claimEarningsOnLongTermOrder(poolKey, orderKey1)
           const ownerBalanceNew = await token0.balanceOf(wallet.address)
-
           const order = await twamm.getOrder(poolKey, orderKey1)
           const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
+
           expect(order.unclaimedEarningsFactor).to.eq(earningsFactorCurrent)
           expect(order.uncollectedEarningsAmount).to.eq(0)
           expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount.div(2))
@@ -499,9 +510,9 @@ describe('TWAMM Hook', () => {
           await setNextBlocktime(expiration + 500)
           await twamm.claimEarningsOnLongTermOrder(poolKey, orderKey1)
           const ownerBalanceNew = await token0.balanceOf(wallet.address)
-
           const order = await twamm.getOrder(poolKey, orderKey1)
           const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
+
           expect(order.sellRate).to.eq(0)
           expect(order.unclaimedEarningsFactor).to.eq(0)
           expect(order.uncollectedEarningsAmount).to.eq(0)
