@@ -784,8 +784,6 @@ describe('TWAMM Hook', () => {
           tickUpper: getMaxTick(10),
           liquidityDelta: '1000000000000000000000000',
         })
-        const balance0 = await token0.balanceOf(twamm.address)
-        const balance1 = await token1.balanceOf(twamm.address)
 
         const amountSell0 = BigNumber.from('100000')
         const amountSell1 = BigNumber.from('34025678683638809405905696563977446090000000')
@@ -797,8 +795,8 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
         await twamm.executeTWAMMOrders(poolKey)
 
-        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
-        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
+        const newBalance0 = await token0.balanceOf(twamm.address)
+        const newBalance1 = await token1.balanceOf(twamm.address)
 
         const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
         const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
@@ -809,11 +807,11 @@ describe('TWAMM Hook', () => {
 
         expect(finalPriceX96).to.equal(expectedSqrtRatioX96)
 
-        const error0 = newBalance0.sub(earningsToken0) // 7705222119
-        const error1 = newBalance1.sub(earningsToken1) // 2879812947
-
-        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
-        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
+        // precision error
+        // 7705222119
+        // 2879812947
+        expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(7705222119))
+        expect(newBalance1.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken1.add(2879812947))
       })
 
       it('swaps to low price (going left)', async () => {
@@ -823,8 +821,6 @@ describe('TWAMM Hook', () => {
           tickUpper: getMaxTick(10),
           liquidityDelta: '1000000000000000000000000',
         })
-        const balance0 = await token0.balanceOf(twamm.address)
-        const balance1 = await token1.balanceOf(twamm.address)
 
         const amountSell0 = BigNumber.from('34025678683638809405905696563977446090000000')
         const amountSell1 = BigNumber.from('100000')
@@ -837,8 +833,8 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
         await twamm.executeTWAMMOrders(poolKey)
 
-        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
-        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
+        const newBalance0 = await token0.balanceOf(twamm.address)
+        const newBalance1 = await token1.balanceOf(twamm.address)
 
         const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
         const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
@@ -849,17 +845,14 @@ describe('TWAMM Hook', () => {
 
         expect(finalPriceX96).to.equal(expectedSqrtRatioX96)
 
-        const error0 = newBalance0.sub(earningsToken0) // 2504936905
-        const error1 = newBalance1.sub(earningsToken1) // 7705222116
-
-        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
-        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
+        // precision error
+        // 2504936905
+        // 7705222116
+        expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(2504936905))
+        expect(newBalance1.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken1.add(7705222116))
       })
 
       it('swaps going right to sqrtSellRatio and does not revert when target tick is an initialized tick', async () => {
-        const balance0 = await token0.balanceOf(twamm.address)
-        const balance1 = await token1.balanceOf(twamm.address)
-
         const amountSell0 = BigNumber.from('100000')
         const amountSell1 = BigNumber.from('33112798684424369649027597812633277504400000')
 
@@ -879,29 +872,26 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
         await twamm.executeTWAMMOrders(poolKey)
 
-        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
-        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
+        const newBalance0 = await token0.balanceOf(twamm.address)
+        const newBalance1 = await token1.balanceOf(twamm.address)
 
         const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
         const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
 
         const expectedPriceX96 = '1441708729548066551791643897157159050890912464896'
 
-        // TODO check desmos
         const poolPrice = (await poolManager.getSlot0(poolKey)).sqrtPriceX96
 
         expect(poolPrice).to.equal(expectedPriceX96)
 
-        const error0 = newBalance0.sub(earningsToken0) // 2944622601
-        const error1 = newBalance1.sub(earningsToken1) // 11843735713
-
-        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
-        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
+        // precision error
+        // 2944622601
+        // 11843735713
+        expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(2944622601))
+        expect(newBalance1.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken1.add(11843735713))
       })
 
       it('swaps to to sqrtSellRatio going left and does not error when target tick is initialized tick', async () => {
-        const balance0 = await token0.balanceOf(twamm.address)
-        const balance1 = await token1.balanceOf(twamm.address)
         const amountSell0 = '34015678683638809405905696563977446090000000'
         const amountSell1 = '100000'
 
@@ -914,8 +904,8 @@ describe('TWAMM Hook', () => {
 
         await twamm.executeTWAMMOrders(poolKey)
 
-        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
-        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
+        const newBalance0 = await token0.balanceOf(twamm.address)
+        const newBalance1 = await token1.balanceOf(twamm.address)
 
         const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
         const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
@@ -925,11 +915,11 @@ describe('TWAMM Hook', () => {
 
         expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(expectedPriceX96)
 
-        const error0 = newBalance0.sub(earningsToken0) // 3687054054
-        const error1 = newBalance1.sub(earningsToken1) // 3249046408
-
-        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
-        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
+        // precision error
+        // 3687054054
+        // 3249046408
+        expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(3687054054))
+        expect(newBalance1.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken1.add(3249046408))
       })
 
       it('swaps to the max price', async () => {
@@ -938,9 +928,6 @@ describe('TWAMM Hook', () => {
           tickUpper: getMaxTick(10),
           liquidityDelta: '100000000000000000000000',
         })
-
-        const balance0 = await token0.balanceOf(twamm.address)
-        const balance1 = await token1.balanceOf(twamm.address)
 
         const amountSell0 = '10000'
         const amountSell1 = '540156786836388094059056965639774460900000000'
@@ -954,8 +941,8 @@ describe('TWAMM Hook', () => {
 
         await twamm.executeTWAMMOrders(poolKey)
 
-        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
-        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
+        const newBalance0 = await token0.balanceOf(twamm.address)
+        const newBalance1 = await token1.balanceOf(twamm.address)
 
         const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
         const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
@@ -964,11 +951,11 @@ describe('TWAMM Hook', () => {
         const expectedPriceX96 = '1461446703485210103287273052203988790139028504576'
         expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(expectedPriceX96)
 
-        const error0 = newBalance0.sub(earningsToken0) // 499359406795
-        const error1 = newBalance1.sub(earningsToken1) // 40099070073
-
-        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
-        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
+        // precision error
+        // 499359406795
+        // 40099070073
+        expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(499359406795))
+        expect(newBalance1.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken1.add(40099070073))
       })
 
       it('swaps to the min price', async () => {
@@ -977,9 +964,6 @@ describe('TWAMM Hook', () => {
           tickUpper: getMaxTick(10),
           liquidityDelta: '100000000000000000000000',
         })
-
-        const balance0 = await token0.balanceOf(twamm.address)
-        const balance1 = await token1.balanceOf(twamm.address)
 
         const amountSell0 = '540156786836388094059056965639774460900000000'
         const amountSell1 = '10000'
@@ -993,8 +977,8 @@ describe('TWAMM Hook', () => {
 
         await twamm.executeTWAMMOrders(poolKey)
 
-        const newBalance0 = (await token0.balanceOf(twamm.address)).sub(balance0)
-        const newBalance1 = (await token1.balanceOf(twamm.address)).sub(balance1)
+        const newBalance0 = await token0.balanceOf(twamm.address)
+        const newBalance1 = await token1.balanceOf(twamm.address)
 
         const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
         const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
@@ -1003,11 +987,11 @@ describe('TWAMM Hook', () => {
         const expectedPriceX96 = '4295128740'
         expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(expectedPriceX96)
 
-        const error0 = newBalance0.sub(earningsToken0) // 21934025816
-        const error1 = newBalance1.sub(earningsToken1) // 499359406802
-
-        expect(newBalance0.sub(error0)).to.eq(earningsToken0)
-        expect(newBalance1.sub(error1)).to.eq(earningsToken1)
+        // precision error
+        // 21934025816
+        // 499359406802
+        expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(21934025816))
+        expect(newBalance1.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken1.add(499359406802))
       })
     })
 

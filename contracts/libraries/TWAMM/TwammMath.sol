@@ -16,6 +16,13 @@ library TwammMath {
     // ABDKMathQuad FixedPoint96.Q96.fromUInt()
     bytes16 constant Q96 = 0x405f0000000000000000000000000000;
 
+    //// @dev The minimum value that a pool price can equal, represented in bytes.
+    // (TickMath.MIN_SQRT_RATIO + 1).fromUInt()
+    bytes16 internal constant MIN_SQRT_RATIO_BYTES = 0x401f000276a400000000000000000000;
+    //// @dev The maximum value that a pool price can equal, represented in bytes.
+    // (MAX_SQRT_RATIO - 1).fromUInt()
+    bytes16 internal constant MAX_SQRT_RATIO_BYTES = 0x409efffb12c7dfa3f8d4a0c91092bb2a;
+
     struct PriceParamsBytes16 {
         bytes16 sqrtSellRatio;
         bytes16 sqrtSellRate;
@@ -33,8 +40,6 @@ library TwammMath {
     }
 
     function getNewSqrtPriceX96(ExecutionUpdateParams memory params) internal pure returns (uint160 newSqrtPriceX96) {
-        bool zeroForOne = params.sellRateCurrent0 > params.sellRateCurrent1;
-
         bytes16 sellRateBytes0 = params.sellRateCurrent0.fromUInt();
         bytes16 sellRateBytes1 = params.sellRateCurrent1.fromUInt();
         bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
@@ -54,10 +59,16 @@ library TwammMath {
         if (isOverflow) {
             // If overflow, the final price is set to the sqrtSellRatio.
             // Ensure that the sqrtSellRatio is not greater than the max or below the min.
-            newSqrtPriceX96 = getSqrtPriceWithinBounds(zeroForOne, sqrtSellRatioX96).toUInt().toUint160();
+            newSqrtPriceX96 = getSqrtPriceWithinBounds(
+                params.sellRateCurrent0 > params.sellRateCurrent1,
+                sqrtSellRatioX96
+            ).toUInt().toUint160();
         } else {
             // Ensure the calculated price is not greater than the max or below the min.
-            newSqrtPriceX96 = getSqrtPriceWithinBounds(zeroForOne, newSqrtPriceBytesX96).toUInt().toUint160();
+            newSqrtPriceX96 = getSqrtPriceWithinBounds(
+                params.sellRateCurrent0 > params.sellRateCurrent1,
+                newSqrtPriceBytesX96
+            ).toUInt().toUint160();
         }
     }
 
@@ -66,15 +77,10 @@ library TwammMath {
         pure
         returns (bytes16 newSqrtPriceX96)
     {
-        bytes16 maxPriceBytesX96 = TickMath.MAX_SQRT_RATIO_BYTES;
-        bytes16 minPriceBytesX96 = TickMath.MIN_SQRT_RATIO_BYTES;
-
         if (zeroForOne) {
-            int8 isLessThanMinimum = minPriceBytesX96.cmp(desiredPriceX96);
-            newSqrtPriceX96 = isLessThanMinimum == 1 ? minPriceBytesX96 : desiredPriceX96;
+            newSqrtPriceX96 = MIN_SQRT_RATIO_BYTES.cmp(desiredPriceX96) == 1 ? MIN_SQRT_RATIO_BYTES : desiredPriceX96;
         } else {
-            int8 isGreaterThanMaximum = desiredPriceX96.cmp(maxPriceBytesX96);
-            newSqrtPriceX96 = isGreaterThanMaximum == 1 ? maxPriceBytesX96 : desiredPriceX96;
+            newSqrtPriceX96 = desiredPriceX96.cmp(MAX_SQRT_RATIO_BYTES) == 1 ? MAX_SQRT_RATIO_BYTES : desiredPriceX96;
         }
     }
 
