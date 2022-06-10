@@ -51,7 +51,7 @@ abstract contract BaseHook is IHooks {
         address,
         IPoolManager.PoolKey calldata,
         uint160
-    ) external virtual {
+    ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
 
@@ -60,7 +60,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         uint160,
         int24
-    ) external virtual {
+    ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
 
@@ -68,7 +68,7 @@ abstract contract BaseHook is IHooks {
         address,
         IPoolManager.PoolKey calldata,
         IPoolManager.ModifyPositionParams calldata
-    ) external virtual {
+    ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
 
@@ -77,7 +77,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         IPoolManager.ModifyPositionParams calldata,
         IPoolManager.BalanceDelta calldata
-    ) external virtual {
+    ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
 
@@ -85,7 +85,7 @@ abstract contract BaseHook is IHooks {
         address,
         IPoolManager.PoolKey calldata,
         IPoolManager.SwapParams calldata
-    ) external virtual {
+    ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
 
@@ -94,7 +94,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         IPoolManager.SwapParams calldata,
         IPoolManager.BalanceDelta calldata
-    ) external virtual {
+    ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
 
@@ -103,7 +103,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         uint256,
         uint256
-    ) external virtual {
+    ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
 
@@ -112,7 +112,7 @@ abstract contract BaseHook is IHooks {
         IPoolManager.PoolKey calldata,
         uint256,
         uint256
-    ) external virtual {
+    ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
 }

@@ -40,35 +40,52 @@ contract TWAMMHook is BaseHook {
         return twammStates[key].lastVirtualOrderTimestamp;
     }
 
-    function getOrderPool(IPoolManager.PoolKey calldata key, bool zeroForOne) external view returns (uint256, uint256) {
+    function getOrder(IPoolManager.PoolKey calldata poolKey, TWAMM.OrderKey calldata orderKey)
+        external
+        view
+        returns (TWAMM.Order memory)
+    {
+        return twammStates[keccak256(abi.encode(poolKey))].getOrder(orderKey);
+    }
+
+    function getOrderPool(IPoolManager.PoolKey calldata key, bool zeroForOne)
+        external
+        view
+        returns (uint256 sellRateCurrent, uint256 earningsFactorCurrent)
+    {
         TWAMM.State storage twamm = getTWAMM(key);
-        if (zeroForOne) return (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent);
-        else return (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
+        return
+            zeroForOne
+                ? (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent)
+                : (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
     }
 
     function beforeInitialize(
         address,
         IPoolManager.PoolKey calldata key,
         uint160
-    ) external virtual override poolManagerOnly {
+    ) external virtual override poolManagerOnly returns (bytes4) {
         // Dont need to enforce one-time as each pool can only be initialized once in the manager
         getTWAMM(key).initialize();
+        return BaseHook.beforeInitialize.selector;
     }
 
     function beforeModifyPosition(
         address,
         IPoolManager.PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata
-    ) external override poolManagerOnly {
+    ) external override poolManagerOnly returns (bytes4) {
         executeTWAMMOrders(key);
+        return BaseHook.beforeModifyPosition.selector;
     }
 
     function beforeSwap(
         address,
         IPoolManager.PoolKey calldata key,
         IPoolManager.SwapParams calldata
-    ) external override poolManagerOnly {
+    ) external override poolManagerOnly returns (bytes4) {
         executeTWAMMOrders(key);
+        return BaseHook.beforeSwap.selector;
     }
 
     struct CallbackData {
@@ -81,10 +98,10 @@ contract TWAMMHook is BaseHook {
         (uint160 sqrtPriceX96, , ) = poolManager.getSlot0(key);
         TWAMM.State storage twamm = getTWAMM(key);
         (bool zeroForOne, uint160 sqrtPriceLimitX96) = twamm.executeTWAMMOrders(
-            expirationInterval,
             poolManager,
             key,
-            TWAMM.PoolParamsOnExecute(sqrtPriceX96, poolManager.getLiquidity(key))
+            TWAMM.PoolParamsOnExecute(sqrtPriceX96, poolManager.getLiquidity(key)),
+            expirationInterval
         );
 
         if (sqrtPriceLimitX96 != 0 && sqrtPriceLimitX96 != sqrtPriceX96) {
@@ -108,12 +125,13 @@ contract TWAMMHook is BaseHook {
 
         unchecked {
             // checks done in TWAMM library
-            uint256 sellRate = amountIn / (orderKey.expiration - block.timestamp);
+            uint256 duration = orderKey.expiration - block.timestamp;
+            uint256 sellRate = amountIn / duration;
             orderId = twamm.submitLongTermOrder(orderKey, sellRate, expirationInterval);
             IERC20Minimal(orderKey.zeroForOne ? key.token0 : key.token1).safeTransferFrom(
                 orderKey.owner,
                 address(this),
-                sellRate * (orderKey.expiration - block.timestamp)
+                sellRate * duration
             );
         }
     }
@@ -127,7 +145,7 @@ contract TWAMMHook is BaseHook {
     function modifyLongTermOrder(
         IPoolManager.PoolKey memory key,
         TWAMM.OrderKey memory orderKey,
-        int128 amountDelta
+        int256 amountDelta
     ) external returns (int256 finalAmountDelta) {
         executeTWAMMOrders(key);
 
@@ -137,10 +155,10 @@ contract TWAMMHook is BaseHook {
         IERC20Minimal sellToken = orderKey.zeroForOne ? key.token0 : key.token1;
 
         if (finalAmountDelta > 0) {
-            sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint128(amountDelta)));
+            sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint256(finalAmountDelta)));
         } else {
             uint256 currentBalance = sellToken.balanceOf(address(this));
-            uint256 amountOut = uint256(uint128(amountDelta));
+            uint256 amountOut = uint256(uint256(-finalAmountDelta));
             if (currentBalance < amountOut) amountOut = currentBalance;
             sellToken.safeTransfer(orderKey.owner, amountOut);
         }

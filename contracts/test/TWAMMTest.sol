@@ -77,7 +77,7 @@ contract TWAMMTest {
     function executeTWAMMOrders(IPoolManager.PoolKey calldata poolKey, TWAMM.PoolParamsOnExecute memory poolParams)
         external
     {
-        twamm.executeTWAMMOrders(expirationInterval, IPoolManager(address(this)), poolKey, poolParams);
+        twamm.executeTWAMMOrders(IPoolManager(address(this)), poolKey, poolParams, expirationInterval);
     }
 
     function calculateExecutionUpdates(TwammMath.ExecutionUpdateParams memory params)
@@ -129,7 +129,7 @@ contract TWAMMTest {
     }
 
     function getOrder(TWAMM.OrderKey calldata orderKey) external view returns (TWAMM.Order memory) {
-        return twamm._getOrder(orderKey);
+        return twamm.getOrder(orderKey);
     }
 
     function getOrderPool(bool zeroForOne) external view returns (uint256 sellRate, uint256 earningsFactor) {

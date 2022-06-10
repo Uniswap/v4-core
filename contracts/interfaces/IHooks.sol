@@ -11,52 +11,52 @@ interface IHooks {
         address sender,
         IPoolManager.PoolKey calldata key,
         uint160 sqrtPriceX96
-    ) external;
+    ) external returns (bytes4);
 
     function afterInitialize(
         address sender,
         IPoolManager.PoolKey calldata key,
         uint160 sqrtPriceX96,
         int24 tick
-    ) external;
+    ) external returns (bytes4);
 
     function beforeModifyPosition(
         address sender,
         IPoolManager.PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata params
-    ) external;
+    ) external returns (bytes4);
 
     function afterModifyPosition(
         address sender,
         IPoolManager.PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata params,
         IPoolManager.BalanceDelta calldata delta
-    ) external;
+    ) external returns (bytes4);
 
     function beforeSwap(
         address sender,
         IPoolManager.PoolKey calldata key,
         IPoolManager.SwapParams calldata params
-    ) external;
+    ) external returns (bytes4);
 
     function afterSwap(
         address sender,
         IPoolManager.PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         IPoolManager.BalanceDelta calldata delta
-    ) external;
+    ) external returns (bytes4);
 
     function beforeDonate(
         address sender,
         IPoolManager.PoolKey calldata key,
         uint256 amount0,
         uint256 amount1
-    ) external;
+    ) external returns (bytes4);
 
     function afterDonate(
         address sender,
         IPoolManager.PoolKey calldata key,
         uint256 amount0,
         uint256 amount1
-    ) external;
+    ) external returns (bytes4);
 }
