@@ -141,10 +141,10 @@ contract TWAMMHook is BaseHook {
         IERC20Minimal sellToken = orderKey.zeroForOne ? key.token0 : key.token1;
 
         if (finalAmountDelta > 0) {
-            sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint256(amountDelta)));
+            sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint256(finalAmountDelta)));
         } else {
             uint256 currentBalance = sellToken.balanceOf(address(this));
-            uint256 amountOut = uint256(uint256(amountDelta));
+            uint256 amountOut = uint256(uint256(-finalAmountDelta));
             if (currentBalance < amountOut) amountOut = currentBalance;
             sellToken.safeTransfer(orderKey.owner, amountOut);
         }
@@ -197,5 +197,13 @@ contract TWAMMHook is BaseHook {
 
     function getTWAMM(IPoolManager.PoolKey memory key) private view returns (TWAMM.State storage) {
         return twammStates[keccak256(abi.encode(key))];
+    }
+
+    function getOrder(IPoolManager.PoolKey calldata poolKey, TWAMM.OrderKey calldata orderKey)
+        external
+        view
+        returns (TWAMM.Order memory)
+    {
+        return twammStates[keccak256(abi.encode(poolKey))].orders[keccak256(abi.encode(orderKey))];
     }
 }

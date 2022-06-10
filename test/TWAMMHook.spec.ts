@@ -186,23 +186,18 @@ describe('TWAMM Hook', () => {
   })
 
   describe('#submitLongTermOrder', () => {
-    it('gas', async () => {
-      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+    let latestTimestamp: number
+    let poolKey: PoolKey
 
-      const poolKey = {
+    beforeEach('setup amm pool', async () => {
+      poolKey = {
         token0: token0.address,
         token1: token1.address,
         fee: 0,
         hooks: twamm.address,
         tickSpacing: 10,
       }
-      const orderKey0 = {
-        zeroForOne: true,
-        owner: wallet.address,
-        expiration,
-      }
-
+      latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 1))
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
 
@@ -211,6 +206,55 @@ describe('TWAMM Hook', () => {
         tickUpper: getMaxTick(10),
         liquidityDelta: expandTo18Decimals(1),
       })
+    })
+
+    it('stores the long term order under the correct pool', async () => {
+      const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+      const orderKey = {
+        zeroForOne: true,
+        owner: wallet.address,
+        expiration,
+      }
+
+      const nullOrder = await twamm.getOrder(poolKey, orderKey)
+      expect(nullOrder.exists).to.eq(false)
+
+      await twamm.submitLongTermOrder(poolKey, orderKey, expandTo18Decimals(10))
+      const order = await twamm.getOrder(poolKey, orderKey)
+      expect(order.exists).to.eq(true)
+      expect(order.unclaimedEarningsFactor).to.eq(0)
+      expect(order.uncollectedEarningsAmount).to.eq(0)
+    })
+
+    it('stores the correct unclaimedEarningsFactor if past earnings have been processed', async () => {
+      const expiration = nIntervalsFrom(latestTimestamp, 10_000, 2)
+      const orderKey0 = {
+        zeroForOne: true,
+        owner: wallet.address,
+        expiration,
+      }
+      const orderKey1 = {
+        zeroForOne: true,
+        owner: wallet.address,
+        expiration: nIntervalsFrom(latestTimestamp, 10_000, 5),
+      }
+      await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10))
+      await setNextBlocktime(expiration)
+      await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))
+      const order = await twamm.getOrder(poolKey, orderKey1)
+
+      expect(order.exists).to.eq(true)
+      expect(order.unclaimedEarningsFactor).to.be.gt(0)
+      expect(order.uncollectedEarningsAmount).to.eq(0)
+    })
+
+    it('gas', async () => {
+      const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+      const orderKey0 = {
+        zeroForOne: true,
+        owner: wallet.address,
+        expiration,
+      }
 
       // difficult to isolate gas from #executeTWAMMOrders()
       await snapshotGasCost(twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10)))
@@ -219,12 +263,16 @@ describe('TWAMM Hook', () => {
 
   describe('#modifyLongTermOrder', () => {
     let orderKey0: OrderKey
+    let orderKey1: OrderKey
     let poolKey: PoolKey
+    let latestTimestamp: number
     let expiration: number
+    let orderAmount: BigNumber
 
     beforeEach('setup pool and twamm', async () => {
-      const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+      latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
+      expiration = nIntervalsFrom(latestTimestamp, 10_000, 6)
+      orderAmount = expandTo18Decimals(10)
 
       poolKey = {
         token0: token0.address,
@@ -238,6 +286,11 @@ describe('TWAMM Hook', () => {
         owner: wallet.address,
         expiration,
       }
+      orderKey1 = {
+        zeroForOne: false,
+        owner: wallet.address,
+        expiration,
+      }
 
       await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 1))
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
@@ -248,7 +301,94 @@ describe('TWAMM Hook', () => {
         liquidityDelta: expandTo18Decimals(1),
       })
 
-      await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10))
+      await inOneBlock(nIntervalsFrom(latestTimestamp, 10_000, 2), async () => {
+        await twamm.submitLongTermOrder(poolKey, orderKey0, orderAmount)
+        await twamm.submitLongTermOrder(poolKey, orderKey1, orderAmount)
+      })
+    })
+
+    describe('for orders trading zeroForOne', () => {
+      it('claims rewards, decreases sellRate, and transfers sell tokens if the delta is negative', async () => {
+        const amountDelta = orderAmount.div(10)
+        const ownerBalancePrev = await token0.balanceOf(wallet.address)
+        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await twamm.modifyLongTermOrder(poolKey, orderKey0, amountDelta.mul(-1))
+        const ownerBalanceNew = await token0.balanceOf(wallet.address)
+        const order = await twamm.getOrder(poolKey, orderKey0)
+
+        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
+        expect(order.sellRate).to.eq(200000000000000)
+        expect(order.exists).to.eq(true)
+        expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(amountDelta)
+      })
+
+      it('decreases sellRate to 0 and returns all tokens if delta sent is -1', async () => {
+        const ownerBalancePrev = await token0.balanceOf(wallet.address)
+        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await twamm.modifyLongTermOrder(poolKey, orderKey0, -1)
+        const ownerBalanceNew = await token0.balanceOf(wallet.address)
+        const order = await twamm.getOrder(poolKey, orderKey0)
+
+        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
+        expect(order.sellRate).to.eq(0)
+        expect(order.exists).to.eq(true)
+        expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount.div(2))
+      })
+
+      it('claims rewards, increases sellRate, collects balance if delta is positive', async () => {
+        const ownerBalancePrev = await token0.balanceOf(wallet.address)
+        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await twamm.modifyLongTermOrder(poolKey, orderKey0, orderAmount)
+        const ownerBalanceNew = await token0.balanceOf(wallet.address)
+        const order = await twamm.getOrder(poolKey, orderKey0)
+
+        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
+        expect(order.sellRate).to.eq(orderAmount.div(40_000).add(orderAmount.div(20_000)))
+        expect(order.exists).to.eq(true)
+        expect(ownerBalancePrev.sub(ownerBalanceNew)).to.eq(orderAmount)
+      })
+    })
+
+    describe('for orders trading oneForZero', () => {
+      it('claims rewards, decreases sellRate, and transfers sell tokens if the delta is negative', async () => {
+        const amountDelta = orderAmount.div(10)
+        const ownerBalancePrev = await token1.balanceOf(wallet.address)
+        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await twamm.modifyLongTermOrder(poolKey, orderKey1, amountDelta.mul(-1))
+        const ownerBalanceNew = await token1.balanceOf(wallet.address)
+        const order = await twamm.getOrder(poolKey, orderKey1)
+
+        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
+        expect(order.sellRate).to.eq(200000000000000)
+        expect(order.exists).to.eq(true)
+        expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(amountDelta)
+      })
+
+      it('decreases sellRate to 0 and returns all tokens if delta sent is -1', async () => {
+        const ownerBalancePrev = await token1.balanceOf(wallet.address)
+        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await twamm.modifyLongTermOrder(poolKey, orderKey1, -1)
+        const ownerBalanceNew = await token1.balanceOf(wallet.address)
+        const order = await twamm.getOrder(poolKey, orderKey1)
+
+        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
+        expect(order.sellRate).to.eq(0)
+        expect(order.exists).to.eq(true)
+        expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount.div(2))
+      })
+
+      it('collects token1 balance if delta is positive and increases sellRate', async () => {
+        const ownerBalancePrev = await token1.balanceOf(wallet.address)
+        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await twamm.modifyLongTermOrder(poolKey, orderKey1, orderAmount)
+        const ownerBalanceNew = await token1.balanceOf(wallet.address)
+        const order = await twamm.getOrder(poolKey, orderKey1)
+
+        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
+        expect(order.sellRate).to.eq(orderAmount.div(40_000).add(orderAmount.div(20_000)))
+        expect(order.exists).to.eq(true)
+        expect(ownerBalancePrev.sub(ownerBalanceNew)).to.eq(orderAmount)
+      })
     })
 
     it('gas', async () => {
