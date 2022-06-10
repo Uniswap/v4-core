@@ -442,7 +442,6 @@ describe('TWAMM Hook', () => {
         await twamm.submitLongTermOrder(poolKey, orderKey0, orderAmount)
         await twamm.submitLongTermOrder(poolKey, orderKey1, orderAmount)
       })
-
     })
 
     describe('for orders trading zeroForOne', () => {
