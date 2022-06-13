@@ -73,8 +73,6 @@ library TWAMM {
         OrderPool.State orderPool0For1;
         OrderPool.State orderPool1For0;
         mapping(bytes32 => Order) orders;
-        mapping(address => uint256) tokens0Owed;
-        mapping(address => uint256) tokens1Owed;
     }
 
     /// @notice Information that identifies an order
