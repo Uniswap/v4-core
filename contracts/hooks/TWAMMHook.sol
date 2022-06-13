@@ -18,6 +18,7 @@ contract TWAMMHook is BaseHook {
 
     uint256 public immutable expirationInterval;
     mapping(bytes32 => TWAMM.State) internal twammStates;
+    // tokensOwed[token][owner] => amountOwed
     mapping(address => mapping(address => uint256)) public tokensOwed;
 
     constructor(IPoolManager _poolManager, uint256 _expirationInterval) BaseHook(_poolManager) {
