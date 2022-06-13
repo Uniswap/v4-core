@@ -88,7 +88,7 @@ library TWAMM {
     /// @notice Information associated with a long term order
     /// @member sellRate Amount of tokens sold per interval
     /// @member earningsFactorLast The accrued earnings factor from which to start claiming owed earnings for this order
-    /// @member uncollectedEarningsAmount Earnings amount claimed thus far, but not yet transferred to the owner.
+    /// @member uncollectedEarningsAmount Token amount in earnings claimed thus far, but not yet transferred to the owner.
     struct Order {
         bool exists;
         uint256 sellRate;
