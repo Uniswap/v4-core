@@ -16,13 +16,14 @@ import {SafeCast} from '../SafeCast.sol';
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
     using OrderPool for OrderPool.State;
-    using TickMath for *;
-    using SafeCast for *;
+    using TickMath for int24;
+    using TickMath for uint160;
+    using SafeCast for uint256;
     using TickBitmap for mapping(int16 => uint256);
 
-    int256 constant MIN_DELTA = -1;
-    bool constant ZERO_FOR_ONE = true;
-    bool constant ONE_FOR_ZERO = false;
+    int256 internal constant MIN_DELTA = -1;
+    bool internal constant ZERO_FOR_ONE = true;
+    bool internal constant ONE_FOR_ZERO = false;
 
     /// @notice Thrown when account other than owner attempts to interact with an order
     /// @param owner The owner of the order
@@ -86,12 +87,12 @@ library TWAMM {
 
     /// @notice Information associated with a long term order
     /// @member sellRate Amount of tokens sold per interval
-    /// @member unclaimedEarningsFactor The accrued earnings factor from which to start claiming owed earnings for this order
+    /// @member earningsFactorLast The accrued earnings factor from which to start claiming owed earnings for this order
     /// @member uncollectedEarningsAmount Earnings amount claimed thus far, but not yet transferred to the owner.
     struct Order {
         bool exists;
         uint256 sellRate;
-        uint256 unclaimedEarningsFactor;
+        uint256 earningsFactorLast;
         uint256 uncollectedEarningsAmount;
     }
 
@@ -116,8 +117,9 @@ library TWAMM {
         uint256 sellRate,
         uint256 expirationInterval
     ) internal returns (bytes32 orderId) {
+        if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
         if (self.lastVirtualOrderTimestamp == 0) revert NotInitialized();
-        if (orderKey.expiration < block.timestamp) revert ExpirationLessThanBlocktime(orderKey.expiration);
+        if (orderKey.expiration <= block.timestamp) revert ExpirationLessThanBlocktime(orderKey.expiration);
         if (sellRate == 0) revert SellRateCannotBeZero();
         if (orderKey.expiration % expirationInterval != 0) revert ExpirationNotOnInterval(orderKey.expiration);
 
@@ -134,7 +136,7 @@ library TWAMM {
         self.orders[orderId] = Order({
             exists: true,
             sellRate: sellRate,
-            unclaimedEarningsFactor: orderPool.earningsFactorCurrent,
+            earningsFactorLast: orderPool.earningsFactorCurrent,
             uncollectedEarningsAmount: 0
         });
     }
@@ -161,9 +163,9 @@ library TWAMM {
 
         unchecked {
             // cache existing earnings
-            uint256 earningsFactor = orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor;
+            uint256 earningsFactor = orderPool.earningsFactorCurrent - order.earningsFactorLast;
             order.uncollectedEarningsAmount += (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
-            order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
+            order.earningsFactorLast = orderPool.earningsFactorCurrent;
 
             uint256 duration = orderKey.expiration - block.timestamp;
             uint256 unsoldAmount = order.sellRate * duration;
@@ -202,15 +204,15 @@ library TWAMM {
         unchecked {
             if (block.timestamp >= orderKey.expiration) {
                 uint256 earningsFactor = orderPool.earningsFactorAtInterval[orderKey.expiration] -
-                    order.unclaimedEarningsFactor;
+                    order.earningsFactorLast;
                 earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
                 earningsAmount += order.uncollectedEarningsAmount;
                 delete self.orders[orderId];
             } else {
-                uint256 earningsFactor = orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor;
+                uint256 earningsFactor = orderPool.earningsFactorCurrent - order.earningsFactorLast;
                 earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
                 earningsAmount += order.uncollectedEarningsAmount;
-                order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
+                order.earningsFactorLast = orderPool.earningsFactorCurrent;
                 order.uncollectedEarningsAmount = 0;
             }
         }

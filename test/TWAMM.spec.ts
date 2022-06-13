@@ -440,11 +440,11 @@ describe('TWAMM', () => {
         expect((await twamm.getOrder(orderKey)).sellRate).to.eq(0)
       })
 
-      it('updates the unclaimedEarningsFactor to the current earningsFactor accumulator', async () => {
+      it('updates the earningsFactorLast to the current earningsFactor accumulator', async () => {
         await twamm.executeTWAMMOrders(POOL_KEY, poolParams)
         await twamm.modifyLongTermOrder(orderKey, MIN_DELTA)
         const orderPool = await twamm.getOrderPool(true)
-        expect((await twamm.getOrder(orderKey)).unclaimedEarningsFactor).to.eq(orderPool.earningsFactor)
+        expect((await twamm.getOrder(orderKey)).earningsFactorLast).to.eq(orderPool.earningsFactor)
       })
 
       it('withdraws half the sell amount at midpoint', async () => {
@@ -799,7 +799,7 @@ describe('TWAMM', () => {
             },
             halfSellAmount
           )
-          await twamm.submitLongTermOrder(
+          await twamm.connect(other).submitLongTermOrder(
             {
               zeroForOne: true,
               owner: other.address,

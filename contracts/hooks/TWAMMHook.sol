@@ -129,7 +129,7 @@ contract TWAMMHook is BaseHook {
             uint256 sellRate = amountIn / duration;
             orderId = twamm.submitLongTermOrder(orderKey, sellRate, expirationInterval);
             IERC20Minimal(orderKey.zeroForOne ? key.token0 : key.token1).safeTransferFrom(
-                orderKey.owner,
+                msg.sender,
                 address(this),
                 sellRate * duration
             );

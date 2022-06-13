@@ -10,12 +10,16 @@ import {TickMath} from '../TickMath.sol';
 
 /// @title TWAMM Math - Pure functions for TWAMM math calculations
 library TwammMath {
-    using ABDKMathQuad for *;
-    using SafeCast for *;
+    using ABDKMathQuad for bytes16;
+    using ABDKMathQuad for uint256;
+    using ABDKMathQuad for uint160;
+    using ABDKMathQuad for uint128;
+    using SafeCast for uint256;
 
     // ABDKMathQuad FixedPoint96.Q96.fromUInt()
-    bytes16 constant Q96 = 0x405f0000000000000000000000000000;
+    bytes16 internal constant Q96 = 0x405f0000000000000000000000000000;
 
+    bytes16 internal constant ONE = 0x3fff0000000000000000000000000000;
     //// @dev The minimum value that a pool price can equal, represented in bytes.
     // (TickMath.MIN_SQRT_RATIO + 1).fromUInt()
     bytes16 internal constant MIN_SQRT_RATIO_BYTES = 0x401f000276a400000000000000000000;
@@ -42,12 +46,12 @@ library TwammMath {
     function getNewSqrtPriceX96(ExecutionUpdateParams memory params) internal pure returns (uint160 newSqrtPriceX96) {
         bytes16 sellRateBytes0 = params.sellRateCurrent0.fromUInt();
         bytes16 sellRateBytes1 = params.sellRateCurrent1.fromUInt();
-        bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
-        bytes16 sqrtSellRatioX96 = sellRateBytes1.div(sellRateBytes0).sqrt().mul(Q96);
+        bytes16 sqrtSellRateBytes = sellRateBytes0.mul(sellRateBytes1).sqrt();
+        bytes16 sqrtSellRatioX96Bytes = sellRateBytes1.div(sellRateBytes0).sqrt().mul(Q96);
 
         PriceParamsBytes16 memory priceParams = PriceParamsBytes16({
-            sqrtSellRatio: sqrtSellRatioX96.div(Q96),
-            sqrtSellRate: sqrtSellRate,
+            sqrtSellRatio: sqrtSellRatioX96Bytes.div(Q96),
+            sqrtSellRate: sqrtSellRateBytes,
             secondsElapsed: params.secondsElapsedX96.fromUInt().div(Q96),
             sqrtPrice: params.sqrtPriceX96.fromUInt().div(Q96),
             liquidity: params.liquidity.fromUInt()
@@ -55,21 +59,12 @@ library TwammMath {
 
         bytes16 newSqrtPriceBytesX96 = calculateNewSqrtPrice(priceParams).mul(Q96);
         bool isOverflow = newSqrtPriceBytesX96.isInfinity() || newSqrtPriceBytesX96.isNaN();
+        bytes16 newSqrtPriceX96Bytes = isOverflow ? sqrtSellRatioX96Bytes : newSqrtPriceBytesX96;
 
-        if (isOverflow) {
-            // If overflow, the final price is set to the sqrtSellRatio.
-            // Ensure that the sqrtSellRatio is not greater than the max or below the min.
-            newSqrtPriceX96 = getSqrtPriceWithinBounds(
-                params.sellRateCurrent0 > params.sellRateCurrent1,
-                sqrtSellRatioX96
-            ).toUInt().toUint160();
-        } else {
-            // Ensure the calculated price is not greater than the max or below the min.
-            newSqrtPriceX96 = getSqrtPriceWithinBounds(
-                params.sellRateCurrent0 > params.sellRateCurrent1,
-                newSqrtPriceBytesX96
-            ).toUInt().toUint160();
-        }
+        newSqrtPriceX96 = getSqrtPriceWithinBounds(
+            params.sellRateCurrent0 > params.sellRateCurrent1,
+            newSqrtPriceX96Bytes
+        ).toUInt().toUint160();
     }
 
     function getSqrtPriceWithinBounds(bool zeroForOne, bytes16 desiredPriceX96)
@@ -186,6 +181,6 @@ library TwammMath {
     }
 
     function reciprocal(bytes16 n) private pure returns (bytes16) {
-        return uint256(1).fromUInt().div(n);
+        return ONE.div(n);
     }
 }
