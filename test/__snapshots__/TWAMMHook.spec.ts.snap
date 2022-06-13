@@ -59,6 +59,6 @@ Object {
 exports[`TWAMM Hook #submitLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 292,
-  "gasUsed": 164189,
+  "gasUsed": 164177,
 }
 `;
