@@ -85,15 +85,20 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
+        if (!key.hooks.isValidHookAddress()) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
-            key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
+            if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96) != IHooks.beforeInitialize.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         tick = _getPool(key).initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
 
         if (key.hooks.shouldCallAfterInitialize()) {
-            key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick);
+            if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
     }
 
@@ -212,7 +217,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (IPoolManager.BalanceDelta memory delta)
     {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            key.hooks.beforeModifyPosition(msg.sender, key, params);
+            if (key.hooks.beforeModifyPosition(msg.sender, key, params) != IHooks.beforeModifyPosition.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         delta = _getPool(key).modifyPosition(
@@ -228,7 +235,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         _accountPoolBalanceDelta(key, delta);
 
         if (key.hooks.shouldCallAfterModifyPosition()) {
-            key.hooks.afterModifyPosition(msg.sender, key, params, delta);
+            if (key.hooks.afterModifyPosition(msg.sender, key, params, delta) != IHooks.afterModifyPosition.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
     }
 
@@ -241,7 +250,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (IPoolManager.BalanceDelta memory delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
-            key.hooks.beforeSwap(msg.sender, key, params);
+            if (key.hooks.beforeSwap(msg.sender, key, params) != IHooks.beforeSwap.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         uint256 feeForProtocol;
@@ -263,7 +274,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         if (key.hooks.shouldCallAfterSwap()) {
-            key.hooks.afterSwap(msg.sender, key, params, delta);
+            if (key.hooks.afterSwap(msg.sender, key, params, delta) != IHooks.afterSwap.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
     }
 
@@ -274,7 +287,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256 amount1
     ) external override noDelegateCall onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
         if (key.hooks.shouldCallBeforeDonate()) {
-            key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+            if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1) != IHooks.beforeDonate.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         delta = _getPool(key).donate(amount0, amount1);
@@ -282,7 +297,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         _accountPoolBalanceDelta(key, delta);
 
         if (key.hooks.shouldCallAfterDonate()) {
-            key.hooks.afterDonate(msg.sender, key, amount0, amount1);
+            if (key.hooks.afterDonate(msg.sender, key, amount0, amount1) != IHooks.afterDonate.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
     }
 

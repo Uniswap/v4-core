@@ -10,6 +10,10 @@ contract HooksTest {
         IHooks(hookAddress).validateHookAddress(params);
     }
 
+    function isValidHookAddress(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).isValidHookAddress();
+    }
+
     function shouldCallBeforeInitialize(address hookAddress) external pure returns (bool) {
         return IHooks(hookAddress).shouldCallBeforeInitialize();
     }

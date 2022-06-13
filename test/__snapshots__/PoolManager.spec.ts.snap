@@ -3,7 +3,7 @@
 exports[`PoolManager #initialize gas cost 1`] = `
 Object {
   "calldataByteLength": 196,
-  "gasUsed": 51338,
+  "gasUsed": 51460,
 }
 `;
 
@@ -24,7 +24,7 @@ Object {
 exports[`PoolManager #mint gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 291457,
+  "gasUsed": 291767,
 }
 `;
 
@@ -49,4 +49,4 @@ Object {
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `25244`;
+exports[`PoolManager bytecode size 1`] = `25790`;

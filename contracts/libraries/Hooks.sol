@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.5.0;
 import {IHooks} from '../interfaces/IHooks.sol';
+import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -31,6 +32,9 @@ library Hooks {
     /// @param hooks The address of the hooks contract
     error HookAddressNotValid(address hooks);
 
+    /// @notice Hook did not return its selector
+    error InvalidHookResponse();
+
     /// @notice Utility function intended to be used in hook constructors to ensure
     /// the deployed hooks address causes the intended hooks to be called
     /// @param calls The hooks that are intended to be called
@@ -48,6 +52,12 @@ library Hooks {
         ) {
             revert HookAddressNotValid(address(self));
         }
+    }
+
+    /// @notice Ensures that the hook address includes at least one hook flag, or is the 0 address
+    /// @param hook The hook to verify
+    function isValidHookAddress(IHooks hook) internal pure returns (bool) {
+        return address(hook) == address(0) || uint160(address(hook)) >= uint160(AFTER_DONATE_FLAG);
     }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {

@@ -24,55 +24,71 @@ contract EmptyTestHooks is IHooks {
     }
 
     function beforeInitialize(
-        address sender,
-        IPoolManager.PoolKey memory key,
-        uint160 sqrtPriceX96
-    ) external override {}
+        address,
+        IPoolManager.PoolKey memory,
+        uint160
+    ) external pure override returns (bytes4) {
+        return IHooks.beforeInitialize.selector;
+    }
 
     function afterInitialize(
-        address sender,
-        IPoolManager.PoolKey memory key,
-        uint160 sqrtPriceX96,
-        int24 tick
-    ) external override {}
+        address,
+        IPoolManager.PoolKey memory,
+        uint160,
+        int24
+    ) external pure override returns (bytes4) {
+        return IHooks.afterInitialize.selector;
+    }
 
     function beforeModifyPosition(
-        address sender,
-        IPoolManager.PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params
-    ) external override {}
+        address,
+        IPoolManager.PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata
+    ) external pure override returns (bytes4) {
+        return IHooks.beforeModifyPosition.selector;
+    }
 
     function afterModifyPosition(
-        address sender,
-        IPoolManager.PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
-        IPoolManager.BalanceDelta calldata delta
-    ) external override {}
+        address,
+        IPoolManager.PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.BalanceDelta calldata
+    ) external pure override returns (bytes4) {
+        return IHooks.afterModifyPosition.selector;
+    }
 
     function beforeSwap(
-        address sender,
-        IPoolManager.PoolKey calldata key,
-        IPoolManager.SwapParams calldata params
-    ) external override {}
+        address,
+        IPoolManager.PoolKey calldata,
+        IPoolManager.SwapParams calldata
+    ) external pure override returns (bytes4) {
+        return IHooks.beforeSwap.selector;
+    }
 
     function afterSwap(
-        address sender,
-        IPoolManager.PoolKey calldata key,
-        IPoolManager.SwapParams calldata params,
-        IPoolManager.BalanceDelta calldata delta
-    ) external override {}
+        address,
+        IPoolManager.PoolKey calldata,
+        IPoolManager.SwapParams calldata,
+        IPoolManager.BalanceDelta calldata
+    ) external pure override returns (bytes4) {
+        return IHooks.afterSwap.selector;
+    }
 
     function beforeDonate(
-        address sender,
-        IPoolManager.PoolKey calldata key,
-        uint256 amount0,
-        uint256 amount1
-    ) external override {}
+        address,
+        IPoolManager.PoolKey calldata,
+        uint256,
+        uint256
+    ) external pure override returns (bytes4) {
+        return IHooks.beforeDonate.selector;
+    }
 
     function afterDonate(
-        address sender,
-        IPoolManager.PoolKey calldata key,
-        uint256 amount0,
-        uint256 amount1
-    ) external override {}
+        address,
+        IPoolManager.PoolKey calldata,
+        uint256,
+        uint256
+    ) external pure override returns (bytes4) {
+        return IHooks.afterDonate.selector;
+    }
 }

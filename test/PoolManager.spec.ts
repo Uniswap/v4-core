@@ -17,7 +17,7 @@ import { MAX_TICK_SPACING, ADDRESS_ZERO } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
 import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId, MaxUint128 } from './shared/utilities'
-import { deployMockContract, MockedContract } from './shared/mockContract'
+import { deployMockContract, MockedContract, setCode } from './shared/mockContract'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -54,7 +54,9 @@ describe('PoolManager', () => {
     const mockHooksAddress = '0xFF00000000000000000000000000000000000000'
     const testHooksEmptyAddress = '0xF000000000000000000000000000000000000000'
 
-    hooksMock = await deployMockContract(hooksTestEmptyFactory.interface, mockHooksAddress)
+    const hookImplAddress = '0xFF00000000000000000000000000000000000001'
+    setCode(hookImplAddress, 'EmptyTestHooks')
+    hooksMock = await deployMockContract(hooksTestEmptyFactory.interface, mockHooksAddress, hookImplAddress)
 
     await hre.network.provider.send('hardhat_setCode', [
       testHooksEmptyAddress,
@@ -230,6 +232,32 @@ describe('PoolManager', () => {
           encodeSqrtPriceX96(10, 1)
         )
       ).to.not.be.reverted
+    })
+
+    it('fails if hook does not return selector', async () => {
+      await manager.initialize(
+        {
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: testHooksEmpty.address,
+        },
+        encodeSqrtPriceX96(10, 1)
+      )
+
+      const {
+        slot0: { sqrtPriceX96 },
+      } = await manager.pools(
+        getPoolId({
+          token0: tokens.token0.address,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: testHooksEmpty.address,
+        })
+      )
+      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
     })
 
     it('fails if tickSpacing is too large', async () => {
