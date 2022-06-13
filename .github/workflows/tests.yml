@@ -49,10 +49,10 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v2
         with:
           node-version: '16'
-          cache: 'yarn'
+          # cache: 'yarn'
 
       - run: yarn
 
