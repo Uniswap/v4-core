@@ -167,10 +167,10 @@ contract TWAMMHook is BaseHook {
         tokensOwed[address(key.token1)][orderKey.owner] += tokens1Owed;
     }
 
-    /// @notice Claim earnings from an ongoing or expired order
+    /// @notice Claim tokens owed from TWAMMHook contract
     /// @param token The token to claim
     /// @param to The receipient of the claim
-    /// @param amountRequested The amount of tokens requested to claim
+    /// @param amountRequested The amount of tokens requested to claim. Set to 0 to claim all.
     /// @return amountTransferred The total token amount to be collected
     function claimTokens(
         IERC20Minimal token,
@@ -180,7 +180,7 @@ contract TWAMMHook is BaseHook {
         uint256 currentBalance = token.balanceOf(address(this));
         amountTransferred = tokensOwed[address(token)][msg.sender];
         if (amountRequested != 0 && amountRequested < amountTransferred) amountTransferred = amountRequested;
-        if (currentBalance < amountTransferred) amountTransferred = currentBalance; // to catch small precision errors
+        if (currentBalance < amountTransferred) amountTransferred = currentBalance; // to catch precision errors
         token.safeTransfer(to, amountTransferred);
     }
 
