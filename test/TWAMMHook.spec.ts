@@ -217,13 +217,10 @@ describe('TWAMM Hook', () => {
       }
 
       const nullOrder = await twamm.getOrder(poolKey, orderKey)
-      expect(nullOrder.exists).to.eq(false)
 
       await twamm.submitLongTermOrder(poolKey, orderKey, expandTo18Decimals(10))
       const order = await twamm.getOrder(poolKey, orderKey)
-      expect(order.exists).to.eq(true)
       expect(order.earningsFactorLast).to.eq(0)
-      expect(order.uncollectedEarningsAmount).to.eq(0)
     })
 
     it('stores the correct earningsFactorLast if past earnings have been processed', async () => {
@@ -239,13 +236,11 @@ describe('TWAMM Hook', () => {
         expiration: nIntervalsFrom(latestTimestamp, 10_000, 5),
       }
       await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10))
-      await setNextBlocktime(expiration)
+      await setNextBlocktime(expiration + 100)
       await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))
       const order = await twamm.getOrder(poolKey, orderKey1)
 
-      expect(order.exists).to.eq(true)
-      expect(order.earningsFactorLast).to.be.gt(0)
-      expect(order.uncollectedEarningsAmount).to.eq(0)
+      expect(order.earningsFactorLast).to.eq((await twamm.getOrderPool(poolKey, true)).earningsFactorCurrent)
     })
 
     it('gas', async () => {
@@ -261,7 +256,7 @@ describe('TWAMM Hook', () => {
     })
   })
 
-  describe('#modifyLongTermOrder', () => {
+  describe('#updateLongTermOrder', () => {
     let orderKey0: OrderKey
     let orderKey1: OrderKey
     let poolKey: PoolKey
@@ -308,108 +303,89 @@ describe('TWAMM Hook', () => {
     })
 
     describe('for orders trading zeroForOne', () => {
-      it('claims rewards, decreases sellRate, and transfers sell tokens if the delta is negative', async () => {
+      it('claims rewards, decreases sellRate, and updates sellTokensOwed to owner', async () => {
         const amountDelta = orderAmount.div(10)
-        const ownerBalancePrev = await token0.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey0, amountDelta.mul(-1))
-        const ownerBalanceNew = await token0.balanceOf(wallet.address)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, amountDelta.mul(-1))
         const order = await twamm.getOrder(poolKey, orderKey0)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
 
-        expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
-        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(200000000000000)
-        expect(order.exists).to.eq(true)
-        expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(amountDelta)
+        expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
+        expect(await twamm.getTokensOwed(poolKey.token0, orderKey0.owner)).to.eq(amountDelta)
+        expect(await twamm.getTokensOwed(poolKey.token1, orderKey0.owner)).to.eq(orderAmount.div(2))
       })
 
-      it('decreases sellRate to 0 and returns all tokens if delta sent is -1', async () => {
-        const ownerBalancePrev = await token0.balanceOf(wallet.address)
+      it('deletes order and returns all tokens if delta sent is -1', async () => {
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey0, -1)
-        const ownerBalanceNew = await token0.balanceOf(wallet.address)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, -1)
         const order = await twamm.getOrder(poolKey, orderKey0)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
 
-        expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
-        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(0)
-        expect(order.exists).to.eq(true)
-        expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount.div(2))
+        expect(order.earningsFactorLast).to.eq(0)
+        expect(await twamm.getTokensOwed(poolKey.token0, orderKey0.owner)).to.eq(orderAmount.div(2))
+        expect(await twamm.getTokensOwed(poolKey.token1, orderKey0.owner)).to.eq(orderAmount.div(2))
       })
 
       it('claims rewards, increases sellRate, collects token0 balance if delta is positive', async () => {
-        const ownerBalancePrev = await token0.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey0, orderAmount)
-        const ownerBalanceNew = await token0.balanceOf(wallet.address)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, orderAmount)
         const order = await twamm.getOrder(poolKey, orderKey0)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
 
-        expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
-        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(orderAmount.div(40_000).add(orderAmount.div(20_000)))
-        expect(order.exists).to.eq(true)
-        expect(ownerBalancePrev.sub(ownerBalanceNew)).to.eq(orderAmount)
+        expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
+        expect(await twamm.getTokensOwed(poolKey.token0, orderKey0.owner)).to.eq(0)
+        expect(await twamm.getTokensOwed(poolKey.token1, orderKey0.owner)).to.eq(orderAmount.div(2))
       })
     })
 
     describe('for orders trading oneForZero', () => {
       it('claims rewards, decreases sellRate, and transfers sell tokens if the delta is negative', async () => {
         const amountDelta = orderAmount.div(10)
-        const ownerBalancePrev = await token1.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey1, amountDelta.mul(-1))
-        const ownerBalanceNew = await token1.balanceOf(wallet.address)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, amountDelta.mul(-1))
         const order = await twamm.getOrder(poolKey, orderKey1)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
 
         expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
-        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(200000000000000)
-        expect(order.exists).to.eq(true)
-        expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(amountDelta)
+        expect(await twamm.getTokensOwed(poolKey.token0, orderKey0.owner)).to.eq(orderAmount.div(2))
+        expect(await twamm.getTokensOwed(poolKey.token1, orderKey0.owner)).to.eq(amountDelta)
       })
 
-      it('decreases sellRate to 0 and returns all tokens if delta sent is -1', async () => {
-        const ownerBalancePrev = await token1.balanceOf(wallet.address)
+      it('deletes and returns all tokens if delta sent is -1', async () => {
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey1, -1)
-        const ownerBalanceNew = await token1.balanceOf(wallet.address)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, -1)
         const order = await twamm.getOrder(poolKey, orderKey1)
-        const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
 
-        expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
-        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
+        expect(order.earningsFactorLast).to.eq(0)
         expect(order.sellRate).to.eq(0)
-        expect(order.exists).to.eq(true)
-        expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount.div(2))
+        expect(await twamm.getTokensOwed(poolKey.token0, orderKey0.owner)).to.eq(orderAmount.div(2))
+        expect(await twamm.getTokensOwed(poolKey.token1, orderKey0.owner)).to.eq(orderAmount.div(2))
       })
 
       it('collects token1 balance if delta is positive and increases sellRate', async () => {
-        const ownerBalancePrev = await token1.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey1, orderAmount)
-        const ownerBalanceNew = await token1.balanceOf(wallet.address)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, orderAmount)
         const order = await twamm.getOrder(poolKey, orderKey1)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
 
         expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
-        expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(orderAmount.div(40_000).add(orderAmount.div(20_000)))
-        expect(order.exists).to.eq(true)
-        expect(ownerBalancePrev.sub(ownerBalanceNew)).to.eq(orderAmount)
+        expect(await twamm.getTokensOwed(poolKey.token0, orderKey0.owner)).to.eq(orderAmount.div(2))
+        expect(await twamm.getTokensOwed(poolKey.token1, orderKey0.owner)).to.eq(0)
       })
     })
 
     it('gas', async () => {
       await setNextBlocktime(expiration - 5_000)
-      await snapshotGasCost(twamm.modifyLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10)))
+      await snapshotGasCost(twamm.updateLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10)))
     })
   })
 
-  describe('#claimEarnings', () => {
+  describe('#claimTokens', () => {
     let orderKey0: OrderKey
     let orderKey1: OrderKey
     let poolKey: PoolKey
@@ -456,75 +432,39 @@ describe('TWAMM Hook', () => {
       })
     })
 
-    describe('for orders trading zeroForOne', () => {
-      describe('when claiming before order expiration', () => {
-        it('transfers the correct amount of earnings and updates the earningsFactor', async () => {
-          const ownerBalancePrev = await token1.balanceOf(wallet.address)
-          await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-          await twamm.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-          const ownerBalanceNew = await token1.balanceOf(wallet.address)
-          const order = await twamm.getOrder(poolKey, orderKey0)
-          const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
-
-          expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
-          expect(order.uncollectedEarningsAmount).to.eq(0)
-          expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount.div(2))
-        })
-      })
-
-      describe('when claiming after order expiration', () => {
-        it('transfers the correct amount of earnings deletes the order', async () => {
-          const ownerBalancePrev = await token1.balanceOf(wallet.address)
-          await setNextBlocktime(expiration + 500)
-          await twamm.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-          const ownerBalanceNew = await token1.balanceOf(wallet.address)
-          const order = await twamm.getOrder(poolKey, orderKey0)
-
-          expect(order.sellRate).to.eq(0)
-          expect(order.earningsFactorLast).to.eq(0)
-          expect(order.uncollectedEarningsAmount).to.eq(0)
-          expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount)
-        })
-      })
+    it('does not claim any tokens if 0 tokens are owed', async () => {
+      const balanceBefore = await token0.balanceOf(wallet.address)
+      await twamm.claimTokens(poolKey.token0, wallet.address, expandTo18Decimals(1))
+      const balanceAfter = await token1.balanceOf(wallet.address)
+      expect(balanceBefore).to.eq(balanceAfter)
     })
 
-    describe('for orders trading oneForZero', () => {
-      describe('when claiming before order expiration', () => {
-        it('transfers the correct amount of earnings and updates the earningsFactor', async () => {
-          const ownerBalancePrev = await token0.balanceOf(wallet.address)
-          await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-          await twamm.claimEarningsOnLongTermOrder(poolKey, orderKey1)
-          const ownerBalanceNew = await token0.balanceOf(wallet.address)
-          const order = await twamm.getOrder(poolKey, orderKey1)
-          const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
+    it('claims full amount if amountRequested is 0', async () => {
+      await setNextBlocktime(expiration - 3_000)
+      await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
+      await twamm.updateLongTermOrder(poolKey, orderKey1, 0)
 
-          expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
-          expect(order.uncollectedEarningsAmount).to.eq(0)
-          expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount.div(2))
-        })
-      })
+      const balance0Prev = await token0.balanceOf(wallet.address)
+      const balance1Prev = await token1.balanceOf(wallet.address)
 
-      describe('when claiming after order expiration', () => {
-        it('transfers the correct amount of earnings deletes the order', async () => {
-          const ownerBalancePrev = await token0.balanceOf(wallet.address)
-          await setNextBlocktime(expiration + 500)
-          await twamm.claimEarningsOnLongTermOrder(poolKey, orderKey1)
-          const ownerBalanceNew = await token0.balanceOf(wallet.address)
-          const order = await twamm.getOrder(poolKey, orderKey1)
-          const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
+      const tokens0Owed = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+      const tokens1Owed = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
-          expect(order.sellRate).to.eq(0)
-          expect(order.earningsFactorLast).to.eq(0)
-          expect(order.uncollectedEarningsAmount).to.eq(0)
-          expect(ownerBalanceNew.sub(ownerBalancePrev)).to.eq(orderAmount)
-        })
-      })
+      await twamm.claimTokens(poolKey.token0, wallet.address, 0)
+      await twamm.claimTokens(poolKey.token1, wallet.address, 0)
+
+      const balance0New = await token0.balanceOf(wallet.address)
+      const balance1New = await token1.balanceOf(wallet.address)
+
+      expect(balance0New.sub(balance0Prev)).to.eq(tokens0Owed)
+      expect(balance1New.sub(balance1Prev)).to.eq(tokens1Owed)
     })
 
     it('gas', async () => {
       await setNextBlocktime(expiration - 3_000)
+      await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
       // difficult to isolate gas from #executeTWAMMOrders()
-      await snapshotGasCost(twamm.claimEarningsOnLongTermOrder(poolKey, orderKey0))
+      await snapshotGasCost(twamm.claimTokens(token0.address, wallet.address, expandTo18Decimals(1)))
     })
   })
 
@@ -735,12 +675,14 @@ describe('TWAMM Hook', () => {
         const prevBalance1 = await token1.balanceOf(twamm.address)
 
         await twamm.executeTWAMMOrders(key)
+        await twamm.updateLongTermOrder(key, orderKey0, 0)
+        await twamm.updateLongTermOrder(key, orderKey1, 0)
 
         const newBalance0 = await token0.balanceOf(twamm.address)
         const newBalance1 = await token1.balanceOf(twamm.address)
 
-        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
-        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
+        const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+        const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
         // precision error of 3-4 wei
         expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.sub(4))
@@ -765,12 +707,14 @@ describe('TWAMM Hook', () => {
         const prevBalance1 = await token1.balanceOf(twamm.address)
 
         await twamm.executeTWAMMOrders(key)
+        await twamm.updateLongTermOrder(key, orderKey0, 0)
+        await twamm.updateLongTermOrder(key, orderKey1, 0)
 
         const newBalance0 = await token0.balanceOf(twamm.address)
         const newBalance1 = await token1.balanceOf(twamm.address)
 
-        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
-        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
+        const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+        const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
         // precision error of 5-6 wei
         expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.sub(5))
@@ -838,12 +782,14 @@ describe('TWAMM Hook', () => {
         const prevBalance1 = await token1.balanceOf(twamm.address)
 
         await twamm.executeTWAMMOrders(key)
+        await twamm.updateLongTermOrder(key, orderKey0, 0)
+        await twamm.updateLongTermOrder(key, orderKey1, 0)
 
         const newBalance0 = await token0.balanceOf(twamm.address)
         const newBalance1 = await token1.balanceOf(twamm.address)
 
-        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
-        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey1)
+        const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+        const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
         // precision error of 3-4 wei
         expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.sub(3))
@@ -956,11 +902,12 @@ describe('TWAMM Hook', () => {
 
           await setNextBlocktime(expiration + 300)
           await twamm.executeTWAMMOrders(key)
+          await twamm.updateLongTermOrder(key, orderKey0, 0)
 
           const newBalance0 = await token0.balanceOf(twamm.address)
           const newBalance1 = await token1.balanceOf(twamm.address)
 
-          const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(key, orderKey0)
+          const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
           // precision error of 8/11 wei
           expect(newBalance0).to.equal(BigNumber.from(INITIAL_TOKEN_BALANCE).sub(8))
@@ -1024,12 +971,14 @@ describe('TWAMM Hook', () => {
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
         await twamm.executeTWAMMOrders(poolKey)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, 0)
 
         const newBalance0 = await token0.balanceOf(twamm.address)
         const newBalance1 = await token1.balanceOf(twamm.address)
 
-        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+        const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+        const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
         const expectedSqrtRatioX96 = '1390179360050332758641088620197702593046604939264'
 
@@ -1062,12 +1011,14 @@ describe('TWAMM Hook', () => {
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
         await twamm.executeTWAMMOrders(poolKey)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, 0)
 
         const newBalance0 = await token0.balanceOf(twamm.address)
         const newBalance1 = await token1.balanceOf(twamm.address)
 
-        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+        const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+        const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
         const expectedSqrtRatioX96 = '4515317890'
 
@@ -1101,12 +1052,14 @@ describe('TWAMM Hook', () => {
 
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
         await twamm.executeTWAMMOrders(poolKey)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, 0)
 
         const newBalance0 = await token0.balanceOf(twamm.address)
         const newBalance1 = await token1.balanceOf(twamm.address)
 
-        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+        const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+        const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
         const expectedPriceX96 = '1441708729548066551791643897157159050890912464896'
 
@@ -1133,12 +1086,14 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
 
         await twamm.executeTWAMMOrders(poolKey)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, 0)
 
         const newBalance0 = await token0.balanceOf(twamm.address)
         const newBalance1 = await token1.balanceOf(twamm.address)
 
-        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+        const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+        const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
         // sqrtSellRatio
         const expectedPriceX96 = 4295760037
@@ -1170,20 +1125,20 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
 
         await twamm.executeTWAMMOrders(poolKey)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, 0)
 
         const newBalance0 = await token0.balanceOf(twamm.address)
         const newBalance1 = await token1.balanceOf(twamm.address)
 
-        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+        const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+        const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
         // max price w/error
         const expectedPriceX96 = '1461446703485210103287273052203988790139028504576'
         expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(expectedPriceX96)
 
-        // precision error
-        // 499359406795
-        // 40099070073
+        // larger precision error in extreme case
         expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(499359406795))
         expect(newBalance1.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken1.add(40099070073))
       })
@@ -1206,20 +1161,20 @@ describe('TWAMM Hook', () => {
         await ethers.provider.send('evm_setNextBlockTimestamp', [expirationTimestamp + 1000])
 
         await twamm.executeTWAMMOrders(poolKey)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, 0)
 
         const newBalance0 = await token0.balanceOf(twamm.address)
         const newBalance1 = await token1.balanceOf(twamm.address)
 
-        const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-        const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+        const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+        const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
         // min price w/error
         const expectedPriceX96 = '4295128740'
         expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(expectedPriceX96)
 
-        // precision error
-        // 21934025816
-        // 499359406802
+        // larger precision error in extreme case
         expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(21934025816))
         expect(newBalance1.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken1.add(499359406802))
       })
@@ -1274,12 +1229,14 @@ describe('TWAMM Hook', () => {
 
           await setNextBlocktime(expirationTimestamp + 1000)
           await twamm.executeTWAMMOrders(poolKey)
+          await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
+          await twamm.updateLongTermOrder(poolKey, orderKey1, 0)
 
           const newBalance0 = await token0.balanceOf(twamm.address)
           const newBalance1 = await token1.balanceOf(twamm.address)
 
-          const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-          const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+          const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+          const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
           const sqrtX96SellRate = encodeSqrtPriceX96(amountSell1, amountSell0)
           expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(sqrtX96SellRate)
@@ -1302,12 +1259,14 @@ describe('TWAMM Hook', () => {
 
           await setNextBlocktime(expirationTimestamp + 1000)
           await twamm.executeTWAMMOrders(poolKey)
+          await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
+          await twamm.updateLongTermOrder(poolKey, orderKey1, 0)
 
           const newBalance0 = await token0.balanceOf(twamm.address)
           const newBalance1 = await token1.balanceOf(twamm.address)
 
-          const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
-          const earningsToken0 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey1)
+          const earningsToken0 = await twamm.getTokensOwed(poolKey.token0, wallet.address)
+          const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
           const sqrtX96SellRate = encodeSqrtPriceX96(amountSell1, amountSell0)
           expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(sqrtX96SellRate)
@@ -1328,9 +1287,10 @@ describe('TWAMM Hook', () => {
 
           await setNextBlocktime(expirationTimestamp + 1000)
           await twamm.executeTWAMMOrders(poolKey)
+          await twamm.updateLongTermOrder(poolKey, orderKey0, 0)
 
           const newBalance1 = await token1.balanceOf(twamm.address)
-          const earningsToken1 = await twamm.callStatic.claimEarningsOnLongTermOrder(poolKey, orderKey0)
+          const earningsToken1 = await twamm.getTokensOwed(poolKey.token1, wallet.address)
 
           // precision error of 15 wei
           expect(newBalance1.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken1.sub(15))

@@ -18,6 +18,7 @@ contract TWAMMHook is BaseHook {
 
     uint256 public immutable expirationInterval;
     mapping(bytes32 => TWAMM.State) internal twammStates;
+    mapping(address => mapping(address => uint256)) public tokensOwed;
 
     constructor(IPoolManager _poolManager, uint256 _expirationInterval) BaseHook(_poolManager) {
         expirationInterval = _expirationInterval;
@@ -58,6 +59,10 @@ contract TWAMMHook is BaseHook {
             zeroForOne
                 ? (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent)
                 : (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
+    }
+
+    function getTokensOwed(address token, address owner) external view returns (uint256 amount) {
+        return tokensOwed[token][owner];
     }
 
     function beforeInitialize(
@@ -141,44 +146,42 @@ contract TWAMMHook is BaseHook {
     /// @param orderKey The OrderKey for which to identify the order
     /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
     ///    min value to remove full amount from order.
-    /// @return finalAmountDelta the amount of the order's sell token added or removed from the order
-    function modifyLongTermOrder(
+    function updateLongTermOrder(
         IPoolManager.PoolKey memory key,
         TWAMM.OrderKey memory orderKey,
         int256 amountDelta
-    ) external returns (int256 finalAmountDelta) {
+    ) external returns (uint256 tokens0Owed, uint256 tokens1Owed) {
         executeTWAMMOrders(key);
-
         // This call reverts if the caller is not the owner of the order
-        finalAmountDelta = getTWAMM(key).modifyLongTermOrder(orderKey, amountDelta);
+        (uint256 buyTokensOwed, uint256 sellTokensOwed) = getTWAMM(key).updateLongTermOrder(orderKey, amountDelta);
 
-        IERC20Minimal sellToken = orderKey.zeroForOne ? key.token0 : key.token1;
-
-        if (finalAmountDelta > 0) {
-            sellToken.safeTransferFrom(orderKey.owner, address(this), uint256(uint256(finalAmountDelta)));
+        if (orderKey.zeroForOne) {
+            tokens0Owed += sellTokensOwed;
+            tokens1Owed += buyTokensOwed;
         } else {
-            uint256 currentBalance = sellToken.balanceOf(address(this));
-            uint256 amountOut = uint256(uint256(-finalAmountDelta));
-            if (currentBalance < amountOut) amountOut = currentBalance;
-            sellToken.safeTransfer(orderKey.owner, amountOut);
+            tokens0Owed += buyTokensOwed;
+            tokens1Owed += sellTokensOwed;
         }
+
+        tokensOwed[address(key.token0)][orderKey.owner] += tokens0Owed;
+        tokensOwed[address(key.token1)][orderKey.owner] += tokens1Owed;
     }
 
-    /// @notice Claim earnings from an ongoing or expired order
-    /// @param key The PoolKey for which to identify the amm pool of the order
-    /// @param orderKey The OrderKey for which to identify the order
-    /// @return earningsAmount The total earnings to be collected at this point in time
-    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey memory key, TWAMM.OrderKey memory orderKey)
-        external
-        returns (uint256 earningsAmount)
-    {
-        executeTWAMMOrders(key);
-
-        earningsAmount = getTWAMM(key).claimEarnings(orderKey);
-        IERC20Minimal buyToken = orderKey.zeroForOne ? key.token1 : key.token0;
-        uint256 currentBalance = buyToken.balanceOf(address(this));
-        if (currentBalance < earningsAmount) earningsAmount = currentBalance;
-        buyToken.safeTransfer(orderKey.owner, earningsAmount);
+    /// @notice Claim tokens owed from TWAMMHook contract
+    /// @param token The token to claim
+    /// @param to The receipient of the claim
+    /// @param amountRequested The amount of tokens requested to claim. Set to 0 to claim all.
+    /// @return amountTransferred The total token amount to be collected
+    function claimTokens(
+        IERC20Minimal token,
+        address to,
+        uint256 amountRequested
+    ) external returns (uint256 amountTransferred) {
+        uint256 currentBalance = token.balanceOf(address(this));
+        amountTransferred = tokensOwed[address(token)][msg.sender];
+        if (amountRequested != 0 && amountRequested < amountTransferred) amountTransferred = amountRequested;
+        if (currentBalance < amountTransferred) amountTransferred = currentBalance; // to catch precision errors
+        token.safeTransfer(to, amountTransferred);
     }
 
     function lockAcquired(bytes calldata rawData) external override poolManagerOnly returns (bytes memory) {
