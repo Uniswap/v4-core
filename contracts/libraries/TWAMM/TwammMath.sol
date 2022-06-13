@@ -16,6 +16,13 @@ library TwammMath {
     // ABDKMathQuad FixedPoint96.Q96.fromUInt()
     bytes16 constant Q96 = 0x405f0000000000000000000000000000;
 
+    //// @dev The minimum value that a pool price can equal, represented in bytes.
+    // (TickMath.MIN_SQRT_RATIO + 1).fromUInt()
+    bytes16 internal constant MIN_SQRT_RATIO_BYTES = 0x401f000276a400000000000000000000;
+    //// @dev The maximum value that a pool price can equal, represented in bytes.
+    // (MAX_SQRT_RATIO - 1).fromUInt()
+    bytes16 internal constant MAX_SQRT_RATIO_BYTES = 0x409efffb12c7dfa3f8d4a0c91092bb2a;
+
     struct PriceParamsBytes16 {
         bytes16 sqrtSellRatio;
         bytes16 sqrtSellRate;
@@ -36,23 +43,45 @@ library TwammMath {
         bytes16 sellRateBytes0 = params.sellRateCurrent0.fromUInt();
         bytes16 sellRateBytes1 = params.sellRateCurrent1.fromUInt();
         bytes16 sqrtSellRate = sellRateBytes0.mul(sellRateBytes1).sqrt();
-        bytes16 sqrtSellRatio = sellRateBytes1.div(sellRateBytes0).sqrt();
+        bytes16 sqrtSellRatioX96 = sellRateBytes1.div(sellRateBytes0).sqrt().mul(Q96);
 
         PriceParamsBytes16 memory priceParams = PriceParamsBytes16({
-            sqrtSellRatio: sqrtSellRatio,
+            sqrtSellRatio: sqrtSellRatioX96.div(Q96),
             sqrtSellRate: sqrtSellRate,
             secondsElapsed: params.secondsElapsedX96.fromUInt().div(Q96),
             sqrtPrice: params.sqrtPriceX96.fromUInt().div(Q96),
             liquidity: params.liquidity.fromUInt()
         });
 
-        bytes16 newSqrtPriceBytes = calculateNewSqrtPrice(priceParams);
+        bytes16 newSqrtPriceBytesX96 = calculateNewSqrtPrice(priceParams).mul(Q96);
+        bool isOverflow = newSqrtPriceBytesX96.isInfinity() || newSqrtPriceBytesX96.isNaN();
 
-        bool isOverflow = newSqrtPriceBytes.isInfinity() || newSqrtPriceBytes.isNaN();
+        if (isOverflow) {
+            // If overflow, the final price is set to the sqrtSellRatio.
+            // Ensure that the sqrtSellRatio is not greater than the max or below the min.
+            newSqrtPriceX96 = getSqrtPriceWithinBounds(
+                params.sellRateCurrent0 > params.sellRateCurrent1,
+                sqrtSellRatioX96
+            ).toUInt().toUint160();
+        } else {
+            // Ensure the calculated price is not greater than the max or below the min.
+            newSqrtPriceX96 = getSqrtPriceWithinBounds(
+                params.sellRateCurrent0 > params.sellRateCurrent1,
+                newSqrtPriceBytesX96
+            ).toUInt().toUint160();
+        }
+    }
 
-        newSqrtPriceX96 = isOverflow
-            ? sqrtSellRatio.mul(Q96).toUInt().toUint160()
-            : newSqrtPriceBytes.mul(Q96).toUInt().toUint160();
+    function getSqrtPriceWithinBounds(bool zeroForOne, bytes16 desiredPriceX96)
+        internal
+        pure
+        returns (bytes16 newSqrtPriceX96)
+    {
+        if (zeroForOne) {
+            newSqrtPriceX96 = MIN_SQRT_RATIO_BYTES.cmp(desiredPriceX96) == 1 ? MIN_SQRT_RATIO_BYTES : desiredPriceX96;
+        } else {
+            newSqrtPriceX96 = desiredPriceX96.cmp(MAX_SQRT_RATIO_BYTES) == 1 ? MAX_SQRT_RATIO_BYTES : desiredPriceX96;
+        }
     }
 
     function calculateEarningsUpdates(ExecutionUpdateParams memory params, uint160 finalSqrtPriceX96)

@@ -547,7 +547,7 @@ library TWAMM {
                 nextTickInit,
                 searchingLeft
             );
-            nextTickInitFurtherThanTarget = searchingLeft ? nextTickInit < targetTick : nextTickInit > targetTick;
+            nextTickInitFurtherThanTarget = searchingLeft ? nextTickInit <= targetTick : nextTickInit > targetTick;
             if (crossingInitializedTick == true) break;
         }
         if (nextTickInitFurtherThanTarget) crossingInitializedTick = false;
