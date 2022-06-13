@@ -140,13 +140,13 @@ library TWAMM {
     }
 
     /// @notice Modify an existing long term order with a new sellAmount
-    /// @dev executeTWAMMOrders must be executed up to current timestamp before calling modifyLongTermOrder
+    /// @dev executeTWAMMOrders must be executed up to current timestamp before calling updateLongTermOrder
     /// @param self The TWAMM State
     /// @param orderKey The OrderKey for which to identify the order
     /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
     ///    -1 to remove full amount from order.
     /// @return finalAmountDelta the amount of the order's sell token to be added or removed from the order
-    function modifyLongTermOrder(
+    function updateLongTermOrder(
         State storage self,
         OrderKey memory orderKey,
         int256 amountDelta

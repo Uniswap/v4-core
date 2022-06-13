@@ -15,7 +15,7 @@ interface ITWAMM {
         external
         returns (uint256 earningsAmount);
 
-    function modifyLongTermOrder(
+    function updateLongTermOrder(
         IPoolManager.PoolKey calldata key,
         TWAMM.OrderKey calldata orderKey,
         int128 amountDelta

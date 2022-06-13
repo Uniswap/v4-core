@@ -261,7 +261,7 @@ describe('TWAMM Hook', () => {
     })
   })
 
-  describe('#modifyLongTermOrder', () => {
+  describe('#updateLongTermOrder', () => {
     let orderKey0: OrderKey
     let orderKey1: OrderKey
     let poolKey: PoolKey
@@ -312,7 +312,7 @@ describe('TWAMM Hook', () => {
         const amountDelta = orderAmount.div(10)
         const ownerBalancePrev = await token0.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey0, amountDelta.mul(-1))
+        await twamm.updateLongTermOrder(poolKey, orderKey0, amountDelta.mul(-1))
         const ownerBalanceNew = await token0.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey0)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
@@ -327,7 +327,7 @@ describe('TWAMM Hook', () => {
       it('decreases sellRate to 0 and returns all tokens if delta sent is -1', async () => {
         const ownerBalancePrev = await token0.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey0, -1)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, -1)
         const ownerBalanceNew = await token0.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey0)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
@@ -342,7 +342,7 @@ describe('TWAMM Hook', () => {
       it('claims rewards, increases sellRate, collects token0 balance if delta is positive', async () => {
         const ownerBalancePrev = await token0.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey0, orderAmount)
+        await twamm.updateLongTermOrder(poolKey, orderKey0, orderAmount)
         const ownerBalanceNew = await token0.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey0)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
@@ -360,7 +360,7 @@ describe('TWAMM Hook', () => {
         const amountDelta = orderAmount.div(10)
         const ownerBalancePrev = await token1.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey1, amountDelta.mul(-1))
+        await twamm.updateLongTermOrder(poolKey, orderKey1, amountDelta.mul(-1))
         const ownerBalanceNew = await token1.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey1)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
@@ -375,7 +375,7 @@ describe('TWAMM Hook', () => {
       it('decreases sellRate to 0 and returns all tokens if delta sent is -1', async () => {
         const ownerBalancePrev = await token1.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey1, -1)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, -1)
         const ownerBalanceNew = await token1.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey1)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
@@ -390,7 +390,7 @@ describe('TWAMM Hook', () => {
       it('collects token1 balance if delta is positive and increases sellRate', async () => {
         const ownerBalancePrev = await token1.balanceOf(wallet.address)
         await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
-        await twamm.modifyLongTermOrder(poolKey, orderKey1, orderAmount)
+        await twamm.updateLongTermOrder(poolKey, orderKey1, orderAmount)
         const ownerBalanceNew = await token1.balanceOf(wallet.address)
         const order = await twamm.getOrder(poolKey, orderKey1)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
@@ -405,7 +405,7 @@ describe('TWAMM Hook', () => {
 
     it('gas', async () => {
       await setNextBlocktime(expiration - 5_000)
-      await snapshotGasCost(twamm.modifyLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10)))
+      await snapshotGasCost(twamm.updateLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10)))
     })
   })
 

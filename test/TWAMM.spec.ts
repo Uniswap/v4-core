@@ -295,7 +295,7 @@ describe('TWAMM', () => {
     })
   })
 
-  describe('#modifyLongTermOrder', () => {
+  describe('#updateLongTermOrder', () => {
     let poolKey: PoolKey
     let orderKey: OrderKey
     let interval: number
@@ -366,7 +366,7 @@ describe('TWAMM', () => {
 
         // given expandTo18Decimals(1.5) has been sold, we are reducing the remaining to sell from 1.5 to 0.5
         // this means the sell rate for the remaining time should divide by 3
-        await twamm.modifyLongTermOrder(orderKey, expandTo18Decimals(1).mul(-1))
+        await twamm.updateLongTermOrder(orderKey, expandTo18Decimals(1).mul(-1))
 
         const sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
         const poolSellRateAfter = (await twamm.getOrderPool(true)).sellRate
@@ -377,14 +377,14 @@ describe('TWAMM', () => {
 
       it('revert if more than the order is removed', async () => {
         // given expandTo18Decimals(1.5) has been sold, we try to remove just more than 1.5
-        await expect(twamm.modifyLongTermOrder(orderKey, expandTo18Decimals(1.5).add(1).mul(-1))).to.be.revertedWith(
+        await expect(twamm.updateLongTermOrder(orderKey, expandTo18Decimals(1.5).add(1).mul(-1))).to.be.revertedWith(
           'InvalidAmountDelta'
         )
       })
 
       it('does not revert if the exact amount is provided', async () => {
         // given expandTo18Decimals(1.5) has been sold, we try to remove exactly 1.5 more
-        await twamm.modifyLongTermOrder(orderKey, expandTo18Decimals(1.5).mul(-1))
+        await twamm.updateLongTermOrder(orderKey, expandTo18Decimals(1.5).mul(-1))
         expect(parseInt((await twamm.getOrder(orderKey)).sellRate.toString())).to.be.eq(0)
       })
 
@@ -394,7 +394,7 @@ describe('TWAMM', () => {
 
         // given expandTo18Decimals(1.5) has been sold, we are increasing the remaining to sell from 1.5 to 2.5
         // this means the sell rate for the remaining time should be (*5/3)
-        await twamm.modifyLongTermOrder(orderKey, expandTo18Decimals(1))
+        await twamm.updateLongTermOrder(orderKey, expandTo18Decimals(1))
 
         const sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
         const poolSellRateAfter = (await twamm.getOrderPool(true)).sellRate
@@ -408,7 +408,7 @@ describe('TWAMM', () => {
 
         // given expandTo18Decimals(1.5) has been sold, we are increasing the remaining to sell from 1.5 to 5
         // this means the sell rate for the remaining time should be (*2)
-        await twamm.modifyLongTermOrder(orderKey, expandTo18Decimals(1.5))
+        await twamm.updateLongTermOrder(orderKey, expandTo18Decimals(1.5))
 
         var sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
         expect(sellRateBefore.mul(2)).to.be.eq(sellRateAfter)
@@ -417,7 +417,7 @@ describe('TWAMM', () => {
         // by this timestamp half of the 3 (since last alteration) have been sold
         // we remove 1.2 of the 1.5 remaining, meaning a sell rate of 1/5th
         sellRateBefore = sellRateAfter
-        await twamm.modifyLongTermOrder(orderKey, expandTo18Decimals(1.2).mul(-1))
+        await twamm.updateLongTermOrder(orderKey, expandTo18Decimals(1.2).mul(-1))
         sellRateAfter = (await twamm.getOrder(orderKey)).sellRate
         expect(sellRateBefore).to.be.eq(sellRateAfter.mul(5))
       })
@@ -430,19 +430,19 @@ describe('TWAMM', () => {
 
       it('changes the sell rate of the order to 0', async () => {
         expect(parseInt((await twamm.getOrder(orderKey)).sellRate.toString())).to.be.greaterThan(0)
-        await twamm.modifyLongTermOrder(orderKey, MIN_DELTA)
+        await twamm.updateLongTermOrder(orderKey, MIN_DELTA)
         expect(parseInt((await twamm.getOrder(orderKey)).sellRate.toString())).to.be.eq(0)
       })
 
       it('claims some of the order, then cancels successfully', async () => {
         await twamm.executeTWAMMOrders(POOL_KEY, poolParams)
-        await twamm.modifyLongTermOrder(orderKey, MIN_DELTA)
+        await twamm.updateLongTermOrder(orderKey, MIN_DELTA)
         expect((await twamm.getOrder(orderKey)).sellRate).to.eq(0)
       })
 
       it('updates the unclaimedEarningsFactor to the current earningsFactor accumulator', async () => {
         await twamm.executeTWAMMOrders(POOL_KEY, poolParams)
-        await twamm.modifyLongTermOrder(orderKey, MIN_DELTA)
+        await twamm.updateLongTermOrder(orderKey, MIN_DELTA)
         const orderPool = await twamm.getOrderPool(true)
         expect((await twamm.getOrder(orderKey)).unclaimedEarningsFactor).to.eq(orderPool.earningsFactor)
       })
@@ -451,13 +451,13 @@ describe('TWAMM', () => {
         // update state and cancel the order at the midpoint
         await twamm.executeTWAMMOrders(POOL_KEY, poolParams)
 
-        const amountDelta = await twamm.callStatic.modifyLongTermOrder(orderKey, MIN_DELTA)
+        const amountDelta = await twamm.callStatic.updateLongTermOrder(orderKey, MIN_DELTA)
         expect(amountDelta).to.equal(sellAmount.div(2).mul(-1))
       })
 
       it('claims half the earnings at midpoint', async () => {
         await executeTwammAndThen(timestampInterval2 - 5_000, poolParams, async () => {
-          await twamm.modifyLongTermOrder(orderKey, MIN_DELTA)
+          await twamm.updateLongTermOrder(orderKey, MIN_DELTA)
         })
 
         const order = await twamm.getOrder(orderKey)
@@ -468,11 +468,11 @@ describe('TWAMM', () => {
 
     it('reverts if you cancel after the expiration', async () => {
       await setNextBlocktime(timestampInterval3)
-      expect(twamm.modifyLongTermOrder(orderKey, MIN_DELTA)).to.be.reverted
+      expect(twamm.updateLongTermOrder(orderKey, MIN_DELTA)).to.be.reverted
     })
 
     it('gas', async () => {
-      await snapshotGasCost(twamm.modifyLongTermOrder(orderKey, MIN_DELTA))
+      await snapshotGasCost(twamm.updateLongTermOrder(orderKey, MIN_DELTA))
     })
   })
 
@@ -692,7 +692,7 @@ describe('TWAMM', () => {
       // calls modify order to cache the earnings as uncollected
       await executeTwammAndThen(expiration - EXPIRATION_INTERVAL / 2, poolParams, async () => {
         // cache uncollected earnings with modify order
-        await twamm.modifyLongTermOrder(orderKey, 0)
+        await twamm.updateLongTermOrder(orderKey, 0)
       })
 
       const uncollectedEarnings = (await twamm.getOrder(orderKey)).uncollectedEarningsAmount
@@ -732,8 +732,8 @@ describe('TWAMM', () => {
       await executeTwammAndThen(oneQuarterTime, poolParams, async () => {
         // cache uncollected earnings and modify order to have 1.8 more, total 3.3 remaining
         // increase the other order so it has something to trade against
-        await twamm.modifyLongTermOrder(orderKey, expandTo18Decimals(1.8))
-        await twamm.modifyLongTermOrder(counterOrderKey, expandTo18Decimals(1.8))
+        await twamm.updateLongTermOrder(orderKey, expandTo18Decimals(1.8))
+        await twamm.updateLongTermOrder(counterOrderKey, expandTo18Decimals(1.8))
       })
 
       const orderAfter = await twamm.getOrder(orderKey)

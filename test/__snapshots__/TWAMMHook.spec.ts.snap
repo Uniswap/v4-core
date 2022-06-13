@@ -10,49 +10,42 @@ Object {
 exports[`TWAMM Hook #executeTWAMMOrders when both order pools are selling gas crossing 1 initialized tick 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 532561,
+  "gasUsed": 532544,
 }
 `;
 
 exports[`TWAMM Hook #executeTWAMMOrders when both order pools are selling gas crossing 2 initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 645703,
+  "gasUsed": 645681,
 }
 `;
 
 exports[`TWAMM Hook #executeTWAMMOrders when both order pools are selling gas with no initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 432625,
+  "gasUsed": 432608,
 }
 `;
 
 exports[`TWAMM Hook #executeTWAMMOrders when only one pool is selling gas crossing 1 initialized tick 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 343389,
+  "gasUsed": 343372,
 }
 `;
 
 exports[`TWAMM Hook #executeTWAMMOrders when only one pool is selling gas crossing 2 initialized ticks 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 366260,
+  "gasUsed": 366242,
 }
 `;
 
 exports[`TWAMM Hook #executeTWAMMOrders when only one pool is selling gas crossing no initialized tick 1`] = `
 Object {
   "calldataByteLength": 164,
-  "gasUsed": 318241,
-}
-`;
-
-exports[`TWAMM Hook #modifyLongTermOrder gas 1`] = `
-Object {
-  "calldataByteLength": 292,
-  "gasUsed": 252408,
+  "gasUsed": 318224,
 }
 `;
 
@@ -60,5 +53,12 @@ exports[`TWAMM Hook #submitLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 292,
   "gasUsed": 164177,
+}
+`;
+
+exports[`TWAMM Hook #updateLongTermOrder gas 1`] = `
+Object {
+  "calldataByteLength": 292,
+  "gasUsed": 252387,
 }
 `;

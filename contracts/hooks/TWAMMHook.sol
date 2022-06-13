@@ -142,7 +142,7 @@ contract TWAMMHook is BaseHook {
     /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
     ///    min value to remove full amount from order.
     /// @return finalAmountDelta the amount of the order's sell token added or removed from the order
-    function modifyLongTermOrder(
+    function updateLongTermOrder(
         IPoolManager.PoolKey memory key,
         TWAMM.OrderKey memory orderKey,
         int256 amountDelta
@@ -150,7 +150,7 @@ contract TWAMMHook is BaseHook {
         executeTWAMMOrders(key);
 
         // This call reverts if the caller is not the owner of the order
-        finalAmountDelta = getTWAMM(key).modifyLongTermOrder(orderKey, amountDelta);
+        finalAmountDelta = getTWAMM(key).updateLongTermOrder(orderKey, amountDelta);
 
         IERC20Minimal sellToken = orderKey.zeroForOne ? key.token0 : key.token1;
 
