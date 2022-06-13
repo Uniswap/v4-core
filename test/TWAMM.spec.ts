@@ -471,8 +471,16 @@ describe.only('TWAMM', () => {
       expect(twamm.updateLongTermOrder(orderKey, MIN_DELTA)).to.be.reverted
     })
 
-    it('gas', async () => {
+    it('gas subtracting', async () => {
       await snapshotGasCost(twamm.updateLongTermOrder(orderKey, MIN_DELTA))
+    })
+
+    it('gas adding', async () => {
+      await snapshotGasCost(twamm.updateLongTermOrder(orderKey, expandTo18Decimals(1)))
+    })
+
+    it('gas no delta', async () => {
+      await snapshotGasCost(twamm.updateLongTermOrder(orderKey, 0))
     })
   })
 

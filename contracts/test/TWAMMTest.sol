@@ -49,11 +49,8 @@ contract TWAMMTest {
         }
     }
 
-    function updateLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)
-        external
-        returns (int256 finalAmountDelta)
-    {
-        finalAmountDelta = twamm.updateLongTermOrder(orderKey, amountDelta);
+    function updateLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta) external {
+        twamm.updateLongTermOrder(orderKey, amountDelta);
     }
 
     // dont return true if the init tick is directly after the target price

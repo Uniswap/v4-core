@@ -130,10 +130,7 @@ library TWAMM {
             orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRate;
         }
 
-        self.orders[orderId] = Order({
-            sellRate: sellRate,
-            unclaimedEarningsFactor: orderPool.earningsFactorCurrent
-        });
+        self.orders[orderId] = Order({sellRate: sellRate, unclaimedEarningsFactor: orderPool.earningsFactorCurrent});
     }
 
     /// @notice Modify an existing long term order with a new sellAmount
@@ -142,20 +139,19 @@ library TWAMM {
     /// @param orderKey The OrderKey for which to identify the order
     /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
     ///    -1 to remove full amount from order.
-    /// @return finalAmountDelta the amount of the order's sell token to be added or removed from the order
     function updateLongTermOrder(
         State storage self,
         OrderKey memory orderKey,
         int256 amountDelta
-    ) internal returns (int256 finalAmountDelta) {
+    ) internal {
         Order storage order = getOrder(self, orderKey);
-        mapping(address => uint256) storage buyTokensOwed = orderKey.zeroForOne ? self.tokens0Owed : self.tokens1Owed;
 
         if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
         if (order.sellRate == 0) revert OrderDoesNotExist(orderKey);
         if (amountDelta != 0 && orderKey.expiration <= block.timestamp) revert OrderAlreadyCompleted(orderKey);
 
         OrderPool.State storage orderPool = orderKey.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
+        mapping(address => uint256) storage buyTokensOwed = orderKey.zeroForOne ? self.tokens1Owed : self.tokens0Owed;
 
         unchecked {
             // cache existing earnings
@@ -164,30 +160,32 @@ library TWAMM {
             order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
 
             if (orderKey.expiration <= block.timestamp) {
-              delete self.orders[_orderId(orderKey)];
-              return 0;
+                delete self.orders[_orderId(orderKey)];
             }
 
             if (amountDelta != 0) {
-              uint256 duration = orderKey.expiration - block.timestamp;
-              uint256 unsoldAmount = order.sellRate * duration;
-              if (amountDelta == MIN_DELTA) amountDelta = -(unsoldAmount.toInt256());
-              int256 newSellAmount = unsoldAmount.toInt256() + amountDelta;
-              if (newSellAmount < 0) revert InvalidAmountDelta(orderKey, unsoldAmount, amountDelta);
+                uint256 duration = orderKey.expiration - block.timestamp;
+                uint256 unsoldAmount = order.sellRate * duration;
+                if (amountDelta == MIN_DELTA) amountDelta = -(unsoldAmount.toInt256());
+                int256 newSellAmount = unsoldAmount.toInt256() + amountDelta;
+                if (newSellAmount < 0) revert InvalidAmountDelta(orderKey, unsoldAmount, amountDelta);
 
-              uint256 newSellRate = uint256(newSellAmount) / duration;
+                uint256 newSellRate = uint256(newSellAmount) / duration;
 
-              if (amountDelta < 0) {
-                  uint256 sellRateDelta = order.sellRate - newSellRate;
-                  orderPool.sellRateCurrent -= sellRateDelta;
-                  orderPool.sellRateEndingAtInterval[orderKey.expiration] -= sellRateDelta;
-              } else {
-                  uint256 sellRateDelta = newSellRate - order.sellRate;
-                  orderPool.sellRateCurrent += sellRateDelta;
-                  orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRateDelta;
-              }
-              order.sellRate = newSellRate;
-              finalAmountDelta = amountDelta;
+                if (amountDelta < 0) {
+                    uint256 sellRateDelta = order.sellRate - newSellRate;
+                    orderPool.sellRateCurrent -= sellRateDelta;
+                    orderPool.sellRateEndingAtInterval[orderKey.expiration] -= sellRateDelta;
+                    mapping(address => uint256) storage sellTokensOwed = orderKey.zeroForOne
+                        ? self.tokens0Owed
+                        : self.tokens1Owed;
+                    sellTokensOwed[orderKey.owner] += uint256(-amountDelta);
+                } else {
+                    uint256 sellRateDelta = newSellRate - order.sellRate;
+                    orderPool.sellRateCurrent += sellRateDelta;
+                    orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRateDelta;
+                }
+                order.sellRate = newSellRate;
             }
         }
     }
