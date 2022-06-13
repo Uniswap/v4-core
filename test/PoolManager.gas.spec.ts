@@ -1,6 +1,6 @@
 import { ethers, waffle } from 'hardhat'
 import { Wallet } from 'ethers'
-import { PoolManager, PoolSwapTest, PoolModifyPositionTest } from '../typechain'
+import { PoolManager, PoolSwapTest, PoolDonateTest, PoolModifyPositionTest } from '../typechain'
 import { expect } from './shared/expect'
 import { ADDRESS_ZERO } from './shared/constants'
 
@@ -15,6 +15,7 @@ import {
   TICK_SPACINGS,
   SwapFunction,
   ModifyPositionFunction,
+  DonateFunction,
   getMaxTick,
   MaxUint128,
   SwapToPriceFunction,
@@ -54,15 +55,17 @@ describe('PoolManager gas tests', () => {
 
     const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
+    const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
     const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
     const CONTROLLER_GAS_LIMIT = 50000
     const manager = (await singletonPoolFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
 
     const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
+    const donateTest = (await donateTestFactory.deploy(manager.address)) as PoolDonateTest
     const modifyPositionTest = (await mintTestFactory.deploy(manager.address)) as PoolModifyPositionTest
 
     for (const token of [token0, token1]) {
-      for (const spender of [swapTest, modifyPositionTest]) {
+      for (const spender of [swapTest, donateTest, modifyPositionTest]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
       }
     }
@@ -124,6 +127,9 @@ describe('PoolManager gas tests', () => {
         liquidityDelta,
       })
     }
+    const donate: DonateFunction = (amount0, amount1) => {
+      return donateTest.donate(poolKey, amount0, amount1)
+    }
     const getSlot0 = async () => {
       const { slot0 } = await manager.pools(getPoolId(poolKey))
       return slot0
@@ -141,7 +147,7 @@ describe('PoolManager gas tests', () => {
     expect(tick).to.eq(startingTick)
     expect(sqrtPriceX96).to.eq(startingPrice)
 
-    return { manager, getSlot0, poolKey, swapExact0For1, modifyPosition, swapToHigherPrice, swapToLowerPrice }
+    return { manager, getSlot0, poolKey, swapExact0For1, modifyPosition, donate, swapToHigherPrice, swapToLowerPrice }
   }
 
   let swapExact0For1: SwapFunction
@@ -149,11 +155,12 @@ describe('PoolManager gas tests', () => {
   let swapToLowerPrice: SwapToPriceFunction
   let manager: PoolManager
   let modifyPosition: ModifyPositionFunction
+  let donate: DonateFunction
   let getSlot0: AsyncReturnType<typeof gasTestFixture>['getSlot0']
   let poolKey: AsyncReturnType<typeof gasTestFixture>['poolKey']
 
   beforeEach('load the fixture', async () => {
-    ;({ swapExact0For1, manager, modifyPosition, swapToHigherPrice, swapToLowerPrice, getSlot0, poolKey } =
+    ;({ swapExact0For1, manager, modifyPosition, donate, swapToHigherPrice, swapToLowerPrice, getSlot0, poolKey } =
       await loadFixture(gasTestFixture))
   })
 
@@ -264,6 +271,16 @@ describe('PoolManager gas tests', () => {
         })
       })
     }
+  })
+
+  describe('#donate', () => {
+    it('donation of 2 tokens', async () => {
+      await snapshotGasCost(donate(100, 200))
+    })
+
+    it('donation of 1 token', async () => {
+      await snapshotGasCost(donate(100, 0))
+    })
   })
 
   // describe('#burn', () => {

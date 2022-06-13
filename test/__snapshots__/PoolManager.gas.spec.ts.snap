@@ -1,5 +1,19 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`PoolManager gas tests #donate donation of 1 token 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 150956,
+}
+`;
+
+exports[`PoolManager gas tests #donate donation of 2 tokens 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 218046,
+}
+`;
+
 exports[`PoolManager gas tests #initialize initialize pool with no hooks and no protocol fee 1`] = `
 Object {
   "calldataByteLength": 196,

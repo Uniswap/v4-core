@@ -82,6 +82,7 @@ export type ModifyPositionFunction = (
   tickUpper: BigNumberish,
   liquidityDelta: BigNumberish
 ) => Promise<ContractTransaction>
+export type DonateFunction = (amount0: BigNumberish, amount1: BigNumberish) => Promise<ContractTransaction>
 
 interface HookMask {
   beforeInitialize: boolean
