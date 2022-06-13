@@ -49,8 +49,8 @@ contract TWAMMTest {
         }
     }
 
-    function updateLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta) external {
-        twamm.updateLongTermOrder(orderKey, amountDelta);
+    function updateLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta) external returns (uint256 buyTokensOwed, uint256 sellTokensOwed) {
+        return twamm.updateLongTermOrder(orderKey, amountDelta);
     }
 
     // dont return true if the init tick is directly after the target price
@@ -65,10 +65,6 @@ contract TWAMMTest {
             poolKey,
             nextSqrtPriceX96
         );
-    }
-
-    function claimEarnings(TWAMM.OrderKey calldata orderKey) external returns (uint256 earningsAmount) {
-        earningsAmount = twamm.claimEarnings(orderKey);
     }
 
     function executeTWAMMOrders(IPoolManager.PoolKey calldata poolKey, TWAMM.PoolParamsOnExecute memory poolParams)
@@ -159,8 +155,6 @@ contract TWAMMTest {
     function getTickNetLiquidity(IPoolManager.PoolKey memory, int24 tick) external view returns (Tick.Info memory) {
         return mockTicks[tick];
     }
-
-    using TickBitmap for mapping(int16 => uint256);
 
     function getNextInitializedTickWithinOneWord(
         IPoolManager.PoolKey memory key,

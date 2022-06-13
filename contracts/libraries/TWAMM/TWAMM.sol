@@ -143,7 +143,7 @@ library TWAMM {
         State storage self,
         OrderKey memory orderKey,
         int256 amountDelta
-    ) internal {
+    ) internal returns (uint256 buyTokensOwed, uint256 sellTokensOwed) {
         Order storage order = getOrder(self, orderKey);
 
         if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
@@ -151,12 +151,10 @@ library TWAMM {
         if (amountDelta != 0 && orderKey.expiration <= block.timestamp) revert OrderAlreadyCompleted(orderKey);
 
         OrderPool.State storage orderPool = orderKey.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
-        mapping(address => uint256) storage buyTokensOwed = orderKey.zeroForOne ? self.tokens1Owed : self.tokens0Owed;
 
         unchecked {
-            // cache existing earnings
             uint256 earningsFactor = orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor;
-            buyTokensOwed[orderKey.owner] += (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
+            buyTokensOwed = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
             order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
 
             if (orderKey.expiration <= block.timestamp) {
@@ -176,45 +174,17 @@ library TWAMM {
                     uint256 sellRateDelta = order.sellRate - newSellRate;
                     orderPool.sellRateCurrent -= sellRateDelta;
                     orderPool.sellRateEndingAtInterval[orderKey.expiration] -= sellRateDelta;
-                    mapping(address => uint256) storage sellTokensOwed = orderKey.zeroForOne
-                        ? self.tokens0Owed
-                        : self.tokens1Owed;
-                    sellTokensOwed[orderKey.owner] += uint256(-amountDelta);
+                    sellTokensOwed = uint256(-amountDelta);
                 } else {
                     uint256 sellRateDelta = newSellRate - order.sellRate;
                     orderPool.sellRateCurrent += sellRateDelta;
                     orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRateDelta;
                 }
-                order.sellRate = newSellRate;
-            }
-        }
-    }
-
-    /// @notice Claim earnings from an ongoing or expired order
-    /// @dev executeTWAMMOrders must be executed up to current timestamp before calling claimEarnings
-    /// @param orderKey The key of the order to be claimed
-    function claimEarnings(State storage self, OrderKey memory orderKey) internal returns (uint256 earningsAmount) {
-        bytes32 orderId = _orderId(orderKey);
-        Order storage order = self.orders[orderId];
-
-        if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
-        if (order.sellRate == 0) revert OrderDoesNotExist(orderKey);
-
-        OrderPool.State storage orderPool = orderKey.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
-        mapping(address => uint256) storage buyTokensOwed = orderKey.zeroForOne ? self.tokens0Owed : self.tokens1Owed;
-
-        unchecked {
-            if (block.timestamp >= orderKey.expiration) {
-                uint256 earningsFactor = orderPool.earningsFactorAtInterval[orderKey.expiration] -
-                    order.unclaimedEarningsFactor;
-                earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
-                earningsAmount += buyTokensOwed[orderKey.owner];
-                delete self.orders[orderId];
-            } else {
-                uint256 earningsFactor = orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor;
-                earningsAmount = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
-                earningsAmount += buyTokensOwed[orderKey.owner];
-                order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
+                if (newSellRate == 0) {
+                  delete self.orders[_orderId(orderKey)];
+                } else {
+                  order.sellRate = newSellRate;
+                }
             }
         }
     }

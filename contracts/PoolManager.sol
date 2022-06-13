@@ -72,6 +72,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return _getPool(key).liquidity;
     }
 
+    /// @inheritdoc IPoolManager
     function getLiquidity(
         IPoolManager.PoolKey calldata key,
         address owner,
@@ -86,6 +87,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return _getPool(key).ticks[tick].liquidityNet;
     }
 
+    /// @inheritdoc IPoolManager
     function getNextInitializedTickWithinOneWord(
         IPoolManager.PoolKey memory key,
         int24 tick,
