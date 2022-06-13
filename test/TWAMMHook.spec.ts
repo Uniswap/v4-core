@@ -217,13 +217,10 @@ describe('TWAMM Hook', () => {
       }
 
       const nullOrder = await twamm.getOrder(poolKey, orderKey)
-      // expect(nullOrder.exists).to.eq(false)
 
       await twamm.submitLongTermOrder(poolKey, orderKey, expandTo18Decimals(10))
       const order = await twamm.getOrder(poolKey, orderKey)
-      // expect(order.exists).to.eq(true)
       expect(order.earningsFactorLast).to.eq(0)
-      // expect(order.uncollectedEarningsAmount).to.eq(0)
     })
 
     it('stores the correct earningsFactorLast if past earnings have been processed', async () => {
@@ -239,13 +236,11 @@ describe('TWAMM Hook', () => {
         expiration: nIntervalsFrom(latestTimestamp, 10_000, 5),
       }
       await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10))
-      await setNextBlocktime(expiration)
+      await setNextBlocktime(expiration + 100)
       await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))
       const order = await twamm.getOrder(poolKey, orderKey1)
 
-      // expect(order.exists).to.eq(true)
-      expect(order.earningsFactorLast).to.be.gt(0)
-      // expect(order.uncollectedEarningsAmount).to.eq(0)
+      expect(order.earningsFactorLast).to.eq((await twamm.getOrderPool(poolKey, true)).earningsFactorCurrent)
     })
 
     it('gas', async () => {
@@ -378,9 +373,7 @@ describe('TWAMM Hook', () => {
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
 
         expect(order.earningsFactorLast).to.eq(earningsFactorCurrent)
-        // expect(order.uncollectedEarningsAmount).to.eq(orderAmount.div(2))
         expect(order.sellRate).to.eq(orderAmount.div(40_000).add(orderAmount.div(20_000)))
-        // expect(order.exists).to.eq(true)
         expect(await twamm.getTokensOwed(poolKey.token0, orderKey0.owner)).to.eq(orderAmount.div(2))
         expect(await twamm.getTokensOwed(poolKey.token1, orderKey0.owner)).to.eq(0)
       })

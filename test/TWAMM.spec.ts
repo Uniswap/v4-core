@@ -252,8 +252,6 @@ describe('TWAMM', () => {
       const sellRate = amountIn.div(expiration - latestTimestamp)
 
       const newOrder = await twamm.getOrder(orderKey)
-
-      // expect(newOrder.exists).to.equal(true)
       expect(newOrder.sellRate).to.equal(sellRate)
     })
 
