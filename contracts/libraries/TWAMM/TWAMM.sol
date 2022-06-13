@@ -32,7 +32,7 @@ library TWAMM {
 
     /// @notice Thrown when trying to cancel an already completed order
     /// @param orderKey The orderKey
-    error OrderAlreadyCompleted(OrderKey orderKey);
+    error CannotModifyCompletedOrder(OrderKey orderKey);
 
     /// @notice Thrown when trying to submit an order with an expiration that isn't on the interval.
     /// @param expiration The expiration timestamp of the order
@@ -148,7 +148,7 @@ library TWAMM {
 
         if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
         if (order.sellRate == 0) revert OrderDoesNotExist(orderKey);
-        if (amountDelta != 0 && orderKey.expiration <= block.timestamp) revert OrderAlreadyCompleted(orderKey);
+        if (amountDelta != 0 && orderKey.expiration <= block.timestamp) revert CannotModifyCompletedOrder(orderKey);
 
         OrderPool.State storage orderPool = orderKey.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
