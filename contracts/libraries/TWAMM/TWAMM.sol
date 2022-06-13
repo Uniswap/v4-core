@@ -16,13 +16,14 @@ import {SafeCast} from '../SafeCast.sol';
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
     using OrderPool for OrderPool.State;
-    using TickMath for *;
-    using SafeCast for *;
+    using TickMath for int24;
+    using TickMath for uint160;
+    using SafeCast for uint256;
     using TickBitmap for mapping(int16 => uint256);
 
-    int256 constant MIN_DELTA = -1;
-    bool constant ZERO_FOR_ONE = true;
-    bool constant ONE_FOR_ZERO = false;
+    int256 internal constant MIN_DELTA = -1;
+    bool internal constant ZERO_FOR_ONE = true;
+    bool internal constant ONE_FOR_ZERO = false;
 
     /// @notice Thrown when account other than owner attempts to interact with an order
     /// @param owner The owner of the order
@@ -88,10 +89,10 @@ library TWAMM {
 
     /// @notice Information associated with a long term order
     /// @member sellRate Amount of tokens sold per interval
-    /// @member unclaimedEarningsFactor The accrued earnings factor from which to start claiming owed earnings for this order
+    /// @member earningsFactorLast The accrued earnings factor from which to start claiming owed earnings for this order
     struct Order {
         uint256 sellRate;
-        uint256 unclaimedEarningsFactor;
+        uint256 earningsFactorLast;
     }
 
     /// @notice Initialize TWAMM state
@@ -115,8 +116,9 @@ library TWAMM {
         uint256 sellRate,
         uint256 expirationInterval
     ) internal returns (bytes32 orderId) {
+        if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
         if (self.lastVirtualOrderTimestamp == 0) revert NotInitialized();
-        if (orderKey.expiration < block.timestamp) revert ExpirationLessThanBlocktime(orderKey.expiration);
+        if (orderKey.expiration <= block.timestamp) revert ExpirationLessThanBlocktime(orderKey.expiration);
         if (sellRate == 0) revert SellRateCannotBeZero();
         if (orderKey.expiration % expirationInterval != 0) revert ExpirationNotOnInterval(orderKey.expiration);
 
@@ -130,7 +132,7 @@ library TWAMM {
             orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRate;
         }
 
-        self.orders[orderId] = Order({sellRate: sellRate, unclaimedEarningsFactor: orderPool.earningsFactorCurrent});
+        self.orders[orderId] = Order({sellRate: sellRate, earningsFactorLast: orderPool.earningsFactorCurrent});
     }
 
     /// @notice Modify an existing long term order with a new sellAmount
@@ -153,9 +155,9 @@ library TWAMM {
         OrderPool.State storage orderPool = orderKey.zeroForOne ? self.orderPool0For1 : self.orderPool1For0;
 
         unchecked {
-            uint256 earningsFactor = orderPool.earningsFactorCurrent - order.unclaimedEarningsFactor;
+            uint256 earningsFactor = orderPool.earningsFactorCurrent - order.earningsFactorLast;
             buyTokensOwed = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
-            order.unclaimedEarningsFactor = orderPool.earningsFactorCurrent;
+            order.earningsFactorLast = orderPool.earningsFactorCurrent;
 
             if (orderKey.expiration <= block.timestamp) {
                 delete self.orders[_orderId(orderKey)];
@@ -181,9 +183,9 @@ library TWAMM {
                     orderPool.sellRateEndingAtInterval[orderKey.expiration] += sellRateDelta;
                 }
                 if (newSellRate == 0) {
-                  delete self.orders[_orderId(orderKey)];
+                    delete self.orders[_orderId(orderKey)];
                 } else {
-                  order.sellRate = newSellRate;
+                    order.sellRate = newSellRate;
                 }
             }
         }

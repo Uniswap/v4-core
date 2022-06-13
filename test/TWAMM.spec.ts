@@ -432,7 +432,10 @@ describe('TWAMM', () => {
         setNextBlocktime(timestampInterval2 - 5_000)
         await twamm.executeTWAMMOrders(POOL_KEY, poolParams)
 
-        const { buyTokensOwed, sellTokensOwed } = await twamm.callStatic.updateLongTermOrder(orderKey, expandTo18Decimals(1))
+        const { buyTokensOwed, sellTokensOwed } = await twamm.callStatic.updateLongTermOrder(
+          orderKey,
+          expandTo18Decimals(1)
+        )
 
         expect(buyTokensOwed).to.eq(sellAmount.div(2))
         // since we're adding, no sell tokens are owed to the owner
@@ -451,7 +454,7 @@ describe('TWAMM', () => {
 
         const orderAfter = await twamm.getOrder(orderKey)
         expect(orderAfter.sellRate).to.eq(0)
-        expect(orderAfter.unclaimedEarningsFactor).to.eq(0)
+        expect(orderAfter.earningsFactorLast).to.eq(0)
       })
 
       it('claims half the earnings balance and returns half the original sell balance', async () => {
@@ -715,7 +718,7 @@ describe('TWAMM', () => {
             },
             halfSellAmount
           )
-          await twamm.submitLongTermOrder(
+          await twamm.connect(other).submitLongTermOrder(
             {
               zeroForOne: true,
               owner: other.address,

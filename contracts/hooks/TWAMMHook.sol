@@ -62,12 +62,8 @@ contract TWAMMHook is BaseHook {
                 : (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
     }
 
-    function getTokensOwed(address token, address owner)
-        external
-        view
-        returns (uint256 amount)
-    {
-      return tokensOwed[token][owner];
+    function getTokensOwed(address token, address owner) external view returns (uint256 amount) {
+        return tokensOwed[token][owner];
     }
 
     function beforeInitialize(
@@ -139,7 +135,7 @@ contract TWAMMHook is BaseHook {
             uint256 sellRate = amountIn / duration;
             orderId = twamm.submitLongTermOrder(orderKey, sellRate, expirationInterval);
             IERC20Minimal(orderKey.zeroForOne ? key.token0 : key.token1).safeTransferFrom(
-                orderKey.owner,
+                msg.sender,
                 address(this),
                 sellRate * duration
             );
@@ -155,17 +151,17 @@ contract TWAMMHook is BaseHook {
         IPoolManager.PoolKey memory key,
         TWAMM.OrderKey memory orderKey,
         int256 amountDelta
-    ) external returns (uint256 tokens0Owed, uint256 tokens1Owed){
+    ) external returns (uint256 tokens0Owed, uint256 tokens1Owed) {
         executeTWAMMOrders(key);
         // This call reverts if the caller is not the owner of the order
         (uint256 buyTokensOwed, uint256 sellTokensOwed) = getTWAMM(key).updateLongTermOrder(orderKey, amountDelta);
 
         if (orderKey.zeroForOne) {
-          tokens0Owed += sellTokensOwed;
-          tokens1Owed += buyTokensOwed;
+            tokens0Owed += sellTokensOwed;
+            tokens1Owed += buyTokensOwed;
         } else {
-          tokens0Owed += buyTokensOwed;
-          tokens1Owed += sellTokensOwed;
+            tokens0Owed += buyTokensOwed;
+            tokens1Owed += sellTokensOwed;
         }
 
         tokensOwed[address(key.token0)][orderKey.owner] += tokens0Owed;
@@ -177,10 +173,11 @@ contract TWAMMHook is BaseHook {
     /// @param to The receipient of the claim
     /// @param amountRequested The amount of tokens requested to claim
     /// @return amountTransferred The total token amount to be collected
-    function claimTokens(IERC20Minimal token, address to, uint256 amountRequested)
-        external
-        returns (uint256 amountTransferred)
-    {
+    function claimTokens(
+        IERC20Minimal token,
+        address to,
+        uint256 amountRequested
+    ) external returns (uint256 amountTransferred) {
         uint256 currentBalance = token.balanceOf(address(this));
         amountTransferred = tokensOwed[address(token)][msg.sender];
         if (amountRequested != 0 && amountRequested < amountTransferred) amountTransferred = amountRequested;
