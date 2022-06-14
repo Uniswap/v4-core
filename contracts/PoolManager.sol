@@ -99,7 +99,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        tick = _getPool(key).initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
+        bytes32 id = key.toId();
+        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(id));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
@@ -378,17 +379,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         emit ProtocolFeeControllerUpdated(address(controller));
     }
 
-    function setPoolProtocolFee(IPoolManager.PoolKey memory key) external {
-        bytes32 poolHash = keccak256(abi.encode(key));
-        uint8 newProtocolFee = fetchPoolProtocolFee(key);
+    function setPoolProtocolFee(bytes32 id) external {
+        uint8 newProtocolFee = fetchPoolProtocolFee(id);
 
-        pools[poolHash].setProtocolFee(newProtocolFee);
-        emit PoolProtocolFeeUpdated(poolHash, newProtocolFee);
+        pools[id].setProtocolFee(newProtocolFee);
+        emit PoolProtocolFeeUpdated(id, newProtocolFee);
     }
 
-    function fetchPoolProtocolFee(IPoolManager.PoolKey memory key) internal view returns (uint8 protocolFee) {
+    function fetchPoolProtocolFee(bytes32 id) internal view returns (uint8 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
-            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (
+            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(id) returns (
                 uint8 updatedProtocolFee
             ) {
                 protocolFee = updatedProtocolFee;

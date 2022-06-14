@@ -7,12 +7,12 @@ import {IPoolManager} from '../interfaces/IPoolManager.sol';
 contract ProtocolFeeControllerTest is IProtocolFeeController {
     mapping(bytes32 => uint8) public feeForPool;
 
-    function protocolFeeForPool(IPoolManager.PoolKey memory key) external view returns (uint8) {
-        return feeForPool[keccak256(abi.encode(key))];
+    function protocolFeeForPool(bytes32 id) external view returns (uint8) {
+        return feeForPool[id];
     }
 
     // for tests to set pool protocol fees
-    function setFeeForPool(bytes32 key, uint8 fee) external {
-        feeForPool[key] = fee;
+    function setFeeForPool(bytes32 id, uint8 fee) external {
+        feeForPool[id] = fee;
     }
 }
