@@ -131,8 +131,7 @@ describe('PoolManager gas tests', () => {
       return donateTest.donate(poolKey, amount0, amount1)
     }
     const getSlot0 = async () => {
-      const { slot0 } = await manager.pools(getPoolId(poolKey))
-      return slot0
+      return await manager.getSlot0(getPoolId(poolKey))
     }
 
     await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))

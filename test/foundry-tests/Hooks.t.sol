@@ -29,15 +29,15 @@ contract HooksTest is Test, Deployers {
         MockHooks impl = new MockHooks();
         vm.etch(ALL_HOOKS_ADDRESS, address(impl).code);
         mockHooks = MockHooks(ALL_HOOKS_ADDRESS);
-        (manager, key) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        (manager, key, ) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
         modifyPositionRouter = new PoolModifyPositionTest(IPoolManager(address(manager)));
         swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
         donateRouter = new PoolDonateTest(IPoolManager(address(manager)));
     }
 
     function testInitializeSucceedsWithHook() public {
-        (PoolManager _manager, IPoolManager.PoolKey memory _key) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
-        (uint160 sqrtPriceX96, , ) = _manager.getSlot0(_key);
+        (PoolManager _manager, , bytes32 id) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        (uint160 sqrtPriceX96, , ) = _manager.getSlot0(id);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
     }
 

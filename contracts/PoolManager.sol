@@ -19,9 +19,11 @@ import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
 
 import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
+import {PoolId} from './libraries/PoolId.sol';
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
+    using PoolId for PoolKey;
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
@@ -45,12 +47,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         controllerGasLimit = _controllerGasLimit;
     }
 
-    function _getPool(IPoolManager.PoolKey memory key) private view returns (Pool.State storage) {
-        return pools[keccak256(abi.encode(key))];
+    function getPoolId(PoolKey calldata key) external pure returns (bytes32) {
+        return key.toId();
+    }
+
+    function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
+        return pools[key.toId()];
     }
 
     /// @inheritdoc IPoolManager
-    function getSlot0(IPoolManager.PoolKey memory key)
+    function getSlot0(bytes32 id)
         external
         view
         override
@@ -60,28 +66,28 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             uint8 protocolFee
         )
     {
-        Pool.Slot0 memory slot0 = _getPool(key).slot0;
+        Pool.Slot0 memory slot0 = pools[id].slot0;
 
         return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee);
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(IPoolManager.PoolKey calldata key) external view override returns (uint128 liquidity) {
-        return _getPool(key).liquidity;
+    function getLiquidity(bytes32 id) external view override returns (uint128 liquidity) {
+        return pools[id].liquidity;
     }
 
     /// @inheritdoc IPoolManager
     function getLiquidity(
-        IPoolManager.PoolKey calldata key,
+        bytes32 id,
         address owner,
         int24 tickLower,
         int24 tickUpper
     ) external view override returns (uint128 liquidity) {
-        return _getPool(key).positions.get(owner, tickLower, tickUpper).liquidity;
+        return pools[id].positions.get(owner, tickLower, tickUpper).liquidity;
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
@@ -93,7 +99,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        tick = _getPool(key).initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
+        bytes32 id = key.toId();
+        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(id));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
@@ -209,7 +216,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function modifyPosition(IPoolManager.PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
+    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
         external
         override
         noDelegateCall
@@ -242,7 +249,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function swap(IPoolManager.PoolKey memory key, IPoolManager.SwapParams memory params)
+    function swap(PoolKey memory key, IPoolManager.SwapParams memory params)
         external
         override
         noDelegateCall
@@ -282,7 +289,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @inheritdoc IPoolManager
     function donate(
-        IPoolManager.PoolKey memory key,
+        PoolKey memory key,
         uint256 amount0,
         uint256 amount1
     ) external override noDelegateCall onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
@@ -372,17 +379,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         emit ProtocolFeeControllerUpdated(address(controller));
     }
 
-    function setPoolProtocolFee(IPoolManager.PoolKey memory key) external {
-        bytes32 poolHash = keccak256(abi.encode(key));
-        uint8 newProtocolFee = fetchPoolProtocolFee(key);
+    function setPoolProtocolFee(bytes32 id) external {
+        uint8 newProtocolFee = fetchPoolProtocolFee(id);
 
-        pools[poolHash].setProtocolFee(newProtocolFee);
-        emit PoolProtocolFeeUpdated(poolHash, newProtocolFee);
+        pools[id].setProtocolFee(newProtocolFee);
+        emit PoolProtocolFeeUpdated(id, newProtocolFee);
     }
 
-    function fetchPoolProtocolFee(IPoolManager.PoolKey memory key) internal view returns (uint8 protocolFee) {
+    function fetchPoolProtocolFee(bytes32 id) internal view returns (uint8 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
-            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (
+            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(id) returns (
                 uint8 updatedProtocolFee
             ) {
                 protocolFee = updatedProtocolFee;

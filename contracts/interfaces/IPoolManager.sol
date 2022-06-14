@@ -51,11 +51,12 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
-    // @notice Given a token address, returns the protocol fees accrued in that token
-    function protocolFeesAccrued(IERC20Minimal) external view returns (uint256);
+    /// @notice Returns the pool ID for the given pool key
+    /// @dev Should be computed using the PoolId library, but present for use in testing
+    function getPoolId(PoolKey calldata key) external pure returns (bytes32);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(PoolKey memory key)
+    function getSlot0(bytes32 id)
         external
         view
         returns (
@@ -65,15 +66,18 @@ interface IPoolManager is IERC1155 {
         );
 
     /// @notice Get the current value of liquidity of the given pool
-    function getLiquidity(IPoolManager.PoolKey calldata key) external view returns (uint128 liquidity);
+    function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
 
     /// @notice Get the current value of liquidity for the specified pool and position
     function getLiquidity(
-        IPoolManager.PoolKey calldata key,
+        bytes32 id,
         address owner,
         int24 tickLower,
         int24 tickUpper
     ) external view returns (uint128 liquidity);
+
+    // @notice Given a token address, returns the protocol fees accrued in that token
+    function protocolFeesAccrued(IERC20Minimal) external view returns (uint256);
 
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
@@ -161,5 +165,5 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
 
-    function setPoolProtocolFee(PoolKey memory key) external;
+    function setPoolProtocolFee(bytes32 id) external;
 }
