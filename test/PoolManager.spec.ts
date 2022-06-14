@@ -186,7 +186,7 @@ describe('PoolManager', () => {
 
       await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
         .to.emit(manager, 'Initialize')
-        .withArgs(poolKey.token0, poolKey.token1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
+        .withArgs(getPoolId(poolKey), poolKey.token0, poolKey.token1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
 
       const {
         slot0: { sqrtPriceX96, protocolFee },

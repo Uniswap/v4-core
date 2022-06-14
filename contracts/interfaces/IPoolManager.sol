@@ -28,27 +28,29 @@ interface IPoolManager is IERC1155 {
     error TickSpacingTooSmall();
 
     /// @notice Emitted when a new pool is initialized
+    /// @param poolId The abi encoded hash of the pool key struct for the new pool
     /// @param token0 The first token of the pool by address sort order
     /// @param token1 The second token of the pool by address sort order
     /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     event Initialize(
+        bytes32 indexed poolId,
         IERC20Minimal indexed token0,
         IERC20Minimal indexed token1,
-        uint24 indexed fee,
+        uint24 fee,
         int24 tickSpacing,
         IHooks hooks
     );
 
     /// @notice Emitted when a liquidity position is modified
-    /// @param poolKey The abi encoded hash of the pool key struct for the pool that was modified
+    /// @param poolId The abi encoded hash of the pool key struct for the pool that was modified
     /// @param sender The address that modified the pool
     /// @param tickLower The lower tick of the position
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
     event ModifyPosition(
-        bytes32 indexed poolKey,
+        bytes32 indexed poolId,
         address indexed sender,
         int24 tickLower,
         int24 tickUpper,
@@ -56,14 +58,14 @@ interface IPoolManager is IERC1155 {
     );
 
     /// @notice Emitted for swaps between token0 and token1
-    /// @param poolKey The abi encoded hash of the pool key struct for the pool that was modified
+    /// @param poolId The abi encoded hash of the pool key struct for the pool that was modified
     /// @param sender The address that initiated the swap call, and that received the callback
     /// @param amount0 The delta of the token0 balance of the pool
     /// @param amount1 The delta of the token1 balance of the pool
     /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
-    event Swap(bytes32 indexed poolKey, address indexed sender, int256 amount0, int256 amount1, uint160 sqrtPriceX96);
+    event Swap(bytes32 indexed poolId, address indexed sender, int256 amount0, int256 amount1, uint160 sqrtPriceX96);
 
-    event PoolProtocolFeeUpdated(bytes32 poolKey, uint8 protocolFee);
+    event PoolProtocolFeeUpdated(bytes32 poolId, uint8 protocolFee);
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 

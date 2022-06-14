@@ -3,15 +3,7 @@
 exports[`PoolManager #initialize gas cost 1`] = `
 Object {
   "calldataByteLength": 196,
-<<<<<<< HEAD
-<<<<<<< HEAD
-  "gasUsed": 51461,
-=======
-  "gasUsed": 54074,
->>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
-=======
-  "gasUsed": 54117,
->>>>>>> 6b6e7c7 (fix: only hash poolId once)
+  "gasUsed": 54349,
 }
 `;
 
@@ -25,100 +17,36 @@ Object {
 exports[`PoolManager #mint gas cost 1`] = `
 Object {
   "calldataByteLength": 260,
-<<<<<<< HEAD
-<<<<<<< HEAD
-  "gasUsed": 287376,
-=======
-  "gasUsed": 289512,
->>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
-=======
-  "gasUsed": 289304,
->>>>>>> 6b6e7c7 (fix: only hash poolId once)
+  "gasUsed": 289294,
 }
 `;
 
 exports[`PoolManager #mint gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 260,
-<<<<<<< HEAD
-<<<<<<< HEAD
-  "gasUsed": 291801,
-=======
-  "gasUsed": 293931,
->>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
-=======
-  "gasUsed": 293727,
->>>>>>> 6b6e7c7 (fix: only hash poolId once)
+  "gasUsed": 293717,
 }
 `;
 
 exports[`PoolManager #swap gas cost 1`] = `
 Object {
   "calldataByteLength": 324,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  "gasUsed": 84823,
-=======
-  "gasUsed": 86711,
->>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
-=======
-  "gasUsed": 86968,
->>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
-=======
-  "gasUsed": 86752,
->>>>>>> 6b6e7c7 (fix: only hash poolId once)
+  "gasUsed": 86619,
 }
 `;
 
 exports[`PoolManager #swap gas cost for swap against liquidity 1`] = `
 Object {
   "calldataByteLength": 324,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  "gasUsed": 224316,
-=======
-  "gasUsed": 226204,
->>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
-=======
-  "gasUsed": 226461,
->>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
-=======
-  "gasUsed": 226244,
->>>>>>> 6b6e7c7 (fix: only hash poolId once)
+  "gasUsed": 226119,
 }
 `;
 
 exports[`PoolManager #swap gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 324,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  "gasUsed": 84852,
+  "gasUsed": 86648,
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `25638`;
-=======
-  "gasUsed": 86740,
-}
-`;
-
-exports[`PoolManager bytecode size 1`] = `26248`;
->>>>>>> 43d7a44 (feat: add events for initialize, swap, and modify)
-=======
-  "gasUsed": 86997,
-}
-`;
-
-exports[`PoolManager bytecode size 1`] = `26281`;
->>>>>>> 15a03f9 (feat: return sqrtPriceX96 from Pool.swap)
-=======
-  "gasUsed": 86780,
-}
-`;
-
-exports[`PoolManager bytecode size 1`] = `26152`;
->>>>>>> 6b6e7c7 (fix: only hash poolId once)
+exports[`PoolManager bytecode size 1`] = `26065`;
