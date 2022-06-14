@@ -51,7 +51,12 @@ contract TWAMMTest {
 
     function updateLongTermOrder(TWAMM.OrderKey calldata orderKey, int128 amountDelta)
         external
-        returns (uint256 buyTokensOwed, uint256 sellTokensOwed)
+        returns (
+            uint256 buyTokensOwed,
+            uint256 sellTokensOwed,
+            uint256 newSellRate,
+            uint256 earningsFactorLast
+        )
     {
         return twamm.updateLongTermOrder(orderKey, amountDelta);
     }

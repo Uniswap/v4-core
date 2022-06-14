@@ -143,7 +143,15 @@ library TWAMM {
         State storage self,
         OrderKey memory orderKey,
         int256 amountDelta
-    ) internal returns (uint256 buyTokensOwed, uint256 sellTokensOwed) {
+    )
+        internal
+        returns (
+            uint256 buyTokensOwed,
+            uint256 sellTokensOwed,
+            uint256 newSellRate,
+            uint256 earningsFactorLast
+        )
+    {
         Order storage order = getOrder(self, orderKey);
 
         if (orderKey.owner != msg.sender) revert MustBeOwner(orderKey.owner, msg.sender);
@@ -155,7 +163,8 @@ library TWAMM {
         unchecked {
             uint256 earningsFactor = orderPool.earningsFactorCurrent - order.earningsFactorLast;
             buyTokensOwed = (earningsFactor * order.sellRate) >> FixedPoint96.RESOLUTION;
-            order.earningsFactorLast = orderPool.earningsFactorCurrent;
+            earningsFactorLast = orderPool.earningsFactorCurrent;
+            order.earningsFactorLast = earningsFactorLast;
 
             if (orderKey.expiration <= block.timestamp) {
                 delete self.orders[_orderId(orderKey)];
@@ -168,7 +177,7 @@ library TWAMM {
                 int256 newSellAmount = unsoldAmount.toInt256() + amountDelta;
                 if (newSellAmount < 0) revert InvalidAmountDelta(orderKey, unsoldAmount, amountDelta);
 
-                uint256 newSellRate = uint256(newSellAmount) / duration;
+                newSellRate = uint256(newSellAmount) / duration;
 
                 if (amountDelta < 0) {
                     uint256 sellRateDelta = order.sellRate - newSellRate;

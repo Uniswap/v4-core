@@ -52,21 +52,21 @@ Object {
 exports[`TWAMM #updateLongTermOrder gas adding 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 43885,
+  "gasUsed": 43946,
 }
 `;
 
 exports[`TWAMM #updateLongTermOrder gas no delta 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 30228,
+  "gasUsed": 30294,
 }
 `;
 
 exports[`TWAMM #updateLongTermOrder gas subtracting 1`] = `
 Object {
   "calldataByteLength": 132,
-  "gasUsed": 35884,
+  "gasUsed": 35933,
 }
 `;
 

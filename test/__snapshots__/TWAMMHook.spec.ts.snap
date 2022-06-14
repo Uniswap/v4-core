@@ -52,15 +52,15 @@ Object {
 exports[`TWAMM Hook #submitLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 292,
-  "gasUsed": 139677,
+  "gasUsed": 142577,
 }
 `;
 
 exports[`TWAMM Hook #updateLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 292,
-  "gasUsed": 229931,
+  "gasUsed": 233637,
 }
 `;
 
-exports[`TWAMM Hook bytecode size 1`] = `25729`;
+exports[`TWAMM Hook bytecode size 1`] = `26095`;

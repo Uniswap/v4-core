@@ -16,7 +16,9 @@ contract TWAMMHook is BaseHook, ITWAMM {
     using TWAMM for TWAMM.State;
     using TransferHelper for IERC20Minimal;
 
+    // Time interval on which orders are allowed to expire. Conserves processing needed on execute.
     uint256 public immutable expirationInterval;
+    // twammStates[poolId] => Twamm.State
     mapping(bytes32 => TWAMM.State) internal twammStates;
     // tokensOwed[token][owner] => amountOwed
     mapping(address => mapping(address => uint256)) public tokensOwed;
@@ -111,24 +113,21 @@ contract TWAMMHook is BaseHook, ITWAMM {
         }
     }
 
-    /// @notice Submits a new long term order into the TWAMM. Also executes TWAMM orders if not up to date.
-    /// @param key The PoolKey for which to identify the amm pool of the order
-    /// @param orderKey The OrderKey for the new order
-    /// @param amountIn The amount of sell token to add to the order. Some precision on amountIn may be lost up to the
-    /// magnitude of (orderKey.expiration - block.timestamp)
-    /// @return orderId The bytes32 ID of the order
+    /// @inheritdoc ITWAMM
     function submitLongTermOrder(
         IPoolManager.PoolKey calldata key,
         TWAMM.OrderKey memory orderKey,
         uint256 amountIn
     ) external returns (bytes32 orderId) {
-        TWAMM.State storage twamm = getTWAMM(key);
+        bytes32 poolId = keccak256(abi.encode(key));
+        TWAMM.State storage twamm = twammStates[poolId];
         executeTWAMMOrders(key);
 
+        uint256 sellRate;
         unchecked {
             // checks done in TWAMM library
             uint256 duration = orderKey.expiration - block.timestamp;
-            uint256 sellRate = amountIn / duration;
+            sellRate = amountIn / duration;
             orderId = twamm.submitLongTermOrder(orderKey, sellRate, expirationInterval);
             IERC20Minimal(orderKey.zeroForOne ? key.token0 : key.token1).safeTransferFrom(
                 msg.sender,
@@ -136,21 +135,32 @@ contract TWAMMHook is BaseHook, ITWAMM {
                 sellRate * duration
             );
         }
+
+        emit SubmitLongTermOrder(
+            poolId,
+            orderKey.owner,
+            orderKey.expiration,
+            orderKey.zeroForOne,
+            sellRate,
+            twamm.getOrder(orderKey).earningsFactorLast
+        );
     }
 
-    /// @notice Modify an existing long term order with a new sellAmount
-    /// @param key The PoolKey for which to identify the amm pool of the order
-    /// @param orderKey The OrderKey for which to identify the order
-    /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
-    ///    min value to remove full amount from order.
+    /// @inheritdoc ITWAMM
     function updateLongTermOrder(
         IPoolManager.PoolKey memory key,
         TWAMM.OrderKey memory orderKey,
         int256 amountDelta
     ) external returns (uint256 tokens0Owed, uint256 tokens1Owed) {
+        bytes32 poolId = keccak256(abi.encode(key));
+        TWAMM.State storage twamm = twammStates[poolId];
+
         executeTWAMMOrders(key);
+
         // This call reverts if the caller is not the owner of the order
-        (uint256 buyTokensOwed, uint256 sellTokensOwed) = getTWAMM(key).updateLongTermOrder(orderKey, amountDelta);
+        (uint256 buyTokensOwed, uint256 sellTokensOwed, uint256 newSellrate, uint256 newEarningsFactorLast) = getTWAMM(
+            key
+        ).updateLongTermOrder(orderKey, amountDelta);
 
         if (orderKey.zeroForOne) {
             tokens0Owed += sellTokensOwed;
@@ -162,13 +172,19 @@ contract TWAMMHook is BaseHook, ITWAMM {
 
         tokensOwed[address(key.token0)][orderKey.owner] += tokens0Owed;
         tokensOwed[address(key.token1)][orderKey.owner] += tokens1Owed;
+
+        TWAMM.Order storage order = twamm.getOrder(orderKey);
+        emit SubmitLongTermOrder(
+            poolId,
+            orderKey.owner,
+            orderKey.expiration,
+            orderKey.zeroForOne,
+            newSellrate,
+            newEarningsFactorLast
+        );
     }
 
-    /// @notice Claim tokens owed from TWAMMHook contract
-    /// @param token The token to claim
-    /// @param to The receipient of the claim
-    /// @param amountRequested The amount of tokens requested to claim. Set to 0 to claim all.
-    /// @return amountTransferred The total token amount to be collected
+    /// @inheritdoc ITWAMM
     function claimTokens(
         IERC20Minimal token,
         address to,
