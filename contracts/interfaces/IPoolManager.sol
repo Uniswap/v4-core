@@ -161,5 +161,5 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
 
-    function setPoolProtocolFee(PoolKey memory poolKey) external;
+    function setPoolProtocolFee(PoolKey memory key) external;
 }
