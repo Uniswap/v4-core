@@ -56,7 +56,14 @@ interface IPoolManager is IERC1155 {
     function getPoolId(PoolKey calldata key) external pure returns (bytes32);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(bytes32 id) external view returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee);
+    function getSlot0(bytes32 id)
+        external
+        view
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint8 protocolFee
+        );
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
@@ -71,7 +78,6 @@ interface IPoolManager is IERC1155 {
 
     // @notice Given a token address, returns the protocol fees accrued in that token
     function protocolFeesAccrued(IERC20Minimal) external view returns (uint256);
-
 
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
