@@ -12,7 +12,7 @@ import {TWAMM} from '../libraries/TWAMM/TWAMM.sol';
 import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {BaseHook} from './base/BaseHook.sol';
 
-contract TWAMMHook is BaseHook {
+contract TWAMMHook is BaseHook, ITWAMM {
     using TWAMM for TWAMM.State;
     using TransferHelper for IERC20Minimal;
 
@@ -60,10 +60,6 @@ contract TWAMMHook is BaseHook {
             zeroForOne
                 ? (twamm.orderPool0For1.sellRateCurrent, twamm.orderPool0For1.earningsFactorCurrent)
                 : (twamm.orderPool1For0.sellRateCurrent, twamm.orderPool1For0.earningsFactorCurrent);
-    }
-
-    function getTokensOwed(address token, address owner) external view returns (uint256 amount) {
-        return tokensOwed[token][owner];
     }
 
     function beforeInitialize(

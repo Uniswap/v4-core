@@ -11,17 +11,13 @@ interface ITWAMM {
         uint256 amountIn
     ) external returns (bytes32 orderId);
 
-    function claimEarningsOnLongTermOrder(IPoolManager.PoolKey calldata key, TWAMM.OrderKey calldata orderKey)
-        external
-        returns (uint256 earningsAmount);
-
     function updateLongTermOrder(
         IPoolManager.PoolKey calldata key,
         TWAMM.OrderKey calldata orderKey,
-        int128 amountDelta
-    ) external returns (uint256 amountOut);
+        int256 amountDelta
+    ) external returns (uint256 tokens0Owed, uint256 tokens1Owed);
 
-    function executeTWAMMOrders(IPoolManager.PoolKey memory key)
-        external
-        returns (IPoolManager.BalanceDelta memory delta);
+    function executeTWAMMOrders(IPoolManager.PoolKey memory key) external;
+
+    function tokensOwed(address token, address owner) external returns (uint256);
 }
