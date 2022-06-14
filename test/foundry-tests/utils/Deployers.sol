@@ -34,7 +34,11 @@ contract Deployers {
 
     function createFreshPool(IHooks hooks, uint160 sqrtPriceX96)
         public
-        returns (PoolManager manager, IPoolManager.PoolKey memory key, bytes32 id)
+        returns (
+            PoolManager manager,
+            IPoolManager.PoolKey memory key,
+            bytes32 id
+        )
     {
         manager = new PoolManager(500000);
         (key, id) = createPool(manager, hooks, sqrtPriceX96);
