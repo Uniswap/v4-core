@@ -28,7 +28,7 @@ contract Deployers {
             60,
             hooks
         );
-        id = PoolId.toId(key)
+        id = PoolId.toId(key);
         manager.initialize(key, sqrtPriceX96);
     }
 
