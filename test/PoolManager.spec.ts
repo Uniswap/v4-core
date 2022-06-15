@@ -568,7 +568,7 @@ describe('PoolManager', () => {
         )
       )
         .to.emit(manager, 'Swap')
-        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2))
+        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932)
     })
     it('succeeds if pool is initialized and hook is provided', async () => {
       await manager.initialize(

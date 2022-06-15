@@ -252,6 +252,8 @@ library Pool {
         int256 amountSpecifiedRemaining;
         // the amount already swapped out/in of the output/input asset
         int256 amountCalculated;
+        // current sqrt(price)
+        uint160 sqrtPriceX96;
         // the tick associated with the current price
         int24 tick;
         // the global fee growth of the input token
@@ -288,7 +290,7 @@ library Pool {
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (IPoolManager.BalanceDelta memory result, uint256 feeForProtocol, uint160 sqrtPriceX96)
+        returns (IPoolManager.BalanceDelta memory result, uint256 feeForProtocol, SwapState memory state)
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
@@ -313,20 +315,20 @@ library Pool {
 
         bool exactInput = params.amountSpecified > 0;
 
-        sqrtPriceX96 = slot0Start.sqrtPriceX96;
-        SwapState memory state = SwapState({
+        state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,
             amountCalculated: 0,
+            sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
             feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
             liquidity: cache.liquidityStart
         });
 
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
-        while (state.amountSpecifiedRemaining != 0 && sqrtPriceX96 != params.sqrtPriceLimitX96) {
+        while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             StepComputations memory step;
 
-            step.sqrtPriceStartX96 = sqrtPriceX96;
+            step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
             (step.tickNext, step.initialized) = self.tickBitmap.nextInitializedTickWithinOneWord(
                 state.tick,
@@ -345,8 +347,8 @@ library Pool {
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
 
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
-            (sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
-                sqrtPriceX96,
+            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
+                state.sqrtPriceX96,
                 (
                     params.zeroForOne
                         ? step.sqrtPriceNextX96 < params.sqrtPriceLimitX96
@@ -391,7 +393,7 @@ library Pool {
             }
 
             // shift tick if we reached the next price
-            if (sqrtPriceX96 == step.sqrtPriceNextX96) {
+            if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
                     int128 liquidityNet = self.ticks.cross(
@@ -413,13 +415,13 @@ library Pool {
                 unchecked {
                     state.tick = params.zeroForOne ? step.tickNext - 1 : step.tickNext;
                 }
-            } else if (sqrtPriceX96 != step.sqrtPriceStartX96) {
+            } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
-                state.tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+                state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
             }
         }
 
-        (self.slot0.sqrtPriceX96, self.slot0.tick) = (sqrtPriceX96, state.tick);
+        (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
 
         // update liquidity if it changed
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
