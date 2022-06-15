@@ -65,7 +65,15 @@ interface IPoolManager is IERC1155 {
     /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
     /// @param liquidity The liquidity of the pool after the swap
     /// @param tick The log base 1.0001 of the price of the pool after the swap
-    event Swap(bytes32 indexed poolId, address indexed sender, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick);
+    event Swap(
+        bytes32 indexed poolId,
+        address indexed sender,
+        int256 amount0,
+        int256 amount1,
+        uint160 sqrtPriceX96,
+        uint128 liquidity,
+        int24 tick
+    );
 
     event PoolProtocolFeeUpdated(bytes32 poolId, uint8 protocolFee);
 
