@@ -290,7 +290,11 @@ library Pool {
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (IPoolManager.BalanceDelta memory result, uint256 feeForProtocol)
+        returns (
+            IPoolManager.BalanceDelta memory result,
+            uint256 feeForProtocol,
+            SwapState memory state
+        )
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
@@ -315,7 +319,7 @@ library Pool {
 
         bool exactInput = params.amountSpecified > 0;
 
-        SwapState memory state = SwapState({
+        state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,
             amountCalculated: 0,
             sqrtPriceX96: slot0Start.sqrtPriceX96,
