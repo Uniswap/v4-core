@@ -95,13 +95,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        tick = _getPool(key).initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
+        bytes32 id = key.toId();
+        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        emit Initialize(id, key.token0, key.token1, key.fee, key.tickSpacing, key.hooks);
     }
 
     /// @inheritdoc IPoolManager
@@ -224,7 +227,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        delta = _getPool(key).modifyPosition(
+        bytes32 poolId = key.toId();
+        delta = pools[poolId].modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -241,6 +245,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        emit ModifyPosition(poolId, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
 
     /// @inheritdoc IPoolManager
@@ -258,7 +264,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         uint256 feeForProtocol;
-        (delta, feeForProtocol) = _getPool(key).swap(
+        Pool.SwapState memory state;
+        bytes32 poolId = key.toId();
+        (delta, feeForProtocol, state) = pools[poolId].swap(
             Pool.SwapParams({
                 fee: key.fee,
                 tickSpacing: key.tickSpacing,
@@ -280,6 +288,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        emit Swap(poolId, msg.sender, delta.amount0, delta.amount1, state.sqrtPriceX96, state.liquidity, state.tick);
     }
 
     /// @inheritdoc IPoolManager
