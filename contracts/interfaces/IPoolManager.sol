@@ -99,10 +99,6 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
-    /// @notice Returns the pool ID for the given pool key
-    /// @dev Should be computed using the PoolId library, but present for use in testing
-    function getPoolId(PoolKey calldata key) external pure returns (bytes32);
-
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(bytes32 id)
         external
@@ -213,5 +209,6 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to pay what is owed
     function settle(IERC20Minimal token) external returns (uint256 paid);
 
-    function setPoolProtocolFee(bytes32 id) external;
+    /// @notice sets the protocol fee for the given pool
+    function setPoolProtocolFee(PoolKey memory key) external;
 }

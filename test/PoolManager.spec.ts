@@ -1091,7 +1091,7 @@ describe('PoolManager', () => {
       const poolProtocolFee = 4
       await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
 
-      await expect(manager.setPoolProtocolFee(poolID)).to.emit(manager, 'PoolProtocolFeeUpdated')
+      await expect(manager.setPoolProtocolFee(poolKey)).to.emit(manager, 'PoolProtocolFeeUpdated')
       ;({
         slot0: { protocolFee },
       } = await manager.pools(poolID))

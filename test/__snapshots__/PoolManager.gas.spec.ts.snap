@@ -3,14 +3,14 @@
 exports[`PoolManager gas tests #donate donation of 1 token 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 150972,
+  "gasUsed": 150990,
 }
 `;
 
 exports[`PoolManager gas tests #donate donation of 2 tokens 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 218062,
+  "gasUsed": 218080,
 }
 `;
 

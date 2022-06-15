@@ -47,10 +47,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         controllerGasLimit = _controllerGasLimit;
     }
 
-    function getPoolId(PoolKey calldata key) external pure returns (bytes32) {
-        return key.toId();
-    }
-
     function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
         return pools[key.toId()];
     }
@@ -100,7 +96,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         bytes32 id = key.toId();
-        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(id));
+        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
@@ -388,16 +384,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         emit ProtocolFeeControllerUpdated(address(controller));
     }
 
-    function setPoolProtocolFee(bytes32 id) external {
-        uint8 newProtocolFee = fetchPoolProtocolFee(id);
+    function setPoolProtocolFee(PoolKey memory key) external {
+        uint8 newProtocolFee = fetchPoolProtocolFee(key);
 
-        pools[id].setProtocolFee(newProtocolFee);
-        emit PoolProtocolFeeUpdated(id, newProtocolFee);
+        _getPool(key).setProtocolFee(newProtocolFee);
+        emit PoolProtocolFeeUpdated(key.toId(), newProtocolFee);
     }
 
-    function fetchPoolProtocolFee(bytes32 id) internal view returns (uint8 protocolFee) {
+    function fetchPoolProtocolFee(PoolKey memory key) internal view returns (uint8 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
-            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(id) returns (
+            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (
                 uint8 updatedProtocolFee
             ) {
                 protocolFee = updatedProtocolFee;
