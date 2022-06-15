@@ -75,7 +75,7 @@ interface IPoolManager is IERC1155 {
         int24 tick
     );
 
-    event PoolProtocolFeeUpdated(bytes32 poolId, uint8 protocolFee);
+    event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolFee);
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 

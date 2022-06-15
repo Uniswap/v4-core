@@ -388,7 +388,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint8 newProtocolFee = fetchPoolProtocolFee(key);
 
         _getPool(key).setProtocolFee(newProtocolFee);
-        emit PoolProtocolFeeUpdated(key.toId(), newProtocolFee);
+        emit ProtocolFeeUpdated(key.toId(), newProtocolFee);
     }
 
     function fetchPoolProtocolFee(PoolKey memory key) internal view returns (uint8 protocolFee) {
