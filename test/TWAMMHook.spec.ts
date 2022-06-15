@@ -38,7 +38,8 @@ type PoolKey = {
 // to be larger than twamm balance, in which case twamm balance will just go to 0. This could obscure larger,
 // unacceptable precision errors.
 const INITIAL_TOKEN_BALANCE = 20
-const CONTROLLER_GAS_LIMIT = 50000
+const CONTROLLER_GAS_LIMIT = 50_000
+const EXPIRATION_INTERVAL = 10_000
 
 describe('TWAMM Hook', () => {
   let wallets: Wallet[]
@@ -102,7 +103,7 @@ describe('TWAMM Hook', () => {
 
     await hre.network.provider.send('hardhat_setCode', [
       twammHookAddress,
-      await getDeployedTWAMMCode(manager.address, 10_000),
+      await getDeployedTWAMMCode(manager.address, EXPIRATION_INTERVAL),
     ])
 
     const twamm: TWAMMHook = twammFactory.attach(twammHookAddress) as TWAMMHook
@@ -202,7 +203,7 @@ describe('TWAMM Hook', () => {
         tickSpacing: 10,
       }
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 1))
+      await setNextBlocktime(nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1))
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
 
       await modifyPositionTest.modifyPosition(poolKey, {
@@ -213,7 +214,7 @@ describe('TWAMM Hook', () => {
     })
 
     it('stores the long term order under the correct pool', async () => {
-      const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+      const expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
       const orderKey = {
         zeroForOne: true,
         owner: wallet.address,
@@ -228,7 +229,7 @@ describe('TWAMM Hook', () => {
     })
 
     it('stores the correct earningsFactorLast if past earnings have been processed', async () => {
-      const expiration = nIntervalsFrom(latestTimestamp, 10_000, 2)
+      const expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 2)
       const orderKey0 = {
         zeroForOne: true,
         owner: wallet.address,
@@ -237,7 +238,7 @@ describe('TWAMM Hook', () => {
       const orderKey1 = {
         zeroForOne: true,
         owner: wallet.address,
-        expiration: nIntervalsFrom(latestTimestamp, 10_000, 5),
+        expiration: nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 5),
       }
       await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10))
       await setNextBlocktime(expiration + 100)
@@ -247,8 +248,22 @@ describe('TWAMM Hook', () => {
       expect(order.earningsFactorLast).to.eq((await twamm.getOrderPool(poolKey, true)).earningsFactorCurrent)
     })
 
+    it('emits a SubmitLongTermOrder event', async () => {
+      const expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
+      const orderAmount = expandTo18Decimals(10)
+      const orderKey = {
+        zeroForOne: true,
+        owner: wallet.address,
+        expiration,
+      }
+
+      await setNextBlocktime(expiration - EXPIRATION_INTERVAL)
+      await expect(twamm.submitLongTermOrder(poolKey, orderKey, orderAmount)).to.emit(twamm, 'SubmitLongTermOrder')
+        .withArgs(getPoolId(poolKey), wallet.address, expiration, true, orderAmount.div(EXPIRATION_INTERVAL), 0)
+    })
+
     it('gas', async () => {
-      const expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+      const expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
       const orderKey0 = {
         zeroForOne: true,
         owner: wallet.address,
@@ -266,11 +281,13 @@ describe('TWAMM Hook', () => {
     let poolKey: PoolKey
     let latestTimestamp: number
     let expiration: number
+    let halfwayTimestamp: number
     let orderAmount: BigNumber
 
     beforeEach('setup pool and twamm', async () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      expiration = nIntervalsFrom(latestTimestamp, 10_000, 6)
+      expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 6)
+      halfwayTimestamp = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 4)
       orderAmount = expandTo18Decimals(10)
 
       poolKey = {
@@ -291,7 +308,7 @@ describe('TWAMM Hook', () => {
         expiration,
       }
 
-      await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 1))
+      await setNextBlocktime(nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1))
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
 
       await modifyPositionTest.modifyPosition(poolKey, {
@@ -300,7 +317,7 @@ describe('TWAMM Hook', () => {
         liquidityDelta: expandTo18Decimals(1),
       })
 
-      await inOneBlock(nIntervalsFrom(latestTimestamp, 10_000, 2), async () => {
+      await inOneBlock(nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 2), async () => {
         await twamm.submitLongTermOrder(poolKey, orderKey0, orderAmount)
         await twamm.submitLongTermOrder(poolKey, orderKey1, orderAmount)
       })
@@ -309,7 +326,7 @@ describe('TWAMM Hook', () => {
     describe('for orders trading zeroForOne', () => {
       it('claims rewards, decreases sellRate, and updates sellTokensOwed to owner', async () => {
         const amountDelta = orderAmount.div(10)
-        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await setNextBlocktime(halfwayTimestamp)
         await twamm.updateLongTermOrder(poolKey, orderKey0, amountDelta.mul(-1))
         const order = await twamm.getOrder(poolKey, orderKey0)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
@@ -321,7 +338,7 @@ describe('TWAMM Hook', () => {
       })
 
       it('deletes order and returns all tokens if delta sent is -1', async () => {
-        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await setNextBlocktime(halfwayTimestamp)
         await twamm.updateLongTermOrder(poolKey, orderKey0, -1)
         const order = await twamm.getOrder(poolKey, orderKey0)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
@@ -333,7 +350,7 @@ describe('TWAMM Hook', () => {
       })
 
       it('claims rewards, increases sellRate, collects token0 balance if delta is positive', async () => {
-        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await setNextBlocktime(halfwayTimestamp)
         await twamm.updateLongTermOrder(poolKey, orderKey0, orderAmount)
         const order = await twamm.getOrder(poolKey, orderKey0)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, true)
@@ -343,12 +360,20 @@ describe('TWAMM Hook', () => {
         expect(await twamm.tokensOwed(poolKey.token0, orderKey0.owner)).to.eq(0)
         expect(await twamm.tokensOwed(poolKey.token1, orderKey0.owner)).to.eq(orderAmount.div(2))
       })
+
+      it('emits an UpdateLongTermOrder event', async () => {
+        await setNextBlocktime(halfwayTimestamp)
+        const updatedSellRate = orderAmount.div(40_000).add(orderAmount.div(20_000))
+        const latestEarningsFactor = "0x4e20000000000000000000000000"
+        await expect(twamm.updateLongTermOrder(poolKey, orderKey0, orderAmount)).to.emit(twamm, 'UpdateLongTermOrder')
+          .withArgs(getPoolId(poolKey), wallet.address, expiration, true, updatedSellRate, latestEarningsFactor)
+      })
     })
 
     describe('for orders trading oneForZero', () => {
       it('claims rewards, decreases sellRate, and transfers sell tokens if the delta is negative', async () => {
         const amountDelta = orderAmount.div(10)
-        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await setNextBlocktime(halfwayTimestamp)
         await twamm.updateLongTermOrder(poolKey, orderKey1, amountDelta.mul(-1))
         const order = await twamm.getOrder(poolKey, orderKey1)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
@@ -360,7 +385,7 @@ describe('TWAMM Hook', () => {
       })
 
       it('deletes and returns all tokens if delta sent is -1', async () => {
-        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await setNextBlocktime(halfwayTimestamp)
         await twamm.updateLongTermOrder(poolKey, orderKey1, -1)
         const order = await twamm.getOrder(poolKey, orderKey1)
 
@@ -371,7 +396,7 @@ describe('TWAMM Hook', () => {
       })
 
       it('collects token1 balance if delta is positive and increases sellRate', async () => {
-        await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 4))
+        await setNextBlocktime(halfwayTimestamp)
         await twamm.updateLongTermOrder(poolKey, orderKey1, orderAmount)
         const order = await twamm.getOrder(poolKey, orderKey1)
         const { earningsFactorCurrent } = await twamm.getOrderPool(poolKey, false)
@@ -380,6 +405,14 @@ describe('TWAMM Hook', () => {
         expect(order.sellRate).to.eq(orderAmount.div(40_000).add(orderAmount.div(20_000)))
         expect(await twamm.tokensOwed(poolKey.token0, orderKey0.owner)).to.eq(orderAmount.div(2))
         expect(await twamm.tokensOwed(poolKey.token1, orderKey0.owner)).to.eq(0)
+      })
+
+      it('emits an UpdateLongTermOrder event', async () => {
+        await setNextBlocktime(halfwayTimestamp)
+        const updatedSellRate = orderAmount.div(40_000).add(orderAmount.div(20_000))
+        const latestEarningsFactor = "0x4e20000000000000000000000000"
+        await expect(twamm.updateLongTermOrder(poolKey, orderKey1, orderAmount)).to.emit(twamm, 'UpdateLongTermOrder')
+          .withArgs(getPoolId(poolKey), wallet.address, expiration, false, updatedSellRate, latestEarningsFactor)
       })
     })
 
@@ -400,7 +433,7 @@ describe('TWAMM Hook', () => {
     beforeEach('setup pool and twamm', async () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
       orderAmount = expandTo18Decimals(10)
-      expiration = nIntervalsFrom(latestTimestamp, 10_000, 6)
+      expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 6)
 
       poolKey = {
         token0: token0.address,
@@ -421,7 +454,7 @@ describe('TWAMM Hook', () => {
         expiration,
       }
 
-      await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 1))
+      await setNextBlocktime(nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1))
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
 
       await modifyPositionTest.modifyPosition(poolKey, {
@@ -430,7 +463,7 @@ describe('TWAMM Hook', () => {
         liquidityDelta: expandTo18Decimals(1),
       })
 
-      await inOneBlock(nIntervalsFrom(latestTimestamp, 10_000, 2), async () => {
+      await inOneBlock(nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 2), async () => {
         await twamm.submitLongTermOrder(poolKey, orderKey0, orderAmount)
         await twamm.submitLongTermOrder(poolKey, orderKey1, orderAmount)
       })
@@ -481,7 +514,7 @@ describe('TWAMM Hook', () => {
 
     beforeEach(async () => {
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-      expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+      expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
 
       poolKey = {
         token0: token0.address,
@@ -501,7 +534,7 @@ describe('TWAMM Hook', () => {
         expiration,
       }
 
-      await setNextBlocktime(nIntervalsFrom(latestTimestamp, 10_000, 1))
+      await setNextBlocktime(nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1))
       await poolManager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
       latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
 
@@ -518,7 +551,7 @@ describe('TWAMM Hook', () => {
           await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(1))
           await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))
         })
-        await setNextBlocktime(latestTimestamp + 10_000)
+        await setNextBlocktime(latestTimestamp + EXPIRATION_INTERVAL)
         await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
       })
 
@@ -532,7 +565,7 @@ describe('TWAMM Hook', () => {
           await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(1))
           await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))
         })
-        await setNextBlocktime(latestTimestamp + 10_000)
+        await setNextBlocktime(latestTimestamp + EXPIRATION_INTERVAL)
         await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
       })
 
@@ -553,7 +586,7 @@ describe('TWAMM Hook', () => {
           await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))
         })
 
-        await setNextBlocktime(latestTimestamp + 10_000)
+        await setNextBlocktime(latestTimestamp + EXPIRATION_INTERVAL)
         await snapshotGasCost(twamm.executeTWAMMOrders(poolKey))
       })
     })
@@ -623,8 +656,8 @@ describe('TWAMM Hook', () => {
         const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
         const amountLiquidity = expandTo18Decimals(1)
 
-        start = nIntervalsFrom(latestTimestamp, 10_000, 1)
-        expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+        start = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1)
+        expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
 
         orderKey0 = {
           zeroForOne: true,
@@ -743,8 +776,8 @@ describe('TWAMM Hook', () => {
         amountSell0 = expandTo18Decimals(1)
         amountSell1 = expandTo18Decimals(10)
 
-        start = nIntervalsFrom(latestTimestamp, 10_000, 1)
-        expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+        start = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1)
+        expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
         orderKey0 = {
           zeroForOne: true,
           owner: wallet.address,
@@ -862,8 +895,8 @@ describe('TWAMM Hook', () => {
         const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
         const amountLiquidity = expandTo18Decimals(1)
 
-        start = nIntervalsFrom(latestTimestamp, 10_000, 1)
-        expiration = nIntervalsFrom(latestTimestamp, 10_000, 3)
+        start = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1)
+        expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
 
         orderKey0 = {
           zeroForOne: true,
@@ -929,7 +962,7 @@ describe('TWAMM Hook', () => {
 
       beforeEach(async () => {
         const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-        const interval = 10_000
+        const interval = EXPIRATION_INTERVAL
         submitTimestamp = nIntervalsFrom(latestTimestamp, interval, 1)
         expirationTimestamp = nIntervalsFrom(latestTimestamp, interval, 2)
         orderKey0 = {
@@ -1193,8 +1226,8 @@ describe('TWAMM Hook', () => {
 
       beforeEach(async () => {
         const latestTimestamp = (await ethers.provider.getBlock('latest')).timestamp
-        submitTimestamp = nIntervalsFrom(latestTimestamp, 10_000, 1)
-        expirationTimestamp = nIntervalsFrom(latestTimestamp, 10_000, 3)
+        submitTimestamp = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 1)
+        expirationTimestamp = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 3)
         orderKey0 = {
           zeroForOne: true,
           owner: wallet.address,

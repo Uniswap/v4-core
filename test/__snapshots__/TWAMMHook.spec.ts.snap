@@ -63,4 +63,4 @@ Object {
 }
 `;
 
-exports[`TWAMM Hook bytecode size 1`] = `26095`;
+exports[`TWAMM Hook bytecode size 1`] = `26094`;

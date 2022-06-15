@@ -174,7 +174,7 @@ contract TWAMMHook is BaseHook, ITWAMM {
         tokensOwed[address(key.token1)][orderKey.owner] += tokens1Owed;
 
         TWAMM.Order storage order = twamm.getOrder(orderKey);
-        emit SubmitLongTermOrder(
+        emit UpdateLongTermOrder(
             poolId,
             orderKey.owner,
             orderKey.expiration,
