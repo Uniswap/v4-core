@@ -164,7 +164,7 @@ describe('TWAMM Hook', () => {
   let snapshotId: string
 
   beforeEach('check the pool is not initialized', async () => {
-    const { sqrtPriceX96 } = await poolManager.getSlot0(poolKey)
+    const { sqrtPriceX96 } = await poolManager.getSlot0(getPoolId(poolKey))
     expect(sqrtPriceX96, 'pool is not initialized').to.eq(0)
     // it seems like the waffle fixture is not working correctly (perhaps due to hardhat_setCode), and if we don't
     // do this and revert in afterEach, the pool is already initialized
@@ -858,7 +858,7 @@ describe('TWAMM Hook', () => {
         await setNextBlocktime(expiration + 1000)
         await twamm.executeTWAMMOrders(key)
         // ensure we've swapped to the correct tick
-        expect((await poolManager.getSlot0(key)).tick).to.eq(22989)
+        expect((await poolManager.getSlot0(getPoolId(key))).tick).to.eq(22989)
       })
 
       it('trades properly with initialized ticks just past the the target price moving left', async () => {
@@ -886,7 +886,7 @@ describe('TWAMM Hook', () => {
         await setNextBlocktime(expiration + 1000)
         await twamm.executeTWAMMOrders(key)
         // ensure we've swapped to the correct tick
-        expect((await poolManager.getSlot0(key)).tick).to.eq(-22990)
+        expect((await poolManager.getSlot0(getPoolId(key))).tick).to.eq(-22990)
       })
     })
 
@@ -1019,7 +1019,7 @@ describe('TWAMM Hook', () => {
 
         const expectedSqrtRatioX96 = '1390179360050332758641088620197702593046604939264'
 
-        const finalPriceX96 = (await poolManager.getSlot0(poolKey)).sqrtPriceX96
+        const finalPriceX96 = (await poolManager.getSlot0(getPoolId(poolKey))).sqrtPriceX96
 
         expect(finalPriceX96).to.equal(expectedSqrtRatioX96)
 
@@ -1059,7 +1059,7 @@ describe('TWAMM Hook', () => {
 
         const expectedSqrtRatioX96 = '4515317890'
 
-        const finalPriceX96 = (await poolManager.getSlot0(poolKey)).sqrtPriceX96
+        const finalPriceX96 = (await poolManager.getSlot0(getPoolId(poolKey))).sqrtPriceX96
 
         expect(finalPriceX96).to.equal(expectedSqrtRatioX96)
 
@@ -1100,7 +1100,7 @@ describe('TWAMM Hook', () => {
 
         const expectedPriceX96 = '1441708729548066551791643897157159050890912464896'
 
-        const poolPrice = (await poolManager.getSlot0(poolKey)).sqrtPriceX96
+        const poolPrice = (await poolManager.getSlot0(getPoolId(poolKey))).sqrtPriceX96
 
         expect(poolPrice).to.equal(expectedPriceX96)
 
@@ -1135,7 +1135,7 @@ describe('TWAMM Hook', () => {
         // sqrtSellRatio
         const expectedPriceX96 = 4295760037
 
-        expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(expectedPriceX96)
+        expect((await poolManager.getSlot0(getPoolId(poolKey))).sqrtPriceX96).to.equal(expectedPriceX96)
 
         // precision error
         // 3687054054
@@ -1173,7 +1173,7 @@ describe('TWAMM Hook', () => {
 
         // max price w/error
         const expectedPriceX96 = '1461446703485210103287273052203988790139028504576'
-        expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(expectedPriceX96)
+        expect((await poolManager.getSlot0(getPoolId(poolKey))).sqrtPriceX96).to.equal(expectedPriceX96)
 
         // larger precision error in extreme case
         expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(499359406795))
@@ -1209,7 +1209,7 @@ describe('TWAMM Hook', () => {
 
         // min price w/error
         const expectedPriceX96 = '4295128740'
-        expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(expectedPriceX96)
+        expect((await poolManager.getSlot0(getPoolId(poolKey))).sqrtPriceX96).to.equal(expectedPriceX96)
 
         // larger precision error in extreme case
         expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.add(21934025816))
@@ -1276,7 +1276,7 @@ describe('TWAMM Hook', () => {
           const earningsToken1 = await twamm.tokensOwed(poolKey.token1, wallet.address)
 
           const sqrtX96SellRate = encodeSqrtPriceX96(amountSell1, amountSell0)
-          expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(sqrtX96SellRate)
+          expect((await poolManager.getSlot0(getPoolId(poolKey))).sqrtPriceX96).to.equal(sqrtX96SellRate)
 
           // precision error of 3-4 wei
           expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.sub(4))
@@ -1306,7 +1306,7 @@ describe('TWAMM Hook', () => {
           const earningsToken1 = await twamm.tokensOwed(poolKey.token1, wallet.address)
 
           const sqrtX96SellRate = encodeSqrtPriceX96(amountSell1, amountSell0)
-          expect((await poolManager.getSlot0(poolKey)).sqrtPriceX96).to.equal(sqrtX96SellRate)
+          expect((await poolManager.getSlot0(getPoolId(poolKey))).sqrtPriceX96).to.equal(sqrtX96SellRate)
 
           // precision error of 7-9 wei
           expect(newBalance0.sub(INITIAL_TOKEN_BALANCE)).to.eq(earningsToken0.sub(9))

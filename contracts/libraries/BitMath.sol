@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.15;
 
 /// @title BitMath
 /// @dev This library provides functionality for computing bit properties of an unsigned integer

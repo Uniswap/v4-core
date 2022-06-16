@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.13;
+pragma solidity =0.8.15;
 
 import {IHooks} from '../interfaces/IHooks.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
@@ -99,12 +99,14 @@ contract TWAMMHook is BaseHook, ITWAMM {
     }
 
     function executeTWAMMOrders(IPoolManager.PoolKey memory key) public {
-        (uint160 sqrtPriceX96, , ) = poolManager.getSlot0(key);
-        TWAMM.State storage twamm = getTWAMM(key);
+        bytes32 poolId = keccak256(abi.encode(key));
+        (uint160 sqrtPriceX96, , ) = poolManager.getSlot0(poolId);
+        TWAMM.State storage twamm = twammStates[poolId];
+
         (bool zeroForOne, uint160 sqrtPriceLimitX96) = twamm.executeTWAMMOrders(
             poolManager,
             key,
-            TWAMM.PoolParamsOnExecute(sqrtPriceX96, poolManager.getLiquidity(key)),
+            TWAMM.PoolParamsOnExecute(sqrtPriceX96, poolManager.getLiquidity(poolId)),
             expirationInterval
         );
 

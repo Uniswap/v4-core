@@ -184,7 +184,9 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
       }
 
-      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
+      await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
+        .to.emit(manager, 'Initialize')
+        .withArgs(getPoolId(poolKey), poolKey.token0, poolKey.token1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
 
       const {
         slot0: { sqrtPriceX96, protocolFee },
@@ -194,24 +196,19 @@ describe('PoolManager', () => {
     })
 
     it('initializes a pool with hooks', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: hooksMock.address,
-        },
+      const poolKey =         {
+                token0: tokens.token0.address,
+                token1: tokens.token1.address,
+                fee: FeeAmount.MEDIUM,
+                tickSpacing: 60,
+                hooks: hooksMock.address,
+              }
+      await manager.initialize(poolKey
+,
         encodeSqrtPriceX96(10, 1)
       )
 
-      const { sqrtPriceX96 } = await manager.getSlot0({
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: hooksMock.address,
-      })
+      const { sqrtPriceX96 } = await manager.getSlot0(getPoolId(poolKey))
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
     })
 
@@ -364,31 +361,34 @@ describe('PoolManager', () => {
     })
 
     it('succeeds if pool is initialized', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
 
-      await modifyPositionTest.modifyPosition(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        {
-          tickLower: 0,
-          tickUpper: 60,
-          liquidityDelta: 100,
-        }
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+      await expect(
+        modifyPositionTest.modifyPosition(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            tickLower: 0,
+            tickUpper: 60,
+            liquidityDelta: 100,
+          }
+        )
       )
+        .to.emit(manager, 'ModifyPosition')
+        .withArgs(getPoolId(poolKey), modifyPositionTest.address, 0, 60, 100)
     })
 
     it('succeeds if pool is initialized and hook is provided', async () => {
@@ -529,34 +529,37 @@ describe('PoolManager', () => {
       ).to.be.revertedWith('I')
     })
     it('succeeds if pool is initialized', async () => {
-      await manager.initialize(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        encodeSqrtPriceX96(1, 1)
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      await expect(
+        swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: false,
+          }
+        )
       )
-      await swapTest.swap(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        {
-          amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        {
-          withdrawTokens: false,
-          settleUsingTransfer: false,
-        }
-      )
+        .to.emit(manager, 'Swap')
+        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932)
     })
     it('succeeds if pool is initialized and hook is provided', async () => {
       await manager.initialize(
@@ -1079,10 +1082,12 @@ describe('PoolManager', () => {
       const poolProtocolFee = 4
       await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
 
-      await expect(manager.setPoolProtocolFee(poolKey)).to.emit(manager, 'PoolProtocolFeeUpdated')
+      await expect(manager.setPoolProtocolFee(poolKey))
+        .to.emit(manager, 'ProtocolFeeUpdated')
+        .withArgs(poolID, poolProtocolFee)
       ;({
         slot0: { protocolFee },
-      } = await manager.pools(getPoolId(poolKey)))
+      } = await manager.pools(poolID))
       expect(protocolFee).to.eq(poolProtocolFee)
     })
   })
