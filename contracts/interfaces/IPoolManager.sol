@@ -109,7 +109,7 @@ interface IPoolManager is IERC1155 {
         );
 
     /// @notice Get tick info for a given tick
-    function getTickNetLiquidity(PoolKey memory key, int24 tick) external view returns (int128);
+    function getTickNetLiquidity(bytes32 poolId, int24 tick) external view returns (int128);
 
     /// @notice Get next initialized tick within one word
     function getNextInitializedTickWithinOneWord(

@@ -49,4 +49,4 @@ Object {
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `26525`;
+exports[`PoolManager bytecode size 1`] = `26508`;

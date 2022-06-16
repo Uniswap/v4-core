@@ -4,6 +4,7 @@ pragma solidity ^0.8.15;
 import {Tick} from '../Tick.sol';
 import {TickBitmap} from '../TickBitmap.sol';
 import {IPoolManager} from '../../interfaces/IPoolManager.sol';
+import {PoolId} from '../PoolId.sol';
 import {TickMath} from '../TickMath.sol';
 import {OrderPool} from './OrderPool.sol';
 import {TwammMath} from './TwammMath.sol';
@@ -16,6 +17,7 @@ import {SafeCast} from '../SafeCast.sol';
 /// @notice TWAMM represents long term orders in a pool
 library TWAMM {
     using OrderPool for OrderPool.State;
+    using PoolId for IPoolManager.PoolKey;
     using TickMath for int24;
     using TickMath for uint160;
     using SafeCast for uint256;
@@ -396,6 +398,7 @@ library TWAMM {
             );
 
             if (crossingInitializedTick) {
+                int128 liquidityNetAtTick = poolManager.getTickNetLiquidity(poolKey.toId(), tick);
                 uint160 initializedSqrtPrice = TickMath.getSqrtRatioAtTick(tick);
 
                 uint256 swapDelta0 = SqrtPriceMath.getAmount0Delta(
@@ -411,10 +414,9 @@ library TWAMM {
                     true
                 );
 
-                int128 liquidityNet = poolManager.getTickNetLiquidity(poolKey, tick);
                 params.pool.liquidity = params.zeroForOne
-                    ? params.pool.liquidity - uint128(liquidityNet)
-                    : params.pool.liquidity + uint128(-liquidityNet);
+                    ? params.pool.liquidity - uint128(liquidityNetAtTick)
+                    : params.pool.liquidity + uint128(-liquidityNetAtTick);
                 params.pool.sqrtPriceX96 = initializedSqrtPrice;
 
                 unchecked {
@@ -468,15 +470,12 @@ library TWAMM {
     ) private returns (PoolParamsOnExecute memory, uint256) {
         uint160 initializedSqrtPrice = params.initializedTick.getSqrtRatioAtTick();
 
-        OrderPool.State storage orderPool0For1 = self.orderPool0For1;
-        OrderPool.State storage orderPool1For0 = self.orderPool1For0;
-
         uint256 secondsUntilCrossingX96 = TwammMath.calculateTimeBetweenTicks(
             params.pool.liquidity,
             params.pool.sqrtPriceX96,
             initializedSqrtPrice,
-            orderPool0For1.sellRateCurrent,
-            orderPool1For0.sellRateCurrent
+            self.orderPool0For1.sellRateCurrent,
+            self.orderPool1For0.sellRateCurrent
         );
 
         (uint256 earningsFactorPool0, uint256 earningsFactorPool1) = TwammMath.calculateEarningsUpdates(
@@ -484,18 +483,18 @@ library TWAMM {
                 secondsUntilCrossingX96,
                 params.pool.sqrtPriceX96,
                 params.pool.liquidity,
-                orderPool0For1.sellRateCurrent,
-                orderPool1For0.sellRateCurrent
+                self.orderPool0For1.sellRateCurrent,
+                self.orderPool1For0.sellRateCurrent
             ),
             initializedSqrtPrice
         );
 
-        orderPool0For1.advanceToCurrentTime(earningsFactorPool0);
-        orderPool1For0.advanceToCurrentTime(earningsFactorPool1);
+        self.orderPool0For1.advanceToCurrentTime(earningsFactorPool0);
+        self.orderPool1For0.advanceToCurrentTime(earningsFactorPool1);
 
         unchecked {
             // update pool
-            int128 liquidityNet = poolManager.getTickNetLiquidity(poolKey, params.initializedTick);
+            int128 liquidityNet = poolManager.getTickNetLiquidity(poolKey.toId(), params.initializedTick);
             if (initializedSqrtPrice < params.pool.sqrtPriceX96) liquidityNet = -liquidityNet;
             params.pool.liquidity = liquidityNet < 0
                 ? params.pool.liquidity - uint128(-liquidityNet)
