@@ -42,7 +42,7 @@ export default {
       metadata: {
         // do not include the metadata hash, since this is machine dependent
         // and we want all generated code to be deterministic
-        // https://docs.soliditylang.org/en/v0.8.13/metadata.html
+        // https://docs.soliditylang.org/en/v0.8.15/metadata.html
         bytecodeHash: 'none',
       },
     },
