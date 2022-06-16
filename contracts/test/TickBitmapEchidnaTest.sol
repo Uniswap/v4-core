@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.13;
+pragma solidity =0.8.15;
 
 import {TickBitmap} from '../libraries/TickBitmap.sol';
 
