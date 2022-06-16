@@ -196,17 +196,14 @@ describe('PoolManager', () => {
     })
 
     it('initializes a pool with hooks', async () => {
-      const poolKey =         {
-                token0: tokens.token0.address,
-                token1: tokens.token1.address,
-                fee: FeeAmount.MEDIUM,
-                tickSpacing: 60,
-                hooks: hooksMock.address,
-              }
-      await manager.initialize(poolKey
-,
-        encodeSqrtPriceX96(10, 1)
-      )
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: hooksMock.address,
+      }
+      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
       const { sqrtPriceX96 } = await manager.getSlot0(getPoolId(poolKey))
       expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))

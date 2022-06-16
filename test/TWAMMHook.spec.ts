@@ -258,7 +258,8 @@ describe('TWAMM Hook', () => {
       }
 
       await setNextBlocktime(expiration - EXPIRATION_INTERVAL)
-      await expect(twamm.submitLongTermOrder(poolKey, orderKey, orderAmount)).to.emit(twamm, 'SubmitLongTermOrder')
+      await expect(twamm.submitLongTermOrder(poolKey, orderKey, orderAmount))
+        .to.emit(twamm, 'SubmitLongTermOrder')
         .withArgs(getPoolId(poolKey), wallet.address, expiration, true, orderAmount.div(EXPIRATION_INTERVAL), 0)
     })
 
@@ -364,8 +365,9 @@ describe('TWAMM Hook', () => {
       it('emits an UpdateLongTermOrder event', async () => {
         await setNextBlocktime(halfwayTimestamp)
         const updatedSellRate = orderAmount.div(40_000).add(orderAmount.div(20_000))
-        const latestEarningsFactor = "0x4e20000000000000000000000000"
-        await expect(twamm.updateLongTermOrder(poolKey, orderKey0, orderAmount)).to.emit(twamm, 'UpdateLongTermOrder')
+        const latestEarningsFactor = '0x4e20000000000000000000000000'
+        await expect(twamm.updateLongTermOrder(poolKey, orderKey0, orderAmount))
+          .to.emit(twamm, 'UpdateLongTermOrder')
           .withArgs(getPoolId(poolKey), wallet.address, expiration, true, updatedSellRate, latestEarningsFactor)
       })
     })
@@ -410,8 +412,9 @@ describe('TWAMM Hook', () => {
       it('emits an UpdateLongTermOrder event', async () => {
         await setNextBlocktime(halfwayTimestamp)
         const updatedSellRate = orderAmount.div(40_000).add(orderAmount.div(20_000))
-        const latestEarningsFactor = "0x4e20000000000000000000000000"
-        await expect(twamm.updateLongTermOrder(poolKey, orderKey1, orderAmount)).to.emit(twamm, 'UpdateLongTermOrder')
+        const latestEarningsFactor = '0x4e20000000000000000000000000'
+        await expect(twamm.updateLongTermOrder(poolKey, orderKey1, orderAmount))
+          .to.emit(twamm, 'UpdateLongTermOrder')
           .withArgs(getPoolId(poolKey), wallet.address, expiration, false, updatedSellRate, latestEarningsFactor)
       })
     })
