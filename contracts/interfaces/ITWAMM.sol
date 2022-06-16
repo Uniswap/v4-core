@@ -51,11 +51,11 @@ interface ITWAMM {
         uint256 amountIn
     ) external returns (bytes32 orderId);
 
-    /// @notice Modify an existing long term order with a new sellAmount
+    /// @notice Update an existing long term order with current earnings, optionally modify the amount selling.
     /// @param key The PoolKey for which to identify the amm pool of the order
     /// @param orderKey The OrderKey for which to identify the order
     /// @param amountDelta The delta for the order sell amount. Negative to remove from order, positive to add, or
-    ///    min value to remove full amount from order.
+    ///    -1 to remove full amount from order.
     function updateLongTermOrder(
         IPoolManager.PoolKey calldata key,
         TWAMM.OrderKey calldata orderKey,
