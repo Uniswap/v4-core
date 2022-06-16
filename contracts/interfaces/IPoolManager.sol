@@ -11,7 +11,7 @@ interface IPoolManager is IERC1155 {
     error MaxTokensTouched();
 
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
-    error InsufficientGasProvided();
+    error ProtocolFeeCannotBeFetched();
 
     /// @notice Thrown when a token is owed to the caller or the caller owes a token
     /// @param token The token that is owed
