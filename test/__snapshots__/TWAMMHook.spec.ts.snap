@@ -59,8 +59,8 @@ Object {
 exports[`TWAMM Hook #updateLongTermOrder gas 1`] = `
 Object {
   "calldataByteLength": 292,
-  "gasUsed": 231022,
+  "gasUsed": 230022,
 }
 `;
 
-exports[`TWAMM Hook bytecode size 1`] = `26145`;
+exports[`TWAMM Hook bytecode size 1`] = `26103`;

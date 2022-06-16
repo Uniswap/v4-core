@@ -160,9 +160,8 @@ contract TWAMMHook is BaseHook, ITWAMM {
         executeTWAMMOrders(key);
 
         // This call reverts if the caller is not the owner of the order
-        (uint256 buyTokensOwed, uint256 sellTokensOwed, uint256 newSellrate, uint256 newEarningsFactorLast) = getTWAMM(
-            key
-        ).updateLongTermOrder(orderKey, amountDelta);
+        (uint256 buyTokensOwed, uint256 sellTokensOwed, uint256 newSellrate, uint256 newEarningsFactorLast) = twamm
+            .updateLongTermOrder(orderKey, amountDelta);
 
         if (orderKey.zeroForOne) {
             tokens0Owed += sellTokensOwed;
@@ -175,7 +174,6 @@ contract TWAMMHook is BaseHook, ITWAMM {
         tokensOwed[address(key.token0)][orderKey.owner] += tokens0Owed;
         tokensOwed[address(key.token1)][orderKey.owner] += tokens1Owed;
 
-        TWAMM.Order storage order = twamm.getOrder(orderKey);
         emit UpdateLongTermOrder(
             poolId,
             orderKey.owner,
