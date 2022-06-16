@@ -22,7 +22,6 @@ interface IPoolManager is IERC1155 {
     /// @param locker The current locker
     error LockedBy(address locker);
 
-    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
@@ -111,6 +110,16 @@ interface IPoolManager is IERC1155 {
             int24 tick,
             uint8 protocolFee
         );
+
+    /// @notice Get tick info for a given tick
+    function getTickNetLiquidity(bytes32 poolId, int24 tick) external view returns (int128);
+
+    /// @notice Get next initialized tick within one word
+    function getNextInitializedTickWithinOneWord(
+        IPoolManager.PoolKey memory key,
+        int24 tick,
+        bool lte
+    ) external view returns (int24 next, bool initialized);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(bytes32 id) external view returns (uint128 liquidity);

@@ -1502,6 +1502,11 @@
   resolved "https://registry.yarnpkg.com/@yarnpkg/lockfile/-/lockfile-1.1.0.tgz#e77a97fbd345b76d83245edcd17d393b1b41fb31"
   integrity sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==
 
+abdk-libraries-solidity@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/abdk-libraries-solidity/-/abdk-libraries-solidity-3.0.0.tgz#9085437262110f3f81abc067b3d24a6727cf7984"
+  integrity sha512-oKBj/1wK6hIXxYjX7b2vCzJPHs9GDu49EBpNfUOw2FpA/nu1oV7V598MgAbB1+R1u7vuUhL6DYqolV+GMWaLvA==
+
 abort-controller@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/abort-controller/-/abort-controller-3.0.0.tgz#eaf54d53b62bae4138e809ca225c8439a6efb392"

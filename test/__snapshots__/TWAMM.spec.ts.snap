@@ -1,0 +1,85 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TWAMM #executeTWAMMOrders both pools selling one interval gas 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 270704,
+}
+`;
+
+exports[`TWAMM #executeTWAMMOrders both pools selling three intervals gas 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 430055,
+}
+`;
+
+exports[`TWAMM #executeTWAMMOrders both pools selling two intervals gas 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 389888,
+}
+`;
+
+exports[`TWAMM #executeTWAMMOrders single pool sell one interval gas 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 111170,
+}
+`;
+
+exports[`TWAMM #executeTWAMMOrders single pool sell three intervals gas 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 167373,
+}
+`;
+
+exports[`TWAMM #executeTWAMMOrders single pool sell two intervals gas 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 145952,
+}
+`;
+
+exports[`TWAMM #submitLongTermOrder gas 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 98923,
+}
+`;
+
+exports[`TWAMM #updateLongTermOrder gas adding 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 43946,
+}
+`;
+
+exports[`TWAMM #updateLongTermOrder gas no delta 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 30294,
+}
+`;
+
+exports[`TWAMM #updateLongTermOrder gas subtracting 1`] = `
+Object {
+  "calldataByteLength": 132,
+  "gasUsed": 35933,
+}
+`;
+
+exports[`TWAMM end-to-end simulation single pool sell tests gas zeroForOne=false 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 109159,
+}
+`;
+
+exports[`TWAMM end-to-end simulation single pool sell tests gas zeroForOne=true 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 97976,
+}
+`;

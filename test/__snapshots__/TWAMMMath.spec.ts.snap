@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TWAMMMath #calculateExecutionUpdates outputs the correct results when gas 1`] = `51570`;
+
+exports[`TWAMMMath #calculateTimeBetweenTicks outputs the correct results when gas 1`] = `34305`;

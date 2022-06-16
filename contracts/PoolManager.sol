@@ -5,6 +5,7 @@ import {TransferHelper} from './libraries/TransferHelper.sol';
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {Tick} from './libraries/Tick.sol';
+import {TickBitmap} from './libraries/TickBitmap.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 import {Position} from './libraries/Position.sol';
 import {TransferHelper} from './libraries/TransferHelper.sol';
@@ -29,6 +30,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using TransferHelper for IERC20Minimal;
+    using TickBitmap for mapping(int16 => uint256);
 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
@@ -80,6 +82,20 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         int24 tickUpper
     ) external view override returns (uint128 liquidity) {
         return pools[id].positions.get(owner, tickLower, tickUpper).liquidity;
+    }
+
+    /// @inheritdoc IPoolManager
+    function getTickNetLiquidity(bytes32 id, int24 tick) external view override returns (int128) {
+        return pools[id].ticks[tick].liquidityNet;
+    }
+
+    /// @inheritdoc IPoolManager
+    function getNextInitializedTickWithinOneWord(
+        IPoolManager.PoolKey memory key,
+        int24 tick,
+        bool lte
+    ) external view override returns (int24 next, bool initialized) {
+        return _getPool(key).tickBitmap.nextInitializedTickWithinOneWord(tick, key.tickSpacing, lte);
     }
 
     /// @inheritdoc IPoolManager

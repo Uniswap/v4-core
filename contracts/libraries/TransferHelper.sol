@@ -42,4 +42,22 @@ library TransferHelper {
 
         require(success, 'TRANSFER_FAILED');
     }
+
+    /// @notice Transfers tokens from from to a recipient
+    /// @dev Calls transferFrom on token contract, errors with TF if transfer fails
+    /// @param token The contract address of the token which will be transferred
+    /// @param from The origin of the transfer
+    /// @param to The recipient of the transfer
+    /// @param value The value of the transfer
+    function safeTransferFrom(
+        IERC20Minimal token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        (bool success, bytes memory data) = address(token).call(
+            abi.encodeWithSelector(IERC20Minimal.transferFrom.selector, from, to, value)
+        );
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'STF');
+    }
 }
