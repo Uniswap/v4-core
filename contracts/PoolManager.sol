@@ -393,6 +393,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function fetchPoolProtocolFee(PoolKey memory key) internal view returns (uint8 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
+            // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
+            // will be allotted no more than this amount, so controllerGasLimit must be set with this
+            // in mind.
+            if (gasleft() < controllerGasLimit) revert ProtocolFeeCannotBeFetched();
             try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (
                 uint8 updatedProtocolFee
             ) {

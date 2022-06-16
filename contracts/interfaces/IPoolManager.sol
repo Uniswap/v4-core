@@ -10,6 +10,9 @@ interface IPoolManager is IERC1155 {
     /// @notice Thrown when tokens touched has exceeded max of 256
     error MaxTokensTouched();
 
+    /// @notice Thrown when not enough gas is provided to look up the protocol fee
+    error ProtocolFeeCannotBeFetched();
+
     /// @notice Thrown when a token is owed to the caller or the caller owes a token
     /// @param token The token that is owed
     /// @param delta The amount that is owed by or to the locker
