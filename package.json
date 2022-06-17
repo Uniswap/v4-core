@@ -58,7 +58,9 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
+    "snapshots": "UPDATE_SNAPSHOT=1 hardhat test",
     "compile-forge": "forge build",
-    "test-forge": "forge test"
+    "test-forge": "forge test",
+    "prettier": "prettier --write '**/*.sol' && prettier --write '**/*.ts'"
   }
 }
