@@ -56,7 +56,7 @@ Object {
 }
 `;
 
-exports[`Oracle #initialize [ @skip-on-coverage ] gas [ @skip-on-coverage ] 1`] = `
+exports[`Oracle #initialize gas [ @skip-on-coverage ] 1`] = `
 Object {
   "calldataByteLength": 100,
   "gasUsed": 70634,

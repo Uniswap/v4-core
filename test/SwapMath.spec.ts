@@ -230,7 +230,7 @@ describe('SwapMath', () => {
       expect(feeAmount).to.eq(1)
     })
 
-    describe('[ @skip-on-coverage ] gas [ @skip-on-coverage ]', () => {
+    describe('gas [ @skip-on-coverage ]', () => {
       it('swap one for zero exact in capped', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(
