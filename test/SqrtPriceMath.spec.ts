@@ -96,7 +96,7 @@ describe('SqrtPriceMath', () => {
       ).to.eq(1)
     })
 
-    it('zeroForOne = true gas [ @skip-on-coverage ]' , async () => {
+    it('zeroForOne = true gas [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromInput(
           encodeSqrtPriceX96(1, 1),
@@ -107,7 +107,7 @@ describe('SqrtPriceMath', () => {
       )
     })
 
-    it('zeroForOne = false gas [ @skip-on-coverage ]' , async () => {
+    it('zeroForOne = false gas [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromInput(
           encodeSqrtPriceX96(1, 1),
@@ -214,7 +214,7 @@ describe('SqrtPriceMath', () => {
         .to.be.reverted
     })
 
-    it('zeroForOne = true gas [ @skip-on-coverage ]' , async () => {
+    it('zeroForOne = true gas [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromOutput(
           encodeSqrtPriceX96(1, 1),
@@ -225,7 +225,7 @@ describe('SqrtPriceMath', () => {
       )
     })
 
-    it('zeroForOne = false gas [ @skip-on-coverage ]' , async () => {
+    it('zeroForOne = false gas [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromOutput(
           encodeSqrtPriceX96(1, 1),

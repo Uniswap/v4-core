@@ -11,8 +11,8 @@ module.exports = {
     'test/TickOverflowSafetyEchidnaTest.so',
     'test/UnsafeMathEchidnaTest.sol',
   ],
-    mocha: {
-        grep: "@skip-on-coverage", // Find everything with this tag
-        invert: true               // Run the grep's inverse set.
-    }
-};
+  mocha: {
+    grep: '@skip-on-coverage', // Find everything with this tag
+    invert: true, // Run the grep's inverse set.
+  },
+}

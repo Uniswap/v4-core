@@ -56,7 +56,7 @@ describe('Oracle', () => {
         secondsPerLiquidityCumulativeX128: 0,
       })
     })
-    it('[ @skip-on-coverage ] gas [ @skip-on-coverage ]' , async () => {
+    it('[ @skip-on-coverage ] gas [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(oracle.initialize({ liquidity: 1, tick: 1, time: 1 }))
     })
   })
