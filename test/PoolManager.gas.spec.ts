@@ -33,7 +33,7 @@ type AsyncReturnType<T extends (...args: any) => any> = T extends (...args: any)
   ? U
   : any
 
-describe('PoolManager gas tests', () => {
+describe('PoolManager gas tests [ @skip-on-coverage ]', () => {
   let wallet: Wallet, other: Wallet
 
   let loadFixture: ReturnType<typeof createFixtureLoader>

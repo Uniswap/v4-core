@@ -96,7 +96,7 @@ describe('SqrtPriceMath', () => {
       ).to.eq(1)
     })
 
-    it('zeroForOne = true gas', async () => {
+    it('zeroForOne = true gas [ @skip-on-coverage ]' , async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromInput(
           encodeSqrtPriceX96(1, 1),
@@ -107,7 +107,7 @@ describe('SqrtPriceMath', () => {
       )
     })
 
-    it('zeroForOne = false gas', async () => {
+    it('zeroForOne = false gas [ @skip-on-coverage ]' , async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromInput(
           encodeSqrtPriceX96(1, 1),
@@ -214,7 +214,7 @@ describe('SqrtPriceMath', () => {
         .to.be.reverted
     })
 
-    it('zeroForOne = true gas', async () => {
+    it('zeroForOne = true gas [ @skip-on-coverage ]' , async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromOutput(
           encodeSqrtPriceX96(1, 1),
@@ -225,7 +225,7 @@ describe('SqrtPriceMath', () => {
       )
     })
 
-    it('zeroForOne = false gas', async () => {
+    it('zeroForOne = false gas [ @skip-on-coverage ]' , async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromOutput(
           encodeSqrtPriceX96(1, 1),
@@ -284,7 +284,7 @@ describe('SqrtPriceMath', () => {
       expect(amount0Up).to.eq(amount0Down.add(1))
     })
 
-    it(`gas cost for amount0 where roundUp = true`, async () => {
+    it(`[ @skip-on-coverage ] gas cost for amount0 where roundUp = true`, async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetAmount0Delta(
           encodeSqrtPriceX96(100, 121),
@@ -295,7 +295,7 @@ describe('SqrtPriceMath', () => {
       )
     })
 
-    it(`gas cost for amount0 where roundUp = true`, async () => {
+    it(`[ @skip-on-coverage ] gas cost for amount0 where roundUp = true`, async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetAmount0Delta(
           encodeSqrtPriceX96(100, 121),
@@ -338,7 +338,7 @@ describe('SqrtPriceMath', () => {
       expect(amount1RoundedDown).to.eq(amount1.sub(1))
     })
 
-    it(`gas cost for amount0 where roundUp = true`, async () => {
+    it(`[ @skip-on-coverage ] gas cost for amount0 where roundUp = true`, async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetAmount0Delta(
           encodeSqrtPriceX96(100, 121),
@@ -349,7 +349,7 @@ describe('SqrtPriceMath', () => {
       )
     })
 
-    it(`gas cost for amount0 where roundUp = false`, async () => {
+    it(`[ @skip-on-coverage ] gas cost for amount0 where roundUp = false`, async () => {
       await snapshotGasCost(
         sqrtPriceMath.getGasCostOfGetAmount0Delta(
           encodeSqrtPriceX96(100, 121),

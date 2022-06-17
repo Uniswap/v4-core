@@ -4,3 +4,5 @@ crytic-export/
 node_modules/
 typechain/
 foundry-out/
+coverage/
+coverage.json

@@ -1,5 +1,12 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`PoolManager #initialize [ @skip-on-coverage ] gas cost 1`] = `
+Object {
+  "calldataByteLength": 196,
+  "gasUsed": 64496,
+}
+`;
+
 exports[`PoolManager #initialize gas cost 1`] = `
 Object {
   "calldataByteLength": 196,
@@ -7,10 +14,31 @@ Object {
 }
 `;
 
+exports[`PoolManager #lock [ @skip-on-coverage ] gas overhead of no-op lock 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 62032,
+}
+`;
+
 exports[`PoolManager #lock gas overhead of no-op lock 1`] = `
 Object {
   "calldataByteLength": 36,
   "gasUsed": 59814,
+}
+`;
+
+exports[`PoolManager #mint [ @skip-on-coverage ] gas cost 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 327150,
+}
+`;
+
+exports[`PoolManager #mint [ @skip-on-coverage ] gas cost with hooks 1`] = `
+Object {
+  "calldataByteLength": 260,
+  "gasUsed": 335184,
 }
 `;
 
@@ -25,6 +53,27 @@ exports[`PoolManager #mint gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 260,
   "gasUsed": 293717,
+}
+`;
+
+exports[`PoolManager #swap [ @skip-on-coverage ] gas cost 1`] = `
+Object {
+  "calldataByteLength": 324,
+  "gasUsed": 116264,
+}
+`;
+
+exports[`PoolManager #swap [ @skip-on-coverage ] gas cost for swap against liquidity 1`] = `
+Object {
+  "calldataByteLength": 324,
+  "gasUsed": 274936,
+}
+`;
+
+exports[`PoolManager #swap [ @skip-on-coverage ] gas cost with hooks 1`] = `
+Object {
+  "calldataByteLength": 324,
+  "gasUsed": 116292,
 }
 `;
 
@@ -48,5 +97,7 @@ Object {
   "gasUsed": 87505,
 }
 `;
+
+exports[`PoolManager bytecode size [ @skip-on-coverage ]  1`] = `113099`;
 
 exports[`PoolManager bytecode size 1`] = `26246`;

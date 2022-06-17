@@ -32,7 +32,7 @@ describe('NoDelegateCall', () => {
     ;({ noDelegateCallTest: base, proxy } = await loadFixture(noDelegateCallFixture))
   })
 
-  it('runtime overhead', async () => {
+  it('runtime overhead [ @skip-on-coverage ]', async () => {
     await snapshotGasCost(
       (await base.getGasCostOfCannotBeDelegateCalled()).sub(await base.getGasCostOfCanBeDelegateCalled())
     )

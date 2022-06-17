@@ -352,7 +352,7 @@ describe('Hooks', () => {
       ).to.be.reverted
     })
 
-    it('gas cost of validateHookAddress', async () => {
+    it('[ @skip-on-coverage ] gas cost of validateHookAddress', async () => {
       await snapshotGasCost(
         hooks.getGasCostOfValidateHookAddress(ADDRESS_ZERO, {
           beforeInitialize: false,
@@ -433,7 +433,7 @@ describe('Hooks', () => {
       expect(await hooks.shouldCallBeforeModifyPosition(ADDRESS_ZERO)).to.be.false
       expect(await hooks.shouldCallAfterModifyPosition(ADDRESS_ZERO)).to.be.false
     })
-    it('gas cost of shouldCall', async () => {
+    it('[ @skip-on-coverage ] gas cost of shouldCall', async () => {
       await snapshotGasCost(hooks.getGasCostOfShouldCall(ADDRESS_ZERO))
     })
   })

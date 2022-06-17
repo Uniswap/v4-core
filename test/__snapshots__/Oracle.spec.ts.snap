@@ -1,5 +1,33 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Oracle #grow [ @skip-on-coverage ] gas for growing by 1 slot when index != cardinality - 1 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 49966,
+}
+`;
+
+exports[`Oracle #grow [ @skip-on-coverage ] gas for growing by 1 slot when index == cardinality - 1 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 49966,
+}
+`;
+
+exports[`Oracle #grow [ @skip-on-coverage ] gas for growing by 10 slots when index != cardinality - 1 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 250765,
+}
+`;
+
+exports[`Oracle #grow [ @skip-on-coverage ] gas for growing by 10 slots when index == cardinality - 1 1`] = `
+Object {
+  "calldataByteLength": 36,
+  "gasUsed": 250765,
+}
+`;
+
 exports[`Oracle #grow gas for growing by 1 slot when index != cardinality - 1 1`] = `
 Object {
   "calldataByteLength": 36,
@@ -28,6 +56,20 @@ Object {
 }
 `;
 
+exports[`Oracle #initialize [ @skip-on-coverage ] gas [ @skip-on-coverage ] 1`] = `
+Object {
+  "calldataByteLength": 100,
+  "gasUsed": 70634,
+}
+`;
+
+exports[`Oracle #initialize [ @skip-on-coverage ] gas 1`] = `
+Object {
+  "calldataByteLength": 100,
+  "gasUsed": 70634,
+}
+`;
+
 exports[`Oracle #initialize gas 1`] = `
 Object {
   "calldataByteLength": 100,
@@ -35,11 +77,29 @@ Object {
 }
 `;
 
+exports[`Oracle #observe before initialization [ @skip-on-coverage ] gas for observe since most recent 1`] = `7431`;
+
+exports[`Oracle #observe before initialization [ @skip-on-coverage ] gas for single observation at current time 1`] = `5260`;
+
+exports[`Oracle #observe before initialization [ @skip-on-coverage ] gas for single observation at current time counterfactually computed 1`] = `6006`;
+
 exports[`Oracle #observe before initialization gas for observe since most recent 1`] = `4615`;
 
 exports[`Oracle #observe before initialization gas for single observation at current time 1`] = `3525`;
 
 exports[`Oracle #observe before initialization gas for single observation at current time counterfactually computed 1`] = `4000`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 5 [ @skip-on-coverage ] gas all of last 20 seconds 1`] = `200248`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 5 [ @skip-on-coverage ] gas between oldest and oldest + 1 1`] = `23807`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 5 [ @skip-on-coverage ] gas latest equal 1`] = `5260`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 5 [ @skip-on-coverage ] gas latest transform 1`] = `6006`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 5 [ @skip-on-coverage ] gas middle 1`] = `22193`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 5 [ @skip-on-coverage ] gas oldest 1`] = `23326`;
 
 exports[`Oracle #observe initialized with 5 observations with starting time of 5 fetch many values 1`] = `
 Object {
@@ -75,6 +135,18 @@ exports[`Oracle #observe initialized with 5 observations with starting time of 5
 exports[`Oracle #observe initialized with 5 observations with starting time of 5 gas middle 1`] = `13746`;
 
 exports[`Oracle #observe initialized with 5 observations with starting time of 5 gas oldest 1`] = `15277`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 4294967291 [ @skip-on-coverage ] gas all of last 20 seconds 1`] = `200248`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 4294967291 [ @skip-on-coverage ] gas between oldest and oldest + 1 1`] = `23807`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 4294967291 [ @skip-on-coverage ] gas latest equal 1`] = `5260`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 4294967291 [ @skip-on-coverage ] gas latest transform 1`] = `6006`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 4294967291 [ @skip-on-coverage ] gas middle 1`] = `22193`;
+
+exports[`Oracle #observe initialized with 5 observations with starting time of 4294967291 [ @skip-on-coverage ] gas oldest 1`] = `23326`;
 
 exports[`Oracle #observe initialized with 5 observations with starting time of 4294967291 fetch many values 1`] = `
 Object {

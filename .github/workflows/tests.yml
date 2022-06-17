@@ -37,6 +37,9 @@ jobs:
       - name: Compile
         run: yarn compile
 
+      - name: Coverage
+        run: yarn coverage
+
       - name: Run unit tests
         run: yarn test
 
