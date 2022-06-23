@@ -116,7 +116,9 @@ contract PoolTest is Test {
                 modifyDelta.amount0 += delta.amount0;
                 modifyDelta.amount1 += delta.amount1;
             } else if (action == Action.SWAP) {
-                (IPoolManager.BalanceDelta memory delta, ,) = state.swap(PoolSimulation.swap(state, rand, tickSpacing));
+                (IPoolManager.BalanceDelta memory delta, , ) = state.swap(
+                    PoolSimulation.swap(state, rand, tickSpacing)
+                );
                 swapDelta.amount0 += delta.amount0;
                 swapDelta.amount1 += delta.amount1;
             }
@@ -135,8 +137,8 @@ contract PoolTest is Test {
         }
 
         // LPs lose a few wei to rounding errors
-        assertEqThreshold(modifyDelta.amount0 + swapDelta.amount0, -withdrawDelta.amount0, 20);
-        assertEqThreshold(modifyDelta.amount1 + swapDelta.amount1, -withdrawDelta.amount1, 20);
+        assertEqThreshold(modifyDelta.amount0 + swapDelta.amount0, -withdrawDelta.amount0, 25);
+        assertEqThreshold(modifyDelta.amount1 + swapDelta.amount1, -withdrawDelta.amount1, 25);
     }
 
     function assertEqThreshold(
