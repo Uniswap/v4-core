@@ -15,6 +15,11 @@ contract PoolTest is Test {
     using Random for Random.Rand;
     using Num for uint256;
 
+    enum Action { 
+        SWAP, 
+        ADD 
+    }
+
     Pool.State state;
 
     function testInitialize(uint160 sqrtPriceX96, uint8 protocolFee) public {
@@ -43,14 +48,6 @@ contract PoolTest is Test {
         int24 bound = boundTickSpacing(tickSpacing);
         assertGt(bound, 0);
         assertLt(bound, 32768);
-    }
-
-    function testRandomTick(uint256 seed, uint128 salt) external {
-        Random.Rand memory rand = Random.Rand(seed, salt);
-        int24 spacing = rand.tickSpacing();
-        int24 bound = rand.tick(spacing);
-        assertGe(bound, TickMath.MIN_TICK);
-        assertLe(bound, TickMath.MAX_TICK);
     }
 
     function testModifyPosition(
@@ -93,20 +90,21 @@ contract PoolTest is Test {
 
     /// Test random set of modifyPosition and swap calls
     /// ensuring that all positions can be closed at the end
-    function testRandomAddAndSwap(uint256 seed, uint256 numActions) public {
+    function testRandomAddAndSwap(uint256 seed) public {
         Random.Rand memory rand = Random.Rand(seed, 0);
         // can increase max numActions at cost of test suite runtime
-        numActions = uint8(numActions.bound(1, 16));
+        uint256 numActions = uint8(rand.u256().bound(1, 16));
         uint160 sqrtPrice = rand.sqrtPrice();
         int24 tickSpacing = rand.tickSpacing();
         state.initialize(sqrtPrice, 0);
 
         Pool.ModifyPositionParams[] memory positions = new Pool.ModifyPositionParams[](numActions);
+        IPoolManager.BalanceDelta memory modifyDelta;
+        IPoolManager.BalanceDelta memory swapDelta;
 
         for (uint256 i = 0; i < numActions; i++) {
-            uint8 action = uint8(rand.u256().bound(0, 2));
-            if (action == 0) {
-                // add liquidity
+            Action action = Action(rand.u256().bound(0, 2));
+            if (action == Action.ADD) {
                 Pool.ModifyPositionParams memory params = PoolSimulation.addLiquidity(
                     state,
                     rand,
@@ -114,20 +112,34 @@ contract PoolTest is Test {
                     address(this)
                 );
                 positions[i] = params;
-                state.modifyPosition(params);
-            } else if (action == 1) {
-                // swap
-                state.swap(PoolSimulation.swap(state, rand, tickSpacing));
+                IPoolManager.BalanceDelta memory delta = state.modifyPosition(params);
+                modifyDelta.amount0 += delta.amount0;
+                modifyDelta.amount1 += delta.amount1;
+            } else if (action == Action.SWAP) {
+                (IPoolManager.BalanceDelta memory delta, ) = state.swap(PoolSimulation.swap(state, rand, tickSpacing));
+                swapDelta.amount0 += delta.amount0;
+                swapDelta.amount1 += delta.amount1;
             }
         }
 
+        IPoolManager.BalanceDelta memory withdrawDelta;
         for (uint256 i = 0; i < numActions; i++) {
             Pool.ModifyPositionParams memory position = positions[i];
             // some indices will be empty if they were used for another action
             if (position.liquidityDelta != 0) {
                 position.liquidityDelta = -position.liquidityDelta;
-                state.modifyPosition(position);
+                IPoolManager.BalanceDelta memory delta = state.modifyPosition(position);
+                withdrawDelta.amount0 += delta.amount0;
+                withdrawDelta.amount1 += delta.amount1;
             }
         }
+
+        // LPs lose 0-14 wei to rounding errors
+        assertEqThreshold(modifyDelta.amount0 + swapDelta.amount0, -withdrawDelta.amount0, 14);
+        assertEqThreshold(modifyDelta.amount1 + swapDelta.amount1, -withdrawDelta.amount1, 14);
+    }
+
+    function assertEqThreshold(int256 a, int256 b, uint256 threshold) public {
+        assertLt(uint256(Num.abs(a - b)), threshold);
     }
 }

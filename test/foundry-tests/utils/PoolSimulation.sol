@@ -16,8 +16,8 @@ library PoolSimulation {
         int24 tickSpacing,
         address sender
     ) internal pure returns (Pool.ModifyPositionParams memory) {
-        int24 tick0 = rand.tick(tickSpacing);
-        int24 tick1 = rand.tick(tickSpacing);
+        int24 tick0 = rand.usableTick(tickSpacing);
+        int24 tick1 = rand.usableTick(tickSpacing);
         if (tick0 == tick1) {
             if (tick1 + tickSpacing < TickMath.MAX_TICK) {
                 tick1 += tickSpacing;
@@ -55,7 +55,7 @@ library PoolSimulation {
 
         return
             Pool.SwapParams({
-                fee: 0,
+                fee: uint16(rand.u256()),
                 tickSpacing: tickSpacing,
                 zeroForOne: zeroForOne,
                 amountSpecified: amount,

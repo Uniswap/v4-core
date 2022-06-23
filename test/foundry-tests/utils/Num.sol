@@ -4,17 +4,17 @@ library Num {
     function bound(
         uint256 num,
         uint256 min,
-        uint256 max
+        uint256 maxExclusive
     ) internal pure returns (uint256) {
-        return min + (num % (max - min));
+        return min + (num % (maxExclusive - min));
     }
 
     function bound(
         int256 num,
         int256 min,
-        int256 max
+        int256 maxExclusive
     ) internal pure returns (int256) {
-        return min + abs(num % (max - min));
+        return min + abs(num % (maxExclusive - min));
     }
 
     function abs(int256 a) internal pure returns (int256) {
