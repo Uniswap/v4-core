@@ -15,9 +15,9 @@ contract PoolTest is Test {
     using Random for Random.Rand;
     using Num for uint256;
 
-    enum Action { 
-        SWAP, 
-        ADD 
+    enum Action {
+        SWAP,
+        ADD
     }
 
     Pool.State state;
@@ -116,7 +116,7 @@ contract PoolTest is Test {
                 modifyDelta.amount0 += delta.amount0;
                 modifyDelta.amount1 += delta.amount1;
             } else if (action == Action.SWAP) {
-                (IPoolManager.BalanceDelta memory delta, ) = state.swap(PoolSimulation.swap(state, rand, tickSpacing));
+                (IPoolManager.BalanceDelta memory delta, ,) = state.swap(PoolSimulation.swap(state, rand, tickSpacing));
                 swapDelta.amount0 += delta.amount0;
                 swapDelta.amount1 += delta.amount1;
             }
@@ -134,12 +134,16 @@ contract PoolTest is Test {
             }
         }
 
-        // LPs lose 0-14 wei to rounding errors
-        assertEqThreshold(modifyDelta.amount0 + swapDelta.amount0, -withdrawDelta.amount0, 14);
-        assertEqThreshold(modifyDelta.amount1 + swapDelta.amount1, -withdrawDelta.amount1, 14);
+        // LPs lose a few wei to rounding errors
+        assertEqThreshold(modifyDelta.amount0 + swapDelta.amount0, -withdrawDelta.amount0, 20);
+        assertEqThreshold(modifyDelta.amount1 + swapDelta.amount1, -withdrawDelta.amount1, 20);
     }
 
-    function assertEqThreshold(int256 a, int256 b, uint256 threshold) public {
+    function assertEqThreshold(
+        int256 a,
+        int256 b,
+        uint256 threshold
+    ) public {
         assertLt(uint256(Num.abs(a - b)), threshold);
     }
 }
