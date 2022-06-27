@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.15;
 
+import {Currency, CurrencyLibrary} from '../libraries/CurrencyLibrary.sol';
+import {TransferHelper} from '../libraries/TransferHelper.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 contract PoolTakeTest is ILockCallback {
+    using CurrencyLibrary for Currency;
+
     IPoolManager public immutable manager;
 
     constructor(IPoolManager _manager) {
@@ -24,7 +28,7 @@ contract PoolTakeTest is ILockCallback {
         IPoolManager.PoolKey memory key,
         uint256 amount0,
         uint256 amount1
-    ) external {
+    ) external payable {
         manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
     }
 
@@ -39,7 +43,11 @@ contract PoolTakeTest is ILockCallback {
             uint256 balAfter = data.key.token0.balanceOf(data.sender);
             require(balAfter - balBefore == data.amount0);
 
-            data.key.token0.transferFrom(data.sender, address(manager), uint256(data.amount0));
+            if (data.key.token0.isNative()) {
+                TransferHelper.safeTransferETH(address(manager), uint256(data.amount0));
+            } else {
+                IERC20Minimal(Currency.unwrap(data.key.token0)).transferFrom(data.sender, address(manager), uint256(data.amount0));
+            }
             manager.settle(data.key.token0);
         }
 
@@ -49,7 +57,11 @@ contract PoolTakeTest is ILockCallback {
             uint256 balAfter = data.key.token1.balanceOf(data.sender);
             require(balAfter - balBefore == data.amount1);
 
-            data.key.token1.transferFrom(data.sender, address(manager), uint256(data.amount1));
+            if (data.key.token1.isNative()) {
+                TransferHelper.safeTransferETH(address(manager), uint256(data.amount1));
+            } else {
+                IERC20Minimal(Currency.unwrap(data.key.token1)).transferFrom(data.sender, address(manager), uint256(data.amount1));
+            }
             manager.settle(data.key.token1);
         }
 

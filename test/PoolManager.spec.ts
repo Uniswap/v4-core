@@ -195,6 +195,26 @@ describe('PoolManager', () => {
       expect(protocolFee).to.eq(0)
     })
 
+    it('initializes a pool with ETH', async () => {
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: ADDRESS_ZERO,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
+      await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
+        .to.emit(manager, 'Initialize')
+        .withArgs(getPoolId(poolKey), poolKey.token0, poolKey.token1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
+
+      const {
+        slot0: { sqrtPriceX96, protocolFee },
+      } = await manager.pools(getPoolId(poolKey))
+      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(protocolFee).to.eq(0)
+    })
+
     it('initializes a pool with hooks', async () => {
       await manager.initialize(
         {
@@ -400,26 +420,51 @@ describe('PoolManager', () => {
         .withArgs(getPoolId(poolKey), modifyPositionTest.address, 0, 60, 100)
     })
 
+    it('succeeds with ETH if pool is initialized', async () => {
+      const poolKey = {
+        token0: ADDRESS_ZERO,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+      await expect(
+        modifyPositionTest.modifyPosition(
+          poolKey,
+          {
+            tickLower: 0,
+            tickUpper: 60,
+            liquidityDelta: 100,
+          },
+          {
+            value: 100,
+          }
+        )
+      )
+        .to.emit(manager, 'ModifyPosition')
+        .withArgs(getPoolId(poolKey), modifyPositionTest.address, 0, 60, 100)
+    })
+
     it('succeeds if pool is initialized and hook is provided', async () => {
-      await manager.initialize(
+      const poolKey = 
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: hooksMock.address,
-        },
+        };
+
+      await manager.initialize(
+        poolKey,
         encodeSqrtPriceX96(1, 1)
       )
 
       await modifyPositionTest.modifyPosition(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: hooksMock.address,
-        },
+        poolKey,
         {
           tickLower: 0,
           tickUpper: 60,
@@ -429,13 +474,7 @@ describe('PoolManager', () => {
 
       const argsBeforeModify = [
         modifyPositionTest.address,
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: hooksMock.address,
-        },
+        poolKey,
         {
           tickLower: 0,
           tickUpper: 60,
@@ -478,6 +517,35 @@ describe('PoolManager', () => {
             tickLower: 0,
             tickUpper: 60,
             liquidityDelta: 100,
+          }
+        )
+      )
+    })
+
+    it('gas cost with ETH', async () => {
+      const poolKey = 
+        {
+          token0: ADDRESS_ZERO,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        };
+      await manager.initialize(
+        poolKey,
+        encodeSqrtPriceX96(1, 1)
+      )
+
+      await snapshotGasCost(
+        modifyPositionTest.modifyPosition(
+          poolKey,
+          {
+            tickLower: 0,
+            tickUpper: 60,
+            liquidityDelta: 100,
+          },
+          {
+            value: 100,
           }
         )
       )
@@ -537,6 +605,7 @@ describe('PoolManager', () => {
         )
       ).to.be.revertedWith('I')
     })
+
     it('succeeds if pool is initialized', async () => {
       const poolKey = {
         token0: tokens.token0.address,
@@ -570,6 +639,35 @@ describe('PoolManager', () => {
         .to.emit(manager, 'Swap')
         .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932)
     })
+
+    it('succeeds with ETH if pool is initialized', async () => {
+      const poolKey = {
+        token0: ADDRESS_ZERO,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      await expect(
+        swapTest.swap(
+          poolKey,
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: false,
+          }
+        )
+      )
+        .to.emit(manager, 'Swap')
+        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932)
+    })
+
     it('succeeds if pool is initialized and hook is provided', async () => {
       await manager.initialize(
         {
@@ -626,26 +724,23 @@ describe('PoolManager', () => {
       expect(await hooksMock.calledWith('beforeSwap', argsBeforeSwap)).to.be.true
       expect(await hooksMock.calledWith('afterSwap', argsAfterSwap)).to.be.true
     })
+
     it('gas cost', async () => {
-      await manager.initialize(
+      const poolKey = 
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
-        },
+        };
+      await manager.initialize(
+        poolKey,
         encodeSqrtPriceX96(1, 1)
       )
 
       await swapTest.swap(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
+        poolKey,
         {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
@@ -659,13 +754,7 @@ describe('PoolManager', () => {
 
       await snapshotGasCost(
         swapTest.swap(
-          {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
+          poolKey,
           {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
@@ -678,6 +767,50 @@ describe('PoolManager', () => {
         )
       )
     })
+
+    it('gas cost with ETH', async () => {
+      const poolKey = 
+        {
+          token0: ADDRESS_ZERO,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        };
+      await manager.initialize(
+        poolKey,
+        encodeSqrtPriceX96(1, 1)
+      )
+
+      await swapTest.swap(
+        poolKey,
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
+        }
+      )
+
+      await snapshotGasCost(
+        swapTest.swap(
+          poolKey,
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: false,
+            settleUsingTransfer: false,
+          }
+        )
+      )
+    })
+
     it('gas cost with hooks', async () => {
       await manager.initialize(
         {
@@ -860,24 +993,21 @@ describe('PoolManager', () => {
       expect(erc1155Balance).to.be.eq(71)
     })
     it('gas cost for swap against liquidity', async () => {
-      await manager.initialize(
+      const poolKey = 
         {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
-        },
+        };
+
+      await manager.initialize(
+        poolKey,
         encodeSqrtPriceX96(1, 1)
       )
       await modifyPositionTest.modifyPosition(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
+        poolKey,
         {
           tickLower: -120,
           tickUpper: 120,
@@ -886,13 +1016,7 @@ describe('PoolManager', () => {
       )
 
       await swapTest.swap(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
+        poolKey,
         {
           amountSpecified: 100,
           sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
@@ -906,13 +1030,7 @@ describe('PoolManager', () => {
 
       await snapshotGasCost(
         swapTest.swap(
-          {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
+          poolKey,
           {
             amountSpecified: 100,
             sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
@@ -921,6 +1039,66 @@ describe('PoolManager', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
+          }
+        )
+      )
+    })
+
+    it('gas cost for swap with ETH against liquidity', async () => {
+      const poolKey = 
+        {
+          token0: ADDRESS_ZERO,
+          token1: tokens.token1.address,
+          fee: FeeAmount.MEDIUM,
+          tickSpacing: 60,
+          hooks: ADDRESS_ZERO,
+        };
+      await manager.initialize(
+        poolKey,
+        encodeSqrtPriceX96(1, 1)
+      )
+      await modifyPositionTest.modifyPosition(
+        poolKey,
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(1),
+        },
+        {
+          value: expandTo18Decimals(1),
+        }
+      )
+
+      await swapTest.swap(
+        poolKey,
+        {
+          amountSpecified: 100,
+          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          zeroForOne: true,
+        },
+        {
+          withdrawTokens: true,
+          settleUsingTransfer: true,
+        },
+        {
+          value: expandTo18Decimals(1),
+        }
+      )
+
+      await snapshotGasCost(
+        swapTest.swap(
+          poolKey,
+          {
+            amountSpecified: 100,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
+          },
+          {
+            value: expandTo18Decimals(1),
           }
         )
       )
@@ -991,6 +1169,27 @@ describe('PoolManager', () => {
       await expect(takeTest.connect(wallet).take(key, 1, 0)).to.be.not.be.reverted
       await expect(takeTest.connect(wallet).take(key, 0, 1)).to.be.not.be.reverted
     })
+
+    it('succeeds with ETH if has liquidity', async () => {
+      const key = {
+        token0: ADDRESS_ZERO,
+        token1: tokens.token1.address,
+        fee: 100,
+        hooks: ADDRESS_ZERO,
+        tickSpacing: 10,
+      }
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: -60,
+        tickUpper: 60,
+        liquidityDelta: 100,
+      }, { value: 100 })
+
+      await tokens.token0.connect(wallet).approve(takeTest.address, MaxUint128)
+
+      await expect(takeTest.connect(wallet).take(key, 1, 0, { value: 1 })).to.be.not.be.reverted
+      await expect(takeTest.connect(wallet).take(key, 0, 1)).to.be.not.be.reverted
+    })
   })
 
   describe('#donate', () => {
@@ -1038,6 +1237,27 @@ describe('PoolManager', () => {
       })
 
       await expect(donateTest.donate(key, 100, 200)).to.be.not.be.reverted
+      const { feeGrowthGlobal0X128, feeGrowthGlobal1X128 } = await manager.pools(getPoolId(key))
+      expect(feeGrowthGlobal0X128).to.eq(BigNumber.from('340282366920938463463374607431768211456')) // 100 << 128 divided by liquidity
+      expect(feeGrowthGlobal1X128).to.eq(BigNumber.from('680564733841876926926749214863536422912')) // 200 << 128 divided by liquidity
+    })
+
+    it('succeeds for ETH if has liquidity', async () => {
+      const key = {
+        token0: ADDRESS_ZERO,
+        token1: tokens.token1.address,
+        fee: 100,
+        hooks: ADDRESS_ZERO,
+        tickSpacing: 10,
+      }
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await modifyPositionTest.modifyPosition(key, {
+        tickLower: -60,
+        tickUpper: 60,
+        liquidityDelta: 100,
+      }, { value: 100 })
+
+      await expect(donateTest.donate(key, 100, 200, { value: 100 })).to.be.not.be.reverted
       const { feeGrowthGlobal0X128, feeGrowthGlobal1X128 } = await manager.pools(getPoolId(key))
       expect(feeGrowthGlobal0X128).to.eq(BigNumber.from('340282366920938463463374607431768211456')) // 100 << 128 divided by liquidity
       expect(feeGrowthGlobal1X128).to.eq(BigNumber.from('680564733841876926926749214863536422912')) // 200 << 128 divided by liquidity
@@ -1102,127 +1322,251 @@ describe('PoolManager', () => {
   })
 
   describe('#collectProtocolFees', async () => {
-    beforeEach('set the fee controller, initialize a pool with protocol fee', async () => {
-      const poolKey = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-      // set the controller, and set the pool's protocol fee
-      await manager.setProtocolFeeController(feeControllerTest.address)
-      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
-      const poolProtocolFee = 68 // 0x 0100 0100
-      const poolID = getPoolId(poolKey)
-      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
-
-      // initialize the pool with the fee
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-      const {
-        slot0: { protocolFee },
-      } = await manager.pools(getPoolId(poolKey))
-      expect(protocolFee).to.eq(poolProtocolFee)
-
-      // add liquidity around the initial price
-      await modifyPositionTest.modifyPosition(
-        {
+    describe('ERC20 tokens', async () => {
+      beforeEach('set the fee controller, initialize a pool with protocol fee', async () => {
+        const poolKey = {
           token0: tokens.token0.address,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
-        },
-        {
-          tickLower: -120,
-          tickUpper: 120,
-          liquidityDelta: expandTo18Decimals(10),
         }
-      )
+        // set the controller, and set the pool's protocol fee
+        await manager.setProtocolFeeController(feeControllerTest.address)
+        expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+        const poolProtocolFee = 68 // 0x 0100 0100
+        const poolID = getPoolId(poolKey)
+        await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+
+        // initialize the pool with the fee
+        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+        const {
+          slot0: { protocolFee },
+        } = await manager.pools(getPoolId(poolKey))
+        expect(protocolFee).to.eq(poolProtocolFee)
+
+        // add liquidity around the initial price
+        await modifyPositionTest.modifyPosition(
+          poolKey,
+          {
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: expandTo18Decimals(10),
+          }
+        )
+      })
+
+      it('allows the owner to collect accumulated fees', async () => {
+        await swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: 10000,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
+          }
+        )
+
+        const expectedFees = 7
+        expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+
+        // allows the owner to collect the fees
+        const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
+        const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
+
+        // get the returned value, then actually execute
+        const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 7)
+        await manager.collectProtocolFees(other.address, tokens.token0.address, expectedFees)
+
+        const recipientBalanceAfter = await tokens.token0.balanceOf(other.address)
+        const managerBalanceAfter = await tokens.token0.balanceOf(manager.address)
+
+        expect(amount).to.be.eq(expectedFees)
+        expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
+        expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
+
+        expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(0))
+      })
+
+      it('returns all fees if 0 is provided', async () => {
+        await swapTest.swap(
+          {
+            token0: tokens.token0.address,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: 10000,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
+          }
+        )
+
+        const expectedFees = 7
+        expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+
+        // allows the owner to collect the fees
+        const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
+        const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
+
+        // get the returned value, then actually execute
+        const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 0)
+        await manager.collectProtocolFees(other.address, tokens.token0.address, 0)
+
+        const recipientBalanceAfter = await tokens.token0.balanceOf(other.address)
+        const managerBalanceAfter = await tokens.token0.balanceOf(manager.address)
+
+        expect(amount).to.be.eq(expectedFees)
+        expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
+        expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
+
+        expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(0))
+      })
     })
 
-    it('allows the owner to collect accumulated fees', async () => {
-      await swapTest.swap(
-        {
-          token0: tokens.token0.address,
+    describe('ETH', async () => {
+      beforeEach('set the fee controller, initialize a pool with protocol fee', async () => {
+        const poolKey = {
+          token0: ADDRESS_ZERO,
           token1: tokens.token1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
-        },
-        {
-          amountSpecified: 10000,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        {
-          withdrawTokens: true,
-          settleUsingTransfer: true,
         }
-      )
+        // set the controller, and set the pool's protocol fee
+        await manager.setProtocolFeeController(feeControllerTest.address)
+        expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+        const poolProtocolFee = 68 // 0x 0100 0100
+        const poolID = getPoolId(poolKey)
+        await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
 
-      const expectedFees = 7
-      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(expectedFees))
-      expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+        // initialize the pool with the fee
+        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+        const {
+          slot0: { protocolFee },
+        } = await manager.pools(getPoolId(poolKey))
+        expect(protocolFee).to.eq(poolProtocolFee)
 
-      // allows the owner to collect the fees
-      const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
-      const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
+        // add liquidity around the initial price
+        await modifyPositionTest.modifyPosition(
+          poolKey,
+          {
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: expandTo18Decimals(10),
+          },
+          {
+            value: expandTo18Decimals(10),
+          }
+        )
+      })
 
-      // get the returned value, then actually execute
-      const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 7)
-      await manager.collectProtocolFees(other.address, tokens.token0.address, expectedFees)
+      it('allows the owner to collect accumulated fees', async () => {
+        await swapTest.swap(
+          {
+            token0: ADDRESS_ZERO,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: 10000,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
+          },
+          {
+            value: 10000,
+          }
+        )
 
-      const recipientBalanceAfter = await tokens.token0.balanceOf(other.address)
-      const managerBalanceAfter = await tokens.token0.balanceOf(manager.address)
+        const expectedFees = 7
+        expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
 
-      expect(amount).to.be.eq(expectedFees)
-      expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
-      expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
+        // allows the owner to collect the fees
+        const recipientBalanceBefore = await other.getBalance()
+        const managerBalanceBefore = await waffle.provider.getBalance(manager.address)
 
-      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(0))
-    })
+        // get the returned value, then actually execute
+        const amount = await manager.callStatic.collectProtocolFees(other.address, ADDRESS_ZERO, 7)
+        await manager.collectProtocolFees(other.address, ADDRESS_ZERO, expectedFees)
 
-    it('returns all fees if 0 is provided', async () => {
-      await swapTest.swap(
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        {
-          amountSpecified: 10000,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        {
-          withdrawTokens: true,
-          settleUsingTransfer: true,
-        }
-      )
+        const recipientBalanceAfter = await other.getBalance()
+        const managerBalanceAfter = await waffle.provider.getBalance(manager.address)
 
-      const expectedFees = 7
-      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(expectedFees))
-      expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+        expect(amount).to.be.eq(expectedFees)
+        expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
+        expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
 
-      // allows the owner to collect the fees
-      const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
-      const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
+        expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(0))
+      })
 
-      // get the returned value, then actually execute
-      const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 0)
-      await manager.collectProtocolFees(other.address, tokens.token0.address, 0)
+      it('returns all fees if 0 is provided', async () => {
+        await swapTest.swap(
+          {
+            token0: ADDRESS_ZERO,
+            token1: tokens.token1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            amountSpecified: 10000,
+            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            zeroForOne: true,
+          },
+          {
+            withdrawTokens: true,
+            settleUsingTransfer: true,
+          },
+          {
+            value: 10000,
+          }
+        )
 
-      const recipientBalanceAfter = await tokens.token0.balanceOf(other.address)
-      const managerBalanceAfter = await tokens.token0.balanceOf(manager.address)
+        const expectedFees = 7
+        expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
 
-      expect(amount).to.be.eq(expectedFees)
-      expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
-      expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
+        // allows the owner to collect the fees
+        const recipientBalanceBefore = await other.getBalance()
+        const managerBalanceBefore = await waffle.provider.getBalance(manager.address)
 
-      expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(0))
+        // get the returned value, then actually execute
+        const amount = await manager.callStatic.collectProtocolFees(other.address, ADDRESS_ZERO, 0)
+        await manager.collectProtocolFees(other.address, ADDRESS_ZERO, 0)
+
+        const recipientBalanceAfter = await other.getBalance()
+        const managerBalanceAfter = await waffle.provider.getBalance(manager.address)
+
+        expect(amount).to.be.eq(expectedFees)
+        expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
+        expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
+
+        expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(0))
+      })
     })
   })
 })

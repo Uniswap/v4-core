@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.15;
 
-import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
+import {Currency, CurrencyLibrary} from '../libraries/CurrencyLibrary.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
 
 contract PoolManagerReentrancyTest is ILockCallback {
+    using CurrencyLibrary for Currency;
+
     event LockAcquired(uint256 count);
 
     function reenter(
         IPoolManager poolManager,
-        IERC20Minimal tokenToBorrow,
+        Currency tokenToBorrow,
         uint256 count
     ) external {
         helper(poolManager, tokenToBorrow, count, count);
@@ -18,7 +20,7 @@ contract PoolManagerReentrancyTest is ILockCallback {
 
     function helper(
         IPoolManager poolManager,
-        IERC20Minimal tokenToBorrow,
+        Currency tokenToBorrow,
         uint256 total,
         uint256 count
     ) internal {
@@ -30,9 +32,9 @@ contract PoolManagerReentrancyTest is ILockCallback {
     }
 
     function lockAcquired(bytes calldata data) external returns (bytes memory) {
-        (IERC20Minimal tokenToBorrow, uint256 total, uint256 count) = abi.decode(
+        (Currency tokenToBorrow, uint256 total, uint256 count) = abi.decode(
             data,
-            (IERC20Minimal, uint256, uint256)
+            (Currency, uint256, uint256)
         );
         emit LockAcquired(count);
 

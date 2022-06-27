@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.6.2;
 
-import {IERC20Minimal} from './external/IERC20Minimal.sol';
+import {Currency} from '../libraries/CurrencyLibrary.sol';
 import {Pool} from '../libraries/Pool.sol';
 import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 import {IHooks} from './IHooks.sol';
@@ -16,7 +16,7 @@ interface IPoolManager is IERC1155 {
     /// @notice Thrown when a token is owed to the caller or the caller owes a token
     /// @param token The token that is owed
     /// @param delta The amount that is owed by or to the locker
-    error TokenNotSettled(IERC20Minimal token, int256 delta);
+    error TokenNotSettled(Currency token, int256 delta);
 
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
@@ -39,8 +39,8 @@ interface IPoolManager is IERC1155 {
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     event Initialize(
         bytes32 indexed poolId,
-        IERC20Minimal indexed token0,
-        IERC20Minimal indexed token1,
+        Currency indexed token0,
+        Currency indexed token1,
         uint24 fee,
         int24 tickSpacing,
         IHooks hooks
@@ -85,9 +85,9 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower token of the pool, sorted numerically
-        IERC20Minimal token0;
+        Currency token0;
         /// @notice The higher token of the pool, sorted numerically
-        IERC20Minimal token1;
+        Currency token1;
         /// @notice The fee for the pool
         uint24 fee;
         /// @notice Ticks that involve positions must be a multiple of tick spacing
@@ -124,7 +124,7 @@ interface IPoolManager is IERC1155 {
     ) external view returns (uint128 liquidity);
 
     // @notice Given a token address, returns the protocol fees accrued in that token
-    function protocolFeesAccrued(IERC20Minimal) external view returns (uint256);
+    function protocolFeesAccrued(Currency) external view returns (uint256);
 
     /// @notice Represents a change in the pool's balance of token0 and token1.
     /// @dev This is returned from most pool operations
@@ -134,7 +134,7 @@ interface IPoolManager is IERC1155 {
     }
 
     /// @notice Returns the reserves for a given ERC20 token
-    function reservesOf(IERC20Minimal token) external view returns (uint256);
+    function reservesOf(Currency token) external view returns (uint256);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
@@ -153,12 +153,12 @@ interface IPoolManager is IERC1155 {
     /// @notice Get the token touched at the given index for the given locker index
     /// @param id The ID of the locker
     /// @param index The index of the token in the tokens touched array to get
-    function getTokensTouched(uint256 id, uint256 index) external view returns (IERC20Minimal);
+    function getTokensTouched(uint256 id, uint256 index) external view returns (Currency);
 
     /// @notice Get the current delta for a given token, and its position in the tokens touched array
     /// @param id The ID of the locker
     /// @param token The token for which to lookup the delta
-    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 index, int248 delta);
+    function getTokenDelta(uint256 id, Currency token) external view returns (uint8 index, int248 delta);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
@@ -197,20 +197,20 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(
-        IERC20Minimal token,
+        Currency token,
         address to,
         uint256 amount
     ) external;
 
     /// @notice Called by the user to move value into ERC1155 balance
     function mint(
-        IERC20Minimal token,
+        Currency token,
         address to,
         uint256 amount
     ) external;
 
     /// @notice Called by the user to pay what is owed
-    function settle(IERC20Minimal token) external returns (uint256 paid);
+    function settle(Currency token) external returns (uint256 paid);
 
     /// @notice sets the protocol fee for the given pool
     function setPoolProtocolFee(PoolKey memory key) external;
