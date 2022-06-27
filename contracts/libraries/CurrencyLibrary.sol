@@ -14,7 +14,11 @@ library CurrencyLibrary {
 
     address constant NATIVE = address(0);
 
-    function transfer(Currency currency, address to, uint256 amount) internal {
+    function transfer(
+        Currency currency,
+        address to,
+        uint256 amount
+    ) internal {
         if (currency.isNative()) {
             TransferHelper.safeTransferETH(to, amount);
         } else {
@@ -33,7 +37,6 @@ library CurrencyLibrary {
     function equals(Currency currency, Currency other) internal pure returns (bool) {
         return Currency.unwrap(currency) == Currency.unwrap(other);
     }
-
 
     function isNative(Currency currency) internal pure returns (bool) {
         return Currency.unwrap(currency) == NATIVE;

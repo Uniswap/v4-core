@@ -32,10 +32,7 @@ contract PoolManagerReentrancyTest is ILockCallback {
     }
 
     function lockAcquired(bytes calldata data) external returns (bytes memory) {
-        (Currency tokenToBorrow, uint256 total, uint256 count) = abi.decode(
-            data,
-            (Currency, uint256, uint256)
-        );
+        (Currency tokenToBorrow, uint256 total, uint256 count) = abi.decode(data, (Currency, uint256, uint256));
         emit LockAcquired(count);
 
         uint256 id = total - count;

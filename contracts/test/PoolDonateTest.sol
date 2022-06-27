@@ -51,7 +51,11 @@ contract PoolDonateTest is ILockCallback {
             if (data.key.token0.isNative()) {
                 TransferHelper.safeTransferETH(address(manager), uint256(delta.amount0));
             } else {
-                IERC20Minimal(Currency.unwrap(data.key.token0)).transferFrom(data.sender, address(manager), uint256(delta.amount0));
+                IERC20Minimal(Currency.unwrap(data.key.token0)).transferFrom(
+                    data.sender,
+                    address(manager),
+                    uint256(delta.amount0)
+                );
             }
             manager.settle(data.key.token0);
         }
@@ -59,7 +63,11 @@ contract PoolDonateTest is ILockCallback {
             if (data.key.token1.isNative()) {
                 TransferHelper.safeTransferETH(address(manager), uint256(delta.amount1));
             } else {
-                IERC20Minimal(Currency.unwrap(data.key.token1)).transferFrom(data.sender, address(manager), uint256(delta.amount1));
+                IERC20Minimal(Currency.unwrap(data.key.token1)).transferFrom(
+                    data.sender,
+                    address(manager),
+                    uint256(delta.amount1)
+                );
             }
             manager.settle(data.key.token1);
         }

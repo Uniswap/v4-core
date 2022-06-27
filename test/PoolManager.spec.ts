@@ -449,28 +449,21 @@ describe('PoolManager', () => {
     })
 
     it('succeeds if pool is initialized and hook is provided', async () => {
-      const poolKey = 
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: hooksMock.address,
-        };
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: hooksMock.address,
+      }
 
-      await manager.initialize(
-        poolKey,
-        encodeSqrtPriceX96(1, 1)
-      )
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
 
-      await modifyPositionTest.modifyPosition(
-        poolKey,
-        {
-          tickLower: 0,
-          tickUpper: 60,
-          liquidityDelta: 100,
-        }
-      )
+      await modifyPositionTest.modifyPosition(poolKey, {
+        tickLower: 0,
+        tickUpper: 60,
+        liquidityDelta: 100,
+      })
 
       const argsBeforeModify = [
         modifyPositionTest.address,
@@ -523,18 +516,14 @@ describe('PoolManager', () => {
     })
 
     it('gas cost with ETH', async () => {
-      const poolKey = 
-        {
-          token0: ADDRESS_ZERO,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        };
-      await manager.initialize(
-        poolKey,
-        encodeSqrtPriceX96(1, 1)
-      )
+      const poolKey = {
+        token0: ADDRESS_ZERO,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
 
       await snapshotGasCost(
         modifyPositionTest.modifyPosition(
@@ -726,18 +715,14 @@ describe('PoolManager', () => {
     })
 
     it('gas cost', async () => {
-      const poolKey = 
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        };
-      await manager.initialize(
-        poolKey,
-        encodeSqrtPriceX96(1, 1)
-      )
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
 
       await swapTest.swap(
         poolKey,
@@ -769,18 +754,14 @@ describe('PoolManager', () => {
     })
 
     it('gas cost with ETH', async () => {
-      const poolKey = 
-        {
-          token0: ADDRESS_ZERO,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        };
-      await manager.initialize(
-        poolKey,
-        encodeSqrtPriceX96(1, 1)
-      )
+      const poolKey = {
+        token0: ADDRESS_ZERO,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
 
       await swapTest.swap(
         poolKey,
@@ -993,27 +974,20 @@ describe('PoolManager', () => {
       expect(erc1155Balance).to.be.eq(71)
     })
     it('gas cost for swap against liquidity', async () => {
-      const poolKey = 
-        {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        };
+      const poolKey = {
+        token0: tokens.token0.address,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
 
-      await manager.initialize(
-        poolKey,
-        encodeSqrtPriceX96(1, 1)
-      )
-      await modifyPositionTest.modifyPosition(
-        poolKey,
-        {
-          tickLower: -120,
-          tickUpper: 120,
-          liquidityDelta: expandTo18Decimals(1),
-        }
-      )
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      await modifyPositionTest.modifyPosition(poolKey, {
+        tickLower: -120,
+        tickUpper: 120,
+        liquidityDelta: expandTo18Decimals(1),
+      })
 
       await swapTest.swap(
         poolKey,
@@ -1045,18 +1019,14 @@ describe('PoolManager', () => {
     })
 
     it('gas cost for swap with ETH against liquidity', async () => {
-      const poolKey = 
-        {
-          token0: ADDRESS_ZERO,
-          token1: tokens.token1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        };
-      await manager.initialize(
-        poolKey,
-        encodeSqrtPriceX96(1, 1)
-      )
+      const poolKey = {
+        token0: ADDRESS_ZERO,
+        token1: tokens.token1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
       await modifyPositionTest.modifyPosition(
         poolKey,
         {
@@ -1179,11 +1149,15 @@ describe('PoolManager', () => {
         tickSpacing: 10,
       }
       await manager.initialize(key, encodeSqrtPriceX96(1, 1))
-      await modifyPositionTest.modifyPosition(key, {
-        tickLower: -60,
-        tickUpper: 60,
-        liquidityDelta: 100,
-      }, { value: 100 })
+      await modifyPositionTest.modifyPosition(
+        key,
+        {
+          tickLower: -60,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        },
+        { value: 100 }
+      )
 
       await tokens.token0.connect(wallet).approve(takeTest.address, MaxUint128)
 
@@ -1251,11 +1225,15 @@ describe('PoolManager', () => {
         tickSpacing: 10,
       }
       await manager.initialize(key, encodeSqrtPriceX96(1, 1))
-      await modifyPositionTest.modifyPosition(key, {
-        tickLower: -60,
-        tickUpper: 60,
-        liquidityDelta: 100,
-      }, { value: 100 })
+      await modifyPositionTest.modifyPosition(
+        key,
+        {
+          tickLower: -60,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        },
+        { value: 100 }
+      )
 
       await expect(donateTest.donate(key, 100, 200, { value: 100 })).to.be.not.be.reverted
       const { feeGrowthGlobal0X128, feeGrowthGlobal1X128 } = await manager.pools(getPoolId(key))
@@ -1346,14 +1324,11 @@ describe('PoolManager', () => {
         expect(protocolFee).to.eq(poolProtocolFee)
 
         // add liquidity around the initial price
-        await modifyPositionTest.modifyPosition(
-          poolKey,
-          {
-            tickLower: -120,
-            tickUpper: 120,
-            liquidityDelta: expandTo18Decimals(10),
-          }
-        )
+        await modifyPositionTest.modifyPosition(poolKey, {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(10),
+        })
       })
 
       it('allows the owner to collect accumulated fees', async () => {

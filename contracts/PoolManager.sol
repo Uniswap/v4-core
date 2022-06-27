@@ -419,5 +419,5 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @notice receive ETH for ETH pools
-    receive() external payable { }
+    receive() external payable {}
 }
