@@ -52,7 +52,7 @@ describe('PoolManager gas tests', () => {
 
   describe('ERC20 tokens', () => {
     const gasTestFixture = async ([wallet]: Wallet[]) => {
-      const { token0, token1 } = await tokensFixture()
+      const { currency0, currency1 } = await tokensFixture()
 
       const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
       const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
@@ -65,15 +65,15 @@ describe('PoolManager gas tests', () => {
       const donateTest = (await donateTestFactory.deploy(manager.address)) as PoolDonateTest
       const modifyPositionTest = (await mintTestFactory.deploy(manager.address)) as PoolModifyPositionTest
 
-      for (const token of [token0, token1]) {
+      for (const token of [currency0, currency1]) {
         for (const spender of [swapTest, donateTest, modifyPositionTest]) {
           await token.connect(wallet).approve(spender.address, constants.MaxUint256)
         }
       }
 
       const poolKey = {
-        token0: token0.address,
-        token1: token1.address,
+        currency0: currency0.address,
+        currency1: currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -167,8 +167,8 @@ describe('PoolManager gas tests', () => {
     describe('#initialize', () => {
       it('initialize pool with no hooks and no protocol fee', async () => {
         const altPoolKey = {
-          token0: wallet.address,
-          token1: other.address,
+          currency0: wallet.address,
+          currency1: other.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: '0x0000000000000000000000000000000000000000',
@@ -341,7 +341,7 @@ describe('PoolManager gas tests', () => {
 
   describe('ETH', () => {
     const gasTestFixture = async ([wallet]: Wallet[]) => {
-      const { token1 } = await tokensFixture()
+      const { currency1 } = await tokensFixture()
 
       const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
       const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
@@ -355,12 +355,12 @@ describe('PoolManager gas tests', () => {
       const modifyPositionTest = (await mintTestFactory.deploy(manager.address)) as PoolModifyPositionTest
 
       for (const spender of [swapTest, donateTest, modifyPositionTest]) {
-        await token1.connect(wallet).approve(spender.address, constants.MaxUint256)
+        await currency1.connect(wallet).approve(spender.address, constants.MaxUint256)
       }
 
       const poolKey = {
-        token0: ADDRESS_ZERO,
-        token1: token1.address,
+        currency0: ADDRESS_ZERO,
+        currency1: currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,

@@ -48,28 +48,28 @@ contract PoolDonateTest is ILockCallback {
         IPoolManager.BalanceDelta memory delta = manager.donate(data.key, data.amount0, data.amount1);
 
         if (delta.amount0 > 0) {
-            if (data.key.token0.isNative()) {
+            if (data.key.currency0.isNative()) {
                 TransferHelper.safeTransferETH(address(manager), uint256(delta.amount0));
             } else {
-                IERC20Minimal(Currency.unwrap(data.key.token0)).transferFrom(
+                IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
                     data.sender,
                     address(manager),
                     uint256(delta.amount0)
                 );
             }
-            manager.settle(data.key.token0);
+            manager.settle(data.key.currency0);
         }
         if (delta.amount1 > 0) {
-            if (data.key.token1.isNative()) {
+            if (data.key.currency1.isNative()) {
                 TransferHelper.safeTransferETH(address(manager), uint256(delta.amount1));
             } else {
-                IERC20Minimal(Currency.unwrap(data.key.token1)).transferFrom(
+                IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
                     data.sender,
                     address(manager),
                     uint256(delta.amount1)
                 );
             }
-            manager.settle(data.key.token1);
+            manager.settle(data.key.currency1);
         }
 
         return abi.encode(delta);

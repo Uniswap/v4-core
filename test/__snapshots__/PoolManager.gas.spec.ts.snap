@@ -3,14 +3,14 @@
 exports[`PoolManager gas tests ERC20 tokens #donate donation of 1 token 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 151131,
+  "gasUsed": 151130,
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #donate donation of 2 tokens 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 218362,
+  "gasUsed": 218361,
 }
 `;
 
@@ -150,7 +150,7 @@ Object {
 exports[`PoolManager gas tests ETH #donate donation of 1 token 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 123141,
+  "gasUsed": 123140,
 }
 `;
 

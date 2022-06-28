@@ -44,10 +44,10 @@ library Tick {
     /// @param tickLower The lower tick boundary of the position
     /// @param tickUpper The upper tick boundary of the position
     /// @param tickCurrent The current tick
-    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
-    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
-    /// @return feeGrowthInside0X128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
-    /// @return feeGrowthInside1X128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
+    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in currency0
+    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in currency1
+    /// @return feeGrowthInside0X128 The all-time fee growth in currency0, per unit of liquidity, inside the position's tick boundaries
+    /// @return feeGrowthInside1X128 The all-time fee growth in currency1, per unit of liquidity, inside the position's tick boundaries
     function getFeeGrowthInside(
         mapping(int24 => Tick.Info) storage self,
         int24 tickLower,
@@ -92,8 +92,8 @@ library Tick {
     /// @param tick The tick that will be updated
     /// @param tickCurrent The current tick
     /// @param liquidityDelta A new amount of liquidity to be added (subtracted) when tick is crossed from left to right (right to left)
-    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
-    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
+    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in currency0
+    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in currency1
     /// @param upper true for updating a position's upper tick, or false for updating a position's lower tick
     /// @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
     /// @return liquidityGrossAfter The total amount of  liquidity for all positions that references the tick after the update
@@ -139,8 +139,8 @@ library Tick {
     /// @notice Transitions to next tick as needed by price movement
     /// @param self The mapping containing all tick information for initialized ticks
     /// @param tick The destination tick of the transition
-    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
-    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
+    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in currency0
+    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in currency1
     /// @return liquidityNet The amount of liquidity added (subtracted) when tick is crossed from left to right (right to left)
     function cross(
         mapping(int24 => Tick.Info) storage self,

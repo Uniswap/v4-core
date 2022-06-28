@@ -54,22 +54,22 @@ contract PoolSwapTest is ILockCallback {
         if (data.params.zeroForOne) {
             if (delta.amount0 > 0) {
                 if (data.testSettings.settleUsingTransfer) {
-                    if (data.key.token0.isNative()) {
+                    if (data.key.currency0.isNative()) {
                         TransferHelper.safeTransferETH(address(manager), uint256(delta.amount0));
                     } else {
-                        IERC20Minimal(Currency.unwrap(data.key.token0)).transferFrom(
+                        IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
                             data.sender,
                             address(manager),
                             uint256(delta.amount0)
                         );
                     }
-                    manager.settle(data.key.token0);
+                    manager.settle(data.key.currency0);
                 } else {
                     // the received hook on this transfer will burn the tokens
                     manager.safeTransferFrom(
                         data.sender,
                         address(manager),
-                        uint256(uint160(Currency.unwrap(data.key.token0))),
+                        uint256(uint160(Currency.unwrap(data.key.currency0))),
                         uint256(delta.amount0),
                         ''
                     );
@@ -77,28 +77,28 @@ contract PoolSwapTest is ILockCallback {
             }
             if (delta.amount1 < 0) {
                 if (data.testSettings.withdrawTokens)
-                    manager.take(data.key.token1, data.sender, uint256(-delta.amount1));
-                else manager.mint(data.key.token1, data.sender, uint256(-delta.amount1));
+                    manager.take(data.key.currency1, data.sender, uint256(-delta.amount1));
+                else manager.mint(data.key.currency1, data.sender, uint256(-delta.amount1));
             }
         } else {
             if (delta.amount1 > 0) {
                 if (data.testSettings.settleUsingTransfer) {
-                    if (data.key.token1.isNative()) {
+                    if (data.key.currency1.isNative()) {
                         TransferHelper.safeTransferETH(address(manager), uint256(delta.amount1));
                     } else {
-                        IERC20Minimal(Currency.unwrap(data.key.token1)).transferFrom(
+                        IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
                             data.sender,
                             address(manager),
                             uint256(delta.amount1)
                         );
                     }
-                    manager.settle(data.key.token1);
+                    manager.settle(data.key.currency1);
                 } else {
                     // the received hook on this transfer will burn the tokens
                     manager.safeTransferFrom(
                         data.sender,
                         address(manager),
-                        uint256(uint160(Currency.unwrap(data.key.token1))),
+                        uint256(uint160(Currency.unwrap(data.key.currency1))),
                         uint256(delta.amount1),
                         ''
                     );
@@ -106,8 +106,8 @@ contract PoolSwapTest is ILockCallback {
             }
             if (delta.amount0 < 0) {
                 if (data.testSettings.withdrawTokens)
-                    manager.take(data.key.token0, data.sender, uint256(-delta.amount0));
-                else manager.mint(data.key.token0, data.sender, uint256(-delta.amount0));
+                    manager.take(data.key.currency0, data.sender, uint256(-delta.amount0));
+                else manager.mint(data.key.currency0, data.sender, uint256(-delta.amount0));
             }
         }
 

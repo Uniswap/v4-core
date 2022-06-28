@@ -38,39 +38,39 @@ contract PoolTakeTest is ILockCallback {
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
         if (data.amount0 > 0) {
-            uint256 balBefore = data.key.token0.balanceOf(data.sender);
-            manager.take(data.key.token0, data.sender, data.amount0);
-            uint256 balAfter = data.key.token0.balanceOf(data.sender);
+            uint256 balBefore = data.key.currency0.balanceOf(data.sender);
+            manager.take(data.key.currency0, data.sender, data.amount0);
+            uint256 balAfter = data.key.currency0.balanceOf(data.sender);
             require(balAfter - balBefore == data.amount0);
 
-            if (data.key.token0.isNative()) {
+            if (data.key.currency0.isNative()) {
                 TransferHelper.safeTransferETH(address(manager), uint256(data.amount0));
             } else {
-                IERC20Minimal(Currency.unwrap(data.key.token0)).transferFrom(
+                IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
                     data.sender,
                     address(manager),
                     uint256(data.amount0)
                 );
             }
-            manager.settle(data.key.token0);
+            manager.settle(data.key.currency0);
         }
 
         if (data.amount1 > 0) {
-            uint256 balBefore = data.key.token1.balanceOf(data.sender);
-            manager.take(data.key.token1, data.sender, data.amount1);
-            uint256 balAfter = data.key.token1.balanceOf(data.sender);
+            uint256 balBefore = data.key.currency1.balanceOf(data.sender);
+            manager.take(data.key.currency1, data.sender, data.amount1);
+            uint256 balAfter = data.key.currency1.balanceOf(data.sender);
             require(balAfter - balBefore == data.amount1);
 
-            if (data.key.token1.isNative()) {
+            if (data.key.currency1.isNative()) {
                 TransferHelper.safeTransferETH(address(manager), uint256(data.amount1));
             } else {
-                IERC20Minimal(Currency.unwrap(data.key.token1)).transferFrom(
+                IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
                     data.sender,
                     address(manager),
                     uint256(data.amount1)
                 );
             }
-            manager.settle(data.key.token1);
+            manager.settle(data.key.currency1);
         }
 
         return abi.encode(0);

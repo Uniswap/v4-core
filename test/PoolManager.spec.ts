@@ -35,7 +35,7 @@ describe('PoolManager', () => {
   let takeTest: PoolTakeTest
   let hooksMock: MockedContract
   let testHooksEmpty: EmptyTestHooks
-  let tokens: { token0: TestERC20; token1: TestERC20; token2: TestERC20 }
+  let tokens: { currency0: TestERC20; currency1: TestERC20; token2: TestERC20 }
 
   const fixture = async () => {
     const poolManagerFactory = await ethers.getContractFactory('PoolManager')
@@ -78,7 +78,7 @@ describe('PoolManager', () => {
       testHooksEmpty,
     }
 
-    for (const token of [tokens.token0, tokens.token1, tokens.token2]) {
+    for (const token of [tokens.currency0, tokens.currency1, tokens.token2]) {
       for (const spender of [result.swapTest, result.modifyPositionTest, result.donateTest, result.takeTest]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
       }
@@ -129,8 +129,8 @@ describe('PoolManager', () => {
 
       await manager.initialize(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
@@ -140,8 +140,8 @@ describe('PoolManager', () => {
 
       await modifyPositionTest.modifyPosition(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
@@ -153,7 +153,7 @@ describe('PoolManager', () => {
         }
       )
 
-      await expect(reenterTest.reenter(manager.address, tokens.token0.address, 3))
+      await expect(reenterTest.reenter(manager.address, tokens.currency0.address, 3))
         .to.emit(reenterTest, 'LockAcquired')
         .withArgs(3)
         .to.emit(reenterTest, 'LockAcquired')
@@ -177,8 +177,8 @@ describe('PoolManager', () => {
   describe('#initialize', async () => {
     it('initializes a pool', async () => {
       const poolKey = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -186,7 +186,7 @@ describe('PoolManager', () => {
 
       await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
         .to.emit(manager, 'Initialize')
-        .withArgs(getPoolId(poolKey), poolKey.token0, poolKey.token1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
+        .withArgs(getPoolId(poolKey), poolKey.currency0, poolKey.currency1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
 
       const {
         slot0: { sqrtPriceX96, protocolFee },
@@ -197,8 +197,8 @@ describe('PoolManager', () => {
 
     it('initializes a pool with ETH', async () => {
       const poolKey = {
-        token0: tokens.token0.address,
-        token1: ADDRESS_ZERO,
+        currency0: tokens.currency0.address,
+        currency1: ADDRESS_ZERO,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -206,7 +206,7 @@ describe('PoolManager', () => {
 
       await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
         .to.emit(manager, 'Initialize')
-        .withArgs(getPoolId(poolKey), poolKey.token0, poolKey.token1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
+        .withArgs(getPoolId(poolKey), poolKey.currency0, poolKey.currency1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
 
       const {
         slot0: { sqrtPriceX96, protocolFee },
@@ -218,8 +218,8 @@ describe('PoolManager', () => {
     it('initializes a pool with hooks', async () => {
       await manager.initialize(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: hooksMock.address,
@@ -231,8 +231,8 @@ describe('PoolManager', () => {
         slot0: { sqrtPriceX96 },
       } = await manager.pools(
         getPoolId({
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: hooksMock.address,
@@ -245,8 +245,8 @@ describe('PoolManager', () => {
       await expect(
         manager.initialize(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: MAX_TICK_SPACING,
             hooks: ADDRESS_ZERO,
@@ -259,8 +259,8 @@ describe('PoolManager', () => {
     it('fails if hook does not return selector', async () => {
       await manager.initialize(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
@@ -272,8 +272,8 @@ describe('PoolManager', () => {
         slot0: { sqrtPriceX96 },
       } = await manager.pools(
         getPoolId({
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
@@ -286,8 +286,8 @@ describe('PoolManager', () => {
       await expect(
         manager.initialize(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: MAX_TICK_SPACING + 1,
             hooks: ADDRESS_ZERO,
@@ -301,8 +301,8 @@ describe('PoolManager', () => {
       await expect(
         manager.initialize(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 0,
             hooks: ADDRESS_ZERO,
@@ -316,8 +316,8 @@ describe('PoolManager', () => {
       await expect(
         manager.initialize(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: -1,
             hooks: ADDRESS_ZERO,
@@ -333,8 +333,8 @@ describe('PoolManager', () => {
       expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
 
       const poolKey = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -357,8 +357,8 @@ describe('PoolManager', () => {
       await snapshotGasCost(
         manager.initialize(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -374,8 +374,8 @@ describe('PoolManager', () => {
       await expect(
         modifyPositionTest.modifyPosition(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -391,8 +391,8 @@ describe('PoolManager', () => {
 
     it('succeeds if pool is initialized', async () => {
       const poolKey = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -403,8 +403,8 @@ describe('PoolManager', () => {
       await expect(
         modifyPositionTest.modifyPosition(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -422,8 +422,8 @@ describe('PoolManager', () => {
 
     it('succeeds with ETH if pool is initialized', async () => {
       const poolKey = {
-        token0: ADDRESS_ZERO,
-        token1: tokens.token1.address,
+        currency0: ADDRESS_ZERO,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -450,8 +450,8 @@ describe('PoolManager', () => {
 
     it('succeeds if pool is initialized and hook is provided', async () => {
       const poolKey = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: hooksMock.address,
@@ -488,8 +488,8 @@ describe('PoolManager', () => {
     it('gas cost', async () => {
       await manager.initialize(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
@@ -500,8 +500,8 @@ describe('PoolManager', () => {
       await snapshotGasCost(
         modifyPositionTest.modifyPosition(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -517,8 +517,8 @@ describe('PoolManager', () => {
 
     it('gas cost with ETH', async () => {
       const poolKey = {
-        token0: ADDRESS_ZERO,
-        token1: tokens.token1.address,
+        currency0: ADDRESS_ZERO,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -543,8 +543,8 @@ describe('PoolManager', () => {
     it('gas cost with hooks', async () => {
       await manager.initialize(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
@@ -555,8 +555,8 @@ describe('PoolManager', () => {
       await snapshotGasCost(
         modifyPositionTest.modifyPosition(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: testHooksEmpty.address,
@@ -576,8 +576,8 @@ describe('PoolManager', () => {
       await expect(
         swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -597,8 +597,8 @@ describe('PoolManager', () => {
 
     it('succeeds if pool is initialized', async () => {
       const poolKey = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -608,8 +608,8 @@ describe('PoolManager', () => {
       await expect(
         swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -631,8 +631,8 @@ describe('PoolManager', () => {
 
     it('succeeds with ETH if pool is initialized', async () => {
       const poolKey = {
-        token0: ADDRESS_ZERO,
-        token1: tokens.token1.address,
+        currency0: ADDRESS_ZERO,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -660,8 +660,8 @@ describe('PoolManager', () => {
     it('succeeds if pool is initialized and hook is provided', async () => {
       await manager.initialize(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: hooksMock.address,
@@ -670,8 +670,8 @@ describe('PoolManager', () => {
       )
       await swapTest.swap(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: hooksMock.address,
@@ -690,8 +690,8 @@ describe('PoolManager', () => {
       const argsBeforeSwap = [
         swapTest.address,
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: hooksMock.address,
@@ -716,8 +716,8 @@ describe('PoolManager', () => {
 
     it('gas cost', async () => {
       const poolKey = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -755,8 +755,8 @@ describe('PoolManager', () => {
 
     it('gas cost with ETH', async () => {
       const poolKey = {
-        token0: ADDRESS_ZERO,
-        token1: tokens.token1.address,
+        currency0: ADDRESS_ZERO,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -795,8 +795,8 @@ describe('PoolManager', () => {
     it('gas cost with hooks', async () => {
       await manager.initialize(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
@@ -806,8 +806,8 @@ describe('PoolManager', () => {
 
       await swapTest.swap(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: testHooksEmpty.address,
@@ -826,8 +826,8 @@ describe('PoolManager', () => {
       await snapshotGasCost(
         swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: testHooksEmpty.address,
@@ -847,8 +847,8 @@ describe('PoolManager', () => {
     it('mints erc1155s if the output token isnt taken', async () => {
       await manager.initialize(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
@@ -857,8 +857,8 @@ describe('PoolManager', () => {
       )
       await modifyPositionTest.modifyPosition(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
@@ -873,8 +873,8 @@ describe('PoolManager', () => {
       await expect(
         swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -891,14 +891,14 @@ describe('PoolManager', () => {
         )
       ).to.emit(manager, 'TransferSingle')
 
-      const erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
+      const erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
       expect(erc1155Balance).to.be.eq(98)
     })
     it('uses 1155s as input from an account that owns them', async () => {
       await manager.initialize(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
@@ -907,8 +907,8 @@ describe('PoolManager', () => {
       )
       await modifyPositionTest.modifyPosition(
         {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
@@ -924,8 +924,8 @@ describe('PoolManager', () => {
       await expect(
         swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -942,18 +942,18 @@ describe('PoolManager', () => {
         )
       ).to.emit(manager, 'TransferSingle')
 
-      let erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
+      let erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
       expect(erc1155Balance).to.be.eq(98)
 
       // give permission for swapTest to burn the 1155s
       await manager.setApprovalForAll(swapTest.address, true)
 
-      // now swap from token1 to token0 again, using 1155s as input tokens
+      // now swap from currency1 to currency0 again, using 1155s as input tokens
       await expect(
         swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -970,13 +970,13 @@ describe('PoolManager', () => {
         )
       ).to.emit(manager, 'TransferSingle')
 
-      erc1155Balance = await manager.balanceOf(wallet.address, tokens.token1.address)
+      erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
       expect(erc1155Balance).to.be.eq(71)
     })
     it('gas cost for swap against liquidity', async () => {
       const poolKey = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -1020,8 +1020,8 @@ describe('PoolManager', () => {
 
     it('gas cost for swap with ETH against liquidity', async () => {
       const poolKey = {
-        token0: ADDRESS_ZERO,
-        token1: tokens.token1.address,
+        currency0: ADDRESS_ZERO,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -1077,12 +1077,12 @@ describe('PoolManager', () => {
 
   describe('#take', () => {
     it('fails if no liquidity', async () => {
-      await tokens.token0.connect(wallet).transfer(ADDRESS_ZERO, constants.MaxUint256.div(2))
+      await tokens.currency0.connect(wallet).transfer(ADDRESS_ZERO, constants.MaxUint256.div(2))
       await expect(
         takeTest.connect(wallet).take(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: 100,
             hooks: ADDRESS_ZERO,
             tickSpacing: 10,
@@ -1096,10 +1096,10 @@ describe('PoolManager', () => {
     it('fails for invalid tokens that dont return true on transfer', async () => {
       const tokenFactory = await ethers.getContractFactory('TestInvalidERC20')
       const invalidToken = (await tokenFactory.deploy(BigNumber.from(2).pow(255))) as TestERC20
-      const token0Invalid = invalidToken.address.toLowerCase() < tokens.token0.address.toLowerCase()
+      const currency0Invalid = invalidToken.address.toLowerCase() < tokens.currency0.address.toLowerCase()
       const key = {
-        token0: token0Invalid ? invalidToken.address : tokens.token0.address,
-        token1: token0Invalid ? tokens.token0.address : invalidToken.address,
+        currency0: currency0Invalid ? invalidToken.address : tokens.currency0.address,
+        currency1: currency0Invalid ? tokens.currency0.address : invalidToken.address,
         fee: 100,
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
@@ -1112,17 +1112,17 @@ describe('PoolManager', () => {
         liquidityDelta: 100,
       })
 
-      await tokens.token0.connect(wallet).approve(takeTest.address, MaxUint128)
+      await tokens.currency0.connect(wallet).approve(takeTest.address, MaxUint128)
       await invalidToken.connect(wallet).approve(takeTest.address, MaxUint128)
 
-      await expect(takeTest.connect(wallet).take(key, token0Invalid ? 1 : 0, token0Invalid ? 0 : 1)).to.be.reverted
-      await expect(takeTest.connect(wallet).take(key, token0Invalid ? 0 : 1, token0Invalid ? 1 : 0)).to.not.be.reverted
+      await expect(takeTest.connect(wallet).take(key, currency0Invalid ? 1 : 0, currency0Invalid ? 0 : 1)).to.be.reverted
+      await expect(takeTest.connect(wallet).take(key, currency0Invalid ? 0 : 1, currency0Invalid ? 1 : 0)).to.not.be.reverted
     })
 
     it('succeeds if has liquidity', async () => {
       const key = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: 100,
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
@@ -1134,7 +1134,7 @@ describe('PoolManager', () => {
         liquidityDelta: 100,
       })
 
-      await tokens.token0.connect(wallet).approve(takeTest.address, MaxUint128)
+      await tokens.currency0.connect(wallet).approve(takeTest.address, MaxUint128)
 
       await expect(takeTest.connect(wallet).take(key, 1, 0)).to.be.not.be.reverted
       await expect(takeTest.connect(wallet).take(key, 0, 1)).to.be.not.be.reverted
@@ -1142,8 +1142,8 @@ describe('PoolManager', () => {
 
     it('succeeds with ETH if has liquidity', async () => {
       const key = {
-        token0: ADDRESS_ZERO,
-        token1: tokens.token1.address,
+        currency0: ADDRESS_ZERO,
+        currency1: tokens.currency1.address,
         fee: 100,
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
@@ -1159,7 +1159,7 @@ describe('PoolManager', () => {
         { value: 100 }
       )
 
-      await tokens.token0.connect(wallet).approve(takeTest.address, MaxUint128)
+      await tokens.currency0.connect(wallet).approve(takeTest.address, MaxUint128)
 
       await expect(takeTest.connect(wallet).take(key, 1, 0, { value: 1 })).to.be.not.be.reverted
       await expect(takeTest.connect(wallet).take(key, 0, 1)).to.be.not.be.reverted
@@ -1171,8 +1171,8 @@ describe('PoolManager', () => {
       await expect(
         donateTest.donate(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: 100,
             hooks: ADDRESS_ZERO,
             tickSpacing: 10,
@@ -1185,8 +1185,8 @@ describe('PoolManager', () => {
 
     it('fails if initialized with no liquidity', async () => {
       const key = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: 100,
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
@@ -1197,8 +1197,8 @@ describe('PoolManager', () => {
 
     it('succeeds if has liquidity', async () => {
       const key = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: 100,
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
@@ -1218,8 +1218,8 @@ describe('PoolManager', () => {
 
     it('succeeds for ETH if has liquidity', async () => {
       const key = {
-        token0: ADDRESS_ZERO,
-        token1: tokens.token1.address,
+        currency0: ADDRESS_ZERO,
+        currency1: tokens.currency1.address,
         fee: 100,
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
@@ -1244,8 +1244,8 @@ describe('PoolManager', () => {
     describe('hooks', () => {
       it('calls beforeDonate and afterDonate', async () => {
         const key = {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: 100,
           hooks: hooksMock.address,
           tickSpacing: 10,
@@ -1268,8 +1268,8 @@ describe('PoolManager', () => {
       expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
 
       const poolKey = {
-        token0: tokens.token0.address,
-        token1: tokens.token1.address,
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
         fee: FeeAmount.MEDIUM,
         tickSpacing: 60,
         hooks: ADDRESS_ZERO,
@@ -1303,8 +1303,8 @@ describe('PoolManager', () => {
     describe('ERC20 tokens', async () => {
       beforeEach('set the fee controller, initialize a pool with protocol fee', async () => {
         const poolKey = {
-          token0: tokens.token0.address,
-          token1: tokens.token1.address,
+          currency0: tokens.currency0.address,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
@@ -1334,8 +1334,8 @@ describe('PoolManager', () => {
       it('allows the owner to collect accumulated fees', async () => {
         await swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -1352,32 +1352,32 @@ describe('PoolManager', () => {
         )
 
         const expectedFees = 7
-        expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(expectedFees))
-        expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.protocolFeesAccrued(tokens.currency0.address)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.protocolFeesAccrued(tokens.currency1.address)).to.be.eq(BigNumber.from(0))
 
         // allows the owner to collect the fees
-        const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
-        const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
+        const recipientBalanceBefore = await tokens.currency0.balanceOf(other.address)
+        const managerBalanceBefore = await tokens.currency0.balanceOf(manager.address)
 
         // get the returned value, then actually execute
-        const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 7)
-        await manager.collectProtocolFees(other.address, tokens.token0.address, expectedFees)
+        const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.currency0.address, 7)
+        await manager.collectProtocolFees(other.address, tokens.currency0.address, expectedFees)
 
-        const recipientBalanceAfter = await tokens.token0.balanceOf(other.address)
-        const managerBalanceAfter = await tokens.token0.balanceOf(manager.address)
+        const recipientBalanceAfter = await tokens.currency0.balanceOf(other.address)
+        const managerBalanceAfter = await tokens.currency0.balanceOf(manager.address)
 
         expect(amount).to.be.eq(expectedFees)
         expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
         expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
 
-        expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.protocolFeesAccrued(tokens.currency0.address)).to.be.eq(BigNumber.from(0))
       })
 
       it('returns all fees if 0 is provided', async () => {
         await swapTest.swap(
           {
-            token0: tokens.token0.address,
-            token1: tokens.token1.address,
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -1394,33 +1394,33 @@ describe('PoolManager', () => {
         )
 
         const expectedFees = 7
-        expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(expectedFees))
-        expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.protocolFeesAccrued(tokens.currency0.address)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.protocolFeesAccrued(tokens.currency1.address)).to.be.eq(BigNumber.from(0))
 
         // allows the owner to collect the fees
-        const recipientBalanceBefore = await tokens.token0.balanceOf(other.address)
-        const managerBalanceBefore = await tokens.token0.balanceOf(manager.address)
+        const recipientBalanceBefore = await tokens.currency0.balanceOf(other.address)
+        const managerBalanceBefore = await tokens.currency0.balanceOf(manager.address)
 
         // get the returned value, then actually execute
-        const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.token0.address, 0)
-        await manager.collectProtocolFees(other.address, tokens.token0.address, 0)
+        const amount = await manager.callStatic.collectProtocolFees(other.address, tokens.currency0.address, 0)
+        await manager.collectProtocolFees(other.address, tokens.currency0.address, 0)
 
-        const recipientBalanceAfter = await tokens.token0.balanceOf(other.address)
-        const managerBalanceAfter = await tokens.token0.balanceOf(manager.address)
+        const recipientBalanceAfter = await tokens.currency0.balanceOf(other.address)
+        const managerBalanceAfter = await tokens.currency0.balanceOf(manager.address)
 
         expect(amount).to.be.eq(expectedFees)
         expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
         expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
 
-        expect(await manager.protocolFeesAccrued(tokens.token0.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.protocolFeesAccrued(tokens.currency0.address)).to.be.eq(BigNumber.from(0))
       })
     })
 
     describe('ETH', async () => {
       beforeEach('set the fee controller, initialize a pool with protocol fee', async () => {
         const poolKey = {
-          token0: ADDRESS_ZERO,
-          token1: tokens.token1.address,
+          currency0: ADDRESS_ZERO,
+          currency1: tokens.currency1.address,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: ADDRESS_ZERO,
@@ -1456,8 +1456,8 @@ describe('PoolManager', () => {
       it('allows the owner to collect accumulated fees', async () => {
         await swapTest.swap(
           {
-            token0: ADDRESS_ZERO,
-            token1: tokens.token1.address,
+            currency0: ADDRESS_ZERO,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -1478,7 +1478,7 @@ describe('PoolManager', () => {
 
         const expectedFees = 7
         expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(expectedFees))
-        expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.protocolFeesAccrued(tokens.currency1.address)).to.be.eq(BigNumber.from(0))
 
         // allows the owner to collect the fees
         const recipientBalanceBefore = await other.getBalance()
@@ -1501,8 +1501,8 @@ describe('PoolManager', () => {
       it('returns all fees if 0 is provided', async () => {
         await swapTest.swap(
           {
-            token0: ADDRESS_ZERO,
-            token1: tokens.token1.address,
+            currency0: ADDRESS_ZERO,
+            currency1: tokens.currency1.address,
             fee: FeeAmount.MEDIUM,
             tickSpacing: 60,
             hooks: ADDRESS_ZERO,
@@ -1523,7 +1523,7 @@ describe('PoolManager', () => {
 
         const expectedFees = 7
         expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(expectedFees))
-        expect(await manager.protocolFeesAccrued(tokens.token1.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.protocolFeesAccrued(tokens.currency1.address)).to.be.eq(BigNumber.from(0))
 
         // allows the owner to collect the fees
         const recipientBalanceBefore = await other.getBalance()
