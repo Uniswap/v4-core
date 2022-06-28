@@ -48,27 +48,27 @@ contract PoolDonateTest is ILockCallback {
 
         if (delta.amount0 > 0) {
             if (data.key.currency0.isNative()) {
-                CurrencyLibrary.NATIVE.transfer(address(manager), uint256(delta.amount0));
+                manager.settle{value: uint256(delta.amount0)}(data.key.currency0);
             } else {
                 IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
                     data.sender,
                     address(manager),
                     uint256(delta.amount0)
                 );
+                manager.settle(data.key.currency0);
             }
-            manager.settle(data.key.currency0);
         }
         if (delta.amount1 > 0) {
             if (data.key.currency1.isNative()) {
-                CurrencyLibrary.NATIVE.transfer(address(manager), uint256(delta.amount1));
+                manager.settle{value: uint256(delta.amount1)}(data.key.currency1);
             } else {
                 IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
                     data.sender,
                     address(manager),
                     uint256(delta.amount1)
                 );
+                manager.settle(data.key.currency1);
             }
-            manager.settle(data.key.currency1);
         }
 
         return abi.encode(delta);

@@ -210,7 +210,7 @@ interface IPoolManager is IERC1155 {
     ) external;
 
     /// @notice Called by the user to pay what is owed
-    function settle(Currency token) external returns (uint256 paid);
+    function settle(Currency token) external payable returns (uint256 paid);
 
     /// @notice sets the protocol fee for the given pool
     function setPoolProtocolFee(PoolKey memory key) external;

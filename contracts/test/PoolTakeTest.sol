@@ -43,15 +43,15 @@ contract PoolTakeTest is ILockCallback {
             require(balAfter - balBefore == data.amount0);
 
             if (data.key.currency0.isNative()) {
-                CurrencyLibrary.NATIVE.transfer(address(manager), uint256(data.amount0));
+                manager.settle{value: uint256(data.amount0)}(data.key.currency0);
             } else {
                 IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
                     data.sender,
                     address(manager),
                     uint256(data.amount0)
                 );
+                manager.settle(data.key.currency0);
             }
-            manager.settle(data.key.currency0);
         }
 
         if (data.amount1 > 0) {
@@ -61,15 +61,15 @@ contract PoolTakeTest is ILockCallback {
             require(balAfter - balBefore == data.amount1);
 
             if (data.key.currency1.isNative()) {
-                CurrencyLibrary.NATIVE.transfer(address(manager), uint256(data.amount1));
+                manager.settle{value: uint256(data.amount1)}(data.key.currency1);
             } else {
                 IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
                     data.sender,
                     address(manager),
                     uint256(data.amount1)
                 );
+                manager.settle(data.key.currency1);
             }
-            manager.settle(data.key.currency1);
         }
 
         return abi.encode(0);

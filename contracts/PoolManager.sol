@@ -336,7 +336,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function settle(Currency currency) external override noDelegateCall onlyByLocker returns (uint256 paid) {
+    function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOf(address(this));
         paid = reservesOf[currency] - reservesBefore;

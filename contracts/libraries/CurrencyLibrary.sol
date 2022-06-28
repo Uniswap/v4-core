@@ -24,9 +24,11 @@ library CurrencyLibrary {
         uint256 amount
     ) internal {
         if (currency.isNative()) {
-            (bool success, ) = to.call{value: amount}(new bytes(0));
+            (bool success, ) = to.call{value: amount}('');
             if (!success) revert ETHTransferFailed();
         } else {
+            // implementation from 
+            // https://github.com/Rari-Capital/solmate/blob/3c738133a0c1697096d63d28ef7a8ef298f9af6b/src/utils/SafeTransferLib.sol
             bool success;
 
             assembly {
