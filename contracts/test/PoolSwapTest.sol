@@ -3,7 +3,6 @@ pragma solidity =0.8.15;
 
 import {CurrencyLibrary, Currency} from '../libraries/CurrencyLibrary.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
-import {TransferHelper} from '../libraries/TransferHelper.sol';
 
 import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
@@ -40,7 +39,7 @@ contract PoolSwapTest is ILockCallback {
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {
-            TransferHelper.safeTransferETH(msg.sender, ethBalance);
+            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
         }
     }
 
@@ -55,7 +54,7 @@ contract PoolSwapTest is ILockCallback {
             if (delta.amount0 > 0) {
                 if (data.testSettings.settleUsingTransfer) {
                     if (data.key.currency0.isNative()) {
-                        TransferHelper.safeTransferETH(address(manager), uint256(delta.amount0));
+                        CurrencyLibrary.NATIVE.transfer(address(manager), uint256(delta.amount0));
                     } else {
                         IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
                             data.sender,
@@ -84,7 +83,7 @@ contract PoolSwapTest is ILockCallback {
             if (delta.amount1 > 0) {
                 if (data.testSettings.settleUsingTransfer) {
                     if (data.key.currency1.isNative()) {
-                        TransferHelper.safeTransferETH(address(manager), uint256(delta.amount1));
+                        CurrencyLibrary.NATIVE.transfer(address(manager), uint256(delta.amount1));
                     } else {
                         IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
                             data.sender,

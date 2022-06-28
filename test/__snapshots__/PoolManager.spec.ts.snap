@@ -24,7 +24,7 @@ Object {
 exports[`PoolManager #mint gas cost with ETH 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 253510,
+  "gasUsed": 253575,
 }
 `;
 
@@ -45,14 +45,14 @@ Object {
 exports[`PoolManager #swap gas cost for swap against liquidity 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 227200,
+  "gasUsed": 227155,
 }
 `;
 
 exports[`PoolManager #swap gas cost for swap with ETH against liquidity 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 204917,
+  "gasUsed": 204936,
 }
 `;
 
@@ -70,4 +70,4 @@ Object {
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `27041`;
+exports[`PoolManager bytecode size 1`] = `26938`;

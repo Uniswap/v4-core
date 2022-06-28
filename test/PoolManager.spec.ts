@@ -186,7 +186,14 @@ describe('PoolManager', () => {
 
       await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
         .to.emit(manager, 'Initialize')
-        .withArgs(getPoolId(poolKey), poolKey.currency0, poolKey.currency1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
+        .withArgs(
+          getPoolId(poolKey),
+          poolKey.currency0,
+          poolKey.currency1,
+          poolKey.fee,
+          poolKey.tickSpacing,
+          poolKey.hooks
+        )
 
       const {
         slot0: { sqrtPriceX96, protocolFee },
@@ -206,7 +213,14 @@ describe('PoolManager', () => {
 
       await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
         .to.emit(manager, 'Initialize')
-        .withArgs(getPoolId(poolKey), poolKey.currency0, poolKey.currency1, poolKey.fee, poolKey.tickSpacing, poolKey.hooks)
+        .withArgs(
+          getPoolId(poolKey),
+          poolKey.currency0,
+          poolKey.currency1,
+          poolKey.fee,
+          poolKey.tickSpacing,
+          poolKey.hooks
+        )
 
       const {
         slot0: { sqrtPriceX96, protocolFee },
@@ -1115,8 +1129,10 @@ describe('PoolManager', () => {
       await tokens.currency0.connect(wallet).approve(takeTest.address, MaxUint128)
       await invalidToken.connect(wallet).approve(takeTest.address, MaxUint128)
 
-      await expect(takeTest.connect(wallet).take(key, currency0Invalid ? 1 : 0, currency0Invalid ? 0 : 1)).to.be.reverted
-      await expect(takeTest.connect(wallet).take(key, currency0Invalid ? 0 : 1, currency0Invalid ? 1 : 0)).to.not.be.reverted
+      await expect(takeTest.connect(wallet).take(key, currency0Invalid ? 1 : 0, currency0Invalid ? 0 : 1)).to.be
+        .reverted
+      await expect(takeTest.connect(wallet).take(key, currency0Invalid ? 0 : 1, currency0Invalid ? 1 : 0)).to.not.be
+        .reverted
     })
 
     it('succeeds if has liquidity', async () => {

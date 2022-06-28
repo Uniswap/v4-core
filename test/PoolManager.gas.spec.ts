@@ -379,7 +379,7 @@ describe('PoolManager gas tests', () => {
             settleUsingTransfer: true,
           },
           {
-            value: amount
+            value: amount,
           }
         )
       }
@@ -410,16 +410,20 @@ describe('PoolManager gas tests', () => {
             settleUsingTransfer: true,
           },
           {
-            value: MaxUint128
+            value: MaxUint128,
           }
         )
       }
       const modifyPosition: ModifyPositionFunction = (tickLower, tickUpper, liquidityDelta) => {
-        return modifyPositionTest.modifyPosition(poolKey, {
-          tickLower,
-          tickUpper,
-          liquidityDelta,
-        }, { value: liquidityDelta })
+        return modifyPositionTest.modifyPosition(
+          poolKey,
+          {
+            tickLower,
+            tickUpper,
+            liquidityDelta,
+          },
+          { value: liquidityDelta }
+        )
       }
       const donate: DonateFunction = (amount0, amount1) => {
         return donateTest.donate(poolKey, amount0, amount1, { value: amount0 })

@@ -2,7 +2,6 @@
 pragma solidity =0.8.15;
 
 import {Currency, CurrencyLibrary} from '../libraries/CurrencyLibrary.sol';
-import {TransferHelper} from '../libraries/TransferHelper.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
@@ -44,7 +43,7 @@ contract PoolTakeTest is ILockCallback {
             require(balAfter - balBefore == data.amount0);
 
             if (data.key.currency0.isNative()) {
-                TransferHelper.safeTransferETH(address(manager), uint256(data.amount0));
+                CurrencyLibrary.NATIVE.transfer(address(manager), uint256(data.amount0));
             } else {
                 IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
                     data.sender,
@@ -62,7 +61,7 @@ contract PoolTakeTest is ILockCallback {
             require(balAfter - balBefore == data.amount1);
 
             if (data.key.currency1.isNative()) {
-                TransferHelper.safeTransferETH(address(manager), uint256(data.amount1));
+                CurrencyLibrary.NATIVE.transfer(address(manager), uint256(data.amount1));
             } else {
                 IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
                     data.sender,
