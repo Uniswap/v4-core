@@ -94,7 +94,18 @@ library Tick {
     ) internal returns (bool flipped, uint128 liquidityGrossAfter) {
         Tick.Info storage info = self[tick];
 
-        uint128 liquidityGrossBefore = info.liquidityGross;
+        uint128 liquidityGrossBefore;
+        int128 liquidityNetBefore;
+        assembly {
+            // load first slot of info which contains liquidityGross and liquidityNet packed
+            // where the top 128 bits are liquidityNet and the bottom 128 bits are liquidityGross
+            let liquidity := sload(info.slot)
+            // slice off top 128 bits of liquidity (liquidityNet) to get just liquidityGross
+            liquidityGrossBefore := shr(128, shl(128, liquidity))
+            // shift right 128 bits to get just liquidityNet
+            liquidityNetBefore := shr(128, liquidity)
+        }
+
         liquidityGrossAfter = liquidityDelta < 0
             ? liquidityGrossBefore - uint128(-liquidityDelta)
             : liquidityGrossBefore + uint128(liquidityDelta);
@@ -110,7 +121,7 @@ library Tick {
         }
 
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
-        int128 liquidityNet = upper ? info.liquidityNet - liquidityDelta : info.liquidityNet + liquidityDelta;
+        int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
         assembly {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
             // So we can store them with a single sstore by packing them ourselves first
