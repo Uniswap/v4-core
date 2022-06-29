@@ -109,10 +109,21 @@ library Tick {
             }
         }
 
-        info.liquidityGross = liquidityGrossAfter;
-
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
-        info.liquidityNet = upper ? info.liquidityNet - liquidityDelta : info.liquidityNet + liquidityDelta;
+        int128 liquidityNet = upper ? info.liquidityNet - liquidityDelta : info.liquidityNet + liquidityDelta;
+        assembly {
+            // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
+            // So we can store them with a single sstore by packing them ourselves first
+            sstore(info.slot, 
+                   // bitwise OR to pack liquidityGrossAfter and liquidityNet
+                   or(
+                       // liquidityGross is in the low bits, upper bits are already 0
+                       liquidityGrossAfter, 
+                       // shift liquidityNet to take the upper bits and lower bits get filled with 0
+                       shl(128, liquidityNet)
+                   )
+            )
+        }
     }
 
     /// @notice Clears tick data

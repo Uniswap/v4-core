@@ -17,14 +17,14 @@ Object {
 exports[`PoolManager #mint gas cost 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 289238,
+  "gasUsed": 288643,
 }
 `;
 
 exports[`PoolManager #mint gas cost with hooks 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 293661,
+  "gasUsed": 293066,
 }
 `;
 
@@ -49,4 +49,4 @@ Object {
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `26243`;
+exports[`PoolManager bytecode size 1`] = `26195`;
