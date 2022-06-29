@@ -114,14 +114,15 @@ library Tick {
         assembly {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
             // So we can store them with a single sstore by packing them ourselves first
-            sstore(info.slot, 
-                   // bitwise OR to pack liquidityGrossAfter and liquidityNet
-                   or(
-                       // liquidityGross is in the low bits, upper bits are already 0
-                       liquidityGrossAfter, 
-                       // shift liquidityNet to take the upper bits and lower bits get filled with 0
-                       shl(128, liquidityNet)
-                   )
+            sstore(
+                info.slot,
+                // bitwise OR to pack liquidityGrossAfter and liquidityNet
+                or(
+                    // liquidityGross is in the low bits, upper bits are already 0
+                    liquidityGrossAfter,
+                    // shift liquidityNet to take the upper bits and lower bits get filled with 0
+                    shl(128, liquidityNet)
+                )
             )
         }
     }
