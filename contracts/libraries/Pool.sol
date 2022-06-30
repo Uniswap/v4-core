@@ -16,7 +16,6 @@ library Pool {
     using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
-    using Pool for State;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -155,12 +154,14 @@ library Pool {
             ModifyPositionState memory state;
             // if we need to update the ticks, do it
             if (params.liquidityDelta != 0) {
-                (state.flippedLower, state.liquidityGrossAfterLower) = self.updateTick(
+                (state.flippedLower, state.liquidityGrossAfterLower) = Pool.updateTick(
+                    self,
                     params.tickLower,
                     params.liquidityDelta,
                     false
                 );
-                (state.flippedUpper, state.liquidityGrossAfterUpper) = self.updateTick(
+                (state.flippedUpper, state.liquidityGrossAfterUpper) = Pool.updateTick(
+                    self,
                     params.tickUpper,
                     params.liquidityDelta,
                     true
@@ -182,7 +183,8 @@ library Pool {
                 }
             }
 
-            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = self.getFeeGrowthInside(
+            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = Pool.getFeeGrowthInside(
+                self,
                 params.tickLower,
                 params.tickUpper
             );
@@ -197,10 +199,10 @@ library Pool {
             // clear any tick data that is no longer needed
             if (params.liquidityDelta < 0) {
                 if (state.flippedLower) {
-                    self.clearTick(params.tickLower);
+                    Pool.clearTick(self, params.tickLower);
                 }
                 if (state.flippedUpper) {
-                    self.clearTick(params.tickUpper);
+                    Pool.clearTick(self, params.tickUpper);
                 }
             }
         }
@@ -402,7 +404,8 @@ library Pool {
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
-                    int128 liquidityNet = self.crossTick(
+                    int128 liquidityNet = Pool.crossTick(
+                        self,
                         step.tickNext,
                         (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
                         (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)

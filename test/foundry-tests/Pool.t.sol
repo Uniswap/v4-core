@@ -5,7 +5,6 @@ import {Vm} from 'forge-std/Vm.sol';
 import {Pool} from '../../contracts/libraries/Pool.sol';
 import {Position} from '../../contracts/libraries/Position.sol';
 import {TickMath} from '../../contracts/libraries/TickMath.sol';
-import {Tick} from '../../contracts/libraries/Tick.sol';
 
 contract PoolTest is Test {
     using Pool for Pool.State;
@@ -61,7 +60,7 @@ contract PoolTest is Test {
             vm.expectRevert(abi.encodeWithSignature('Panic(uint256)', 0x11));
         } else if (liquidityDelta == 0) {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
-        } else if (liquidityDelta > int128(Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing))) {
+        } else if (liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing))) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, tickLower));
         } else if (tickLower % tickSpacing != 0 || tickUpper % tickSpacing != 0) {
             vm.expectRevert();
