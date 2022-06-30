@@ -248,6 +248,61 @@ describe('Tick', () => {
       expect(feeGrowthOutside0X128).to.eq(0)
       expect(feeGrowthOutside1X128).to.eq(0)
     })
+
+    describe('liquidity parsing', async () => {
+      it('parses max uint128 stored liquidityGross before update', async () => {
+        await tickTest.setTick(2, {
+          feeGrowthOutside0X128: 0,
+          feeGrowthOutside1X128: 0,
+          liquidityGross: MaxUint128,
+          liquidityNet: 0,
+        })
+
+        await tickTest.update(2, 1, -1, 1, 2, false)
+        const { liquidityGross, liquidityNet } = await tickTest.ticks(2)
+        expect(liquidityGross).to.eq(MaxUint128.sub(1))
+        expect(liquidityNet).to.eq(-1)
+      })
+      it('parses max uint128 stored liquidityGross after update', async () => {
+        await tickTest.setTick(2, {
+          feeGrowthOutside0X128: 0,
+          feeGrowthOutside1X128: 0,
+          liquidityGross: MaxUint128.div(2).add(1),
+          liquidityNet: 0,
+        })
+
+        await tickTest.update(2, 1, MaxUint128.div(2), 1, 2, false)
+        const { liquidityGross, liquidityNet } = await tickTest.ticks(2)
+        expect(liquidityGross).to.eq(MaxUint128)
+        expect(liquidityNet).to.eq(MaxUint128.div(2))
+      })
+      it('parses max int128 stored liquidityNet before update', async () => {
+        await tickTest.setTick(2, {
+          feeGrowthOutside0X128: 0,
+          feeGrowthOutside1X128: 0,
+          liquidityGross: 1,
+          liquidityNet: MaxUint128.div(2),
+        })
+
+        await tickTest.update(2, 1, -1, 1, 2, false)
+        const { liquidityGross, liquidityNet } = await tickTest.ticks(2)
+        expect(liquidityGross).to.eq(0)
+        expect(liquidityNet).to.eq(MaxUint128.div(2).sub(1))
+      })
+      it('parses max int128 stored liquidityNet after update', async () => {
+        await tickTest.setTick(2, {
+          feeGrowthOutside0X128: 0,
+          feeGrowthOutside1X128: 0,
+          liquidityGross: 0,
+          liquidityNet: MaxUint128.div(2).sub(1),
+        })
+
+        await tickTest.update(2, 1, 1, 1, 2, false)
+        const { liquidityGross, liquidityNet } = await tickTest.ticks(2)
+        expect(liquidityGross).to.eq(1)
+        expect(liquidityNet).to.eq(MaxUint128.div(2))
+      })
+    })
   })
 
   // this is skipped because the presence of the method causes slither to fail
