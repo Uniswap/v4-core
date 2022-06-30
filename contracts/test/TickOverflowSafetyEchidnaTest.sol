@@ -42,16 +42,8 @@ contract TickOverflowSafetyEchidnaTest {
         require(tickLower > MIN_TICK);
         require(tickUpper < MAX_TICK);
         require(tickLower < tickUpper);
-        (bool flippedLower, ) = pool.updateTick(
-            tickLower,
-            liquidityDelta,
-            false
-        );
-        (bool flippedUpper, ) = pool.updateTick(
-            tickUpper,
-            liquidityDelta,
-            true
-        );
+        (bool flippedLower, ) = pool.updateTick(tickLower, liquidityDelta, false);
+        (bool flippedUpper, ) = pool.updateTick(tickUpper, liquidityDelta, true);
 
         if (flippedLower) {
             if (liquidityDelta < 0) {
@@ -86,7 +78,8 @@ contract TickOverflowSafetyEchidnaTest {
                     pool.crossTick(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 tick++;
             } else {
-                if (pool.ticks[tick].liquidityGross > 0) pool.crossTick(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+                if (pool.ticks[tick].liquidityGross > 0)
+                    pool.crossTick(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 tick--;
             }
         }
