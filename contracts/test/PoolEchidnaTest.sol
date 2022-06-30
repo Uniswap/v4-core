@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.15;
 
-import {Tick} from '../libraries/Tick.sol';
+import {Pool} from '../libraries/Pool.sol';
 import {TickMath} from '../libraries/TickMath.sol';
 
-contract TickEchidnaTest {
+contract PoolEchidnaTest {
     function checkTickSpacingToParametersInvariants(int24 tickSpacing) external pure {
         require(tickSpacing <= TickMath.MAX_TICK);
         require(tickSpacing > 0);
@@ -12,7 +12,7 @@ contract TickEchidnaTest {
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
         int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
 
-        uint128 maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        uint128 maxLiquidityPerTick = Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing);
 
         // symmetry around 0 tick
         assert(maxTick == -minTick);

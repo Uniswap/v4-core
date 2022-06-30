@@ -1,25 +1,29 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.15;
 
-import {Tick} from '../libraries/Tick.sol';
+import {Pool} from '../libraries/Pool.sol';
 
 contract TickTest {
-    using Tick for mapping(int24 => Tick.Info);
+    using Pool for Pool.State;
 
-    mapping(int24 => Tick.Info) public ticks;
+    Pool.State public pool;
+
+    function ticks(int24 tick) external view returns (Pool.TickInfo memory) {
+        return pool.ticks[tick];
+    }
 
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) external pure returns (uint128) {
-        return Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        return Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing);
     }
 
     function getGasCostOfTickSpacingToMaxLiquidityPerTick(int24 tickSpacing) external view returns (uint256) {
         uint256 gasBefore = gasleft();
-        Tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing);
         return gasBefore - gasleft();
     }
 
-    function setTick(int24 tick, Tick.Info memory info) external {
-        ticks[tick] = info;
+    function setTick(int24 tick, Pool.TickInfo memory info) external {
+        pool.ticks[tick] = info;
     }
 
     function getFeeGrowthInside(
@@ -28,8 +32,11 @@ contract TickTest {
         int24 tickCurrent,
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128
-    ) external view returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) {
-        return ticks.getFeeGrowthInside(tickLower, tickUpper, tickCurrent, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+    ) external returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) {
+        pool.slot0.tick = tickCurrent;
+        pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128;
+        pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128;
+        return pool.getFeeGrowthInside(tickLower, tickUpper);
     }
 
     function update(
@@ -40,11 +47,14 @@ contract TickTest {
         uint256 feeGrowthGlobal1X128,
         bool upper
     ) external returns (bool flipped, uint128 liquidityGrossAfter) {
-        return ticks.update(tick, tickCurrent, liquidityDelta, feeGrowthGlobal0X128, feeGrowthGlobal1X128, upper);
+        pool.slot0.tick = tickCurrent;
+        pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128;
+        pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128;
+        return pool.updateTick(tick, liquidityDelta, upper);
     }
 
     function clear(int24 tick) external {
-        ticks.clear(tick);
+        pool.clearTick(tick);
     }
 
     function cross(
@@ -52,6 +62,6 @@ contract TickTest {
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128
     ) external returns (int128 liquidityNet) {
-        return ticks.cross(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+        return pool.crossTick(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
     }
 }
