@@ -60,16 +60,16 @@ contract TickOverflowSafetyEchidnaTest {
 
         if (flippedLower) {
             if (liquidityDelta < 0) {
-                assert(ticks[tickLower].liquidityGross == 0);
+                assert(ticks[tickLower].liquidity.gross == 0);
                 ticks.clear(tickLower);
-            } else assert(ticks[tickLower].liquidityGross > 0);
+            } else assert(ticks[tickLower].liquidity.gross > 0);
         }
 
         if (flippedUpper) {
             if (liquidityDelta < 0) {
-                assert(ticks[tickUpper].liquidityGross == 0);
+                assert(ticks[tickUpper].liquidity.gross == 0);
                 ticks.clear(tickUpper);
-            } else assert(ticks[tickUpper].liquidityGross > 0);
+            } else assert(ticks[tickUpper].liquidity.gross > 0);
         }
 
         totalLiquidity += liquidityDelta;
@@ -87,11 +87,11 @@ contract TickOverflowSafetyEchidnaTest {
         require(target < MAX_TICK);
         while (tick != target) {
             if (tick < target) {
-                if (ticks[tick + 1].liquidityGross > 0)
+                if (ticks[tick + 1].liquidity.gross > 0)
                     ticks.cross(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 tick++;
             } else {
-                if (ticks[tick].liquidityGross > 0) ticks.cross(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+                if (ticks[tick].liquidity.gross > 0) ticks.cross(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 tick--;
             }
         }

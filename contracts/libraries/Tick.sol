@@ -12,12 +12,17 @@ library Tick {
 
     using SafeCast for int256;
 
+    struct Liquidity {
+        // the total position liquidity that references this tick
+        uint128 gross;
+        // amount of net liquidity added (subtracted) when tick is crossed from left to right (right to left),
+        int128 net;
+    }
+
     // info stored for each initialized individual tick
     struct Info {
-        // the total position liquidity that references this tick
-        uint128 liquidityGross;
-        // amount of net liquidity added (subtracted) when tick is crossed from left to right (right to left),
-        int128 liquidityNet;
+        // liquidityGross and liquidityNet packed into first slot
+        Liquidity liquidity;
         // fee growth per unit of liquidity on the _other_ side of this tick (relative to the current tick)
         // only has relative meaning, not absolute — the value depends on when the tick is initialized
         uint256 feeGrowthOutside0X128;
@@ -94,25 +99,15 @@ library Tick {
     ) internal returns (bool flipped, uint128 liquidityGrossAfter) {
         Tick.Info storage info = self[tick];
 
-        uint128 liquidityGrossBefore;
-        int128 liquidityNetBefore;
-        assembly {
-            // load first slot of info which contains liquidityGross and liquidityNet packed
-            // where the top 128 bits are liquidityNet and the bottom 128 bits are liquidityGross
-            let liquidity := sload(info.slot)
-            // slice off top 128 bits of liquidity (liquidityNet) to get just liquidityGross
-            liquidityGrossBefore := shr(128, shl(128, liquidity))
-            // shift right 128 bits to get just liquidityNet
-            liquidityNetBefore := shr(128, liquidity)
-        }
+        Liquidity memory liquidityBefore = info.liquidity;
 
         liquidityGrossAfter = liquidityDelta < 0
-            ? liquidityGrossBefore - uint128(-liquidityDelta)
-            : liquidityGrossBefore + uint128(liquidityDelta);
+            ? liquidityBefore.gross - uint128(-liquidityDelta)
+            : liquidityBefore.gross + uint128(liquidityDelta);
 
-        flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
+        flipped = (liquidityGrossAfter == 0) != (liquidityBefore.gross == 0);
 
-        if (liquidityGrossBefore == 0) {
+        if (liquidityBefore.gross == 0) {
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
             if (tick <= tickCurrent) {
                 info.feeGrowthOutside0X128 = feeGrowthGlobal0X128;
@@ -120,22 +115,7 @@ library Tick {
             }
         }
 
-        // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
-        int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
-        assembly {
-            // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
-            // So we can store them with a single sstore by packing them ourselves first
-            sstore(
-                info.slot,
-                // bitwise OR to pack liquidityGrossAfter and liquidityNet
-                or(
-                    // liquidityGross is in the low bits, upper bits are already 0
-                    liquidityGrossAfter,
-                    // shift liquidityNet to take the upper bits and lower bits get filled with 0
-                    shl(128, liquidityNet)
-                )
-            )
-        }
+        info.liquidity = Liquidity(liquidityGrossAfter, upper ? liquidityBefore.net - liquidityDelta : liquidityBefore.net + liquidityDelta);
     }
 
     /// @notice Clears tick data
@@ -161,7 +141,7 @@ library Tick {
             Tick.Info storage info = self[tick];
             info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
             info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
-            liquidityNet = info.liquidityNet;
+            liquidityNet = info.liquidity.net;
         }
     }
 }
