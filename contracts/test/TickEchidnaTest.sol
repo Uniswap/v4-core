@@ -4,7 +4,7 @@ pragma solidity =0.8.15;
 import {Pool} from '../libraries/Pool.sol';
 import {TickMath} from '../libraries/TickMath.sol';
 
-contract PoolEchidnaTest {
+contract TickEchidnaTest {
     function checkTickSpacingToParametersInvariants(int24 tickSpacing) external pure {
         require(tickSpacing <= TickMath.MAX_TICK);
         require(tickSpacing > 0);
