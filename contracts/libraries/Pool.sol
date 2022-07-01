@@ -154,13 +154,13 @@ library Pool {
             ModifyPositionState memory state;
             // if we need to update the ticks, do it
             if (params.liquidityDelta != 0) {
-                (state.flippedLower, state.liquidityGrossAfterLower) = Pool.updateTick(
+                (state.flippedLower, state.liquidityGrossAfterLower) = updateTick(
                     self,
                     params.tickLower,
                     params.liquidityDelta,
                     false
                 );
-                (state.flippedUpper, state.liquidityGrossAfterUpper) = Pool.updateTick(
+                (state.flippedUpper, state.liquidityGrossAfterUpper) = updateTick(
                     self,
                     params.tickUpper,
                     params.liquidityDelta,
@@ -168,7 +168,7 @@ library Pool {
                 );
 
                 if (params.liquidityDelta > 0) {
-                    uint128 maxLiquidityPerTick = Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
+                    uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
                     if (state.liquidityGrossAfterLower > maxLiquidityPerTick)
                         revert TickLiquidityOverflow(params.tickLower);
                     if (state.liquidityGrossAfterUpper > maxLiquidityPerTick)
@@ -183,7 +183,7 @@ library Pool {
                 }
             }
 
-            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = Pool.getFeeGrowthInside(
+            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = getFeeGrowthInside(
                 self,
                 params.tickLower,
                 params.tickUpper
@@ -199,10 +199,10 @@ library Pool {
             // clear any tick data that is no longer needed
             if (params.liquidityDelta < 0) {
                 if (state.flippedLower) {
-                    Pool.clearTick(self, params.tickLower);
+                    clearTick(self, params.tickLower);
                 }
                 if (state.flippedUpper) {
-                    Pool.clearTick(self, params.tickUpper);
+                    clearTick(self, params.tickUpper);
                 }
             }
         }
