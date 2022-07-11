@@ -202,7 +202,7 @@ describe('PoolManager', () => {
       expect(protocolFee).to.eq(0)
     })
 
-    it('initializes a pool with ETH', async () => {
+    it('initializes a pool with native tokens', async () => {
       const poolKey = {
         currency0: tokens.currency0.address,
         currency1: ADDRESS_ZERO,
@@ -434,7 +434,7 @@ describe('PoolManager', () => {
         .withArgs(getPoolId(poolKey), modifyPositionTest.address, 0, 60, 100)
     })
 
-    it('succeeds with ETH if pool is initialized', async () => {
+    it('succeeds with native tokens if pool is initialized', async () => {
       const poolKey = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
@@ -529,7 +529,7 @@ describe('PoolManager', () => {
       )
     })
 
-    it('gas cost with ETH', async () => {
+    it('gas cost with native tokens', async () => {
       const poolKey = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
@@ -643,7 +643,7 @@ describe('PoolManager', () => {
         .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932)
     })
 
-    it('succeeds with ETH if pool is initialized', async () => {
+    it('succeeds with native tokens if pool is initialized', async () => {
       const poolKey = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
@@ -767,7 +767,7 @@ describe('PoolManager', () => {
       )
     })
 
-    it('gas cost with ETH', async () => {
+    it('gas cost with native tokens', async () => {
       const poolKey = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
@@ -1032,7 +1032,7 @@ describe('PoolManager', () => {
       )
     })
 
-    it('gas cost for swap with ETH against liquidity', async () => {
+    it('gas cost for swap with native tokens against liquidity', async () => {
       const poolKey = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
@@ -1156,7 +1156,7 @@ describe('PoolManager', () => {
       await expect(takeTest.connect(wallet).take(key, 0, 1)).to.be.not.be.reverted
     })
 
-    it('succeeds with ETH if has liquidity', async () => {
+    it('succeeds with native tokens if has liquidity', async () => {
       const key = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
@@ -1232,7 +1232,7 @@ describe('PoolManager', () => {
       expect(feeGrowthGlobal1X128).to.eq(BigNumber.from('680564733841876926926749214863536422912')) // 200 << 128 divided by liquidity
     })
 
-    it('succeeds for ETH if has liquidity', async () => {
+    it('succeeds for native tokens if has liquidity', async () => {
       const key = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
@@ -1432,7 +1432,7 @@ describe('PoolManager', () => {
       })
     })
 
-    describe('ETH', async () => {
+    describe('native tokens', async () => {
       beforeEach('set the fee controller, initialize a pool with protocol fee', async () => {
         const poolKey = {
           currency0: ADDRESS_ZERO,

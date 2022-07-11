@@ -338,7 +338,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
-        reservesOf[currency] = currency.balanceOf(address(this));
+        reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
         _accountDelta(currency, -(paid.toInt256()));
@@ -418,6 +418,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return amount;
     }
 
-    /// @notice receive ETH for ETH pools
+    /// @notice receive native tokens for native pools
     receive() external payable {}
 }

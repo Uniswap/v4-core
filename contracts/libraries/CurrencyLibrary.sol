@@ -6,17 +6,17 @@ import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 type Currency is address;
 
 /// @title CurrencyLibrary
-/// @dev This library allows for transferring and holding native ETH and ERC20 tokens
+/// @dev This library allows for transferring and holding native tokens and ERC20 tokens
 library CurrencyLibrary {
     using CurrencyLibrary for Currency;
 
-    /// @notice Thrown when an ETH transfer fails
-    error ETHTransferFailed();
+    /// @notice Thrown when a native transfer fails
+    error NativeTransferFailed();
 
     /// @notice Thrown when an ERC20 transfer fails
     error ERC20TransferFailed();
 
-    Currency constant NATIVE = Currency.wrap(address(0));
+    Currency constant public NATIVE = Currency.wrap(address(0));
 
     function transfer(
         Currency currency,
@@ -25,7 +25,7 @@ library CurrencyLibrary {
     ) internal {
         if (currency.isNative()) {
             (bool success, ) = to.call{value: amount}('');
-            if (!success) revert ETHTransferFailed();
+            if (!success) revert NativeTransferFailed();
         } else {
             // implementation from
             // https://github.com/Rari-Capital/solmate/blob/3c738133a0c1697096d63d28ef7a8ef298f9af6b/src/utils/SafeTransferLib.sol
@@ -56,11 +56,11 @@ library CurrencyLibrary {
         }
     }
 
-    function balanceOf(Currency currency, address who) internal view returns (uint256) {
+    function balanceOfSelf(Currency currency) internal view returns (uint256) {
         if (currency.isNative()) {
-            return who.balance;
+            return address(this).balance;
         } else {
-            return IERC20Minimal(Currency.unwrap(currency)).balanceOf(who);
+            return IERC20Minimal(Currency.unwrap(currency)).balanceOf(address(this));
         }
     }
 
@@ -73,7 +73,7 @@ library CurrencyLibrary {
     }
 
     function toId(Currency currency) internal pure returns (uint256) {
-        return uint256(uint160(Currency.unwrap(currency)));
+        return uint160(Currency.unwrap(currency));
     }
 
     function fromId(uint256 id) internal pure returns (Currency) {

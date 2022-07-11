@@ -339,7 +339,7 @@ describe('PoolManager gas tests', () => {
     // })
   })
 
-  describe('ETH', () => {
+  describe('Native Tokens', () => {
     const gasTestFixture = async ([wallet]: Wallet[]) => {
       const { currency1 } = await tokensFixture()
 
