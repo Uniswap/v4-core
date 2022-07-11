@@ -3,7 +3,6 @@ pragma solidity ^0.8.15;
 
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
-import {Tick} from './libraries/Tick.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 import {Position} from './libraries/Position.sol';
 import {Currency, CurrencyLibrary} from './libraries/CurrencyLibrary.sol';
