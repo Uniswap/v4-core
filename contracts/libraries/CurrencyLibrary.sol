@@ -16,7 +16,7 @@ library CurrencyLibrary {
     /// @notice Thrown when an ERC20 transfer fails
     error ERC20TransferFailed();
 
-    Currency constant public NATIVE = Currency.wrap(address(0));
+    Currency public constant NATIVE = Currency.wrap(address(0));
 
     function transfer(
         Currency currency,
