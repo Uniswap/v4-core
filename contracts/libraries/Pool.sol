@@ -2,7 +2,6 @@
 pragma solidity =0.8.15;
 
 import {SafeCast} from './SafeCast.sol';
-import {Tick} from './Tick.sol';
 import {TickBitmap} from './TickBitmap.sol';
 import {Position} from './Position.sol';
 import {FullMath} from './FullMath.sol';
@@ -14,7 +13,6 @@ import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 library Pool {
     using SafeCast for *;
-    using Tick for mapping(int24 => Tick.Info);
     using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
@@ -72,13 +70,25 @@ library Pool {
         // 64 bits left!
     }
 
+    // info stored for each initialized individual tick
+    struct TickInfo {
+        // the total position liquidity that references this tick
+        uint128 liquidityGross;
+        // amount of net liquidity added (subtracted) when tick is crossed from left to right (right to left),
+        int128 liquidityNet;
+        // fee growth per unit of liquidity on the _other_ side of this tick (relative to the current tick)
+        // only has relative meaning, not absolute — the value depends on when the tick is initialized
+        uint256 feeGrowthOutside0X128;
+        uint256 feeGrowthOutside1X128;
+    }
+
     /// @dev The state of a pool
     struct State {
         Slot0 slot0;
         uint256 feeGrowthGlobal0X128;
         uint256 feeGrowthGlobal1X128;
         uint128 liquidity;
-        mapping(int24 => Tick.Info) ticks;
+        mapping(int24 => TickInfo) ticks;
         mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
     }
@@ -144,25 +154,21 @@ library Pool {
             ModifyPositionState memory state;
             // if we need to update the ticks, do it
             if (params.liquidityDelta != 0) {
-                (state.flippedLower, state.liquidityGrossAfterLower) = self.ticks.update(
+                (state.flippedLower, state.liquidityGrossAfterLower) = updateTick(
+                    self,
                     params.tickLower,
-                    self.slot0.tick,
                     params.liquidityDelta,
-                    self.feeGrowthGlobal0X128,
-                    self.feeGrowthGlobal1X128,
                     false
                 );
-                (state.flippedUpper, state.liquidityGrossAfterUpper) = self.ticks.update(
+                (state.flippedUpper, state.liquidityGrossAfterUpper) = updateTick(
+                    self,
                     params.tickUpper,
-                    self.slot0.tick,
                     params.liquidityDelta,
-                    self.feeGrowthGlobal0X128,
-                    self.feeGrowthGlobal1X128,
                     true
                 );
 
                 if (params.liquidityDelta > 0) {
-                    uint128 maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
+                    uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
                     if (state.liquidityGrossAfterLower > maxLiquidityPerTick)
                         revert TickLiquidityOverflow(params.tickLower);
                     if (state.liquidityGrossAfterUpper > maxLiquidityPerTick)
@@ -177,12 +183,10 @@ library Pool {
                 }
             }
 
-            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = self.ticks.getFeeGrowthInside(
+            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = getFeeGrowthInside(
+                self,
                 params.tickLower,
-                params.tickUpper,
-                self.slot0.tick,
-                self.feeGrowthGlobal0X128,
-                self.feeGrowthGlobal1X128
+                params.tickUpper
             );
 
             (uint256 feesOwed0, uint256 feesOwed1) = self
@@ -195,10 +199,10 @@ library Pool {
             // clear any tick data that is no longer needed
             if (params.liquidityDelta < 0) {
                 if (state.flippedLower) {
-                    self.ticks.clear(params.tickLower);
+                    clearTick(self, params.tickLower);
                 }
                 if (state.flippedUpper) {
-                    self.ticks.clear(params.tickUpper);
+                    clearTick(self, params.tickUpper);
                 }
             }
         }
@@ -400,7 +404,8 @@ library Pool {
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
-                    int128 liquidityNet = self.ticks.cross(
+                    int128 liquidityNet = Pool.crossTick(
+                        self,
                         step.tickNext,
                         (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
                         (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
@@ -458,6 +463,142 @@ library Pool {
                 state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
             if (amount1 > 0)
                 state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
+        }
+    }
+
+    /// @notice Retrieves fee growth data
+    /// @param self The Pool state struct
+    /// @param tickLower The lower tick boundary of the position
+    /// @param tickUpper The upper tick boundary of the position
+    /// @return feeGrowthInside0X128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
+    /// @return feeGrowthInside1X128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
+    function getFeeGrowthInside(
+        State storage self,
+        int24 tickLower,
+        int24 tickUpper
+    ) internal view returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) {
+        TickInfo storage lower = self.ticks[tickLower];
+        TickInfo storage upper = self.ticks[tickUpper];
+        int24 tickCurrent = self.slot0.tick;
+
+        unchecked {
+            if (tickCurrent < tickLower) {
+                feeGrowthInside0X128 = lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128;
+                feeGrowthInside1X128 = lower.feeGrowthOutside1X128 - upper.feeGrowthOutside1X128;
+            } else if (tickCurrent >= tickUpper) {
+                feeGrowthInside0X128 = upper.feeGrowthOutside0X128 - lower.feeGrowthOutside0X128;
+                feeGrowthInside1X128 = upper.feeGrowthOutside1X128 - lower.feeGrowthOutside1X128;
+            } else {
+                feeGrowthInside0X128 =
+                    self.feeGrowthGlobal0X128 -
+                    lower.feeGrowthOutside0X128 -
+                    upper.feeGrowthOutside0X128;
+                feeGrowthInside1X128 =
+                    self.feeGrowthGlobal1X128 -
+                    lower.feeGrowthOutside1X128 -
+                    upper.feeGrowthOutside1X128;
+            }
+        }
+    }
+
+    /// @notice Updates a tick and returns true if the tick was flipped from initialized to uninitialized, or vice versa
+    /// @param self The mapping containing all tick information for initialized ticks
+    /// @param tick The tick that will be updated
+    /// @param liquidityDelta A new amount of liquidity to be added (subtracted) when tick is crossed from left to right (right to left)
+    /// @param upper true for updating a position's upper tick, or false for updating a position's lower tick
+    /// @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
+    /// @return liquidityGrossAfter The total amount of  liquidity for all positions that references the tick after the update
+    function updateTick(
+        State storage self,
+        int24 tick,
+        int128 liquidityDelta,
+        bool upper
+    ) internal returns (bool flipped, uint128 liquidityGrossAfter) {
+        TickInfo storage info = self.ticks[tick];
+
+        uint128 liquidityGrossBefore;
+        int128 liquidityNetBefore;
+        assembly {
+            // load first slot of info which contains liquidityGross and liquidityNet packed
+            // where the top 128 bits are liquidityNet and the bottom 128 bits are liquidityGross
+            let liquidity := sload(info.slot)
+            // slice off top 128 bits of liquidity (liquidityNet) to get just liquidityGross
+            liquidityGrossBefore := shr(128, shl(128, liquidity))
+            // shift right 128 bits to get just liquidityNet
+            liquidityNetBefore := shr(128, liquidity)
+        }
+
+        liquidityGrossAfter = liquidityDelta < 0
+            ? liquidityGrossBefore - uint128(-liquidityDelta)
+            : liquidityGrossBefore + uint128(liquidityDelta);
+
+        flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
+
+        if (liquidityGrossBefore == 0) {
+            // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
+            if (tick <= self.slot0.tick) {
+                info.feeGrowthOutside0X128 = self.feeGrowthGlobal0X128;
+                info.feeGrowthOutside1X128 = self.feeGrowthGlobal1X128;
+            }
+        }
+
+        // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
+        int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
+        assembly {
+            // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
+            // So we can store them with a single sstore by packing them ourselves first
+            sstore(
+                info.slot,
+                // bitwise OR to pack liquidityGrossAfter and liquidityNet
+                or(
+                    // liquidityGross is in the low bits, upper bits are already 0
+                    liquidityGrossAfter,
+                    // shift liquidityNet to take the upper bits and lower bits get filled with 0
+                    shl(128, liquidityNet)
+                )
+            )
+        }
+    }
+
+    /// @notice Derives max liquidity per tick from given tick spacing
+    /// @dev Executed within the pool constructor
+    /// @param tickSpacing The amount of required tick separation, realized in multiples of `tickSpacing`
+    ///     e.g., a tickSpacing of 3 requires ticks to be initialized every 3rd tick i.e., ..., -6, -3, 0, 3, 6, ...
+    /// @return The max liquidity per tick
+    function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
+        unchecked {
+            return
+                uint128(
+                    (type(uint128).max * uint256(int256(tickSpacing))) /
+                        uint256(int256(TickMath.MAX_TICK * 2 + tickSpacing))
+                );
+        }
+    }
+
+    /// @notice Clears tick data
+    /// @param self The mapping containing all initialized tick information for initialized ticks
+    /// @param tick The tick that will be cleared
+    function clearTick(State storage self, int24 tick) internal {
+        delete self.ticks[tick];
+    }
+
+    /// @notice Transitions to next tick as needed by price movement
+    /// @param self The Pool state struct
+    /// @param tick The destination tick of the transition
+    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
+    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
+    /// @return liquidityNet The amount of liquidity added (subtracted) when tick is crossed from left to right (right to left)
+    function crossTick(
+        State storage self,
+        int24 tick,
+        uint256 feeGrowthGlobal0X128,
+        uint256 feeGrowthGlobal1X128
+    ) internal returns (int128 liquidityNet) {
+        unchecked {
+            TickInfo storage info = self.ticks[tick];
+            info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
+            info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
+            liquidityNet = info.liquidityNet;
         }
     }
 }

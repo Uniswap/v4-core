@@ -52,6 +52,7 @@ jobs:
             --group-name "@uniswap/core-next@${{ github.sha }}" \
             --solc-version 0.8.15 \
             --check-properties \
+            --remap-import "@openzeppelin/contracts/=$(pwd)/node_modules/@openzeppelin/contracts/" \
             contracts/test/TickBitmapEchidnaTest.sol --include TickBitmapEchidnaTest \
             contracts/test/TickMathEchidnaTest.sol --include TickMathEchidnaTest \
             contracts/test/SqrtPriceMathEchidnaTest.sol --include SqrtPriceMathEchidnaTest \
