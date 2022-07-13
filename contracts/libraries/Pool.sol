@@ -210,7 +210,7 @@ library Pool {
         if (params.liquidityDelta != 0) {
             if (self.slot0.tick < params.tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
-                // right, when we'll need _more_ token0 (it's becoming more valuable) so user must provide it
+                // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
                 result.amount0 += SqrtPriceMath.getAmount0Delta(
                     TickMath.getSqrtRatioAtTick(params.tickLower),
                     TickMath.getSqrtRatioAtTick(params.tickUpper),
@@ -233,7 +233,7 @@ library Pool {
                     : self.liquidity + uint128(params.liquidityDelta);
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
-                // left, when we'll need _more_ token1 (it's becoming more valuable) so user must provide it
+                // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
                 result.amount1 += SqrtPriceMath.getAmount1Delta(
                     TickMath.getSqrtRatioAtTick(params.tickLower),
                     TickMath.getSqrtRatioAtTick(params.tickUpper),
@@ -449,7 +449,7 @@ library Pool {
         }
     }
 
-    /// @notice Donates the given amount of token0 and token1 to the pool
+    /// @notice Donates the given amount of currency0 and currency1 to the pool
     function donate(
         State storage state,
         uint256 amount0,

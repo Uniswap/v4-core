@@ -38,10 +38,10 @@ library Position {
     /// @notice Credits accumulated fees to a user's position
     /// @param self The individual position to update
     /// @param liquidityDelta The change in pool liquidity as a result of the position update
-    /// @param feeGrowthInside0X128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
-    /// @param feeGrowthInside1X128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
-    /// @return feesOwed0 The amount of token0 owed to the position owner
-    /// @return feesOwed1 The amount of token1 owed to the position owner
+    /// @param feeGrowthInside0X128 The all-time fee growth in currency0, per unit of liquidity, inside the position's tick boundaries
+    /// @param feeGrowthInside1X128 The all-time fee growth in currency1, per unit of liquidity, inside the position's tick boundaries
+    /// @return feesOwed0 The amount of currency0 owed to the position owner
+    /// @return feesOwed1 The amount of currency1 owed to the position owner
     function update(
         Info storage self,
         int128 liquidityDelta,

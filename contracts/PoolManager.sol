@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.15;
 
-import {TransferHelper} from './libraries/TransferHelper.sol';
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 import {Position} from './libraries/Position.sol';
-import {TransferHelper} from './libraries/TransferHelper.sol';
+import {Currency, CurrencyLibrary} from './libraries/CurrencyLibrary.sol';
 
-import {IERC20Minimal} from './interfaces/external/IERC20Minimal.sol';
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {Owned} from './Owned.sol';
 import {IHooks} from './interfaces/IHooks.sol';
@@ -27,7 +25,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using Pool for *;
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
-    using TransferHelper for IERC20Minimal;
+    using CurrencyLibrary for Currency;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
@@ -37,7 +35,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     mapping(bytes32 => Pool.State) public pools;
 
-    mapping(IERC20Minimal => uint256) public override protocolFeesAccrued;
+    mapping(Currency => uint256) public override protocolFeesAccrued;
     IProtocolFeeController public protocolFeeController;
 
     uint256 private immutable controllerGasLimit;
@@ -103,11 +101,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit Initialize(id, key.token0, key.token1, key.fee, key.tickSpacing, key.hooks);
+        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
     }
 
     /// @inheritdoc IPoolManager
-    mapping(IERC20Minimal => uint256) public override reservesOf;
+    mapping(Currency => uint256) public override reservesOf;
 
     /// @inheritdoc IPoolManager
     address[] public override lockedBy;
@@ -117,37 +115,37 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return lockedBy.length;
     }
 
-    /// @member index The index in the tokensTouched array where the token is found
-    /// @member delta The delta that is owed for that particular token
+    /// @member index The index in the currenciesTouched array where the currency is found
+    /// @member delta The delta that is owed for that particular currency
     struct IndexAndDelta {
         uint8 index;
         int248 delta;
     }
 
-    /// @member tokensTouched The tokens that have been touched by this locker
-    /// @member tokenDelta The amount owed to the locker (positive) or owed to the pool (negative) of the token
+    /// @member currenciesTouched The currencies that have been touched by this locker
+    /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
     struct LockState {
-        IERC20Minimal[] tokensTouched;
-        mapping(IERC20Minimal => IndexAndDelta) tokenDelta;
+        Currency[] currenciesTouched;
+        mapping(Currency => IndexAndDelta) currencyDelta;
     }
 
-    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 tokens owed before
+    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
     /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
     mapping(uint256 => LockState) private lockStates;
 
     /// @inheritdoc IPoolManager
-    function getTokensTouchedLength(uint256 id) external view returns (uint256) {
-        return lockStates[id].tokensTouched.length;
+    function getCurrenciesTouchedLength(uint256 id) external view returns (uint256) {
+        return lockStates[id].currenciesTouched.length;
     }
 
     /// @inheritdoc IPoolManager
-    function getTokensTouched(uint256 id, uint256 index) external view returns (IERC20Minimal) {
-        return lockStates[id].tokensTouched[index];
+    function getCurrenciesTouched(uint256 id, uint256 index) external view returns (Currency) {
+        return lockStates[id].currenciesTouched[index];
     }
 
     /// @inheritdoc IPoolManager
-    function getTokenDelta(uint256 id, IERC20Minimal token) external view returns (uint8 index, int248 delta) {
-        IndexAndDelta storage indexAndDelta = lockStates[id].tokenDelta[token];
+    function getCurrencyDelta(uint256 id, Currency currency) external view returns (uint8 index, int248 delta) {
+        IndexAndDelta storage indexAndDelta = lockStates[id].currencyDelta[currency];
         (index, delta) = (indexAndDelta.index, indexAndDelta.delta);
     }
 
@@ -161,49 +159,49 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         unchecked {
             LockState storage lockState = lockStates[id];
-            uint256 numTokensTouched = lockState.tokensTouched.length;
-            for (uint256 i; i < numTokensTouched; i++) {
-                IERC20Minimal token = lockState.tokensTouched[i];
-                IndexAndDelta storage indexAndDelta = lockState.tokenDelta[token];
-                if (indexAndDelta.delta != 0) revert TokenNotSettled(token, indexAndDelta.delta);
-                delete lockState.tokenDelta[token];
+            uint256 numCurrenciesTouched = lockState.currenciesTouched.length;
+            for (uint256 i; i < numCurrenciesTouched; i++) {
+                Currency currency = lockState.currenciesTouched[i];
+                IndexAndDelta storage indexAndDelta = lockState.currencyDelta[currency];
+                if (indexAndDelta.delta != 0) revert CurrencyNotSettled(currency, indexAndDelta.delta);
+                delete lockState.currencyDelta[currency];
             }
-            delete lockState.tokensTouched;
+            delete lockState.currenciesTouched;
         }
 
         lockedBy.pop();
     }
 
-    /// @dev Adds a token to a unique list of tokens that have been touched
-    function _addTokenToSet(IERC20Minimal token) internal returns (uint8 index) {
+    /// @dev Adds a currency to a unique list of currencies that have been touched
+    function _addCurrencyToSet(Currency currency) internal returns (uint8 index) {
         LockState storage lockState = lockStates[lockedBy.length - 1];
-        uint256 numTokensTouched = lockState.tokensTouched.length;
-        if (numTokensTouched == 0) {
-            lockState.tokensTouched.push(token);
+        uint256 numCurrenciesTouched = lockState.currenciesTouched.length;
+        if (numCurrenciesTouched == 0) {
+            lockState.currenciesTouched.push(currency);
             return 0;
         }
 
-        IndexAndDelta storage indexAndDelta = lockState.tokenDelta[token];
+        IndexAndDelta storage indexAndDelta = lockState.currencyDelta[currency];
         index = indexAndDelta.index;
 
-        if (index == 0 && lockState.tokensTouched[index] != token) {
-            if (numTokensTouched >= type(uint8).max) revert MaxTokensTouched();
-            index = uint8(numTokensTouched);
+        if (index == 0 && !lockState.currenciesTouched[index].equals(currency)) {
+            if (numCurrenciesTouched >= type(uint8).max) revert MaxCurrenciesTouched();
+            index = uint8(numCurrenciesTouched);
             indexAndDelta.index = index;
-            lockState.tokensTouched.push(token);
+            lockState.currenciesTouched.push(currency);
         }
     }
 
-    function _accountDelta(IERC20Minimal token, int256 delta) internal {
+    function _accountDelta(Currency currency, int256 delta) internal {
         if (delta == 0) return;
-        _addTokenToSet(token);
-        lockStates[lockedBy.length - 1].tokenDelta[token].delta += delta.toInt248();
+        _addCurrencyToSet(currency);
+        lockStates[lockedBy.length - 1].currencyDelta[currency].delta += delta.toInt248();
     }
 
-    /// @dev Accumulates a balance change to a map of token to balance changes
+    /// @dev Accumulates a balance change to a map of currency to balance changes
     function _accountPoolBalanceDelta(PoolKey memory key, IPoolManager.BalanceDelta memory delta) internal {
-        _accountDelta(key.token0, delta.amount0);
-        _accountDelta(key.token1, delta.amount1);
+        _accountDelta(key.currency0, delta.amount0);
+        _accountDelta(key.currency1, delta.amount1);
     }
 
     modifier onlyByLocker() {
@@ -276,10 +274,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         );
 
         _accountPoolBalanceDelta(key, delta);
-        // the fee is on the input token
+        // the fee is on the input currency
 
         unchecked {
-            if (feeForProtocol > 0) protocolFeesAccrued[params.zeroForOne ? key.token0 : key.token1] += feeForProtocol;
+            if (feeForProtocol > 0)
+                protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
         }
 
         if (key.hooks.shouldCallAfterSwap()) {
@@ -316,37 +315,37 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @inheritdoc IPoolManager
     function take(
-        IERC20Minimal token,
+        Currency currency,
         address to,
         uint256 amount
     ) external override noDelegateCall onlyByLocker {
-        _accountDelta(token, amount.toInt256());
-        reservesOf[token] -= amount;
-        token.safeTransfer(to, amount);
+        _accountDelta(currency, amount.toInt256());
+        reservesOf[currency] -= amount;
+        currency.transfer(to, amount);
     }
 
     /// @inheritdoc IPoolManager
     function mint(
-        IERC20Minimal token,
+        Currency currency,
         address to,
         uint256 amount
     ) external override noDelegateCall onlyByLocker {
-        _accountDelta(token, amount.toInt256());
-        _mint(to, uint256(uint160(address(token))), amount, '');
+        _accountDelta(currency, amount.toInt256());
+        _mint(to, currency.toId(), amount, '');
     }
 
     /// @inheritdoc IPoolManager
-    function settle(IERC20Minimal token) external override noDelegateCall onlyByLocker returns (uint256 paid) {
-        uint256 reservesBefore = reservesOf[token];
-        reservesOf[token] = token.balanceOf(address(this));
-        paid = reservesOf[token] - reservesBefore;
+    function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
+        uint256 reservesBefore = reservesOf[currency];
+        reservesOf[currency] = currency.balanceOfSelf();
+        paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
-        _accountDelta(token, -(paid.toInt256()));
+        _accountDelta(currency, -(paid.toInt256()));
     }
 
-    function _burnAndAccount(IERC20Minimal token, uint256 amount) internal {
-        _burn(address(this), uint256(uint160(address((token)))), amount);
-        _accountDelta(IERC20Minimal(token), -(amount.toInt256()));
+    function _burnAndAccount(Currency currency, uint256 amount) internal {
+        _burn(address(this), currency.toId(), amount);
+        _accountDelta(currency, -(amount.toInt256()));
     }
 
     function onERC1155Received(
@@ -357,7 +356,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         bytes calldata
     ) external returns (bytes4) {
         if (msg.sender != address(this)) revert NotPoolManagerToken();
-        _burnAndAccount(IERC20Minimal(address(uint160(id))), value);
+        _burnAndAccount(CurrencyLibrary.fromId(id), value);
         return IERC1155Receiver.onERC1155Received.selector;
     }
 
@@ -372,7 +371,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         // unchecked to save gas on incrementations of i
         unchecked {
             for (uint256 i; i < ids.length; i++) {
-                _burnAndAccount(IERC20Minimal(address(uint160(ids[i]))), values[i]);
+                _burnAndAccount(CurrencyLibrary.fromId(ids[i]), values[i]);
             }
         }
         return IERC1155Receiver.onERC1155BatchReceived.selector;
@@ -406,15 +405,18 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function collectProtocolFees(
         address recipient,
-        IERC20Minimal token,
+        Currency currency,
         uint256 amount
     ) external returns (uint256) {
         if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
 
-        amount = (amount == 0) ? protocolFeesAccrued[token] : amount;
-        protocolFeesAccrued[token] -= amount;
-        TransferHelper.safeTransfer(token, recipient, amount);
+        amount = (amount == 0) ? protocolFeesAccrued[currency] : amount;
+        protocolFeesAccrued[currency] -= amount;
+        currency.transfer(recipient, amount);
 
         return amount;
     }
+
+    /// @notice receive native tokens for native pools
+    receive() external payable {}
 }

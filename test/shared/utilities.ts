@@ -45,14 +45,14 @@ export function getPositionKey(address: string, lowerTick: number, upperTick: nu
 }
 
 export function getPoolId({
-  token0,
-  token1,
+  currency0,
+  currency1,
   fee,
   tickSpacing,
   hooks,
 }: {
-  token0: string | Contract
-  token1: string | Contract
+  currency0: string | Contract
+  currency1: string | Contract
   fee: number
   tickSpacing: number
   hooks: string | Contract
@@ -61,8 +61,8 @@ export function getPoolId({
     utils.defaultAbiCoder.encode(
       ['address', 'address', 'uint24', 'int24', 'address'],
       [
-        typeof token0 === 'string' ? token0 : token0.address,
-        typeof token1 === 'string' ? token1 : token1.address,
+        typeof currency0 === 'string' ? currency0 : currency0.address,
+        typeof currency1 === 'string' ? currency1 : currency1.address,
         fee,
         tickSpacing,
         typeof hooks === 'string' ? hooks : hooks.address,
