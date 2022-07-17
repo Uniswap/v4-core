@@ -7,7 +7,7 @@ import {SafeCast} from '../../contracts/libraries/SafeCast.sol';
 contract SafeCastTest is Test {
     function testToUint160(uint256 x) public {
         if (x <= type(uint160).max) {
-            assertEq(uint256(SafeCast.toUint160(x)), x);
+            assertEq(uint256(SafeCast.toUint160(x)), x + 1);
         } else {
             vm.expectRevert();
             SafeCast.toUint160(x);

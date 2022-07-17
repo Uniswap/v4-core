@@ -12,6 +12,7 @@ import {TWAMM} from '../libraries/TWAMM/TWAMM.sol';
 import {OrderPool} from '../libraries/TWAMM/OrderPool.sol';
 import {BaseHook} from './base/BaseHook.sol';
 
+
 contract TWAMMHook is BaseHook, ITWAMM {
     using TWAMM for TWAMM.State;
     using TransferHelper for IERC20Minimal;
@@ -99,6 +100,7 @@ contract TWAMMHook is BaseHook, ITWAMM {
     }
 
     function executeTWAMMOrders(IPoolManager.PoolKey memory key) public {
+
         bytes32 poolId = keccak256(abi.encode(key));
         (uint160 sqrtPriceX96, , ) = poolManager.getSlot0(poolId);
         TWAMM.State storage twamm = twammStates[poolId];

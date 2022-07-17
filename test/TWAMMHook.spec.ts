@@ -190,7 +190,7 @@ describe('TWAMM Hook', () => {
     })
   })
 
-  describe('#submitLongTermOrder', () => {
+  describe.only('#submitLongTermOrder', () => {
     let latestTimestamp: number
     let poolKey: PoolKey
 
@@ -209,7 +209,7 @@ describe('TWAMM Hook', () => {
       await modifyPositionTest.modifyPosition(poolKey, {
         tickLower: getMinTick(10),
         tickUpper: getMaxTick(10),
-        liquidityDelta: expandTo18Decimals(1),
+        liquidityDelta: expandTo18Decimals(10),
       })
     })
 
@@ -228,7 +228,7 @@ describe('TWAMM Hook', () => {
       expect(order.earningsFactorLast).to.eq(0)
     })
 
-    it('stores the correct earningsFactorLast if past earnings have been processed', async () => {
+    it.only('stores the correct earningsFactorLast if past earnings have been processed', async () => {
       const expiration = nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 2)
       const orderKey0 = {
         zeroForOne: true,
@@ -240,6 +240,7 @@ describe('TWAMM Hook', () => {
         owner: wallet.address,
         expiration: nIntervalsFrom(latestTimestamp, EXPIRATION_INTERVAL, 5),
       }
+
       await twamm.submitLongTermOrder(poolKey, orderKey0, expandTo18Decimals(10))
       await setNextBlocktime(expiration + 100)
       await twamm.submitLongTermOrder(poolKey, orderKey1, expandTo18Decimals(10))

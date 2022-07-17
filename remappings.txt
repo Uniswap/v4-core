@@ -1,3 +1,4 @@
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
 @openzeppelin/contracts/=node_modules/@openzeppelin/contracts
+abdk-libraries-solidity/=node_modules/abdk-libraries-solidity
