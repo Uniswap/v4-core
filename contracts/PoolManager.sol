@@ -115,7 +115,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return lockedBy.length;
     }
 
-    /// @member currenciesTouched The currencies that have been touched by this locker
+    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
     /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
     struct LockState {
         uint256 nonzeroDeltaCount;
