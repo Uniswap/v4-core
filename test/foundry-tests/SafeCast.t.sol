@@ -31,13 +31,4 @@ contract SafeCastTest is Test {
             SafeCast.toInt256(x);
         }
     }
-
-    function testToInt248(int256 x) public {
-        if (x <= type(int248).max && x >= type(int248).min) {
-            assertEq(int256(SafeCast.toInt248(x)), x);
-        } else {
-            vm.expectRevert();
-            SafeCast.toInt248(x);
-        }
-    }
 }

@@ -13,10 +13,8 @@ interface IPoolManager is IERC1155 {
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
     error ProtocolFeeCannotBeFetched();
 
-    /// @notice Thrown when a currency is owed to the caller or the caller owes a currency
-    /// @param currency The currency that is owed
-    /// @param delta The amount that is owed by or to the locker
-    error CurrencyNotSettled(Currency currency, int256 delta);
+    /// @notice Thrown when a currency is not netted out after a lock
+    error CurrencyNotSettled();
 
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
@@ -146,19 +144,14 @@ interface IPoolManager is IERC1155 {
     /// @notice Getter for the length of the lockedBy array
     function lockedByLength() external view returns (uint256);
 
-    /// @notice Get the number of currencies touched for the given locker index. The current locker index is always `#lockedByLength() - 1`
+    /// @notice Returns the count of nonzero deltas for the given locker ID
     /// @param id The ID of the locker
-    function getCurrenciesTouchedLength(uint256 id) external view returns (uint256);
-
-    /// @notice Get the currency touched at the given index for the given locker index
-    /// @param id The ID of the locker
-    /// @param index The index of the currency in the currency touched array to get
-    function getCurrenciesTouched(uint256 id, uint256 index) external view returns (Currency);
+    function getNonzeroDeltaCount(uint256 id) external view returns (uint256);
 
     /// @notice Get the current delta for a given currency, and its position in the currencies touched array
     /// @param id The ID of the locker
     /// @param currency The currency for which to lookup the delta
-    function getCurrencyDelta(uint256 id, Currency currency) external view returns (uint8 index, int248 delta);
+    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
