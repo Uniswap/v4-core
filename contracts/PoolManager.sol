@@ -169,7 +169,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        lockState.currencyDelta[currency] += delta;
+        lockState.currencyDelta[currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
