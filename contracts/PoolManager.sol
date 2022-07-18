@@ -159,13 +159,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         int256 current = lockState.currencyDelta[currency];
 
         int256 next = current + delta;
-        if (next == 0) {
-            unchecked {
-                lockState.nonzeroDeltaCount -= 1;
-            }
-        } else if (current == 0) {
-            unchecked {
-                lockState.nonzeroDeltaCount += 1;
+        unchecked {
+            if (next == 0) {
+                lockState.nonzeroDeltaCount--;
+            } else if (current == 0) {
+                lockState.nonzeroDeltaCount++;
             }
         }
 
