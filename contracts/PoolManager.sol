@@ -115,18 +115,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return lockedBy.length;
     }
 
-    /// @member index The index in the currenciesTouched array where the currency is found
-    /// @member delta The delta that is owed for that particular currency
-    struct IndexAndDelta {
-        uint8 index;
-        int248 delta;
-    }
-
-    /// @member currenciesTouched The currencies that have been touched by this locker
+    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
     /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
     struct LockState {
-        Currency[] currenciesTouched;
-        mapping(Currency => IndexAndDelta) currencyDelta;
+        uint256 nonzeroDeltaCount;
+        mapping(Currency => int256) currencyDelta;
     }
 
     /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
@@ -134,19 +127,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     mapping(uint256 => LockState) private lockStates;
 
     /// @inheritdoc IPoolManager
-    function getCurrenciesTouchedLength(uint256 id) external view returns (uint256) {
-        return lockStates[id].currenciesTouched.length;
+    function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
+        return lockStates[id].nonzeroDeltaCount;
     }
 
     /// @inheritdoc IPoolManager
-    function getCurrenciesTouched(uint256 id, uint256 index) external view returns (Currency) {
-        return lockStates[id].currenciesTouched[index];
-    }
-
-    /// @inheritdoc IPoolManager
-    function getCurrencyDelta(uint256 id, Currency currency) external view returns (uint8 index, int248 delta) {
-        IndexAndDelta storage indexAndDelta = lockStates[id].currencyDelta[currency];
-        (index, delta) = (indexAndDelta.index, indexAndDelta.delta);
+    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256) {
+        return lockStates[id].currencyDelta[currency];
     }
 
     /// @inheritdoc IPoolManager
@@ -159,43 +146,28 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         unchecked {
             LockState storage lockState = lockStates[id];
-            uint256 numCurrenciesTouched = lockState.currenciesTouched.length;
-            for (uint256 i; i < numCurrenciesTouched; i++) {
-                Currency currency = lockState.currenciesTouched[i];
-                IndexAndDelta storage indexAndDelta = lockState.currencyDelta[currency];
-                if (indexAndDelta.delta != 0) revert CurrencyNotSettled(currency, indexAndDelta.delta);
-                delete lockState.currencyDelta[currency];
-            }
-            delete lockState.currenciesTouched;
+            if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
         }
 
         lockedBy.pop();
     }
 
-    /// @dev Adds a currency to a unique list of currencies that have been touched
-    function _addCurrencyToSet(Currency currency) internal returns (uint8 index) {
-        LockState storage lockState = lockStates[lockedBy.length - 1];
-        uint256 numCurrenciesTouched = lockState.currenciesTouched.length;
-        if (numCurrenciesTouched == 0) {
-            lockState.currenciesTouched.push(currency);
-            return 0;
-        }
-
-        IndexAndDelta storage indexAndDelta = lockState.currencyDelta[currency];
-        index = indexAndDelta.index;
-
-        if (index == 0 && !lockState.currenciesTouched[index].equals(currency)) {
-            if (numCurrenciesTouched >= type(uint8).max) revert MaxCurrenciesTouched();
-            index = uint8(numCurrenciesTouched);
-            indexAndDelta.index = index;
-            lockState.currenciesTouched.push(currency);
-        }
-    }
-
     function _accountDelta(Currency currency, int256 delta) internal {
         if (delta == 0) return;
-        _addCurrencyToSet(currency);
-        lockStates[lockedBy.length - 1].currencyDelta[currency].delta += delta.toInt248();
+
+        LockState storage lockState = lockStates[lockedBy.length - 1];
+        int256 current = lockState.currencyDelta[currency];
+
+        int256 next = current + delta;
+        unchecked {
+            if (next == 0) {
+                lockState.nonzeroDeltaCount--;
+            } else if (current == 0) {
+                lockState.nonzeroDeltaCount++;
+            }
+        }
+
+        lockState.currencyDelta[currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes

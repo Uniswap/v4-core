@@ -42,24 +42,23 @@ contract PoolManagerReentrancyTest is ILockCallback {
         assert(poolManager.lockedBy(id) == address(this));
         assert(poolManager.lockedByLength() == id + 1);
 
-        // currencies touched length is 0 when we enter
-        assert(poolManager.getCurrenciesTouchedLength(id) == 0);
+        assert(poolManager.getNonzeroDeltaCount(id) == 0);
 
-        (uint8 index, int248 delta) = poolManager.getCurrencyDelta(id, currencyToBorrow);
-        assert(index == 0 && delta == 0);
+        int256 delta = poolManager.getCurrencyDelta(id, currencyToBorrow);
+        assert(delta == 0);
 
         // take some
         poolManager.take(currencyToBorrow, address(this), 1);
-        assert(poolManager.getCurrenciesTouchedLength(id) == 1);
-        (index, delta) = poolManager.getCurrencyDelta(id, currencyToBorrow);
-        assert(index == 0 && delta == 1);
+        assert(poolManager.getNonzeroDeltaCount(id) == 1);
+        delta = poolManager.getCurrencyDelta(id, currencyToBorrow);
+        assert(delta == 1);
 
         // then pay it back
         currencyToBorrow.transfer(address(poolManager), 1);
         poolManager.settle(currencyToBorrow);
-        assert(poolManager.getCurrenciesTouchedLength(id) == 1);
-        (index, delta) = poolManager.getCurrencyDelta(id, currencyToBorrow);
-        assert(index == 0 && delta == 0);
+        assert(poolManager.getNonzeroDeltaCount(id) == 0);
+        delta = poolManager.getCurrencyDelta(id, currencyToBorrow);
+        assert(delta == 0);
 
         if (count > 0) helper(IPoolManager(msg.sender), currencyToBorrow, total, count - 1);
 
