@@ -15,7 +15,7 @@ import {PoolSwapTest} from '../../contracts/test/PoolSwapTest.sol';
 import {PoolDonateTest} from '../../contracts/test/PoolDonateTest.sol';
 import {Deployers} from './utils/Deployers.sol';
 
-contract HooksTest is Test, Deployers {
+contract TWAMMHookTest is Test, Deployers {
     TWAMMHook twamm;
     PoolManager manager;
     IPoolManager.PoolKey poolKey;
@@ -66,6 +66,26 @@ contract HooksTest is Test, Deployers {
         assertEq(submittedOrder.earningsFactorLast, 0);
     }
 
+    function TWAMMSingleSellFailing() public {
+        // TODO: fails with a bug for single pool sell, swap amount 3 wei above balance.
+        TWAMM.OrderKey memory orderKey1 = TWAMM.OrderKey(address(this), 30000, true);
+        TWAMM.OrderKey memory orderKey2 = TWAMM.OrderKey(address(this), 40000, true);
+
+        poolKey.token0.approve(address(twamm), 100e18);
+        poolKey.token1.approve(address(twamm), 100e18);
+        vm.warp(10000);
+        twamm.submitLongTermOrder(poolKey, orderKey1, 1e18);
+        vm.warp(30000);
+        poolKey.token0.approve(address(twamm), 100e18);
+        twamm.submitLongTermOrder(poolKey, orderKey2, 1e18);
+        vm.warp(40000);
+
+        TWAMM.Order memory submittedOrder = twamm.getOrder(poolKey, orderKey2);
+        (, uint256 earningsFactorCurrent) = twamm.getOrderPool(poolKey, true);
+        assertEq(submittedOrder.sellRate, 1 ether / 10000);
+        assertEq(submittedOrder.earningsFactorLast, earningsFactorCurrent);
+    }
+
     function testTWAMMOrderStoresEarningsFactorLast() public {
         TWAMM.OrderKey memory orderKey1 = TWAMM.OrderKey(address(this), 30000, true);
         TWAMM.OrderKey memory orderKey2 = TWAMM.OrderKey(address(this), 40000, true);
@@ -87,7 +107,26 @@ contract HooksTest is Test, Deployers {
         assertEq(submittedOrder.earningsFactorLast, earningsFactorCurrent);
     }
 
-    function testTWAMMEndToEndSimEvenTrading() public {
+    event SubmitLongTermOrder(
+        bytes32 indexed poolId,
+        address indexed owner,
+        uint160 expiration,
+        bool zeroForOne,
+        uint256 sellRate,
+        uint256 earningsFactorLast
+    );
+    function testTWAMMSubmitOrderEmitsEvent() public {
+        TWAMM.OrderKey memory orderKey1 = TWAMM.OrderKey(address(this), 30000, true);
+
+        poolKey.token0.approve(address(twamm), 100e18);
+        vm.warp(10000);
+
+        vm.expectEmit(false, false, false, true);
+        emit SubmitLongTermOrder(id, address(this), 30000, true,  1 ether / 20000, 0);
+        twamm.submitLongTermOrder(poolKey, orderKey1, 1e18);
+    }
+
+    function testTWAMMEndToEndSimEvenTradingGas() public {
         uint256 orderAmount = 1e18;
         TWAMM.OrderKey memory orderKey1 = TWAMM.OrderKey(address(this), 30000, true);
         TWAMM.OrderKey memory orderKey2 = TWAMM.OrderKey(address(this), 30000, false);

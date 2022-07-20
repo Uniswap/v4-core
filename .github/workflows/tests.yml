@@ -65,3 +65,13 @@ jobs:
         run: yarn test-forge -vvv
         env:
           FOUNDRY_PROFILE: ci
+
+      - name: Run Gas Snapshots
+        run: forge snapshot --match Gas
+        env:
+          FOUNDRY_PROFILE: ci
+
+      - name: Commit Gas Snapshots
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: 'Update Gas Snapshots'
