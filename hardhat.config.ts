@@ -21,8 +21,8 @@ subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async (args: TaskArguments, hre, r
   return {
     compilerPath,
     isSolcJs: false,
-    version: '0.8.15',
-    longVersion: '0.8.15',
+    version: '0.8.16',
+    longVersion: '0.8.16-ci.2022.7.20+commit.90c17503.Darwin.appleclang',
   }
 })
 

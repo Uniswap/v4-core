@@ -108,14 +108,14 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     mapping(Currency => uint256) public override reservesOf;
 
     /// @inheritdoc IPoolManager
-    function lockedBy(uint256 index) public returns (address locker) {
+    function lockedBy(uint256 index) public view returns (address locker) {
         assembly {
             locker := tload(add(index, 1))
         }
     }
 
     /// @inheritdoc IPoolManager
-    function lockedByLength() public returns (uint256 length) {
+    function lockedByLength() public view returns (uint256 length) {
         assembly {
             length := tload(0)
         }
