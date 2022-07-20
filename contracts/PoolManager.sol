@@ -18,6 +18,8 @@ import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
 import {PoolId} from './libraries/PoolId.sol';
 
+import {console} from 'hardhat/console.sol';
+
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
     using PoolId for PoolKey;
@@ -134,22 +136,22 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @dev Pop the latest locked by address from the stack
     function popLockedBy() internal {
         assembly {
-            let index := tload(0)
-            tstore(0, sub(index, 1))
-            tstore(index, 0)
+            let length := tload(0)
+            tstore(0, sub(length, 1))
+            tstore(length, 0)
         }
     }
 
     /// @inheritdoc IPoolManager
     function getNonzeroDeltaCount(uint256 id) public view returns (uint256 count) {
         assembly {
-            count := tload(shl(128, id))
+            count := tload(add(shl(128, 1), id))
         }
     }
 
     function setNonzeroDeltaCount(uint256 id, uint256 count) internal {
         assembly {
-            tstore(shl(128, id), count)
+            tstore(add(shl(128, 1), id), count)
         }
     }
 
