@@ -2,8 +2,6 @@ name: Tests
 
 on:
   push:
-    branches:
-      - main
   pull_request:
 
 jobs:
@@ -65,6 +63,7 @@ jobs:
         run: yarn test-forge -vvv
         env:
           FOUNDRY_PROFILE: ci
+
 
       - name: Run Gas Snapshots
         run: forge snapshot --match Gas
