@@ -110,7 +110,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     function lockedBy(uint256 index) public returns (address locker) {
         assembly {
-            locker := tload(shl(8, index))
+            locker := tload(add(index, 1))
         }
     }
 
@@ -127,7 +127,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         assembly {
             index := tload(0)
             tstore(0, add(index, 1))
-            tstore(index, addr)
+            tstore(add(index, 1), addr)
         }
     }
 
@@ -171,10 +171,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             tstore(key, delta)
         }
     }
-
-    /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
-    ///     more than 256 tokens.
-    uint256 public constant MAX_TOKENS_TOUCHED = type(uint8).max;
 
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
