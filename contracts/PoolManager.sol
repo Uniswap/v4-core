@@ -13,7 +13,6 @@ import {IHooks} from './interfaces/IHooks.sol';
 import {IProtocolFeeController} from './interfaces/IProtocolFeeController.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
-import {TransientStorageProxy, TransientStorage} from './libraries/TransientStorage.sol';
 
 import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
@@ -27,7 +26,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
-    using TransientStorage for TransientStorageProxy;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
@@ -37,11 +35,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     mapping(bytes32 => Pool.State) public pools;
 
-    TransientStorageProxy public immutable transientStorage;
-
-    constructor() ERC1155('') {
-        transientStorage = TransientStorage.init();
-    }
     mapping(Currency => uint256) public override protocolFeesAccrued;
     IProtocolFeeController public protocolFeeController;
 
@@ -114,74 +107,69 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     mapping(Currency => uint256) public override reservesOf;
 
-    uint256 public constant LOCKED_BY_SLOT = uint256(keccak256('lockedBy'));
-    uint256 public constant TOKENS_TOUCHED_SLOT = uint256(keccak256('tokensTouched'));
-    uint256 public constant TOKEN_DELTA_SLOT = uint256(keccak256('tokenDelta'));
-
     /// @inheritdoc IPoolManager
-    function lockedBy(uint256 index) public returns (address) {
-        unchecked {
-            return address(uint160(transientStorage.load(LOCKED_BY_SLOT + index + 1)));
+    function lockedBy(uint256 index) public returns (address locker) {
+        assembly {
+            locker := tload(shl(8, index))
         }
     }
 
     /// @inheritdoc IPoolManager
-    function lockedByLength() public returns (uint256) {
-        return transientStorage.load(LOCKED_BY_SLOT);
+    function lockedByLength() public returns (uint256 length) {
+        assembly {
+            length := tload(0)
+        }
     }
-
 
     /// @dev Push the latest locked by address from the stack
     /// @return index The index of the locker, i.e. the locker's unique identifier
     function pushLockedBy(address addr) internal returns (uint256 index) {
-        // addition by 1 is never expected to overflow
-    unchecked {
-        index = lockedByLength();
-        transientStorage.store(LOCKED_BY_SLOT, index + 1);
-        transientStorage.store(LOCKED_BY_SLOT + index + 1, uint256(uint160(addr)));
-    }
+        assembly {
+            index := tload(0)
+            tstore(0, add(index, 1))
+            tstore(index, addr)
+        }
     }
 
     /// @dev Pop the latest locked by address from the stack
     function popLockedBy() internal {
-        // subtraction can be unchecked because we never pop unless we've pushed
-    unchecked {
-        transientStorage.store(LOCKED_BY_SLOT, lockedByLength() - 1);
-    }
-    }
-
-
-    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
-    /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
-    struct LockState {
-        uint256 nonzeroDeltaCount;
-        mapping(Currency => int256) currencyDelta;
-    }
-
-    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
-    /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
-    mapping(uint256 => LockState) private lockStates;
-
-    /// @inheritdoc IPoolManager
-    function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
-        return lockStates[id].nonzeroDeltaCount;
+        assembly {
+            let index := sub(tload(0), 1)
+            tstore(0, index)
+            tstore(index, 0)
+        }
     }
 
     /// @inheritdoc IPoolManager
-    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256) {
-        return lockStates[id].currencyDelta[currency];
+    function getNonzeroDeltaCount(uint256 id) public view returns (uint256 count) {
+        assembly {
+            count := tload(shl(128, id))
+        }
     }
 
-    function setTokenDelta(
+    function setNonzeroDeltaCount(uint256 id, uint256 count) internal {
+        assembly {
+            tstore(shl(128, id), count)
+        }
+    }
+
+    /// @inheritdoc IPoolManager
+    function getCurrencyDelta(uint256 id, Currency currency) public view returns (int256 delta) {
+        uint256 key = uint256(keccak256(abi.encode(id, currency)));
+        assembly {
+            delta := tload(key)
+        }
+    }
+
+    function setCurrencyDelta(
         uint256 id,
-        IERC20Minimal token,
-        uint256 slot,
-        int248 delta
+        Currency currency,
+        int256 delta
     ) internal {
-        transientStorage.store(
-            uint256(keccak256(abi.encodePacked(TOKEN_DELTA_SLOT, id, token))),
-            (uint256(slot) << 248) | uint256(uint248(delta))
-        );
+        uint256 key = uint256(keccak256(abi.encode(id, currency)));
+        assembly {
+            tstore(key, delta)
+        }
     }
 
     /// @dev Limited to 256 since the slot in the mapping is a uint8. It is unexpected for any set of actions to involve
@@ -196,35 +184,46 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         unchecked {
-            LockState storage lockState = lockStates[id];
-            if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            if (getNonzeroDeltaCount(id) != 0) revert CurrencyNotSettled();
         }
 
-        lockedBy.pop();
+        popLockedBy();
     }
 
-    function _accountDelta(Currency currency, int256 delta) internal {
+    function _accountDelta(
+        uint256 id,
+        Currency currency,
+        int256 delta
+    ) internal {
         if (delta == 0) return;
 
-        LockState storage lockState = lockStates[lockedBy.length - 1];
-        int256 current = lockState.currencyDelta[currency];
+        int256 current = getCurrencyDelta(id, currency);
 
         int256 next = current + delta;
         unchecked {
             if (next == 0) {
-                lockState.nonzeroDeltaCount--;
+                setNonzeroDeltaCount(id, getNonzeroDeltaCount(id) - 1);
             } else if (current == 0) {
-                lockState.nonzeroDeltaCount++;
+                setNonzeroDeltaCount(id, getNonzeroDeltaCount(id) + 1);
             }
         }
 
-        lockState.currencyDelta[currency] = next;
+        setCurrencyDelta(id, currency, next);
+    }
+
+    function lockerIdCurrent() internal view returns (uint256) {
+        unchecked {
+            return lockedByLength() - 1;
+        }
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
     function _accountPoolBalanceDelta(PoolKey memory key, IPoolManager.BalanceDelta memory delta) internal {
-        _accountDelta(key.currency0, delta.amount0);
-        _accountDelta(key.currency1, delta.amount1);
+        unchecked {
+            uint256 id = lockerIdCurrent();
+            _accountDelta(id, key.currency0, delta.amount0);
+            _accountDelta(id, key.currency1, delta.amount1);
+        }
     }
 
     modifier onlyByLocker() {
@@ -342,7 +341,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         address to,
         uint256 amount
     ) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt256());
+        _accountDelta(lockerIdCurrent(), currency, amount.toInt256());
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
@@ -353,7 +352,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         address to,
         uint256 amount
     ) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt256());
+        _accountDelta(lockerIdCurrent(), currency, amount.toInt256());
         _mint(to, currency.toId(), amount, '');
     }
 
@@ -363,12 +362,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt256()));
+        _accountDelta(lockerIdCurrent(), currency, -(paid.toInt256()));
     }
 
     function _burnAndAccount(Currency currency, uint256 amount) internal {
         _burn(address(this), currency.toId(), amount);
-        _accountDelta(currency, -(amount.toInt256()));
+        _accountDelta(lockerIdCurrent(), currency, -(amount.toInt256()));
     }
 
     function onERC1155Received(

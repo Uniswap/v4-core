@@ -6,6 +6,26 @@ import '@nomiclabs/hardhat-etherscan'
 const importToml = require('import-toml')
 const foundryConfig = importToml.sync('foundry.toml')
 
+import { TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD } from 'hardhat/builtin-tasks/task-names'
+import { subtask } from 'hardhat/config'
+import { TaskArguments } from 'hardhat/types'
+import { join as pathJoin } from 'path'
+
+subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async (args: TaskArguments, hre, runSuper) => {
+  if (args.solcVersion !== '0.8.15') {
+    throw new Error('need binary for solc version')
+  }
+
+  const compilerPath = pathJoin(__dirname, 'bin', 'solc')
+
+  return {
+    compilerPath,
+    isSolcJs: false,
+    version: '0.8.15',
+    longVersion: '0.8.15',
+  }
+})
+
 export default {
   networks: {
     hardhat: {
