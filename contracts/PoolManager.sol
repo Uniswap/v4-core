@@ -145,21 +145,20 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     function getNonzeroDeltaCount(uint256 id) public view returns (uint256 count) {
         assembly {
-            count := tload(add(shl(128, 1), id))
+            count := tload(shl(160, add(id, 1)))
         }
     }
 
     function setNonzeroDeltaCount(uint256 id, uint256 count) internal {
         assembly {
-            tstore(add(shl(128, 1), id), count)
+            tstore(shl(160, add(id, 1)), count)
         }
     }
 
     /// @inheritdoc IPoolManager
     function getCurrencyDelta(uint256 id, Currency currency) public view returns (int256 delta) {
-        uint256 key = uint256(keccak256(abi.encode(id, currency)));
         assembly {
-            delta := tload(key)
+            delta := tload(shl(160, add(add(id, 2), currency)))
         }
     }
 
@@ -168,9 +167,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         Currency currency,
         int256 delta
     ) internal {
-        uint256 key = uint256(keccak256(abi.encode(id, currency)));
         assembly {
-            tstore(key, delta)
+            tstore(shl(160, add(add(id, 2), currency)), delta)
         }
     }
 
