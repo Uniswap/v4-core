@@ -12,7 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
       - uses: actions/setup-node@v1
         with:
           node-version: 12.x
@@ -49,14 +52,16 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
-          cache: 'yarn'
+          # cache: 'yarn'
 
       - run: yarn
 
       - name: Install Foundry
-        uses: onbjerg/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
       - name: Run tests
         run: yarn test-forge -vvv
+        env:
+          FOUNDRY_PROFILE: ci

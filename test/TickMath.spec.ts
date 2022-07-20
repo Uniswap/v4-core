@@ -19,11 +19,11 @@ describe('TickMath', () => {
 
   describe('#getSqrtRatioAtTick', () => {
     it('throws for too low', async () => {
-      await expect(tickMath.getSqrtRatioAtTick(MIN_TICK - 1)).to.be.revertedWith('T')
+      await expect(tickMath.getSqrtRatioAtTick(MIN_TICK - 1)).to.be.revertedWith('InvalidTick()')
     })
 
     it('throws for too low', async () => {
-      await expect(tickMath.getSqrtRatioAtTick(MAX_TICK + 1)).to.be.revertedWith('T')
+      await expect(tickMath.getSqrtRatioAtTick(MAX_TICK + 1)).to.be.revertedWith('InvalidTick()')
     })
 
     it('min tick', async () => {
@@ -109,11 +109,11 @@ describe('TickMath', () => {
 
   describe('#getTickAtSqrtRatio', () => {
     it('throws for too low', async () => {
-      await expect(tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO.sub(1))).to.be.revertedWith('R')
+      await expect(tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO.sub(1))).to.be.revertedWith('InvalidSqrtRatio()')
     })
 
     it('throws for too high', async () => {
-      await expect(tickMath.getTickAtSqrtRatio(BigNumber.from(MAX_SQRT_RATIO))).to.be.revertedWith('R')
+      await expect(tickMath.getTickAtSqrtRatio(BigNumber.from(MAX_SQRT_RATIO))).to.be.revertedWith('InvalidSqrtRatio()')
     })
 
     it('ratio of min tick', async () => {
