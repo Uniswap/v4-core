@@ -134,8 +134,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @dev Pop the latest locked by address from the stack
     function popLockedBy() internal {
         assembly {
-            let index := sub(tload(0), 1)
-            tstore(0, index)
+            let index := tload(0)
+            tstore(0, sub(index, 1))
             tstore(index, 0)
         }
     }
@@ -223,7 +223,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     modifier onlyByLocker() {
-        address lb = lockedBy(lockedByLength() - 1);
+        address lb = lockedBy(lockerIdCurrent());
         if (msg.sender != lb) revert LockedBy(lb);
         _;
     }
