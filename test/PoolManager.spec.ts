@@ -554,7 +554,7 @@ describe('PoolManager', () => {
       )
     })
 
-    it('gas cost with hooks', async () => {
+    it('gas cost with hooks [ @skip-on-coverage ]', async () => {
       await manager.initialize(
         {
           currency0: tokens.currency0.address,
@@ -767,7 +767,7 @@ describe('PoolManager', () => {
       )
     })
 
-    it('gas cost with native tokens', async () => {
+    it('gas cost with native tokens [@skip-on-coverage ]', async () => {
       const poolKey = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
@@ -1032,7 +1032,7 @@ describe('PoolManager', () => {
       )
     })
 
-    it('gas cost for swap with native tokens against liquidity', async () => {
+    it('gas cost for swap with native tokens against liquidity [ @skip-on-coverage ]', async () => {
       const poolKey = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
