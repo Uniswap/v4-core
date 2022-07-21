@@ -49,13 +49,7 @@ contract OracleTest {
         uint16 _cardinalityNext = cardinalityNext;
 
         for (uint256 i = 0; i < params.length; i++) {
-            (_index, _cardinality) = observations.write(
-                _index,
-                _tick,
-                _liquidity,
-                _cardinality,
-                _cardinalityNext
-            );
+            (_index, _cardinality) = observations.write(_index, _tick, _liquidity, _cardinality, _cardinalityNext);
             _tick = params[i].tick;
             _liquidity = params[i].liquidity;
         }

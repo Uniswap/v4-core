@@ -301,13 +301,15 @@ describe.only('Oracle', () => {
       it('fails if an older observation does not exist', async () => {
         await oracle.initialize({ liquidity: 4, tick: 2, time: 5 })
         const blockTimestamp = await latestTimestamp()
-        await expect(observeSingle(1)).to.be.revertedWith(`TargetPredatesOldestObservation(${blockTimestamp}, ${blockTimestamp - 1})`)
+        await expect(observeSingle(1)).to.be.revertedWith(
+          `TargetPredatesOldestObservation(${blockTimestamp}, ${blockTimestamp - 1})`
+        )
       })
 
       it('does not fail across overflow boundary', async () => {
         await setNextBlocktime(2 ** 32 - 1)
         await oracle.initialize({ liquidity: 4, tick: 2, time: 2 ** 32 - 1 })
-        await mineBlock(await latestTimestamp() + 2)
+        await mineBlock((await latestTimestamp()) + 2)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(1)
         expect(tickCumulative).to.be.eq(2)
         expect(secondsPerLiquidityCumulativeX128).to.be.eq('85070591730234615865843651857942052864')
@@ -388,14 +390,16 @@ describe.only('Oracle', () => {
 
       it('single observation in past but not earlier than secondsAgo', async () => {
         await oracle.initialize({ liquidity: 4, tick: 2, time: 5 })
-        await mineBlock(await latestTimestamp() + 3)
+        await mineBlock((await latestTimestamp()) + 3)
         const blockTimestamp = await latestTimestamp()
-        await expect(observeSingle(4)).to.be.revertedWith(`TargetPredatesOldestObservation(${blockTimestamp - 3}, ${blockTimestamp - 4})`)
+        await expect(observeSingle(4)).to.be.revertedWith(
+          `TargetPredatesOldestObservation(${blockTimestamp - 3}, ${blockTimestamp - 4})`
+        )
       })
 
       it('single observation in past at exactly seconds ago', async () => {
         await oracle.initialize({ liquidity: 4, tick: 2, time: 5 })
-        await mineBlock(await latestTimestamp() + 3)
+        await mineBlock((await latestTimestamp()) + 3)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(3)
         expect(tickCumulative).to.eq(0)
         expect(secondsPerLiquidityCumulativeX128).to.eq(0)
@@ -403,7 +407,7 @@ describe.only('Oracle', () => {
 
       it('single observation in past counterfactual in past', async () => {
         await oracle.initialize({ liquidity: 4, tick: 2, time: 5 })
-        await mineBlock(await latestTimestamp() + 3)
+        await mineBlock((await latestTimestamp()) + 3)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(1)
         expect(tickCumulative).to.eq(4)
         expect(secondsPerLiquidityCumulativeX128).to.eq('170141183460469231731687303715884105728')
@@ -411,7 +415,7 @@ describe.only('Oracle', () => {
 
       it('single observation in past counterfactual now', async () => {
         await oracle.initialize({ liquidity: 4, tick: 2, time: 5 })
-        await mineBlock(await latestTimestamp() + 3)
+        await mineBlock((await latestTimestamp()) + 3)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(0)
         expect(tickCumulative).to.eq(6)
         expect(secondsPerLiquidityCumulativeX128).to.eq('255211775190703847597530955573826158592')
@@ -432,7 +436,7 @@ describe.only('Oracle', () => {
         await oracle.grow(2)
         await advanceBlockTimeBy(4)
         await oracle.update({ advanceTimeBy: 4, tick: 1, liquidity: 2 })
-        await mineBlock(await latestTimestamp() + 7)
+        await mineBlock((await latestTimestamp()) + 7)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(0)
         expect(tickCumulative).to.eq(-13)
         expect(secondsPerLiquidityCumulativeX128).to.eq('1463214177760035392892510811956603309260')
@@ -443,7 +447,7 @@ describe.only('Oracle', () => {
         await oracle.grow(2)
         await advanceBlockTimeBy(4)
         await oracle.update({ advanceTimeBy: 4, tick: 1, liquidity: 2 })
-        await mineBlock(await latestTimestamp() + 7)
+        await mineBlock((await latestTimestamp()) + 7)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(11)
         expect(tickCumulative).to.eq(0)
         expect(secondsPerLiquidityCumulativeX128).to.eq(0)
@@ -454,7 +458,7 @@ describe.only('Oracle', () => {
         await oracle.grow(2)
         await advanceBlockTimeBy(4)
         await oracle.update({ advanceTimeBy: 4, tick: 1, liquidity: 2 })
-        await mineBlock(await latestTimestamp() + 7)
+        await mineBlock((await latestTimestamp()) + 7)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(9)
         expect(tickCumulative).to.eq(-10)
         expect(secondsPerLiquidityCumulativeX128).to.eq('136112946768375385385349842972707284582')
@@ -479,7 +483,7 @@ describe.only('Oracle', () => {
         await oracle.update({ advanceTimeBy: 4, tick: 1, liquidity: 2 })
         await advanceBlockTimeBy(3)
         await oracle.update({ advanceTimeBy: 3, tick: -5, liquidity: 4 })
-        await mineBlock(await latestTimestamp() + 7)
+        await mineBlock((await latestTimestamp()) + 7)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(0)
         expect(tickCumulative).to.eq(-52)
         expect(secondsPerLiquidityCumulativeX128).to.eq('1378143586029800777026667160098661256396')
@@ -492,7 +496,7 @@ describe.only('Oracle', () => {
         await oracle.update({ advanceTimeBy: 4, tick: 1, liquidity: 2 })
         await advanceBlockTimeBy(3)
         await oracle.update({ advanceTimeBy: 3, tick: -5, liquidity: 4 })
-        await mineBlock(await latestTimestamp() + 7)
+        await mineBlock((await latestTimestamp()) + 7)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(10)
         expect(tickCumulative).to.eq(-20)
         expect(secondsPerLiquidityCumulativeX128).to.eq('272225893536750770770699685945414569164')
@@ -505,7 +509,7 @@ describe.only('Oracle', () => {
         await oracle.update({ advanceTimeBy: 4, tick: 1, liquidity: 2 })
         await advanceBlockTimeBy(3)
         await oracle.update({ advanceTimeBy: 3, tick: -5, liquidity: 4 })
-        await mineBlock(await latestTimestamp() + 7)
+        await mineBlock((await latestTimestamp()) + 7)
         const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(9)
         expect(tickCumulative).to.eq(-19)
         expect(secondsPerLiquidityCumulativeX128).to.eq('442367076997220002502386989661298674892')
@@ -529,7 +533,7 @@ describe.only('Oracle', () => {
         expect(secondsPerLiquidityCumulativeX128s).to.have.lengthOf(6)
         expect(secondsPerLiquidityCumulativeX128s[0]).to.eq('550383467004691728624232610897330176')
         expect(secondsPerLiquidityCumulativeX128s[1]).to.eq('301153217795020002454768787094765568')
-          expect(secondsPerLiquidityCumulativeX128s[2]).to.eq('103845937170696552570609926584401920')
+        expect(secondsPerLiquidityCumulativeX128s[2]).to.eq('103845937170696552570609926584401920')
         expect(secondsPerLiquidityCumulativeX128s[3]).to.eq('51922968585348276285304963292200960')
         expect(secondsPerLiquidityCumulativeX128s[4]).to.eq('31153781151208965771182977975320576')
         expect(secondsPerLiquidityCumulativeX128s[5]).to.eq(0)
@@ -537,7 +541,7 @@ describe.only('Oracle', () => {
 
       it('gas for observe since most recent', async () => {
         await oracle.initialize({ liquidity: 5, tick: -5, time: 5 })
-        await mineBlock(await latestTimestamp() + 2)
+        await mineBlock((await latestTimestamp()) + 2)
         await snapshotGasCost(oracle.getGasCostOfObserve([1]))
       })
 
@@ -597,13 +601,13 @@ describe.only('Oracle', () => {
           expect(secondsPerLiquidityCumulativeX128).to.eq('2104079302127802832415199655953100107502')
         })
         it('latest observation 5 seconds after latest', async () => {
-          await mineBlock(await latestTimestamp() + 5)
+          await mineBlock((await latestTimestamp()) + 5)
           const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(5)
           expect(tickCumulative).to.eq(-21)
           expect(secondsPerLiquidityCumulativeX128).to.eq('2104079302127802832415199655953100107502')
         })
         it('current observation 5 seconds after latest', async () => {
-          await mineBlock(await latestTimestamp() + 5)
+          await mineBlock((await latestTimestamp()) + 5)
           const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(0)
           expect(tickCumulative).to.eq(9)
           expect(secondsPerLiquidityCumulativeX128).to.eq('2347138135642758877746181518404363115684')
@@ -614,7 +618,7 @@ describe.only('Oracle', () => {
           expect(secondsPerLiquidityCumulativeX128).to.eq('1593655751746395137220137744805447790318')
         })
         it('between latest observation and just before latest observation after the latest observation', async () => {
-          await mineBlock(await latestTimestamp() + 5)
+          await mineBlock((await latestTimestamp()) + 5)
           const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(8)
           expect(tickCumulative).to.eq(-33)
           expect(secondsPerLiquidityCumulativeX128).to.eq('1593655751746395137220137744805447790318')
@@ -630,7 +634,7 @@ describe.only('Oracle', () => {
           await expect(observeSingle(secondsAgo)).to.be.revertedWith(
             `TargetPredatesOldestObservation(${oldestTimestamp}, ${target})`
           )
-          await mineBlock(await latestTimestamp() + 5)
+          await mineBlock((await latestTimestamp()) + 5)
           await expect(observeSingle(20)).to.be.revertedWith(
             `TargetPredatesOldestObservation(${oldestTimestamp}, ${target})`
           )

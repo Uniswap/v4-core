@@ -94,7 +94,6 @@ library Oracle {
             // early return if we've already written an observation this block
             if (last.blockTimestamp == uint32(block.timestamp)) return (index, cardinality);
 
-
             // if the conditions are right, we can bump the cardinality
             if (cardinalityNext > cardinality && index == (cardinality - 1)) {
                 cardinalityUpdated = cardinalityNext;
@@ -266,7 +265,8 @@ library Oracle {
         unchecked {
             if (secondsAgo == 0) {
                 Observation memory last = self[index];
-                if (last.blockTimestamp != uint32(block.timestamp)) last = transform(last, uint32(block.timestamp), tick, liquidity);
+                if (last.blockTimestamp != uint32(block.timestamp))
+                    last = transform(last, uint32(block.timestamp), tick, liquidity);
                 return (last.tickCumulative, last.secondsPerLiquidityCumulativeX128);
             }
 
