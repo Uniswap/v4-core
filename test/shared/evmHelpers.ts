@@ -14,3 +14,11 @@ export async function latestTimestamp(): Promise<number> {
 export async function setNextBlocktime(time: number) {
   await ethers.provider.send('evm_setNextBlockTimestamp', [time])
 }
+
+export async function advanceBlockTimeBy(seconds: number) {
+  await ethers.provider.send('evm_setNextBlockTimestamp', [await latestTimestamp() + seconds - 1])
+}
+
+export async function mineBlock(timestamp: number) {
+  await ethers.provider.send('evm_mine', [timestamp])
+}

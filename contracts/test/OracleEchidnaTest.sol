@@ -22,18 +22,12 @@ contract OracleEchidnaTest {
         initialized = true;
     }
 
-    function advanceTime(uint32 by) public {
-        timePassed += by;
-        oracle.advanceTime(by);
-    }
-
     // write an observation, then change tick and liquidity
     function update(
         uint32 advanceTimeBy,
         int24 tick,
         uint128 liquidity
     ) external {
-        timePassed += advanceTimeBy;
         oracle.update(OracleTest.UpdateParams({advanceTimeBy: advanceTimeBy, tick: tick, liquidity: liquidity}));
     }
 

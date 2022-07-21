@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
+import 'hardhat/console.sol';
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
@@ -56,7 +57,6 @@ library Oracle {
 
     /// @notice Initialize the oracle array by writing the first slot. Called once for the lifecycle of the observations array
     /// @param self The stored oracle array
-    /// @param time The time of the oracle initialization, via block.timestamp truncated to uint32
     /// @return cardinality The number of populated elements in the oracle array
     /// @return cardinalityNext The new length of the oracle array, independent of population
     function initialize(Observation[65535] storage self) internal returns (uint16 cardinality, uint16 cardinalityNext) {
@@ -75,7 +75,6 @@ library Oracle {
     /// is greater than the current one, cardinality may be increased. This restriction is created to preserve ordering.
     /// @param self The stored oracle array
     /// @param index The index of the observation that was most recently written to the observations array
-    /// @param blockTimestamp The timestamp of the new observation
     /// @param tick The active tick at the time of the new observation
     /// @param liquidity The total in-range liquidity at the time of the new observation
     /// @param cardinality The number of populated elements in the oracle array
@@ -85,7 +84,6 @@ library Oracle {
     function write(
         Observation[65535] storage self,
         uint16 index,
-        uint32 blockTimestamp,
         int24 tick,
         uint128 liquidity,
         uint16 cardinality,
@@ -95,7 +93,8 @@ library Oracle {
             Observation memory last = self[index];
 
             // early return if we've already written an observation this block
-            if (last.blockTimestamp == blockTimestamp) return (index, cardinality);
+            if (last.blockTimestamp == uint32(block.timestamp)) return (index, cardinality);
+
 
             // if the conditions are right, we can bump the cardinality
             if (cardinalityNext > cardinality && index == (cardinality - 1)) {
@@ -105,7 +104,7 @@ library Oracle {
             }
 
             indexUpdated = (index + 1) % cardinalityUpdated;
-            self[indexUpdated] = transform(last, blockTimestamp, tick, liquidity);
+            self[indexUpdated] = transform(last, uint32(block.timestamp), tick, liquidity);
         }
     }
 
@@ -202,7 +201,6 @@ library Oracle {
     /// @dev Assumes there is at least 1 initialized observation.
     /// Used by observeSingle() to compute the counterfactual accumulator values as of a given block timestamp.
     /// @param self The stored oracle array
-    /// @param time The current block.timestamp
     /// @param target The timestamp at which the reserved observation should be for
     /// @param tick The active tick at the time of the returned or simulated observation
     /// @param index The index of the observation that was most recently written to the observations array
@@ -212,7 +210,6 @@ library Oracle {
     /// @return atOrAfter The observation which occurred at, or after, the given timestamp
     function getSurroundingObservations(
         Observation[65535] storage self,
-        uint32 time,
         uint32 target,
         int24 tick,
         uint16 index,
@@ -224,7 +221,7 @@ library Oracle {
             beforeOrAt = self[index];
 
             // if the target is chronologically at or after the newest observation, we can early return
-            if (lte(time, beforeOrAt.blockTimestamp, target)) {
+            if (lte(uint32(block.timestamp), beforeOrAt.blockTimestamp, target)) {
                 if (beforeOrAt.blockTimestamp == target) {
                     // if newest observation equals target, we're in the same block, so we can ignore atOrAfter
                     return (beforeOrAt, atOrAfter);
@@ -239,11 +236,11 @@ library Oracle {
             if (!beforeOrAt.initialized) beforeOrAt = self[0];
 
             // ensure that the target is chronologically at or after the oldest observation
-            if (!lte(time, beforeOrAt.blockTimestamp, target))
+            if (!lte(uint32(block.timestamp), beforeOrAt.blockTimestamp, target))
                 revert TargetPredatesOldestObservation(beforeOrAt.blockTimestamp, target);
 
             // if we've reached this point, we have to binary search
-            return binarySearch(self, time, target, index, cardinality);
+            return binarySearch(self, uint32(block.timestamp), target, index, cardinality);
         }
     }
 
@@ -252,7 +249,6 @@ library Oracle {
     /// If called with a timestamp falling between two observations, returns the counterfactual accumulator values
     /// at exactly the timestamp between the two observations.
     /// @param self The stored oracle array
-    /// @param time The current block timestamp
     /// @param secondsAgo The amount of time to look back, in seconds, at which point to return an observation
     /// @param tick The current tick
     /// @param index The index of the observation that was most recently written to the observations array
@@ -262,7 +258,6 @@ library Oracle {
     /// @return secondsPerLiquidityCumulativeX128 The time elapsed / max(1, liquidity) since the pool was first initialized, as of `secondsAgo`
     function observeSingle(
         Observation[65535] storage self,
-        uint32 time,
         uint32 secondsAgo,
         int24 tick,
         uint16 index,
@@ -272,15 +267,14 @@ library Oracle {
         unchecked {
             if (secondsAgo == 0) {
                 Observation memory last = self[index];
-                if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
+                if (last.blockTimestamp != uint32(block.timestamp)) last = transform(last, uint32(block.timestamp), tick, liquidity);
                 return (last.tickCumulative, last.secondsPerLiquidityCumulativeX128);
             }
 
-            uint32 target = time - secondsAgo;
+            uint32 target = uint32(block.timestamp) - secondsAgo;
 
             (Observation memory beforeOrAt, Observation memory atOrAfter) = getSurroundingObservations(
                 self,
-                time,
                 target,
                 tick,
                 index,
@@ -317,7 +311,6 @@ library Oracle {
     /// @notice Returns the accumulator values as of each time seconds ago from the given time in the array of `secondsAgos`
     /// @dev Reverts if `secondsAgos` > oldest observation
     /// @param self The stored oracle array
-    /// @param time The current block.timestamp
     /// @param secondsAgos Each amount of time to look back, in seconds, at which point to return an observation
     /// @param tick The current tick
     /// @param index The index of the observation that was most recently written to the observations array
@@ -327,7 +320,6 @@ library Oracle {
     /// @return secondsPerLiquidityCumulativeX128s The cumulative seconds / max(1, liquidity) since the pool was first initialized, as of each `secondsAgo`
     function observe(
         Observation[65535] storage self,
-        uint32 time,
         uint32[] memory secondsAgos,
         int24 tick,
         uint16 index,
@@ -342,7 +334,6 @@ library Oracle {
             for (uint256 i = 0; i < secondsAgos.length; i++) {
                 (tickCumulatives[i], secondsPerLiquidityCumulativeX128s[i]) = observeSingle(
                     self,
-                    time,
                     secondsAgos[i],
                     tick,
                     index,
