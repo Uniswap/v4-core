@@ -1,295 +1,288 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PoolManager gas tests #donate donation of 1 token 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #donate donation of 1 token 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 150990,
+  "gasUsed": 130936,
 }
 `;
 
-exports[`PoolManager gas tests #donate donation of 2 tokens 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #donate donation of 2 tokens 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 218080,
+  "gasUsed": 177874,
 }
 `;
 
-exports[`PoolManager gas tests #initialize initialize pool with no hooks and no protocol fee 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #initialize initialize pool with no hooks and no protocol fee 1`] = `
 Object {
   "calldataByteLength": 196,
   "gasUsed": 54061,
 }
 `;
 
-exports[`PoolManager gas tests #mint above current price add to position existing 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #mint above current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 183123,
+  "gasUsed": 158179,
 }
 `;
 
-exports[`PoolManager gas tests #mint above current price new position mint first in range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #mint above current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 242664,
+  "gasUsed": 217921,
 }
 `;
 
-exports[`PoolManager gas tests #mint above current price second position in same range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #mint above current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 183123,
+  "gasUsed": 158179,
 }
 `;
 
-exports[`PoolManager gas tests #mint around current price add to position existing 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #mint around current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 251596,
+  "gasUsed": 209908,
 }
 `;
 
-exports[`PoolManager gas tests #mint around current price new position mint first in range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #mint around current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 360840,
+  "gasUsed": 319524,
 }
 `;
 
-exports[`PoolManager gas tests #mint around current price second position in same range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #mint around current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 251596,
+  "gasUsed": 209908,
 }
 `;
 
-exports[`PoolManager gas tests #mint below current price add to position existing 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #mint below current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 183800,
+  "gasUsed": 158892,
 }
 `;
 
-exports[`PoolManager gas tests #mint below current price new position mint first in range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #mint below current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 307708,
+  "gasUsed": 286541,
 }
 `;
 
-exports[`PoolManager gas tests #mint below current price second position in same range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #mint below current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 183800,
+  "gasUsed": 158892,
 }
 `;
 
-exports[`PoolManager gas tests #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 232538,
+  "gasUsed": 192267,
 }
 `;
 
-exports[`PoolManager gas tests #swapExact0For1 first swap in block with no tick movement 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #swapExact0For1 first swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 226616,
+  "gasUsed": 186344,
 }
 `;
 
-exports[`PoolManager gas tests #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 251515,
+  "gasUsed": 211250,
 }
 `;
 
-exports[`PoolManager gas tests #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 293644,
+  "gasUsed": 253398,
 }
 `;
 
-exports[`PoolManager gas tests #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 244580,
+  "gasUsed": 204309,
 }
 `;
 
-exports[`PoolManager gas tests #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 232538,
+  "gasUsed": 192267,
 }
 `;
 
-exports[`PoolManager gas tests #swapExact0For1 second swap in block with no tick movement 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #swapExact0For1 second swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 226704,
+  "gasUsed": 186433,
 }
 `;
 
-exports[`PoolManager gas tests #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 245709,
+  "gasUsed": 205444,
 }
 `;
 
-exports[`PoolManager gas tests #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] ERC20 tokens #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 287812,
+  "gasUsed": 247567,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #donate donation of 1 token 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #donate donation of 1 token 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 172209,
+  "gasUsed": 118353,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #donate donation of 2 tokens 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #donate donation of 2 tokens 1`] = `
 Object {
   "calldataByteLength": 228,
-  "gasUsed": 247904,
+  "gasUsed": 165292,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #initialize initialize pool with no hooks and no protocol fee 1`] = `
-Object {
-  "calldataByteLength": 196,
-  "gasUsed": 63656,
-}
-`;
-
-exports[`PoolManager gas tests [ @skip-on-coverage ] #mint above current price add to position existing 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #mint above current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 217956,
+  "gasUsed": 151202,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #mint above current price new position mint first in range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #mint above current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 278981,
+  "gasUsed": 210944,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #mint above current price second position in same range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #mint above current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 217956,
+  "gasUsed": 151202,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #mint around current price add to position existing 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #mint around current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 296220,
+  "gasUsed": 202932,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #mint around current price new position mint first in range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #mint around current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 407078,
+  "gasUsed": 312548,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #mint around current price second position in same range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #mint around current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 296220,
+  "gasUsed": 202932,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #mint below current price add to position existing 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #mint below current price add to position existing 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 218362,
+  "gasUsed": 164315,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #mint below current price new position mint first in range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #mint below current price new position mint first in range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 344012,
+  "gasUsed": 291964,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #mint below current price second position in same range 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #mint below current price second position in same range 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 218362,
+  "gasUsed": 164315,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 287846,
+  "gasUsed": 179652,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #swapExact0For1 first swap in block with no tick movement 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #swapExact0For1 first swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 272620,
+  "gasUsed": 173730,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 319377,
+  "gasUsed": 198636,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 397857,
+  "gasUsed": 240784,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 319629,
+  "gasUsed": 191695,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 287846,
+  "gasUsed": 179652,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #swapExact0For1 second swap in block with no tick movement 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #swapExact0For1 second swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 272913,
+  "gasUsed": 173819,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 304356,
+  "gasUsed": 192830,
 }
 `;
 
-exports[`PoolManager gas tests [ @skip-on-coverage ] #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
+exports[`PoolManager gas tests [ @skip-on-coverage ] Native Tokens #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 382779,
+  "gasUsed": 234952,
 }
 `;

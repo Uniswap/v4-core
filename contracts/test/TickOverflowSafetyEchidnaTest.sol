@@ -1,22 +1,23 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.15;
 
-import {Tick} from '../libraries/Tick.sol';
+import {Pool} from '../libraries/Pool.sol';
 
 contract TickOverflowSafetyEchidnaTest {
-    using Tick for mapping(int24 => Tick.Info);
+    using Pool for Pool.State;
 
     int24 private constant MIN_TICK = -16;
     int24 private constant MAX_TICK = 16;
 
-    mapping(int24 => Tick.Info) private ticks;
+    Pool.State private pool;
     int24 private tick = 0;
+
+    // half the cap of fee growth has happened, this can overflow
+    uint256 feeGrowthGlobal0X128 = type(uint256).max / 2;
+    uint256 feeGrowthGlobal1X128 = type(uint256).max / 2;
 
     // used to track how much total liquidity has been added. should never be negative
     int256 totalLiquidity = 0;
-    // half the cap of fee growth has happened, this can overflow
-    uint256 private feeGrowthGlobal0X128 = type(uint256).max / 2;
-    uint256 private feeGrowthGlobal1X128 = type(uint256).max / 2;
     // how much total growth has happened, this cannot overflow
     uint256 private totalGrowth0 = 0;
     uint256 private totalGrowth1 = 0;
@@ -41,35 +42,21 @@ contract TickOverflowSafetyEchidnaTest {
         require(tickLower > MIN_TICK);
         require(tickUpper < MAX_TICK);
         require(tickLower < tickUpper);
-        (bool flippedLower, ) = ticks.update(
-            tickLower,
-            tick,
-            liquidityDelta,
-            feeGrowthGlobal0X128,
-            feeGrowthGlobal1X128,
-            false
-        );
-        (bool flippedUpper, ) = ticks.update(
-            tickUpper,
-            tick,
-            liquidityDelta,
-            feeGrowthGlobal0X128,
-            feeGrowthGlobal1X128,
-            true
-        );
+        (bool flippedLower, ) = pool.updateTick(tickLower, liquidityDelta, false);
+        (bool flippedUpper, ) = pool.updateTick(tickUpper, liquidityDelta, true);
 
         if (flippedLower) {
             if (liquidityDelta < 0) {
-                assert(ticks[tickLower].liquidityGross == 0);
-                ticks.clear(tickLower);
-            } else assert(ticks[tickLower].liquidityGross > 0);
+                assert(pool.ticks[tickLower].liquidityGross == 0);
+                pool.clearTick(tickLower);
+            } else assert(pool.ticks[tickLower].liquidityGross > 0);
         }
 
         if (flippedUpper) {
             if (liquidityDelta < 0) {
-                assert(ticks[tickUpper].liquidityGross == 0);
-                ticks.clear(tickUpper);
-            } else assert(ticks[tickUpper].liquidityGross > 0);
+                assert(pool.ticks[tickUpper].liquidityGross == 0);
+                pool.clearTick(tickUpper);
+            } else assert(pool.ticks[tickUpper].liquidityGross > 0);
         }
 
         totalLiquidity += liquidityDelta;
@@ -87,11 +74,12 @@ contract TickOverflowSafetyEchidnaTest {
         require(target < MAX_TICK);
         while (tick != target) {
             if (tick < target) {
-                if (ticks[tick + 1].liquidityGross > 0)
-                    ticks.cross(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+                if (pool.ticks[tick + 1].liquidityGross > 0)
+                    pool.crossTick(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 tick++;
             } else {
-                if (ticks[tick].liquidityGross > 0) ticks.cross(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+                if (pool.ticks[tick].liquidityGross > 0)
+                    pool.crossTick(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 tick--;
             }
         }

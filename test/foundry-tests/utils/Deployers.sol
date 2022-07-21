@@ -1,8 +1,8 @@
 pragma solidity ^0.8.15;
 
 import {TestERC20} from '../../../contracts/test/TestERC20.sol';
+import {Currency} from '../../../contracts/libraries/CurrencyLibrary.sol';
 import {IHooks} from '../../../contracts/interfaces/IHooks.sol';
-import {IERC20Minimal} from '../../../contracts/interfaces/external/IERC20Minimal.sol';
 import {IPoolManager} from '../../../contracts/interfaces/IPoolManager.sol';
 import {PoolManager} from '../../../contracts/PoolManager.sol';
 import {PoolId} from '../../../contracts/libraries/PoolId.sol';
@@ -22,8 +22,8 @@ contract Deployers {
     ) public returns (IPoolManager.PoolKey memory key, bytes32 id) {
         TestERC20[] memory tokens = deployTokens(2, 2**255);
         key = IPoolManager.PoolKey(
-            IERC20Minimal(address(tokens[0])),
-            IERC20Minimal(address(tokens[1])),
+            Currency.wrap(address(tokens[0])),
+            Currency.wrap(address(tokens[1])),
             3000,
             60,
             hooks
