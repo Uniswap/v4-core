@@ -59,15 +59,15 @@ describe('Tick', () => {
       checkCantOverflow(2302, maxLiquidityPerTick)
     })
 
-    it('[ @skip-on-coverage ] gas cost min tick spacing', async () => {
+    it('gas cost min tick spacing [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(tickTest.getGasCostOfTickSpacingToMaxLiquidityPerTick(1))
     })
 
-    it('[ @skip-on-coverage ] gas cost 60 tick spacing', async () => {
+    it('gas cost 60 tick spacing [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(tickTest.getGasCostOfTickSpacingToMaxLiquidityPerTick(60))
     })
 
-    it('[ @skip-on-coverage ] gas cost max tick spacing', async () => {
+    it('gas cost max tick spacing [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(tickTest.getGasCostOfTickSpacingToMaxLiquidityPerTick(MAX_TICK_SPACING))
     })
   })

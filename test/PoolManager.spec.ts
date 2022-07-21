@@ -109,7 +109,7 @@ describe('PoolManager', () => {
     } = await loadFixture(fixture))
   })
 
-  it('bytecode size [ @skip-on-coverage ] ', async () => {
+  it('bytecode size [ @skip-on-coverage ]', async () => {
     expect(((await waffle.provider.getCode(manager.address)).length - 2) / 2).to.matchSnapshot()
   })
 
@@ -118,7 +118,7 @@ describe('PoolManager', () => {
       await lockTest.lock(manager.address)
     })
 
-    it('[ @skip-on-coverage ] gas overhead of no-op lock', async () => {
+    it('gas overhead of no-op lock [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(lockTest.lock(manager.address))
     })
 
@@ -367,7 +367,7 @@ describe('PoolManager', () => {
       expect(protocolFee).to.eq(poolProtocolFee)
     })
 
-    it('[ @skip-on-coverage ] gas cost', async () => {
+    it('gas cost [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(
         manager.initialize(
           {
@@ -499,7 +499,7 @@ describe('PoolManager', () => {
       expect(await hooksMock.called('afterSwap')).to.be.false
     })
 
-    it('[ @skip-on-coverage ] gas cost', async () => {
+    it('gas cost [ @skip-on-coverage ]', async () => {
       await manager.initialize(
         {
           currency0: tokens.currency0.address,
@@ -529,7 +529,7 @@ describe('PoolManager', () => {
       )
     })
 
-    it('[ @skip-on-coverage ] gas cost with native tokens', async () => {
+    it('gas cost with native tokens [ @skip-on-coverage ]', async () => {
       const poolKey = {
         currency0: ADDRESS_ZERO,
         currency1: tokens.currency1.address,
@@ -728,7 +728,7 @@ describe('PoolManager', () => {
       expect(await hooksMock.calledWith('afterSwap', argsAfterSwap)).to.be.true
     })
 
-    it('[ @skip-on-coverage ] gas cost', async () => {
+    it('gas cost [ @skip-on-coverage ]', async () => {
       const poolKey = {
         currency0: tokens.currency0.address,
         currency1: tokens.currency1.address,
@@ -806,7 +806,7 @@ describe('PoolManager', () => {
       )
     })
 
-    it('[ @skip-on-coverage ] gas cost with hooks', async () => {
+    it('gas cost with hooks [ @skip-on-coverage ]', async () => {
       await manager.initialize(
         {
           currency0: tokens.currency0.address,
@@ -987,7 +987,7 @@ describe('PoolManager', () => {
       erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
       expect(erc1155Balance).to.be.eq(71)
     })
-    it('[ @skip-on-coverage ] gas cost for swap against liquidity', async () => {
+    it('gas cost for swap against liquidity [ @skip-on-coverage ]', async () => {
       const poolKey = {
         currency0: tokens.currency0.address,
         currency1: tokens.currency1.address,

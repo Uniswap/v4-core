@@ -70,14 +70,14 @@ describe('TickBitmap', () => {
       expect(await tickBitmap.isInitialized(-229)).to.eq(false)
     })
 
-    it('[ @skip-on-coverage ] gas cost of flipping first tick in word to initialized', async () => {
+    it('gas cost of flipping first tick in word to initialized [ @skip-on-coverage ]', async () => {
       await snapshotGasCost(await tickBitmap.getGasCostOfFlipTick(1))
     })
-    it('[ @skip-on-coverage ] gas cost of flipping second tick in word to initialized', async () => {
+    it('gas cost of flipping second tick in word to initialized [ @skip-on-coverage ]', async () => {
       await tickBitmap.flipTick(0)
       await snapshotGasCost(await tickBitmap.getGasCostOfFlipTick(1))
     })
-    it('[ @skip-on-coverage ] gas cost of flipping a tick that results in deleting a word', async () => {
+    it('gas cost of flipping a tick that results in deleting a word [ @skip-on-coverage ]', async () => {
       await tickBitmap.flipTick(0)
       await snapshotGasCost(await tickBitmap.getGasCostOfFlipTick(0))
     })
@@ -145,13 +145,13 @@ describe('TickBitmap', () => {
         expect(initialized).to.eq(false)
       })
 
-      it('[ @skip-on-coverage ] gas cost on boundary', async () => {
+      it('gas cost on boundary [ @skip-on-coverage ]', async () => {
         await snapshotGasCost(await tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(255, false))
       })
-      it('[ @skip-on-coverage ] gas cost just below boundary', async () => {
+      it('gas cost just below boundary [ @skip-on-coverage ]', async () => {
         await snapshotGasCost(await tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(254, false))
       })
-      it('[ @skip-on-coverage ] gas cost for entire word', async () => {
+      it('gas cost for entire word [ @skip-on-coverage ]', async () => {
         await snapshotGasCost(await tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(768, false))
       })
     })
@@ -213,13 +213,13 @@ describe('TickBitmap', () => {
         expect(initialized).to.eq(true)
       })
 
-      it('[ @skip-on-coverage ] gas cost on boundary', async () => {
+      it('gas cost on boundary [ @skip-on-coverage ]', async () => {
         await snapshotGasCost(await tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(256, true))
       })
-      it('[ @skip-on-coverage ] gas cost just below boundary', async () => {
+      it('gas cost just below boundary [ @skip-on-coverage ]', async () => {
         await snapshotGasCost(await tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(255, true))
       })
-      it('[ @skip-on-coverage ] gas cost for entire word', async () => {
+      it('gas cost for entire word [ @skip-on-coverage ]', async () => {
         await snapshotGasCost(await tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(1024, true))
       })
     })
