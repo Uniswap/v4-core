@@ -1,7 +1,7 @@
 [default]
 src = 'contracts'
 out = 'foundry-out'
-solc_version = '0.8.13'
+solc_version = '0.8.15'
 optimizer_runs = 800
 
 [ci]

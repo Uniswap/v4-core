@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
-import 'hardhat/console.sol';
+pragma solidity ^0.8.15;
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs

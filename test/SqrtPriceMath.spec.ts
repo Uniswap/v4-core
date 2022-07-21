@@ -57,7 +57,7 @@ describe('SqrtPriceMath', () => {
       expect(await sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, maxAmountNoOverflow, true)).to.eq('1')
     })
 
-    it('input amount of 0.1 token1', async () => {
+    it('input amount of 0.1 currency1', async () => {
       const sqrtQ = await sqrtPriceMath.getNextSqrtPriceFromInput(
         encodeSqrtPriceX96(1, 1),
         expandTo18Decimals(1),
@@ -67,7 +67,7 @@ describe('SqrtPriceMath', () => {
       expect(sqrtQ).to.eq('87150978765690771352898345369')
     })
 
-    it('input amount of 0.1 token0', async () => {
+    it('input amount of 0.1 currency0', async () => {
       const sqrtQ = await sqrtPriceMath.getNextSqrtPriceFromInput(
         encodeSqrtPriceX96(1, 1),
         expandTo18Decimals(1),
@@ -128,35 +128,35 @@ describe('SqrtPriceMath', () => {
       await expect(sqrtPriceMath.getNextSqrtPriceFromOutput(1, 0, expandTo18Decimals(1).div(10), true)).to.be.reverted
     })
 
-    it('fails if output amount is exactly the virtual reserves of token0', async () => {
+    it('fails if output amount is exactly the virtual reserves of currency0', async () => {
       const price = '20282409603651670423947251286016'
       const liquidity = 1024
       const amountOut = 4
       await expect(sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false)).to.be.reverted
     })
 
-    it('fails if output amount is greater than virtual reserves of token0', async () => {
+    it('fails if output amount is greater than virtual reserves of currency0', async () => {
       const price = '20282409603651670423947251286016'
       const liquidity = 1024
       const amountOut = 5
       await expect(sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false)).to.be.reverted
     })
 
-    it('fails if output amount is greater than virtual reserves of token1', async () => {
+    it('fails if output amount is greater than virtual reserves of currency1', async () => {
       const price = '20282409603651670423947251286016'
       const liquidity = 1024
       const amountOut = 262145
       await expect(sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true)).to.be.reverted
     })
 
-    it('fails if output amount is exactly the virtual reserves of token1', async () => {
+    it('fails if output amount is exactly the virtual reserves of currency1', async () => {
       const price = '20282409603651670423947251286016'
       const liquidity = 1024
       const amountOut = 262144
       await expect(sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true)).to.be.reverted
     })
 
-    it('succeeds if output amount is just less than the virtual reserves of token1', async () => {
+    it('succeeds if output amount is just less than the virtual reserves of currency1', async () => {
       const price = '20282409603651670423947251286016'
       const liquidity = 1024
       const amountOut = 262143
@@ -184,7 +184,7 @@ describe('SqrtPriceMath', () => {
       )
     })
 
-    it('output amount of 0.1 token1', async () => {
+    it('output amount of 0.1 currency1', async () => {
       const sqrtQ = await sqrtPriceMath.getNextSqrtPriceFromOutput(
         encodeSqrtPriceX96(1, 1),
         expandTo18Decimals(1),
@@ -194,7 +194,7 @@ describe('SqrtPriceMath', () => {
       expect(sqrtQ).to.eq('88031291682515930659493278152')
     })
 
-    it('output amount of 0.1 token1', async () => {
+    it('output amount of 0.1 currency1', async () => {
       const sqrtQ = await sqrtPriceMath.getNextSqrtPriceFromOutput(
         encodeSqrtPriceX96(1, 1),
         expandTo18Decimals(1),
