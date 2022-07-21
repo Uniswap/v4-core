@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Tick #tickSpacingToMaxLiquidityPerTick [ @skip-on-coverage ] gas cost 60 tick spacing 1`] = `128`;
+exports[`Tick #tickSpacingToMaxLiquidityPerTick gas cost 60 tick spacing [ @skip-on-coverage ] 1`] = `128`;
 
-exports[`Tick #tickSpacingToMaxLiquidityPerTick [ @skip-on-coverage ] gas cost max tick spacing 1`] = `128`;
+exports[`Tick #tickSpacingToMaxLiquidityPerTick gas cost max tick spacing [ @skip-on-coverage ] 1`] = `128`;
 
-exports[`Tick #tickSpacingToMaxLiquidityPerTick [ @skip-on-coverage ] gas cost min tick spacing 1`] = `128`;
+exports[`Tick #tickSpacingToMaxLiquidityPerTick gas cost min tick spacing [ @skip-on-coverage ] 1`] = `128`;

@@ -1,5 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Hooks #shouldCall [ @skip-on-coverage ] gas cost of shouldCall 1`] = `7`;
+exports[`Hooks #shouldCall gas cost of shouldCall [ @skip-on-coverage ] 1`] = `7`;
 
-exports[`Hooks #validateHookAddress [ @skip-on-coverage ] gas cost of validateHookAddress 1`] = `1443`;
+exports[`Hooks #validateHookAddress gas cost of validateHookAddress [ @skip-on-coverage ] 1`] = `1443`;
