@@ -245,10 +245,13 @@ describe.only('Oracle', () => {
 
       await advanceBlockTimeBy(3)
       await oracle.update({ advanceTimeBy: 3, tick: 3, liquidity: 2 })
+      const blockTimestamp1 = await latestTimestamp()
       await advanceBlockTimeBy(4)
       await oracle.update({ advanceTimeBy: 4, tick: -7, liquidity: 6 })
+      const blockTimestamp2 = await latestTimestamp()
       await advanceBlockTimeBy(5)
       await oracle.update({ advanceTimeBy: 5, tick: -2, liquidity: 4 })
+      const blockTimestamp3 = await latestTimestamp()
 
       expect(await oracle.index()).to.eq(3)
 
@@ -256,25 +259,25 @@ describe.only('Oracle', () => {
         initialized: true,
         tickCumulative: 0,
         secondsPerLiquidityCumulativeX128: '1020847100762815390390123822295304634368',
-        blockTimestamp: await latestTimestamp(),
+        blockTimestamp: blockTimestamp1,
       })
       checkObservationEquals(await oracle.observations(2), {
         initialized: true,
         tickCumulative: 12,
         secondsPerLiquidityCumulativeX128: '1701411834604692317316873037158841057280',
-        blockTimestamp: await latestTimestamp(),
+        blockTimestamp: blockTimestamp2,
       })
       checkObservationEquals(await oracle.observations(3), {
         initialized: true,
         tickCumulative: -23,
         secondsPerLiquidityCumulativeX128: '1984980473705474370203018543351981233493',
-        blockTimestamp: await latestTimestamp(),
+        blockTimestamp: blockTimestamp3,
       })
       checkObservationEquals(await oracle.observations(4), {
         initialized: false,
         tickCumulative: 0,
         secondsPerLiquidityCumulativeX128: 0,
-        blockTimestamp: await latestTimestamp(),
+        blockTimestamp: 0,
       })
     })
   })
