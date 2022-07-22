@@ -57,7 +57,7 @@ jobs:
       - name: Compile
         run: yarn compile
       - name: Run coverage
-      # without service like coveralls, latest stats are hardcoded as minimum threshold
+        # without service like coveralls, latest stats are just hardcoded as minimum threshold
         run: yarn run coverage && npx istanbul check-coverage --statements 83 --branches 75 --functions 76 --lines 83
 
   forge-tests:
