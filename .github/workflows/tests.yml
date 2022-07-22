@@ -37,16 +37,42 @@ jobs:
       - name: Compile
         run: yarn compile
 
-      - name: Coverage
-        run: yarn coverage
-      - name: Publish coverage
-        uses: codecov/codecov-action@v1
-        with:
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Run unit tests
         run: yarn test
+
+    coverage:
+      name: Code Coverage
+      runs-on: ubuntu-latest
+
+      steps:
+        - uses: actions/checkout@v3
+          with:
+            submodules: recursive
+
+        - uses: actions/setup-node@v1
+          with:
+            node-version: 12.x
+
+        - id: yarn-cache
+          run: echo "::set-output name=dir::$(yarn cache dir)"
+
+        - uses: actions/cache@v1
+          with:
+            path: ${{ steps.yarn-cache.outputs.dir }}
+            key: yarn-${{ hashFiles('**/yarn.lock') }}
+            restore-keys: |
+              yarn-
+
+        - name: Install dependencies
+          run: yarn install --frozen-lockfile
+
+        # This is required separately from yarn test because it generates the typechain definitions
+        - name: Compile
+          run: yarn compile
+
+        - name: Run Coverage
+          run: yarn run coverage
 
   forge-tests:
     name: Forge Tests
