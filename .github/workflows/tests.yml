@@ -57,7 +57,7 @@ jobs:
       - name: Compile
         run: yarn compile
       - name: Run coverage
-        run: yarn run coverage
+        run: yarn run coverage && npx istanbul check-coverage --statements 90 --branches 90 --functions 90 --lines 90
 
   forge-tests:
     name: Forge Tests
