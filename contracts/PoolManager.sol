@@ -123,25 +123,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    /// @dev Push the latest locked by address from the stack
-    /// @return index The index of the locker, i.e. the locker's unique identifier
-    function pushLockedBy(address addr) internal returns (uint256 index) {
-        assembly {
-            index := tload(0)
-            tstore(0, add(index, 1))
-            tstore(add(index, 1), addr)
-        }
-    }
-
-    /// @dev Pop the latest locked by address from the stack
-    function popLockedBy() internal {
-        assembly {
-            let length := tload(0)
-            tstore(0, sub(length, 1))
-            tstore(length, 0)
-        }
-    }
-
     /// @inheritdoc IPoolManager
     function getNonzeroDeltaCount(uint256 id) public view returns (uint256 count) {
         assembly {
@@ -174,7 +155,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        uint256 id = pushLockedBy(msg.sender);
+        uint256 id;
+        assembly {
+            id := tload(0)
+            tstore(0, add(id, 1))
+            tstore(add(id, 1), caller())
+        }
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
@@ -183,7 +169,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             if (getNonzeroDeltaCount(id) != 0) revert CurrencyNotSettled();
         }
 
-        popLockedBy();
+        assembly {
+            tstore(0, id)
+            tstore(add(id, 1), 0)
+        }
     }
 
     function _accountDelta(
@@ -207,9 +196,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         setCurrencyDelta(id, currency, next);
     }
 
-    function lockerIdCurrent() internal view returns (uint256) {
-        unchecked {
-            return lockedByLength() - 1;
+    function lockerIdCurrent() internal view returns (uint256 id) {
+        assembly {
+            id := sub(tload(0), 1)
         }
     }
 
@@ -223,7 +212,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     modifier onlyByLocker() {
-        address lb = lockedBy(lockerIdCurrent());
+        address lb;
+        assembly {
+            lb := tload(tload(0))
+        }
         if (msg.sender != lb) revert LockedBy(lb);
         _;
     }

@@ -58,7 +58,7 @@ export function getPoolId({
   hooks: string | Contract
 }): string {
   return utils.keccak256(
-    utils.defaultAbiCoder.encode(
+    utils.solidityPack(
       ['address', 'address', 'uint24', 'int24', 'address'],
       [
         typeof currency0 === 'string' ? currency0 : currency0.address,
