@@ -9,7 +9,7 @@ import { advanceBlockTimeBy, latestTimestamp, setNextBlocktime, mineBlock } from
 
 const num = 1
 
-describe.only('Oracle', () => {
+describe('Oracle', () => {
   let wallet: Wallet, other: Wallet
 
   let loadFixture: ReturnType<typeof waffle.createFixtureLoader>
