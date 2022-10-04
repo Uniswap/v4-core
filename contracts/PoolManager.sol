@@ -268,7 +268,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit Swap(poolId, msg.sender, delta.amount0, delta.amount1, state.sqrtPriceX96, state.liquidity, state.tick, fee);
+        emit Swap(
+            poolId,
+            msg.sender,
+            delta.amount0,
+            delta.amount1,
+            state.sqrtPriceX96,
+            state.liquidity,
+            state.tick,
+            fee
+        );
     }
 
     /// @inheritdoc IPoolManager
