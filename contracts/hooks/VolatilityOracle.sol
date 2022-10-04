@@ -7,16 +7,13 @@ import {IDynamicFeeManager} from '../interfaces/IDynamicFeeManager.sol';
 import {BaseHook} from './base/BaseHook.sol';
 import {Hooks} from '../libraries/Hooks.sol';
 
-
 contract VolatilityOracle is BaseHook, IDynamicFeeManager {
     uint32 deployTimestamp;
 
-    function getFee(
-        IPoolManager.PoolKey calldata
-    ) external view returns (uint24) {
+    function getFee(IPoolManager.PoolKey calldata) external view returns (uint24) {
         uint24 fee = 3000;
         uint32 lapsed = deployTimestamp - _blockTimestamp();
-        return fee + uint24(lapsed) * 100 / 60; // 100 bps a minute
+        return fee + (uint24(lapsed) * 100) / 60; // 100 bps a minute
     }
 
     /// @dev For mocking
@@ -40,6 +37,4 @@ contract VolatilityOracle is BaseHook, IDynamicFeeManager {
         );
         deployTimestamp = _blockTimestamp();
     }
-
-    
 }
