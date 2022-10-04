@@ -20,9 +20,10 @@ contract MyScript is Script {
         vm.startBroadcast(pk);
         VolatilityOracle dynamicFeeHook = new VolatilityOracle(manager);
         vm.stopBroadcast();
-
-        vm.startBroadcast();
+        
         Deployers deployer = new Deployers();
+        vm.startBroadcast();
+        
         uint160 sqrtPriceX96 = 2**96;
         (IPoolManager.PoolKey memory key, bytes32 id) = deployer.createPool(manager, dynamicFeeHook, sqrtPriceX96);
         vm.stopBroadcast();

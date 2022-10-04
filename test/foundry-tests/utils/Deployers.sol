@@ -24,7 +24,7 @@ contract Deployers {
         key = IPoolManager.PoolKey(
             Currency.wrap(address(tokens[0])),
             Currency.wrap(address(tokens[1])),
-            3000,
+            type(uint24).max,
             60,
             hooks
         );
