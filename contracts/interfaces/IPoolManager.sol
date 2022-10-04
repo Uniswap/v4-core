@@ -73,7 +73,8 @@ interface IPoolManager is IERC1155 {
         int256 amount1,
         uint160 sqrtPriceX96,
         uint128 liquidity,
-        int24 tick
+        int24 tick,
+        uint24 fee
     );
 
     event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolFee);
@@ -99,6 +100,9 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
+
+    /// @notice Returns the magic value which denotes that a pool uses dynamic fees
+    function DYNAMIC_FEE() external view returns (uint24);
 
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(bytes32 id)
