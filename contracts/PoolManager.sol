@@ -7,7 +7,6 @@ import {SafeCast} from './libraries/SafeCast.sol';
 import {Position} from './libraries/Position.sol';
 import {Currency, CurrencyLibrary} from './libraries/CurrencyLibrary.sol';
 
-import {NoDelegateCall} from './NoDelegateCall.sol';
 import {Owned} from './Owned.sol';
 import {IHooks} from './interfaces/IHooks.sol';
 import {IProtocolFeeController} from './interfaces/IProtocolFeeController.sol';
@@ -20,7 +19,7 @@ import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Re
 import {PoolId} from './libraries/PoolId.sol';
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
+contract PoolManager is IPoolManager, Owned, ERC1155, IERC1155Receiver {
     using PoolId for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -190,7 +189,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
         external
         override
-        noDelegateCall
         onlyByLocker
         returns (IPoolManager.BalanceDelta memory delta)
     {
@@ -226,7 +224,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function swap(PoolKey memory key, IPoolManager.SwapParams memory params)
         external
         override
-        noDelegateCall
         onlyByLocker
         returns (IPoolManager.BalanceDelta memory delta)
     {
@@ -285,7 +282,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         PoolKey memory key,
         uint256 amount0,
         uint256 amount1
-    ) external override noDelegateCall onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
+    ) external override onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
         if (key.hooks.shouldCallBeforeDonate()) {
             if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1) != IHooks.beforeDonate.selector) {
                 revert Hooks.InvalidHookResponse();
@@ -308,7 +305,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         Currency currency,
         address to,
         uint256 amount
-    ) external override noDelegateCall onlyByLocker {
+    ) external override onlyByLocker {
         _accountDelta(currency, amount.toInt256());
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
@@ -319,13 +316,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         Currency currency,
         address to,
         uint256 amount
-    ) external override noDelegateCall onlyByLocker {
+    ) external override onlyByLocker {
         _accountDelta(currency, amount.toInt256());
         _mint(to, currency.toId(), amount, '');
     }
 
     /// @inheritdoc IPoolManager
-    function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
+    function settle(Currency currency) external payable override onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
