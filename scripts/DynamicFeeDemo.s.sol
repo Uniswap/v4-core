@@ -15,7 +15,9 @@ contract MyScript is Script {
         PoolManager manager = new PoolManager(CONTROLLER_FEE);
         vm.stopBroadcast();
 
-        vm.startBroadcast(0xf53e3747d93eb10180fc46078e1cf55d9f5fa485ce4106d3eb77404204ca8c25);
+        uint256 pk = 0xf53e3747d93eb10180fc46078e1cf55d9f5fa485ce4106d3eb77404204ca8c25;
+        console2.log(vm.addr(pk));
+        vm.startBroadcast(pk);
         VolatilityOracle dynamicFeeHook = new VolatilityOracle(manager);
         vm.stopBroadcast();
 

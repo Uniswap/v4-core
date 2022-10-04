@@ -57,7 +57,7 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook) internal pure returns (bool) {
-        return address(hook) == address(0) || uint160(address(hook)) >= uint160(AFTER_DONATE_FLAG);
+        return address(hook) == address(0);
     }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
