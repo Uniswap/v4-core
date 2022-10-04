@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Script.sol";
+import 'forge-std/Script.sol';
 
-import {PoolManager} from "../contracts/PoolManager.sol";
-import {IPoolManager} from "../contracts/interfaces/IPoolManager.sol";
-import {VolatilityOracle} from "../contracts/hooks/VolatilityOracle.sol";
-import {Deployers} from "../test/foundry-tests/utils/Deployers.sol";
-
+import {PoolManager} from '../contracts/PoolManager.sol';
+import {IPoolManager} from '../contracts/interfaces/IPoolManager.sol';
+import {VolatilityOracle} from '../contracts/hooks/VolatilityOracle.sol';
+import {Deployers} from '../test/foundry-tests/utils/Deployers.sol';
 
 contract MyScript is Script {
-
     function run() external {
-       
         vm.startBroadcast();
         uint256 CONTROLLER_FEE = 50000;
         PoolManager manager = new PoolManager(CONTROLLER_FEE);
@@ -25,8 +22,7 @@ contract MyScript is Script {
         vm.startBroadcast();
         Deployers deployer = new Deployers();
         uint160 sqrtPriceX96 = 2**96;
-        (IPoolManager.PoolKey memory key, bytes32 id) = deployer.createPool(manager, dynamicFeeHook,sqrtPriceX96);
+        (IPoolManager.PoolKey memory key, bytes32 id) = deployer.createPool(manager, dynamicFeeHook, sqrtPriceX96);
         vm.stopBroadcast();
-
     }
 }
