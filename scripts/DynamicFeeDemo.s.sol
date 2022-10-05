@@ -23,16 +23,17 @@ contract MyScript is Script {
         // SETUP
         uint256 CONTROLLER_FEE = 50000;
         PoolManager manager = new PoolManager{salt: 0x0}(CONTROLLER_FEE);
-        console2.log("Deployed PoolManager", address(manager));
+        console2.log('Deployed PoolManager', address(manager));
 
-        VolatilityOracle dynamicFeeHook = new VolatilityOracle{salt: 0x4e59b44847b379578588920ca78fbf26c0b4956ca8c62c9e3a9be00000348826}(manager);
-        console2.log("Deployed VolatilityOracle Hook", address(dynamicFeeHook));
+        VolatilityOracle dynamicFeeHook = new VolatilityOracle{
+            salt: 0x4e59b44847b379578588920ca78fbf26c0b4956ca8c62c9e3a9be00000348826
+        }(manager);
+        console2.log('Deployed VolatilityOracle Hook', address(dynamicFeeHook));
 
         TestERC20 tokenA = new TestERC20(10**24);
         TestERC20 tokenB = new TestERC20(10**24);
         tokenA.mint(deployerAddress, 10**18);
         tokenB.mint(deployerAddress, 10**18);
-
 
         // INITIALIZE POOL
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey(
@@ -45,7 +46,7 @@ contract MyScript is Script {
 
         uint160 sqrtPriceX96 = 2**96;
         manager.initialize(key, sqrtPriceX96);
-        console2.log("Created pool");
+        console2.log('Created pool');
 
         // ADD LIQUIDITY
         PoolModifyPositionTest addLiquidity = new PoolModifyPositionTest(IPoolManager(address(manager)));
@@ -59,7 +60,7 @@ contract MyScript is Script {
                 liquidityDelta: 10**9
             })
         );
-        console2.log("Added liquidity");
+        console2.log('Added liquidity');
 
         PoolSwapTest swapTest = new PoolSwapTest(manager);
         tokenA.approve(address(swapTest), type(uint256).max);
@@ -68,7 +69,7 @@ contract MyScript is Script {
         // MAKE SWAPS WITH TIMESTAMP INCREASING
         for (uint256 i = 0; i < 25; i++) {
             swapTest.swap(key, IPoolManager.SwapParams(false, 100, 2**96 * 2), PoolSwapTest.TestSettings(true, true));
-            console2.log("Swapped");
+            console2.log('Swapped');
             vm.warp(block.timestamp + 100);
         }
         vm.stopBroadcast();
