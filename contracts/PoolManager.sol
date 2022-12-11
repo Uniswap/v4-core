@@ -6,13 +6,14 @@ import {Pool} from './libraries/Pool.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 import {Position} from './libraries/Position.sol';
 import {Currency, CurrencyLibrary} from './libraries/CurrencyLibrary.sol';
+import {CurrencyDelta, CurrencyDeltaMapping} from './libraries/CurrencyDelta.sol';
 
 import {NoDelegateCall} from './NoDelegateCall.sol';
 import {Owned} from './Owned.sol';
 import {IHooks} from './interfaces/IHooks.sol';
 import {IProtocolFeeController} from './interfaces/IProtocolFeeController.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
-import {ILockCallback} from './interfaces/callback/ILockCallback.sol';
+import {IExecuteCallback} from './interfaces/callback/IExecuteCallback.sol';
 
 import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
@@ -26,6 +27,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
+    using CurrencyDeltaMapping for CurrencyDelta[];
 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
@@ -37,6 +39,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     mapping(Currency => uint256) public override protocolFeesAccrued;
     IProtocolFeeController public protocolFeeController;
+
+    /// @inheritdoc IPoolManager
+    mapping(Currency => uint256) public override reservesOf;
 
     uint256 private immutable controllerGasLimit;
 
@@ -104,90 +109,81 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
     }
 
-    /// @inheritdoc IPoolManager
-    mapping(Currency => uint256) public override reservesOf;
-
-    /// @inheritdoc IPoolManager
-    address[] public override lockedBy;
-
-    /// @inheritdoc IPoolManager
-    function lockedByLength() external view returns (uint256) {
-        return lockedBy.length;
-    }
-
-    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
-    /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
-    struct LockState {
-        uint256 nonzeroDeltaCount;
-        mapping(Currency => int256) currencyDelta;
-    }
-
-    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
-    /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
-    mapping(uint256 => LockState) private lockStates;
-
-    /// @inheritdoc IPoolManager
-    function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
-        return lockStates[id].nonzeroDeltaCount;
-    }
-
-    /// @inheritdoc IPoolManager
-    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256) {
-        return lockStates[id].currencyDelta[currency];
-    }
-
-    /// @inheritdoc IPoolManager
-    function lock(bytes calldata data) external override returns (bytes memory result) {
-        uint256 id = lockedBy.length;
-        lockedBy.push(msg.sender);
-
-        // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(msg.sender).lockAcquired(data);
-
-        unchecked {
-            LockState storage lockState = lockStates[id];
-            if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
-        }
-
-        lockedBy.pop();
-    }
-
-    function _accountDelta(Currency currency, int256 delta) internal {
-        if (delta == 0) return;
-
-        LockState storage lockState = lockStates[lockedBy.length - 1];
-        int256 current = lockState.currencyDelta[currency];
-
-        int256 next = current + delta;
-        unchecked {
-            if (next == 0) {
-                lockState.nonzeroDeltaCount--;
-            } else if (current == 0) {
-                lockState.nonzeroDeltaCount++;
+    // TODO: add reentrancy lock
+    function execute(
+        bytes calldata operations,
+        bytes[] calldata inputs,
+        bytes calldata callbackData
+    ) external returns (bytes memory result) {
+        CurrencyDelta[] memory deltas;
+        for (uint256 i = 0; i < operations.length; i++) {
+            IPoolManager.Command command = IPoolManager.Command(uint8(operations[i]));
+            if (command == IPoolManager.Command.SWAP) {
+                (PoolKey memory key, IPoolManager.SwapParams memory params) = abi.decode(
+                    inputs[i],
+                    (PoolKey, IPoolManager.SwapParams)
+                );
+                IPoolManager.BalanceDelta memory delta = swap(key, params);
+                _accountPoolBalanceDelta(deltas, key, delta);
+            } else if (command == IPoolManager.Command.MODIFY) {
+                (PoolKey memory key, IPoolManager.ModifyPositionParams memory params) = abi.decode(
+                    inputs[i],
+                    (PoolKey, IPoolManager.ModifyPositionParams)
+                );
+                IPoolManager.BalanceDelta memory delta = modifyPosition(key, params);
+                _accountPoolBalanceDelta(deltas, key, delta);
+            } else if (command == IPoolManager.Command.DONATE) {
+                (PoolKey memory key, uint256 amount0, uint256 amount1) = abi.decode(
+                    inputs[i],
+                    (PoolKey, uint256, uint256)
+                );
+                IPoolManager.BalanceDelta memory delta = donate(key, amount0, amount1);
+                _accountPoolBalanceDelta(deltas, key, delta);
+            } else if (command == IPoolManager.Command.TAKE) {
+                (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
+                if (amount == 0) {
+                    amount = uint256(-deltas.get(currency));
+                }
+                take(currency, to, amount);
+                deltas.add(currency, amount.toInt256());
+            } else if (command == IPoolManager.Command.MINT) {
+                (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
+                mint(currency, to, amount);
+                deltas.add(currency, amount.toInt256());
+            } else if (command == IPoolManager.Command.BURN) {
+                (Currency currency, address from, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
+                burn(currency, from, amount);
+                deltas.add(currency, -(amount.toInt256()));
+            } else {
+                revert('Invalid command');
             }
         }
 
-        lockState.currencyDelta[currency] = next;
+        // callback for payment
+        result = IExecuteCallback(msg.sender).executeCallback(deltas, callbackData);
+
+        for (uint256 i = 0; i < deltas.length; i++) {
+            CurrencyDelta memory delta = deltas[i];
+            uint256 paid = settle(delta.currency);
+            if (delta.delta - paid.toInt256() != int256(0)) {
+                revert CurrencyNotSettled();
+            }
+        }
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, IPoolManager.BalanceDelta memory delta) internal {
-        _accountDelta(key.currency0, delta.amount0);
-        _accountDelta(key.currency1, delta.amount1);
+    function _accountPoolBalanceDelta(
+        CurrencyDelta[] memory deltas,
+        PoolKey memory key,
+        IPoolManager.BalanceDelta memory delta
+    ) internal {
+        deltas.add(key.currency0, delta.amount0);
+        deltas.add(key.currency1, delta.amount1);
     }
 
-    modifier onlyByLocker() {
-        address locker = lockedBy[lockedBy.length - 1];
-        if (msg.sender != locker) revert LockedBy(locker);
-        _;
-    }
-
-    /// @inheritdoc IPoolManager
+    /// @notice modify liquidity position in the given pool
     function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
-        external
-        override
-        noDelegateCall
-        onlyByLocker
+        internal
         returns (IPoolManager.BalanceDelta memory delta)
     {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
@@ -207,8 +203,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             })
         );
 
-        _accountPoolBalanceDelta(key, delta);
-
         if (key.hooks.shouldCallAfterModifyPosition()) {
             if (key.hooks.afterModifyPosition(msg.sender, key, params, delta) != IHooks.afterModifyPosition.selector) {
                 revert Hooks.InvalidHookResponse();
@@ -218,12 +212,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         emit ModifyPosition(poolId, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
 
-    /// @inheritdoc IPoolManager
+    /// @notice perform a swap on the given pool
     function swap(PoolKey memory key, IPoolManager.SwapParams memory params)
-        external
-        override
-        noDelegateCall
-        onlyByLocker
+        internal
         returns (IPoolManager.BalanceDelta memory delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
@@ -245,12 +236,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             })
         );
 
-        _accountPoolBalanceDelta(key, delta);
         // the fee is on the input currency
-
         unchecked {
-            if (feeForProtocol > 0)
+            if (feeForProtocol > 0) {
                 protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
+            }
         }
 
         if (key.hooks.shouldCallAfterSwap()) {
@@ -262,12 +252,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         emit Swap(poolId, msg.sender, delta.amount0, delta.amount1, state.sqrtPriceX96, state.liquidity, state.tick);
     }
 
-    /// @inheritdoc IPoolManager
+    /// @notice donate funds to the given pool
     function donate(
         PoolKey memory key,
         uint256 amount0,
         uint256 amount1
-    ) external override noDelegateCall onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
+    ) internal returns (IPoolManager.BalanceDelta memory delta) {
         if (key.hooks.shouldCallBeforeDonate()) {
             if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1) != IHooks.beforeDonate.selector) {
                 revert Hooks.InvalidHookResponse();
@@ -276,8 +266,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         delta = _getPool(key).donate(amount0, amount1);
 
-        _accountPoolBalanceDelta(key, delta);
-
         if (key.hooks.shouldCallAfterDonate()) {
             if (key.hooks.afterDonate(msg.sender, key, amount0, amount1) != IHooks.afterDonate.selector) {
                 revert Hooks.InvalidHookResponse();
@@ -285,39 +273,40 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    /// @inheritdoc IPoolManager
+    /// @notice take funds from the given pool
     function take(
         Currency currency,
         address to,
         uint256 amount
-    ) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt256());
+    ) internal {
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
 
-    /// @inheritdoc IPoolManager
+    /// @notice mint a claim to pool tokens
     function mint(
         Currency currency,
         address to,
         uint256 amount
-    ) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt256());
+    ) internal {
         _mint(to, currency.toId(), amount, '');
     }
 
-    /// @inheritdoc IPoolManager
-    function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
+    /// @notice burn a claim to pool tokens
+    function burn(
+        Currency currency,
+        address from,
+        uint256 amount
+    ) internal {
+        require(from == msg.sender || isApprovedForAll(from, msg.sender), 'ERC1155: caller is not owner nor approved');
+        _burn(from, currency.toId(), amount);
+    }
+
+    /// @notice settle a pool by checking for received funds
+    function settle(Currency currency) internal returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
-        // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt256()));
-    }
-
-    function _burnAndAccount(Currency currency, uint256 amount) internal {
-        _burn(address(this), currency.toId(), amount);
-        _accountDelta(currency, -(amount.toInt256()));
     }
 
     function onERC1155Received(
@@ -327,9 +316,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256 value,
         bytes calldata
     ) external returns (bytes4) {
-        if (msg.sender != address(this)) revert NotPoolManagerToken();
-        _burnAndAccount(CurrencyLibrary.fromId(id), value);
-        return IERC1155Receiver.onERC1155Received.selector;
+        // can't account for deltas outside of execute
+        revert('not implemented');
     }
 
     function onERC1155BatchReceived(
@@ -339,14 +327,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256[] calldata values,
         bytes calldata
     ) external returns (bytes4) {
-        if (msg.sender != address(this)) revert NotPoolManagerToken();
-        // unchecked to save gas on incrementations of i
-        unchecked {
-            for (uint256 i; i < ids.length; i++) {
-                _burnAndAccount(CurrencyLibrary.fromId(ids[i]), values[i]);
-            }
-        }
-        return IERC1155Receiver.onERC1155BatchReceived.selector;
+        revert('not implemented');
     }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {

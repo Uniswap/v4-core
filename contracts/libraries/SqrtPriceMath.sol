@@ -38,9 +38,10 @@ library SqrtPriceMath {
                 uint256 product;
                 if ((product = amount * sqrtPX96) / amount == sqrtPX96) {
                     uint256 denominator = numerator1 + product;
-                    if (denominator >= numerator1)
+                    if (denominator >= numerator1) {
                         // always fits in 160 bits
                         return uint160(FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator));
+                    }
                 }
             }
             // denominator is checked for overflow

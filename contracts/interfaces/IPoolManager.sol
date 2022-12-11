@@ -80,6 +80,15 @@ interface IPoolManager is IERC1155 {
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
+    enum Command {
+        SWAP,
+        MODIFY,
+        DONATE,
+        TAKE,
+        MINT,
+        BURN
+    }
+
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower currency of the pool, sorted numerically
@@ -137,27 +146,6 @@ interface IPoolManager is IERC1155 {
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
-    /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
-    /// @param index The index of the locker, also known as the id of the locker
-    function lockedBy(uint256 index) external view returns (address);
-
-    /// @notice Getter for the length of the lockedBy array
-    function lockedByLength() external view returns (uint256);
-
-    /// @notice Returns the count of nonzero deltas for the given locker ID
-    /// @param id The ID of the locker
-    function getNonzeroDeltaCount(uint256 id) external view returns (uint256);
-
-    /// @notice Get the current delta for a given currency, and its position in the currencies touched array
-    /// @param id The ID of the locker
-    /// @param currency The currency for which to lookup the delta
-    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256);
-
-    /// @notice All operations go through this function
-    /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
-    /// @return The data returned by the call to `ILockCallback(msg.sender).lockCallback(data)`
-    function lock(bytes calldata data) external returns (bytes memory);
-
     struct ModifyPositionParams {
         // the lower and upper tick of the position
         int24 tickLower;
@@ -166,45 +154,18 @@ interface IPoolManager is IERC1155 {
         int256 liquidityDelta;
     }
 
-    /// @notice Modify the position for the given pool
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
-        external
-        returns (BalanceDelta memory delta);
-
     struct SwapParams {
         bool zeroForOne;
         int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
     }
 
-    /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta memory delta);
-
-    /// @notice Donate the given currency amounts to the pool with the given pool key
-    function donate(
-        PoolKey memory key,
-        uint256 amount0,
-        uint256 amount1
-    ) external returns (BalanceDelta memory delta);
-
-    /// @notice Called by the user to net out some value owed to the user
-    /// @dev Can also be used as a mechanism for _free_ flash loans
-    function take(
-        Currency currency,
-        address to,
-        uint256 amount
-    ) external;
-
-    /// @notice Called by the user to move value into ERC1155 balance
-    function mint(
-        Currency token,
-        address to,
-        uint256 amount
-    ) external;
-
-    /// @notice Called by the user to pay what is owed
-    function settle(Currency token) external payable returns (uint256 paid);
-
     /// @notice sets the protocol fee for the given pool
     function setPoolProtocolFee(PoolKey memory key) external;
+
+    function execute(
+        bytes calldata operations,
+        bytes[] calldata inputs,
+        bytes calldata callbackData
+    ) external returns (bytes memory result);
 }

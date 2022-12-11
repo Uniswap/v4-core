@@ -7,6 +7,7 @@ import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 contract MockHooks is IHooks {
     using Hooks for IHooks;
+
     mapping(bytes4 => bytes4) public returnValues;
 
     function beforeInitialize(

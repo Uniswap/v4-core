@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.15;
 
+import {CurrencyDelta} from '../libraries/CurrencyDelta.sol';
 import {CurrencyLibrary, Currency} from '../libraries/CurrencyLibrary.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
-import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
+import {IExecuteCallback} from '../interfaces/callback/IExecuteCallback.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
-contract PoolModifyPositionTest is ILockCallback {
+contract PoolModifyPositionTest is IExecuteCallback {
     using CurrencyLibrary for Currency;
+
     IPoolManager public immutable manager;
 
     constructor(IPoolManager _manager) {
@@ -26,8 +28,13 @@ contract PoolModifyPositionTest is ILockCallback {
         payable
         returns (IPoolManager.BalanceDelta memory delta)
     {
+        bytes memory commands = new bytes(1);
+        commands[0] = bytes1(uint8(IPoolManager.Command.MODIFY));
+        bytes[] memory inputs = new bytes[](1);
+        inputs[0] = abi.encode(key, params);
+
         delta = abi.decode(
-            manager.lock(abi.encode(CallbackData(msg.sender, key, params))),
+            manager.execute(commands, inputs, abi.encode(CallbackData(msg.sender, key, params))),
             (IPoolManager.BalanceDelta)
         );
 
@@ -37,38 +44,34 @@ contract PoolModifyPositionTest is ILockCallback {
         }
     }
 
-    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
+    function executeCallback(CurrencyDelta[] memory deltas, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        IPoolManager.BalanceDelta memory delta = manager.modifyPosition(data.key, data.params);
+        IPoolManager.BalanceDelta memory result;
 
-        if (delta.amount0 > 0) {
-            if (data.key.currency0.isNative()) {
-                manager.settle{value: uint256(delta.amount0)}(data.key.currency0);
-            } else {
-                IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
-                    data.sender,
-                    address(manager),
-                    uint256(delta.amount0)
-                );
-                manager.settle(data.key.currency0);
+        for (uint256 i = 0; i < deltas.length; i++) {
+            CurrencyDelta memory delta = deltas[i];
+            if (i == 0) {
+                result.amount0 = delta.delta;
+            } else if (i == 1) {
+                result.amount1 = delta.delta;
             }
-        }
-        if (delta.amount1 > 0) {
-            if (data.key.currency1.isNative()) {
-                manager.settle{value: uint256(delta.amount1)}(data.key.currency1);
-            } else {
-                IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
-                    data.sender,
-                    address(manager),
-                    uint256(delta.amount1)
-                );
-                manager.settle(data.key.currency1);
+
+            if (delta.delta > 0) {
+                if (delta.currency.isNative()) {
+                    payable(address(manager)).transfer(uint256(delta.delta));
+                } else {
+                    IERC20Minimal(Currency.unwrap(delta.currency)).transferFrom(
+                        data.sender,
+                        address(manager),
+                        uint256(delta.delta)
+                    );
+                }
             }
         }
 
-        return abi.encode(delta);
+        return abi.encode(result);
     }
 }

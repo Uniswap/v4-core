@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.5.0;
+
 import {IHooks} from '../interfaces/IHooks.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
