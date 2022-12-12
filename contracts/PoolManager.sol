@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.15;
 
+import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
+import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
@@ -15,12 +19,10 @@ import {IProtocolFeeController} from './interfaces/IProtocolFeeController.sol';
 import {IPoolManager} from './interfaces/IPoolManager.sol';
 import {IExecuteCallback} from './interfaces/callback/IExecuteCallback.sol';
 
-import {ERC1155} from '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
-import {IERC1155Receiver} from '@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol';
 import {PoolId} from './libraries/PoolId.sol';
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
+contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver, ReentrancyGuard {
     using PoolId for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -109,12 +111,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
     }
 
-    // TODO: add reentrancy lock
     function execute(
         bytes calldata operations,
         bytes[] calldata inputs,
         bytes calldata callbackData
-    ) external returns (bytes memory result) {
+    ) external nonReentrant returns (bytes memory result) {
         CurrencyDelta[] memory deltas;
         for (uint256 i = 0; i < operations.length; i++) {
             IPoolManager.Command command = IPoolManager.Command(uint8(operations[i]));
