@@ -27,6 +27,8 @@ interface IPoolManager is IERC1155 {
     error TickSpacingTooLarge();
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
     error TickSpacingTooSmall();
+    error InvalidCommand();
+    error NotImplemented();
 
     /// @notice Emitted when a new pool is initialized
     /// @param poolId The abi encoded hash of the pool key struct for the new pool

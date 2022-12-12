@@ -156,7 +156,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 burn(currency, from, amount);
                 deltas = deltas.add(currency, -(amount.toInt256()));
             } else {
-                revert('Invalid command');
+                revert InvalidCommand();
             }
         }
 
@@ -318,7 +318,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         bytes calldata
     ) external returns (bytes4) {
         // can't account for deltas outside of execute
-        revert('not implemented');
+        revert NotImplemented();
     }
 
     function onERC1155BatchReceived(
@@ -328,7 +328,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256[] calldata values,
         bytes calldata
     ) external returns (bytes4) {
-        revert('not implemented');
+        // can't account for deltas outside of execute
+        revert NotImplemented();
     }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
