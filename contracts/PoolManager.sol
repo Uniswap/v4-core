@@ -125,36 +125,36 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                     (PoolKey, IPoolManager.SwapParams)
                 );
                 IPoolManager.BalanceDelta memory delta = swap(key, params);
-                _accountPoolBalanceDelta(deltas, key, delta);
+                deltas = _accountPoolBalanceDelta(deltas, key, delta);
             } else if (command == IPoolManager.Command.MODIFY) {
                 (PoolKey memory key, IPoolManager.ModifyPositionParams memory params) = abi.decode(
                     inputs[i],
                     (PoolKey, IPoolManager.ModifyPositionParams)
                 );
                 IPoolManager.BalanceDelta memory delta = modifyPosition(key, params);
-                _accountPoolBalanceDelta(deltas, key, delta);
+                deltas = _accountPoolBalanceDelta(deltas, key, delta);
             } else if (command == IPoolManager.Command.DONATE) {
                 (PoolKey memory key, uint256 amount0, uint256 amount1) = abi.decode(
                     inputs[i],
                     (PoolKey, uint256, uint256)
                 );
                 IPoolManager.BalanceDelta memory delta = donate(key, amount0, amount1);
-                _accountPoolBalanceDelta(deltas, key, delta);
+                deltas = _accountPoolBalanceDelta(deltas, key, delta);
             } else if (command == IPoolManager.Command.TAKE) {
                 (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
                 if (amount == 0) {
                     amount = uint256(-deltas.get(currency));
                 }
                 take(currency, to, amount);
-                deltas.add(currency, amount.toInt256());
+                deltas = deltas.add(currency, amount.toInt256());
             } else if (command == IPoolManager.Command.MINT) {
                 (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
                 mint(currency, to, amount);
-                deltas.add(currency, amount.toInt256());
+                deltas = deltas.add(currency, amount.toInt256());
             } else if (command == IPoolManager.Command.BURN) {
                 (Currency currency, address from, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
                 burn(currency, from, amount);
-                deltas.add(currency, -(amount.toInt256()));
+                deltas = deltas.add(currency, -(amount.toInt256()));
             } else {
                 revert('Invalid command');
             }
@@ -177,9 +177,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         CurrencyDelta[] memory deltas,
         PoolKey memory key,
         IPoolManager.BalanceDelta memory delta
-    ) internal {
-        deltas.add(key.currency0, delta.amount0);
-        deltas.add(key.currency1, delta.amount1);
+    ) internal returns (CurrencyDelta[] memory result) {
+        result = deltas.add(key.currency0, delta.amount0);
+        result = result.add(key.currency1, delta.amount1);
     }
 
     /// @notice modify liquidity position in the given pool
