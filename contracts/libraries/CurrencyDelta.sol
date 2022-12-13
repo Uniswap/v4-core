@@ -14,7 +14,6 @@ struct CurrencyDelta {
 // TODO: this library currently expands memory with reckless abandon
 // it could be improved by managing memory more effectively, ideas:
 // - batch mem allocation, i.e. allocate 5 slots at a time, use one if currency == 0
-// - re-use cleared slots, i.e. if delta == 0 we can safely overwrite
 // - check if freemempointer is at the end of the current array and just pushing + updating size + updating fmp
 // - use a linked list or something else
 library CurrencyDeltaMapping {
@@ -27,12 +26,19 @@ library CurrencyDeltaMapping {
         Currency currency,
         int256 delta
     ) internal pure returns (CurrencyDelta[] memory result) {
+        uint256 availableSlot = type(uint256).max;
         // if currency already exists in deltas, just update it
         for (uint256 i = 0; i < deltas.length; i++) {
             if (deltas[i].currency.equals(currency)) {
                 deltas[i].delta += delta;
                 return deltas;
+            } else if (deltas[i].delta == 0 && availableSlot == type(uint256).max) {
+                availableSlot = i;
             }
+        }
+        if (availableSlot != type(uint256).max) {
+            deltas[availableSlot] = CurrencyDelta(currency, delta);
+            return deltas;
         }
 
         // else we have to expand the mapping
