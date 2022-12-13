@@ -67,8 +67,8 @@ library Pool {
         // represented as an integer denominator (1/x)%
         // First 4 bits are the fee for trading 1 for 0, and the latter 4 for 0 for 1
         uint8 protocolFee;
+        // 64 bits left!
     }
-    // 64 bits left!
 
     // info stored for each initialized individual tick
     struct TickInfo {
@@ -169,12 +169,10 @@ library Pool {
 
                 if (params.liquidityDelta > 0) {
                     uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
-                    if (state.liquidityGrossAfterLower > maxLiquidityPerTick) {
+                    if (state.liquidityGrossAfterLower > maxLiquidityPerTick)
                         revert TickLiquidityOverflow(params.tickLower);
-                    }
-                    if (state.liquidityGrossAfterUpper > maxLiquidityPerTick) {
+                    if (state.liquidityGrossAfterUpper > maxLiquidityPerTick)
                         revert TickLiquidityOverflow(params.tickUpper);
-                    }
                 }
 
                 if (state.flippedLower) {
@@ -307,19 +305,15 @@ library Pool {
         Slot0 memory slot0Start = self.slot0;
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
         if (params.zeroForOne) {
-            if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
+            if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96)
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
-            }
-            if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO) {
+            if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO)
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
-            }
         } else {
-            if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96) {
+            if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96)
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
-            }
-            if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
+            if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO)
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
-            }
         }
 
         SwapCache memory cache = SwapCache({
@@ -465,12 +459,10 @@ library Pool {
         delta.amount0 = amount0.toInt256();
         delta.amount1 = amount1.toInt256();
         unchecked {
-            if (amount0 > 0) {
+            if (amount0 > 0)
                 state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
-            }
-            if (amount1 > 0) {
+            if (amount1 > 0)
                 state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
-            }
         }
     }
 

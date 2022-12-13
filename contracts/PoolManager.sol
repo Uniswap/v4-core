@@ -239,9 +239,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         // the fee is on the input currency
         unchecked {
-            if (feeForProtocol > 0) {
+            if (feeForProtocol > 0)
                 protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
-            }
         }
 
         if (key.hooks.shouldCallAfterSwap()) {

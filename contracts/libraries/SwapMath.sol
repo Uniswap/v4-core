@@ -43,30 +43,26 @@ library SwapMath {
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, true);
-                if (amountRemainingLessFee >= amountIn) {
-                    sqrtRatioNextX96 = sqrtRatioTargetX96;
-                } else {
+                if (amountRemainingLessFee >= amountIn) sqrtRatioNextX96 = sqrtRatioTargetX96;
+                else
                     sqrtRatioNextX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
                         sqrtRatioCurrentX96,
                         liquidity,
                         amountRemainingLessFee,
                         zeroForOne
                     );
-                }
             } else {
                 amountOut = zeroForOne
                     ? SqrtPriceMath.getAmount1Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, false)
                     : SqrtPriceMath.getAmount0Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, false);
-                if (uint256(-amountRemaining) >= amountOut) {
-                    sqrtRatioNextX96 = sqrtRatioTargetX96;
-                } else {
+                if (uint256(-amountRemaining) >= amountOut) sqrtRatioNextX96 = sqrtRatioTargetX96;
+                else
                     sqrtRatioNextX96 = SqrtPriceMath.getNextSqrtPriceFromOutput(
                         sqrtRatioCurrentX96,
                         liquidity,
                         uint256(-amountRemaining),
                         zeroForOne
                     );
-                }
             }
 
             bool max = sqrtRatioTargetX96 == sqrtRatioNextX96;
