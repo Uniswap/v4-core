@@ -3,6 +3,7 @@ pragma solidity =0.8.15;
 
 import {Currency, CurrencyLibrary} from '../libraries/CurrencyLibrary.sol';
 import {CurrencyDelta} from '../libraries/CurrencyDelta.sol';
+import {Commands} from '../libraries/Commands.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
 import {IExecuteCallback} from '../interfaces/callback/IExecuteCallback.sol';
 
@@ -23,11 +24,11 @@ contract PoolManagerReentrancyTest is IExecuteCallback {
         uint256 total,
         uint256 count
     ) internal {
-        IPoolManager.Command[] memory commands = new IPoolManager.Command[](1);
-        commands[0] = IPoolManager.Command.TAKE;
+        bytes memory commands = new bytes(1);
+        commands[0] = Commands.TAKE;
         bytes[] memory inputs = new bytes[](1);
         inputs[0] = abi.encode(currencyToBorrow, address(this), 1);
-        poolManager.execute(abi.encode(commands), inputs, abi.encode(currencyToBorrow, total, count));
+        poolManager.execute(commands, inputs, abi.encode(currencyToBorrow, total, count));
     }
 
     function executeCallback(CurrencyDelta[] memory deltas, bytes calldata data) external returns (bytes memory) {

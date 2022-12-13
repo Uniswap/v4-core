@@ -7,6 +7,7 @@ import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.
 
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
+import {Commands} from './libraries/Commands.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 import {Position} from './libraries/Position.sol';
 import {Currency, CurrencyLibrary} from './libraries/CurrencyLibrary.sol';
@@ -118,40 +119,40 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     ) external nonReentrant returns (bytes memory result) {
         CurrencyDelta[] memory deltas;
         for (uint256 i = 0; i < operations.length; i++) {
-            IPoolManager.Command command = IPoolManager.Command(uint8(operations[i]));
-            if (command == IPoolManager.Command.SWAP) {
+            bytes1 command = operations[i];
+            if (command == Commands.SWAP) {
                 (PoolKey memory key, IPoolManager.SwapParams memory params) = abi.decode(
                     inputs[i],
                     (PoolKey, IPoolManager.SwapParams)
                 );
                 IPoolManager.BalanceDelta memory delta = swap(key, params);
                 deltas = _accountPoolBalanceDelta(deltas, key, delta);
-            } else if (command == IPoolManager.Command.MODIFY) {
+            } else if (command == Commands.MODIFY) {
                 (PoolKey memory key, IPoolManager.ModifyPositionParams memory params) = abi.decode(
                     inputs[i],
                     (PoolKey, IPoolManager.ModifyPositionParams)
                 );
                 IPoolManager.BalanceDelta memory delta = modifyPosition(key, params);
                 deltas = _accountPoolBalanceDelta(deltas, key, delta);
-            } else if (command == IPoolManager.Command.DONATE) {
+            } else if (command == Commands.DONATE) {
                 (PoolKey memory key, uint256 amount0, uint256 amount1) = abi.decode(
                     inputs[i],
                     (PoolKey, uint256, uint256)
                 );
                 IPoolManager.BalanceDelta memory delta = donate(key, amount0, amount1);
                 deltas = _accountPoolBalanceDelta(deltas, key, delta);
-            } else if (command == IPoolManager.Command.TAKE) {
+            } else if (command == Commands.TAKE) {
                 (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
                 if (amount == 0) {
                     amount = uint256(-deltas.get(currency));
                 }
                 take(currency, to, amount);
                 deltas = deltas.add(currency, amount.toInt256());
-            } else if (command == IPoolManager.Command.MINT) {
+            } else if (command == Commands.MINT) {
                 (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
                 mint(currency, to, amount);
                 deltas = deltas.add(currency, amount.toInt256());
-            } else if (command == IPoolManager.Command.BURN) {
+            } else if (command == Commands.BURN) {
                 (Currency currency, address from, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
                 burn(currency, from, amount);
                 deltas = deltas.add(currency, -(amount.toInt256()));
@@ -312,8 +313,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function onERC1155Received(
         address,
         address,
-        uint256 id,
-        uint256 value,
+        uint256,
+        uint256,
         bytes calldata
     ) external returns (bytes4) {
         // can't account for deltas outside of execute
@@ -323,8 +324,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function onERC1155BatchReceived(
         address,
         address,
-        uint256[] calldata ids,
-        uint256[] calldata values,
+        uint256[] calldata,
+        uint256[] calldata,
         bytes calldata
     ) external returns (bytes4) {
         // can't account for deltas outside of execute

@@ -3,6 +3,7 @@ pragma solidity =0.8.15;
 
 import {Currency, CurrencyLibrary} from '../libraries/CurrencyLibrary.sol';
 import {CurrencyDelta} from '../libraries/CurrencyDelta.sol';
+import {Commands} from '../libraries/Commands.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {Currency} from '../libraries/CurrencyLibrary.sol';
@@ -31,7 +32,7 @@ contract PoolDonateTest is IExecuteCallback {
         uint256 amount1
     ) external payable returns (IPoolManager.BalanceDelta memory delta) {
         bytes memory commands = new bytes(1);
-        commands[0] = bytes1(uint8(IPoolManager.Command.DONATE));
+        commands[0] = Commands.DONATE;
         bytes[] memory inputs = new bytes[](1);
         inputs[0] = abi.encode(key, amount0, amount1);
         delta = abi.decode(

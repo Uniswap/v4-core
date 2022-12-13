@@ -82,15 +82,6 @@ interface IPoolManager is IERC1155 {
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
-    enum Command {
-        SWAP,
-        MODIFY,
-        DONATE,
-        TAKE,
-        MINT,
-        BURN
-    }
-
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower currency of the pool, sorted numerically

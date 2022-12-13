@@ -3,6 +3,7 @@ pragma solidity =0.8.15;
 
 import {Currency, CurrencyLibrary} from '../libraries/CurrencyLibrary.sol';
 import {CurrencyDelta} from '../libraries/CurrencyDelta.sol';
+import {Commands} from '../libraries/Commands.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
 import {IExecuteCallback} from '../interfaces/callback/IExecuteCallback.sol';
@@ -30,7 +31,7 @@ contract PoolTakeTest is IExecuteCallback {
         uint256 amount1
     ) external payable {
         bytes memory commands = new bytes(1);
-        commands[0] = bytes1(uint8(IPoolManager.Command.TAKE));
+        commands[0] = Commands.TAKE;
         bytes[] memory inputs = new bytes[](1);
         if (amount0 > 0) {
             inputs[0] = abi.encode(key.currency0, msg.sender, amount0);
