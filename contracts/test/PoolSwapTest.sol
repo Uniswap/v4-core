@@ -37,7 +37,11 @@ contract PoolSwapTest is IExecuteCallback {
     ) external payable returns (IPoolManager.BalanceDelta memory delta) {
         bytes memory commands = new bytes(2);
         commands[0] = Commands.SWAP;
-        commands[1] = Commands.TAKE;
+        if (testSettings.withdrawTokens) {
+            commands[1] = Commands.TAKE;
+        } else {
+            commands[1] = Commands.MINT;
+        }
         bytes[] memory inputs = new bytes[](2);
         inputs[0] = abi.encode(key, params);
         if (params.zeroForOne) {
@@ -71,7 +75,7 @@ contract PoolSwapTest is IExecuteCallback {
                 result.amount1 = delta.delta;
             }
 
-            if (delta.delta > 0) {
+            if (data.testSettings.settleUsingTransfer && delta.delta > 0) {
                 if (delta.currency.isNative()) {
                     payable(address(manager)).transfer(uint256(delta.delta));
                 } else {

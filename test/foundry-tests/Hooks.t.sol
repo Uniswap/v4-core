@@ -78,7 +78,7 @@ contract HooksTest is Test, Deployers {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(false, false)
+            PoolSwapTest.TestSettings(true, false)
         );
     }
 

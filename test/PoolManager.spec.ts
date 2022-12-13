@@ -153,13 +153,9 @@ describe('PoolManager', () => {
         }
       )
 
-      await expect(reenterTest.reenter(manager.address, tokens.currency0.address, 3))
-        .to.emit(reenterTest, 'LockAcquired')
-        .withArgs(3)
-        .to.emit(reenterTest, 'LockAcquired')
-        .withArgs(2)
-        .to.emit(reenterTest, 'LockAcquired')
-        .withArgs(1)
+      await expect(reenterTest.reenter(manager.address, tokens.currency0.address, 3)).to.be.revertedWith(
+        'ReentrancyGuard: reentrant call'
+      )
     })
   })
 

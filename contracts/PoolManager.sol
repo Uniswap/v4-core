@@ -150,9 +150,15 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 deltas = deltas.add(currency, amount.toInt256());
             } else if (command == Commands.MINT) {
                 (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
+                if (amount == 0) {
+                    amount = uint256(-deltas.get(currency));
+                }
                 mint(currency, to, amount);
                 deltas = deltas.add(currency, amount.toInt256());
             } else if (command == Commands.BURN) {
+                // TODO: this doesn't really work rn
+                // workaround is we can have callers send 1155s in, but in onReceived hook we just keep them
+                // and in settle we can check any held 1155 balance, burn it, and use it to settle
                 (Currency currency, address from, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
                 burn(currency, from, amount);
                 deltas = deltas.add(currency, -(amount.toInt256()));
@@ -178,7 +184,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         CurrencyDelta[] memory deltas,
         PoolKey memory key,
         IPoolManager.BalanceDelta memory delta
-    ) internal returns (CurrencyDelta[] memory result) {
+    ) internal pure returns (CurrencyDelta[] memory result) {
         result = deltas.add(key.currency0, delta.amount0);
         result = result.add(key.currency1, delta.amount1);
     }
@@ -316,7 +322,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256,
         uint256,
         bytes calldata
-    ) external returns (bytes4) {
+    ) external pure returns (bytes4) {
         // can't account for deltas outside of execute
         revert NotImplemented();
     }
@@ -327,7 +333,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256[] calldata,
         uint256[] calldata,
         bytes calldata
-    ) external returns (bytes4) {
+    ) external pure returns (bytes4) {
         // can't account for deltas outside of execute
         revert NotImplemented();
     }

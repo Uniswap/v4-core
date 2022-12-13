@@ -31,7 +31,7 @@ contract PoolManagerReentrancyTest is IExecuteCallback {
         poolManager.execute(commands, inputs, abi.encode(currencyToBorrow, total, count));
     }
 
-    function executeCallback(CurrencyDelta[] memory deltas, bytes calldata data) external returns (bytes memory) {
+    function executeCallback(CurrencyDelta[] memory, bytes calldata data) external returns (bytes memory) {
         (Currency currencyToBorrow, uint256 total, uint256 count) = abi.decode(data, (Currency, uint256, uint256));
 
         IPoolManager poolManager = IPoolManager(msg.sender);
