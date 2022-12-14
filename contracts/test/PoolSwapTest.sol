@@ -21,8 +21,6 @@ contract PoolSwapTest is IExecuteCallback {
     struct CallbackData {
         address sender;
         TestSettings testSettings;
-        IPoolManager.PoolKey key;
-        IPoolManager.SwapParams params;
     }
 
     struct TestSettings {
@@ -51,7 +49,7 @@ contract PoolSwapTest is IExecuteCallback {
         }
 
         delta = abi.decode(
-            manager.execute(commands, inputs, abi.encode(CallbackData(msg.sender, testSettings, key, params))),
+            manager.execute(commands, inputs, abi.encode(CallbackData(msg.sender, testSettings))),
             (IPoolManager.BalanceDelta)
         );
 
