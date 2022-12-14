@@ -7,5 +7,4 @@ library Commands {
     bytes1 internal constant DONATE = 0x02;
     bytes1 internal constant TAKE = 0x03;
     bytes1 internal constant MINT = 0x04;
-    bytes1 internal constant BURN = 0x05;
 }

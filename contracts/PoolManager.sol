@@ -148,13 +148,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 }
                 mint(currency, to, amount);
                 deltas = deltas.add(currency, amount.toInt256());
-            } else if (command == Commands.BURN) {
-                // TODO: this doesn't really work rn
-                // workaround is we can have callers send 1155s in, but in onReceived hook we just keep them
-                // and in settle we can check any held 1155 balance, burn it, and use it to settle
-                (Currency currency, address from, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
-                burn(currency, from, amount);
-                deltas = deltas.add(currency, -(amount.toInt256()));
             } else if (command == Commands.DONATE) {
                 (PoolKey memory key, uint256 amount0, uint256 amount1) = abi.decode(
                     inputs[i],
@@ -302,21 +295,19 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         _mint(to, currency.toId(), amount, '');
     }
 
-    /// @notice burn a claim to pool tokens
-    function burn(
-        Currency currency,
-        address from,
-        uint256 amount
-    ) internal {
-        require(from == msg.sender || isApprovedForAll(from, msg.sender), 'ERC1155: caller is not owner nor approved');
-        _burn(from, currency.toId(), amount);
-    }
-
     /// @notice settle a pool by checking for received funds
     function settle(Currency currency) internal returns (uint256 paid) {
+        // settlement by directly sending currency in
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
-        paid = reservesOf[currency] - reservesBefore;
+
+        // settlement by sending ERC1155 tokens in
+        uint256 erc1155Balance = balanceOf(address(this), currency.toId());
+        if (erc1155Balance > 0) {
+            _burn(address(this), currency.toId(), erc1155Balance);
+        }
+
+        paid = reservesOf[currency] + erc1155Balance - reservesBefore;
     }
 
     function onERC1155Received(
@@ -325,9 +316,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256,
         uint256,
         bytes calldata
-    ) external pure returns (bytes4) {
+    ) external view returns (bytes4) {
+        if (msg.sender != address(this)) revert NotPoolManagerToken();
         // can't account for deltas outside of execute
-        revert NotImplemented();
+        // so we just accept the tokens and burn them later in settle()
+        return IERC1155Receiver.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(
@@ -336,9 +329,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256[] calldata,
         uint256[] calldata,
         bytes calldata
-    ) external pure returns (bytes4) {
+    ) external view returns (bytes4) {
+        if (msg.sender != address(this)) revert NotPoolManagerToken();
         // can't account for deltas outside of execute
-        revert NotImplemented();
+        // so we just accept the tokens and burn them later in settle()
+        return IERC1155Receiver.onERC1155Received.selector;
     }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {

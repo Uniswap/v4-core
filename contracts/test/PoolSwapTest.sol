@@ -75,14 +75,24 @@ contract PoolSwapTest is IExecuteCallback {
                 result.amount1 = delta.delta;
             }
 
-            if (data.testSettings.settleUsingTransfer && delta.delta > 0) {
-                if (delta.currency.isNative()) {
-                    payable(address(manager)).transfer(uint256(delta.delta));
+            if (delta.delta > 0) {
+                if (data.testSettings.settleUsingTransfer) {
+                    if (delta.currency.isNative()) {
+                        payable(address(manager)).transfer(uint256(delta.delta));
+                    } else {
+                        IERC20Minimal(Currency.unwrap(delta.currency)).transferFrom(
+                            data.sender,
+                            address(manager),
+                            uint256(delta.delta)
+                        );
+                    }
                 } else {
-                    IERC20Minimal(Currency.unwrap(delta.currency)).transferFrom(
+                    manager.safeTransferFrom(
                         data.sender,
                         address(manager),
-                        uint256(delta.delta)
+                        delta.currency.toId(),
+                        uint256(delta.delta),
+                        ''
                     );
                 }
             }
