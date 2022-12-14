@@ -172,9 +172,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         for (uint256 i = 0; i < deltas.length; i++) {
             CurrencyDelta memory delta = deltas[i];
-            uint256 paid = settle(delta.currency);
-            if (delta.delta - paid.toInt256() != int256(0)) {
-                revert CurrencyNotSettled();
+            // if already settled from commands, skip checking received tokens
+            if (delta.delta != int256(0)) {
+                uint256 paid = settle(delta.currency);
+                if (delta.delta - paid.toInt256() != int256(0)) {
+                    revert CurrencyNotSettled();
+                }
             }
         }
     }
