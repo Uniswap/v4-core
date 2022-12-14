@@ -126,13 +126,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                     inputs[i],
                     (PoolKey, IPoolManager.SwapParams)
                 );
+                Commands.mapAmount(deltas, key, params);
                 IPoolManager.BalanceDelta memory delta = swap(key, params);
                 deltas = _accountPoolBalanceDelta(deltas, key, delta);
             } else if (command == Commands.TAKE) {
                 (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
-                if (amount == 0) {
-                    amount = uint256(-deltas.get(currency));
-                }
+                amount = Commands.mapAmount(deltas, currency, amount);
+
                 take(currency, to, amount);
                 deltas = deltas.add(currency, amount.toInt256());
             } else if (command == Commands.MODIFY) {
@@ -144,9 +144,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 deltas = _accountPoolBalanceDelta(deltas, key, delta);
             } else if (command == Commands.MINT) {
                 (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
-                if (amount == 0) {
-                    amount = uint256(-deltas.get(currency));
-                }
+                amount = Commands.mapAmount(deltas, currency, amount);
+
                 mint(currency, to, amount);
                 deltas = deltas.add(currency, amount.toInt256());
             } else if (command == Commands.DONATE) {
@@ -154,6 +153,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                     inputs[i],
                     (PoolKey, uint256, uint256)
                 );
+                amount0 = Commands.mapAmount(deltas, key.currency0, amount0);
+                amount1 = Commands.mapAmount(deltas, key.currency1, amount1);
                 IPoolManager.BalanceDelta memory delta = donate(key, amount0, amount1);
                 deltas = _accountPoolBalanceDelta(deltas, key, delta);
             } else {
@@ -167,9 +168,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         for (uint256 i = 0; i < deltas.length; i++) {
             CurrencyDelta memory delta = deltas[i];
             // if already settled from commands, skip checking received tokens
-            if (delta.delta != int256(0)) {
+            if (delta.delta != 0) {
                 uint256 paid = settle(delta.currency);
-                if (delta.delta - paid.toInt256() != int256(0)) {
+                if (delta.delta - paid.toInt256() != 0) {
                     revert CurrencyNotSettled();
                 }
             }

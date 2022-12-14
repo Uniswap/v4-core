@@ -6,6 +6,7 @@ import {
   PoolDonateTest,
   PoolManager,
   PoolManagerReentrancyTest,
+  PoolSwapAndAddTest,
   PoolManagerTest,
   PoolModifyPositionTest,
   ProtocolFeeControllerTest,
@@ -31,6 +32,7 @@ describe('PoolManager', () => {
   let swapTest: PoolSwapTest
   let feeControllerTest: ProtocolFeeControllerTest
   let modifyPositionTest: PoolModifyPositionTest
+  let swapAndAddTest: PoolSwapAndAddTest
   let donateTest: PoolDonateTest
   let takeTest: PoolTakeTest
   let hooksMock: MockedContract
@@ -43,6 +45,7 @@ describe('PoolManager', () => {
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const feeControllerTestFactory = await ethers.getContractFactory('ProtocolFeeControllerTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
+    const swapAndAddTestFactory = await ethers.getContractFactory('PoolSwapAndAddTest')
     const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
     const takeTestFactory = await ethers.getContractFactory('PoolTakeTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
@@ -73,13 +76,20 @@ describe('PoolManager', () => {
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
       donateTest: (await donateTestFactory.deploy(manager.address)) as PoolDonateTest,
       takeTest: (await takeTestFactory.deploy(manager.address)) as PoolTakeTest,
+      swapAndAddTest: (await swapAndAddTestFactory.deploy(manager.address)) as PoolSwapAndAddTest,
       tokens,
       hooksMock,
       testHooksEmpty,
     }
 
     for (const token of [tokens.currency0, tokens.currency1, tokens.token2]) {
-      for (const spender of [result.swapTest, result.modifyPositionTest, result.donateTest, result.takeTest]) {
+      for (const spender of [
+        result.swapTest,
+        result.modifyPositionTest,
+        result.donateTest,
+        result.takeTest,
+        result.swapAndAddTest,
+      ]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
       }
     }
@@ -100,6 +110,7 @@ describe('PoolManager', () => {
       tokens,
       lockTest,
       modifyPositionTest,
+      swapAndAddTest,
       swapTest,
       feeControllerTest,
       donateTest,
@@ -1554,6 +1565,220 @@ describe('PoolManager', () => {
 
         expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(0))
       })
+    })
+  })
+
+  describe('swapAndAdd', async () => {
+    it('reverts if pool not initialized', async () => {
+      await expect(
+        swapAndAddTest.swapAndAdd(
+          {
+            currency0: tokens.currency0.address,
+            currency1: tokens.currency1.address,
+            fee: FeeAmount.MEDIUM,
+            tickSpacing: 60,
+            hooks: ADDRESS_ZERO,
+          },
+          {
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: expandTo18Decimals(10),
+          },
+          true,
+          encodeSqrtPriceX96(1, 2)
+        )
+      ).to.be.revertedWith('I')
+    })
+
+    it('succeeds if pool is initialized', async () => {
+      const poolKey = {
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+      // little seed liquidity to prevent exactOutput rounding errors
+      await modifyPositionTest.modifyPosition(
+        poolKey,
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(10),
+        },
+        {
+          value: expandTo18Decimals(10),
+        }
+      )
+
+      const token0BalanceBefore = await tokens.currency0.balanceOf(wallet.address)
+      const token1BalanceBefore = await tokens.currency1.balanceOf(wallet.address)
+
+      await expect(
+        swapAndAddTest.swapAndAdd(
+          poolKey,
+          {
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: expandTo18Decimals(10),
+          },
+          true,
+          encodeSqrtPriceX96(1, 2)
+        )
+      )
+        .to.emit(manager, 'ModifyPosition')
+        .withArgs(getPoolId(poolKey), swapAndAddTest.address, -120, 120, expandTo18Decimals(10))
+
+      const token0BalanceAfter = await tokens.currency0.balanceOf(wallet.address)
+      const token1BalanceAfter = await tokens.currency1.balanceOf(wallet.address)
+      expect(token0BalanceAfter).to.be.lt(token0BalanceBefore)
+      // since we did swapAndAdd zeroForOne, token1 balance should be unchanged
+      expect(token1BalanceAfter).to.be.eq(token1BalanceBefore)
+    })
+
+    it('succeeds with oneForZero', async () => {
+      const poolKey = {
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+      // little seed liquidity to prevent exactOutput rounding errors
+      await modifyPositionTest.modifyPosition(
+        poolKey,
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(10),
+        },
+        {
+          value: expandTo18Decimals(10),
+        }
+      )
+
+      const token0BalanceBefore = await tokens.currency0.balanceOf(wallet.address)
+      const token1BalanceBefore = await tokens.currency1.balanceOf(wallet.address)
+
+      await expect(
+        swapAndAddTest.swapAndAdd(
+          poolKey,
+          {
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: expandTo18Decimals(10),
+          },
+          false,
+          encodeSqrtPriceX96(2, 1)
+        )
+      )
+        .to.emit(manager, 'ModifyPosition')
+        .withArgs(getPoolId(poolKey), swapAndAddTest.address, -120, 120, expandTo18Decimals(10))
+
+      const token0BalanceAfter = await tokens.currency0.balanceOf(wallet.address)
+      const token1BalanceAfter = await tokens.currency1.balanceOf(wallet.address)
+      // since we did swapAndAdd oneForZero, token0 balance should be unchanged
+      expect(token0BalanceAfter).to.be.eq(token0BalanceBefore)
+      // since we did swapAndAdd oneForZero, token1 balance should be less
+      expect(token1BalanceAfter).to.be.lt(token1BalanceBefore)
+    })
+
+    it('succeeds with native tokens if pool is initialized', async () => {
+      const poolKey = {
+        currency0: ADDRESS_ZERO,
+        currency1: tokens.currency1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+      // little seed liquidity to prevent exactOutput rounding errors
+      await modifyPositionTest.modifyPosition(
+        poolKey,
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(10),
+        },
+        {
+          value: expandTo18Decimals(10),
+        }
+      )
+
+      const ethBalanceBefore = await wallet.getBalance()
+      const token1BalanceBefore = await tokens.currency1.balanceOf(wallet.address)
+
+      await expect(
+        swapAndAddTest.swapAndAdd(
+          poolKey,
+          {
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: expandTo18Decimals(10),
+          },
+          true,
+          encodeSqrtPriceX96(1, 2),
+          {
+            value: expandTo18Decimals(10),
+          }
+        )
+      )
+        .to.emit(manager, 'ModifyPosition')
+        .withArgs(getPoolId(poolKey), swapAndAddTest.address, -120, 120, expandTo18Decimals(10))
+
+      const ethBalanceAfter = await wallet.getBalance()
+      const token1BalanceAfter = await tokens.currency1.balanceOf(wallet.address)
+      expect(ethBalanceAfter).to.be.lt(ethBalanceBefore)
+      // since we did swapAndAdd zeroForOne, token1 balance should be unchanged
+      expect(token1BalanceAfter).to.be.eq(token1BalanceBefore)
+    })
+
+    it('gas cost', async () => {
+      const poolKey = {
+        currency0: tokens.currency0.address,
+        currency1: tokens.currency1.address,
+        fee: FeeAmount.MEDIUM,
+        tickSpacing: 60,
+        hooks: ADDRESS_ZERO,
+      }
+
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+      // little seed liquidity to prevent exactOutput rounding errors
+      await modifyPositionTest.modifyPosition(
+        poolKey,
+        {
+          tickLower: -120,
+          tickUpper: 120,
+          liquidityDelta: expandTo18Decimals(10),
+        },
+        {
+          value: expandTo18Decimals(10),
+        }
+      )
+
+      await expect(
+        swapAndAddTest.swapAndAdd(
+          poolKey,
+          {
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: expandTo18Decimals(10),
+          },
+          true,
+          encodeSqrtPriceX96(1, 2)
+        )
+      )
+        .to.emit(manager, 'ModifyPosition')
+        .withArgs(getPoolId(poolKey), swapAndAddTest.address, -120, 120, expandTo18Decimals(10))
     })
   })
 })

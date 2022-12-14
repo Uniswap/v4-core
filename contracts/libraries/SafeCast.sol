@@ -25,4 +25,11 @@ library SafeCast {
         require(y < 2**255);
         z = int256(y);
     }
+
+    /// @notice Cast a int256 to a uint256, taking the absolute value in the process
+    /// @param y The int256 to be casted
+    /// @return z The casted absolute value integer
+    function absToUint256(int256 y) internal pure returns (uint256 z) {
+        z = uint256(y < 0 ? -y : y);
+    }
 }
