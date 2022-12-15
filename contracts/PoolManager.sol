@@ -127,8 +127,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                     (PoolKey, IPoolManager.SwapParams)
                 );
                 Commands.mapAmount(deltas, key, params);
-                IPoolManager.BalanceDelta memory delta = swap(key, params);
-                deltas = _accountPoolBalanceDelta(deltas, key, delta);
+                deltas = _accountPoolBalanceDelta(deltas, key, swap(key, params));
             } else if (command == Commands.TAKE) {
                 (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
                 amount = Commands.mapAmount(deltas, currency, amount);
@@ -140,8 +139,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                     inputs[i],
                     (PoolKey, IPoolManager.ModifyPositionParams)
                 );
-                IPoolManager.BalanceDelta memory delta = modifyPosition(key, params);
-                deltas = _accountPoolBalanceDelta(deltas, key, delta);
+                deltas = _accountPoolBalanceDelta(deltas, key, modifyPosition(key, params));
             } else if (command == Commands.MINT) {
                 (Currency currency, address to, uint256 amount) = abi.decode(inputs[i], (Currency, address, uint256));
                 amount = Commands.mapAmount(deltas, currency, amount);
@@ -155,8 +153,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 );
                 amount0 = Commands.mapAmount(deltas, key.currency0, amount0);
                 amount1 = Commands.mapAmount(deltas, key.currency1, amount1);
-                IPoolManager.BalanceDelta memory delta = donate(key, amount0, amount1);
-                deltas = _accountPoolBalanceDelta(deltas, key, delta);
+                deltas = _accountPoolBalanceDelta(deltas, key, donate(key, amount0, amount1));
             } else {
                 revert InvalidCommand();
             }

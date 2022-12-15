@@ -40,7 +40,7 @@ library Commands {
         CurrencyDelta[] memory deltas,
         IPoolManager.PoolKey memory key,
         IPoolManager.SwapParams memory params
-    ) internal view {
+    ) internal pure {
         bool zeroForOne = params.zeroForOne;
         int256 amountSpecified = params.amountSpecified;
         if (amountSpecified == EXACT_INPUT_ABS_DELTA) {
