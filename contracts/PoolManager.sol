@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.19;
 
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
@@ -33,9 +33,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    mapping(bytes32 => Pool.State) public pools;
+    mapping(bytes32 id => Pool.State) public pools;
 
-    mapping(Currency => uint256) public override protocolFeesAccrued;
+    mapping(Currency currency => uint256) public override protocolFeesAccrued;
     IProtocolFeeController public protocolFeeController;
 
     uint256 private immutable controllerGasLimit;
@@ -105,7 +105,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    mapping(Currency => uint256) public override reservesOf;
+    mapping(Currency currency => uint256) public override reservesOf;
 
     /// @inheritdoc IPoolManager
     address[] public override lockedBy;
@@ -119,12 +119,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
     struct LockState {
         uint256 nonzeroDeltaCount;
-        mapping(Currency => int256) currencyDelta;
+        mapping(Currency currency => int256) currencyDelta;
     }
 
     /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
     /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
-    mapping(uint256 => LockState) private lockStates;
+    mapping(uint256 index => LockState) private lockStates;
 
     /// @inheritdoc IPoolManager
     function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
