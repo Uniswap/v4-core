@@ -36,15 +36,15 @@ contract TestBitMath is Test, GasSnapshot {
     }
 
     function testMsbGas() public {
-        snapStart("BitMathMostSignificantBitSmallNumber");
+        snapStart('BitMathMostSignificantBitSmallNumber');
         BitMath.mostSignificantBit(3568);
         snapEnd();
 
-        snapStart("BitMathMostSignificantBitMaxUint128");
+        snapStart('BitMathMostSignificantBitMaxUint128');
         BitMath.mostSignificantBit(type(uint128).max);
         snapEnd();
 
-        snapStart("BitMathMostSignificantBitMaxUint256");
+        snapStart('BitMathMostSignificantBitMaxUint256');
         BitMath.mostSignificantBit(type(uint256).max);
         snapEnd();
     }
@@ -79,21 +79,21 @@ contract TestBitMath is Test, GasSnapshot {
     }
 
     function testLsbGas() public {
-        snapStart("BitMathLeastSignificantBitSmallNumber");
+        snapStart('BitMathLeastSignificantBitSmallNumber');
         BitMath.leastSignificantBit(3568);
         snapEnd();
 
-        snapStart("BitMathLeastSignificantBitMaxUint128");
+        snapStart('BitMathLeastSignificantBitMaxUint128');
         BitMath.leastSignificantBit(type(uint128).max);
         snapEnd();
 
-        snapStart("BitMathLeastSignificantBitMaxUint256");
+        snapStart('BitMathLeastSignificantBitMaxUint256');
         BitMath.leastSignificantBit(type(uint256).max);
         snapEnd();
     }
 
     function mostSignificantBitReference(uint256 x) private pure returns (uint256) {
-        uint i = 0;
+        uint256 i = 0;
         while ((x >>= 1) > 0) {
             ++i;
         }
@@ -103,7 +103,7 @@ contract TestBitMath is Test, GasSnapshot {
     function leastSignificantBitReference(uint256 x) private pure returns (uint256) {
         require(x > 0, 'BitMath: zero has no least significant bit');
 
-        uint i = 0;
+        uint256 i = 0;
         while ((x >> i) & 1 == 0) {
             ++i;
         }
