@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.15;
+pragma solidity =0.8.19;
 
 import {CurrencyLibrary, Currency} from '../libraries/CurrencyLibrary.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';

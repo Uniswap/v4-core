@@ -1,4 +1,4 @@
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.19;
 
 import {TestERC20} from '../../../contracts/test/TestERC20.sol';
 import {Currency} from '../../../contracts/libraries/CurrencyLibrary.sol';

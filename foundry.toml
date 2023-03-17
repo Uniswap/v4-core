@@ -1,7 +1,7 @@
 [profile.default]
 src = 'contracts'
 out = 'foundry-out'
-solc_version = '0.8.15'
+solc_version = '0.8.19'
 optimizer_runs = 800
 ffi = true
 fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}]
