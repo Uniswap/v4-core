@@ -33,11 +33,11 @@ export default {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
   solidity: {
-    version: foundryConfig.default.solc_version,
+    version: foundryConfig.profile.default.solc_version,
     settings: {
       optimizer: {
         enabled: true,
-        runs: foundryConfig.default.optimizer_runs,
+        runs: foundryConfig.profile.default.optimizer_runs,
       },
       metadata: {
         // do not include the metadata hash, since this is machine dependent
