@@ -84,11 +84,9 @@ contract OracleTest {
         cardinalityNext = observations.grow(cardinalityNext, _cardinalityNext);
     }
 
-    function observe(uint32[] calldata secondsAgos)
-        external
-        view
-        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
-    {
+    function observe(
+        uint32[] calldata secondsAgos
+    ) external view returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) {
         return observations.observe(time, secondsAgos, tick, index, liquidity, cardinality);
     }
 

@@ -23,11 +23,7 @@ contract EmptyTestHooks is IHooks {
         );
     }
 
-    function beforeInitialize(
-        address,
-        IPoolManager.PoolKey memory,
-        uint160
-    ) external pure override returns (bytes4) {
+    function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external pure override returns (bytes4) {
         return IHooks.beforeInitialize.selector;
     }
 

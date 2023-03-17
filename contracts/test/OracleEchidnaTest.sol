@@ -13,11 +13,7 @@ contract OracleEchidnaTest {
         oracle = new OracleTest();
     }
 
-    function initialize(
-        uint32 time,
-        int24 tick,
-        uint128 liquidity
-    ) external {
+    function initialize(uint32 time, int24 tick, uint128 liquidity) external {
         oracle.initialize(OracleTest.InitializeParams({time: time, tick: tick, liquidity: liquidity}));
         initialized = true;
     }
@@ -28,11 +24,7 @@ contract OracleEchidnaTest {
     }
 
     // write an observation, then change tick and liquidity
-    function update(
-        uint32 advanceTimeBy,
-        int24 tick,
-        uint128 liquidity
-    ) external {
+    function update(uint32 advanceTimeBy, int24 tick, uint128 liquidity) external {
         timePassed += advanceTimeBy;
         oracle.update(OracleTest.UpdateParams({advanceTimeBy: advanceTimeBy, tick: tick, liquidity: liquidity}));
     }
