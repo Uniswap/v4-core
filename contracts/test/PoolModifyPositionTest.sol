@@ -21,11 +21,10 @@ contract PoolModifyPositionTest is ILockCallback {
         IPoolManager.ModifyPositionParams params;
     }
 
-    function modifyPosition(IPoolManager.PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
-        external
-        payable
-        returns (IPoolManager.BalanceDelta memory delta)
-    {
+    function modifyPosition(
+        IPoolManager.PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params
+    ) external payable returns (IPoolManager.BalanceDelta memory delta) {
         delta = abi.decode(
             manager.lock(abi.encode(CallbackData(msg.sender, key, params))),
             (IPoolManager.BalanceDelta)

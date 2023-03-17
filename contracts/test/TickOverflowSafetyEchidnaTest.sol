@@ -34,11 +34,7 @@ contract TickOverflowSafetyEchidnaTest {
         totalGrowth1 += amount;
     }
 
-    function setPosition(
-        int24 tickLower,
-        int24 tickUpper,
-        int128 liquidityDelta
-    ) external {
+    function setPosition(int24 tickLower, int24 tickUpper, int128 liquidityDelta) external {
         require(tickLower > MIN_TICK);
         require(tickUpper < MAX_TICK);
         require(tickLower < tickUpper);

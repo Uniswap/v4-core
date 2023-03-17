@@ -18,11 +18,7 @@ library CurrencyLibrary {
 
     Currency public constant NATIVE = Currency.wrap(address(0));
 
-    function transfer(
-        Currency currency,
-        address to,
-        uint256 amount
-    ) internal {
+    function transfer(Currency currency, address to, uint256 amount) internal {
         if (currency.isNative()) {
             (bool success, ) = to.call{value: amount}('');
             if (!success) revert NativeTransferFailed();

@@ -23,11 +23,7 @@ contract PoolTakeTest is ILockCallback {
         uint256 amount1;
     }
 
-    function take(
-        IPoolManager.PoolKey memory key,
-        uint256 amount0,
-        uint256 amount1
-    ) external payable {
+    function take(IPoolManager.PoolKey memory key, uint256 amount0, uint256 amount1) external payable {
         manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
     }
 

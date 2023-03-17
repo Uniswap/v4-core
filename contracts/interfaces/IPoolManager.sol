@@ -101,14 +101,7 @@ interface IPoolManager is IERC1155 {
     function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(bytes32 id)
-        external
-        view
-        returns (
-            uint160 sqrtPriceX96,
-            int24 tick,
-            uint8 protocolFee
-        );
+    function getSlot0(bytes32 id) external view returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
@@ -167,9 +160,10 @@ interface IPoolManager is IERC1155 {
     }
 
     /// @notice Modify the position for the given pool
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
-        external
-        returns (BalanceDelta memory delta);
+    function modifyPosition(
+        PoolKey memory key,
+        ModifyPositionParams memory params
+    ) external returns (BalanceDelta memory delta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -181,26 +175,14 @@ interface IPoolManager is IERC1155 {
     function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta memory delta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
-    function donate(
-        PoolKey memory key,
-        uint256 amount0,
-        uint256 amount1
-    ) external returns (BalanceDelta memory delta);
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1) external returns (BalanceDelta memory delta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
-    function take(
-        Currency currency,
-        address to,
-        uint256 amount
-    ) external;
+    function take(Currency currency, address to, uint256 amount) external;
 
     /// @notice Called by the user to move value into ERC1155 balance
-    function mint(
-        Currency token,
-        address to,
-        uint256 amount
-    ) external;
+    function mint(Currency token, address to, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
