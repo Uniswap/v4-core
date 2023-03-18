@@ -1,5 +1,6 @@
 pragma solidity ^0.8.15;
 
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from 'forge-std/Test.sol';
 import {Vm} from 'forge-std/Vm.sol';
 import {Hooks} from '../../contracts/libraries/Hooks.sol';
@@ -16,7 +17,7 @@ import {PoolSwapTest} from '../../contracts/test/PoolSwapTest.sol';
 import {PoolDonateTest} from '../../contracts/test/PoolDonateTest.sol';
 import {Deployers} from './utils/Deployers.sol';
 
-contract HooksTest is Test, Deployers {
+contract HooksTest is Test, Deployers, GasSnapshot {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
     uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
     MockHooks mockHooks;
@@ -128,6 +129,374 @@ contract HooksTest is Test, Deployers {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         donateRouter.donate(key, 100, 200);
+    }
+
+    // hook validation
+    function testValidateHookAddressNoHooks(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressBeforeInitialize(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x80 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: true,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressAfterInitialize(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x40 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: true,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressBeforeAndAfterInitialize(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0xC0 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: true,
+          afterInitialize: true,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressBeforeModify(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x20 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: true,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressAfterModify(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x10 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: true,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressBeforeAndAfterModify(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x30 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: true,
+          afterModifyPosition: true,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressBeforeSwap(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x08 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: true,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressAfterSwap(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x04 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: true,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressBeforeAndAfterSwap(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x0c << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: true,
+          afterSwap: true,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressBeforeDonate(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x02 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: true,
+          afterDonate: false
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressAfterDonate(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x01 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: true
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressBeforeAndAfterDonate(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x03 << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: true,
+          afterDonate: true
+        }));
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressAllHooks(uint152 preAddr) public {
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0xfF << 152)));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: true,
+          afterInitialize: true,
+          beforeModifyPosition: true,
+          afterModifyPosition: true,
+          beforeSwap: true,
+          afterSwap: true,
+          beforeDonate: true,
+          afterDonate: true
+        }));
+        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
+    function testValidateHookAddressFailsAllHooks(uint152 preAddr, uint8 mask) public {
+        vm.assume(mask != 0xff);
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 152)));
+        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: true,
+          afterInitialize: true,
+          beforeModifyPosition: true,
+          afterModifyPosition: true,
+          beforeSwap: true,
+          afterSwap: true,
+          beforeDonate: true,
+          afterDonate: true
+        }));
+    }
+
+    function testValidateHookAddressFailsNoHooks(uint152 preAddr, uint8 mask) public {
+        vm.assume(mask != 0);
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 152)));
+        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
+        Hooks.validateHookAddress(hookAddr, Hooks.Calls({
+          beforeInitialize: false,
+          afterInitialize: false,
+          beforeModifyPosition: false,
+          afterModifyPosition: false,
+          beforeSwap: false,
+          afterSwap: false,
+          beforeDonate: false,
+          afterDonate: false
+        }));
+    }
+
+    function testGas() public {
+        snapStart("HooksShouldCallBeforeSwap");
+        Hooks.shouldCallBeforeSwap(IHooks(address(0)));
+        snapEnd();
+    }
+
+    function testIsValidHookAddressAnyFlags() public {
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x8000000000000000000000000000000000000000)));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x4000000000000000000000000000000000000000)));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x2000000000000000000000000000000000000000)));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x1000000000000000000000000000000000000000)));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x0800000000000000000000000000000000000000)));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x0200000000000000000000000000000000000000)));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x0100000000000000000000000000000000000000)));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0xf09840a85d5Af5bF1d1762f925bdaDdC4201f984)));
+    }
+
+    function testIsValidHookAddressZeroAddrsss() public {
+        assertTrue(Hooks.isValidHookAddress(IHooks(address(0))));
+    }
+
+    function testInvalidIfNoFlags() public {
+      assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001)));
+      assertFalse(Hooks.isValidHookAddress(IHooks(0x0010000000000000000000000000000000000001)));
+      assertFalse(Hooks.isValidHookAddress(IHooks(0x009840A85D5af5BF1D1762f925BDaddC4201f984)));
     }
 
     function addLiquidity(
