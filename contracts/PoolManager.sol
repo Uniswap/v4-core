@@ -5,6 +5,7 @@ import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
 import {SafeCast} from './libraries/SafeCast.sol';
 import {Position} from './libraries/Position.sol';
+import {Q96} from './libraries/FixedPoint96.sol';
 import {Currency, CurrencyLibrary} from './libraries/CurrencyLibrary.sol';
 
 import {NoDelegateCall} from './NoDelegateCall.sol';
@@ -49,10 +50,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getSlot0(bytes32 id) external view override returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee) {
+    function getSlot0(bytes32 id) external view override returns (Q96 sqrtPrice, int24 tick, uint8 protocolFee) {
         Pool.Slot0 memory slot0 = pools[id].slot0;
 
-        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee);
+        return (slot0.sqrtPrice, slot0.tick, slot0.protocolFee);
     }
 
     /// @inheritdoc IPoolManager
@@ -71,23 +72,23 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
+    function initialize(PoolKey memory key, Q96 sqrtPrice) external override returns (int24 tick) {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
         if (!key.hooks.isValidHookAddress()) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
-            if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96) != IHooks.beforeInitialize.selector) {
+            if (key.hooks.beforeInitialize(msg.sender, key, sqrtPrice) != IHooks.beforeInitialize.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
 
         bytes32 id = key.toId();
-        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
+        tick = pools[id].initialize(sqrtPrice, fetchPoolProtocolFee(key));
 
         if (key.hooks.shouldCallAfterInitialize()) {
-            if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
+            if (key.hooks.afterInitialize(msg.sender, key, sqrtPrice, tick) != IHooks.afterInitialize.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -226,7 +227,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
-                sqrtPriceLimitX96: params.sqrtPriceLimitX96
+                sqrtPriceLimit: params.sqrtPriceLimit
             })
         );
 
@@ -244,7 +245,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit Swap(poolId, msg.sender, delta.amount0, delta.amount1, state.sqrtPriceX96, state.liquidity, state.tick);
+        emit Swap(poolId, msg.sender, delta.amount0, delta.amount1, state.sqrtPrice, state.liquidity, state.tick);
     }
 
     /// @inheritdoc IPoolManager

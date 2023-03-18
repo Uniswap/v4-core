@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
+import {Q96, FixedPoint96} from './FixedPoint96.sol';
+
 /// @title Math library for computing sqrt prices from ticks and vice versa
 /// @notice Computes sqrt price for ticks of size 1.0001, i.e. sqrt(1.0001^tick) as fixed point Q64.96 numbers. Supports
 /// prices between 2**-128 and 2**128
@@ -16,9 +18,9 @@ library TickMath {
     int24 internal constant MAX_TICK = -MIN_TICK;
 
     /// @dev The minimum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MIN_TICK)
-    uint160 internal constant MIN_SQRT_RATIO = 4295128739;
+    Q96 internal constant MIN_SQRT_RATIO = Q96.wrap(4295128739);
     /// @dev The maximum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MAX_TICK)
-    uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
+    Q96 internal constant MAX_SQRT_RATIO = Q96.wrap(1461446703485210103287273052203988822378723970342);
 
     /// @notice Given a tickSpacing, compute the maximum usable tick
     function maxUsableTick(int24 tickSpacing) internal pure returns (int24) {
@@ -37,9 +39,9 @@ library TickMath {
     /// @notice Calculates sqrt(1.0001^tick) * 2^96
     /// @dev Throws if |tick| > max tick
     /// @param tick The input tick for the above formula
-    /// @return sqrtPriceX96 A Fixed point Q64.96 number representing the sqrt of the ratio of the two assets (currency1/currency0)
+    /// @return sqrtPrice A Fixed point Q64.96 number representing the sqrt of the ratio of the two assets (currency1/currency0)
     /// at the given tick
-    function getSqrtRatioAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
+    function getSqrtRatioAtTick(int24 tick) internal pure returns (Q96 sqrtPrice) {
         unchecked {
             uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
             if (absTick > uint256(int256(MAX_TICK))) revert InvalidTick();
@@ -72,20 +74,20 @@ library TickMath {
             // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
             // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
             // we round up in the division so getTickAtSqrtRatio of the output price is always consistent
-            sqrtPriceX96 = uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1));
+            sqrtPrice = Q96.wrap(uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1)));
         }
     }
 
     /// @notice Calculates the greatest tick value such that getRatioAtTick(tick) <= ratio
-    /// @dev Throws in case sqrtPriceX96 < MIN_SQRT_RATIO, as MIN_SQRT_RATIO is the lowest value getRatioAtTick may
+    /// @dev Throws in case sqrtPrice < MIN_SQRT_RATIO, as MIN_SQRT_RATIO is the lowest value getRatioAtTick may
     /// ever return.
-    /// @param sqrtPriceX96 The sqrt ratio for which to compute the tick as a Q64.96
+    /// @param sqrtPrice The sqrt ratio for which to compute the tick as a Q64.96
     /// @return tick The greatest tick for which the ratio is less than or equal to the input ratio
-    function getTickAtSqrtRatio(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
+    function getTickAtSqrtRatio(Q96 sqrtPrice) internal pure returns (int24 tick) {
         unchecked {
             // second inequality must be < because the price can never reach the price at the max tick
-            if (sqrtPriceX96 < MIN_SQRT_RATIO || sqrtPriceX96 >= MAX_SQRT_RATIO) revert InvalidSqrtRatio();
-            uint256 ratio = uint256(sqrtPriceX96) << 32;
+            if (sqrtPrice < MIN_SQRT_RATIO || sqrtPrice >= MAX_SQRT_RATIO) revert InvalidSqrtRatio();
+            uint256 ratio = uint256(Q96.unwrap(sqrtPrice)) << 32;
 
             uint256 r = ratio;
             uint256 msb = 0;
@@ -224,7 +226,7 @@ library TickMath {
             int24 tickLow = int24((log_sqrt10001 - 3402992956809132418596140100660247210) >> 128);
             int24 tickHi = int24((log_sqrt10001 + 291339464771989622907027621153398088495) >> 128);
 
-            tick = tickLow == tickHi ? tickLow : getSqrtRatioAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
+            tick = tickLow == tickHi ? tickLow : getSqrtRatioAtTick(tickHi) <= sqrtPrice ? tickHi : tickLow;
         }
     }
 }

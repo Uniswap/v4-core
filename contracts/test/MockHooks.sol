@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
+import {Q96} from '../libraries/FixedPoint96.sol';
 import {Hooks} from '../libraries/Hooks.sol';
 import {IHooks} from '../interfaces/IHooks.sol';
 import {IPoolManager} from '../interfaces/IPoolManager.sol';
@@ -9,7 +10,7 @@ contract MockHooks is IHooks {
     using Hooks for IHooks;
     mapping(bytes4 => bytes4) public returnValues;
 
-    function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external view override returns (bytes4) {
+    function beforeInitialize(address, IPoolManager.PoolKey memory, Q96) external view override returns (bytes4) {
         bytes4 selector = MockHooks.beforeInitialize.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
@@ -17,7 +18,7 @@ contract MockHooks is IHooks {
     function afterInitialize(
         address,
         IPoolManager.PoolKey memory,
-        uint160,
+        Q96,
         int24
     ) external view override returns (bytes4) {
         bytes4 selector = MockHooks.afterInitialize.selector;
