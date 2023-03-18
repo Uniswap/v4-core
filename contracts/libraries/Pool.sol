@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {SafeCast} from "./SafeCast.sol";
-import {TickBitmap} from "./TickBitmap.sol";
-import {Position} from "./Position.sol";
-import {FullMath} from "./FullMath.sol";
-import {FixedPoint128} from "./FixedPoint128.sol";
-import {TickMath} from "./TickMath.sol";
-import {SqrtPriceMath} from "./SqrtPriceMath.sol";
-import {SwapMath} from "./SwapMath.sol";
-import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {SafeCast} from './SafeCast.sol';
+import {TickBitmap} from './TickBitmap.sol';
+import {Position} from './Position.sol';
+import {FullMath} from './FullMath.sol';
+import {FixedPoint128} from './FixedPoint128.sol';
+import {Q96, FixedPoint96} from './FixedPoint96.sol';
+import {TickMath} from './TickMath.sol';
+import {SqrtPriceMath} from './SqrtPriceMath.sol';
+import {SwapMath} from './SwapMath.sol';
+import {IPoolManager} from '../interfaces/IPoolManager.sol';
 
 library Pool {
     using SafeCast for *;
@@ -46,21 +47,21 @@ library Pool {
     /// @notice Thrown when trying to swap amount of 0
     error SwapAmountCannotBeZero();
 
-    /// @notice Thrown when sqrtPriceLimitX96 on a swap has already exceeded its limit
-    /// @param sqrtPriceCurrentX96 The invalid, already surpassed sqrtPriceLimitX96
-    /// @param sqrtPriceLimitX96 The invalid, already surpassed sqrtPriceLimitX96
-    error PriceLimitAlreadyExceeded(uint160 sqrtPriceCurrentX96, uint160 sqrtPriceLimitX96);
+    /// @notice Thrown when sqrtPriceLimit on a swap has already exceeded its limit
+    /// @param sqrtPriceCurrent The invalid, already surpassed sqrtPriceLimit
+    /// @param sqrtPriceLimit The invalid, already surpassed sqrtPriceLimit
+    error PriceLimitAlreadyExceeded(Q96 sqrtPriceCurrent, Q96 sqrtPriceLimit);
 
-    /// @notice Thrown when sqrtPriceLimitX96 lies outside of valid tick/price range
-    /// @param sqrtPriceLimitX96 The invalid, out-of-bounds sqrtPriceLimitX96
-    error PriceLimitOutOfBounds(uint160 sqrtPriceLimitX96);
+    /// @notice Thrown when sqrtPriceLimit lies outside of valid tick/price range
+    /// @param sqrtPriceLimit The invalid, out-of-bounds sqrtPriceLimit
+    error PriceLimitOutOfBounds(Q96 sqrtPriceLimit);
 
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
     struct Slot0 {
         // the current price
-        uint160 sqrtPriceX96;
+        Q96 sqrtPrice;
         // the current tick
         int24 tick;
         // the current protocol fee as a percentage of the swap fee taken on withdrawal
@@ -102,16 +103,20 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint8 protocolFee) internal returns (int24 tick) {
-        if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
+    function initialize(
+        State storage self,
+        Q96 sqrtPrice,
+        uint8 protocolFee
+    ) internal returns (int24 tick) {
+        if (self.slot0.sqrtPrice != Q96.wrap(0)) revert PoolAlreadyInitialized();
 
-        tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+        tick = TickMath.getTickAtSqrtRatio(sqrtPrice);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, lastSwapTimestamp: 0});
+        self.slot0 = Slot0({sqrtPriceX96: sqrtPrice, tick: tick, protocolFee: protocolFee, lastSwapTimestamp: 0});
     }
 
     function setProtocolFee(State storage self, uint8 newProtocolFee) internal {
-        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
+        if (self.slot0.sqrtPrice == Q96.wrap(0)) revert PoolNotInitialized();
 
         self.slot0.protocolFee = newProtocolFee;
     }
@@ -144,7 +149,7 @@ library Pool {
         internal
         returns (IPoolManager.BalanceDelta memory result)
     {
-        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
+        if (self.slot0.sqrtPrice == Q96.wrap(0)) revert PoolNotInitialized();
 
         checkTicks(params.tickLower, params.tickUpper);
 
@@ -206,10 +211,14 @@ library Pool {
                 );
             } else if (self.slot0.tick < params.tickUpper) {
                 result.amount0 += SqrtPriceMath.getAmount0Delta(
-                    self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
+                    self.slot0.sqrtPrice,
+                    TickMath.getSqrtRatioAtTick(params.tickUpper),
+                    params.liquidityDelta
                 );
                 result.amount1 += SqrtPriceMath.getAmount1Delta(
-                    TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
+                    TickMath.getSqrtRatioAtTick(params.tickLower),
+                    self.slot0.sqrtPrice,
+                    params.liquidityDelta
                 );
 
                 self.liquidity = params.liquidityDelta < 0
@@ -241,7 +250,7 @@ library Pool {
         // the amount already swapped out/in of the output/input asset
         int256 amountCalculated;
         // current sqrt(price)
-        uint160 sqrtPriceX96;
+        Q96 sqrtPrice;
         // the tick associated with the current price
         int24 tick;
         // the global fee growth of the input token
@@ -252,13 +261,13 @@ library Pool {
 
     struct StepComputations {
         // the price at the beginning of the step
-        uint160 sqrtPriceStartX96;
+        Q96 sqrtPriceStart;
         // the next tick to swap to from the current tick in the swap direction
         int24 tickNext;
         // whether tickNext is initialized or not
         bool initialized;
         // sqrt(price) for the next tick (1/0)
-        uint160 sqrtPriceNextX96;
+        Q96 sqrtPriceNext;
         // how much is being swapped in in this step
         uint256 amountIn;
         // how much is being swapped out
@@ -272,7 +281,7 @@ library Pool {
         int24 tickSpacing;
         bool zeroForOne;
         int256 amountSpecified;
-        uint160 sqrtPriceLimitX96;
+        Q96 sqrtPriceLimit;
     }
 
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
@@ -283,21 +292,17 @@ library Pool {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
-        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
+        if (self.slot0.sqrtPrice == Q96.wrap(0)) revert PoolNotInitialized();
         if (params.zeroForOne) {
-            if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
-            }
-            if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO) {
-                revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
-            }
+            if (params.sqrtPriceLimit >= slot0Start.sqrtPrice)
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPrice, params.sqrtPriceLimit);
+            if (params.sqrtPriceLimit <= TickMath.MIN_SQRT_RATIO)
+                revert PriceLimitOutOfBounds(params.sqrtPriceLimit);
         } else {
-            if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
-            }
-            if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
-                revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
-            }
+            if (params.sqrtPriceLimit <= slot0Start.sqrtPrice)
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPrice, params.sqrtPriceLimit);
+            if (params.sqrtPriceLimit >= TickMath.MAX_SQRT_RATIO)
+                revert PriceLimitOutOfBounds(params.sqrtPriceLimit);
         }
 
         SwapCache memory cache = SwapCache({
@@ -310,17 +315,17 @@ library Pool {
         state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,
             amountCalculated: 0,
-            sqrtPriceX96: slot0Start.sqrtPriceX96,
+            sqrtPrice: slot0Start.sqrtPrice,
             tick: slot0Start.tick,
             feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
             liquidity: cache.liquidityStart
         });
 
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
-        while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
+        while (state.amountSpecifiedRemaining != 0 && state.sqrtPrice != params.sqrtPriceLimit) {
             StepComputations memory step;
 
-            step.sqrtPriceStartX96 = state.sqrtPriceX96;
+            step.sqrtPriceStart = state.sqrtPrice;
 
             (step.tickNext, step.initialized) =
                 self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, params.zeroForOne);
@@ -333,16 +338,18 @@ library Pool {
             }
 
             // get the price for the next tick
-            step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
+            step.sqrtPriceNext = TickMath.getSqrtRatioAtTick(step.tickNext);
 
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
-            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
-                state.sqrtPriceX96,
+            (state.sqrtPrice, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
+                state.sqrtPrice,
                 (
                     params.zeroForOne
-                        ? step.sqrtPriceNextX96 < params.sqrtPriceLimitX96
-                        : step.sqrtPriceNextX96 > params.sqrtPriceLimitX96
-                ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
+                        ? step.sqrtPriceNext < params.sqrtPriceLimit
+                        : step.sqrtPriceNext > params.sqrtPriceLimit
+                )
+                    ? params.sqrtPriceLimit
+                    : step.sqrtPriceNext,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
                 params.fee
@@ -380,7 +387,7 @@ library Pool {
             }
 
             // shift tick if we reached the next price
-            if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
+            if (state.sqrtPrice == step.sqrtPriceNext) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
                     int128 liquidityNet = Pool.crossTick(
@@ -403,14 +410,14 @@ library Pool {
                 unchecked {
                     state.tick = params.zeroForOne ? step.tickNext - 1 : step.tickNext;
                 }
-            } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
+            } else if (state.sqrtPrice != step.sqrtPriceStart) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
-                state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
+                state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPrice);
             }
         }
 
-        (self.slot0.sqrtPriceX96, self.slot0.tick, self.slot0.lastSwapTimestamp) =
-            (state.sqrtPriceX96, state.tick, uint40(block.timestamp));
+        (self.slot0.sqrtPrice, self.slot0.tick, self.slot0.lastSwapTimestamp) =
+            (state.sqrtPrice, state.tick, uint40(block.timestamp));
 
         // update liquidity if it changed
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;

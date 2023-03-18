@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.6.2;
 
-import {Currency} from "../libraries/CurrencyLibrary.sol";
-import {Pool} from "../libraries/Pool.sol";
-import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import {IHooks} from "./IHooks.sol";
+import {Currency} from '../libraries/CurrencyLibrary.sol';
+import {Pool} from '../libraries/Pool.sol';
+import {Q96} from '../libraries/FixedPoint96.sol';
+import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
+import {IHooks} from './IHooks.sol';
 
 interface IPoolManager is IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256
@@ -62,7 +63,7 @@ interface IPoolManager is IERC1155 {
     /// @param sender The address that initiated the swap call, and that received the callback
     /// @param amount0 The delta of the currency0 balance of the pool
     /// @param amount1 The delta of the currency1 balance of the pool
-    /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
+    /// @param sqrtPrice The sqrt(price) of the pool after the swap, as a Q64.96
     /// @param liquidity The liquidity of the pool after the swap
     /// @param tick The log base 1.0001 of the price of the pool after the swap
     event Swap(
@@ -70,7 +71,7 @@ interface IPoolManager is IERC1155 {
         address indexed sender,
         int256 amount0,
         int256 amount1,
-        uint160 sqrtPriceX96,
+        Q96 sqrtPrice,
         uint128 liquidity,
         int24 tick,
         uint24 fee
@@ -101,7 +102,7 @@ interface IPoolManager is IERC1155 {
     function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(bytes32 id) external view returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee);
+    function getSlot0(bytes32 id) external view returns (Q96 sqrtPrice, int24 tick, uint8 protocolFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
@@ -126,7 +127,7 @@ interface IPoolManager is IERC1155 {
     function reservesOf(Currency currency) external view returns (uint256);
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
+    function initialize(PoolKey memory key, Q96 sqrtPrice) external returns (int24 tick);
 
     /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
     /// @param index The index of the locker, also known as the id of the locker
@@ -165,7 +166,7 @@ interface IPoolManager is IERC1155 {
     struct SwapParams {
         bool zeroForOne;
         int256 amountSpecified;
-        uint160 sqrtPriceLimitX96;
+        Q96 sqrtPriceLimit;
     }
 
     /// @notice Swap against the given pool
