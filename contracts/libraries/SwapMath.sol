@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.19;
 
 import {FullMath} from './FullMath.sol';
 import {SqrtPriceMath} from './SqrtPriceMath.sol';
@@ -24,16 +24,7 @@ library SwapMath {
         uint128 liquidity,
         int256 amountRemaining,
         uint24 feePips
-    )
-        internal
-        pure
-        returns (
-            uint160 sqrtRatioNextX96,
-            uint256 amountIn,
-            uint256 amountOut,
-            uint256 feeAmount
-        )
-    {
+    ) internal pure returns (uint160 sqrtRatioNextX96, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
         unchecked {
             bool zeroForOne = sqrtRatioCurrentX96 >= sqrtRatioTargetX96;
             bool exactIn = amountRemaining >= 0;

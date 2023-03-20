@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.15;
+pragma solidity =0.8.19;
 
 import {CurrencyLibrary, Currency} from '../libraries/CurrencyLibrary.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
@@ -21,11 +21,10 @@ contract PoolModifyPositionTest is ILockCallback {
         IPoolManager.ModifyPositionParams params;
     }
 
-    function modifyPosition(IPoolManager.PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
-        external
-        payable
-        returns (IPoolManager.BalanceDelta memory delta)
-    {
+    function modifyPosition(
+        IPoolManager.PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params
+    ) external payable returns (IPoolManager.BalanceDelta memory delta) {
         delta = abi.decode(
             manager.lock(abi.encode(CallbackData(msg.sender, key, params))),
             (IPoolManager.BalanceDelta)

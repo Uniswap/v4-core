@@ -1,4 +1,4 @@
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.19;
 
 import {Test} from 'forge-std/Test.sol';
 import {Vm} from 'forge-std/Vm.sol';
@@ -53,28 +53,28 @@ contract HooksTest is Test, Deployers {
     }
 
     function testModifyPositionSucceedsWithHook() public {
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10**18);
+        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
     }
 
     function testFailBeforeModifyPositionInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, bytes4(0xdeadbeef));
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10**18);
+        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
     }
 
     function testFailAfterModifyPositionInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, bytes4(0xdeadbeef));
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10**18);
+        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
     }
 
     function testSwapSucceedsWithHook() public {
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10**18);
+        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
@@ -84,8 +84,8 @@ contract HooksTest is Test, Deployers {
 
     function testFailBeforeSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10**18);
+        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
@@ -95,8 +95,8 @@ contract HooksTest is Test, Deployers {
 
     function testFailAfterSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, bytes4(0xdeadbeef));
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10**18);
+        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
@@ -130,15 +130,11 @@ contract HooksTest is Test, Deployers {
         donateRouter.donate(key, 100, 200);
     }
 
-    function addLiquidity(
-        int24 tickLower,
-        int24 tickUpper,
-        int256 amount
-    ) internal {
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10**18);
-        TestERC20(Currency.unwrap(key.currency1)).mint(address(this), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10**18);
+    function addLiquidity(int24 tickLower, int24 tickUpper, int256 amount) internal {
+        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        TestERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(tickLower, tickUpper, amount));
     }
 }

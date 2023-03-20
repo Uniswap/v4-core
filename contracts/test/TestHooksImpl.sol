@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.15;
+pragma solidity =0.8.19;
 
 import {Hooks} from '../libraries/Hooks.sol';
 import {IHooks} from '../interfaces/IHooks.sol';
@@ -23,11 +23,7 @@ contract EmptyTestHooks is IHooks {
         );
     }
 
-    function beforeInitialize(
-        address,
-        IPoolManager.PoolKey memory,
-        uint160
-    ) external pure override returns (bytes4) {
+    function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external pure override returns (bytes4) {
         return IHooks.beforeInitialize.selector;
     }
 

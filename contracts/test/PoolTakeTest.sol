@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.15;
+pragma solidity =0.8.19;
 
 import {Currency, CurrencyLibrary} from '../libraries/CurrencyLibrary.sol';
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
@@ -23,11 +23,7 @@ contract PoolTakeTest is ILockCallback {
         uint256 amount1;
     }
 
-    function take(
-        IPoolManager.PoolKey memory key,
-        uint256 amount0,
-        uint256 amount1
-    ) external payable {
+    function take(IPoolManager.PoolKey memory key, uint256 amount0, uint256 amount1) external payable {
         manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
     }
 
