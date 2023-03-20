@@ -61,6 +61,6 @@
     "snapshots": "UPDATE_SNAPSHOT=1 hardhat test",
     "compile-forge": "forge build",
     "test-forge": "forge test",
-    "prettier": "prettier --write '**/*.sol' && prettier --write '**/*.ts'"
+    "prettier": "prettier --write '(contracts|test)/**/*.sol' && prettier --write 'test/**/*.ts'"
   }
 }
