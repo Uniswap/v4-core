@@ -8,16 +8,16 @@ import {
   PoolManagerReentrancyTest,
   PoolManagerTest,
   PoolModifyPositionTest,
-  ProtocolFeeControllerTest,
   PoolSwapTest,
-  TestERC20,
   PoolTakeTest,
+  ProtocolFeeControllerTest,
+  TestERC20,
 } from '../typechain'
-import { MAX_TICK_SPACING, ADDRESS_ZERO } from './shared/constants'
+import { ADDRESS_ZERO, MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId, MaxUint128 } from './shared/utilities'
 import { deployMockContract, MockedContract, setCode } from './shared/mockContract'
+import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId, MaxUint128 } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -640,7 +640,7 @@ describe('PoolManager', () => {
         )
       )
         .to.emit(manager, 'Swap')
-        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932)
+        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932, 3000)
     })
 
     it('succeeds with native tokens if pool is initialized', async () => {
@@ -668,7 +668,7 @@ describe('PoolManager', () => {
         )
       )
         .to.emit(manager, 'Swap')
-        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932)
+        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932, 3000)
     })
 
     it('succeeds if pool is initialized and hook is provided', async () => {
