@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.15;
+pragma solidity =0.8.19;
 
 import {SafeCast} from './SafeCast.sol';
 import {TickBitmap} from './TickBitmap.sol';
@@ -100,11 +100,7 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(
-        State storage self,
-        uint160 sqrtPriceX96,
-        uint8 protocolFee
-    ) internal returns (int24 tick) {
+    function initialize(State storage self, uint160 sqrtPriceX96, uint8 protocolFee) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
@@ -142,10 +138,10 @@ library Pool {
     /// @dev Effect changes to a position in a pool
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
-    function modifyPosition(State storage self, ModifyPositionParams memory params)
-        internal
-        returns (IPoolManager.BalanceDelta memory result)
-    {
+    function modifyPosition(
+        State storage self,
+        ModifyPositionParams memory params
+    ) internal returns (IPoolManager.BalanceDelta memory result) {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
         checkTicks(params.tickLower, params.tickUpper);
@@ -292,14 +288,10 @@ library Pool {
     }
 
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
-    function swap(State storage self, SwapParams memory params)
-        internal
-        returns (
-            IPoolManager.BalanceDelta memory result,
-            uint256 feeForProtocol,
-            SwapState memory state
-        )
-    {
+    function swap(
+        State storage self,
+        SwapParams memory params
+    ) internal returns (IPoolManager.BalanceDelta memory result, uint256 feeForProtocol, SwapState memory state) {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.19;
 
 import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
 
@@ -18,11 +18,7 @@ library CurrencyLibrary {
 
     Currency public constant NATIVE = Currency.wrap(address(0));
 
-    function transfer(
-        Currency currency,
-        address to,
-        uint256 amount
-    ) internal {
+    function transfer(Currency currency, address to, uint256 amount) internal {
         if (currency.isNative()) {
             (bool success, ) = to.call{value: amount}('');
             if (!success) revert NativeTransferFailed();

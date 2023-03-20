@@ -52,11 +52,10 @@ contract HooksTest {
         return gasBefore - gasleft();
     }
 
-    function getGasCostOfValidateHookAddress(address hookAddress, Hooks.Calls calldata params)
-        external
-        view
-        returns (uint256)
-    {
+    function getGasCostOfValidateHookAddress(
+        address hookAddress,
+        Hooks.Calls calldata params
+    ) external view returns (uint256) {
         uint256 gasBefore = gasleft();
         IHooks(hookAddress).validateHookAddress(params);
         return gasBefore - gasleft();

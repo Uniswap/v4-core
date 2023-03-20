@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.15;
+pragma solidity =0.8.19;
 
 import {SwapMath} from '../libraries/SwapMath.sol';
 
@@ -10,16 +10,7 @@ contract SwapMathTest {
         uint128 liquidity,
         int256 amountRemaining,
         uint24 feePips
-    )
-        external
-        pure
-        returns (
-            uint160 sqrtQ,
-            uint256 amountIn,
-            uint256 amountOut,
-            uint256 feeAmount
-        )
-    {
+    ) external pure returns (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
         return SwapMath.computeSwapStep(sqrtP, sqrtPTarget, liquidity, amountRemaining, feePips);
     }
 

@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.15;
+pragma solidity =0.8.19;
 
 import {FullMath} from '../libraries/FullMath.sol';
 
 contract FullMathEchidnaTest {
-    function checkMulDivRounding(
-        uint256 x,
-        uint256 y,
-        uint256 d
-    ) external pure {
+    function checkMulDivRounding(uint256 x, uint256 y, uint256 d) external pure {
         unchecked {
             require(d > 0);
 
@@ -23,11 +19,7 @@ contract FullMathEchidnaTest {
         }
     }
 
-    function checkMulDiv(
-        uint256 x,
-        uint256 y,
-        uint256 d
-    ) external pure {
+    function checkMulDiv(uint256 x, uint256 y, uint256 d) external pure {
         unchecked {
             require(d > 0);
             uint256 z = FullMath.mulDiv(x, y, d);
@@ -47,11 +39,7 @@ contract FullMathEchidnaTest {
         }
     }
 
-    function checkMulDivRoundingUp(
-        uint256 x,
-        uint256 y,
-        uint256 d
-    ) external pure {
+    function checkMulDivRoundingUp(uint256 x, uint256 y, uint256 d) external pure {
         unchecked {
             require(d > 0);
             uint256 z = FullMath.mulDivRoundingUp(x, y, d);

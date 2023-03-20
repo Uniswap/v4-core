@@ -1,4 +1,4 @@
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.19;
 
 import {TestERC20} from '../../../contracts/test/TestERC20.sol';
 import {Currency} from '../../../contracts/libraries/CurrencyLibrary.sol';
@@ -20,7 +20,7 @@ contract Deployers {
         IHooks hooks,
         uint160 sqrtPriceX96
     ) public returns (IPoolManager.PoolKey memory key, bytes32 id) {
-        TestERC20[] memory tokens = deployTokens(2, 2**255);
+        TestERC20[] memory tokens = deployTokens(2, 2 ** 255);
         key = IPoolManager.PoolKey(
             Currency.wrap(address(tokens[0])),
             Currency.wrap(address(tokens[1])),
@@ -32,14 +32,10 @@ contract Deployers {
         manager.initialize(key, sqrtPriceX96);
     }
 
-    function createFreshPool(IHooks hooks, uint160 sqrtPriceX96)
-        public
-        returns (
-            PoolManager manager,
-            IPoolManager.PoolKey memory key,
-            bytes32 id
-        )
-    {
+    function createFreshPool(
+        IHooks hooks,
+        uint160 sqrtPriceX96
+    ) public returns (PoolManager manager, IPoolManager.PoolKey memory key, bytes32 id) {
         manager = new PoolManager(500000);
         (key, id) = createPool(manager, hooks, sqrtPriceX96);
         return (manager, key, id);
