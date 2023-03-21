@@ -58,6 +58,7 @@
     "snapshots": "UPDATE_SNAPSHOT=1 hardhat test",
     "compile-forge": "forge build",
     "test-forge": "forge test",
-    "prettier": "forge fmt contracts/**/*.sol && forge fmt test/**/*.sol && prettier --write 'test/**/*.ts'"
+    "prettier": "forge fmt contracts/**/*.sol && forge fmt test/**/*.sol && prettier --write 'test/**/*.ts'",
+    "prettier-check": "forge fmt --check contracts/**/*.sol && forge fmt --check test/**/*.sol && prettier --check 'test/**/*.ts'"
   }
 }

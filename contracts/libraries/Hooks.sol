@@ -58,10 +58,9 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
-        return
-            address(hook) == address(0)
-                ? fee != DYNAMIC_FEE // having no hooks is fine, but the fee must not be dynamic
-                : (uint160(address(hook)) >= AFTER_DONATE_FLAG || fee == DYNAMIC_FEE);
+        return address(hook) == address(0)
+            ? fee != DYNAMIC_FEE // having no hooks is fine, but the fee must not be dynamic
+            : (uint160(address(hook)) >= AFTER_DONATE_FLAG || fee == DYNAMIC_FEE);
     }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
