@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.15;
+pragma solidity =0.8.19;
 
-import {Hooks} from '../libraries/Hooks.sol';
-import {IHooks} from '../interfaces/IHooks.sol';
-import {IPoolManager} from '../interfaces/IPoolManager.sol';
+import {Hooks} from "../libraries/Hooks.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 contract EmptyTestHooks is IHooks {
     using Hooks for IHooks;
@@ -23,28 +23,25 @@ contract EmptyTestHooks is IHooks {
         );
     }
 
-    function beforeInitialize(
-        address,
-        IPoolManager.PoolKey memory,
-        uint160
-    ) external pure override returns (bytes4) {
+    function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external pure override returns (bytes4) {
         return IHooks.beforeInitialize.selector;
     }
 
-    function afterInitialize(
-        address,
-        IPoolManager.PoolKey memory,
-        uint160,
-        int24
-    ) external pure override returns (bytes4) {
+    function afterInitialize(address, IPoolManager.PoolKey memory, uint160, int24)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return IHooks.afterInitialize.selector;
     }
 
-    function beforeModifyPosition(
-        address,
-        IPoolManager.PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata
-    ) external pure override returns (bytes4) {
+    function beforeModifyPosition(address, IPoolManager.PoolKey calldata, IPoolManager.ModifyPositionParams calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return IHooks.beforeModifyPosition.selector;
     }
 
@@ -57,11 +54,12 @@ contract EmptyTestHooks is IHooks {
         return IHooks.afterModifyPosition.selector;
     }
 
-    function beforeSwap(
-        address,
-        IPoolManager.PoolKey calldata,
-        IPoolManager.SwapParams calldata
-    ) external pure override returns (bytes4) {
+    function beforeSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return IHooks.beforeSwap.selector;
     }
 
@@ -74,21 +72,21 @@ contract EmptyTestHooks is IHooks {
         return IHooks.afterSwap.selector;
     }
 
-    function beforeDonate(
-        address,
-        IPoolManager.PoolKey calldata,
-        uint256,
-        uint256
-    ) external pure override returns (bytes4) {
+    function beforeDonate(address, IPoolManager.PoolKey calldata, uint256, uint256)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return IHooks.beforeDonate.selector;
     }
 
-    function afterDonate(
-        address,
-        IPoolManager.PoolKey calldata,
-        uint256,
-        uint256
-    ) external pure override returns (bytes4) {
+    function afterDonate(address, IPoolManager.PoolKey calldata, uint256, uint256)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return IHooks.afterDonate.selector;
     }
 }

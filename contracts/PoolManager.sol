@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.19;
 
 import {Hooks} from './libraries/Hooks.sol';
 import {Pool} from './libraries/Pool.sol';
@@ -33,9 +33,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    mapping(bytes32 => Pool.State) public pools;
+    mapping(bytes32 id => Pool.State) public pools;
 
-    mapping(Currency => uint256) public override protocolFeesAccrued;
+    mapping(Currency currency => uint256) public override protocolFeesAccrued;
     IProtocolFeeController public protocolFeeController;
 
     uint256 private immutable controllerGasLimit;
@@ -49,16 +49,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getSlot0(bytes32 id)
-        external
-        view
-        override
-        returns (
-            uint160 sqrtPriceX96,
-            int24 tick,
-            uint8 protocolFee
-        )
-    {
+    function getSlot0(bytes32 id) external view override returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee) {
         Pool.Slot0 memory slot0 = pools[id].slot0;
 
         return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee);
@@ -105,7 +96,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    mapping(Currency => uint256) public override reservesOf;
+    mapping(Currency currency => uint256) public override reservesOf;
 
     /// @inheritdoc IPoolManager
     address[] public override lockedBy;
@@ -119,12 +110,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
     struct LockState {
         uint256 nonzeroDeltaCount;
-        mapping(Currency => int256) currencyDelta;
+        mapping(Currency currency => int256) currencyDelta;
     }
 
     /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
     /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
-    mapping(uint256 => LockState) private lockStates;
+    mapping(uint256 index => LockState) private lockStates;
 
     /// @inheritdoc IPoolManager
     function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
@@ -183,13 +174,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
-        external
-        override
-        noDelegateCall
-        onlyByLocker
-        returns (IPoolManager.BalanceDelta memory delta)
-    {
+    function modifyPosition(
+        PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params
+    ) external override noDelegateCall onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             if (key.hooks.beforeModifyPosition(msg.sender, key, params) != IHooks.beforeModifyPosition.selector) {
                 revert Hooks.InvalidHookResponse();
@@ -219,13 +207,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function swap(PoolKey memory key, IPoolManager.SwapParams memory params)
-        external
-        override
-        noDelegateCall
-        onlyByLocker
-        returns (IPoolManager.BalanceDelta memory delta)
-    {
+    function swap(
+        PoolKey memory key,
+        IPoolManager.SwapParams memory params
+    ) external override noDelegateCall onlyByLocker returns (IPoolManager.BalanceDelta memory delta) {
         if (key.hooks.shouldCallBeforeSwap()) {
             if (key.hooks.beforeSwap(msg.sender, key, params) != IHooks.beforeSwap.selector) {
                 revert Hooks.InvalidHookResponse();
@@ -286,22 +271,14 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function take(
-        Currency currency,
-        address to,
-        uint256 amount
-    ) external override noDelegateCall onlyByLocker {
+    function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
         _accountDelta(currency, amount.toInt256());
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
 
     /// @inheritdoc IPoolManager
-    function mint(
-        Currency currency,
-        address to,
-        uint256 amount
-    ) external override noDelegateCall onlyByLocker {
+    function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
         _accountDelta(currency, amount.toInt256());
         _mint(to, currency.toId(), amount, '');
     }
@@ -320,13 +297,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         _accountDelta(currency, -(amount.toInt256()));
     }
 
-    function onERC1155Received(
-        address,
-        address,
-        uint256 id,
-        uint256 value,
-        bytes calldata
-    ) external returns (bytes4) {
+    function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata) external returns (bytes4) {
         if (msg.sender != address(this)) revert NotPoolManagerToken();
         _burnAndAccount(CurrencyLibrary.fromId(id), value);
         return IERC1155Receiver.onERC1155Received.selector;
@@ -375,11 +346,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    function collectProtocolFees(
-        address recipient,
-        Currency currency,
-        uint256 amount
-    ) external returns (uint256) {
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount) external returns (uint256) {
         if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
 
         amount = (amount == 0) ? protocolFeesAccrued[currency] : amount;

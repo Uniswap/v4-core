@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.5.0;
-import {IHooks} from '../interfaces/IHooks.sol';
-import {IPoolManager} from '../interfaces/IPoolManager.sol';
+
+import {IHooks} from "../interfaces/IHooks.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -41,14 +42,12 @@ library Hooks {
     /// @dev calls param is memory as the function will be called from constructors
     function validateHookAddress(IHooks self, Calls memory calls) internal pure {
         if (
-            calls.beforeInitialize != shouldCallBeforeInitialize(self) ||
-            calls.afterInitialize != shouldCallAfterInitialize(self) ||
-            calls.beforeModifyPosition != shouldCallBeforeModifyPosition(self) ||
-            calls.afterModifyPosition != shouldCallAfterModifyPosition(self) ||
-            calls.beforeSwap != shouldCallBeforeSwap(self) ||
-            calls.afterSwap != shouldCallAfterSwap(self) ||
-            calls.beforeDonate != shouldCallBeforeDonate(self) ||
-            calls.afterDonate != shouldCallAfterDonate(self)
+            calls.beforeInitialize != shouldCallBeforeInitialize(self)
+                || calls.afterInitialize != shouldCallAfterInitialize(self)
+                || calls.beforeModifyPosition != shouldCallBeforeModifyPosition(self)
+                || calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
+                || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
+                || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
