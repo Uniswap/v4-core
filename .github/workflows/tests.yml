@@ -53,6 +53,6 @@ jobs:
           version: nightly
 
       - name: Run tests
-        run: yarn test-forge -vvv
+        run: forge test -vvv
         env:
           FOUNDRY_PROFILE: ci
