@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.5.0;
-import {Hooks} from '../libraries/Hooks.sol';
-import {IHooks} from '../interfaces/IHooks.sol';
+
+import {Hooks} from "../libraries/Hooks.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
 
 contract HooksTest {
     using Hooks for IHooks;

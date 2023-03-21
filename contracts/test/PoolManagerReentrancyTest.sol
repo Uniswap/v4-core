@@ -1,29 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.15;
+pragma solidity =0.8.19;
 
-import {Currency, CurrencyLibrary} from '../libraries/CurrencyLibrary.sol';
-import {IPoolManager} from '../interfaces/IPoolManager.sol';
-import {ILockCallback} from '../interfaces/callback/ILockCallback.sol';
+import {Currency, CurrencyLibrary} from "../libraries/CurrencyLibrary.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 
 contract PoolManagerReentrancyTest is ILockCallback {
     using CurrencyLibrary for Currency;
 
     event LockAcquired(uint256 count);
 
-    function reenter(
-        IPoolManager poolManager,
-        Currency currencyToBorrow,
-        uint256 count
-    ) external {
+    function reenter(IPoolManager poolManager, Currency currencyToBorrow, uint256 count) external {
         helper(poolManager, currencyToBorrow, count, count);
     }
 
-    function helper(
-        IPoolManager poolManager,
-        Currency currencyToBorrow,
-        uint256 total,
-        uint256 count
-    ) internal {
+    function helper(IPoolManager poolManager, Currency currencyToBorrow, uint256 total, uint256 count) internal {
         // check that it is currently already locked `total-count` times, ...
         assert(poolManager.lockedByLength() == total - count);
         poolManager.lock(abi.encode(currencyToBorrow, total, count));
@@ -62,6 +53,6 @@ contract PoolManagerReentrancyTest is ILockCallback {
 
         if (count > 0) helper(IPoolManager(msg.sender), currencyToBorrow, total, count - 1);
 
-        return '';
+        return "";
     }
 }
