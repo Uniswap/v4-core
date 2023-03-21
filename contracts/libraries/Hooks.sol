@@ -11,14 +11,14 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 library Hooks {
     uint24 internal constant DYNAMIC_FEE = type(uint24).max;
 
-    uint256 private constant BEFORE_INITIALIZE_FLAG = 1 << 159;
-    uint256 private constant AFTER_INITIALIZE_FLAG = 1 << 158;
-    uint256 private constant BEFORE_MODIFY_POSITION_FLAG = 1 << 157;
-    uint256 private constant AFTER_MODIFY_POSITION_FLAG = 1 << 156;
-    uint256 private constant BEFORE_SWAP_FLAG = 1 << 155;
-    uint256 private constant AFTER_SWAP_FLAG = 1 << 154;
-    uint256 private constant BEFORE_DONATE_FLAG = 1 << 153;
-    uint256 private constant AFTER_DONATE_FLAG = 1 << 152;
+    uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
+    uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
+    uint256 internal constant BEFORE_MODIFY_POSITION_FLAG = 1 << 157;
+    uint256 internal constant AFTER_MODIFY_POSITION_FLAG = 1 << 156;
+    uint256 internal constant BEFORE_SWAP_FLAG = 1 << 155;
+    uint256 internal constant AFTER_SWAP_FLAG = 1 << 154;
+    uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
+    uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
 
     struct Calls {
         bool beforeInitialize;
