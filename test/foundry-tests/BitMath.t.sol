@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.15;
 
-import {GasSnapshot} from 'forge-gas-snapshot/GasSnapshot.sol';
-import {Test} from 'forge-std/Test.sol';
-import {BitMath} from '../../contracts/libraries/BitMath.sol';
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {Test} from "forge-std/Test.sol";
+import {BitMath} from "../../contracts/libraries/BitMath.sol";
 
 contract TestBitMath is Test, GasSnapshot {
     function testMostSignificantBitZero() public {
@@ -36,15 +36,15 @@ contract TestBitMath is Test, GasSnapshot {
     }
 
     function testMsbGas() public {
-        snapStart('BitMathMostSignificantBitSmallNumber');
+        snapStart("BitMathMostSignificantBitSmallNumber");
         BitMath.mostSignificantBit(3568);
         snapEnd();
 
-        snapStart('BitMathMostSignificantBitMaxUint128');
+        snapStart("BitMathMostSignificantBitMaxUint128");
         BitMath.mostSignificantBit(type(uint128).max);
         snapEnd();
 
-        snapStart('BitMathMostSignificantBitMaxUint256');
+        snapStart("BitMathMostSignificantBitMaxUint256");
         BitMath.mostSignificantBit(type(uint256).max);
         snapEnd();
     }
@@ -79,15 +79,15 @@ contract TestBitMath is Test, GasSnapshot {
     }
 
     function testLsbGas() public {
-        snapStart('BitMathLeastSignificantBitSmallNumber');
+        snapStart("BitMathLeastSignificantBitSmallNumber");
         BitMath.leastSignificantBit(3568);
         snapEnd();
 
-        snapStart('BitMathLeastSignificantBitMaxUint128');
+        snapStart("BitMathLeastSignificantBitMaxUint128");
         BitMath.leastSignificantBit(type(uint128).max);
         snapEnd();
 
-        snapStart('BitMathLeastSignificantBitMaxUint256');
+        snapStart("BitMathLeastSignificantBitMaxUint256");
         BitMath.leastSignificantBit(type(uint256).max);
         snapEnd();
     }
@@ -101,7 +101,7 @@ contract TestBitMath is Test, GasSnapshot {
     }
 
     function leastSignificantBitReference(uint256 x) private pure returns (uint256) {
-        require(x > 0, 'BitMath: zero has no least significant bit');
+        require(x > 0, "BitMath: zero has no least significant bit");
 
         uint256 i = 0;
         while ((x >> i) & 1 == 0) {

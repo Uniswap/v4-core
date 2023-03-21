@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {IPoolManager} from './IPoolManager.sol';
+import {IPoolManager} from "./IPoolManager.sol";
 
 interface IProtocolFeeController {
     /// @notice Returns the protocol fee for a pool given the conditions of this contract

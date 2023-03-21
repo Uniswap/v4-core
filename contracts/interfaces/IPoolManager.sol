@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.6.2;
 
-import {Currency} from '../libraries/CurrencyLibrary.sol';
-import {Pool} from '../libraries/Pool.sol';
-import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
-import {IHooks} from './IHooks.sol';
+import {Currency} from "../libraries/CurrencyLibrary.sol";
+import {Pool} from "../libraries/Pool.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {IHooks} from "./IHooks.sol";
 
 interface IPoolManager is IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256
@@ -51,11 +51,7 @@ interface IPoolManager is IERC1155 {
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
     event ModifyPosition(
-        bytes32 indexed poolId,
-        address indexed sender,
-        int24 tickLower,
-        int24 tickUpper,
-        int256 liquidityDelta
+        bytes32 indexed poolId, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
     );
 
     /// @notice Emitted for swaps between currency0 and currency1
@@ -107,12 +103,10 @@ interface IPoolManager is IERC1155 {
     function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
 
     /// @notice Get the current value of liquidity for the specified pool and position
-    function getLiquidity(
-        bytes32 id,
-        address owner,
-        int24 tickLower,
-        int24 tickUpper
-    ) external view returns (uint128 liquidity);
+    function getLiquidity(bytes32 id, address owner, int24 tickLower, int24 tickUpper)
+        external
+        view
+        returns (uint128 liquidity);
 
     // @notice Given a currency address, returns the protocol fees accrued in that currency
     function protocolFeesAccrued(Currency) external view returns (uint256);
@@ -160,10 +154,9 @@ interface IPoolManager is IERC1155 {
     }
 
     /// @notice Modify the position for the given pool
-    function modifyPosition(
-        PoolKey memory key,
-        ModifyPositionParams memory params
-    ) external returns (BalanceDelta memory delta);
+    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
+        external
+        returns (BalanceDelta memory delta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -175,7 +168,9 @@ interface IPoolManager is IERC1155 {
     function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta memory delta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1) external returns (BalanceDelta memory delta);
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1)
+        external
+        returns (BalanceDelta memory delta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans

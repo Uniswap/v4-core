@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {IERC20Minimal} from '../interfaces/external/IERC20Minimal.sol';
+import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
 // Regular ERC20 but it doesn't return true on transfer.
 contract TestInvalidERC20 is IERC20Minimal {
@@ -14,17 +14,17 @@ contract TestInvalidERC20 is IERC20Minimal {
 
     function mint(address to, uint256 amount) public {
         uint256 balanceNext = balanceOf[to] + amount;
-        require(balanceNext >= amount, 'overflow balance');
+        require(balanceNext >= amount, "overflow balance");
         balanceOf[to] = balanceNext;
     }
 
     function transfer(address recipient, uint256 amount) external override returns (bool) {
         uint256 balanceBefore = balanceOf[msg.sender];
-        require(balanceBefore >= amount, 'insufficient balance');
+        require(balanceBefore >= amount, "insufficient balance");
         balanceOf[msg.sender] = balanceBefore - amount;
 
         uint256 balanceRecipient = balanceOf[recipient];
-        require(balanceRecipient + amount >= balanceRecipient, 'recipient balance overflow');
+        require(balanceRecipient + amount >= balanceRecipient, "recipient balance overflow");
         balanceOf[recipient] = balanceRecipient + amount;
 
         emit Transfer(msg.sender, recipient, amount);
@@ -39,15 +39,15 @@ contract TestInvalidERC20 is IERC20Minimal {
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
         uint256 allowanceBefore = allowance[sender][msg.sender];
-        require(allowanceBefore >= amount, 'allowance insufficient');
+        require(allowanceBefore >= amount, "allowance insufficient");
 
         allowance[sender][msg.sender] = allowanceBefore - amount;
 
         uint256 balanceRecipient = balanceOf[recipient];
-        require(balanceRecipient + amount >= balanceRecipient, 'overflow balance recipient');
+        require(balanceRecipient + amount >= balanceRecipient, "overflow balance recipient");
         balanceOf[recipient] = balanceRecipient + amount;
         uint256 balanceSender = balanceOf[sender];
-        require(balanceSender >= amount, 'underflow balance sender');
+        require(balanceSender >= amount, "underflow balance sender");
         balanceOf[sender] = balanceSender - amount;
 
         emit Transfer(sender, recipient, amount);

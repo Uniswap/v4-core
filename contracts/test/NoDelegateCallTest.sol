@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {NoDelegateCall} from '../NoDelegateCall.sol';
+import {NoDelegateCall} from "../NoDelegateCall.sol";
 
 contract NoDelegateCallTest is NoDelegateCall {
     function canBeDelegateCalled() public view returns (uint256) {

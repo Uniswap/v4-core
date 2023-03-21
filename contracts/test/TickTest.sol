@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {Pool} from '../libraries/Pool.sol';
+import {Pool} from "../libraries/Pool.sol";
 
 contract TickTest {
     using Pool for Pool.State;
@@ -57,11 +57,10 @@ contract TickTest {
         pool.clearTick(tick);
     }
 
-    function cross(
-        int24 tick,
-        uint256 feeGrowthGlobal0X128,
-        uint256 feeGrowthGlobal1X128
-    ) external returns (int128 liquidityNet) {
+    function cross(int24 tick, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128)
+        external
+        returns (int128 liquidityNet)
+    {
         return pool.crossTick(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
     }
 }

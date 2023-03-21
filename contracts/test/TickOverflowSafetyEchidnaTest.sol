@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {Pool} from '../libraries/Pool.sol';
+import {Pool} from "../libraries/Pool.sol";
 
 contract TickOverflowSafetyEchidnaTest {
     using Pool for Pool.State;
@@ -38,21 +38,25 @@ contract TickOverflowSafetyEchidnaTest {
         require(tickLower > MIN_TICK);
         require(tickUpper < MAX_TICK);
         require(tickLower < tickUpper);
-        (bool flippedLower, ) = pool.updateTick(tickLower, liquidityDelta, false);
-        (bool flippedUpper, ) = pool.updateTick(tickUpper, liquidityDelta, true);
+        (bool flippedLower,) = pool.updateTick(tickLower, liquidityDelta, false);
+        (bool flippedUpper,) = pool.updateTick(tickUpper, liquidityDelta, true);
 
         if (flippedLower) {
             if (liquidityDelta < 0) {
                 assert(pool.ticks[tickLower].liquidityGross == 0);
                 pool.clearTick(tickLower);
-            } else assert(pool.ticks[tickLower].liquidityGross > 0);
+            } else {
+                assert(pool.ticks[tickLower].liquidityGross > 0);
+            }
         }
 
         if (flippedUpper) {
             if (liquidityDelta < 0) {
                 assert(pool.ticks[tickUpper].liquidityGross == 0);
                 pool.clearTick(tickUpper);
-            } else assert(pool.ticks[tickUpper].liquidityGross > 0);
+            } else {
+                assert(pool.ticks[tickUpper].liquidityGross > 0);
+            }
         }
 
         totalLiquidity += liquidityDelta;
@@ -70,12 +74,14 @@ contract TickOverflowSafetyEchidnaTest {
         require(target < MAX_TICK);
         while (tick != target) {
             if (tick < target) {
-                if (pool.ticks[tick + 1].liquidityGross > 0)
+                if (pool.ticks[tick + 1].liquidityGross > 0) {
                     pool.crossTick(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+                }
                 tick++;
             } else {
-                if (pool.ticks[tick].liquidityGross > 0)
+                if (pool.ticks[tick].liquidityGross > 0) {
                     pool.crossTick(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+                }
                 tick--;
             }
         }

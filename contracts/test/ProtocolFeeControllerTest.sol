@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {IProtocolFeeController} from '../interfaces/IProtocolFeeController.sol';
-import {IPoolManager} from '../interfaces/IPoolManager.sol';
-import {PoolId} from '../libraries/PoolId.sol';
+import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {PoolId} from "../libraries/PoolId.sol";
 
 contract ProtocolFeeControllerTest is IProtocolFeeController {
     using PoolId for IPoolManager.PoolKey;

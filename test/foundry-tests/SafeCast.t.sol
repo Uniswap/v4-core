@@ -1,8 +1,8 @@
 pragma solidity ^0.8.19;
 
-import {Test} from 'forge-std/Test.sol';
-import {Vm} from 'forge-std/Vm.sol';
-import {SafeCast} from '../../contracts/libraries/SafeCast.sol';
+import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {SafeCast} from "../../contracts/libraries/SafeCast.sol";
 
 contract SafeCastTest is Test {
     function testToUint160(uint256 x) public {
