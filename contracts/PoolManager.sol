@@ -32,7 +32,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
     /// @inheritdoc IPoolManager
-    uint24 public constant override DYNAMIC_FEE = type(uint24).max;
+    uint24 public constant override DYNAMIC_FEE = Hooks.DYNAMIC_FEE;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
