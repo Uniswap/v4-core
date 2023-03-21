@@ -11,8 +11,8 @@ contract HooksTest {
         IHooks(hookAddress).validateHookAddress(params);
     }
 
-    function isValidHookAddress(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).isValidHookAddress(3000);
+    function isValidHookAddress(address hookAddress, uint24 fee) external pure returns (bool) {
+        return IHooks(hookAddress).isValidHookAddress(fee);
     }
 
     function shouldCallBeforeInitialize(address hookAddress) external pure returns (bool) {
