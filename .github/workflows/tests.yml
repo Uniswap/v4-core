@@ -16,19 +16,10 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v3
         with:
-          node-version: 12.x
-
-      - id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - uses: actions/cache@v1
-        with:
-          path: ${{ steps.yarn-cache.outputs.dir }}
-          key: yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            yarn-
+          node-version: 16
+          cache: 'yarn'
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -49,10 +40,10 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
-          node-version: '16'
-          # cache: 'yarn'
+          node-version: 16
+          cache: 'yarn'
 
       - run: yarn
 
@@ -62,6 +53,6 @@ jobs:
           version: nightly
 
       - name: Run tests
-        run: yarn test-forge -vvv
+        run: forge test -vvv
         env:
           FOUNDRY_PROFILE: ci
