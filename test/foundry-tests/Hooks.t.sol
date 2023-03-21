@@ -1,21 +1,21 @@
 pragma solidity ^0.8.19;
 
-import {GasSnapshot} from 'forge-gas-snapshot/GasSnapshot.sol';
-import {Test} from 'forge-std/Test.sol';
-import {Vm} from 'forge-std/Vm.sol';
-import {Hooks} from '../../contracts/libraries/Hooks.sol';
-import {MockHooks} from '../../contracts/test/MockHooks.sol';
-import {IPoolManager} from '../../contracts/interfaces/IPoolManager.sol';
-import {TestERC20} from '../../contracts/test/TestERC20.sol';
-import {IHooks} from '../../contracts/interfaces/IHooks.sol';
-import {Currency} from '../../contracts/libraries/CurrencyLibrary.sol';
-import {IERC20Minimal} from '../../contracts/interfaces/external/IERC20Minimal.sol';
-import {PoolManager} from '../../contracts/PoolManager.sol';
-import {SqrtPriceMath} from '../../contracts/libraries/SqrtPriceMath.sol';
-import {PoolModifyPositionTest} from '../../contracts/test/PoolModifyPositionTest.sol';
-import {PoolSwapTest} from '../../contracts/test/PoolSwapTest.sol';
-import {PoolDonateTest} from '../../contracts/test/PoolDonateTest.sol';
-import {Deployers} from './utils/Deployers.sol';
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {Hooks} from "../../contracts/libraries/Hooks.sol";
+import {MockHooks} from "../../contracts/test/MockHooks.sol";
+import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
+import {TestERC20} from "../../contracts/test/TestERC20.sol";
+import {IHooks} from "../../contracts/interfaces/IHooks.sol";
+import {Currency} from "../../contracts/libraries/CurrencyLibrary.sol";
+import {IERC20Minimal} from "../../contracts/interfaces/external/IERC20Minimal.sol";
+import {PoolManager} from "../../contracts/PoolManager.sol";
+import {SqrtPriceMath} from "../../contracts/libraries/SqrtPriceMath.sol";
+import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
+import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
+import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
+import {Deployers} from "./utils/Deployers.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
@@ -515,7 +515,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testGas() public {
-        snapStart('HooksShouldCallBeforeSwap');
+        snapStart("HooksShouldCallBeforeSwap");
         Hooks.shouldCallBeforeSwap(IHooks(address(0)));
         snapEnd();
     }
@@ -541,15 +541,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.isValidHookAddress(IHooks(0x009840A85D5af5BF1D1762f925BDaddC4201f984)));
     }
 
-    function addLiquidity(
-        int24 tickLower,
-        int24 tickUpper,
-        int256 amount
-    ) internal {
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10**18);
-        TestERC20(Currency.unwrap(key.currency1)).mint(address(this), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10**18);
-        IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10**18);
+    function addLiquidity(int24 tickLower, int24 tickUpper, int256 amount) internal {
+        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        TestERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
+        IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(tickLower, tickUpper, amount));
     }
 }
