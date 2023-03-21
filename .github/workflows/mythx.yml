@@ -14,7 +14,7 @@ jobs:
       - name: Set up node
         uses: actions/setup-node@v1
         with:
-          node-version: 12
+          node-version: 16
 
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
@@ -36,10 +36,10 @@ jobs:
         run: |
           pip3 install solc-select
 
-      - name: Install solc 0.8.15
+      - name: Install solc 0.8.19
         run: |
-          solc-select install 0.8.15
-          solc-select use 0.8.15
+          solc-select install 0.8.19
+          solc-select use 0.8.19
 
       - name: Submit code to Mythx
         run: |
@@ -50,7 +50,7 @@ jobs:
             --async \
             --create-group \
             --group-name "@uniswap/core-next@${{ github.sha }}" \
-            --solc-version 0.8.15 \
+            --solc-version 0.8.19 \
             --check-properties \
             --remap-import "@openzeppelin/contracts/=$(pwd)/node_modules/@openzeppelin/contracts/" \
             contracts/test/TickBitmapEchidnaTest.sol --include TickBitmapEchidnaTest \
