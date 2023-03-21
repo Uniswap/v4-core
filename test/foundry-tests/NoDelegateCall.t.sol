@@ -33,6 +33,7 @@ contract TestDelegateCall is Test, GasSnapshot {
         (bool success, ) = address(noDelegateCallTest).delegatecall(
             abi.encode(noDelegateCallTest.cannotBeDelegateCalled.selector)
         );
+        // note vm.expectRevert inverts success, so a true result here means it reverted
         assertTrue(success);
     }
 
@@ -45,6 +46,7 @@ contract TestDelegateCall is Test, GasSnapshot {
         (bool success, ) = address(noDelegateCallTest).delegatecall(
             abi.encode(noDelegateCallTest.callsIntoNoDelegateCallFunction.selector)
         );
+        // note vm.expectRevert inverts success, so a true result here means it reverted
         assertTrue(success);
     }
 }
