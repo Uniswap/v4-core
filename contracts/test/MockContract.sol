@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
-import {Proxy} from '@openzeppelin/contracts/proxy/Proxy.sol';
+
+import {Proxy} from "@openzeppelin/contracts/proxy/Proxy.sol";
 
 /// @notice Mock contract that tracks the number of calls to various functions by selector
 /// @dev allows for proxying to an implementation contract

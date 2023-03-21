@@ -1,20 +1,20 @@
 pragma solidity ^0.8.19;
 
-import {Test} from 'forge-std/Test.sol';
-import {Vm} from 'forge-std/Vm.sol';
-import {Hooks} from '../../contracts/libraries/Hooks.sol';
-import {MockHooks} from '../../contracts/test/MockHooks.sol';
-import {IPoolManager} from '../../contracts/interfaces/IPoolManager.sol';
-import {TestERC20} from '../../contracts/test/TestERC20.sol';
-import {IHooks} from '../../contracts/interfaces/IHooks.sol';
-import {Currency} from '../../contracts/libraries/CurrencyLibrary.sol';
-import {IERC20Minimal} from '../../contracts/interfaces/external/IERC20Minimal.sol';
-import {PoolManager} from '../../contracts/PoolManager.sol';
-import {SqrtPriceMath} from '../../contracts/libraries/SqrtPriceMath.sol';
-import {PoolModifyPositionTest} from '../../contracts/test/PoolModifyPositionTest.sol';
-import {PoolSwapTest} from '../../contracts/test/PoolSwapTest.sol';
-import {PoolDonateTest} from '../../contracts/test/PoolDonateTest.sol';
-import {Deployers} from './utils/Deployers.sol';
+import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {Hooks} from "../../contracts/libraries/Hooks.sol";
+import {MockHooks} from "../../contracts/test/MockHooks.sol";
+import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
+import {TestERC20} from "../../contracts/test/TestERC20.sol";
+import {IHooks} from "../../contracts/interfaces/IHooks.sol";
+import {Currency} from "../../contracts/libraries/CurrencyLibrary.sol";
+import {IERC20Minimal} from "../../contracts/interfaces/external/IERC20Minimal.sol";
+import {PoolManager} from "../../contracts/PoolManager.sol";
+import {SqrtPriceMath} from "../../contracts/libraries/SqrtPriceMath.sol";
+import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
+import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
+import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
+import {Deployers} from "./utils/Deployers.sol";
 
 contract HooksTest is Test, Deployers {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
@@ -30,15 +30,15 @@ contract HooksTest is Test, Deployers {
         MockHooks impl = new MockHooks();
         vm.etch(ALL_HOOKS_ADDRESS, address(impl).code);
         mockHooks = MockHooks(ALL_HOOKS_ADDRESS);
-        (manager, key, ) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        (manager, key,) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
         modifyPositionRouter = new PoolModifyPositionTest(IPoolManager(address(manager)));
         swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
         donateRouter = new PoolDonateTest(IPoolManager(address(manager)));
     }
 
     function testInitializeSucceedsWithHook() public {
-        (PoolManager _manager, , bytes32 id) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
-        (uint160 sqrtPriceX96, , ) = _manager.getSlot0(id);
+        (PoolManager _manager,, bytes32 id) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        (uint160 sqrtPriceX96,,) = _manager.getSlot0(id);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
     }
 
@@ -76,9 +76,7 @@ contract HooksTest is Test, Deployers {
         TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
-            key,
-            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(false, false)
+            key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false)
         );
     }
 
@@ -87,9 +85,7 @@ contract HooksTest is Test, Deployers {
         TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
-            key,
-            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(false, false)
+            key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false)
         );
     }
 
@@ -98,9 +94,7 @@ contract HooksTest is Test, Deployers {
         TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
-            key,
-            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(false, false)
+            key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false)
         );
     }
 

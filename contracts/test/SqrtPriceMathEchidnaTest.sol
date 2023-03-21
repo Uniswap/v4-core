@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {FullMath} from '../libraries/FullMath.sol';
-import {SqrtPriceMath} from '../libraries/SqrtPriceMath.sol';
-import {FixedPoint96} from '../libraries/FixedPoint96.sol';
+import {FullMath} from "../libraries/FullMath.sol";
+import {SqrtPriceMath} from "../libraries/SqrtPriceMath.sol";
+import {FixedPoint96} from "../libraries/FixedPoint96.sol";
 
 contract SqrtPriceMathEchidnaTest {
     function mulDivRoundingUpInvariants(uint256 x, uint256 y, uint256 z) external pure {
@@ -21,12 +21,10 @@ contract SqrtPriceMathEchidnaTest {
         }
     }
 
-    function getNextSqrtPriceFromInputInvariants(
-        uint160 sqrtP,
-        uint128 liquidity,
-        uint256 amountIn,
-        bool zeroForOne
-    ) external pure {
+    function getNextSqrtPriceFromInputInvariants(uint160 sqrtP, uint128 liquidity, uint256 amountIn, bool zeroForOne)
+        external
+        pure
+    {
         uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, amountIn, zeroForOne);
 
         if (zeroForOne) {
@@ -38,12 +36,10 @@ contract SqrtPriceMathEchidnaTest {
         }
     }
 
-    function getNextSqrtPriceFromOutputInvariants(
-        uint160 sqrtP,
-        uint128 liquidity,
-        uint256 amountOut,
-        bool zeroForOne
-    ) external pure {
+    function getNextSqrtPriceFromOutputInvariants(uint160 sqrtP, uint128 liquidity, uint256 amountOut, bool zeroForOne)
+        external
+        pure
+    {
         uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, liquidity, amountOut, zeroForOne);
 
         if (zeroForOne) {
@@ -185,12 +181,10 @@ contract SqrtPriceMathEchidnaTest {
         }
     }
 
-    function getInRangeMintInvariants(
-        uint160 sqrtLower,
-        uint160 sqrtCurrent,
-        uint160 sqrtUpper,
-        int128 liquidity
-    ) external pure {
+    function getInRangeMintInvariants(uint160 sqrtLower, uint160 sqrtCurrent, uint160 sqrtUpper, int128 liquidity)
+        external
+        pure
+    {
         require(sqrtLower > 0);
         require(sqrtLower < sqrtUpper);
         require(sqrtLower <= sqrtCurrent && sqrtCurrent <= sqrtUpper);

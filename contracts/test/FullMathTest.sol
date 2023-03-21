@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {FullMath} from '../libraries/FullMath.sol';
+import {FullMath} from "../libraries/FullMath.sol";
 
 contract FullMathTest {
     function mulDiv(uint256 x, uint256 y, uint256 z) external pure returns (uint256) {

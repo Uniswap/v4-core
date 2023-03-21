@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {Oracle} from '../libraries/Oracle.sol';
+import {Oracle} from "../libraries/Oracle.sol";
 
 contract OracleTest {
     using Oracle for Oracle.Observation[65535];
@@ -22,7 +22,7 @@ contract OracleTest {
     }
 
     function initialize(InitializeParams calldata params) external {
-        require(cardinality == 0, 'already initialized');
+        require(cardinality == 0, "already initialized");
         time = params.time;
         tick = params.tick;
         liquidity = params.liquidity;
@@ -60,14 +60,8 @@ contract OracleTest {
 
         for (uint256 i = 0; i < params.length; i++) {
             _time += params[i].advanceTimeBy;
-            (_index, _cardinality) = observations.write(
-                _index,
-                _time,
-                _tick,
-                _liquidity,
-                _cardinality,
-                _cardinalityNext
-            );
+            (_index, _cardinality) =
+                observations.write(_index, _time, _tick, _liquidity, _cardinality, _cardinalityNext);
             _tick = params[i].tick;
             _liquidity = params[i].liquidity;
         }
@@ -84,9 +78,11 @@ contract OracleTest {
         cardinalityNext = observations.grow(cardinalityNext, _cardinalityNext);
     }
 
-    function observe(
-        uint32[] calldata secondsAgos
-    ) external view returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) {
+    function observe(uint32[] calldata secondsAgos)
+        external
+        view
+        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
+    {
         return observations.observe(time, secondsAgos, tick, index, liquidity, cardinality);
     }
 

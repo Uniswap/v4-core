@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {OracleTest} from './OracleTest.sol';
+import {OracleTest} from "./OracleTest.sol";
 
 contract OracleEchidnaTest {
     OracleTest private oracle;
@@ -45,12 +45,11 @@ contract OracleEchidnaTest {
         secondsAgos[0] = secondsAgo0;
         secondsAgos[1] = secondsAgo1;
 
-        (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) = oracle.observe(
-            secondsAgos
-        );
+        (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) =
+            oracle.observe(secondsAgos);
         int56 timeWeightedTick = (tickCumulatives[1] - tickCumulatives[0]) / int56(uint56(timeElapsed));
-        uint256 timeWeightedHarmonicMeanLiquidity = (uint256(timeElapsed) * type(uint160).max) /
-            (uint256(secondsPerLiquidityCumulativeX128s[1] - secondsPerLiquidityCumulativeX128s[0]) << 32);
+        uint256 timeWeightedHarmonicMeanLiquidity = (uint256(timeElapsed) * type(uint160).max)
+            / (uint256(secondsPerLiquidityCumulativeX128s[1] - secondsPerLiquidityCumulativeX128s[0]) << 32);
         assert(timeWeightedHarmonicMeanLiquidity <= type(uint128).max);
         assert(timeWeightedTick <= type(int24).max);
         assert(timeWeightedTick >= type(int24).min);
@@ -61,7 +60,7 @@ contract OracleEchidnaTest {
     }
 
     function echidna_AlwaysInitialized() external view returns (bool) {
-        (, , , bool isInitialized) = oracle.observations(0);
+        (,,, bool isInitialized) = oracle.observations(0);
         return oracle.cardinality() == 0 || isInitialized;
     }
 
@@ -75,7 +74,7 @@ contract OracleEchidnaTest {
         }
         uint32[] memory arr = new uint32[](1);
         arr[0] = 0;
-        (bool success, ) = address(oracle).staticcall(abi.encodeWithSelector(OracleTest.observe.selector, arr));
+        (bool success,) = address(oracle).staticcall(abi.encodeWithSelector(OracleTest.observe.selector, arr));
         return success;
     }
 
@@ -84,10 +83,9 @@ contract OracleEchidnaTest {
         // check that the observations are initialized, and that the index is not the oldest observation
         require(index < cardinality && index != (oracle.index() + 1) % cardinality);
 
-        (uint32 blockTimestamp0, int56 tickCumulative0, , bool initialized0) = oracle.observations(
-            index == 0 ? cardinality - 1 : index - 1
-        );
-        (uint32 blockTimestamp1, int56 tickCumulative1, , bool initialized1) = oracle.observations(index);
+        (uint32 blockTimestamp0, int56 tickCumulative0,, bool initialized0) =
+            oracle.observations(index == 0 ? cardinality - 1 : index - 1);
+        (uint32 blockTimestamp1, int56 tickCumulative1,, bool initialized1) = oracle.observations(index);
 
         require(initialized0);
         require(initialized1);
@@ -103,9 +101,8 @@ contract OracleEchidnaTest {
         uint32[] memory secondsAgos = new uint32[](2);
         secondsAgos[0] = secondsAgo;
         secondsAgos[1] = 0;
-        (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) = oracle.observe(
-            secondsAgos
-        );
+        (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) =
+            oracle.observe(secondsAgos);
 
         // compute the time weighted tick, rounded towards negative infinity
         int56 numerator = tickCumulatives[1] - tickCumulatives[0];
@@ -117,8 +114,8 @@ contract OracleEchidnaTest {
         // the time weighted averages fit in their respective accumulated types
         assert(timeWeightedTick <= type(int24).max && timeWeightedTick >= type(int24).min);
 
-        uint256 timeWeightedHarmonicMeanLiquidity = (uint256(secondsAgo) * type(uint160).max) /
-            (uint256(secondsPerLiquidityCumulativeX128s[1] - secondsPerLiquidityCumulativeX128s[0]) << 32);
+        uint256 timeWeightedHarmonicMeanLiquidity = (uint256(secondsAgo) * type(uint160).max)
+            / (uint256(secondsPerLiquidityCumulativeX128s[1] - secondsPerLiquidityCumulativeX128s[0]) << 32);
         assert(timeWeightedHarmonicMeanLiquidity <= type(uint128).max);
     }
 }
