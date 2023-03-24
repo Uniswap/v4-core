@@ -17,13 +17,18 @@ contract Deployers {
         }
     }
 
-    function createPool(PoolManager manager, IHooks hooks, uint160 sqrtPriceX96)
-        public
+    function createPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
+        private
         returns (IPoolManager.PoolKey memory key, bytes32 id)
     {
         TestERC20[] memory tokens = deployTokens(2, 2 ** 255);
-        key =
-            IPoolManager.PoolKey(Currency.wrap(address(tokens[0])), Currency.wrap(address(tokens[1])), 3000, 60, hooks);
+        key = IPoolManager.PoolKey(
+            Currency.wrap(address(tokens[0])),
+            Currency.wrap(address(tokens[1])),
+            fee,
+            fee == Hooks.DYNAMIC_FEE ? int24(60) : int24(fee / 100 * 2),
+            hooks
+        );
         id = PoolId.toId(key);
         manager.initialize(key, sqrtPriceX96);
     }

@@ -522,24 +522,29 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testIsValidHookAddressAnyFlags() public {
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x8000000000000000000000000000000000000000)));
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x4000000000000000000000000000000000000000)));
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x2000000000000000000000000000000000000000)));
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x1000000000000000000000000000000000000000)));
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x0800000000000000000000000000000000000000)));
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x0200000000000000000000000000000000000000)));
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x0100000000000000000000000000000000000000)));
-        assertTrue(Hooks.isValidHookAddress(IHooks(0xf09840a85d5Af5bF1d1762f925bdaDdC4201f984)));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x8000000000000000000000000000000000000000), 3000));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x4000000000000000000000000000000000000000), 3000));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x2000000000000000000000000000000000000000), 3000));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x1000000000000000000000000000000000000000), 3000));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x0800000000000000000000000000000000000000), 3000));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x0200000000000000000000000000000000000000), 3000));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x0100000000000000000000000000000000000000), 3000));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0xf09840a85d5Af5bF1d1762f925bdaDdC4201f984), 3000));
     }
 
-    function testIsValidHookAddressZeroAddrsss() public {
-        assertTrue(Hooks.isValidHookAddress(IHooks(address(0))));
+    function testIsValidHookAddressZeroAddress() public {
+        assertTrue(Hooks.isValidHookAddress(IHooks(address(0)), 3000));
+    }
+
+    function testIsValidIfDynamicFee() public {
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), Hooks.DYNAMIC_FEE));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x8000000000000000000000000000000000000000), 3000));
     }
 
     function testInvalidIfNoFlags() public {
-        assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001)));
-        assertFalse(Hooks.isValidHookAddress(IHooks(0x0010000000000000000000000000000000000001)));
-        assertFalse(Hooks.isValidHookAddress(IHooks(0x009840A85D5af5BF1D1762f925BDaddC4201f984)));
+        assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), 3000));
+        assertFalse(Hooks.isValidHookAddress(IHooks(0x0010000000000000000000000000000000000001), 3000));
+        assertFalse(Hooks.isValidHookAddress(IHooks(0x009840A85D5af5BF1D1762f925BDaddC4201f984), 3000));
     }
 
     function addLiquidity(int24 tickLower, int24 tickUpper, int256 amount) internal {
