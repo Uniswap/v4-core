@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
@@ -30,26 +31,26 @@ contract HooksTest is Test, Deployers {
         MockHooks impl = new MockHooks();
         vm.etch(ALL_HOOKS_ADDRESS, address(impl).code);
         mockHooks = MockHooks(ALL_HOOKS_ADDRESS);
-        (manager, key,) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        (manager, key,) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
         modifyPositionRouter = new PoolModifyPositionTest(IPoolManager(address(manager)));
         swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
         donateRouter = new PoolDonateTest(IPoolManager(address(manager)));
     }
 
     function testInitializeSucceedsWithHook() public {
-        (PoolManager _manager,, bytes32 id) = Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        (PoolManager _manager,, bytes32 id) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
         (uint160 sqrtPriceX96,,) = _manager.getSlot0(id);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
     }
 
     function testFailBeforeInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
-        Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
     }
 
     function testFailAfterInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
-        Deployers.createFreshPool(mockHooks, SQRT_RATIO_1_1);
+        Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
     }
 
     function testModifyPositionSucceedsWithHook() public {
