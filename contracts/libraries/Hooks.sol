@@ -9,14 +9,16 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
 /// has leading bits '1001' which would cause the 'before initialize' and 'after swap' hooks to be used.
 library Hooks {
-    uint256 public constant BEFORE_INITIALIZE_FLAG = 1 << 159;
-    uint256 public constant AFTER_INITIALIZE_FLAG = 1 << 158;
-    uint256 public constant BEFORE_MODIFY_POSITION_FLAG = 1 << 157;
-    uint256 public constant AFTER_MODIFY_POSITION_FLAG = 1 << 156;
-    uint256 public constant BEFORE_SWAP_FLAG = 1 << 155;
-    uint256 public constant AFTER_SWAP_FLAG = 1 << 154;
-    uint256 public constant BEFORE_DONATE_FLAG = 1 << 153;
-    uint256 public constant AFTER_DONATE_FLAG = 1 << 152;
+    uint24 internal constant DYNAMIC_FEE = type(uint24).max;
+
+    uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
+    uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
+    uint256 internal constant BEFORE_MODIFY_POSITION_FLAG = 1 << 157;
+    uint256 internal constant AFTER_MODIFY_POSITION_FLAG = 1 << 156;
+    uint256 internal constant BEFORE_SWAP_FLAG = 1 << 155;
+    uint256 internal constant AFTER_SWAP_FLAG = 1 << 154;
+    uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
+    uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
 
     struct Calls {
         bool beforeInitialize;
@@ -53,10 +55,12 @@ library Hooks {
         }
     }
 
-    /// @notice Ensures that the hook address includes at least one hook flag, or is the 0 address
+    /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
-    function isValidHookAddress(IHooks hook) internal pure returns (bool) {
-        return address(hook) == address(0) || uint160(address(hook)) >= uint160(AFTER_DONATE_FLAG);
+    function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
+        return address(hook) == address(0)
+            ? fee != DYNAMIC_FEE // having no hooks is fine, but the fee must not be dynamic
+            : (uint160(address(hook)) >= AFTER_DONATE_FLAG || fee == DYNAMIC_FEE);
     }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
