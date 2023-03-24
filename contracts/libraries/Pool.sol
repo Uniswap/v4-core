@@ -70,7 +70,7 @@ library Pool {
         // the timestamp at which pool slot0 was last updated
         uint48 lastUpdateTimestamp;
     }
-    // 64 bits left!
+    // 16 bits left!
 
     // info stored for each initialized individual tick
     struct TickInfo {
