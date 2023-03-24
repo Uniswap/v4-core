@@ -23,6 +23,9 @@ interface IPoolManager is IERC1155 {
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
 
+    /// @notice Pools must have a fee that is <100%, enforced in #intialize and for dynamic fee pools
+    error FeeTooLarge();
+
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
@@ -69,7 +72,8 @@ interface IPoolManager is IERC1155 {
         int256 amount1,
         uint160 sqrtPriceX96,
         uint128 liquidity,
-        int24 tick
+        int24 tick,
+        uint24 fee
     );
 
     event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolFee);
