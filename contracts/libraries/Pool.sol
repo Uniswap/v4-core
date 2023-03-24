@@ -67,6 +67,8 @@ library Pool {
         // represented as an integer denominator (1/x)%
         // First 4 bits are the fee for trading 1 for 0, and the latter 4 for 0 for 1
         uint8 protocolFee;
+        // the timestamp at which pool slot0 was last updated
+        uint48 lastUpdateTimestamp;
     }
     // 64 bits left!
 
@@ -105,7 +107,12 @@ library Pool {
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee});
+        self.slot0 = Slot0({
+            sqrtPriceX96: sqrtPriceX96,
+            tick: tick,
+            protocolFee: protocolFee,
+            lastUpdateTimestamp: uint48(block.timestamp)
+        });
     }
 
     function setProtocolFee(State storage self, uint8 newProtocolFee) internal {
@@ -407,7 +414,8 @@ library Pool {
             }
         }
 
-        (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
+        (self.slot0.sqrtPriceX96, self.slot0.tick, self.slot0.lastUpdateTimestamp) =
+            (state.sqrtPriceX96, state.tick, uint48(block.timestamp));
 
         // update liquidity if it changed
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;

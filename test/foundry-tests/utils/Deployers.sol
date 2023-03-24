@@ -10,6 +10,8 @@ import {PoolManager} from "../../../contracts/PoolManager.sol";
 import {PoolId} from "../../../contracts/libraries/PoolId.sol";
 
 contract Deployers {
+    uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
+
     function deployTokens(uint8 count, uint256 totalSupply) internal returns (TestERC20[] memory tokens) {
         tokens = new TestERC20[](count);
         for (uint8 i = 0; i < count; i++) {
