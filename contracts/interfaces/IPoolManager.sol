@@ -23,6 +23,9 @@ interface IPoolManager is IERC1155 {
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
 
+    /// @notice Pools must have a fee that is <100%, enforced in #intialize and for dynamic fee pools
+    error FeeTooLarge();
+
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
@@ -96,9 +99,6 @@ interface IPoolManager is IERC1155 {
 
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
-
-    /// @notice Returns the magic value which denotes that a pool uses dynamic fees
-    function DYNAMIC_FEE() external view returns (uint24);
 
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(bytes32 id) external view returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee);
