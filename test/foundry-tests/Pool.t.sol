@@ -85,10 +85,14 @@ contract PoolTest is Test, Deployers {
     function testLastUpdateTimestamp() public {
         vm.warp(100);
         state.initialize(TickMath.MIN_SQRT_RATIO, 0);
-        assertEq(state.slot0.lastUpdateTimestamp, 100);
+        assertEq(state.slot0.lastSwapTimestamp, 0);
 
         vm.warp(500);
         state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + 1));
-        assertEq(state.slot0.lastUpdateTimestamp, 500);
+        assertEq(state.slot0.lastSwapTimestamp, 500);
+
+        vm.warp(700);
+        state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + 2));
+        assertEq(state.slot0.lastSwapTimestamp, 700);
     }
 }
