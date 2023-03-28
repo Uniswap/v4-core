@@ -32,8 +32,6 @@ contract DynamicFees is IDynamicFeeManager {
 }
 
 contract TestDynamicFees is Test, Deployers {
-    uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
-
     DynamicFees dynamicFees = DynamicFees(
         address(
             uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
