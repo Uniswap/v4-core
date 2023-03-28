@@ -19,7 +19,6 @@ import {Deployers} from "./utils/Deployers.sol";
 
 contract HooksTest is Test, Deployers {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
-    uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
     MockHooks mockHooks;
     PoolManager manager;
     IPoolManager.PoolKey key;
