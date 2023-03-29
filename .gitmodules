@@ -4,3 +4,6 @@
 [submodule "lib/forge-gas-snapshot"]
 	path = lib/forge-gas-snapshot
 	url = https://github.com/marktoda/forge-gas-snapshot
+[submodule "lib/solmate"]
+	path = lib/solmate
+	url = https://github.com/transmissions11/solmate
