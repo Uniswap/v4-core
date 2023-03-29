@@ -44,42 +44,68 @@ contract PoolTest is Test, Deployers {
         assertLt(bound, 32768);
     }
 
-    function testModifyPosition(
-        uint160 sqrtPriceX96,
-        int24 tickLower,
-        int24 tickUpper,
-        int128 liquidityDelta,
-        int24 tickSpacing
-    ) public {
-        tickSpacing = boundTickSpacing(tickSpacing);
+    function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
+        params.tickSpacing = boundTickSpacing(params.tickSpacing);
 
         testInitialize(sqrtPriceX96, 0);
 
-        if (tickLower >= tickUpper) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, tickLower, tickUpper));
-        } else if (tickLower < TickMath.MIN_TICK) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TickLowerOutOfBounds.selector, tickLower));
-        } else if (tickUpper > TickMath.MAX_TICK) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, tickUpper));
-        } else if (liquidityDelta < 0) {
+        if (params.tickLower >= params.tickUpper) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
+        } else if (params.tickLower < TickMath.MIN_TICK) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickLowerOutOfBounds.selector, params.tickLower));
+        } else if (params.tickUpper > TickMath.MAX_TICK) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, params.tickUpper));
+        } else if (params.liquidityDelta < 0) {
             vm.expectRevert(abi.encodeWithSignature("Panic(uint256)", 0x11));
-        } else if (liquidityDelta == 0) {
+        } else if (params.liquidityDelta == 0) {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
-        } else if (liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing))) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, tickLower));
-        } else if (tickLower % tickSpacing != 0 || tickUpper % tickSpacing != 0) {
+        } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, params.tickLower));
+        } else if (params.tickLower % params.tickSpacing != 0 || params.tickUpper % params.tickSpacing != 0) {
             vm.expectRevert();
         }
 
-        state.modifyPosition(
-            Pool.ModifyPositionParams({
-                owner: address(this),
-                tickLower: tickLower,
-                tickUpper: tickUpper,
-                liquidityDelta: liquidityDelta,
-                tickSpacing: tickSpacing
-            })
-        );
+        params.owner = address(this);
+        state.modifyPosition(params);
+    }
+
+    function testSwap(uint160 sqrtPriceX96, Pool.SwapParams memory params) public {
+        params.tickSpacing = boundTickSpacing(params.tickSpacing);
+
+        testInitialize(sqrtPriceX96, 0);
+        Pool.Slot0 memory slot0 = state.slot0;
+
+        if (params.amountSpecified == 0) {
+            vm.expectRevert(Pool.SwapAmountCannotBeZero.selector);
+        } else if (params.zeroForOne) {
+            if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96) {
+                vm.expectRevert(
+                    abi.encodeWithSelector(
+                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                    )
+                );
+            } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO) {
+                vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
+            }
+        } else if (!params.zeroForOne) {
+            if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96) {
+                vm.expectRevert(
+                    abi.encodeWithSelector(
+                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                    )
+                );
+            } else if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
+                vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
+            }
+        }
+
+        state.swap(params);
+
+        if (params.zeroForOne) {
+            assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+        } else {
+            assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+        }
     }
 
     function testLastUpdateTimestamp() public {
