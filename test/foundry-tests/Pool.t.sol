@@ -45,7 +45,7 @@ contract PoolTest is Test, Deployers {
     }
 
     function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
-        params.tickSpacing = boundTickSpacing(params.tickSpacing);
+        vm.assume(params.tickSpacing > 0 && params.tickSpacing < 32768);
 
         testInitialize(sqrtPriceX96, 0);
 
@@ -55,16 +55,16 @@ contract PoolTest is Test, Deployers {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLowerOutOfBounds.selector, params.tickLower));
         } else if (params.tickUpper > TickMath.MAX_TICK) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, params.tickUpper));
+        } else if (params.tickLower % params.tickSpacing != 0) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickMisaligned.selector, params.tickLower, params.tickSpacing));
+        } else if (params.tickUpper % params.tickSpacing != 0) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickMisaligned.selector, params.tickUpper, params.tickSpacing));
         } else if (params.liquidityDelta < 0) {
             vm.expectRevert(abi.encodeWithSignature("Panic(uint256)", 0x11));
         } else if (params.liquidityDelta == 0) {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, params.tickLower));
-        } else if (params.tickLower % params.tickSpacing != 0) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TickNotInTickSpacing.selector, params.tickLower, params.tickSpacing));
-        } else if (params.tickUpper % params.tickSpacing != 0) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TickNotInTickSpacing.selector, params.tickUpper, params.tickSpacing));
         }
 
         params.owner = address(this);

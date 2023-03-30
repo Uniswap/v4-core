@@ -33,7 +33,7 @@ library Pool {
     /// @notice Thrown when the tick is not enumerated by the tick spacing
     /// @param tick the invalid tick
     /// @param tickSpacing The tick spacing of the pool
-    error TickNotInTickSpacing(int24 tick, int24 tickSpacing);
+    error TickMisaligned(int24 tick, int24 tickSpacing);
 
     /// @notice For the tick spacing, the tick has too much liquidity
     error TickLiquidityOverflow(int24 tick);
@@ -105,8 +105,8 @@ library Pool {
         if (tickLower >= tickUpper) revert TicksMisordered(tickLower, tickUpper);
         if (tickLower < TickMath.MIN_TICK) revert TickLowerOutOfBounds(tickLower);
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
-        if (tickLower % tickSpacing != 0) revert TickNotInTickSpacing(tickLower, tickSpacing);
-        if (tickUpper % tickSpacing != 0) revert TickNotInTickSpacing(tickUpper, tickSpacing);
+        if (tickLower % tickSpacing != 0) revert TickMisaligned(tickLower, tickSpacing);
+        if (tickUpper % tickSpacing != 0) revert TickMisaligned(tickUpper, tickSpacing);
     }
 
     function initialize(State storage self, uint160 sqrtPriceX96, uint8 protocolFee) internal returns (int24 tick) {
