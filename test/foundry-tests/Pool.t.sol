@@ -61,8 +61,10 @@ contract PoolTest is Test, Deployers {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, params.tickLower));
-        } else if (params.tickLower % params.tickSpacing != 0 || params.tickUpper % params.tickSpacing != 0) {
-            vm.expectRevert();
+        } else if (params.tickLower % params.tickSpacing != 0) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickNotInTickSpacing.selector, params.tickLower, params.tickSpacing));
+        } else if (params.tickUpper % params.tickSpacing != 0) {
+            vm.expectRevert(abi.encodeWithSelector(Pool.TickNotInTickSpacing.selector, params.tickUpper, params.tickSpacing));
         }
 
         params.owner = address(this);
