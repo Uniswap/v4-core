@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import {Hooks} from "../../../contracts/libraries/Hooks.sol";
 import {TestERC20} from "../../../contracts/test/TestERC20.sol";
+import {Hooks} from "../../../contracts/libraries/Hooks.sol";
 import {Currency} from "../../../contracts/libraries/CurrencyLibrary.sol";
 import {IHooks} from "../../../contracts/interfaces/IHooks.sol";
 import {IPoolManager} from "../../../contracts/interfaces/IPoolManager.sol";
