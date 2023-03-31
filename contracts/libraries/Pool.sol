@@ -96,7 +96,7 @@ library Pool {
     }
 
     /// @dev Common checks for valid tick inputs.
-    function checkTicks(int24 tickLower, int24 tickUpper, int24 tickSpacing) private pure {
+    function checkTicks(int24 tickLower, int24 tickUpper) private pure {
         if (tickLower >= tickUpper) revert TicksMisordered(tickLower, tickUpper);
         if (tickLower < TickMath.MIN_TICK) revert TickLowerOutOfBounds(tickLower);
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
@@ -146,7 +146,7 @@ library Pool {
     {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
-        checkTicks(params.tickLower, params.tickUpper, params.tickSpacing);
+        checkTicks(params.tickLower, params.tickUpper);
 
         {
             ModifyPositionState memory state;

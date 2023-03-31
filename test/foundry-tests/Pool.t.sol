@@ -46,7 +46,8 @@ contract PoolTest is Test, Deployers {
     }
 
     function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
-        vm.assume(params.tickSpacing > 0 && params.tickSpacing < 32768);
+        vm.assume(params.tickSpacing > 0);
+        vm.assume(params.tickSpacing < 32768);
 
         testInitialize(sqrtPriceX96, 0);
 
