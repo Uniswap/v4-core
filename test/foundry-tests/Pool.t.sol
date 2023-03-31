@@ -9,6 +9,7 @@ import {PoolManager} from "../../contracts/PoolManager.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
+import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 
 contract PoolTest is Test, Deployers {
@@ -55,16 +56,20 @@ contract PoolTest is Test, Deployers {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLowerOutOfBounds.selector, params.tickLower));
         } else if (params.tickUpper > TickMath.MAX_TICK) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, params.tickUpper));
-        } else if (params.tickLower % params.tickSpacing != 0) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TickMisaligned.selector, params.tickLower, params.tickSpacing));
-        } else if (params.tickUpper % params.tickSpacing != 0) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TickMisaligned.selector, params.tickUpper, params.tickSpacing));
         } else if (params.liquidityDelta < 0) {
             vm.expectRevert(abi.encodeWithSignature("Panic(uint256)", 0x11));
         } else if (params.liquidityDelta == 0) {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, params.tickLower));
+        } else if (params.tickLower % params.tickSpacing != 0) {
+            vm.expectRevert(
+                abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickLower, params.tickSpacing)
+            );
+        } else if (params.tickUpper % params.tickSpacing != 0) {
+            vm.expectRevert(
+                abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickUpper, params.tickSpacing)
+            );
         }
 
         params.owner = address(this);
