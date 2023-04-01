@@ -152,7 +152,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressBeforeInitialize(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x80 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -177,7 +177,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressAfterInitialize(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x40 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_INITIALIZE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -202,7 +202,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressBeforeAndAfterInitialize(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0xC0 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -227,7 +227,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressBeforeModify(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x20 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -252,7 +252,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressAfterModify(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x10 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -277,7 +277,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressBeforeAndAfterModify(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x30 << 152)));
+        IHooks hookAddr =
+            IHooks(address(uint160(preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -302,7 +303,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressBeforeSwap(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x08 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -327,7 +328,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressAfterSwap(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x04 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_SWAP_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -352,7 +353,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressBeforeAndAfterSwap(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x0c << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -377,7 +378,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressBeforeDonate(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x02 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -402,7 +403,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressAfterDonate(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x01 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_DONATE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -427,7 +428,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testValidateHookAddressBeforeAndAfterDonate(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0x03 << 152)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_DONATE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
