@@ -70,7 +70,9 @@ contract PoolTest is Test, Deployers {
         testInitialize(sqrtPriceX96, 0);
         Pool.Slot0 memory slot0 = state.slot0;
 
-        if (params.amountSpecified == 0) {
+        if (params.fee >= 1e6) {
+            vm.expectRevert();
+        } else if (params.amountSpecified == 0) {
             vm.expectRevert(Pool.SwapAmountCannotBeZero.selector);
         } else if (params.zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96) {
