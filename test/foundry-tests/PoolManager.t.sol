@@ -11,7 +11,6 @@ import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
 import {PoolId} from "../../contracts/libraries/PoolId.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {PoolId} from "../../contracts/libraries/PoolId.sol";
 
 contract PoolManagerTest is Test, Deployers {
     using Hooks for IHooks;
