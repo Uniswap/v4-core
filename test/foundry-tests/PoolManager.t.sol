@@ -25,8 +25,8 @@ contract PoolManagerTest is Test, Deployers {
 
     function testPoolManagerInitialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 > TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 <= TickMath.MAX_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
         // tested in Hooks.t.sol
         key.hooks = IHooks(address(0));
