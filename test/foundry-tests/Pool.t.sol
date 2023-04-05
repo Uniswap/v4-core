@@ -31,20 +31,6 @@ contract PoolTest is Test, Deployers {
         }
     }
 
-    function boundTickSpacing(int24 unbound) private pure returns (int24) {
-        int24 tickSpacing = unbound;
-        if (tickSpacing < 0) {
-            tickSpacing -= type(int24).min;
-        }
-        return (tickSpacing % 32767) + 1;
-    }
-
-    function testBoundTickSpacing(int24 tickSpacing) external {
-        int24 bound = boundTickSpacing(tickSpacing);
-        assertGt(bound, 0);
-        assertLt(bound, 32768);
-    }
-
     function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
@@ -78,7 +64,8 @@ contract PoolTest is Test, Deployers {
     }
 
     function testSwap(uint160 sqrtPriceX96, Pool.SwapParams memory params) public {
-        params.tickSpacing = boundTickSpacing(params.tickSpacing);
+        vm.assume(params.tickSpacing > 0);
+        vm.assume(params.tickSpacing < 32768);
 
         testInitialize(sqrtPriceX96, 0);
         Pool.Slot0 memory slot0 = state.slot0;
