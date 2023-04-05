@@ -43,4 +43,8 @@ contract Deployers {
         (key, id) = createPool(manager, hooks, fee, sqrtPriceX96);
         return (manager, key, id);
     }
+
+    function createFreshManager() internal returns (PoolManager manager) {
+        manager = new PoolManager(500000);
+    }
 }
