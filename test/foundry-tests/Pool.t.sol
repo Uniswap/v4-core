@@ -69,7 +69,7 @@ contract PoolTest is Test, Deployers {
         // Assumptions tested in PoolManager.t.sol
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
-        vm.assume(params.fee < 1000000 && params.fee != Hooks.DYNAMIC_FEE);
+        vm.assume(params.fee < 1000000);
 
         testPoolInitialize(sqrtPriceX96, 0);
         Pool.Slot0 memory slot0 = state.slot0;
