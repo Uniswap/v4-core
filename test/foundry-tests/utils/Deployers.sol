@@ -39,8 +39,12 @@ contract Deployers {
         internal
         returns (PoolManager manager, IPoolManager.PoolKey memory key, bytes32 id)
     {
-        manager = new PoolManager(500000);
+        manager = createFreshManager();
         (key, id) = createPool(manager, hooks, fee, sqrtPriceX96);
         return (manager, key, id);
+    }
+
+    function createFreshManager() internal returns (PoolManager manager) {
+        manager = new PoolManager(500000);
     }
 }

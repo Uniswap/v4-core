@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
+import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
@@ -17,7 +18,7 @@ contract PoolTest is Test, Deployers {
 
     Pool.State state;
 
-    function testInitialize(uint160 sqrtPriceX96, uint8 protocolFee) public {
+    function testPoolInitialize(uint160 sqrtPriceX96, uint8 protocolFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
             vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
             state.initialize(sqrtPriceX96, protocolFee);
@@ -32,10 +33,11 @@ contract PoolTest is Test, Deployers {
     }
 
     function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
+        // Assumptions tested in PoolManager.t.sol
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
 
-        testInitialize(sqrtPriceX96, 0);
+        testPoolInitialize(sqrtPriceX96, 0);
 
         if (params.tickLower >= params.tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
@@ -64,10 +66,12 @@ contract PoolTest is Test, Deployers {
     }
 
     function testSwap(uint160 sqrtPriceX96, Pool.SwapParams memory params) public {
+        // Assumptions tested in PoolManager.t.sol
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
+        vm.assume(params.fee < 1000000);
 
-        testInitialize(sqrtPriceX96, 0);
+        testPoolInitialize(sqrtPriceX96, 0);
         Pool.Slot0 memory slot0 = state.slot0;
 
         if (params.amountSpecified == 0) {
