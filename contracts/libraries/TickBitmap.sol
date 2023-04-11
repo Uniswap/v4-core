@@ -7,6 +7,11 @@ import {BitMath} from "./BitMath.sol";
 /// @notice Stores a packed mapping of tick index to its initialized state
 /// @dev The mapping uses int16 for keys since ticks are represented as int24 and there are 256 (2^8) values per word.
 library TickBitmap {
+    /// @notice Thrown when the tick is not enumerated by the tick spacing
+    /// @param tick the invalid tick
+    /// @param tickSpacing The tick spacing of the pool
+    error TickMisaligned(int24 tick, int24 tickSpacing);
+
     /// @notice Computes the position in the mapping where the initialized bit for a tick lives
     /// @param tick The tick for which to compute the position
     /// @return wordPos The key in the mapping containing the word in which the bit is stored
@@ -24,7 +29,7 @@ library TickBitmap {
     /// @param tickSpacing The spacing between usable ticks
     function flipTick(mapping(int16 => uint256) storage self, int24 tick, int24 tickSpacing) internal {
         unchecked {
-            require(tick % tickSpacing == 0); // ensure that the tick is spaced
+            if (tick % tickSpacing != 0) revert TickMisaligned(tick, tickSpacing); // ensure that the tick is spaced
             (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
             uint256 mask = 1 << bitPos;
             self[wordPos] ^= mask;

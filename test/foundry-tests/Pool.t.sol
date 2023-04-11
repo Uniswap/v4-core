@@ -5,10 +5,12 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
+import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
+import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 
 contract PoolTest is Test, Deployers {
@@ -16,7 +18,7 @@ contract PoolTest is Test, Deployers {
 
     Pool.State state;
 
-    function testInitialize(uint160 sqrtPriceX96, uint8 protocolFee) public {
+    function testPoolInitialize(uint160 sqrtPriceX96, uint8 protocolFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
             vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
             state.initialize(sqrtPriceX96, protocolFee);
@@ -30,24 +32,12 @@ contract PoolTest is Test, Deployers {
         }
     }
 
-    function boundTickSpacing(int24 unbound) private pure returns (int24) {
-        int24 tickSpacing = unbound;
-        if (tickSpacing < 0) {
-            tickSpacing -= type(int24).min;
-        }
-        return (tickSpacing % 32767) + 1;
-    }
-
-    function testBoundTickSpacing(int24 tickSpacing) external {
-        int24 bound = boundTickSpacing(tickSpacing);
-        assertGt(bound, 0);
-        assertLt(bound, 32768);
-    }
-
     function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
-        params.tickSpacing = boundTickSpacing(params.tickSpacing);
+        // Assumptions tested in PoolManager.t.sol
+        vm.assume(params.tickSpacing > 0);
+        vm.assume(params.tickSpacing < 32768);
 
-        testInitialize(sqrtPriceX96, 0);
+        testPoolInitialize(sqrtPriceX96, 0);
 
         if (params.tickLower >= params.tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
@@ -61,8 +51,14 @@ contract PoolTest is Test, Deployers {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, params.tickLower));
-        } else if (params.tickLower % params.tickSpacing != 0 || params.tickUpper % params.tickSpacing != 0) {
-            vm.expectRevert();
+        } else if (params.tickLower % params.tickSpacing != 0) {
+            vm.expectRevert(
+                abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickLower, params.tickSpacing)
+            );
+        } else if (params.tickUpper % params.tickSpacing != 0) {
+            vm.expectRevert(
+                abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickUpper, params.tickSpacing)
+            );
         }
 
         params.owner = address(this);
@@ -70,9 +66,12 @@ contract PoolTest is Test, Deployers {
     }
 
     function testSwap(uint160 sqrtPriceX96, Pool.SwapParams memory params) public {
-        params.tickSpacing = boundTickSpacing(params.tickSpacing);
+        // Assumptions tested in PoolManager.t.sol
+        vm.assume(params.tickSpacing > 0);
+        vm.assume(params.tickSpacing < 32768);
+        vm.assume(params.fee < 1000000);
 
-        testInitialize(sqrtPriceX96, 0);
+        testPoolInitialize(sqrtPriceX96, 0);
         Pool.Slot0 memory slot0 = state.slot0;
 
         if (params.amountSpecified == 0) {
