@@ -129,7 +129,7 @@ contract FullMathTest is Test {
 
     function checkMulDivRoundingUp(uint256 x, uint256 y, uint256 d) external {
         unchecked {
-            require(d > 0);
+            vm.assume(d > 0);
             vm.assume(!resultOverflows(x, y, d));
             uint256 z = FullMath.mulDivRoundingUp(x, y, d);
             if (x == 0 || y == 0) {
@@ -161,6 +161,8 @@ contract FullMathTest is Test {
     }
 
     function resultOverflows(uint256 x, uint256 y, uint256 d) private pure returns (bool) {
+        require(d > 0);
+
         // If x or y is zero, the result will be zero, and there's no overflow
         if (x == 0 || y == 0) {
             return false;
@@ -173,7 +175,7 @@ contract FullMathTest is Test {
         uint256 big;
         unchecked {
             small = x * y;
-            big = remainder - small;
+            big = (remainder - small) - (remainder < small ? 1 : 0);
         }
 
         return d <= big;
