@@ -17,10 +17,10 @@ contract PoolManagerReentrancyTest is ILockCallback {
     function helper(IPoolManager poolManager, Currency currencyToBorrow, uint256 total, uint256 count) internal {
         // check that it is currently already locked `total-count` times, ...
         unchecked {
-            assert(poolManager.lockedByIndex() + 1 == total - count);
+            assert(poolManager.openLockCount() == total - count);
             poolManager.lock(abi.encode(currencyToBorrow, total, count));
             // and still has that many locks after this particular lock is released
-            assert(poolManager.lockedByIndex() + 1 == total - count);
+            assert(poolManager.openLockCount() == total - count);
         }
     }
 
@@ -28,13 +28,11 @@ contract PoolManagerReentrancyTest is ILockCallback {
         (Currency currencyToBorrow, uint256 total, uint256 count) = abi.decode(data, (Currency, uint256, uint256));
         emit LockAcquired(count);
 
-        // uint256 id = total - count;
-
         IPoolManager poolManager = IPoolManager(msg.sender);
 
-        assert(poolManager.lockedBy(poolManager.lockedByIndex()) == address(this));
+        assert(poolManager.lockedBy(poolManager.openLockCount() - 1) == address(this));
         unchecked {
-            assert(poolManager.lockedByIndex() == total - count);
+            assert(poolManager.openLockCount() - 1 == total - count);
         }
 
         assert(poolManager.getNonzeroDeltaCount(address(this)) == 0);

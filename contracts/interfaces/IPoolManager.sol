@@ -133,8 +133,8 @@ interface IPoolManager is IERC1155 {
     /// @param index The index of the locker, also known as the id of the locker
     function lockedBy(uint256 index) external view returns (address);
 
-    /// @notice The index of the currently active locker. Always <= the length of the lockedBy array.
-    function lockedByIndex() external view returns (uint256);
+    /// @notice The number of open locks. 0 by default, always <= lockedBy.length.
+    function openLockCount() external view returns (uint256);
 
     /// @notice Returns the count of nonzero deltas for the given locker
     /// @param locker The address of the locker

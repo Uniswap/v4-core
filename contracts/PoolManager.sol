@@ -109,7 +109,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     address[] public override lockedBy;
 
     /// @inheritdoc IPoolManager
-    uint256 public override lockedByIndex = type(uint256).max;
+    uint256 public override openLockCount;
 
     /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
     /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
@@ -136,15 +136,15 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function lock(bytes calldata data) external override returns (bytes memory result) {
         unchecked {
             lockedBy.push(msg.sender);
-            lockedByIndex++;
+            openLockCount++;
 
             // the caller does everything in this callback, including paying what they owe via calls to settle
             result = ILockCallback(msg.sender).lockAcquired(data);
 
-            lockedByIndex--;
+            openLockCount--;
 
             // only enforce that deltas are 0 when the outermost lock frame is expiring
-            if (lockedByIndex == type(uint256).max) {
+            if (openLockCount == 0) {
                 // awkward for loop but it basically clears the array in reverse order without assigning superfluously
                 // TODO worth de-duping this to handle duplicate lockers?
                 for (uint256 i = lockedBy.length - 1; i != type(uint256).max; i--) {
@@ -160,7 +160,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function _accountDelta(Currency currency, int256 delta) internal {
         if (delta == 0) return;
 
-        LockState storage lockState = lockStates[lockedBy[lockedByIndex]];
+        LockState storage lockState = lockStates[lockedBy[openLockCount - 1]];
         int256 current = lockState.currencyDelta[currency];
 
         int256 next = current + delta;
@@ -182,7 +182,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     modifier onlyByLocker() {
-        address locker = lockedBy[lockedByIndex];
+        address locker = lockedBy[openLockCount - 1];
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
