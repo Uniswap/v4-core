@@ -14,7 +14,8 @@ interface IPoolManager is IERC1155 {
     error ProtocolFeeCannotBeFetched();
 
     /// @notice Thrown when a currency is not netted out after a lock
-    error CurrencyNotSettled();
+    /// @param locker The offending locker
+    error CurrencyNotSettled(address locker);
 
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
@@ -132,17 +133,17 @@ interface IPoolManager is IERC1155 {
     /// @param index The index of the locker, also known as the id of the locker
     function lockedBy(uint256 index) external view returns (address);
 
-    /// @notice Getter for the length of the lockedBy array
-    function lockedByLength() external view returns (uint256);
+    /// @notice The index of the currently active locker. Always <= the length of the lockedBy array.
+    function lockedByIndex() external view returns (uint256);
 
-    /// @notice Returns the count of nonzero deltas for the given locker ID
-    /// @param id The ID of the locker
-    function getNonzeroDeltaCount(uint256 id) external view returns (uint256);
+    /// @notice Returns the count of nonzero deltas for the given locker
+    /// @param locker The address of the locker
+    function getNonzeroDeltaCount(address locker) external view returns (uint256);
 
     /// @notice Get the current delta for a given currency, and its position in the currencies touched array
-    /// @param id The ID of the locker
+    /// @param locker The address of the locker
     /// @param currency The currency for which to lookup the delta
-    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256);
+    function getCurrencyDelta(address locker, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`

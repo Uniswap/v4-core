@@ -109,9 +109,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     address[] public override lockedBy;
 
     /// @inheritdoc IPoolManager
-    function lockedByLength() external view returns (uint256) {
-        return lockedBy.length;
-    }
+    uint256 public override lockedByIndex = type(uint256).max;
 
     /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
     /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
@@ -122,38 +120,47 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
     /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
-    mapping(uint256 index => LockState) private lockStates;
+    mapping(address locker => LockState) private lockStates;
 
     /// @inheritdoc IPoolManager
-    function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
-        return lockStates[id].nonzeroDeltaCount;
+    function getNonzeroDeltaCount(address locker) external view returns (uint256) {
+        return lockStates[locker].nonzeroDeltaCount;
     }
 
     /// @inheritdoc IPoolManager
-    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256) {
-        return lockStates[id].currencyDelta[currency];
+    function getCurrencyDelta(address locker, Currency currency) external view returns (int256) {
+        return lockStates[locker].currencyDelta[currency];
     }
 
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        uint256 id = lockedBy.length;
-        lockedBy.push(msg.sender);
-
-        // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(msg.sender).lockAcquired(data);
-
         unchecked {
-            LockState storage lockState = lockStates[id];
-            if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
-        }
+            lockedBy.push(msg.sender);
+            lockedByIndex++;
 
-        lockedBy.pop();
+            // the caller does everything in this callback, including paying what they owe via calls to settle
+            result = ILockCallback(msg.sender).lockAcquired(data);
+
+            lockedByIndex--;
+
+            // only enforce that deltas are 0 when the outermost lock frame is expiring
+            if (lockedByIndex == type(uint256).max) {
+                // awkward for loop but it basically clears the array in reverse order without assigning superfluously
+                // TODO worth de-duping this to handle duplicate lockers?
+                for (uint256 i = lockedBy.length - 1; i != type(uint256).max; i--) {
+                    address locker = lockedBy[i];
+                    LockState storage lockState = lockStates[locker];
+                    if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled(locker);
+                    lockedBy.pop(); // remove the locker from the stack
+                }
+            }
+        }
     }
 
     function _accountDelta(Currency currency, int256 delta) internal {
         if (delta == 0) return;
 
-        LockState storage lockState = lockStates[lockedBy.length - 1];
+        LockState storage lockState = lockStates[lockedBy[lockedByIndex]];
         int256 current = lockState.currencyDelta[currency];
 
         int256 next = current + delta;
@@ -175,7 +182,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     modifier onlyByLocker() {
-        address locker = lockedBy[lockedBy.length - 1];
+        address locker = lockedBy[lockedByIndex];
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
