@@ -182,10 +182,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 10
         });
         manager.initialize(key, SQRT_RATIO_1_1);
-        
+
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
         modifyPositionRouter.modifyPosition(key, params);
-        
+
         snapStart("donate gas with 1 token");
         donateRouter.donate(key, 100, 0);
         snapEnd();

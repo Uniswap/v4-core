@@ -273,7 +273,6 @@ describe('PoolManager gas tests', () => {
       }
     })
 
-
     // describe('#burn', () => {
     //   for (const { description, tickLower, tickUpper } of [
     //     {
