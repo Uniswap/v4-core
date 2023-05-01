@@ -14,12 +14,12 @@ import {PoolId} from "../../contracts/libraries/PoolId.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
-import {Currency} from "../../contracts/libraries/CurrencyLibrary.sol";
+import {Currency, CurrencyLibrary} from "../../contracts/libraries/CurrencyLibrary.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
-contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot{
+contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
     using Pool for Pool.State;
 
@@ -29,21 +29,21 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot{
     PoolModifyPositionTest modifyPositionRouter;
 
     address ADDRESS_ZERO = address(0);
-    
+
     function setUp() public {
         initializeTokens();
         manager = Deployers.createFreshManager();
         donateRouter = new PoolDonateTest(manager);
         modifyPositionRouter = new PoolModifyPositionTest(manager);
 
-        MockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ** 18);
+        MockERC20(Currency.unwrap(currency0)).mint(address(this), 1 ether);
+        MockERC20(Currency.unwrap(currency1)).mint(address(this), 1 ether);
 
-        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 10 ** 18);
+        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 1 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 1 ether);
 
-        MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ** 18);
-        MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ** 18);
+        MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 1 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 1 ether);
     }
 
     function testPoolManagerInitialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) public {
@@ -79,7 +79,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot{
         donateRouter.donate(key, 100, 100);
     }
 
-    function testDonalFailsIfNoLiquidity(uint160 sqrtPriceX96) public {
+    function testDonateFailsIfNoLiquidity(uint160 sqrtPriceX96) public {
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
@@ -95,7 +95,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot{
         donateRouter.donate(key, 100, 100);
     }
 
-    // test successful donation if pool has liquidity 
+    // test successful donation if pool has liquidity
     function testDonateSucceedsWhenPoolHasLiquidity() public {
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
@@ -106,14 +106,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot{
         });
         manager.initialize(key, SQRT_RATIO_1_1);
 
-
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
         modifyPositionRouter.modifyPosition(key, params);
         snapStart("donate gas with 2 tokens");
         donateRouter.donate(key, 100, 200);
         snapEnd();
 
-        (,uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(PoolId.toId(key));
+        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(PoolId.toId(key));
         assertEq(feeGrowthGlobal0X128, 340282366920938463463374607431768211456);
         assertEq(feeGrowthGlobal1X128, 680564733841876926926749214863536422912);
     }
@@ -122,7 +121,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot{
         vm.deal(address(this), 1 ether);
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
-            currency0: Currency.wrap(ADDRESS_ZERO),
+            currency0: CurrencyLibrary.NATIVE,
             currency1: currency1,
             fee: 100,
             hooks: IHooks(address(0)),
@@ -131,10 +130,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot{
         manager.initialize(key, SQRT_RATIO_1_1);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
-        modifyPositionRouter.modifyPosition{value:1}(key, params);
-        donateRouter.donate{value:100}(key, 100, 200);
+        modifyPositionRouter.modifyPosition{value: 1}(key, params);
+        donateRouter.donate{value: 100}(key, 100, 200);
 
-        (,uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(PoolId.toId(key));
+        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(PoolId.toId(key));
         assertEq(feeGrowthGlobal0X128, 340282366920938463463374607431768211456);
         assertEq(feeGrowthGlobal1X128, 680564733841876926926749214863536422912);
     }
@@ -193,5 +192,4 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot{
     }
 
     fallback() external payable {}
-
 }
