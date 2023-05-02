@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import {FullMath} from './FullMath.sol';
-import {SqrtPriceMath} from './SqrtPriceMath.sol';
-import {Q96} from './FixedPoint96.sol';
+import {FullMath} from "./FullMath.sol";
+import {SqrtPriceMath} from "./SqrtPriceMath.sol";
+import {Q96} from "./FixedPoint96.sol";
 
 /// @title Computes the result of a swap within ticks
 /// @notice Contains methods for computing the result of a swap within a single tick price range, i.e., a single tick.
@@ -35,28 +35,24 @@ library SwapMath {
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioTarget, sqrtRatioCurrent, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrent, sqrtRatioTarget, liquidity, true);
-                if (amountRemainingLessFee >= amountIn) sqrtRatioNext = sqrtRatioTarget;
-                else
+                if (amountRemainingLessFee >= amountIn) {
+                    sqrtRatioNext = sqrtRatioTarget;
+                } else {
                     sqrtRatioNext = SqrtPriceMath.getNextSqrtPriceFromInput(
-                        sqrtRatioCurrent,
-                        liquidity,
-                        amountRemainingLessFee,
-                        zeroForOne
+                        sqrtRatioCurrent, liquidity, amountRemainingLessFee, zeroForOne
                     );
-                
+                }
             } else {
                 amountOut = zeroForOne
                     ? SqrtPriceMath.getAmount1Delta(sqrtRatioTarget, sqrtRatioCurrent, liquidity, false)
                     : SqrtPriceMath.getAmount0Delta(sqrtRatioCurrent, sqrtRatioTarget, liquidity, false);
-                if (uint256(-amountRemaining) >= amountOut) sqrtRatioNext = sqrtRatioTarget;
-                else
+                if (uint256(-amountRemaining) >= amountOut) {
+                    sqrtRatioNext = sqrtRatioTarget;
+                } else {
                     sqrtRatioNext = SqrtPriceMath.getNextSqrtPriceFromOutput(
-                        sqrtRatioCurrent,
-                        liquidity,
-                        uint256(-amountRemaining),
-                        zeroForOne
+                        sqrtRatioCurrent, liquidity, uint256(-amountRemaining), zeroForOne
                     );
-                
+                }
             }
 
             bool max = sqrtRatioTarget == sqrtRatioNext;

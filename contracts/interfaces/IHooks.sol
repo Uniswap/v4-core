@@ -14,7 +14,7 @@ interface IHooks {
     /// @param key The key for the pool being initialized
     /// @param sqrtPrice The sqrt(price) of the pool as a Q64.96
     /// @return bytes4 The function selector for the hook
-    function beforeInitialize(address sender, IPoolManager.PoolKey calldata key, uint160 sqrtPrice)
+    function beforeInitialize(address sender, IPoolManager.PoolKey calldata key, Q96 sqrtPrice)
         external
         returns (bytes4);
 
@@ -24,7 +24,7 @@ interface IHooks {
     /// @param sqrtPrice The sqrt(price) of the pool as a Q64.96
     /// @param tick The current tick after the state of a pool is initialized
     /// @return bytes4 The function selector for the hook
-    function afterInitialize(address sender, IPoolManager.PoolKey calldata key, uint160 sqrtPrice, int24 tick)
+    function afterInitialize(address sender, IPoolManager.PoolKey calldata key, Q96 sqrtPrice, int24 tick)
         external
         returns (bytes4);
 

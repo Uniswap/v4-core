@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import {Hooks} from './libraries/Hooks.sol';
-import {Pool} from './libraries/Pool.sol';
-import {SafeCast} from './libraries/SafeCast.sol';
-import {Position} from './libraries/Position.sol';
-import {Q96} from './libraries/FixedPoint96.sol';
-import {Currency, CurrencyLibrary} from './libraries/CurrencyLibrary.sol';
+import {Hooks} from "./libraries/Hooks.sol";
+import {Pool} from "./libraries/Pool.sol";
+import {SafeCast} from "./libraries/SafeCast.sol";
+import {Position} from "./libraries/Position.sol";
+import {Q96} from "./libraries/FixedPoint96.sol";
+import {Currency, CurrencyLibrary} from "./libraries/CurrencyLibrary.sol";
 
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
@@ -73,7 +73,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(PoolKey memory key, Q96 sqrtPriceX96) external override returns (int24 tick) {
+    function initialize(PoolKey memory key, Q96 sqrtPrice) external override returns (int24 tick) {
         if (key.fee >= 1000000 && key.fee != Hooks.DYNAMIC_FEE) revert FeeTooLarge();
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
@@ -260,9 +260,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit Swap(
-            poolId, msg.sender, delta.amount0, delta.amount1, state.sqrtPrice, state.liquidity, state.tick, fee
-        );
+        emit Swap(poolId, msg.sender, delta.amount0, delta.amount1, state.sqrtPrice, state.liquidity, state.tick, fee);
     }
 
     /// @inheritdoc IPoolManager

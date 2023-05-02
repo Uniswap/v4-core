@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.6.2;
 
-import {Currency} from '../libraries/CurrencyLibrary.sol';
-import {Pool} from '../libraries/Pool.sol';
-import {Q96} from '../libraries/FixedPoint96.sol';
-import {IERC1155} from '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
-import {IHooks} from './IHooks.sol';
+import {Currency} from "../libraries/CurrencyLibrary.sol";
+import {Pool} from "../libraries/Pool.sol";
+import {Q96} from "../libraries/FixedPoint96.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {IHooks} from "./IHooks.sol";
 
 interface IPoolManager is IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256

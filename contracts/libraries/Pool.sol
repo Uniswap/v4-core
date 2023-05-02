@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {SafeCast} from './SafeCast.sol';
-import {TickBitmap} from './TickBitmap.sol';
-import {Position} from './Position.sol';
-import {FullMath} from './FullMath.sol';
-import {FixedPoint128} from './FixedPoint128.sol';
-import {Q96, FixedPoint96} from './FixedPoint96.sol';
-import {TickMath} from './TickMath.sol';
-import {SqrtPriceMath} from './SqrtPriceMath.sol';
-import {SwapMath} from './SwapMath.sol';
-import {IPoolManager} from '../interfaces/IPoolManager.sol';
+import {SafeCast} from "./SafeCast.sol";
+import {TickBitmap} from "./TickBitmap.sol";
+import {Position} from "./Position.sol";
+import {FullMath} from "./FullMath.sol";
+import {FixedPoint128} from "./FixedPoint128.sol";
+import {Q96, FixedPoint96} from "./FixedPoint96.sol";
+import {TickMath} from "./TickMath.sol";
+import {SqrtPriceMath} from "./SqrtPriceMath.sol";
+import {SwapMath} from "./SwapMath.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 library Pool {
     using SafeCast for *;
@@ -103,16 +103,12 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(
-        State storage self,
-        Q96 sqrtPrice,
-        uint8 protocolFee
-    ) internal returns (int24 tick) {
+    function initialize(State storage self, Q96 sqrtPrice, uint8 protocolFee) internal returns (int24 tick) {
         if (self.slot0.sqrtPrice != Q96.wrap(0)) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPrice);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPrice, tick: tick, protocolFee: protocolFee, lastSwapTimestamp: 0});
+        self.slot0 = Slot0({sqrtPrice: sqrtPrice, tick: tick, protocolFee: protocolFee, lastSwapTimestamp: 0});
     }
 
     function setProtocolFee(State storage self, uint8 newProtocolFee) internal {
@@ -211,14 +207,10 @@ library Pool {
                 );
             } else if (self.slot0.tick < params.tickUpper) {
                 result.amount0 += SqrtPriceMath.getAmount0Delta(
-                    self.slot0.sqrtPrice,
-                    TickMath.getSqrtRatioAtTick(params.tickUpper),
-                    params.liquidityDelta
+                    self.slot0.sqrtPrice, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
                 );
                 result.amount1 += SqrtPriceMath.getAmount1Delta(
-                    TickMath.getSqrtRatioAtTick(params.tickLower),
-                    self.slot0.sqrtPrice,
-                    params.liquidityDelta
+                    TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPrice, params.liquidityDelta
                 );
 
                 self.liquidity = params.liquidityDelta < 0
@@ -294,15 +286,19 @@ library Pool {
         Slot0 memory slot0Start = self.slot0;
         if (self.slot0.sqrtPrice == Q96.wrap(0)) revert PoolNotInitialized();
         if (params.zeroForOne) {
-            if (params.sqrtPriceLimit >= slot0Start.sqrtPrice)
+            if (params.sqrtPriceLimit >= slot0Start.sqrtPrice) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPrice, params.sqrtPriceLimit);
-            if (params.sqrtPriceLimit <= TickMath.MIN_SQRT_RATIO)
+            }
+            if (params.sqrtPriceLimit <= TickMath.MIN_SQRT_RATIO) {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimit);
+            }
         } else {
-            if (params.sqrtPriceLimit <= slot0Start.sqrtPrice)
+            if (params.sqrtPriceLimit <= slot0Start.sqrtPrice) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPrice, params.sqrtPriceLimit);
-            if (params.sqrtPriceLimit >= TickMath.MAX_SQRT_RATIO)
+            }
+            if (params.sqrtPriceLimit >= TickMath.MAX_SQRT_RATIO) {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimit);
+            }
         }
 
         SwapCache memory cache = SwapCache({
@@ -347,9 +343,7 @@ library Pool {
                     params.zeroForOne
                         ? step.sqrtPriceNext < params.sqrtPriceLimit
                         : step.sqrtPriceNext > params.sqrtPriceLimit
-                )
-                    ? params.sqrtPriceLimit
-                    : step.sqrtPriceNext,
+                ) ? params.sqrtPriceLimit : step.sqrtPriceNext,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
                 params.fee
