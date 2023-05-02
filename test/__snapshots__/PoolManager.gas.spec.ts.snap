@@ -1,19 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PoolManager gas tests ERC20 tokens #donate donation of 1 token 1`] = `
-Object {
-  "calldataByteLength": 228,
-  "gasUsed": 130895,
-}
-`;
-
-exports[`PoolManager gas tests ERC20 tokens #donate donation of 2 tokens 1`] = `
-Object {
-  "calldataByteLength": 228,
-  "gasUsed": 177820,
-}
-`;
-
 exports[`PoolManager gas tests ERC20 tokens #initialize initialize pool with no hooks and no protocol fee 1`] = `
 Object {
   "calldataByteLength": 196,
@@ -144,20 +130,6 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block
 Object {
   "calldataByteLength": 324,
   "gasUsed": 247736,
-}
-`;
-
-exports[`PoolManager gas tests Native Tokens #donate donation of 1 token 1`] = `
-Object {
-  "calldataByteLength": 228,
-  "gasUsed": 118282,
-}
-`;
-
-exports[`PoolManager gas tests Native Tokens #donate donation of 2 tokens 1`] = `
-Object {
-  "calldataByteLength": 228,
-  "gasUsed": 165208,
 }
 `;
 
