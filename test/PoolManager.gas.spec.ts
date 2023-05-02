@@ -273,16 +273,6 @@ describe('PoolManager gas tests', () => {
       }
     })
 
-    describe('#donate', () => {
-      it('donation of 2 tokens', async () => {
-        await snapshotGasCost(donate(100, 200))
-      })
-
-      it('donation of 1 token', async () => {
-        await snapshotGasCost(donate(100, 0))
-      })
-    })
-
     // describe('#burn', () => {
     //   for (const { description, tickLower, tickUpper } of [
     //     {
@@ -555,16 +545,6 @@ describe('PoolManager gas tests', () => {
           })
         })
       }
-    })
-
-    describe('#donate', () => {
-      it('donation of 2 tokens', async () => {
-        await snapshotGasCost(donate(100, 200))
-      })
-
-      it('donation of 1 token', async () => {
-        await snapshotGasCost(donate(100, 0))
-      })
     })
   })
 })
