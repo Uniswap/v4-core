@@ -19,6 +19,7 @@ import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
+import {Q96} from "../../contracts/libraries/FixedPoint96.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
@@ -51,10 +52,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 1 ether);
     }
 
-    function testPoolManagerInitialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) public {
+    function testPoolManagerInitialize(IPoolManager.PoolKey memory key, Q96 sqrtPrice) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        vm.assume(sqrtPrice >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPrice < TickMath.MAX_SQRT_RATIO);
 
         // tested in Hooks.t.sol
         key.hooks = IHooks(address(0));
@@ -69,7 +70,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key.hooks)));
         }
 
-        manager.initialize(key, sqrtPriceX96);
+        manager.initialize(key, sqrtPrice);
     }
 
     function testDonateFailsIfNotInitialized() public {
@@ -84,9 +85,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         donateRouter.donate(key, 100, 100);
     }
 
-    function testDonateFailsIfNoLiquidity(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+    function testDonateFailsIfNoLiquidity(Q96 sqrtPrice) public {
+        vm.assume(sqrtPrice >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPrice < TickMath.MAX_SQRT_RATIO);
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
@@ -95,7 +96,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             hooks: IHooks(address(0)),
             tickSpacing: 10
         });
-        manager.initialize(key, sqrtPriceX96);
+        manager.initialize(key, sqrtPrice);
         vm.expectRevert(abi.encodeWithSelector(Pool.NoLiquidityToReceiveFees.selector));
         donateRouter.donate(key, 100, 100);
     }

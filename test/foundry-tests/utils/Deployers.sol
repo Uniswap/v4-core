@@ -8,9 +8,10 @@ import {IHooks} from "../../../contracts/interfaces/IHooks.sol";
 import {IPoolManager} from "../../../contracts/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../../contracts/PoolManager.sol";
 import {PoolId} from "../../../contracts/libraries/PoolId.sol";
+import {Q96} from "../../../contracts/libraries/FixedPoint96.sol";
 
 contract Deployers {
-    uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
+    Q96 constant SQRT_RATIO_1_1 = Q96.wrap(79228162514264337593543950336);
 
     function deployTokens(uint8 count, uint256 totalSupply) internal returns (TestERC20[] memory tokens) {
         tokens = new TestERC20[](count);
@@ -19,7 +20,7 @@ contract Deployers {
         }
     }
 
-    function createPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
+    function createPool(PoolManager manager, IHooks hooks, uint24 fee, Q96 sqrtPrice)
         private
         returns (IPoolManager.PoolKey memory key, bytes32 id)
     {
@@ -32,15 +33,15 @@ contract Deployers {
             hooks
         );
         id = PoolId.toId(key);
-        manager.initialize(key, sqrtPriceX96);
+        manager.initialize(key, sqrtPrice);
     }
 
-    function createFreshPool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
+    function createFreshPool(IHooks hooks, uint24 fee, Q96 sqrtPrice)
         internal
         returns (PoolManager manager, IPoolManager.PoolKey memory key, bytes32 id)
     {
         manager = createFreshManager();
-        (key, id) = createPool(manager, hooks, fee, sqrtPriceX96);
+        (key, id) = createPool(manager, hooks, fee, sqrtPrice);
         return (manager, key, id);
     }
 

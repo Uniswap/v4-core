@@ -183,9 +183,9 @@ describe('PoolManager', () => {
         )
 
       const {
-        slot0: { sqrtPriceX96, protocolFee },
+        slot0: { sqrtPrice, protocolFee },
       } = await manager.pools(getPoolId(poolKey))
-      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
       expect(protocolFee).to.eq(0)
     })
 
@@ -210,9 +210,9 @@ describe('PoolManager', () => {
         )
 
       const {
-        slot0: { sqrtPriceX96, protocolFee },
+        slot0: { sqrtPrice, protocolFee },
       } = await manager.pools(getPoolId(poolKey))
-      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
       expect(protocolFee).to.eq(0)
     })
 
@@ -229,7 +229,7 @@ describe('PoolManager', () => {
       )
 
       const {
-        slot0: { sqrtPriceX96 },
+        slot0: { sqrtPrice },
       } = await manager.pools(
         getPoolId({
           currency0: tokens.currency0.address,
@@ -239,7 +239,7 @@ describe('PoolManager', () => {
           hooks: hooksMock.address,
         })
       )
-      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
     })
 
     it('can be initialized with MAX_TICK_SPACING', async () => {
@@ -270,7 +270,7 @@ describe('PoolManager', () => {
       )
 
       const {
-        slot0: { sqrtPriceX96 },
+        slot0: { sqrtPrice },
       } = await manager.pools(
         getPoolId({
           currency0: tokens.currency0.address,
@@ -280,7 +280,7 @@ describe('PoolManager', () => {
           hooks: testHooksEmpty.address,
         })
       )
-      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
     })
 
     it('fails if tickSpacing is too large', async () => {
@@ -348,9 +348,9 @@ describe('PoolManager', () => {
       await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
       const {
-        slot0: { sqrtPriceX96, protocolFee },
+        slot0: { sqrtPrice, protocolFee },
       } = await manager.pools(getPoolId(poolKey))
-      expect(sqrtPriceX96).to.eq(encodeSqrtPriceX96(10, 1))
+      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
       expect(protocolFee).to.eq(poolProtocolFee)
     })
 
@@ -585,7 +585,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
           {
@@ -617,7 +617,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
           {
@@ -645,7 +645,7 @@ describe('PoolManager', () => {
           poolKey,
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
           {
@@ -679,7 +679,7 @@ describe('PoolManager', () => {
         },
         {
           amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
         {
@@ -699,7 +699,7 @@ describe('PoolManager', () => {
         },
         {
           amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
       ]
@@ -729,7 +729,7 @@ describe('PoolManager', () => {
         poolKey,
         {
           amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
         {
@@ -743,7 +743,7 @@ describe('PoolManager', () => {
           poolKey,
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           },
           {
@@ -768,7 +768,7 @@ describe('PoolManager', () => {
         poolKey,
         {
           amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
         {
@@ -782,7 +782,7 @@ describe('PoolManager', () => {
           poolKey,
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           },
           {
@@ -815,7 +815,7 @@ describe('PoolManager', () => {
         },
         {
           amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
         {
@@ -835,7 +835,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           },
           {
@@ -882,7 +882,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
           {
@@ -933,7 +933,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
           {
@@ -961,7 +961,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: -25,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(4, 1),
+            sqrtPriceLimit: encodeSqrtPriceX96(4, 1),
             zeroForOne: false,
           },
           {
@@ -994,7 +994,7 @@ describe('PoolManager', () => {
         poolKey,
         {
           amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
         {
@@ -1008,7 +1008,7 @@ describe('PoolManager', () => {
           poolKey,
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           },
           {
@@ -1044,7 +1044,7 @@ describe('PoolManager', () => {
         poolKey,
         {
           amountSpecified: 100,
-          sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
           zeroForOne: true,
         },
         {
@@ -1061,7 +1061,7 @@ describe('PoolManager', () => {
           poolKey,
           {
             amountSpecified: 100,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 4),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
             zeroForOne: true,
           },
           {
@@ -1248,7 +1248,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: 10000,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
           {
@@ -1290,7 +1290,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: 10000,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
           {
@@ -1370,7 +1370,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: 10000,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
           {
@@ -1415,7 +1415,7 @@ describe('PoolManager', () => {
           },
           {
             amountSpecified: 10000,
-            sqrtPriceLimitX96: encodeSqrtPriceX96(1, 2),
+            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
             zeroForOne: true,
           },
           {

@@ -3,7 +3,18 @@ pragma solidity ^0.8.19;
 
 type Q96 is uint160;
 
-using {add as +, sub as -, eq as ==, neq as !=, lt as <, gt as >, lte as <=, gte as >=} for Q96 global;
+using {
+    add as +,
+    sub as -,
+    eq as ==,
+    neq as !=,
+    lt as <,
+    gt as >,
+    lte as <=,
+    gte as >=,
+    div as /,
+    mul as *
+} for Q96 global;
 
 function add(Q96 a, Q96 b) pure returns (Q96) {
     return Q96.wrap(Q96.unwrap(a) + Q96.unwrap(b));
@@ -35,6 +46,14 @@ function lte(Q96 a, Q96 b) pure returns (bool) {
 
 function gte(Q96 a, Q96 b) pure returns (bool) {
     return Q96.unwrap(a) >= Q96.unwrap(b);
+}
+
+function div(Q96 a, Q96 b) pure returns (Q96) {
+    return Q96.wrap((Q96.unwrap(a) * 2 ** 96) / Q96.unwrap(b));
+}
+
+function mul(Q96 a, Q96 b) pure returns (Q96) {
+    return Q96.wrap((Q96.unwrap(a) * Q96.unwrap(b)) / 2 ** 96);
 }
 
 /// @title FixedPoint96

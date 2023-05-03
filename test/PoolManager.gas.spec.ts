@@ -79,13 +79,13 @@ describe('PoolManager gas tests', () => {
         hooks: ADDRESS_ZERO,
       }
 
-      const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
+      const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimit) => {
         return swapTest.swap(
           poolKey,
           {
             zeroForOne: true,
             amountSpecified: amount,
-            sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
+            sqrtPriceLimit: sqrtPriceLimit ?? MIN_SQRT_RATIO.add(1),
           },
           {
             withdrawTokens: true,
@@ -93,13 +93,13 @@ describe('PoolManager gas tests', () => {
           }
         )
       }
-      const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
+      const swapToHigherPrice: SwapToPriceFunction = (sqrtPrice, to) => {
         return swapTest.swap(
           poolKey,
           {
             zeroForOne: false,
             amountSpecified: MaxUint128,
-            sqrtPriceLimitX96: sqrtPriceX96,
+            sqrtPriceLimit: sqrtPrice,
           },
           {
             withdrawTokens: true,
@@ -107,13 +107,13 @@ describe('PoolManager gas tests', () => {
           }
         )
       }
-      const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
+      const swapToLowerPrice: SwapToPriceFunction = (sqrtPrice, to) => {
         return swapTest.swap(
           poolKey,
           {
             zeroForOne: true,
             amountSpecified: MaxUint128,
-            sqrtPriceLimitX96: sqrtPriceX96,
+            sqrtPriceLimit: sqrtPrice,
           },
           {
             withdrawTokens: true,
@@ -142,10 +142,10 @@ describe('PoolManager gas tests', () => {
       await swapExact0For1(expandTo18Decimals(1), wallet.address)
       await swapToHigherPrice(startingPrice, wallet.address)
 
-      const { tick, sqrtPriceX96 } = await getSlot0()
+      const { tick, sqrtPrice } = await getSlot0()
 
       expect(tick).to.eq(startingTick)
-      expect(sqrtPriceX96).to.eq(startingPrice)
+      expect(sqrtPrice).to.eq(startingPrice)
 
       return { manager, getSlot0, poolKey, swapExact0For1, modifyPosition, donate, swapToHigherPrice, swapToLowerPrice }
     }
@@ -180,7 +180,7 @@ describe('PoolManager gas tests', () => {
     describe('#swapExact0For1', () => {
       it('first swap in block with no tick movement', async () => {
         await snapshotGasCost(swapExact0For1(2000, wallet.address))
-        expect((await getSlot0()).sqrtPriceX96).to.not.eq(startingPrice)
+        expect((await getSlot0()).sqrtPrice).to.not.eq(startingPrice)
         expect((await getSlot0()).tick).to.eq(startingTick)
       })
 
@@ -356,13 +356,13 @@ describe('PoolManager gas tests', () => {
         hooks: ADDRESS_ZERO,
       }
 
-      const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimitX96) => {
+      const swapExact0For1: SwapFunction = (amount, to, sqrtPriceLimit) => {
         return swapTest.swap(
           poolKey,
           {
             zeroForOne: true,
             amountSpecified: amount,
-            sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
+            sqrtPriceLimit: sqrtPriceLimit ?? MIN_SQRT_RATIO.add(1),
           },
           {
             withdrawTokens: true,
@@ -373,13 +373,13 @@ describe('PoolManager gas tests', () => {
           }
         )
       }
-      const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
+      const swapToHigherPrice: SwapToPriceFunction = (sqrtPrice, to) => {
         return swapTest.swap(
           poolKey,
           {
             zeroForOne: false,
             amountSpecified: MaxUint128,
-            sqrtPriceLimitX96: sqrtPriceX96,
+            sqrtPriceLimit: sqrtPrice,
           },
           {
             withdrawTokens: true,
@@ -387,13 +387,13 @@ describe('PoolManager gas tests', () => {
           }
         )
       }
-      const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
+      const swapToLowerPrice: SwapToPriceFunction = (sqrtPrice, to) => {
         return swapTest.swap(
           poolKey,
           {
             zeroForOne: true,
             amountSpecified: MaxUint128,
-            sqrtPriceLimitX96: sqrtPriceX96,
+            sqrtPriceLimit: sqrtPrice,
           },
           {
             withdrawTokens: true,
@@ -429,10 +429,10 @@ describe('PoolManager gas tests', () => {
       await swapExact0For1(expandTo18Decimals(1), wallet.address)
       await swapToHigherPrice(startingPrice, wallet.address)
 
-      const { tick, sqrtPriceX96 } = await getSlot0()
+      const { tick, sqrtPrice } = await getSlot0()
 
       expect(tick).to.eq(startingTick)
-      expect(sqrtPriceX96).to.eq(startingPrice)
+      expect(sqrtPrice).to.eq(startingPrice)
 
       return { manager, getSlot0, poolKey, swapExact0For1, modifyPosition, donate, swapToHigherPrice, swapToLowerPrice }
     }
@@ -454,7 +454,7 @@ describe('PoolManager gas tests', () => {
     describe('#swapExact0For1', () => {
       it('first swap in block with no tick movement', async () => {
         await snapshotGasCost(swapExact0For1(2000, wallet.address))
-        expect((await getSlot0()).sqrtPriceX96).to.not.eq(startingPrice)
+        expect((await getSlot0()).sqrtPrice).to.not.eq(startingPrice)
         expect((await getSlot0()).tick).to.eq(startingTick)
       })
 

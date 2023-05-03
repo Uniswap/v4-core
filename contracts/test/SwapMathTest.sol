@@ -2,25 +2,30 @@
 pragma solidity =0.8.19;
 
 import {SwapMath} from "../libraries/SwapMath.sol";
+import {Q96} from "../libraries/FixedPoint96.sol";
 
 contract SwapMathTest {
     function computeSwapStep(
-        uint160 sqrtP,
-        uint160 sqrtPTarget,
+        uint160 sqrtPX96,
+        uint160 sqrtPTargetX96,
         uint128 liquidity,
         int256 amountRemaining,
         uint24 feePips
-    ) external pure returns (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
+    ) external pure returns (Q96 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
+        Q96 sqrtP = Q96.wrap(sqrtPX96);
+        Q96 sqrtPTarget = Q96.wrap(sqrtPTargetX96);
         return SwapMath.computeSwapStep(sqrtP, sqrtPTarget, liquidity, amountRemaining, feePips);
     }
 
     function getGasCostOfComputeSwapStep(
-        uint160 sqrtP,
-        uint160 sqrtPTarget,
+        uint160 sqrtPX96,
+        uint160 sqrtPTargetX96,
         uint128 liquidity,
         int256 amountRemaining,
         uint24 feePips
     ) external view returns (uint256) {
+        Q96 sqrtP = Q96.wrap(sqrtPX96);
+        Q96 sqrtPTarget = Q96.wrap(sqrtPTargetX96);
         uint256 gasBefore = gasleft();
         SwapMath.computeSwapStep(sqrtP, sqrtPTarget, liquidity, amountRemaining, feePips);
         return gasBefore - gasleft();
