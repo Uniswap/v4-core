@@ -8,29 +8,29 @@ import {IPoolManager} from "./IPoolManager.sol";
 /// cause the 'before swap' hook to be invoked. See the Hooks library for the full spec.
 interface IHooks {
     /// @notice The hook called before the state of a pool is initialized
-    /// @param sender The address initializing the pool
+    /// @param sender The initial msg.sender for the initialize call
     /// @param key The key for the pool being initialized
     /// @param sqrtPriceX96 The sqrt(price) of the pool as a Q64.96
-    /// @return Any The function selector for the hook
+    /// @return bytes4 The function selector for the hook
     function beforeInitialize(address sender, IPoolManager.PoolKey calldata key, uint160 sqrtPriceX96)
         external
         returns (bytes4);
 
-    /// @notice The hook called after the state of a pool is iniitialized
-    /// @param sender The address initializing the pool
+    /// @notice The hook called after the state of a pool is initialized
+    /// @param sender The initial msg.sender for the initialize call
     /// @param key The key for the pool being initialized
     /// @param sqrtPriceX96 The sqrt(price) of the pool as a Q64.96
     /// @param tick The current tick after the state of a pool is initialized
-    /// @return Any The function selector for the hook
+    /// @return bytes4 The function selector for the hook
     function afterInitialize(address sender, IPoolManager.PoolKey calldata key, uint160 sqrtPriceX96, int24 tick)
         external
         returns (bytes4);
 
     /// @notice The hook called before a position is modified
-    /// @param sender The address modifying a position
+    /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
     /// @param params The paramaters for modifying the positon
-    /// @return Any The function selector for the hook
+    /// @return bytes4 The function selector for the hook
     function beforeModifyPosition(
         address sender,
         IPoolManager.PoolKey calldata key,
@@ -38,10 +38,10 @@ interface IHooks {
     ) external returns (bytes4);
 
     /// @notice The hook called after a position is modified
-    /// @param sender The address modifying a position
+    /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
     /// @param params The paramaters for modifying the positon
-    /// @return Any The function selector for the hook
+    /// @return bytes4 The function selector for the hook
     function afterModifyPosition(
         address sender,
         IPoolManager.PoolKey calldata key,
@@ -50,20 +50,20 @@ interface IHooks {
     ) external returns (bytes4);
 
     /// @notice The hook called before a swap
-    /// @param sender The address making a swap
+    /// @param sender The initial msg.sender for the swap call
     /// @param key The key for the pool
     /// @param params The paramaters for the swap
-    /// @return Any The function selector for the hook
+    /// @return bytes4 The function selector for the hook
     function beforeSwap(address sender, IPoolManager.PoolKey calldata key, IPoolManager.SwapParams calldata params)
         external
         returns (bytes4);
 
     /// @notice The hook called after a swap
-    /// @param sender The address making a swap
+    /// @param sender The initial msg.sender for the swap call
     /// @param key The key for the pool
     /// @param params The paramaters for the swap
-    /// @param delta What the swapper owes the pool
-    /// @return Any The function selector for the hook
+    /// @param delta The amount owed to the locker (positive) or owed to the pool (negative)
+    /// @return bytes4 The function selector for the hook
     function afterSwap(
         address sender,
         IPoolManager.PoolKey calldata key,
@@ -72,21 +72,21 @@ interface IHooks {
     ) external returns (bytes4);
 
     /// @notice The hook called before donate
-    /// @param sender The address calling donate
+    /// @param sender The initial msg.sender for the donate call
     /// @param key The key for the pool
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
-    /// @return Any The function selector for the hook
+    /// @return bytes4 The function selector for the hook
     function beforeDonate(address sender, IPoolManager.PoolKey calldata key, uint256 amount0, uint256 amount1)
         external
         returns (bytes4);
 
     /// @notice The hook called after donate
-    /// @param sender The address calling donate
+    /// @param sender The initial msg.sender for the donate call
     /// @param key The key for the pool
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
-    /// @return Any The function selector for the hook
+    /// @return bytes4 The function selector for the hook
     function afterDonate(address sender, IPoolManager.PoolKey calldata key, uint256 amount0, uint256 amount1)
         external
         returns (bytes4);
