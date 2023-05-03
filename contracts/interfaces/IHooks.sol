@@ -7,7 +7,7 @@ import {IPoolManager} from "./IPoolManager.sol";
 /// of the hooks contract address. For example, a 1 bit in the first bit of the address will
 /// cause the 'before swap' hook to be invoked. See the Hooks library for the full spec.
 interface IHooks {
-    /// @notice The hook called before the state of a pool is iniitialized
+    /// @notice The hook called before the state of a pool is initialized
     /// @param sender The address initializing the pool
     /// @param  key The key for the pool being initialized
     /// @param  sqrtPriceX96 The sqrt(price) of the pool as a Q64.96
