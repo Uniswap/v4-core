@@ -29,7 +29,7 @@ interface IHooks {
     /// @notice The hook called before a position is modified
     /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
-    /// @param params The paramaters for modifying the positon
+    /// @param params The parameters for modifying the position
     /// @return bytes4 The function selector for the hook
     function beforeModifyPosition(
         address sender,
@@ -40,7 +40,7 @@ interface IHooks {
     /// @notice The hook called after a position is modified
     /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
-    /// @param params The paramaters for modifying the positon
+    /// @param params The parameters for modifying the position
     /// @return bytes4 The function selector for the hook
     function afterModifyPosition(
         address sender,
@@ -52,7 +52,7 @@ interface IHooks {
     /// @notice The hook called before a swap
     /// @param sender The initial msg.sender for the swap call
     /// @param key The key for the pool
-    /// @param params The paramaters for the swap
+    /// @param params The parameters for the swap
     /// @return bytes4 The function selector for the hook
     function beforeSwap(address sender, IPoolManager.PoolKey calldata key, IPoolManager.SwapParams calldata params)
         external
@@ -61,7 +61,7 @@ interface IHooks {
     /// @notice The hook called after a swap
     /// @param sender The initial msg.sender for the swap call
     /// @param key The key for the pool
-    /// @param params The paramaters for the swap
+    /// @param params The parameters for the swap
     /// @param delta The amount owed to the locker (positive) or owed to the pool (negative)
     /// @return bytes4 The function selector for the hook
     function afterSwap(
