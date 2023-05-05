@@ -2,7 +2,7 @@
 pragma solidity =0.8.19;
 
 import {SwapMath} from "../libraries/SwapMath.sol";
-import {Q96} from "../libraries/FixedPoint96.sol";
+import {UQ64x96} from "../libraries/FixedPoint96.sol";
 
 contract SwapMathEchidnaTest {
     function checkComputeSwapStepInvariants(
@@ -17,10 +17,10 @@ contract SwapMathEchidnaTest {
         require(feePips > 0);
         require(feePips < 1e6);
 
-        Q96 sqrtPriceRaw = Q96.wrap(sqrtPriceRawX96);
-        Q96 sqrtPriceTargetRaw = Q96.wrap(sqrtPriceTargetRawX96);
+        UQ64x96 sqrtPriceRaw = UQ64x96.wrap(sqrtPriceRawX96);
+        UQ64x96 sqrtPriceTargetRaw = UQ64x96.wrap(sqrtPriceTargetRawX96);
 
-        (Q96 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+        (UQ64x96 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
             SwapMath.computeSwapStep(sqrtPriceRaw, sqrtPriceTargetRaw, liquidity, amountRemaining, feePips);
 
         assert(amountIn <= type(uint256).max - feeAmount);

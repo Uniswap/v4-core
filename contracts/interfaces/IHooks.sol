@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {Q96} from "../libraries/FixedPoint96.sol";
+import {UQ64x96} from "../libraries/FixedPoint96.sol";
 import {IPoolManager} from "./IPoolManager.sol";
 
 /// @notice The PoolManager contract decides whether to invoke specific hooks by inspecting the leading bits
@@ -14,7 +14,7 @@ interface IHooks {
     /// @param key The key for the pool being initialized
     /// @param sqrtPrice The sqrt(price) of the pool as a Q64.96
     /// @return bytes4 The function selector for the hook
-    function beforeInitialize(address sender, IPoolManager.PoolKey calldata key, Q96 sqrtPrice)
+    function beforeInitialize(address sender, IPoolManager.PoolKey calldata key, UQ64x96 sqrtPrice)
         external
         returns (bytes4);
 
@@ -24,7 +24,7 @@ interface IHooks {
     /// @param sqrtPrice The sqrt(price) of the pool as a Q64.96
     /// @param tick The current tick after the state of a pool is initialized
     /// @return bytes4 The function selector for the hook
-    function afterInitialize(address sender, IPoolManager.PoolKey calldata key, Q96 sqrtPrice, int24 tick)
+    function afterInitialize(address sender, IPoolManager.PoolKey calldata key, UQ64x96 sqrtPrice, int24 tick)
         external
         returns (bytes4);
 

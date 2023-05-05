@@ -11,10 +11,14 @@ exports[`PoolManager gas tests ERC20 tokens #mint above current price add to pos
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 157982,
 =======
   "gasUsed": 158076,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 157972,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -22,10 +26,14 @@ exports[`PoolManager gas tests ERC20 tokens #mint above current price new positi
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 217724,
 =======
   "gasUsed": 217819,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 217714,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -33,10 +41,14 @@ exports[`PoolManager gas tests ERC20 tokens #mint above current price second pos
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 157982,
 =======
   "gasUsed": 158076,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 157972,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -44,10 +56,14 @@ exports[`PoolManager gas tests ERC20 tokens #mint around current price add to po
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 209663,
 =======
   "gasUsed": 209798,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 209588,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -55,10 +71,14 @@ exports[`PoolManager gas tests ERC20 tokens #mint around current price new posit
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 319279,
 =======
   "gasUsed": 319414,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 319204,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -66,10 +86,14 @@ exports[`PoolManager gas tests ERC20 tokens #mint around current price second po
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 209663,
 =======
   "gasUsed": 209798,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 209588,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -77,10 +101,14 @@ exports[`PoolManager gas tests ERC20 tokens #mint below current price add to pos
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 158695,
 =======
   "gasUsed": 158697,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 158592,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -88,10 +116,14 @@ exports[`PoolManager gas tests ERC20 tokens #mint below current price new positi
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 286344,
 =======
   "gasUsed": 286347,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 286242,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -99,10 +131,14 @@ exports[`PoolManager gas tests ERC20 tokens #mint below current price second pos
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 158695,
 =======
   "gasUsed": 158697,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 158592,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -110,10 +146,14 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block 
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 192568,
 =======
   "gasUsed": 192938,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 192396,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -121,10 +161,14 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block 
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 186676,
 =======
   "gasUsed": 186893,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 186570,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -132,10 +176,14 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block,
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 211516,
 =======
   "gasUsed": 212038,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 211278,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -143,10 +191,14 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block,
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 253572,
 =======
   "gasUsed": 254550,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 253135,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -154,10 +206,14 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block,
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 204554,
 =======
   "gasUsed": 205228,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 204249,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -165,10 +221,14 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 192568,
 =======
   "gasUsed": 192938,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 192396,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -176,10 +236,14 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 186764,
 =======
   "gasUsed": 186982,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 186659,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -187,10 +251,14 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 205740,
 =======
   "gasUsed": 206109,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 205568,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -198,10 +266,14 @@ exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 247770,
 =======
   "gasUsed": 248596,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 247399,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -209,10 +281,14 @@ exports[`PoolManager gas tests Native Tokens #mint above current price add to po
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 150975,
 =======
   "gasUsed": 151069,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 150964,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -220,10 +296,14 @@ exports[`PoolManager gas tests Native Tokens #mint above current price new posit
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 210717,
 =======
   "gasUsed": 210812,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 210707,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -231,10 +311,14 @@ exports[`PoolManager gas tests Native Tokens #mint above current price second po
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 150975,
 =======
   "gasUsed": 151069,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 150964,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -242,10 +326,14 @@ exports[`PoolManager gas tests Native Tokens #mint around current price add to p
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 202656,
 =======
   "gasUsed": 202791,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 202581,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -253,10 +341,14 @@ exports[`PoolManager gas tests Native Tokens #mint around current price new posi
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 312272,
 =======
   "gasUsed": 312407,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 312197,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -264,10 +356,14 @@ exports[`PoolManager gas tests Native Tokens #mint around current price second p
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 202656,
 =======
   "gasUsed": 202791,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 202581,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -275,10 +371,14 @@ exports[`PoolManager gas tests Native Tokens #mint below current price add to po
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 164108,
 =======
   "gasUsed": 164111,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 164006,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -286,10 +386,14 @@ exports[`PoolManager gas tests Native Tokens #mint below current price new posit
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 291758,
 =======
   "gasUsed": 291760,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 291656,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -297,10 +401,14 @@ exports[`PoolManager gas tests Native Tokens #mint below current price second po
 Object {
   "calldataByteLength": 260,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 164108,
 =======
   "gasUsed": 164111,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 164006,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -308,10 +416,14 @@ exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 179923,
 =======
   "gasUsed": 180292,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 179751,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -319,10 +431,14 @@ exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 174030,
 =======
   "gasUsed": 174248,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 173924,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -330,10 +446,14 @@ exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 198871,
 =======
   "gasUsed": 199392,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 198632,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -341,10 +461,14 @@ exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 240927,
 =======
   "gasUsed": 241904,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 240489,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -352,10 +476,14 @@ exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 191908,
 =======
   "gasUsed": 192582,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 191604,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -363,10 +491,14 @@ exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in bloc
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 179923,
 =======
   "gasUsed": 180292,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 179751,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -374,10 +506,14 @@ exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in bloc
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 174119,
 =======
   "gasUsed": 174336,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 174013,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -385,10 +521,14 @@ exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in bloc
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 193094,
 =======
   "gasUsed": 193464,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 192922,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;
 
@@ -396,9 +536,13 @@ exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in bloc
 Object {
   "calldataByteLength": 324,
 <<<<<<< HEAD
+<<<<<<< HEAD
   "gasUsed": 235124,
 =======
   "gasUsed": 235950,
 >>>>>>> d857b01 (fix tests)
+=======
+  "gasUsed": 234753,
+>>>>>>> 63251d6 (add unchecked, use more specific typename)
 }
 `;

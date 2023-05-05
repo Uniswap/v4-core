@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
-import {Q96} from "../libraries/FixedPoint96.sol";
+import {UQ64x96} from "../libraries/FixedPoint96.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
@@ -24,11 +24,11 @@ contract EmptyTestHooks is IHooks {
         );
     }
 
-    function beforeInitialize(address, IPoolManager.PoolKey memory, Q96) external pure override returns (bytes4) {
+    function beforeInitialize(address, IPoolManager.PoolKey memory, UQ64x96) external pure override returns (bytes4) {
         return IHooks.beforeInitialize.selector;
     }
 
-    function afterInitialize(address, IPoolManager.PoolKey memory, Q96, int24)
+    function afterInitialize(address, IPoolManager.PoolKey memory, UQ64x96, int24)
         external
         pure
         override

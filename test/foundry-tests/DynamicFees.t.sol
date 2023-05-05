@@ -18,7 +18,7 @@ import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {IDynamicFeeManager} from "././../../contracts/interfaces/IDynamicFeeManager.sol";
-import {Q96} from "../../contracts/libraries/FixedPoint96.sol";
+import {UQ64x96} from "../../contracts/libraries/FixedPoint96.sol";
 
 contract DynamicFees is IDynamicFeeManager {
     uint24 internal fee;
@@ -60,7 +60,7 @@ contract TestDynamicFees is Test, Deployers {
         vm.expectRevert(IPoolManager.FeeTooLarge.selector);
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + Q96.wrap(1)),
+            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + UQ64x96.wrap(1)),
             PoolSwapTest.TestSettings(false, false)
         );
     }
@@ -70,7 +70,7 @@ contract TestDynamicFees is Test, Deployers {
         address indexed sender,
         int256 amount0,
         int256 amount1,
-        Q96 sqrtPrice,
+        UQ64x96 sqrtPrice,
         uint128 liquidity,
         int24 tick,
         uint24 fee
@@ -79,10 +79,10 @@ contract TestDynamicFees is Test, Deployers {
     function testSwapWorks() public {
         dynamicFees.setFee(123);
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(PoolId.toId(key), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + Q96.wrap(1), 0, 0, 123);
+        emit Swap(PoolId.toId(key), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + UQ64x96.wrap(1), 0, 0, 123);
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + Q96.wrap(1)),
+            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + UQ64x96.wrap(1)),
             PoolSwapTest.TestSettings(false, false)
         );
     }

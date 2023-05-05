@@ -6,7 +6,7 @@ import {TickBitmap} from "./TickBitmap.sol";
 import {Position} from "./Position.sol";
 import {FullMath} from "./FullMath.sol";
 import {FixedPoint128} from "./FixedPoint128.sol";
-import {Q96, FixedPoint96} from "./FixedPoint96.sol";
+import {UQ64x96, FixedPoint96} from "./FixedPoint96.sol";
 import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
@@ -50,18 +50,18 @@ library Pool {
     /// @notice Thrown when sqrtPriceLimit on a swap has already exceeded its limit
     /// @param sqrtPriceCurrent The invalid, already surpassed sqrtPriceLimit
     /// @param sqrtPriceLimit The invalid, already surpassed sqrtPriceLimit
-    error PriceLimitAlreadyExceeded(Q96 sqrtPriceCurrent, Q96 sqrtPriceLimit);
+    error PriceLimitAlreadyExceeded(UQ64x96 sqrtPriceCurrent, UQ64x96 sqrtPriceLimit);
 
     /// @notice Thrown when sqrtPriceLimit lies outside of valid tick/price range
     /// @param sqrtPriceLimit The invalid, out-of-bounds sqrtPriceLimit
-    error PriceLimitOutOfBounds(Q96 sqrtPriceLimit);
+    error PriceLimitOutOfBounds(UQ64x96 sqrtPriceLimit);
 
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
     struct Slot0 {
         // the current price
-        Q96 sqrtPrice;
+        UQ64x96 sqrtPrice;
         // the current tick
         int24 tick;
         // the current protocol fee as a percentage of the swap fee taken on withdrawal
@@ -103,8 +103,8 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, Q96 sqrtPrice, uint8 protocolFee) internal returns (int24 tick) {
-        if (self.slot0.sqrtPrice != Q96.wrap(0)) revert PoolAlreadyInitialized();
+    function initialize(State storage self, UQ64x96 sqrtPrice, uint8 protocolFee) internal returns (int24 tick) {
+        if (self.slot0.sqrtPrice != UQ64x96.wrap(0)) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPrice);
 
@@ -112,7 +112,7 @@ library Pool {
     }
 
     function setProtocolFee(State storage self, uint8 newProtocolFee) internal {
-        if (self.slot0.sqrtPrice == Q96.wrap(0)) revert PoolNotInitialized();
+        if (self.slot0.sqrtPrice == UQ64x96.wrap(0)) revert PoolNotInitialized();
 
         self.slot0.protocolFee = newProtocolFee;
     }
@@ -145,7 +145,7 @@ library Pool {
         internal
         returns (IPoolManager.BalanceDelta memory result)
     {
-        if (self.slot0.sqrtPrice == Q96.wrap(0)) revert PoolNotInitialized();
+        if (self.slot0.sqrtPrice == UQ64x96.wrap(0)) revert PoolNotInitialized();
 
         checkTicks(params.tickLower, params.tickUpper);
 
@@ -242,7 +242,7 @@ library Pool {
         // the amount already swapped out/in of the output/input asset
         int256 amountCalculated;
         // current sqrt(price)
-        Q96 sqrtPrice;
+        UQ64x96 sqrtPrice;
         // the tick associated with the current price
         int24 tick;
         // the global fee growth of the input token
@@ -253,13 +253,13 @@ library Pool {
 
     struct StepComputations {
         // the price at the beginning of the step
-        Q96 sqrtPriceStart;
+        UQ64x96 sqrtPriceStart;
         // the next tick to swap to from the current tick in the swap direction
         int24 tickNext;
         // whether tickNext is initialized or not
         bool initialized;
         // sqrt(price) for the next tick (1/0)
-        Q96 sqrtPriceNext;
+        UQ64x96 sqrtPriceNext;
         // how much is being swapped in in this step
         uint256 amountIn;
         // how much is being swapped out
@@ -273,7 +273,7 @@ library Pool {
         int24 tickSpacing;
         bool zeroForOne;
         int256 amountSpecified;
-        Q96 sqrtPriceLimit;
+        UQ64x96 sqrtPriceLimit;
     }
 
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
@@ -284,7 +284,7 @@ library Pool {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
-        if (self.slot0.sqrtPrice == Q96.wrap(0)) revert PoolNotInitialized();
+        if (self.slot0.sqrtPrice == UQ64x96.wrap(0)) revert PoolNotInitialized();
         if (params.zeroForOne) {
             if (params.sqrtPriceLimit >= slot0Start.sqrtPrice) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPrice, params.sqrtPriceLimit);

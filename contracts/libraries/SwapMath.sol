@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {FullMath} from "./FullMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
-import {Q96} from "./FixedPoint96.sol";
+import {UQ64x96} from "./FixedPoint96.sol";
 
 /// @title Computes the result of a swap within ticks
 /// @notice Contains methods for computing the result of a swap within a single tick price range, i.e., a single tick.
@@ -20,12 +20,12 @@ library SwapMath {
     /// @return amountOut The amount to be received, of either currency0 or currency1, based on the direction of the swap
     /// @return feeAmount The amount of input that will be taken as a fee
     function computeSwapStep(
-        Q96 sqrtRatioCurrent,
-        Q96 sqrtRatioTarget,
+        UQ64x96 sqrtRatioCurrent,
+        UQ64x96 sqrtRatioTarget,
         uint128 liquidity,
         int256 amountRemaining,
         uint24 feePips
-    ) internal pure returns (Q96 sqrtRatioNext, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
+    ) internal pure returns (UQ64x96 sqrtRatioNext, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
         unchecked {
             bool zeroForOne = sqrtRatioCurrent >= sqrtRatioTarget;
             bool exactIn = amountRemaining >= 0;

@@ -12,20 +12,20 @@ import {Position} from "../../contracts/libraries/Position.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
-import {Q96} from "../../contracts/libraries/FixedPoint96.sol";
+import {UQ64x96} from "../../contracts/libraries/FixedPoint96.sol";
 
 contract PoolTest is Test, Deployers {
     using Pool for Pool.State;
 
     Pool.State state;
 
-    function testPoolInitialize(Q96 sqrtPrice, uint8 protocolFee) public {
+    function testPoolInitialize(UQ64x96 sqrtPrice, uint8 protocolFee) public {
         if (sqrtPrice < TickMath.MIN_SQRT_RATIO || sqrtPrice >= TickMath.MAX_SQRT_RATIO) {
             vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
             state.initialize(sqrtPrice, protocolFee);
         } else {
             state.initialize(sqrtPrice, protocolFee);
-            assertEq(Q96.unwrap(state.slot0.sqrtPrice), Q96.unwrap(sqrtPrice));
+            assertEq(UQ64x96.unwrap(state.slot0.sqrtPrice), UQ64x96.unwrap(sqrtPrice));
             assertEq(state.slot0.protocolFee, protocolFee);
             assertEq(state.slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPrice));
             assertLt(state.slot0.tick, TickMath.MAX_TICK);
@@ -33,7 +33,7 @@ contract PoolTest is Test, Deployers {
         }
     }
 
-    function testModifyPosition(Q96 sqrtPrice, Pool.ModifyPositionParams memory params) public {
+    function testModifyPosition(UQ64x96 sqrtPrice, Pool.ModifyPositionParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
@@ -66,7 +66,7 @@ contract PoolTest is Test, Deployers {
         state.modifyPosition(params);
     }
 
-    function testSwap(Q96 sqrtPrice, Pool.SwapParams memory params) public {
+    function testSwap(UQ64x96 sqrtPrice, Pool.SwapParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
@@ -102,9 +102,9 @@ contract PoolTest is Test, Deployers {
         state.swap(params);
 
         if (params.zeroForOne) {
-            assertLe(Q96.unwrap(state.slot0.sqrtPrice), Q96.unwrap(params.sqrtPriceLimit));
+            assertLe(UQ64x96.unwrap(state.slot0.sqrtPrice), UQ64x96.unwrap(params.sqrtPriceLimit));
         } else {
-            assertGe(Q96.unwrap(state.slot0.sqrtPrice), Q96.unwrap(params.sqrtPriceLimit));
+            assertGe(UQ64x96.unwrap(state.slot0.sqrtPrice), UQ64x96.unwrap(params.sqrtPriceLimit));
         }
     }
 
@@ -114,11 +114,11 @@ contract PoolTest is Test, Deployers {
         assertEq(state.slot0.lastSwapTimestamp, 0);
 
         vm.warp(500);
-        state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + Q96.wrap(1)));
+        state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + UQ64x96.wrap(1)));
         assertEq(state.slot0.lastSwapTimestamp, 500);
 
         vm.warp(700);
-        state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + Q96.wrap(2)));
+        state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + UQ64x96.wrap(2)));
         assertEq(state.slot0.lastSwapTimestamp, 700);
     }
 }

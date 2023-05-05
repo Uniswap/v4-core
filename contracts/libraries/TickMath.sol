@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
-import {Q96, FixedPoint96} from "./FixedPoint96.sol";
+import {UQ64x96, FixedPoint96} from "./FixedPoint96.sol";
 
 /// @title Math library for computing sqrt prices from ticks and vice versa
 /// @notice Computes sqrt price for ticks of size 1.0001, i.e. sqrt(1.0001^tick) as fixed point Q64.96 numbers. Supports
@@ -18,9 +18,9 @@ library TickMath {
     int24 internal constant MAX_TICK = -MIN_TICK;
 
     /// @dev The minimum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MIN_TICK)
-    Q96 internal constant MIN_SQRT_RATIO = Q96.wrap(4295128739);
+    UQ64x96 internal constant MIN_SQRT_RATIO = UQ64x96.wrap(4295128739);
     /// @dev The maximum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MAX_TICK)
-    Q96 internal constant MAX_SQRT_RATIO = Q96.wrap(1461446703485210103287273052203988822378723970342);
+    UQ64x96 internal constant MAX_SQRT_RATIO = UQ64x96.wrap(1461446703485210103287273052203988822378723970342);
 
     /// @notice Given a tickSpacing, compute the maximum usable tick
     function maxUsableTick(int24 tickSpacing) internal pure returns (int24) {
@@ -41,7 +41,7 @@ library TickMath {
     /// @param tick The input tick for the above formula
     /// @return sqrtPrice A Fixed point Q64.96 number representing the sqrt of the ratio of the two assets (currency1/currency0)
     /// at the given tick
-    function getSqrtRatioAtTick(int24 tick) internal pure returns (Q96 sqrtPrice) {
+    function getSqrtRatioAtTick(int24 tick) internal pure returns (UQ64x96 sqrtPrice) {
         unchecked {
             uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
             if (absTick > uint256(int256(MAX_TICK))) revert InvalidTick();
@@ -73,7 +73,7 @@ library TickMath {
             // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
             // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
             // we round up in the division so getTickAtSqrtRatio of the output price is always consistent
-            sqrtPrice = Q96.wrap(uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1)));
+            sqrtPrice = UQ64x96.wrap(uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1)));
         }
     }
 
@@ -82,11 +82,11 @@ library TickMath {
     /// ever return.
     /// @param sqrtPrice The sqrt ratio for which to compute the tick as a Q64.96
     /// @return tick The greatest tick for which the ratio is less than or equal to the input ratio
-    function getTickAtSqrtRatio(Q96 sqrtPrice) internal pure returns (int24 tick) {
+    function getTickAtSqrtRatio(UQ64x96 sqrtPrice) internal pure returns (int24 tick) {
         unchecked {
             // second inequality must be < because the price can never reach the price at the max tick
             if (sqrtPrice < MIN_SQRT_RATIO || sqrtPrice >= MAX_SQRT_RATIO) revert InvalidSqrtRatio();
-            uint256 ratio = uint256(Q96.unwrap(sqrtPrice)) << 32;
+            uint256 ratio = uint256(UQ64x96.unwrap(sqrtPrice)) << 32;
 
             uint256 r = ratio;
             uint256 msb = 0;

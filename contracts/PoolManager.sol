@@ -5,7 +5,7 @@ import {Hooks} from "./libraries/Hooks.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
 import {Position} from "./libraries/Position.sol";
-import {Q96} from "./libraries/FixedPoint96.sol";
+import {UQ64x96} from "./libraries/FixedPoint96.sol";
 import {Currency, CurrencyLibrary} from "./libraries/CurrencyLibrary.sol";
 
 import {NoDelegateCall} from "./NoDelegateCall.sol";
@@ -51,7 +51,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getSlot0(bytes32 id) external view override returns (Q96 sqrtPrice, int24 tick, uint8 protocolFee) {
+    function getSlot0(bytes32 id) external view override returns (UQ64x96 sqrtPrice, int24 tick, uint8 protocolFee) {
         Pool.Slot0 memory slot0 = pools[id].slot0;
 
         return (slot0.sqrtPrice, slot0.tick, slot0.protocolFee);
@@ -73,7 +73,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(PoolKey memory key, Q96 sqrtPrice) external override returns (int24 tick) {
+    function initialize(PoolKey memory key, UQ64x96 sqrtPrice) external override returns (int24 tick) {
         if (key.fee >= 1000000 && key.fee != Hooks.DYNAMIC_FEE) revert FeeTooLarge();
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();

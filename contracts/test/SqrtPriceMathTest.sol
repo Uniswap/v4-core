@@ -2,7 +2,7 @@
 pragma solidity =0.8.19;
 
 import {SqrtPriceMath} from "../libraries/SqrtPriceMath.sol";
-import {Q96} from "../libraries/FixedPoint96.sol";
+import {UQ64x96} from "../libraries/FixedPoint96.sol";
 
 contract SqrtPriceMathTest {
     function getNextSqrtPriceFromInput(uint160 sqrtPX96, uint128 liquidity, uint256 amountIn, bool zeroForOne)
@@ -10,8 +10,8 @@ contract SqrtPriceMathTest {
         pure
         returns (uint160 sqrtQ)
     {
-        Q96 sqrtP = Q96.wrap(sqrtPX96);
-        return Q96.unwrap(SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, amountIn, zeroForOne));
+        UQ64x96 sqrtP = UQ64x96.wrap(sqrtPX96);
+        return UQ64x96.unwrap(SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, amountIn, zeroForOne));
     }
 
     function getGasCostOfGetNextSqrtPriceFromInput(
@@ -20,7 +20,7 @@ contract SqrtPriceMathTest {
         uint256 amountIn,
         bool zeroForOne
     ) external view returns (uint256) {
-        Q96 sqrtP = Q96.wrap(sqrtPX96);
+        UQ64x96 sqrtP = UQ64x96.wrap(sqrtPX96);
         uint256 gasBefore = gasleft();
         SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, amountIn, zeroForOne);
         return gasBefore - gasleft();
@@ -31,8 +31,8 @@ contract SqrtPriceMathTest {
         pure
         returns (uint160 sqrtQ)
     {
-        Q96 sqrtP = Q96.wrap(sqrtPX96);
-        return Q96.unwrap(SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, liquidity, amountOut, zeroForOne));
+        UQ64x96 sqrtP = UQ64x96.wrap(sqrtPX96);
+        return UQ64x96.unwrap(SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, liquidity, amountOut, zeroForOne));
     }
 
     function getGasCostOfGetNextSqrtPriceFromOutput(
@@ -41,7 +41,7 @@ contract SqrtPriceMathTest {
         uint256 amountOut,
         bool zeroForOne
     ) external view returns (uint256) {
-        Q96 sqrtP = Q96.wrap(sqrtPX96);
+        UQ64x96 sqrtP = UQ64x96.wrap(sqrtPX96);
         uint256 gasBefore = gasleft();
         SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, liquidity, amountOut, zeroForOne);
         return gasBefore - gasleft();
@@ -52,8 +52,8 @@ contract SqrtPriceMathTest {
         pure
         returns (uint256 amount0)
     {
-        Q96 sqrtLower = Q96.wrap(sqrtLowerX96);
-        Q96 sqrtUpper = Q96.wrap(sqrtUpperX96);
+        UQ64x96 sqrtLower = UQ64x96.wrap(sqrtLowerX96);
+        UQ64x96 sqrtUpper = UQ64x96.wrap(sqrtUpperX96);
         return SqrtPriceMath.getAmount0Delta(sqrtLower, sqrtUpper, liquidity, roundUp);
     }
 
@@ -62,8 +62,8 @@ contract SqrtPriceMathTest {
         pure
         returns (uint256 amount1)
     {
-        Q96 sqrtLower = Q96.wrap(sqrtLowerX96);
-        Q96 sqrtUpper = Q96.wrap(sqrtUpperX96);
+        UQ64x96 sqrtLower = UQ64x96.wrap(sqrtLowerX96);
+        UQ64x96 sqrtUpper = UQ64x96.wrap(sqrtUpperX96);
         return SqrtPriceMath.getAmount1Delta(sqrtLower, sqrtUpper, liquidity, roundUp);
     }
 
@@ -72,8 +72,8 @@ contract SqrtPriceMathTest {
         view
         returns (uint256)
     {
-        Q96 sqrtLower = Q96.wrap(sqrtLowerX96);
-        Q96 sqrtUpper = Q96.wrap(sqrtUpperX96);
+        UQ64x96 sqrtLower = UQ64x96.wrap(sqrtLowerX96);
+        UQ64x96 sqrtUpper = UQ64x96.wrap(sqrtUpperX96);
         uint256 gasBefore = gasleft();
         SqrtPriceMath.getAmount0Delta(sqrtLower, sqrtUpper, liquidity, roundUp);
         return gasBefore - gasleft();
@@ -84,8 +84,8 @@ contract SqrtPriceMathTest {
         view
         returns (uint256)
     {
-        Q96 sqrtLower = Q96.wrap(sqrtLowerX96);
-        Q96 sqrtUpper = Q96.wrap(sqrtUpperX96);
+        UQ64x96 sqrtLower = UQ64x96.wrap(sqrtLowerX96);
+        UQ64x96 sqrtUpper = UQ64x96.wrap(sqrtUpperX96);
         uint256 gasBefore = gasleft();
         SqrtPriceMath.getAmount1Delta(sqrtLower, sqrtUpper, liquidity, roundUp);
         return gasBefore - gasleft();

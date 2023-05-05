@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
-type Q96 is uint160;
+// Using custom type UQ64x96 with Unsafe math on Q64.96 numbers
+type UQ64x96 is uint160;
 
 using {
     add as +,
@@ -14,46 +15,54 @@ using {
     gte as >=,
     div as /,
     mul as *
-} for Q96 global;
+} for UQ64x96 global;
 
-function add(Q96 a, Q96 b) pure returns (Q96) {
-    return Q96.wrap(Q96.unwrap(a) + Q96.unwrap(b));
+function add(UQ64x96 a, UQ64x96 b) pure returns (UQ64x96) {
+    unchecked {
+        return UQ64x96.wrap(UQ64x96.unwrap(a) + UQ64x96.unwrap(b));
+    }
 }
 
-function sub(Q96 a, Q96 b) pure returns (Q96) {
-    return Q96.wrap(Q96.unwrap(a) - Q96.unwrap(b));
+function sub(UQ64x96 a, UQ64x96 b) pure returns (UQ64x96) {
+    unchecked {
+        return UQ64x96.wrap(UQ64x96.unwrap(a) - UQ64x96.unwrap(b));
+    }
 }
 
-function eq(Q96 a, Q96 b) pure returns (bool) {
-    return Q96.unwrap(a) == Q96.unwrap(b);
+function eq(UQ64x96 a, UQ64x96 b) pure returns (bool) {
+    return UQ64x96.unwrap(a) == UQ64x96.unwrap(b);
 }
 
-function neq(Q96 a, Q96 b) pure returns (bool) {
-    return Q96.unwrap(a) != Q96.unwrap(b);
+function neq(UQ64x96 a, UQ64x96 b) pure returns (bool) {
+    return UQ64x96.unwrap(a) != UQ64x96.unwrap(b);
 }
 
-function lt(Q96 a, Q96 b) pure returns (bool) {
-    return Q96.unwrap(a) < Q96.unwrap(b);
+function lt(UQ64x96 a, UQ64x96 b) pure returns (bool) {
+    return UQ64x96.unwrap(a) < UQ64x96.unwrap(b);
 }
 
-function gt(Q96 a, Q96 b) pure returns (bool) {
-    return Q96.unwrap(a) > Q96.unwrap(b);
+function gt(UQ64x96 a, UQ64x96 b) pure returns (bool) {
+    return UQ64x96.unwrap(a) > UQ64x96.unwrap(b);
 }
 
-function lte(Q96 a, Q96 b) pure returns (bool) {
-    return Q96.unwrap(a) <= Q96.unwrap(b);
+function lte(UQ64x96 a, UQ64x96 b) pure returns (bool) {
+    return UQ64x96.unwrap(a) <= UQ64x96.unwrap(b);
 }
 
-function gte(Q96 a, Q96 b) pure returns (bool) {
-    return Q96.unwrap(a) >= Q96.unwrap(b);
+function gte(UQ64x96 a, UQ64x96 b) pure returns (bool) {
+    return UQ64x96.unwrap(a) >= UQ64x96.unwrap(b);
 }
 
-function div(Q96 a, Q96 b) pure returns (Q96) {
-    return Q96.wrap((Q96.unwrap(a) * 2 ** 96) / Q96.unwrap(b));
+function div(UQ64x96 a, UQ64x96 b) pure returns (UQ64x96) {
+    unchecked {
+        return UQ64x96.wrap((UQ64x96.unwrap(a) * 2 ** 96) / UQ64x96.unwrap(b));
+    }
 }
 
-function mul(Q96 a, Q96 b) pure returns (Q96) {
-    return Q96.wrap((Q96.unwrap(a) * Q96.unwrap(b)) / 2 ** 96);
+function mul(UQ64x96 a, UQ64x96 b) pure returns (UQ64x96) {
+    unchecked {
+        return UQ64x96.wrap((UQ64x96.unwrap(a) * UQ64x96.unwrap(b)) / 2 ** 96);
+    }
 }
 
 /// @title FixedPoint96
@@ -63,7 +72,7 @@ library FixedPoint96 {
     uint8 internal constant RESOLUTION = 96;
     uint256 internal constant ONE = 0x1000000000000000000000000;
 
-    function toUint256(Q96 self) internal pure returns (uint256) {
-        return uint256(Q96.unwrap(self));
+    function toUint256(UQ64x96 self) internal pure returns (uint256) {
+        return uint256(UQ64x96.unwrap(self));
     }
 }

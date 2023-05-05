@@ -3,7 +3,7 @@ pragma solidity >=0.6.2;
 
 import {Currency} from "../libraries/CurrencyLibrary.sol";
 import {Pool} from "../libraries/Pool.sol";
-import {Q96} from "../libraries/FixedPoint96.sol";
+import {UQ64x96} from "../libraries/FixedPoint96.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IHooks} from "./IHooks.sol";
 
@@ -71,7 +71,7 @@ interface IPoolManager is IERC1155 {
         address indexed sender,
         int256 amount0,
         int256 amount1,
-        Q96 sqrtPrice,
+        UQ64x96 sqrtPrice,
         uint128 liquidity,
         int24 tick,
         uint24 fee
@@ -102,7 +102,7 @@ interface IPoolManager is IERC1155 {
     function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(bytes32 id) external view returns (Q96 sqrtPrice, int24 tick, uint8 protocolFee);
+    function getSlot0(bytes32 id) external view returns (UQ64x96 sqrtPrice, int24 tick, uint8 protocolFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
@@ -127,7 +127,7 @@ interface IPoolManager is IERC1155 {
     function reservesOf(Currency currency) external view returns (uint256);
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(PoolKey memory key, Q96 sqrtPrice) external returns (int24 tick);
+    function initialize(PoolKey memory key, UQ64x96 sqrtPrice) external returns (int24 tick);
 
     /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
     /// @param index The index of the locker, also known as the id of the locker
@@ -166,7 +166,7 @@ interface IPoolManager is IERC1155 {
     struct SwapParams {
         bool zeroForOne;
         int256 amountSpecified;
-        Q96 sqrtPriceLimit;
+        UQ64x96 sqrtPriceLimit;
     }
 
     /// @notice Swap against the given pool
