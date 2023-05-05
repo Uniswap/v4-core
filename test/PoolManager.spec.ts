@@ -91,7 +91,7 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ; ({
+    ;({
       manager,
       tokens,
       modifyPositionTest,
@@ -109,7 +109,6 @@ describe('PoolManager', () => {
   })
 
   describe('#lock', () => {
-
     it('can be reentered', async () => {
       const reenterTest = (await (
         await ethers.getContractFactory('PoolManagerReentrancyTest')
@@ -1186,9 +1185,9 @@ describe('PoolManager', () => {
       await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
       var protocolFee: number
-        ; ({
-          slot0: { protocolFee },
-        } = await manager.pools(getPoolId(poolKey)))
+      ;({
+        slot0: { protocolFee },
+      } = await manager.pools(getPoolId(poolKey)))
       expect(protocolFee).to.eq(0)
 
       await manager.setProtocolFeeController(feeControllerTest.address)
@@ -1199,9 +1198,9 @@ describe('PoolManager', () => {
       await expect(manager.setPoolProtocolFee(poolKey))
         .to.emit(manager, 'ProtocolFeeUpdated')
         .withArgs(poolID, poolProtocolFee)
-        ; ({
-          slot0: { protocolFee },
-        } = await manager.pools(poolID))
+      ;({
+        slot0: { protocolFee },
+      } = await manager.pools(poolID))
       expect(protocolFee).to.eq(poolProtocolFee)
     })
   })
