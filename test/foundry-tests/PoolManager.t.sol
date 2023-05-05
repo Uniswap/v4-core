@@ -196,7 +196,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         snapEnd();
     }
 
-    // write the above test in solidity
     function testNoOpLockIsOk() public {
         snapStart("gas overhead of no-op lock");
         lockTest.lock();
