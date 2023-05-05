@@ -18,15 +18,19 @@ import {Currency, CurrencyLibrary} from "../../contracts/libraries/CurrencyLibra
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
     using Pool for Pool.State;
 
+    event LockAcquired(uint256 id);
+
     Pool.State state;
     PoolManager manager;
     PoolDonateTest donateRouter;
     PoolModifyPositionTest modifyPositionRouter;
+    PoolLockTest lockTest;
 
     address ADDRESS_ZERO = address(0);
 
@@ -35,6 +39,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         manager = Deployers.createFreshManager();
         donateRouter = new PoolDonateTest(manager);
         modifyPositionRouter = new PoolModifyPositionTest(manager);
+        lockTest = new PoolLockTest(manager);
 
         MockERC20(Currency.unwrap(currency0)).mint(address(this), 1 ether);
         MockERC20(Currency.unwrap(currency1)).mint(address(this), 1 ether);
@@ -189,6 +194,18 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         snapStart("donate gas with 1 token");
         donateRouter.donate(key, 100, 0);
         snapEnd();
+    }
+
+    function testNoOpLockIsOk() public {
+        snapStart("gas overhead of no-op lock");
+        lockTest.lock();
+        snapEnd();
+    }
+
+    function testLockEmitsCorrectId() public {
+        vm.expectEmit(false, false, false, true);
+        emit LockAcquired(0);
+        lockTest.lock();
     }
 
     fallback() external payable {}

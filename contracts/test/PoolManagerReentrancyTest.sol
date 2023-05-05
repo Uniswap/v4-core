@@ -22,11 +22,9 @@ contract PoolManagerReentrancyTest is ILockCallback {
         assert(poolManager.lockedByLength() == total - count);
     }
 
-    function lockAcquired(bytes calldata data) external returns (bytes memory) {
+    function lockAcquired(uint256 id, bytes calldata data) external returns (bytes memory) {
         (Currency currencyToBorrow, uint256 total, uint256 count) = abi.decode(data, (Currency, uint256, uint256));
         emit LockAcquired(count);
-
-        uint256 id = total - count;
 
         IPoolManager poolManager = IPoolManager(msg.sender);
 

@@ -140,7 +140,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         lockedBy.push(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(msg.sender).lockAcquired(data);
+        result = ILockCallback(msg.sender).lockAcquired(id, data);
 
         unchecked {
             LockState storage lockState = lockStates[id];
