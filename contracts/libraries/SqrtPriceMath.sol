@@ -11,7 +11,6 @@ import {UQ64x96, FixedPoint96} from "./FixedPoint96.sol";
 /// @notice Contains the math that uses square root of price as a Q64.96 and liquidity to compute deltas
 library SqrtPriceMath {
     using SafeCast for uint256;
-    using FixedPoint96 for UQ64x96;
 
     /// @notice Gets the next sqrt price given a delta of currency0
     /// @dev Always rounds up, because in the exact output case (increasing price) we need to move the price at least

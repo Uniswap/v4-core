@@ -17,6 +17,8 @@ using {
     mul as *
 } for UQ64x96 global;
 
+using FixedPoint96 for UQ64x96 global;
+
 function add(UQ64x96 a, UQ64x96 b) pure returns (UQ64x96) {
     unchecked {
         return UQ64x96.wrap(UQ64x96.unwrap(a) + UQ64x96.unwrap(b));
