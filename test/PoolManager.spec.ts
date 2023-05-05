@@ -6,7 +6,6 @@ import {
   PoolDonateTest,
   PoolManager,
   PoolManagerReentrancyTest,
-  PoolManagerTest,
   PoolModifyPositionTest,
   PoolSwapTest,
   PoolTakeTest,
@@ -27,7 +26,6 @@ describe('PoolManager', () => {
   let wallet: Wallet, other: Wallet
 
   let manager: PoolManager
-  let lockTest: PoolManagerTest
   let swapTest: PoolSwapTest
   let feeControllerTest: ProtocolFeeControllerTest
   let modifyPositionTest: PoolModifyPositionTest
@@ -39,7 +37,6 @@ describe('PoolManager', () => {
 
   const fixture = async () => {
     const poolManagerFactory = await ethers.getContractFactory('PoolManager')
-    const managerTestFactory = await ethers.getContractFactory('PoolManagerTest')
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const feeControllerTestFactory = await ethers.getContractFactory('ProtocolFeeControllerTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
@@ -67,7 +64,6 @@ describe('PoolManager', () => {
 
     const result = {
       manager,
-      lockTest: (await managerTestFactory.deploy()) as PoolManagerTest,
       swapTest: (await swapTestFactory.deploy(manager.address)) as PoolSwapTest,
       feeControllerTest: (await feeControllerTestFactory.deploy()) as ProtocolFeeControllerTest,
       modifyPositionTest: (await modifyPositionTestFactory.deploy(manager.address)) as PoolModifyPositionTest,
@@ -95,10 +91,9 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({
+    ; ({
       manager,
       tokens,
-      lockTest,
       modifyPositionTest,
       swapTest,
       feeControllerTest,
@@ -114,13 +109,6 @@ describe('PoolManager', () => {
   })
 
   describe('#lock', () => {
-    it('no-op lock is ok', async () => {
-      await lockTest.lock(manager.address)
-    })
-
-    it('gas overhead of no-op lock', async () => {
-      await snapshotGasCost(lockTest.lock(manager.address))
-    })
 
     it('can be reentered', async () => {
       const reenterTest = (await (
@@ -1198,9 +1186,9 @@ describe('PoolManager', () => {
       await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
       var protocolFee: number
-      ;({
-        slot0: { protocolFee },
-      } = await manager.pools(getPoolId(poolKey)))
+        ; ({
+          slot0: { protocolFee },
+        } = await manager.pools(getPoolId(poolKey)))
       expect(protocolFee).to.eq(0)
 
       await manager.setProtocolFeeController(feeControllerTest.address)
@@ -1211,9 +1199,9 @@ describe('PoolManager', () => {
       await expect(manager.setPoolProtocolFee(poolKey))
         .to.emit(manager, 'ProtocolFeeUpdated')
         .withArgs(poolID, poolProtocolFee)
-      ;({
-        slot0: { protocolFee },
-      } = await manager.pools(poolID))
+        ; ({
+          slot0: { protocolFee },
+        } = await manager.pools(poolID))
       expect(protocolFee).to.eq(poolProtocolFee)
     })
   })

@@ -39,7 +39,7 @@ contract PoolDonateTest is ILockCallback {
         }
     }
 
-    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(uint256, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
