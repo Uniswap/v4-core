@@ -6,6 +6,7 @@ import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
 import {Position} from "./libraries/Position.sol";
 import {Currency, CurrencyLibrary} from "./libraries/CurrencyLibrary.sol";
+import {TickBitmap} from './libraries/TickBitmap.sol';
 
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
@@ -26,6 +27,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using Pool for *;
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
+    using TickBitmap for mapping(int16 => uint256);
     using CurrencyLibrary for Currency;
 
     /// @inheritdoc IPoolManager
@@ -375,6 +377,20 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         currency.transfer(recipient, amount);
 
         return amount;
+    }
+
+    /// @inheritdoc IPoolManager
+    function getTickNetLiquidity(bytes32 id, int24 tick) external view override returns (int128) {
+        return pools[id].ticks[tick].liquidityNet;
+    }
+
+    /// @inheritdoc IPoolManager
+    function getNextInitializedTickWithinOneWord(
+        IPoolManager.PoolKey memory key,
+        int24 tick,
+        bool lte
+    ) external view override returns (int24 next, bool initialized) {
+        return _getPool(key).tickBitmap.nextInitializedTickWithinOneWord(tick, key.tickSpacing, lte);
     }
 
     /// @notice receive native tokens for native pools

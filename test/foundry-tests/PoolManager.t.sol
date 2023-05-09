@@ -23,6 +23,7 @@ import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
     using Pool for Pool.State;
+    using PoolId for IPoolManager.PoolKey;
 
     event LockAcquired(uint256 id);
 
@@ -206,6 +207,50 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         vm.expectEmit(false, false, false, true);
         emit LockAcquired(0);
         lockTest.lock();
+    }
+
+    function testGetTickNetLiquidityReturnsNetLiquidity() public {
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: IHooks(address(0)),
+            tickSpacing: 10
+        });
+
+        manager.initialize(key, SQRT_RATIO_1_1);
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
+        modifyPositionRouter.modifyPosition(key, params);
+
+        assertEq(manager.getTickNetLiquidity(key.toId(), -60), 100);
+        assertEq(manager.getTickNetLiquidity(key.toId(), 60), -100);
+        assertEq(manager.getTickNetLiquidity(key.toId(), 0), 0);
+    }
+
+    function testGetNextInitializedTickWithinOneWordReturnsCorrectTick() public {
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: IHooks(address(0)),
+            tickSpacing: 10
+        });
+
+        manager.initialize(key, SQRT_RATIO_1_1);
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
+        modifyPositionRouter.modifyPosition(key, params);
+
+        (int24 next, bool initialized) = manager.getNextInitializedTickWithinOneWord(key, 0, false);
+        assertEq(next, 60);
+        assertEq(initialized, true);
+
+        (next, initialized) = manager.getNextInitializedTickWithinOneWord(key, 0, true);
+        assertEq(next, 0);
+        assertEq(initialized, false);
+
+        (next, initialized) = manager.getNextInitializedTickWithinOneWord(key, -1, true);
+        assertEq(next, -60);
+        assertEq(initialized, true);
     }
 
     fallback() external payable {}

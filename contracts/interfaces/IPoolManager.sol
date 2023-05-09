@@ -188,4 +188,14 @@ interface IPoolManager is IERC1155 {
 
     /// @notice sets the protocol fee for the given pool
     function setPoolProtocolFee(PoolKey memory key) external;
+
+    /// @notice Get tick info for a given tick
+    function getTickNetLiquidity(bytes32 poolId, int24 tick) external view returns (int128);
+
+    /// @notice Get next initialized tick within one word
+    function getNextInitializedTickWithinOneWord(
+        IPoolManager.PoolKey memory key,
+        int24 tick,
+        bool lte
+    ) external view returns (int24 next, bool initialized);
 }
