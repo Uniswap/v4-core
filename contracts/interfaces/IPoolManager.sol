@@ -193,9 +193,8 @@ interface IPoolManager is IERC1155 {
     function getTickNetLiquidity(bytes32 poolId, int24 tick) external view returns (int128);
 
     /// @notice Get next initialized tick within one word
-    function getNextInitializedTickWithinOneWord(
-        IPoolManager.PoolKey memory key,
-        int24 tick,
-        bool lte
-    ) external view returns (int24 next, bool initialized);
+    function getNextInitializedTickWithinOneWord(IPoolManager.PoolKey memory key, int24 tick, bool lte)
+        external
+        view
+        returns (int24 next, bool initialized);
 }

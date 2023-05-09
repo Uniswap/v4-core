@@ -6,7 +6,7 @@ import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
 import {Position} from "./libraries/Position.sol";
 import {Currency, CurrencyLibrary} from "./libraries/CurrencyLibrary.sol";
-import {TickBitmap} from './libraries/TickBitmap.sol';
+import {TickBitmap} from "./libraries/TickBitmap.sol";
 
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
@@ -385,11 +385,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getNextInitializedTickWithinOneWord(
-        IPoolManager.PoolKey memory key,
-        int24 tick,
-        bool lte
-    ) external view override returns (int24 next, bool initialized) {
+    function getNextInitializedTickWithinOneWord(IPoolManager.PoolKey memory key, int24 tick, bool lte)
+        external
+        view
+        override
+        returns (int24 next, bool initialized)
+    {
         return _getPool(key).tickBitmap.nextInitializedTickWithinOneWord(tick, key.tickSpacing, lte);
     }
 
