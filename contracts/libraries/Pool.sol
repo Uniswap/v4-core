@@ -116,18 +116,6 @@ library Pool {
         self.slot0.protocolFee = newProtocolFee;
     }
 
-    struct ModifyPositionParams {
-        // the address that owns the position
-        address owner;
-        // the lower and upper tick of the position
-        int24 tickLower;
-        int24 tickUpper;
-        // any change in liquidity
-        int128 liquidityDelta;
-        // the spacing between ticks
-        int24 tickSpacing;
-    }
-
     struct ModifyPositionState {
         bool flippedLower;
         uint128 liquidityGrossAfterLower;
@@ -140,10 +128,12 @@ library Pool {
     /// @dev Effect changes to a position in a pool
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
-    function modifyPosition(State storage self, ModifyPositionParams memory params)
-        internal
-        returns (IPoolManager.BalanceDelta memory result)
-    {
+    function modifyPosition(
+        State storage self,
+        IPoolManager.ModifyPositionParams calldata params,
+        address owner,
+        int24 tickSpacing
+    ) internal returns (IPoolManager.BalanceDelta memory result) {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
         checkTicks(params.tickLower, params.tickUpper);
@@ -158,7 +148,7 @@ library Pool {
                     updateTick(self, params.tickUpper, params.liquidityDelta, true);
 
                 if (params.liquidityDelta > 0) {
-                    uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
+                    uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(tickSpacing);
                     if (state.liquidityGrossAfterLower > maxLiquidityPerTick) {
                         revert TickLiquidityOverflow(params.tickLower);
                     }
@@ -168,19 +158,18 @@ library Pool {
                 }
 
                 if (state.flippedLower) {
-                    self.tickBitmap.flipTick(params.tickLower, params.tickSpacing);
+                    self.tickBitmap.flipTick(params.tickLower, tickSpacing);
                 }
                 if (state.flippedUpper) {
-                    self.tickBitmap.flipTick(params.tickUpper, params.tickSpacing);
+                    self.tickBitmap.flipTick(params.tickUpper, tickSpacing);
                 }
             }
 
             (state.feeGrowthInside0X128, state.feeGrowthInside1X128) =
                 getFeeGrowthInside(self, params.tickLower, params.tickUpper);
 
-            (uint256 feesOwed0, uint256 feesOwed1) = self.positions.get(
-                params.owner, params.tickLower, params.tickUpper
-            ).update(params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
+            (uint256 feesOwed0, uint256 feesOwed1) = self.positions.get(owner, params.tickLower, params.tickUpper)
+                .update(params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
             result.amount0 -= feesOwed0.toInt256();
             result.amount1 -= feesOwed1.toInt256();
 

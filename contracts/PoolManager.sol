@@ -180,40 +180,56 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         _;
     }
 
+    function addDeltas(IPoolManager.BalanceDelta memory a, IPoolManager.BalanceDelta memory b)
+        private
+        pure
+        returns (IPoolManager.BalanceDelta memory)
+    {
+        return IPoolManager.BalanceDelta({amount0: a.amount0 + b.amount0, amount1: a.amount1 + b.amount1});
+    }
+
     /// @inheritdoc IPoolManager
-    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
+    function modifyPositions(PoolKey memory key, IPoolManager.ModifyPositionParams[] calldata params)
         external
         override
         noDelegateCall
         onlyByLocker
         returns (IPoolManager.BalanceDelta memory delta)
     {
-        if (key.hooks.shouldCallBeforeModifyPosition()) {
-            if (key.hooks.beforeModifyPosition(msg.sender, key, params) != IHooks.beforeModifyPosition.selector) {
-                revert Hooks.InvalidHookResponse();
+        unchecked {
+            for (uint256 i = 0; i < params.length; i++) {
+                if (key.hooks.shouldCallBeforeModifyPosition()) {
+                    if (
+                        key.hooks.beforeModifyPosition(msg.sender, key, params[i])
+                            != IHooks.beforeModifyPosition.selector
+                    ) {
+                        revert Hooks.InvalidHookResponse();
+                    }
+                }
+
+                bytes32 poolId = key.toId();
+                IPoolManager.BalanceDelta memory nextDelta =
+                    pools[poolId].modifyPosition(params[i], msg.sender, key.tickSpacing);
+                // is it necessary to do this every time? or can we just do it once at the end?
+                _accountPoolBalanceDelta(key, nextDelta);
+                delta = addDeltas(delta, nextDelta);
+
+                if (key.hooks.shouldCallAfterModifyPosition()) {
+                    if (
+                        key.hooks.afterModifyPosition(msg.sender, key, params[i], delta)
+                            != IHooks.afterModifyPosition.selector
+                    ) {
+                        revert Hooks.InvalidHookResponse();
+                    }
+                }
+
+                emit ModifyPosition(
+                    poolId, msg.sender, params[i].tickLower, params[i].tickUpper, params[i].liquidityDelta
+                );
             }
+
+            // here's where we could e.g. charge a fee on the net negative delta
         }
-
-        bytes32 poolId = key.toId();
-        delta = pools[poolId].modifyPosition(
-            Pool.ModifyPositionParams({
-                owner: msg.sender,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                liquidityDelta: params.liquidityDelta.toInt128(),
-                tickSpacing: key.tickSpacing
-            })
-        );
-
-        _accountPoolBalanceDelta(key, delta);
-
-        if (key.hooks.shouldCallAfterModifyPosition()) {
-            if (key.hooks.afterModifyPosition(msg.sender, key, params, delta) != IHooks.afterModifyPosition.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
-
-        emit ModifyPosition(poolId, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
 
     /// @inheritdoc IPoolManager

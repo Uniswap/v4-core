@@ -154,11 +154,11 @@ interface IPoolManager is IERC1155 {
         int24 tickLower;
         int24 tickUpper;
         // how to modify the liquidity
-        int256 liquidityDelta;
+        int128 liquidityDelta;
     }
 
     /// @notice Modify the position for the given pool
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
+    function modifyPositions(PoolKey memory key, ModifyPositionParams[] calldata params)
         external
         returns (BalanceDelta memory delta);
 
