@@ -55,7 +55,11 @@ function gte(UQ128x128 a, UQ128x128 b) pure returns (bool) {
 
 // TODO: mul, div
 function mul(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {}
-function div(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {}
+
+function div(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
+    // TODO: is this right? seems to be easier than 64x96 since 128x128 fills entire uint256
+    return UQ128x128.wrap(UQ128x128.unwrap(a) / UQ128x128.unwrap(b));
+}
 
 /// @title FixedPoint128
 /// @notice A library for handling binary fixed point numbers, see https://en.wikipedia.org/wiki/Q_(number_format)
