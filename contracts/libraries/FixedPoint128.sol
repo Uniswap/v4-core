@@ -58,7 +58,7 @@ function mul(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {}
 
 function div(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
     // TODO: is this right? seems to be easier than 64x96 since 128x128 fills entire uint256
-    return UQ128x128.wrap(UQ128x128.unwrap(a) / UQ128x128.unwrap(b));
+    return UQ128x128.wrap((UQ128x128.unwrap(a) * 2 ** 96) / UQ128x128.unwrap(b));
 }
 
 /// @title FixedPoint128
