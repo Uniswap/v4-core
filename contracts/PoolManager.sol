@@ -6,6 +6,7 @@ import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
 import {Position} from "./libraries/Position.sol";
 import {Currency, CurrencyLibrary} from "./libraries/CurrencyLibrary.sol";
+import {BalanceDelta} from "./types/BalanceDelta.sol";
 
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
@@ -169,9 +170,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, IPoolManager.BalanceDelta memory delta) internal {
-        _accountDelta(key.currency0, delta.amount0);
-        _accountDelta(key.currency1, delta.amount1);
+    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta) internal {
+        _accountDelta(key.currency0, delta.amount0());
+        _accountDelta(key.currency1, delta.amount1());
     }
 
     modifier onlyByLocker() {
@@ -186,7 +187,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         override
         noDelegateCall
         onlyByLocker
-        returns (IPoolManager.BalanceDelta memory delta)
+        returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             if (key.hooks.beforeModifyPosition(msg.sender, key, params) != IHooks.beforeModifyPosition.selector) {
@@ -222,7 +223,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         override
         noDelegateCall
         onlyByLocker
-        returns (IPoolManager.BalanceDelta memory delta)
+        returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
             if (key.hooks.beforeSwap(msg.sender, key, params) != IHooks.beforeSwap.selector) {
@@ -265,7 +266,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         emit Swap(
-            poolId, msg.sender, delta.amount0, delta.amount1, state.sqrtPriceX96, state.liquidity, state.tick, fee
+            poolId, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, fee
         );
     }
 
@@ -275,7 +276,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         override
         noDelegateCall
         onlyByLocker
-        returns (IPoolManager.BalanceDelta memory delta)
+        returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeDonate()) {
             if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1) != IHooks.beforeDonate.selector) {
