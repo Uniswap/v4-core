@@ -71,6 +71,4 @@ library FixedPoint128 {
     function toUint256(UQ128x128 self) internal pure returns (uint256) {
         return UQ128x128.unwrap(self);
     }
-
-    // Do we want a fromUint256 method as well
 }
