@@ -33,7 +33,7 @@ contract TickTest {
         int24 tickCurrent,
         UQ128x128 feeGrowthGlobal0,
         UQ128x128 feeGrowthGlobal1
-    ) external returns (UQ128x128 feeGrowthInside0X128, UQ128x128 feeGrowthInside1X128) {
+    ) external returns (UQ128x128 feeGrowthInside0, UQ128x128 feeGrowthInside1) {
         pool.slot0.tick = tickCurrent;
         pool.feeGrowthGlobal0 = feeGrowthGlobal0;
         pool.feeGrowthGlobal1 = feeGrowthGlobal1;

@@ -37,15 +37,15 @@ library Position {
     /// @notice Credits accumulated fees to a user's position
     /// @param self The individual position to update
     /// @param liquidityDelta The change in pool liquidity as a result of the position update
-    /// @param feeGrowthInside0X128 The all-time fee growth in currency0, per unit of liquidity, inside the position's tick boundaries
-    /// @param feeGrowthInside1X128 The all-time fee growth in currency1, per unit of liquidity, inside the position's tick boundaries
+    /// @param feeGrowthInside0 The all-time fee growth in currency0, per unit of liquidity, inside the position's tick boundaries
+    /// @param feeGrowthInside1 The all-time fee growth in currency1, per unit of liquidity, inside the position's tick boundaries
     /// @return feesOwed0 The amount of currency0 owed to the position owner
     /// @return feesOwed1 The amount of currency1 owed to the position owner
     function update(
         Info storage self,
         int128 liquidityDelta,
-        UQ128x128 feeGrowthInside0X128,
-        UQ128x128 feeGrowthInside1X128
+        UQ128x128 feeGrowthInside0,
+        UQ128x128 feeGrowthInside1
     ) internal returns (uint256 feesOwed0, uint256 feesOwed1) {
         Info memory _self = self;
 
@@ -62,16 +62,16 @@ library Position {
         // calculate accumulated fees. overflow in the subtraction of fee growth is expected
         unchecked {
             feesOwed0 = FullMath.mulDiv(
-                UQ128x128.unwrap(feeGrowthInside0X128 - _self.feeGrowthInside0Last), _self.liquidity, FixedPoint128.Q128
+                UQ128x128.unwrap(feeGrowthInside0 - _self.feeGrowthInside0Last), _self.liquidity, FixedPoint128.Q128
             );
             feesOwed1 = FullMath.mulDiv(
-                UQ128x128.unwrap(feeGrowthInside1X128 - _self.feeGrowthInside1Last), _self.liquidity, FixedPoint128.Q128
+                UQ128x128.unwrap(feeGrowthInside1 - _self.feeGrowthInside1Last), _self.liquidity, FixedPoint128.Q128
             );
         }
 
         // update the position
         if (liquidityDelta != 0) self.liquidity = liquidityNext;
-        self.feeGrowthInside0Last = feeGrowthInside0X128;
-        self.feeGrowthInside1Last = feeGrowthInside1X128;
+        self.feeGrowthInside0Last = feeGrowthInside0;
+        self.feeGrowthInside1Last = feeGrowthInside1;
     }
 }
