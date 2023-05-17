@@ -41,12 +41,10 @@ library Position {
     /// @param feeGrowthInside1 The all-time fee growth in currency1, per unit of liquidity, inside the position's tick boundaries
     /// @return feesOwed0 The amount of currency0 owed to the position owner
     /// @return feesOwed1 The amount of currency1 owed to the position owner
-    function update(
-        Info storage self,
-        int128 liquidityDelta,
-        UQ128x128 feeGrowthInside0,
-        UQ128x128 feeGrowthInside1
-    ) internal returns (uint256 feesOwed0, uint256 feesOwed1) {
+    function update(Info storage self, int128 liquidityDelta, UQ128x128 feeGrowthInside0, UQ128x128 feeGrowthInside1)
+        internal
+        returns (uint256 feesOwed0, uint256 feesOwed1)
+    {
         Info memory _self = self;
 
         uint128 liquidityNext;

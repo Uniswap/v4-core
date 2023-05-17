@@ -74,35 +74,17 @@ describe('Tick', () => {
 
   describe('#getFeeGrowthInside', () => {
     it('returns all for two uninitialized ticks if tick is inside', async () => {
-      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(
-        -2,
-        2,
-        0,
-        15,
-        15
-      )
+      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(-2, 2, 0, 15, 15)
       expect(feeGrowthInside0).to.eq(15)
       expect(feeGrowthInside1).to.eq(15)
     })
     it('returns 0 for two uninitialized ticks if tick is above', async () => {
-      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(
-        -2,
-        2,
-        4,
-        15,
-        15
-      )
+      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(-2, 2, 4, 15, 15)
       expect(feeGrowthInside0).to.eq(0)
       expect(feeGrowthInside1).to.eq(0)
     })
     it('returns 0 for two uninitialized ticks if tick is below', async () => {
-      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(
-        -2,
-        2,
-        -4,
-        15,
-        15
-      )
+      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(-2, 2, -4, 15, 15)
       expect(feeGrowthInside0).to.eq(0)
       expect(feeGrowthInside1).to.eq(0)
     })
@@ -114,13 +96,7 @@ describe('Tick', () => {
         liquidityGross: 0,
         liquidityNet: 0,
       })
-      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(
-        -2,
-        2,
-        0,
-        15,
-        15
-      )
+      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(-2, 2, 0, 15, 15)
       expect(feeGrowthInside0).to.eq(13)
       expect(feeGrowthInside1).to.eq(12)
     })
@@ -132,13 +108,7 @@ describe('Tick', () => {
         liquidityGross: 0,
         liquidityNet: 0,
       })
-      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(
-        -2,
-        2,
-        0,
-        15,
-        15
-      )
+      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(-2, 2, 0, 15, 15)
       expect(feeGrowthInside0).to.eq(13)
       expect(feeGrowthInside1).to.eq(12)
     })
@@ -156,13 +126,7 @@ describe('Tick', () => {
         liquidityGross: 0,
         liquidityNet: 0,
       })
-      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(
-        -2,
-        2,
-        0,
-        15,
-        15
-      )
+      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(-2, 2, 0, 15, 15)
       expect(feeGrowthInside0).to.eq(9)
       expect(feeGrowthInside1).to.eq(11)
     })
@@ -180,13 +144,7 @@ describe('Tick', () => {
         liquidityGross: 0,
         liquidityNet: 0,
       })
-      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(
-        -2,
-        2,
-        0,
-        15,
-        15
-      )
+      const { feeGrowthInside0, feeGrowthInside1 } = await tickTest.callStatic.getFeeGrowthInside(-2, 2, 0, 15, 15)
       expect(feeGrowthInside0).to.eq(16)
       expect(feeGrowthInside1).to.eq(13)
     })
