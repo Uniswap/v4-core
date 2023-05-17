@@ -46,21 +46,21 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testBeforeInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
         TestERC20[] memory tokens = Deployers.deployTokens(2, 2 ** 255);
-        IPoolManager.PoolKey memory key = IPoolManager.PoolKey(
+        IPoolManager.PoolKey memory _key = IPoolManager.PoolKey(
             Currency.wrap(address(tokens[0])), Currency.wrap(address(tokens[1])), 3000, int24(3000 / 100 * 2), mockHooks
         );
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(key, SQRT_RATIO_1_1);
+        manager.initialize(_key, SQRT_RATIO_1_1);
     }
 
     function testAfterInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
         TestERC20[] memory tokens = Deployers.deployTokens(2, 2 ** 255);
-        IPoolManager.PoolKey memory key = IPoolManager.PoolKey(
+        IPoolManager.PoolKey memory _key = IPoolManager.PoolKey(
             Currency.wrap(address(tokens[0])), Currency.wrap(address(tokens[1])), 3000, int24(3000 / 100 * 2), mockHooks
         );
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(key, SQRT_RATIO_1_1);
+        manager.initialize(_key, SQRT_RATIO_1_1);
     }
 
     function testModifyPositionSucceedsWithHook() public {

@@ -208,5 +208,5 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         lockTest.lock();
     }
 
-    fallback() external payable {}
+    receive() external payable {}
 }
