@@ -113,10 +113,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return lockedBy.length;
     }
 
-    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
-    /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
+    /// @member positiveDeltaCount The number of entries in the currencyDelta mapping that have a positive value
+    /// @member currencyDelta The amount owed to the locker (negative) or owed to the pool (positive) of the currency
     struct LockState {
-        uint256 nonzeroDeltaCount;
+        uint256 positiveDeltaCount;
         mapping(Currency currency => int256) currencyDelta;
     }
 
@@ -125,8 +125,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     mapping(uint256 index => LockState) private lockStates;
 
     /// @inheritdoc IPoolManager
-    function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
-        return lockStates[id].nonzeroDeltaCount;
+    function getPositiveDeltaCount(uint256 id) external view returns (uint256) {
+        return lockStates[id].positiveDeltaCount;
     }
 
     /// @inheritdoc IPoolManager
@@ -144,7 +144,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         unchecked {
             LockState storage lockState = lockStates[id];
-            if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            if (lockState.positiveDeltaCount != 0) revert CurrencyNotSettled();
         }
 
         lockedBy.pop();
@@ -155,17 +155,17 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         LockState storage lockState = lockStates[lockedBy.length - 1];
         int256 current = lockState.currencyDelta[currency];
+        int256 next;
+        lockState.currencyDelta[currency] = (next = current + delta);
 
-        int256 next = current + delta;
         unchecked {
-            if (next == 0) {
-                lockState.nonzeroDeltaCount--;
-            } else if (current == 0) {
-                lockState.nonzeroDeltaCount++;
+            // positive deltas mean that the pool is owed tokens, which we must track
+            if (next > 0 && current <= 0) {
+                lockState.positiveDeltaCount++;
+            } else if (next <= 0 && current > 0) {
+                lockState.positiveDeltaCount--;
             }
         }
-
-        lockState.currencyDelta[currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
@@ -310,8 +310,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
-        reservesOf[currency] = currency.balanceOfSelf();
-        paid = reservesOf[currency] - reservesBefore;
+        uint256 reservesCurrent;
+        reservesOf[currency] = (reservesCurrent = currency.balanceOfSelf());
+        paid = reservesCurrent - reservesBefore;
         // subtraction must be safe
         _accountDelta(currency, -(paid.toInt256()));
     }

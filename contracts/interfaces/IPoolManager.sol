@@ -135,9 +135,9 @@ interface IPoolManager is IERC1155 {
     /// @notice Getter for the length of the lockedBy array
     function lockedByLength() external view returns (uint256);
 
-    /// @notice Returns the count of nonzero deltas for the given locker ID
+    /// @notice Returns the count of positive deltas for the given locker ID
     /// @param id The ID of the locker
-    function getNonzeroDeltaCount(uint256 id) external view returns (uint256);
+    function getPositiveDeltaCount(uint256 id) external view returns (uint256);
 
     /// @notice Get the current delta for a given currency, and its position in the currencies touched array
     /// @param id The ID of the locker
