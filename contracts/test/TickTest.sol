@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
+import {UQ128x128} from "../libraries/FixedPoint128.sol";
 import {Pool} from "../libraries/Pool.sol";
 
 contract TickTest {
@@ -30,12 +31,12 @@ contract TickTest {
         int24 tickLower,
         int24 tickUpper,
         int24 tickCurrent,
-        uint256 feeGrowthGlobal0X128,
-        uint256 feeGrowthGlobal1X128
-    ) external returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) {
+        UQ128x128 feeGrowthGlobal0,
+        UQ128x128 feeGrowthGlobal1
+    ) external returns (UQ128x128 feeGrowthInside0X128, UQ128x128 feeGrowthInside1X128) {
         pool.slot0.tick = tickCurrent;
-        pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128;
-        pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128;
+        pool.feeGrowthGlobal0 = feeGrowthGlobal0;
+        pool.feeGrowthGlobal1 = feeGrowthGlobal1;
         return pool.getFeeGrowthInside(tickLower, tickUpper);
     }
 
@@ -43,13 +44,13 @@ contract TickTest {
         int24 tick,
         int24 tickCurrent,
         int128 liquidityDelta,
-        uint256 feeGrowthGlobal0X128,
-        uint256 feeGrowthGlobal1X128,
+        UQ128x128 feeGrowthGlobal0,
+        UQ128x128 feeGrowthGlobal1,
         bool upper
     ) external returns (bool flipped, uint128 liquidityGrossAfter) {
         pool.slot0.tick = tickCurrent;
-        pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128;
-        pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128;
+        pool.feeGrowthGlobal0 = feeGrowthGlobal0;
+        pool.feeGrowthGlobal1 = feeGrowthGlobal1;
         return pool.updateTick(tick, liquidityDelta, upper);
     }
 
@@ -57,10 +58,10 @@ contract TickTest {
         pool.clearTick(tick);
     }
 
-    function cross(int24 tick, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128)
+    function cross(int24 tick, UQ128x128 feeGrowthGlobal0, UQ128x128 feeGrowthGlobal1)
         external
         returns (int128 liquidityNet)
     {
-        return pool.crossTick(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+        return pool.crossTick(tick, feeGrowthGlobal0, feeGrowthGlobal1);
     }
 }

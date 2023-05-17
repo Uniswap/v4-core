@@ -375,7 +375,8 @@ library Pool {
             // update global fee tracker
             if (state.liquidity > 0) {
                 unchecked {
-                    state.feeGrowthGlobalX128 += FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
+                    state.feeGrowthGlobalX128 = state.feeGrowthGlobalX128
+                        + UQ128x128.wrap(FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity));
                 }
             }
 
@@ -439,10 +440,12 @@ library Pool {
         delta.amount1 = amount1.toInt256();
         unchecked {
             if (amount0 > 0) {
-                state.feeGrowthGlobal0 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
+                state.feeGrowthGlobal0 =
+                    state.feeGrowthGlobal0 + (UQ128x128.wrap(amount0) / UQ128x128.wrap((state.liquidity)));
             }
             if (amount1 > 0) {
-                state.feeGrowthGlobal1 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
+                state.feeGrowthGlobal1 =
+                    state.feeGrowthGlobal1 + (UQ128x128.wrap(amount1) / UQ128x128.wrap((state.liquidity)));
             }
         }
     }
@@ -470,10 +473,8 @@ library Pool {
                 feeGrowthInside0 = upper.feeGrowthOutside0 - lower.feeGrowthOutside0;
                 feeGrowthInside1 = upper.feeGrowthOutside1 - lower.feeGrowthOutside1;
             } else {
-                feeGrowthInside0 =
-                    self.feeGrowthGlobal0 - lower.feeGrowthOutside0 - upper.feeGrowthOutside0;
-                feeGrowthInside1 =
-                    self.feeGrowthGlobal1 - lower.feeGrowthOutside1 - upper.feeGrowthOutside1;
+                feeGrowthInside0 = self.feeGrowthGlobal0 - lower.feeGrowthOutside0 - upper.feeGrowthOutside0;
+                feeGrowthInside1 = self.feeGrowthGlobal1 - lower.feeGrowthOutside1 - upper.feeGrowthOutside1;
             }
         }
     }

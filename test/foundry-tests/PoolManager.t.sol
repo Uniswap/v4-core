@@ -19,6 +19,7 @@ import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
+import {UQ128x128} from "../../contracts/libraries/FixedPoint128.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
@@ -117,9 +118,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         donateRouter.donate(key, 100, 200);
         snapEnd();
 
-        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(PoolId.toId(key));
-        assertEq(feeGrowthGlobal0X128, 340282366920938463463374607431768211456);
-        assertEq(feeGrowthGlobal1X128, 680564733841876926926749214863536422912);
+        (, UQ128x128 feeGrowthGlobal0, UQ128x128 feeGrowthGlobal1,) = manager.pools(PoolId.toId(key));
+        assertEq(UQ128x128.unwrap(feeGrowthGlobal0), 340282366920938463463374607431768211456);
+        assertEq(UQ128x128.unwrap(feeGrowthGlobal1), 680564733841876926926749214863536422912);
     }
 
     function testDonateSucceedsForNativeTokensWhenPoolHasLiquidity() public {
@@ -138,9 +139,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         modifyPositionRouter.modifyPosition{value: 1}(key, params);
         donateRouter.donate{value: 100}(key, 100, 200);
 
-        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(PoolId.toId(key));
-        assertEq(feeGrowthGlobal0X128, 340282366920938463463374607431768211456);
-        assertEq(feeGrowthGlobal1X128, 680564733841876926926749214863536422912);
+        (, UQ128x128 feeGrowthGlobal0, UQ128x128 feeGrowthGlobal1,) = manager.pools(PoolId.toId(key));
+        assertEq(UQ128x128.unwrap(feeGrowthGlobal0), 340282366920938463463374607431768211456);
+        assertEq(UQ128x128.unwrap(feeGrowthGlobal1), 680564733841876926926749214863536422912);
     }
 
     function testDonateSucceedsWithBeforeAndAfterHooks() public {

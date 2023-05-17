@@ -56,23 +56,11 @@ function gte(UQ128x128 a, UQ128x128 b) pure returns (bool) {
 }
 
 function mul(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
-    return UQ128x128.wrap(
-        FullMath.mulDiv(
-            UQ128x128.unwrap(a), 
-            UQ128x128.unwrap(b), 
-            2 ** 128
-        )
-    );
+    return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), UQ128x128.unwrap(b), 2 ** 128));
 }
 
 function div(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
-    return UQ128x128.wrap(
-        FullMath.mulDiv(
-            UQ128x128.unwrap(a), 
-            2 ** 128, 
-            UQ128x128.unwrap(b)
-        )
-    );
+    return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), 2 ** 128, UQ128x128.unwrap(b)));
 }
 
 /// @title FixedPoint128
@@ -83,6 +71,6 @@ library FixedPoint128 {
     function toUint256(UQ128x128 self) internal pure returns (uint256) {
         return UQ128x128.unwrap(self);
     }
+
+    // Do we want a fromUint256 method as well
 }
-
-

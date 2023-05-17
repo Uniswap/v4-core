@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity =0.8.19;
 
+import {UQ128x128} from "../libraries/FixedPoint128.sol";
 import {Pool} from "../libraries/Pool.sol";
 
 contract TickOverflowSafetyEchidnaTest {
@@ -13,25 +14,25 @@ contract TickOverflowSafetyEchidnaTest {
     int24 private tick = 0;
 
     // half the cap of fee growth has happened, this can overflow
-    uint256 feeGrowthGlobal0X128 = type(uint256).max / 2;
-    uint256 feeGrowthGlobal1X128 = type(uint256).max / 2;
+    UQ128x128 feeGrowthGlobal0 = UQ128x128.wrap(type(uint256).max / 2);
+    UQ128x128 feeGrowthGlobal1 = UQ128x128.wrap(type(uint256).max / 2);
 
     // used to track how much total liquidity has been added. should never be negative
     int256 totalLiquidity = 0;
     // how much total growth has happened, this cannot overflow
-    uint256 private totalGrowth0 = 0;
-    uint256 private totalGrowth1 = 0;
+    UQ128x128 private totalGrowth0 = UQ128x128.wrap(0);
+    UQ128x128 private totalGrowth1 = UQ128x128.wrap(0);
 
-    function increaseFeeGrowthGlobal0X128(uint256 amount) external {
+    function increasefeeGrowthGlobal0(UQ128x128 amount) external {
         require(totalGrowth0 + amount > totalGrowth0); // overflow check
-        feeGrowthGlobal0X128 += amount; // overflow desired
-        totalGrowth0 += amount;
+        feeGrowthGlobal0 = feeGrowthGlobal0 + amount; // overflow desired
+        totalGrowth0 = totalGrowth0 + amount;
     }
 
-    function increaseFeeGrowthGlobal1X128(uint256 amount) external {
+    function increasefeeGrowthGlobal1(UQ128x128 amount) external {
         require(totalGrowth1 + amount > totalGrowth1); // overflow check
-        feeGrowthGlobal1X128 += amount; // overflow desired
-        totalGrowth1 += amount;
+        feeGrowthGlobal1 = feeGrowthGlobal1 + amount; // overflow desired
+        totalGrowth1 = totalGrowth1 + amount;
     }
 
     function setPosition(int24 tickLower, int24 tickUpper, int128 liquidityDelta) external {
@@ -64,8 +65,8 @@ contract TickOverflowSafetyEchidnaTest {
         assert(totalLiquidity >= 0);
 
         if (totalLiquidity == 0) {
-            totalGrowth0 = 0;
-            totalGrowth1 = 0;
+            totalGrowth0 = UQ128x128.wrap(0);
+            totalGrowth1 = UQ128x128.wrap(0);
         }
     }
 
@@ -75,12 +76,12 @@ contract TickOverflowSafetyEchidnaTest {
         while (tick != target) {
             if (tick < target) {
                 if (pool.ticks[tick + 1].liquidityGross > 0) {
-                    pool.crossTick(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+                    pool.crossTick(tick + 1, feeGrowthGlobal0, feeGrowthGlobal1);
                 }
                 tick++;
             } else {
                 if (pool.ticks[tick].liquidityGross > 0) {
-                    pool.crossTick(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
+                    pool.crossTick(tick, feeGrowthGlobal0, feeGrowthGlobal1);
                 }
                 tick--;
             }
