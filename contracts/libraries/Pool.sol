@@ -5,7 +5,7 @@ import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
 import {Position} from "./Position.sol";
 import {FullMath} from "./FullMath.sol";
-import {FixedPoint128} from "./FixedPoint128.sol";
+import {UQ128x128, FixedPoint128} from "./FixedPoint128.sol";
 import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
@@ -80,15 +80,15 @@ library Pool {
         int128 liquidityNet;
         // fee growth per unit of liquidity on the _other_ side of this tick (relative to the current tick)
         // only has relative meaning, not absolute — the value depends on when the tick is initialized
-        uint256 feeGrowthOutside0X128;
-        uint256 feeGrowthOutside1X128;
+        UQ128x128 feeGrowthOutside0;
+        UQ128x128 feeGrowthOutside1;
     }
 
     /// @dev The state of a pool
     struct State {
         Slot0 slot0;
-        uint256 feeGrowthGlobal0X128;
-        uint256 feeGrowthGlobal1X128;
+        UQ128x128 feeGrowthGlobal0;
+        UQ128x128 feeGrowthGlobal1;
         uint128 liquidity;
         mapping(int24 => TickInfo) ticks;
         mapping(int16 => uint256) tickBitmap;
@@ -133,8 +133,8 @@ library Pool {
         uint128 liquidityGrossAfterLower;
         bool flippedUpper;
         uint128 liquidityGrossAfterUpper;
-        uint256 feeGrowthInside0X128;
-        uint256 feeGrowthInside1X128;
+        UQ128x128 feeGrowthInside0;
+        UQ128x128 feeGrowthInside1;
     }
 
     /// @dev Effect changes to a position in a pool
@@ -175,12 +175,12 @@ library Pool {
                 }
             }
 
-            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) =
+            (state.feeGrowthInside0, state.feeGrowthInside1) =
                 getFeeGrowthInside(self, params.tickLower, params.tickUpper);
 
             (uint256 feesOwed0, uint256 feesOwed1) = self.positions.get(
                 params.owner, params.tickLower, params.tickUpper
-            ).update(params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
+            ).update(params.liquidityDelta, state.feeGrowthInside0, state.feeGrowthInside1);
             result.amount0 -= feesOwed0.toInt256();
             result.amount1 -= feesOwed1.toInt256();
 
@@ -245,7 +245,7 @@ library Pool {
         // the tick associated with the current price
         int24 tick;
         // the global fee growth of the input token
-        uint256 feeGrowthGlobalX128;
+        UQ128x128 feeGrowthGlobalX128;
         // the current liquidity in range
         uint128 liquidity;
     }
@@ -312,7 +312,7 @@ library Pool {
             amountCalculated: 0,
             sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
-            feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
+            feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0 : self.feeGrowthGlobal1,
             liquidity: cache.liquidityStart
         });
 
@@ -386,8 +386,8 @@ library Pool {
                     int128 liquidityNet = Pool.crossTick(
                         self,
                         step.tickNext,
-                        (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
-                        (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
+                        (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0),
+                        (params.zeroForOne ? self.feeGrowthGlobal1 : state.feeGrowthGlobalX128)
                     );
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
@@ -417,9 +417,9 @@ library Pool {
 
         // update fee growth global
         if (params.zeroForOne) {
-            self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
+            self.feeGrowthGlobal0 = state.feeGrowthGlobalX128;
         } else {
-            self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
+            self.feeGrowthGlobal1 = state.feeGrowthGlobalX128;
         }
 
         unchecked {
@@ -439,10 +439,10 @@ library Pool {
         delta.amount1 = amount1.toInt256();
         unchecked {
             if (amount0 > 0) {
-                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
+                state.feeGrowthGlobal0 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
             }
             if (amount1 > 0) {
-                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
+                state.feeGrowthGlobal1 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
             }
         }
     }
@@ -451,12 +451,12 @@ library Pool {
     /// @param self The Pool state struct
     /// @param tickLower The lower tick boundary of the position
     /// @param tickUpper The upper tick boundary of the position
-    /// @return feeGrowthInside0X128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
-    /// @return feeGrowthInside1X128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
+    /// @return feeGrowthInside0 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
+    /// @return feeGrowthInside1 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
     function getFeeGrowthInside(State storage self, int24 tickLower, int24 tickUpper)
         internal
         view
-        returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128)
+        returns (UQ128x128 feeGrowthInside0, UQ128x128 feeGrowthInside1)
     {
         TickInfo storage lower = self.ticks[tickLower];
         TickInfo storage upper = self.ticks[tickUpper];
@@ -464,16 +464,16 @@ library Pool {
 
         unchecked {
             if (tickCurrent < tickLower) {
-                feeGrowthInside0X128 = lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128;
-                feeGrowthInside1X128 = lower.feeGrowthOutside1X128 - upper.feeGrowthOutside1X128;
+                feeGrowthInside0 = lower.feeGrowthOutside0 - upper.feeGrowthOutside0;
+                feeGrowthInside1 = lower.feeGrowthOutside1 - upper.feeGrowthOutside1;
             } else if (tickCurrent >= tickUpper) {
-                feeGrowthInside0X128 = upper.feeGrowthOutside0X128 - lower.feeGrowthOutside0X128;
-                feeGrowthInside1X128 = upper.feeGrowthOutside1X128 - lower.feeGrowthOutside1X128;
+                feeGrowthInside0 = upper.feeGrowthOutside0 - lower.feeGrowthOutside0;
+                feeGrowthInside1 = upper.feeGrowthOutside1 - lower.feeGrowthOutside1;
             } else {
-                feeGrowthInside0X128 =
-                    self.feeGrowthGlobal0X128 - lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128;
-                feeGrowthInside1X128 =
-                    self.feeGrowthGlobal1X128 - lower.feeGrowthOutside1X128 - upper.feeGrowthOutside1X128;
+                feeGrowthInside0 =
+                    self.feeGrowthGlobal0 - lower.feeGrowthOutside0 - upper.feeGrowthOutside0;
+                feeGrowthInside1 =
+                    self.feeGrowthGlobal1 - lower.feeGrowthOutside1 - upper.feeGrowthOutside1;
             }
         }
     }
@@ -512,8 +512,8 @@ library Pool {
         if (liquidityGrossBefore == 0) {
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
             if (tick <= self.slot0.tick) {
-                info.feeGrowthOutside0X128 = self.feeGrowthGlobal0X128;
-                info.feeGrowthOutside1X128 = self.feeGrowthGlobal1X128;
+                info.feeGrowthOutside0 = self.feeGrowthGlobal0;
+                info.feeGrowthOutside1 = self.feeGrowthGlobal1;
             }
         }
 
@@ -559,17 +559,17 @@ library Pool {
     /// @notice Transitions to next tick as needed by price movement
     /// @param self The Pool state struct
     /// @param tick The destination tick of the transition
-    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
-    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
+    /// @param feeGrowthGlobal0 The all-time global fee growth, per unit of liquidity, in token0
+    /// @param feeGrowthGlobal1 The all-time global fee growth, per unit of liquidity, in token1
     /// @return liquidityNet The amount of liquidity added (subtracted) when tick is crossed from left to right (right to left)
-    function crossTick(State storage self, int24 tick, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128)
+    function crossTick(State storage self, int24 tick, UQ128x128 feeGrowthGlobal0, UQ128x128 feeGrowthGlobal1)
         internal
         returns (int128 liquidityNet)
     {
         unchecked {
             TickInfo storage info = self.ticks[tick];
-            info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
-            info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
+            info.feeGrowthOutside0 = feeGrowthGlobal0 - info.feeGrowthOutside0;
+            info.feeGrowthOutside1 = feeGrowthGlobal1 - info.feeGrowthOutside1;
             liquidityNet = info.liquidityNet;
         }
     }

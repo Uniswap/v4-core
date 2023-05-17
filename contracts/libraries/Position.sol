@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {FullMath} from "./FullMath.sol";
-import {FixedPoint128} from "./FixedPoint128.sol";
+import {UQ128x128, FixedPoint128} from "./FixedPoint128.sol";
 
 /// @title Position
 /// @notice Positions represent an owner address' liquidity between a lower and upper tick boundary
@@ -16,8 +16,8 @@ library Position {
         // the amount of liquidity owned by this position
         uint128 liquidity;
         // fee growth per unit of liquidity as of the last update to liquidity or fees owed
-        uint256 feeGrowthInside0LastX128;
-        uint256 feeGrowthInside1LastX128;
+        UQ128x128 feeGrowthInside0Last;
+        UQ128x128 feeGrowthInside1Last;
     }
 
     /// @notice Returns the Info struct of a position, given an owner and position boundaries
@@ -44,8 +44,8 @@ library Position {
     function update(
         Info storage self,
         int128 liquidityDelta,
-        uint256 feeGrowthInside0X128,
-        uint256 feeGrowthInside1X128
+        UQ128x128 feeGrowthInside0X128,
+        UQ128x128 feeGrowthInside1X128
     ) internal returns (uint256 feesOwed0, uint256 feesOwed1) {
         Info memory _self = self;
 
@@ -62,16 +62,16 @@ library Position {
         // calculate accumulated fees. overflow in the subtraction of fee growth is expected
         unchecked {
             feesOwed0 = FullMath.mulDiv(
-                feeGrowthInside0X128 - _self.feeGrowthInside0LastX128, _self.liquidity, FixedPoint128.Q128
+                UQ128x128.unwrap(feeGrowthInside0X128 - _self.feeGrowthInside0Last), _self.liquidity, FixedPoint128.Q128
             );
             feesOwed1 = FullMath.mulDiv(
-                feeGrowthInside1X128 - _self.feeGrowthInside1LastX128, _self.liquidity, FixedPoint128.Q128
+                UQ128x128.unwrap(feeGrowthInside1X128 - _self.feeGrowthInside1Last), _self.liquidity, FixedPoint128.Q128
             );
         }
 
         // update the position
         if (liquidityDelta != 0) self.liquidity = liquidityNext;
-        self.feeGrowthInside0LastX128 = feeGrowthInside0X128;
-        self.feeGrowthInside1LastX128 = feeGrowthInside1X128;
+        self.feeGrowthInside0Last = feeGrowthInside0X128;
+        self.feeGrowthInside1Last = feeGrowthInside1X128;
     }
 }
