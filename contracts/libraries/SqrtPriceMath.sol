@@ -161,7 +161,7 @@ library SqrtPriceMath {
             if (sqrtRatioA > sqrtRatioB) (sqrtRatioA, sqrtRatioB) = (sqrtRatioB, sqrtRatioA);
 
             uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
-            uint256 numerator2 = (sqrtRatioB - sqrtRatioA).toUint256();
+            uint256 numerator2 = (sqrtRatioB.uncheckedSub(sqrtRatioA)).toUint256();
 
             require(sqrtRatioA > UQ64x96.wrap(0));
 
@@ -188,8 +188,8 @@ library SqrtPriceMath {
         if (sqrtRatioA > sqrtRatioB) (sqrtRatioA, sqrtRatioB) = (sqrtRatioB, sqrtRatioA);
 
         return roundUp
-            ? FullMath.mulDivRoundingUp(liquidity, (sqrtRatioB - sqrtRatioA).toUint256(), FixedPoint96.ONE)
-            : FullMath.mulDiv(liquidity, (sqrtRatioB - sqrtRatioA).toUint256(), FixedPoint96.ONE);
+            ? FullMath.mulDivRoundingUp(liquidity, (sqrtRatioB.uncheckedSub(sqrtRatioA)).toUint256(), FixedPoint96.ONE)
+            : FullMath.mulDiv(liquidity, (sqrtRatioB.uncheckedSub(sqrtRatioA)).toUint256(), FixedPoint96.ONE);
     }
 
     /// @notice Helper that gets signed currency0 delta
