@@ -71,7 +71,7 @@ library FixedPoint96 {
     uint256 internal constant ONE = 0x1000000000000000000000000;
 
     function toUint256(UQ64x96 self) internal pure returns (uint256) {
-        return uint256(UQ64x96.unwrap(self));
+        return UQ64x96.unwrap(self);
     }
 
     function uncheckedAdd(UQ64x96 a, UQ64x96 b) internal pure returns (UQ64x96) {
