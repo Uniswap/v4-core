@@ -60,7 +60,7 @@ function div(UQ64x96 a, UQ64x96 b) pure returns (UQ64x96) {
 }
 
 function mul(UQ64x96 a, UQ64x96 b) pure returns (UQ64x96) {
-    return UQ64x96.wrap((a.toUint256() * b.toUint256() / 2 ** 96).toUint160());
+    return UQ64x96.wrap(FullMath.mulDiv(a.toUint256(), b.toUint256(), 2 ** 96).toUint160());
 }
 
 /// @title FixedPoint96
