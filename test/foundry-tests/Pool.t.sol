@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
@@ -13,7 +12,7 @@ import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 
-contract PoolTest is Test, Deployers {
+contract PoolTest is Test {
     using Pool for Pool.State;
 
     Pool.State state;
@@ -105,19 +104,5 @@ contract PoolTest is Test, Deployers {
         } else {
             assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
         }
-    }
-
-    function testLastUpdateTimestamp() public {
-        vm.warp(100);
-        state.initialize(TickMath.MIN_SQRT_RATIO, 0);
-        assertEq(state.slot0.lastSwapTimestamp, 0);
-
-        vm.warp(500);
-        state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + 1));
-        assertEq(state.slot0.lastSwapTimestamp, 500);
-
-        vm.warp(700);
-        state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + 2));
-        assertEq(state.slot0.lastSwapTimestamp, 700);
     }
 }
