@@ -5,7 +5,7 @@ import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
 import {Position} from "./Position.sol";
 import {FullMath} from "./FullMath.sol";
-import {UQ128x128, FixedPoint128} from "./FixedPoint128.sol";
+import {UQ128x128, FixedPoint128, uncheckedSub} from "./FixedPoint128.sol";
 import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
@@ -467,14 +467,14 @@ library Pool {
 
         unchecked {
             if (tickCurrent < tickLower) {
-                feeGrowthInside0 = lower.feeGrowthOutside0 - upper.feeGrowthOutside0;
-                feeGrowthInside1 = lower.feeGrowthOutside1 - upper.feeGrowthOutside1;
+                feeGrowthInside0 = uncheckedSub(lower.feeGrowthOutside0, upper.feeGrowthOutside0);
+                feeGrowthInside1 = uncheckedSub(lower.feeGrowthOutside1, upper.feeGrowthOutside1);
             } else if (tickCurrent >= tickUpper) {
-                feeGrowthInside0 = upper.feeGrowthOutside0 - lower.feeGrowthOutside0;
-                feeGrowthInside1 = upper.feeGrowthOutside1 - lower.feeGrowthOutside1;
+                feeGrowthInside0 = uncheckedSub(upper.feeGrowthOutside0, lower.feeGrowthOutside0);
+                feeGrowthInside1 = uncheckedSub(upper.feeGrowthOutside1, lower.feeGrowthOutside1);
             } else {
-                feeGrowthInside0 = self.feeGrowthGlobal0 - lower.feeGrowthOutside0 - upper.feeGrowthOutside0;
-                feeGrowthInside1 = self.feeGrowthGlobal1 - lower.feeGrowthOutside1 - upper.feeGrowthOutside1;
+                feeGrowthInside0 = uncheckedSub(uncheckedSub(self.feeGrowthGlobal0, lower.feeGrowthOutside0), upper.feeGrowthOutside0);
+                feeGrowthInside1 = uncheckedSub(uncheckedSub(self.feeGrowthGlobal1, lower.feeGrowthOutside1), upper.feeGrowthOutside1);
             }
         }
     }

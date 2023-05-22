@@ -30,6 +30,12 @@ function sub(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
     return UQ128x128.wrap(UQ128x128.unwrap(a) - UQ128x128.unwrap(b));
 }
 
+function uncheckedSub(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
+    unchecked {
+        return UQ128x128.wrap(UQ128x128.unwrap(a) - UQ128x128.unwrap(b));
+    }
+}
+
 function eq(UQ128x128 a, UQ128x128 b) pure returns (bool) {
     return UQ128x128.unwrap(a) == UQ128x128.unwrap(b);
 }
