@@ -88,10 +88,10 @@ library FixedPoint96 {
 
     function uncheckedMul(UQ64x96 a, UQ64x96 b) internal pure returns (UQ64x96) {
         unchecked {
-            if (a.toUint256() * b.toUint256() / b.toUint256() != a.toUint256()) {
+            if (b != UQ64x96.wrap(0) && a.toUint256() * b.toUint256() / b.toUint256() != a.toUint256()) {
                 return UQ64x96.wrap(FullMath.mulDiv(a.toUint256(), b.toUint256(), 2 ** 96).toUint160());
             }
-            return UQ64x96.wrap((UQ64x96.unwrap(a) * UQ64x96.unwrap(b)) / 2 ** 96);
+            return UQ64x96.wrap((a.toUint256() * b.toUint256() / 2 ** 96).toUint160());
         }
     }
 
