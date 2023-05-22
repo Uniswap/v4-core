@@ -59,10 +59,12 @@ function mul(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
 }
 
 function uncheckedMul(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
-    if (UQ128x128.unwrap(a) * UQ128x128.unwrap(b) / UQ128x128.unwrap(b) == UQ128x128.unwrap(a)) {
-        return UQ128x128.wrap((UQ128x128.unwrap(a) * UQ128x128.unwrap(b)) / 2 ** 128);
+    unchecked {
+        if (UQ128x128.unwrap(a) * UQ128x128.unwrap(b) / UQ128x128.unwrap(b) == UQ128x128.unwrap(a)) {
+            return UQ128x128.wrap((UQ128x128.unwrap(a) * UQ128x128.unwrap(b)) / 2 ** 128);
+        }
+        return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), UQ128x128.unwrap(b), 2 ** 128));
     }
-    return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), UQ128x128.unwrap(b), 2 ** 128));
 }
 
 function div(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
@@ -70,10 +72,12 @@ function div(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
 }
 
 function uncheckedDiv(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
-    if (UQ128x128.unwrap(a) * 2 ** 128 / 2 ** 128 == UQ128x128.unwrap(a)) {
-        return UQ128x128.wrap((UQ128x128.unwrap(a) * 2 ** 128 / UQ128x128.unwrap(b)));
+    unchecked {
+        if (UQ128x128.unwrap(a) * 2 ** 128 / 2 ** 128 == UQ128x128.unwrap(a)) {
+            return UQ128x128.wrap((UQ128x128.unwrap(a) * 2 ** 128 / UQ128x128.unwrap(b)));
+        }
+        return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), 2 ** 128, UQ128x128.unwrap(b)));
     }
-    return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), 2 ** 128, UQ128x128.unwrap(b)));
 }
 
 /// @title FixedPoint128
