@@ -245,7 +245,7 @@ library Pool {
         // the tick associated with the current price
         int24 tick;
         // the global fee growth of the input token
-        UQ128x128 feeGrowthGlobalX128;
+        UQ128x128 feeGrowthGlobal;
         // the current liquidity in range
         uint128 liquidity;
     }
@@ -312,7 +312,7 @@ library Pool {
             amountCalculated: 0,
             sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
-            feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0 : self.feeGrowthGlobal1,
+            feeGrowthGlobal: params.zeroForOne ? self.feeGrowthGlobal0 : self.feeGrowthGlobal1,
             liquidity: cache.liquidityStart
         });
 
@@ -375,7 +375,7 @@ library Pool {
             // update global fee tracker
             if (state.liquidity > 0) {
                 unchecked {
-                    state.feeGrowthGlobalX128 = state.feeGrowthGlobalX128
+                    state.feeGrowthGlobal = state.feeGrowthGlobal
                         + UQ128x128.wrap(FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity));
                 }
             }
@@ -387,8 +387,8 @@ library Pool {
                     int128 liquidityNet = Pool.crossTick(
                         self,
                         step.tickNext,
-                        (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0),
-                        (params.zeroForOne ? self.feeGrowthGlobal1 : state.feeGrowthGlobalX128)
+                        (params.zeroForOne ? state.feeGrowthGlobal : self.feeGrowthGlobal0),
+                        (params.zeroForOne ? self.feeGrowthGlobal1 : state.feeGrowthGlobal)
                     );
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
@@ -418,9 +418,9 @@ library Pool {
 
         // update fee growth global
         if (params.zeroForOne) {
-            self.feeGrowthGlobal0 = state.feeGrowthGlobalX128;
+            self.feeGrowthGlobal0 = state.feeGrowthGlobal;
         } else {
-            self.feeGrowthGlobal1 = state.feeGrowthGlobalX128;
+            self.feeGrowthGlobal1 = state.feeGrowthGlobal;
         }
 
         unchecked {

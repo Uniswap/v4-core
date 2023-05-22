@@ -20,17 +20,16 @@ using {
 
 using FixedPoint128 for UQ128x128 global;
 
-// Add two UQ128x128 numbers together, reverts on overflow relying on checked math on uint256
+/// @notice Add two UQ128x128 numbers together, reverts on overflow relying on checked math on uint256
 function add(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
     return UQ128x128.wrap(UQ128x128.unwrap(a) + UQ128x128.unwrap(b));
 }
 
-// Subtract one UQ128x128 number from another, reverts on underflow relying on checked math on uint256
+/// @notice Subtract one UQ128x128 number from another, reverts on underflow relying on checked math on uint256
 function sub(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
     return UQ128x128.wrap(UQ128x128.unwrap(a) - UQ128x128.unwrap(b));
 }
 
-/// Comparison operators
 function eq(UQ128x128 a, UQ128x128 b) pure returns (bool) {
     return UQ128x128.unwrap(a) == UQ128x128.unwrap(b);
 }
@@ -56,10 +55,24 @@ function gte(UQ128x128 a, UQ128x128 b) pure returns (bool) {
 }
 
 function mul(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
+    return UQ128x128.wrap(FullMath.mulDiv(a.toUint256(), b.toUint256(), 2 ** 128));
+}
+
+function uncheckedMul(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
+    if (UQ128x128.unwrap(a) * UQ128x128.unwrap(b) / UQ128x128.unwrap(b) == UQ128x128.unwrap(a)) {
+        return UQ128x128.wrap((UQ128x128.unwrap(a) * UQ128x128.unwrap(b)) / 2 ** 128);
+    }
     return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), UQ128x128.unwrap(b), 2 ** 128));
 }
 
 function div(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
+    return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), 2 ** 128, UQ128x128.unwrap(b)));
+}
+
+function uncheckedDiv(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
+    if (UQ128x128.unwrap(a) * 2 ** 128 / 2 ** 128 == UQ128x128.unwrap(a)) {
+        return UQ128x128.wrap((UQ128x128.unwrap(a) * 2 ** 128 / UQ128x128.unwrap(b)));
+    }
     return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), 2 ** 128, UQ128x128.unwrap(b)));
 }
 
@@ -68,6 +81,7 @@ function div(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
 library FixedPoint128 {
     uint256 internal constant Q128 = 0x100000000000000000000000000000000;
 
+    /// returns uint256 of the same data reprensentation
     function toUint256(UQ128x128 self) internal pure returns (uint256) {
         return UQ128x128.unwrap(self);
     }
