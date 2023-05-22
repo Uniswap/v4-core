@@ -5,23 +5,25 @@ import {MockERC20} from "./MockERC20.sol";
 import {Currency} from "../../../contracts/libraries/CurrencyLibrary.sol";
 
 contract TokenFixture {
-    Currency public currency0;
-    Currency public currency1;
-    MockERC20 public token2;
+    Currency internal currency1;
+    Currency internal currency0;
 
-    function initializeTokens() public {
+    function initializeTokens() internal {
         MockERC20 tokenA = new MockERC20("TestA", "A", 18);
         MockERC20 tokenB = new MockERC20("TestB", "B", 18);
-        MockERC20 token2 = new MockERC20("TestC", "C", 18);
 
         (currency0, currency1) = sortTokens(tokenA, tokenB);
     }
 
-    function sortTokens(MockERC20 tokenA, MockERC20 tokenB) internal returns (Currency currency0, Currency currency1) {
+    function sortTokens(MockERC20 tokenA, MockERC20 tokenB)
+        private
+        pure
+        returns (Currency _currency0, Currency _currency1)
+    {
         if (address(tokenA) < address(tokenB)) {
-            (currency0, currency1) = (Currency.wrap(address(tokenA)), Currency.wrap(address(tokenB)));
+            (_currency0, _currency1) = (Currency.wrap(address(tokenA)), Currency.wrap(address(tokenB)));
         } else {
-            (currency0, currency1) = (Currency.wrap(address(tokenB)), Currency.wrap(address(tokenA)));
+            (_currency0, _currency1) = (Currency.wrap(address(tokenB)), Currency.wrap(address(tokenA)));
         }
     }
 }
