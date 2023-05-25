@@ -385,8 +385,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getTickNetLiquidity(bytes32 id, int24 tick) external view override returns (int128) {
-        return pools[id].ticks[tick].liquidityNet;
+    function getTickInfo(bytes32 id, int24 tick) external view override returns (Pool.TickInfo memory tickInfo) {
+        return pools[id].ticks[tick];
     }
 
     /// @inheritdoc IPoolManager

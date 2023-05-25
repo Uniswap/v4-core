@@ -60,29 +60,38 @@ contract PoolGettersTest is Test, TokenFixture, Deployers, GasSnapshot {
         );
     }
 
-    function testGetPoolPrice() public {
+    function testGetPoolPriceGetter() public {
         bytes32 _poolId = poolId;
         snapStart("poolGetSqrtPriceFromGetters");
         uint160 sqrtPriceX96Getter = manager.getPoolPrice(_poolId);
         snapEnd();
 
-        snapStart("poolGetSqrtPriceFromSlot0");
         (uint160 sqrtPriceX96Slot0, , ) = manager.getSlot0(_poolId);
-        snapEnd();
-
         assertEq(sqrtPriceX96Getter, sqrtPriceX96Slot0);
     }
 
-    function testGetNetLiquidityAtTick() public {
+    function testGetPoolPriceInternalHelper() public {
+        bytes32 _poolId = poolId;
+
+        snapStart("poolGetSqrtPriceFromSlot0");
+        (uint160 sqrtPriceX96Slot0, , ) = manager.getSlot0(_poolId);
+        snapEnd();
+    }
+
+    function testGetNetLiquidityAtTickInteralHelper() public {
+        bytes32 _poolId = poolId;
+        snapStart("poolGetNetLiquidityAtTickFromHelperFunction");
+        int128 netLiquidityHelper = manager.getTickInfo(_poolId, 120).liquidityNet;
+        snapEnd();
+    }
+
+    function testGetNetLiquidityAtTickGetter() public {
         bytes32 _poolId = poolId;
         snapStart("poolGetNetLiquidityAtTickFromGetters");
         int128 netLiquidityGetter = manager.getNetLiquidityAtTick(_poolId, 120);
         snapEnd();
 
-        snapStart("poolGetNetLiquidityAtTickFromHelperFunction");
-        int128 netLiquidityHelper = manager.getTickNetLiquidity(_poolId, 120);
-        snapEnd();
-
+        int128 netLiquidityHelper = manager.getTickInfo(_poolId, 120).liquidityNet;
         assertEq(netLiquidityGetter, netLiquidityHelper);
     }
 }

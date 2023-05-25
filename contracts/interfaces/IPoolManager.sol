@@ -190,7 +190,7 @@ interface IPoolManager is IERC1155 {
     function setPoolProtocolFee(PoolKey memory key) external;
 
     /// @notice Get net liquidity for a given tick
-    function getTickNetLiquidity(bytes32 poolId, int24 tick) external view returns (int128);
+    function getTickInfo(bytes32 poolId, int24 tick) external view returns (Pool.TickInfo memory);
 
     /// @notice Get next initialized tick within one word
     function getNextInitializedTickWithinOneWord(IPoolManager.PoolKey memory key, int24 tick, bool lte)
