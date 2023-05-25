@@ -197,4 +197,7 @@ interface IPoolManager is IERC1155 {
         external
         view
         returns (int24 next, bool initialized);
+
+    /// @notice Called by external contracts to access granular pool state
+    function extsload(bytes32 slot) external returns (bytes32 value);
 }

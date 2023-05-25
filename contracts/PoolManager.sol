@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
+import "hardhat/console.sol";
+
 import {Hooks} from "./libraries/Hooks.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
@@ -226,6 +228,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         onlyByLocker
         returns (IPoolManager.BalanceDelta memory delta)
     {
+
+
         if (key.hooks.shouldCallBeforeSwap()) {
             if (key.hooks.beforeSwap(msg.sender, key, params) != IHooks.beforeSwap.selector) {
                 revert Hooks.InvalidHookResponse();
@@ -241,6 +245,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256 feeForProtocol;
         Pool.SwapState memory state;
         bytes32 poolId = key.toId();
+
         (delta, feeForProtocol, state) = pools[poolId].swap(
             Pool.SwapParams({
                 fee: fee,
@@ -369,6 +374,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
+    function getTickNetLiquidity(bytes32 id, int24 tick) external view override returns (int128) {
+        return pools[id].ticks[tick].liquidityNet;
+    }
+
     function collectProtocolFees(address recipient, Currency currency, uint256 amount) external returns (uint256) {
         if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
 
@@ -392,6 +401,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (int24 next, bool initialized)
     {
         return _getPool(key).tickBitmap.nextInitializedTickWithinOneWord(tick, key.tickSpacing, lte);
+    }
+
+    function extsload(bytes32 slot) external view returns (bytes32 value) {
+        assembly {
+            value := sload(slot)
+        }
     }
 
     /// @notice receive native tokens for native pools
