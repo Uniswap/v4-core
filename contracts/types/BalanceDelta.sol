@@ -6,9 +6,11 @@ type BalanceDelta is int256;
 using {add as +, sub as -} for BalanceDelta global;
 using BalanceDeltaLibrary for BalanceDelta global;
 
-function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceDelta) {
-    unchecked {
-        return BalanceDelta.wrap((int256(_amount0) << 128) | int256(_amount1));
+function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceDelta balanceDelta) {
+    /// @solidity memory-safe-assembly
+    assembly {
+        balanceDelta :=
+            or(shl(128, _amount0), and(0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff, _amount1))
     }
 }
 
@@ -21,27 +23,17 @@ function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
 }
 
 library BalanceDeltaLibrary {
-    function amount0(BalanceDelta balanceDelta) internal pure returns (int128) {
-        return int128(BalanceDelta.unwrap(balanceDelta) >> 128);
+    function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _amount0 := shr(128, balanceDelta)
+        }
     }
 
-    function amount1(BalanceDelta balanceDelta) internal pure returns (int128) {
-        return int128(BalanceDelta.unwrap(balanceDelta));
-    }
-
-    function addAmount0(BalanceDelta balanceDelta, int128 _amount0) internal pure returns (BalanceDelta) {
-        return toBalanceDelta(balanceDelta.amount0() + _amount0, balanceDelta.amount1());
-    }
-
-    function addAmount1(BalanceDelta balanceDelta, int128 _amount1) internal pure returns (BalanceDelta) {
-        return toBalanceDelta(balanceDelta.amount0(), balanceDelta.amount1() + _amount1);
-    }
-
-    function subAmount0(BalanceDelta balanceDelta, int128 _amount0) internal pure returns (BalanceDelta) {
-        return toBalanceDelta(balanceDelta.amount0() - _amount0, balanceDelta.amount1());
-    }
-
-    function subAmount1(BalanceDelta balanceDelta, int128 _amount1) internal pure returns (BalanceDelta) {
-        return toBalanceDelta(balanceDelta.amount0(), balanceDelta.amount1() - _amount1);
+    function amount1(BalanceDelta balanceDelta) internal pure returns (int128 _amount1) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _amount1 := balanceDelta
+        }
     }
 }

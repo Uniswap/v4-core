@@ -199,13 +199,15 @@ library Pool {
             if (self.slot0.tick < params.tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
-                result = result.addAmount0(
-                    SqrtPriceMath.getAmount0Delta(
-                        TickMath.getSqrtRatioAtTick(params.tickLower),
-                        TickMath.getSqrtRatioAtTick(params.tickUpper),
-                        params.liquidityDelta
-                    ).toInt128()
-                );
+                result = result
+                    + toBalanceDelta(
+                        SqrtPriceMath.getAmount0Delta(
+                            TickMath.getSqrtRatioAtTick(params.tickLower),
+                            TickMath.getSqrtRatioAtTick(params.tickUpper),
+                            params.liquidityDelta
+                        ).toInt128(),
+                        0
+                    );
             } else if (self.slot0.tick < params.tickUpper) {
                 result = result
                     + toBalanceDelta(
@@ -223,13 +225,15 @@ library Pool {
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
-                result = result.addAmount1(
-                    SqrtPriceMath.getAmount1Delta(
-                        TickMath.getSqrtRatioAtTick(params.tickLower),
-                        TickMath.getSqrtRatioAtTick(params.tickUpper),
-                        params.liquidityDelta
-                    ).toInt128()
-                );
+                result = result
+                    + toBalanceDelta(
+                        0,
+                        SqrtPriceMath.getAmount1Delta(
+                            TickMath.getSqrtRatioAtTick(params.tickLower),
+                            TickMath.getSqrtRatioAtTick(params.tickUpper),
+                            params.liquidityDelta
+                        ).toInt128()
+                    );
             }
         }
     }
