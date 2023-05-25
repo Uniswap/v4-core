@@ -75,7 +75,14 @@ contract PoolGettersTest is Test, TokenFixture, Deployers, GasSnapshot {
 
     function testGetNetLiquidityAtTick() public {
         bytes32 _poolId = poolId;
-        int128 netLiquidity = manager.getNetLiquidityAtTick(_poolId, 120);
-        console.logInt(netLiquidity);
+        snapStart("poolGetNetLiquidityAtTickFromGetters");
+        int128 netLiquidityGetter = manager.getNetLiquidityAtTick(_poolId, 120);
+        snapEnd();
+
+        snapStart("poolGetNetLiquidityAtTickFromHelperFunction");
+        int128 netLiquidityHelper = manager.getTickNetLiquidity(_poolId, 120);
+        snapEnd();
+
+        assertEq(netLiquidityGetter, netLiquidityHelper);
     }
 }

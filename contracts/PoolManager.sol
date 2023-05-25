@@ -374,10 +374,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    function getTickNetLiquidity(bytes32 id, int24 tick) external view override returns (int128) {
-        return pools[id].ticks[tick].liquidityNet;
-    }
-
     function collectProtocolFees(address recipient, Currency currency, uint256 amount) external returns (uint256) {
         if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
 
