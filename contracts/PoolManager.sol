@@ -105,14 +105,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
 
-    struct Lock {
-        address locker;
-        uint96 parentLockIndex;
+    /// @inheritdoc IPoolManager
+    address[] public override lockedBy;
+
+    /// @inheritdoc IPoolManager
+    function lockedByLength() external view returns (uint256) {
+        return lockedBy.length;
     }
-
-    Lock[] public locks;
-
-    uint256 public lockIndex;
 
     /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
     /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
@@ -123,51 +122,38 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
     /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
-    mapping(address locker => LockState) private lockStates;
+    mapping(uint256 index => LockState) private lockStates;
 
     /// @inheritdoc IPoolManager
-    function getNonzeroDeltaCount(address locker) external view returns (uint256) {
-        return lockStates[locker].nonzeroDeltaCount;
+    function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
+        return lockStates[id].nonzeroDeltaCount;
     }
 
     /// @inheritdoc IPoolManager
-    function getCurrencyDelta(address locker, Currency currency) external view returns (int256) {
-        return lockStates[locker].currencyDelta[currency];
+    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256) {
+        return lockStates[id].currencyDelta[currency];
     }
 
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
+        uint256 id = lockedBy.length;
+        lockedBy.push(msg.sender);
+
+        // the caller does everything in this callback, including paying what they owe via calls to settle
+        result = ILockCallback(msg.sender).lockAcquired(id, data);
+
         unchecked {
-            if (locks.length == 0) {
-                locks.push(Lock({locker: msg.sender, parentLockIndex: 0}));
-            } else {
-                locks.push(Lock({locker: msg.sender, parentLockIndex: uint96(lockIndex)}));
-                lockIndex = locks.length - 1;
-            }
-
-            // the caller does everything in this callback, including paying what they owe via calls to settle
-            result = ILockCallback(msg.sender).lockAcquired(data);
-
-            if (lockIndex == 0) {
-                for (uint256 i; i < locks.length; i++) {
-                    address locker = locks[i].locker;
-                    LockState storage lockState = lockStates[locker];
-                    if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled(locker);
-                }
-                /// @solidity memory-safe-assembly
-                assembly {
-                    sstore(locks.slot, 0)
-                }
-            } else {
-                lockIndex = locks[lockIndex].parentLockIndex;
-            }
+            LockState storage lockState = lockStates[id];
+            if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
         }
+
+        lockedBy.pop();
     }
 
     function _accountDelta(Currency currency, int256 delta) internal {
         if (delta == 0) return;
 
-        LockState storage lockState = lockStates[locks[lockIndex].locker];
+        LockState storage lockState = lockStates[lockedBy.length - 1];
         int256 current = lockState.currencyDelta[currency];
 
         int256 next = current + delta;
@@ -189,7 +175,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     modifier onlyByLocker() {
-        address locker = locks[lockIndex].locker;
+        address locker = lockedBy[lockedBy.length - 1];
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
