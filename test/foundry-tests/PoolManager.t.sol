@@ -24,7 +24,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
     using Pool for Pool.State;
 
-    event LockAcquired(uint256 id);
+    event LockAcquired();
 
     Pool.State state;
     PoolManager manager;
@@ -204,7 +204,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
 
     function testLockEmitsCorrectId() public {
         vm.expectEmit(false, false, false, true);
-        emit LockAcquired(0);
+        emit LockAcquired();
         lockTest.lock();
     }
 
