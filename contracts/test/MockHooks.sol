@@ -4,8 +4,9 @@ pragma solidity =0.8.19;
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {IHookFee} from "../interfaces/IHookFee.sol";
 
-contract MockHooks is IHooks {
+contract MockHooks is IHooks, IHookFee {
     using Hooks for IHooks;
 
     mapping(bytes4 => bytes4) public returnValues;
@@ -83,6 +84,12 @@ contract MockHooks is IHooks {
     {
         bytes4 selector = MockHooks.afterDonate.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+    }
+
+    function getHookFee(IPoolManager.PoolKey calldata) external view override returns (uint8) {
+        // 20% fee
+        // 0x50
+        return 80;
     }
 
     function setReturnValue(bytes4 key, bytes4 value) external {

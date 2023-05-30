@@ -80,6 +80,8 @@ interface IPoolManager is IERC1155 {
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
+    event HookFeeUpdated(bytes32 indexed poolKey, uint8 hookFee);
+
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower currency of the pool, sorted numerically

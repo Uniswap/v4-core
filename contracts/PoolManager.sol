@@ -12,6 +12,7 @@ import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
 import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
 import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
+import {IHookFee} from "./interfaces/IHookFee.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 
@@ -31,12 +32,23 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
+    // placeholder for max protocol fee
+    // 6.25% to 25%
+    // TODO: Potentially want the lower range to be more granular since we are now accounting
+    // for a possible split between hook and protocol generated fees
+    uint8 public constant MAX_FEE_DENOMINATOR = 4;
+
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
     mapping(bytes32 id => Pool.State) public pools;
 
     mapping(Currency currency => uint256) public override protocolFeesAccrued;
+
+    // fees are per pool in case multiple hooks are attached to a pool
+    // could consider accruing them per hook
+    mapping(bytes32 id => mapping(Currency currency => uint256)) public hookFeesAccrued;
+
     IProtocolFeeController public protocolFeeController;
 
     uint256 private immutable controllerGasLimit;
@@ -91,7 +103,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         bytes32 id = key.toId();
-        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
+        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(key), fetchPoolHookFee(key));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
@@ -237,9 +249,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         uint256 feeForProtocol;
+        uint256 feeForHook;
         Pool.SwapState memory state;
         bytes32 poolId = key.toId();
-        (delta, feeForProtocol, state) = pools[poolId].swap(
+        (delta, feeForProtocol, feeForHook, state) = pools[poolId].swap(
             Pool.SwapParams({
                 fee: fee,
                 tickSpacing: key.tickSpacing,
@@ -255,6 +268,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         unchecked {
             if (feeForProtocol > 0) {
                 protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
+            }
+            if (feeForHook > 0) {
+                hookFeesAccrued[poolId][params.zeroForOne ? key.currency0 : key.currency1] += feeForHook;
             }
         }
 
@@ -364,6 +380,31 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             ) {
                 protocolFee = updatedProtocolFee;
             } catch {}
+
+            if (protocolFee != 0) {
+                uint8 protocolFee0 = protocolFee % 16;
+                uint8 protocolFee1 = protocolFee >> 4;
+                // specified as a denominator so the specified protocol fee cannot be LESS than the MAX_FEE_DENOMINATOR unless it is 0
+                if (
+                    (protocolFee0 != 0 && protocolFee0 < MAX_FEE_DENOMINATOR)
+                        || (protocolFee1 != 0 && protocolFee1 < MAX_FEE_DENOMINATOR)
+                ) {
+                    revert FeeTooLarge();
+                }
+            }
+        }
+    }
+
+    function setPoolHookFee(PoolKey memory key) external {
+        (uint8 newHookFee) = fetchPoolHookFee(key);
+        _getPool(key).setHookFee(newHookFee);
+        emit HookFeeUpdated(key.toId(), newHookFee);
+    }
+
+    /// @notice There is no cap on the hook fee, but it is specified as a percentage taken on the amount after the protocol fee is applied, if there is a protocol fee.
+    function fetchPoolHookFee(PoolKey memory key) internal view returns (uint8 hookFee) {
+        if (key.hooks.shouldCallGetHookFee()) {
+            hookFee = IHookFee(address(key.hooks)).getHookFee(key);
         }
     }
 
@@ -375,6 +416,20 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         currency.transfer(recipient, amount);
 
         return amount;
+    }
+
+    // Alternatively we could just send to the hook address itself and make callable by anyone.
+    function collectHookFees(address recipient, PoolKey memory key, Currency currency, uint256 amount)
+        external
+        returns (uint256)
+    {
+        if (msg.sender != address(key.hooks)) revert InvalidCaller();
+
+        bytes32 poolId = key.toId();
+        amount = (amount == 0) ? hookFeesAccrued[poolId][currency] : amount;
+        // test for amount > hookFeesAccrued[poolId][currency]
+        hookFeesAccrued[poolId][currency] -= amount;
+        currency.transfer(address(key.hooks), amount);
     }
 
     /// @notice receive native tokens for native pools

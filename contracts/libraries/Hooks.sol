@@ -20,6 +20,9 @@ library Hooks {
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
 
+    // TODO: Consider using more bits in the fee field to specify hook fees rather than addr.
+    uint256 internal constant GET_HOOK_FEE_FLAG = 1 << 151;
+
     struct Calls {
         bool beforeInitialize;
         bool afterInitialize;
@@ -29,6 +32,7 @@ library Hooks {
         bool afterSwap;
         bool beforeDonate;
         bool afterDonate;
+        bool getHookFee;
     }
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
@@ -50,6 +54,7 @@ library Hooks {
                 || calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
                 || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
                 || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
+                || calls.getHookFee != shouldCallGetHookFee(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -60,7 +65,7 @@ library Hooks {
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
         return address(hook) == address(0)
             ? fee != DYNAMIC_FEE // having no hooks is fine, but the fee must not be dynamic
-            : (uint160(address(hook)) >= AFTER_DONATE_FLAG || fee == DYNAMIC_FEE);
+            : (uint160(address(hook)) >= GET_HOOK_FEE_FLAG || fee == DYNAMIC_FEE);
     }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
@@ -93,5 +98,9 @@ library Hooks {
 
     function shouldCallAfterDonate(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
+    }
+
+    function shouldCallGetHookFee(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & GET_HOOK_FEE_FLAG != 0;
     }
 }
