@@ -150,6 +150,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             // the caller does everything in this callback, including paying what they owe via calls to settle
             result = ILockCallback(msg.sender).lockAcquired(data);
 
+            // only enforce that deltas are 0 when the outermost lock frame is expiring
             if (lockIndex == 0) {
                 for (uint256 i; i < locks.length; i++) {
                     address locker = locks[i].locker;
