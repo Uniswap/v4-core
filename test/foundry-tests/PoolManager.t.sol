@@ -253,5 +253,5 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(initialized, true);
     }
 
-    fallback() external payable {}
+    receive() external payable {}
 }
