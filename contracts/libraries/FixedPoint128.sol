@@ -93,7 +93,7 @@ library FixedPoint128 {
 
     function uncheckedDiv(UQ128x128 a, UQ128x128 b) internal pure returns (UQ128x128) {
         unchecked {
-            if (UQ128x128.unwrap(a) * 2 ** 128 / 2 ** 128 == UQ128x128.unwrap(a)) {
+            if ((UQ128x128.unwrap(a) * 2 ** 128) / 2 ** 128 == UQ128x128.unwrap(a)) {
                 return UQ128x128.wrap((UQ128x128.unwrap(a) * 2 ** 128 / UQ128x128.unwrap(b)));
             }
             return UQ128x128.wrap(FullMath.mulDiv(UQ128x128.unwrap(a), 2 ** 128, UQ128x128.unwrap(b)));
