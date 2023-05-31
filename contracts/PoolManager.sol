@@ -32,10 +32,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
-    // placeholder for max protocol fee
-    // 6.25% to 25%
-    // TODO: Potentially want the lower range to be more granular since we are now accounting
-    // for a possible split between hook and protocol generated fees
+    // 25% maximum fee
     uint8 public constant MAX_FEE_DENOMINATOR = 4;
 
     /// @inheritdoc IPoolManager
@@ -427,7 +424,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         bytes32 poolId = key.toId();
         amount = (amount == 0) ? hookFeesAccrued[poolId][currency] : amount;
-        // test for amount > hookFeesAccrued[poolId][currency]
         hookFeesAccrued[poolId][currency] -= amount;
         currency.transfer(address(key.hooks), amount);
     }

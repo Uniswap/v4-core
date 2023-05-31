@@ -20,7 +20,7 @@ library Hooks {
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
 
-    // TODO: Consider using more bits in the fee field to specify hook fees rather than addr.
+    // S: Consider using more bits in the fee field to specify hook fees rather than in addr.
     uint256 internal constant GET_HOOK_FEE_FLAG = 1 << 151;
 
     struct Calls {
