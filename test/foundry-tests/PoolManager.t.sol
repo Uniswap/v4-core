@@ -25,6 +25,14 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Pool for Pool.State;
 
     event LockAcquired(uint256 id);
+    event Initialize(
+        bytes32 indexed poolId,
+        Currency indexed currency0,
+        Currency indexed currency1,
+        uint24 fee,
+        int24 tickSpacing,
+        IHooks hooks
+    );
 
     Pool.State state;
     PoolManager manager;
@@ -67,9 +75,44 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
         } else if (!key.hooks.isValidHookAddress(key.fee)) {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key.hooks)));
+        } else {
+            vm.expectEmit(true, true, true, true);
+            emit Initialize(PoolId.toId(key), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
         }
 
         manager.initialize(key, sqrtPriceX96);
+
+        (Pool.Slot0 memory slot0,,, ) = manager.pools(PoolId.toId(key));
+        // assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
+        assertEq(slot0.protocolFee, 0);
+    }
+
+    function testPoolManagerInitializeWithNative(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        // tested in Hooks.t.sol
+        key.hooks = IHooks(address(0));
+
+        if (key.fee >= 1000000 && key.fee != Hooks.DYNAMIC_FEE) {
+            vm.expectRevert(abi.encodeWithSelector(IPoolManager.FeeTooLarge.selector));
+        } else if (key.tickSpacing > manager.MAX_TICK_SPACING()) {
+            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector));
+        } else if (key.tickSpacing < manager.MIN_TICK_SPACING()) {
+            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
+        } else if (!key.hooks.isValidHookAddress(key.fee)) {
+            vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key.hooks)));
+        } else {
+            vm.expectEmit(true, true, true, true);
+            emit Initialize(PoolId.toId(key), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+        }
+
+        manager.initialize(key, sqrtPriceX96);
+
+        (Pool.Slot0 memory slot0,,, ) = manager.pools(PoolId.toId(key));
+        // assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
+        assertEq(slot0.protocolFee, 0);
     }
 
     function testDonateFailsIfNotInitialized() public {
