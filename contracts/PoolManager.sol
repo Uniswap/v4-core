@@ -38,13 +38,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    mapping(bytes32 id => Pool.State) public pools;
+    mapping(bytes32 poolId => Pool.State) public pools;
 
     mapping(Currency currency => uint256) public override protocolFeesAccrued;
 
     // fees are per pool in case multiple hooks are attached to a pool
     // could consider accruing them per hook
-    mapping(bytes32 id => mapping(Currency currency => uint256)) public hookFeesAccrued;
+    mapping(bytes32 poolId => mapping(Currency currency => uint256)) public hookFeesAccrued;
 
     IProtocolFeeController public protocolFeeController;
 
@@ -59,30 +59,30 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getSlot0(bytes32 id)
+    function getSlot0(bytes32 poolId)
         external
         view
         override
         returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee)
     {
-        Pool.Slot0 memory slot0 = pools[id].slot0;
+        Pool.Slot0 memory slot0 = pools[poolId].slot0;
 
         return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee);
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(bytes32 id) external view override returns (uint128 liquidity) {
-        return pools[id].liquidity;
+    function getLiquidity(bytes32 poolId) external view override returns (uint128 liquidity) {
+        return pools[poolId].liquidity;
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(bytes32 id, address owner, int24 tickLower, int24 tickUpper)
+    function getLiquidity(bytes32 poolId, address owner, int24 tickLower, int24 tickUpper)
         external
         view
         override
         returns (uint128 liquidity)
     {
-        return pools[id].positions.get(owner, tickLower, tickUpper).liquidity;
+        return pools[poolId].positions.get(owner, tickLower, tickUpper).liquidity;
     }
 
     /// @inheritdoc IPoolManager
@@ -99,8 +99,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        bytes32 id = key.toId();
-        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(key), fetchPoolHookFee(key));
+        bytes32 poolId = key.toId();
+        tick = pools[poolId].initialize(sqrtPriceX96, fetchPoolProtocolFee(key), fetchPoolHookFee(key));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
@@ -108,7 +108,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+        emit Initialize(poolId, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
     }
 
     /// @inheritdoc IPoolManager
