@@ -105,14 +105,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
 
-    struct Lock {
-        address locker;
-        uint96 parentLockIndex;
-    }
+    IPoolManager.Lock[] public locks;
 
-    Lock[] public locks;
-
-    uint256 public lockIndex;
+    /// @inheritdoc IPoolManager
+    uint256 public override lockIndex;
 
     /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
     /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
@@ -138,12 +134,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
         unchecked {
-            if (locks.length == 0) {
-                locks.push(Lock({locker: msg.sender, parentLockIndex: 0}));
-            } else {
-                locks.push(Lock({locker: msg.sender, parentLockIndex: uint96(lockIndex)}));
-                lockIndex = locks.length - 1;
-            }
+            locks.push(Lock({locker: msg.sender, parentLockIndex: uint96(lockIndex)}));
+            lockIndex = locks.length - 1;
 
             // the caller does everything in this callback, including paying what they owe via calls to settle
             result = ILockCallback(msg.sender).lockAcquired(data);
@@ -154,10 +146,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                     LockState storage lockState = lockStates[locker];
                     if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled(locker);
                 }
-                /// @solidity memory-safe-assembly
-                assembly {
-                    sstore(locks.slot, 0)
-                }
+                delete locks;
             } else {
                 lockIndex = locks[lockIndex].parentLockIndex;
             }

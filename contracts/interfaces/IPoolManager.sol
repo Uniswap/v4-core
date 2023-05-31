@@ -125,6 +125,17 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
+    /// @notice Data structure stored in an append-only singly linked list to track pool lockers
+    struct Lock {
+        /// @notice The locker
+        address locker;
+        /// @notice The list index of the parent locker
+        uint96 parentLockIndex;
+    }
+
+    /// @notice Returns the index of the current locker
+    function lockIndex() external view returns (uint256);
+
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
