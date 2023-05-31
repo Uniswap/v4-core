@@ -55,7 +55,8 @@ contract PoolGettersTest is Test, TokenFixture, Deployers, GasSnapshot {
         // populate pool storage data
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 5 ether));
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 1 ether, TickMath.MAX_SQRT_RATIO - 1),
+            key,
+            IPoolManager.SwapParams(false, 1 ether, TickMath.MAX_SQRT_RATIO - 1),
             PoolSwapTest.TestSettings(true, true)
         );
     }
@@ -66,7 +67,7 @@ contract PoolGettersTest is Test, TokenFixture, Deployers, GasSnapshot {
         uint160 sqrtPriceX96Getter = manager.getPoolPrice(_poolId);
         snapEnd();
 
-        (uint160 sqrtPriceX96Slot0, , ) = manager.getSlot0(_poolId);
+        (uint160 sqrtPriceX96Slot0,,) = manager.getSlot0(_poolId);
         assertEq(sqrtPriceX96Getter, sqrtPriceX96Slot0);
     }
 
@@ -84,7 +85,7 @@ contract PoolGettersTest is Test, TokenFixture, Deployers, GasSnapshot {
         int24 tickGetter = manager.getPoolTick(_poolId);
         snapEnd();
 
-        (, int24 tickSlot0, ) = manager.getSlot0(_poolId);
+        (, int24 tickSlot0,) = manager.getSlot0(_poolId);
         assertEq(tickGetter, tickSlot0);
     }
 
