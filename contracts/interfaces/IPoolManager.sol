@@ -133,6 +133,12 @@ interface IPoolManager is IERC1155 {
         uint96 parentLockIndex;
     }
 
+    /// @notice Returns the ith element of the locker array
+    function locksGetter(uint256) external view returns (IPoolManager.Lock memory);
+
+    /// @notice Returns the length of the locker array
+    function locksLength() external view returns (uint256);
+
     /// @notice Returns the index of the current locker
     function lockIndex() external view returns (uint256);
 

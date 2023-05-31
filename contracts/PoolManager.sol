@@ -105,7 +105,17 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
 
-    IPoolManager.Lock[] public locks;
+    IPoolManager.Lock[] private locks;
+
+    /// @inheritdoc IPoolManager
+    function locksGetter(uint256 i) external view override returns (IPoolManager.Lock memory) {
+        return locks[i];
+    }
+
+    /// @inheritdoc IPoolManager
+    function locksLength() external view returns (uint256) {
+        return locks.length;
+    }
 
     /// @inheritdoc IPoolManager
     uint256 public override lockIndex;

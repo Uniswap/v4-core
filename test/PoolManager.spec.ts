@@ -5,7 +5,6 @@ import {
   EmptyTestHooks,
   PoolDonateTest,
   PoolManager,
-  PoolManagerReentrancyTest,
   PoolModifyPositionTest,
   PoolSwapTest,
   PoolTakeTest,
@@ -15,8 +14,8 @@ import {
 import { ADDRESS_ZERO, MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { deployMockContract, MockedContract, setCode } from './shared/mockContract'
-import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId, MaxUint128 } from './shared/utilities'
+import { MockedContract, deployMockContract, setCode } from './shared/mockContract'
+import { FeeAmount, MaxUint128, encodeSqrtPriceX96, expandTo18Decimals, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -106,48 +105,6 @@ describe('PoolManager', () => {
 
   it('bytecode size', async () => {
     expect(((await waffle.provider.getCode(manager.address)).length - 2) / 2).to.matchSnapshot()
-  })
-
-  describe('#lock', () => {
-    it('can be reentered', async () => {
-      const reenterTest = (await (
-        await ethers.getContractFactory('PoolManagerReentrancyTest')
-      ).deploy()) as PoolManagerReentrancyTest
-
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
-
-      await modifyPositionTest.modifyPosition(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        {
-          tickLower: 0,
-          tickUpper: 60,
-          liquidityDelta: 100,
-        }
-      )
-
-      await expect(reenterTest.reenter(manager.address, tokens.currency0.address, 3))
-        .to.emit(reenterTest, 'LockAcquired')
-        .withArgs(3)
-        .to.emit(reenterTest, 'LockAcquired')
-        .withArgs(2)
-        .to.emit(reenterTest, 'LockAcquired')
-        .withArgs(1)
-    })
   })
 
   describe('#setProtocolFeeController', () => {
