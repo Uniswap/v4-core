@@ -21,5 +21,6 @@ contract PoolLockTest is ILockCallback {
     /// @notice Called by the pool manager on `msg.sender` when a lock is acquired
     function lockAcquired(uint256 id, bytes calldata) external override returns (bytes memory) {
         emit LockAcquired(id);
+        return "";
     }
 }

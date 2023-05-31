@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import "forge-std/console.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 /// @title Helper functions to access pool information
