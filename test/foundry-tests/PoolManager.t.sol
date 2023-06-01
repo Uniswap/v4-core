@@ -998,12 +998,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function testHookEnabledFee() public {
-        uint24 fee = 13582912;
-        assertEq(fee.isDynamicFee(), true);
-        assertEq(fee.hasHookEnabledFee(), true);
-    }
-
     function testDonateFailsIfNotInitialized() public {
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
