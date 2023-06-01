@@ -12,9 +12,10 @@ import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
 import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
 import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
+import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
-
+import {Fees} from "./libraries/Fees.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {PoolId} from "./libraries/PoolId.sol";
@@ -28,16 +29,25 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
+    using Fees for uint24;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
+    // 25% maximum fee
+    uint8 public constant MAX_PROTOCOL_FEE_DENOMINATOR = 4;
+
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    mapping(bytes32 id => Pool.State) public pools;
+    mapping(bytes32 poolId => Pool.State) public pools;
 
     mapping(Currency currency => uint256) public override protocolFeesAccrued;
+
+    // fees are per pool in case multiple hooks are attached to a pool
+    // could consider accruing them per hook
+    mapping(bytes32 poolId => mapping(Currency currency => uint256)) public hookFeesAccrued;
+
     IProtocolFeeController public protocolFeeController;
 
     uint256 private immutable controllerGasLimit;
@@ -51,35 +61,38 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getSlot0(bytes32 id)
+    function getSlot0(bytes32 poolId)
         external
         view
         override
         returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee)
     {
-        Pool.Slot0 memory slot0 = pools[id].slot0;
+        Pool.Slot0 memory slot0 = pools[poolId].slot0;
 
         return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee);
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(bytes32 id) external view override returns (uint128 liquidity) {
-        return pools[id].liquidity;
+    function getLiquidity(bytes32 poolId) external view override returns (uint128 liquidity) {
+        return pools[poolId].liquidity;
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(bytes32 id, address owner, int24 tickLower, int24 tickUpper)
+    function getLiquidity(bytes32 poolId, address owner, int24 tickLower, int24 tickUpper)
         external
         view
         override
         returns (uint128 liquidity)
     {
-        return pools[id].positions.get(owner, tickLower, tickUpper).liquidity;
+        return pools[poolId].positions.get(owner, tickLower, tickUpper).liquidity;
     }
 
     /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
-        if (key.fee >= 1000000 && key.fee != Hooks.DYNAMIC_FEE) revert FeeTooLarge();
+        if (key.fee & Fees.MASK >= 1000000) {
+            revert FeeTooLarge();
+        }
+
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
@@ -91,8 +104,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        bytes32 id = key.toId();
-        tick = pools[id].initialize(sqrtPriceX96, fetchPoolProtocolFee(key));
+        bytes32 poolId = key.toId();
+        tick = pools[poolId].initialize(sqrtPriceX96, fetchPoolProtocolFee(key), fetchPoolHookFee(key));
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
@@ -100,7 +113,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+        emit Initialize(poolId, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
     }
 
     /// @inheritdoc IPoolManager
@@ -231,16 +244,20 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        uint24 fee = key.fee;
-        if (fee == Hooks.DYNAMIC_FEE) {
+        uint24 fee;
+        if (key.fee.isDynamicFee()) {
             fee = IDynamicFeeManager(address(key.hooks)).getFee(key);
             if (fee >= 1000000) revert FeeTooLarge();
+        } else {
+            // clear the top 4 bits since they may be flagged for hook fees
+            fee = key.fee & Fees.MASK;
         }
 
         uint256 feeForProtocol;
+        uint256 feeForHook;
         Pool.SwapState memory state;
         bytes32 poolId = key.toId();
-        (delta, feeForProtocol, state) = pools[poolId].swap(
+        (delta, feeForProtocol, feeForHook, state) = pools[poolId].swap(
             Pool.SwapParams({
                 fee: fee,
                 tickSpacing: key.tickSpacing,
@@ -256,6 +273,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         unchecked {
             if (feeForProtocol > 0) {
                 protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
+            }
+            if (feeForHook > 0) {
+                hookFeesAccrued[poolId][params.zeroForOne ? key.currency0 : key.currency1] += feeForHook;
             }
         }
 
@@ -365,6 +385,32 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             ) {
                 protocolFee = updatedProtocolFee;
             } catch {}
+
+            if (protocolFee != 0) {
+                uint8 protocolFee0 = protocolFee % 16;
+                uint8 protocolFee1 = protocolFee >> 4;
+                // specified as a denominator so the specified protocol fee cannot be LESS than the MAX_PROTOCOL_FEE_DENOMINATOR unless it is 0
+                if (
+                    (protocolFee0 != 0 && protocolFee0 < MAX_PROTOCOL_FEE_DENOMINATOR)
+                        || (protocolFee1 != 0 && protocolFee1 < MAX_PROTOCOL_FEE_DENOMINATOR)
+                ) {
+                    revert FeeTooLarge();
+                }
+            }
+        }
+    }
+
+    function setPoolHookFee(PoolKey memory key) external {
+        (uint8 newHookFee) = fetchPoolHookFee(key);
+
+        _getPool(key).setHookFee(newHookFee);
+        emit HookFeeUpdated(key.toId(), newHookFee);
+    }
+
+    /// @notice There is no cap on the hook fee, but it is specified as a percentage taken on the amount after the protocol fee is applied, if there is a protocol fee.
+    function fetchPoolHookFee(PoolKey memory key) internal view returns (uint8 hookFee) {
+        if (key.fee.hasHookEnabledFee()) {
+            hookFee = IHookFeeManager(address(key.hooks)).getHookFee(key);
         }
     }
 
@@ -396,6 +442,19 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         return value;
+
+    }
+    // Alternatively we could just send to the hook address itself and make callable by anyone.
+    function collectHookFees(address recipient, PoolKey memory key, Currency currency, uint256 amount)
+        external
+        returns (uint256)
+    {
+        if (msg.sender != address(key.hooks)) revert InvalidCaller();
+
+        bytes32 poolId = key.toId();
+        amount = (amount == 0) ? hookFeesAccrued[poolId][currency] : amount;
+        hookFeesAccrued[poolId][currency] -= amount;
+        currency.transfer(address(key.hooks), amount);
     }
 
     /// @notice receive native tokens for native pools

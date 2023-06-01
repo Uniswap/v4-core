@@ -81,13 +81,15 @@ interface IPoolManager is IERC1155 {
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
+    event HookFeeUpdated(bytes32 indexed poolKey, uint8 hookFee);
+
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
         /// @notice The lower currency of the pool, sorted numerically
         Currency currency0;
         /// @notice The higher currency of the pool, sorted numerically
         Currency currency1;
-        /// @notice The fee for the pool
+        /// @notice The fee for the pool, capped at 1_000_000. The last 4 bits are used to determine if a hook sets any fees.
         uint24 fee;
         /// @notice Ticks that involve positions must be a multiple of tick spacing
         int24 tickSpacing;
