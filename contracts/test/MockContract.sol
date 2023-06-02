@@ -13,7 +13,7 @@ contract MockContract is Proxy {
     /// @notice If set, delegatecall to implementation after tracking call
     address internal impl;
 
-    function timesCalled(bytes32 selector) public view returns (uint256) {
+    function timesCalledSelector(bytes32 selector) public view returns (uint256) {
         return calls[selector];
     }
 
@@ -22,7 +22,7 @@ contract MockContract is Proxy {
         return calls[selector];
     }
 
-    function calledWith(bytes32 selector, bytes calldata params) public view returns (bool) {
+    function calledWithSelector(bytes32 selector, bytes calldata params) public view returns (bool) {
         return callParams[selector][params[1:]] > 0; // Drop 0x byte string prefix
     }
 
