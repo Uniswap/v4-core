@@ -404,14 +404,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         bytes memory value = new bytes(32 * nSlots);
 
         assembly {
-            for { let i := 0} lt(i, nSlots) { i := add(i, 1) } {
-              mstore(add(value, mul(add(i, 1), 0x20)), sload(add(startSlot, i)))
+            for { let i := 0 } lt(i, nSlots) { i := add(i, 1) } {
+                mstore(add(value, mul(add(i, 1), 0x20)), sload(add(startSlot, i)))
             }
         }
 
         return value;
     }
-
 
     /// @notice receive native tokens for native pools
     receive() external payable {}
