@@ -121,6 +121,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         (Pool.Slot0 memory slot0,,,) = manager.pools(PoolId.toId(key));
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
         assertEq(slot0.protocolFee, 0);
+        assertEq(slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
     }
 
     function testPoolManagerInitializeSucceedsWithHooks(uint160 sqrtPriceX96) public {
@@ -128,23 +129,36 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address hookAddr = address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG));
+        address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
 
-        MockHooks impl = new MockHooks();
-        vm.etch(hookAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookAddr);
+        MockHooksSimple hook = new MockHooksSimple();
+        MockContract mockContract = new MockContract();
+        vm.etch(hookAddr, address(mockContract).code);
+
+        MockContract(hookAddr).setImplementation(address(hook));
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
             currency1: currency1,
             fee: 60,
-            hooks: mockHooks,
+            hooks: IHooks(hookAddr),
             tickSpacing: 60
         });
 
-        manager.initialize(key, sqrtPriceX96);
+        int24 tick = manager.initialize(key, sqrtPriceX96);
         (Pool.Slot0 memory slot0,,,) = manager.pools(PoolId.toId(key));
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
+
+        bytes32 beforeSelector = MockHooks.beforeInitialize.selector;
+        bytes memory beforeParams = abi.encode(address(this), key, sqrtPriceX96);
+
+        bytes32 afterSelector = MockHooks.afterInitialize.selector;
+        bytes memory afterParams = abi.encode(address(this), key, sqrtPriceX96, tick);
+
+        assertEq(MockContract(hookAddr).timesCalledSelector(beforeSelector), 1);
+        assertTrue(MockContract(hookAddr).calledWithSelector(beforeSelector, beforeParams));
+        assertEq(MockContract(hookAddr).timesCalledSelector(afterSelector), 1);
+        assertTrue(MockContract(hookAddr).calledWithSelector(afterSelector, afterParams));
     }
 
     function testPoolManagerInitializeSucceedsWithMaxTickSpacing(uint160 sqrtPriceX96) public {
@@ -159,6 +173,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             hooks: IHooks(address(0)),
             tickSpacing: manager.MAX_TICK_SPACING()
         });
+
+        vm.expectEmit(true, true, true, true);
+        emit Initialize(PoolId.toId(key), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
 
         manager.initialize(key, sqrtPriceX96);
     }
@@ -238,6 +255,12 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         manager.initialize(key, sqrtPriceX96);
     }
 
+    function testPoolManagerFeeControllerSet() public {
+        assertEq(address(manager.protocolFeeController()), address(0));
+        manager.setProtocolFeeController(feeTest);
+        assertEq(address(manager.protocolFeeController()), address(feeTest));
+    }
+
     function testPoolManagerFetchFeeWhenController(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
@@ -251,12 +274,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 60
         });
 
-        assertEq(address(manager.protocolFeeController()), address(0));
         manager.setProtocolFeeController(feeTest);
-        assertEq(address(manager.protocolFeeController()), address(feeTest));
 
         uint8 poolProtocolFee = 4;
-
         feeTest.setFeeForPool(PoolId.toId(key), poolProtocolFee);
 
         manager.initialize(key, sqrtPriceX96);
@@ -266,11 +286,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(slot0.protocolFee, poolProtocolFee);
     }
 
-    function testGasPoolManagerInitialize(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-
+    function testGasPoolManagerInitialize() public {
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
             currency1: currency1,
@@ -280,7 +296,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         });
 
         snapStart("initialize");
-        manager.initialize(key, sqrtPriceX96);
+        manager.initialize(key, SQRT_RATIO_1_1);
         snapEnd();
     }
 
@@ -311,6 +327,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         });
 
         manager.initialize(key, sqrtPriceX96);
+
         vm.expectEmit(true, true, true, true);
         emit ModifyPosition(PoolId.toId(key), address(modifyPositionRouter), 0, 60, 100);
 
@@ -369,27 +386,18 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         IPoolManager.BalanceDelta memory balanceDelta = modifyPositionRouter.modifyPosition(key, params);
 
         bytes32 beforeSelector = MockHooks.beforeModifyPosition.selector;
-        assertEq(MockContract(hookAddr).timesCalledSelector(beforeSelector), 1);
-
         bytes memory beforeParams = abi.encode(address(modifyPositionRouter), key, params);
 
-        assertTrue(MockContract(hookAddr).calledWithSelector(beforeSelector, beforeParams));
-
         bytes32 afterSelector = MockHooks.afterModifyPosition.selector;
-        assertEq(MockContract(hookAddr).timesCalledSelector(afterSelector), 1);
-
         bytes memory afterParams = abi.encode(address(modifyPositionRouter), key, params, balanceDelta);
 
+        assertEq(MockContract(hookAddr).timesCalledSelector(beforeSelector), 1);
+        assertTrue(MockContract(hookAddr).calledWithSelector(beforeSelector, beforeParams));
+        assertEq(MockContract(hookAddr).timesCalledSelector(afterSelector), 1);
         assertTrue(MockContract(hookAddr).calledWithSelector(afterSelector, afterParams));
-
-        assertEq(MockContract(hookAddr).timesCalledSelector(MockHooks.beforeSwap.selector), 0);
-        assertEq(MockContract(hookAddr).timesCalledSelector(MockHooks.afterSwap.selector), 0);
     }
 
-    function testGasMint(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-
+    function testGasMint() public {
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
             currency1: currency1,
@@ -398,7 +406,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 60
         });
 
-        manager.initialize(key, sqrtPriceX96);
+        manager.initialize(key, SQRT_RATIO_1_1);
 
         snapStart("mint");
         modifyPositionRouter.modifyPosition(
@@ -407,10 +415,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         snapEnd();
     }
 
-    function testGasMintWithNative(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-
+    function testGasMintWithNative() public {
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: Currency.wrap(address(0)),
             currency1: currency1,
@@ -419,7 +424,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 60
         });
 
-        manager.initialize(key, sqrtPriceX96);
+        manager.initialize(key, SQRT_RATIO_1_1);
 
         snapStart("mint with native token");
         modifyPositionRouter.modifyPosition{value: 100}(
@@ -428,10 +433,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         snapEnd();
     }
 
-    function testGasMintWithHooks(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-
+    function testGasMintWithHooks() public {
         address hookEmptyAddr = EMPTY_HOOKS;
         MockHooks impl = new MockHooks();
         vm.etch(hookEmptyAddr, address(impl).code);
@@ -445,7 +447,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 60
         });
 
-        manager.initialize(key, sqrtPriceX96);
+        manager.initialize(key, SQRT_RATIO_1_1);
 
         snapStart("mint with empty hook");
         modifyPositionRouter.modifyPosition(
