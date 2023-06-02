@@ -65,6 +65,7 @@ function div(UQ128x128 a, UQ128x128 b) pure returns (UQ128x128) {
 /// @title FixedPoint128
 /// @notice A library for handling binary fixed point numbers, see https://en.wikipedia.org/wiki/Q_(number_format)
 library FixedPoint128 {
+    uint8 internal constant RESOLUTION = 128;
     uint256 internal constant Q128 = 0x100000000000000000000000000000000;
 
     function uncheckedAdd(UQ128x128 a, UQ128x128 b) internal pure returns (UQ128x128) {

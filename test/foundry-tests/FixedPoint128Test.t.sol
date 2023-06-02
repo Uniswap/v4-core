@@ -66,9 +66,8 @@ contract FixedPoint128Test is Test {
     }
 
     function testIntermediateOverflowUncheckedMul(uint256 a, uint256 b) public {
-        // these values are proper UQ128x128 values
-        UQ128x128 _a = UQ128x128.wrap(a);
-        UQ128x128 _b = UQ128x128.wrap(b);
+        UQ128x128 _a = UQ128x128.wrap((a >> FixedPoint128.RESOLUTION) << FixedPoint128.RESOLUTION);
+        UQ128x128 _b = UQ128x128.wrap((b >> FixedPoint128.RESOLUTION) << FixedPoint128.RESOLUTION);
 
         uint256 result = FullMath.mulDiv(_a.toUint256(), _b.toUint256(), 2 ** 128);
         vm.assume(result < type(uint256).max);
@@ -77,8 +76,8 @@ contract FixedPoint128Test is Test {
 
     function testNoOverflowUncheckedDiv(uint256 a, uint256 b) public {
         // these values are proper UQ128x128 values
-        UQ128x128 _a = UQ128x128.wrap(a);
-        UQ128x128 _b = UQ128x128.wrap(b);
+        UQ128x128 _a = UQ128x128.wrap((a >> FixedPoint128.RESOLUTION) << FixedPoint128.RESOLUTION);
+        UQ128x128 _b = UQ128x128.wrap((b >> FixedPoint128.RESOLUTION) << FixedPoint128.RESOLUTION);
         vm.assume(_b != UQ128x128.wrap(0));
 
         // assume no overflow
@@ -92,12 +91,11 @@ contract FixedPoint128Test is Test {
     }
 
     function testIntermediateOverflowUncheckedDiv(uint256 a, uint256 b) public {
-        // these values are proper UQ128x128 values
-        UQ128x128 _a = UQ128x128.wrap(a);
-        UQ128x128 _b = UQ128x128.wrap(b);
+        UQ128x128 _a = UQ128x128.wrap((a >> FixedPoint128.RESOLUTION) << FixedPoint128.RESOLUTION);
+        UQ128x128 _b = UQ128x128.wrap((b >> FixedPoint128.RESOLUTION) << FixedPoint128.RESOLUTION);
         vm.assume(_b != UQ128x128.wrap(0));
 
-        uint256 result = FullMath.mulDiv(UQ128x128.unwrap(_a), 2 ** 128, UQ128x128.unwrap(_b));
+        uint256 result = FullMath.mulDiv(_a.toUint256(), 2 ** 128, _b.toUint256());
         vm.assume(result < type(uint256).max);
         assertEq(result, UQ128x128.unwrap(FixedPoint128.uncheckedDiv(_a, _b)));
     }
