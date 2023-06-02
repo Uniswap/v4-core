@@ -2,7 +2,6 @@
 pragma solidity =0.8.19;
 
 import {Proxy} from "@openzeppelin/contracts/proxy/Proxy.sol";
-import {console2} from "forge-std/console2.sol";
 
 /// @notice Mock contract that tracks the number of calls to various functions by selector
 /// @dev allows for proxying to an implementation contract
@@ -46,7 +45,6 @@ contract MockContract is Proxy {
         bytes32 selector = bytes32(msg.data[:5]);
         bytes memory params = msg.data[5:];
         calls[selector]++;
-        // console2.logBytes32(selector);
         callParams[selector][params]++;
     }
 }
