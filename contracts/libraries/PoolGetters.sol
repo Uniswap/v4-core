@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {Pool} from "../libraries/Pool.sol";
 
 /// @title Helper functions to access pool information
 library PoolGetters {
@@ -23,6 +24,19 @@ library PoolGetters {
         // tick = (pool.slot0 & 0xffffff << 160) >> 160
         assembly {
             p := shr(160, and(value, shl(160, sub(shl(24, 1), 1))))
+        }
+    }
+
+    function getTickInfoExtsload(IPoolManager poolManager, bytes32 poolId, int24 tick) internal returns (Pool.TickInfo memory info) {
+        bytes memory value = poolManager.extsload(
+            keccak256(abi.encode(tick, uint256(keccak256(abi.encode(poolId, POOL_SLOT))) + TICKS_OFFSET)), 3
+        );
+
+        assembly {
+          mstore(info, and(sub(shl(128, 1), 1), mload(add(value, 0x20))))
+          mstore(add(info, 0x20), shr(128, and(mload(add(value, 0x20)), shl(128, sub(shl(128, 1), 1)))))
+          mstore(add(info, 0x40), mload(add(value, 0x40)))
+          mstore(add(info, 0x60), mload(add(value, 0x60)))
         }
     }
 

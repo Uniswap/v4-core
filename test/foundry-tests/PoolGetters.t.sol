@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.15;
 
-import {console} from "forge-std/console.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
@@ -63,7 +62,7 @@ contract PoolGettersTest is Test, TokenFixture, Deployers, GasSnapshot {
 
     function testGetPoolPriceGetter() public {
         bytes32 _poolId = poolId;
-        snapStart("poolGetSqrtPriceFromGettersLibrary");
+        snapStart("poolGetSqrtPrice");
         uint160 sqrtPriceX96Getter = manager.getPoolPrice(_poolId);
         snapEnd();
 
@@ -99,10 +98,25 @@ contract PoolGettersTest is Test, TokenFixture, Deployers, GasSnapshot {
         assertEq(grossLiquidityGetter, grossLiquidityHelper);
     }
 
-    function testGetGrossLiquidityAtTickInteralHelperGas() public {
+    function testGetTickInfoGetter() public {
         bytes32 _poolId = poolId;
-        snapStart("poolGetGrossLiquidityAtTickFromStructGetter");
-        manager.getTickInfo(_poolId, 120).liquidityGross;
+
+        snapStart("poolGetTickInfoWithExtsload");
+        Pool.TickInfo memory tickInfo = manager.getTickInfoExtsload(_poolId, 120);
+        snapEnd();
+
+        Pool.TickInfo memory info = manager.getTickInfo(_poolId, 120);
+
+        assertEq(tickInfo.liquidityGross, info.liquidityGross);
+        assertEq(tickInfo.liquidityNet, info.liquidityNet);
+        assertEq(tickInfo.feeGrowthOutside0X128, info.feeGrowthOutside0X128);
+        assertEq(tickInfo.feeGrowthOutside1X128, info.feeGrowthOutside1X128);
+    }
+
+    function testGetTickInfoPMHelperHelperGas() public {
+        bytes32 _poolId = poolId;
+        snapStart("poolGetTickInfoWithPMExternalHelper");
+        manager.getTickInfo(_poolId, 120);
         snapEnd();
     }
 
