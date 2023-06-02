@@ -241,7 +241,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256 feeForProtocol;
         Pool.SwapState memory state;
         bytes32 poolId = key.toId();
-
         (delta, feeForProtocol, state) = pools[poolId].swap(
             Pool.SwapParams({
                 fee: fee,

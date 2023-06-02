@@ -7,9 +7,6 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 library PoolGetters {
     uint256 constant POOL_SLOT = 4;
     uint256 constant TICKS_OFFSET = 4;
-    bytes32 constant MASK_24 = bytes32(uint256((1 << 24) - 1));
-    uint256 constant MASK_128 = uint256((1 << 128) - 1);
-    uint256 constant MASK_160 = uint256((1 << 160) - 1);
 
     function getPoolPrice(IPoolManager poolManager, bytes32 poolId) internal returns (uint160 p) {
         bytes32 value = poolManager.extsload(keccak256(abi.encode(poolId, POOL_SLOT)));
