@@ -6,14 +6,14 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {console2} from "forge-std/console2.sol";
 
-contract MockHooks is IHooks {
+contract MockHooksSimple is IHooks {
     using Hooks for IHooks;
 
     mapping(bytes4 => bytes4) public returnValues;
 
     function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external view override returns (bytes4) {
-        bytes4 selector = MockHooks.beforeInitialize.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        bytes4 selector = MockHooksSimple.beforeInitialize.selector;
+        return selector;
     }
 
     function afterInitialize(address, IPoolManager.PoolKey memory, uint160, int24)
@@ -22,8 +22,8 @@ contract MockHooks is IHooks {
         override
         returns (bytes4)
     {
-        bytes4 selector = MockHooks.afterInitialize.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        bytes4 selector = MockHooksSimple.afterInitialize.selector;
+        return selector;
     }
 
     function beforeModifyPosition(address, IPoolManager.PoolKey calldata, IPoolManager.ModifyPositionParams calldata)
@@ -32,10 +32,8 @@ contract MockHooks is IHooks {
         override
         returns (bytes4)
     {
-        bytes4 selector = MockHooks.beforeModifyPosition.selector;
-        console2.logBytes4(selector);
-        console2.logBytes4(returnValues[selector]);
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        bytes4 selector = MockHooksSimple.beforeModifyPosition.selector;
+        return selector;
     }
 
     function afterModifyPosition(
@@ -44,8 +42,8 @@ contract MockHooks is IHooks {
         IPoolManager.ModifyPositionParams calldata,
         IPoolManager.BalanceDelta calldata
     ) external view override returns (bytes4) {
-        bytes4 selector = MockHooks.afterModifyPosition.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        bytes4 selector = MockHooksSimple.afterModifyPosition.selector;
+        return selector;
     }
 
     function beforeSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata)
@@ -54,8 +52,8 @@ contract MockHooks is IHooks {
         override
         returns (bytes4)
     {
-        bytes4 selector = MockHooks.beforeSwap.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        bytes4 selector = MockHooksSimple.beforeSwap.selector;
+        return selector;
     }
 
     function afterSwap(
@@ -64,8 +62,8 @@ contract MockHooks is IHooks {
         IPoolManager.SwapParams calldata,
         IPoolManager.BalanceDelta calldata
     ) external view override returns (bytes4) {
-        bytes4 selector = MockHooks.afterSwap.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        bytes4 selector = MockHooksSimple.afterSwap.selector;
+        return selector;
     }
 
     function beforeDonate(address, IPoolManager.PoolKey calldata, uint256, uint256)
@@ -74,8 +72,8 @@ contract MockHooks is IHooks {
         override
         returns (bytes4)
     {
-        bytes4 selector = MockHooks.beforeDonate.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        bytes4 selector = MockHooksSimple.beforeDonate.selector;
+        return selector;
     }
 
     function afterDonate(address, IPoolManager.PoolKey calldata, uint256, uint256)
@@ -84,8 +82,8 @@ contract MockHooks is IHooks {
         override
         returns (bytes4)
     {
-        bytes4 selector = MockHooks.afterDonate.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        bytes4 selector = MockHooksSimple.afterDonate.selector;
+        return selector;
     }
 
     function setReturnValue(bytes4 key, bytes4 value) external {

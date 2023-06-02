@@ -2,6 +2,7 @@
 pragma solidity =0.8.19;
 
 import {Proxy} from "@openzeppelin/contracts/proxy/Proxy.sol";
+import {console2} from "forge-std/console2.sol";
 
 /// @notice Mock contract that tracks the number of calls to various functions by selector
 /// @dev allows for proxying to an implementation contract
@@ -13,9 +14,17 @@ contract MockContract is Proxy {
     /// @notice If set, delegatecall to implementation after tracking call
     address internal impl;
 
+    function timesCalled(bytes32 selector) public view returns (uint256) {
+        return calls[selector];
+    }
+
     function timesCalled(string calldata fnSig) public view returns (uint256) {
         bytes32 selector = bytes32(uint256(keccak256(bytes(fnSig))) & (type(uint256).max << 224));
         return calls[selector];
+    }
+
+    function calledWith(bytes32 selector, bytes calldata params) public view returns (bool) {
+        return callParams[selector][params[1:]] > 0; // Drop 0x byte string prefix
     }
 
     function calledWith(string calldata fnSig, bytes calldata params) public view returns (bool) {
@@ -37,6 +46,7 @@ contract MockContract is Proxy {
         bytes32 selector = bytes32(msg.data[:5]);
         bytes memory params = msg.data[5:];
         calls[selector]++;
+        // console2.logBytes32(selector);
         callParams[selector][params]++;
     }
 }
