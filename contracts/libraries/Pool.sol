@@ -285,19 +285,23 @@ library Pool {
 
         if (params.liquidityDelta < 0 && self.slot0.hookWithdrawFee > 0) {
             // Only take fees if the hook withdraw fee is set and the liquidity is being removed.
-            (fees) = accountFees(self, result);
+            (fees) = _calculateExternalFees(self, result);
 
+            // Amounts are balances owed to the pool. When negative, they represent the balance a user can take.
+            // Since protocol and hook fees are extracted on the balance a user can take, they are owed (added) back to the pool
+            // where they are kept to be collected by the fee recipients.
             result = result
                 + toBalanceDelta(
-                    (fees.feeForHook0.toInt256() + fees.feeForProtocol0.toInt256()).toInt128(),
-                    (fees.feeForHook1.toInt256() + fees.feeForProtocol1.toInt256()).toInt128()
+                    fees.feeForHook0.toInt128() + fees.feeForProtocol0.toInt128(),
+                    fees.feeForHook1.toInt128() + fees.feeForProtocol1.toInt128()
                 );
         }
 
+        // Fees earned from LPing are removed from the pool balance.
         result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
-    function accountFees(State storage self, BalanceDelta result) internal view returns (Fees memory fees) {
+    function _calculateExternalFees(State storage self, BalanceDelta result) internal view returns (Fees memory fees) {
         int128 amount0 = result.amount0();
         int128 amount1 = result.amount1();
 
@@ -307,11 +311,11 @@ library Pool {
         uint8 protocolFee0 = self.slot0.protocolWithdrawFee % 16;
         uint8 protocolFee1 = self.slot0.protocolWithdrawFee >> 4;
 
-        if (amount0 > 0 && hookFee0 > 0) {
-            fees.feeForHook0 = uint128(amount0) / hookFee0;
+        if (amount0 < 0 && hookFee0 > 0) {
+            fees.feeForHook0 = uint128(-amount0) / hookFee0;
         }
-        if (amount1 > 0 && hookFee1 > 0) {
-            fees.feeForHook1 = uint128(amount1) / hookFee1;
+        if (amount1 < 0 && hookFee1 > 0) {
+            fees.feeForHook1 = uint128(-amount1) / hookFee1;
         }
 
         // A protocol fee is only applied if the hook fee is applied.
@@ -319,12 +323,13 @@ library Pool {
             fees.feeForProtocol0 = fees.feeForHook0 / protocolFee0;
             fees.feeForHook0 -= fees.feeForProtocol0;
         }
+
         if (protocolFee1 > 0 && fees.feeForHook1 > 0) {
             fees.feeForProtocol1 = fees.feeForHook1 / protocolFee1;
             fees.feeForHook1 -= fees.feeForProtocol1;
         }
 
-        return (fees);
+        return fees;
     }
 
     struct SwapCache {
