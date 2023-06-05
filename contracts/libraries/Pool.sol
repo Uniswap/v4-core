@@ -314,7 +314,7 @@ library Pool {
             fees.feeForHook1 = uint128(amount1) / hookFee1;
         }
 
-        // protocol fee is only applied if the hook fee is applied
+        // A protocol fee is only applied if the hook fee is applied.
         if (protocolFee0 > 0 && fees.feeForHook0 > 0) {
             fees.feeForProtocol0 = fees.feeForHook0 / protocolFee0;
             fees.feeForHook0 -= fees.feeForProtocol0;
