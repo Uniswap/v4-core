@@ -326,7 +326,7 @@ describe('PoolManager', () => {
           settleUsingTransfer: true,
         }
       )
-      
+
       await snapshotGasCost(
         swapTest.swap(
           poolKey,
@@ -559,7 +559,6 @@ describe('PoolManager', () => {
           }
         )
       ).to.emit(manager, 'TransferSingle')
-
       erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
       expect(erc1155Balance).to.be.eq(71)
     })
