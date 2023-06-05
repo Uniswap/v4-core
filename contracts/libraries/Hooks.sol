@@ -60,8 +60,11 @@ library Hooks {
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
         return address(hook) == address(0)
-            ? !fee.isDynamicFee() && !fee.hasHookEnabledFee() // having no hooks is fine, but the fee must not be dynamic and there must not be a hook enabled fee
-            : (uint160(address(hook)) >= AFTER_DONATE_FLAG || fee.isDynamicFee() || fee.hasHookEnabledFee());
+            ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee() // having no hooks is fine, but the fee must not be dynamic and there must not be a hook swap or withdraw fee
+            : (
+                uint160(address(hook)) >= AFTER_DONATE_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
+                    || fee.hasHookWithdrawFee()
+            );
     }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {

@@ -77,11 +77,11 @@ interface IPoolManager is IERC1155 {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolFee);
+    event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolSwapFee, uint8 protocolWithdrawFee);
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
-    event HookFeeUpdated(bytes32 indexed poolKey, uint8 hookFee);
+    event HookFeeUpdated(bytes32 indexed poolKey, uint8 hookSwapFee, uint8 hookWithdrawFee);
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -178,9 +178,6 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
 
-    /// @notice sets the protocol fee for the given pool
-    function setPoolProtocolFee(PoolKey memory key) external;
-
     /// @notice Called by external contracts to access granular pool state
     /// @param slot Key of slot to sload
     /// @return value The value of the slot as bytes32
@@ -191,4 +188,6 @@ interface IPoolManager is IERC1155 {
     /// @param nSlots Number of slots to load into return value
     /// @return value The value of the sload-ed slots concatentated as dynamic bytes
     function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
+
+    function setProtocolFee(PoolKey memory key) external;
 }

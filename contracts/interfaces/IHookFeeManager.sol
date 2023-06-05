@@ -6,5 +6,6 @@ import {IPoolManager} from "./IPoolManager.sol";
 /// @notice The interface for setting a fee on swap to the hook
 /// @dev note that this pool is only called if the PoolKey customFee flag is true
 interface IHookFeeManager {
-    function getHookFee(IPoolManager.PoolKey calldata) external view returns (uint8);
+    function getHookSwapFee(IPoolManager.PoolKey calldata) external view returns (uint8);
+    function getHookWithdrawFee(IPoolManager.PoolKey calldata) external view returns (uint8);
 }

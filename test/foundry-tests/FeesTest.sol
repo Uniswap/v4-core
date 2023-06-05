@@ -64,7 +64,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         key = IPoolManager.PoolKey({
             currency0: currency0,
             currency1: currency1,
-            fee: Fees.HOOK_FEE_FLAG | uint24(3000),
+            fee: Fees.HOOK_SWAP_FEE_FLAG | uint24(3000),
             hooks: hook,
             tickSpacing: 60
         });
@@ -73,23 +73,23 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     }
 
     function testInitializeWithHookFee() public {
-        manager.setPoolHookFee(key);
+        manager.setHookFee(key);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.hookFee, 0x50);
+        assertEq(slot0.hookSwapFee, 0x50);
     }
 
     function testInitializeWithProtocolFeeAndHookFee() public {
         protocolFeeController.setFeeForPool(key.toId(), 0xA0); // 10% on 1 to 0 swaps
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setPoolProtocolFee(key);
+        manager.setProtocolFee(key);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, 0xA0);
+        assertEq(slot0.protocolSwapFee, 0xA0);
 
-        manager.setPoolHookFee(key);
+        manager.setHookFee(key);
         (slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.hookFee, 0x50);
+        assertEq(slot0.hookSwapFee, 0x50);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
         modifyPositionRouter.modifyPosition(key, params);
@@ -108,14 +108,14 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     function testCollectHookFees() public {
         protocolFeeController.setFeeForPool(key.toId(), 0xA0); // 10% on 1 to 0 swaps
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setPoolProtocolFee(key);
+        manager.setProtocolFee(key);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, 0xA0);
+        assertEq(slot0.protocolSwapFee, 0xA0);
 
-        manager.setPoolHookFee(key);
+        manager.setHookFee(key);
         (slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.hookFee, 0x50);
+        assertEq(slot0.hookSwapFee, 0x50);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
         modifyPositionRouter.modifyPosition(key, params);

@@ -10,8 +10,9 @@ contract ProtocolFeeControllerTest is IProtocolFeeController {
 
     mapping(bytes32 => uint8) public feeForPool;
 
-    function protocolFeeForPool(IPoolManager.PoolKey memory key) external view returns (uint8) {
-        return feeForPool[key.toId()];
+    function protocolFeeForPool(IPoolManager.PoolKey memory key) external view returns (uint8, uint8) {
+        // TODO test positive withdraw fee
+        return (feeForPool[key.toId()], 0);
     }
 
     // for tests to set pool protocol fees

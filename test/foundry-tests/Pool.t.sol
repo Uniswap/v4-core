@@ -20,11 +20,11 @@ contract PoolTest is Test {
     function testPoolInitialize(uint160 sqrtPriceX96, uint8 protocolFee, uint8 hookFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
             vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
-            state.initialize(sqrtPriceX96, protocolFee, hookFee);
+            state.initialize(sqrtPriceX96, protocolFee, hookFee, protocolFee, hookFee);
         } else {
-            state.initialize(sqrtPriceX96, protocolFee, hookFee);
+            state.initialize(sqrtPriceX96, protocolFee, hookFee, protocolFee, hookFee);
             assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(state.slot0.protocolFee, protocolFee);
+            assertEq(state.slot0.protocolSwapFee, protocolFee);
             assertEq(state.slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
             assertLt(state.slot0.tick, TickMath.MAX_TICK);
             assertGt(state.slot0.tick, TickMath.MIN_TICK - 1);
