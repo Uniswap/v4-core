@@ -326,7 +326,7 @@ describe('PoolManager', () => {
           settleUsingTransfer: true,
         }
       )
-
+      
       await snapshotGasCost(
         swapTest.swap(
           poolKey,
