@@ -213,11 +213,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         bytes32 poolId = key.toId();
-        uint256 feeForProtocol0;
-        uint256 feeForProtocol1;
-        uint256 feeForHook0;
-        uint256 feeForHook1;
-        (delta, feeForProtocol0, feeForProtocol1, feeForHook0, feeForHook1) = pools[poolId].modifyPosition(
+        Pool.Fees memory fees;
+        (delta, fees) = pools[poolId].modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -230,17 +227,17 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         _accountPoolBalanceDelta(key, delta);
 
         unchecked {
-            if (feeForProtocol0 > 0) {
-                protocolFeesAccrued[key.currency0] += feeForProtocol0;
+            if (fees.feeForProtocol0 > 0) {
+                protocolFeesAccrued[key.currency0] += fees.feeForProtocol0;
             }
-            if (feeForProtocol1 > 0) {
-                protocolFeesAccrued[key.currency1] += feeForProtocol1;
+            if (fees.feeForProtocol1 > 0) {
+                protocolFeesAccrued[key.currency1] += fees.feeForProtocol1;
             }
-            if (feeForHook0 > 0) {
-                hookFeesAccrued[poolId][key.currency0] += feeForHook0;
+            if (fees.feeForHook0 > 0) {
+                hookFeesAccrued[poolId][key.currency0] += fees.feeForHook0;
             }
-            if (feeForHook1 > 0) {
-                hookFeesAccrued[poolId][key.currency1] += feeForHook1;
+            if (fees.feeForHook1 > 0) {
+                hookFeesAccrued[poolId][key.currency1] += fees.feeForHook1;
             }
         }
 

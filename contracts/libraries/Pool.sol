@@ -175,18 +175,19 @@ library Pool {
         uint256 feeGrowthInside1X128;
     }
 
+    struct Fees {
+        uint256 feeForProtocol0;
+        uint256 feeForProtocol1;
+        uint256 feeForHook0;
+        uint256 feeForHook1;
+    }
+
     /// @dev Effect changes to a position in a pool
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
     function modifyPosition(State storage self, ModifyPositionParams memory params)
         internal
-        returns (
-            BalanceDelta result,
-            uint256 feeForProtocol0,
-            uint256 feeForProtocol1,
-            uint256 feeForHook0,
-            uint256 feeForHook1
-        )
+        returns (BalanceDelta result, Fees memory fees)
     {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
@@ -284,20 +285,19 @@ library Pool {
 
         if (params.liquidityDelta < 0 && self.slot0.hookWithdrawFee > 0) {
             // Only take fees if the hook withdraw fee is set and the liquidity is being removed.
-            (feeForProtocol0, feeForProtocol1, feeForHook0, feeForHook1) = accountFees(self, result);
+            (fees) = accountFees(self, result);
 
-            result.amount0 += (feeForHook0.toInt256() + feeForProtocol0.toInt256());
-            result.amount1 += (feeForHook1.toInt256() + feeForProtocol1.toInt256());
+            result = result
+                + toBalanceDelta(
+                    (fees.feeForHook0.toInt256() + fees.feeForProtocol0.toInt256()).toInt128(),
+                    (fees.feeForHook1.toInt256() + fees.feeForProtocol1.toInt256()).toInt128()
+                );
         }
 
         result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
-    function accountFees(State storage self, BalanceDelta result)
-        internal
-        view
-        returns (uint256 feeForProtocol0, uint256 feeForProtocol1, uint256 feeForHook0, uint256 feeForHook1)
-    {
+    function accountFees(State storage self, BalanceDelta result) internal view returns (Fees memory fees) {
         int128 amount0 = result.amount0();
         int128 amount1 = result.amount1();
 
@@ -308,23 +308,23 @@ library Pool {
         uint8 protocolFee1 = self.slot0.protocolWithdrawFee >> 4;
 
         if (amount0 > 0 && hookFee0 > 0) {
-            feeForHook0 = uint128(amount0) / hookFee0;
-            adjusted0 = int256(uint128(amount0) - feeForHook0);
+            fees.feeForHook0 = uint128(amount0) / hookFee0;
         }
         if (amount1 > 0 && hookFee1 > 0) {
-            feeForHook1 = uint128(amount1) / hookFee1;
-            adjusted1 = int256(uint128(amount1) - feeForHook1);
+            fees.feeForHook1 = uint128(amount1) / hookFee1;
         }
 
         // protocol fee is only applied if the hook fee is applied
-        if (protocolFee0 > 0 && feeForHook0 > 0) {
-            feeForProtocol0 = feeForHook0 / protocolFee0;
-            feeForHook0 -= feeForProtocol0;
+        if (protocolFee0 > 0 && fees.feeForHook0 > 0) {
+            fees.feeForProtocol0 = fees.feeForHook0 / protocolFee0;
+            fees.feeForHook0 -= fees.feeForProtocol0;
         }
-        if (protocolFee1 > 0 && feeForHook1 > 0) {
-            feeForProtocol1 = feeForHook1 / protocolFee1;
-            feeForHook1 -= feeForProtocol1;
+        if (protocolFee1 > 0 && fees.feeForHook1 > 0) {
+            fees.feeForProtocol1 = fees.feeForHook1 / protocolFee1;
+            fees.feeForHook1 -= fees.feeForProtocol1;
         }
+
+        return (fees);
     }
 
     struct SwapCache {
