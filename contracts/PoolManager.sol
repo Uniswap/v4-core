@@ -487,7 +487,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         bytes32 poolId = key.toId();
         amount = (amount == 0) ? hookFeesAccrued[poolId][currency] : amount;
         hookFeesAccrued[poolId][currency] -= amount;
-        currency.transfer(address(key.hooks), amount);
+        currency.transfer(recipient, amount);
+
+        return amount;
     }
 
     /// @notice receive native tokens for native pools

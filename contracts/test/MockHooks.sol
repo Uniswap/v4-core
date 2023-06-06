@@ -6,11 +6,17 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IHookFeeManager} from "../interfaces/IHookFeeManager.sol";
+import {PoolId} from "../libraries/PoolId.sol";
 
 contract MockHooks is IHooks, IHookFeeManager {
+    using PoolId for IPoolManager.PoolKey;
     using Hooks for IHooks;
 
     mapping(bytes4 => bytes4) public returnValues;
+
+    mapping(bytes32 => uint8) public swapFees;
+
+    mapping(bytes32 => uint8) public withdrawFees;
 
     function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external view override returns (bytes4) {
         bytes4 selector = MockHooks.beforeInitialize.selector;
@@ -87,18 +93,23 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function getHookSwapFee(IPoolManager.PoolKey calldata) external view override returns (uint8) {
-        // 20% fee
-        // 0x50
-        return 80;
+    function getHookSwapFee(IPoolManager.PoolKey calldata key) external view override returns (uint8) {
+        return swapFees[key.toId()];
     }
 
-    function getHookWithdrawFee(IPoolManager.PoolKey calldata) external view override returns (uint8) {
-        // 6.25%
-        return type(uint8).max;
+    function getHookWithdrawFee(IPoolManager.PoolKey calldata key) external view override returns (uint8) {
+        return withdrawFees[key.toId()];
     }
 
     function setReturnValue(bytes4 key, bytes4 value) external {
         returnValues[key] = value;
+    }
+
+    function setSwapFee(IPoolManager.PoolKey calldata key, uint8 value) external {
+        swapFees[key.toId()] = value;
+    }
+
+    function setWithdrawFee(IPoolManager.PoolKey calldata key, uint8 value) external {
+        withdrawFees[key.toId()] = value;
     }
 }

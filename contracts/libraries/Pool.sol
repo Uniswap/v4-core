@@ -60,10 +60,9 @@ library Pool {
     error NoLiquidityToReceiveFees();
 
     // S: Consider using more bits to make the protocolFee and hookFee more granular.
-    /// uint8 fees
-    /// 0000     0000
-    /// 1 for 0  0 for 1
-    /// fee1     fee0
+    /// uint8 fees, split into 4 bits each:
+    /// swapFee:     1->0  | 0->1
+    /// withdrawFee: fee1  | fee0
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
