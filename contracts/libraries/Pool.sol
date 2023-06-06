@@ -180,7 +180,7 @@ library Pool {
             (uint256 feesOwed0, uint256 feesOwed1) = self.positions.get(
                 params.owner, params.tickLower, params.tickUpper
             ).update(params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
-            result = result - toBalanceDelta(feesOwed0.toInt256().toInt128(), feesOwed1.toInt256().toInt128());
+            result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
 
             // clear any tick data that is no longer needed
             if (params.liquidityDelta < 0) {
@@ -448,7 +448,7 @@ library Pool {
     /// @notice Donates the given amount of currency0 and currency1 to the pool
     function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
         if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
-        delta = toBalanceDelta(amount0.toInt256().toInt128(), amount1.toInt256().toInt128());
+        delta = toBalanceDelta(amount0.toInt128(), amount1.toInt128());
         unchecked {
             if (amount0 > 0) {
                 state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);

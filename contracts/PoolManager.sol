@@ -297,14 +297,14 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt256().toInt128());
+        _accountDelta(currency, amount.toInt128());
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
 
     /// @inheritdoc IPoolManager
     function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt256().toInt128());
+        _accountDelta(currency, amount.toInt128());
         _mint(to, currency.toId(), amount, "");
     }
 
@@ -314,12 +314,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt256().toInt128()));
+        _accountDelta(currency, -(paid.toInt128()));
     }
 
     function _burnAndAccount(Currency currency, uint256 amount) internal {
         _burn(address(this), currency.toId(), amount);
-        _accountDelta(currency, -(amount.toInt256().toInt128()));
+        _accountDelta(currency, -(amount.toInt128()));
     }
 
     function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata) external returns (bytes4) {
