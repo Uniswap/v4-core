@@ -226,7 +226,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
     }
 
-    function testPoolManagerInitializeSucceedsWithCorrectSelectors() public {
+    function testPoolManagerInitializeFailsWithIncorrectSelectors() public {
         address hookAddr = address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG));
 
         MockHooks impl = new MockHooks();
@@ -252,9 +252,29 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, mockHooks.beforeInitialize.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         manager.initialize(key, SQRT_RATIO_1_1);
+    }
 
-        // Succeeds.
+    function testPoolManagerInitializeSucceedsWithCorrectSelectors() public {
+        address hookAddr = address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG));
+
+        MockHooks impl = new MockHooks();
+        vm.etch(hookAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookAddr);
+
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: mockHooks,
+            tickSpacing: 10
+        });
+
+        mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, mockHooks.beforeInitialize.selector);
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, mockHooks.afterInitialize.selector);
+
+        vm.expectEmit(true, true, true, true);
+        emit Initialize(PoolId.toId(key), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+
         manager.initialize(key, SQRT_RATIO_1_1);
     }
 
@@ -451,7 +471,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertTrue(MockContract(hookAddr).calledWithSelector(afterSelector, afterParams));
     }
 
-    function testMintSucceedsWithCorrectSelectors() public {
+    function testMintFailsWithIncorrectSelectors() public {
         address hookAddr = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG));
 
         MockHooks impl = new MockHooks();
@@ -482,9 +502,34 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, mockHooks.beforeModifyPosition.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, params);
+    }
 
-        // Succeeds.
+    function testMintSucceedsWithCorrectSelectors() public {
+        address hookAddr = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG));
+
+        MockHooks impl = new MockHooks();
+        vm.etch(hookAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookAddr);
+
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: mockHooks,
+            tickSpacing: 10
+        });
+
+        IPoolManager.ModifyPositionParams memory params =
+            IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100});
+
+        manager.initialize(key, SQRT_RATIO_1_1);
+
+        mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, mockHooks.beforeModifyPosition.selector);
         mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, mockHooks.afterModifyPosition.selector);
+
+        vm.expectEmit(true, true, true, true);
+        emit ModifyPosition(PoolId.toId(key), address(modifyPositionRouter), 0, 60, 100);
+
         modifyPositionRouter.modifyPosition(key, params);
     }
 
@@ -668,7 +713,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertTrue(MockContract(hookAddr).calledWithSelector(afterSelector, afterParams));
     }
 
-    function testSwapSucceedsWithCorrectSelectors() public {
+    function testSwapFailsWithIncorrectSelectors() public {
         address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG));
 
         MockHooks impl = new MockHooks();
@@ -706,9 +751,41 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, mockHooks.beforeSwap.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapTest.swap(key, swapParams, testSettings);
+    }
 
-        // Succeeds.
+    function testSwapSucceedsWithCorrectSelectors() public {
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG));
+
+        MockHooks impl = new MockHooks();
+        vm.etch(hookAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookAddr);
+
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: mockHooks,
+            tickSpacing: 10
+        });
+
+        IPoolManager.ModifyPositionParams memory params =
+            IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100});
+
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 10, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
+
+        manager.initialize(key, SQRT_RATIO_1_1);
+        modifyPositionRouter.modifyPosition(key, params);
+
+        mockHooks.setReturnValue(mockHooks.beforeSwap.selector, mockHooks.beforeSwap.selector);
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, mockHooks.afterSwap.selector);
+
+        vm.expectEmit(true, true, true, true);
+        emit Swap(PoolId.toId(key), address(swapTest), 0, 0, SQRT_RATIO_1_2, 0, -6932, 100);
+
         swapTest.swap(key, swapParams, testSettings);
     }
 
@@ -730,12 +807,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(key, SQRT_RATIO_1_1);
         swapTest.swap(key, params, testSettings);
 
-        snapStart("swap");
-
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
-
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
 
+        snapStart("swap");
         swapTest.swap(key, params, testSettings);
         snapEnd();
     }
@@ -1000,7 +1075,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(feeGrowthGlobal1X128, 680564733841876926926749214863536422912);
     }
 
-    function testDonateSucceedsWithCorrectSelectors() public {
+    function testDonateFailsWithIncorrectSelectors() public {
         address hookAddr = address(uint160(Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_DONATE_FLAG));
 
         MockHooks impl = new MockHooks();
@@ -1029,9 +1104,30 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         mockHooks.setReturnValue(mockHooks.beforeDonate.selector, mockHooks.beforeDonate.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         donateRouter.donate(key, 100, 200);
+    }
 
-        // Succeeds.
+    function testDonateSucceedsWithCorrectSelectors() public {
+        address hookAddr = address(uint160(Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_DONATE_FLAG));
+
+        MockHooks impl = new MockHooks();
+        vm.etch(hookAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookAddr);
+
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: mockHooks,
+            tickSpacing: 10
+        });
+        manager.initialize(key, SQRT_RATIO_1_1);
+
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
+        modifyPositionRouter.modifyPosition(key, params);
+
+        mockHooks.setReturnValue(mockHooks.beforeDonate.selector, mockHooks.beforeDonate.selector);
         mockHooks.setReturnValue(mockHooks.afterDonate.selector, mockHooks.afterDonate.selector);
+
         donateRouter.donate(key, 100, 200);
     }
 
