@@ -6,8 +6,6 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 contract MockHooksSimple is IHooks {
-    mapping(bytes4 => bytes4) public returnValues;
-
     function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external pure override returns (bytes4) {
         bytes4 selector = MockHooksSimple.beforeInitialize.selector;
         return selector;
@@ -81,9 +79,5 @@ contract MockHooksSimple is IHooks {
     {
         bytes4 selector = MockHooksSimple.afterDonate.selector;
         return selector;
-    }
-
-    function setReturnValue(bytes4 key, bytes4 value) external {
-        returnValues[key] = value;
     }
 }

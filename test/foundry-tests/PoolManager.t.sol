@@ -151,14 +151,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        // address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
-        address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
+        address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
 
-        // MockHooksSimple hook = new MockHooksSimple();
-        // MockContract mockContract = new MockContract();
-        // vm.etch(hookAddr, address(mockContract).code);
-
-        EmptyTestHooks hook = new EmptyTestHooks();
+        MockHooksSimple hook = new MockHooksSimple();
         MockContract mockContract = new MockContract();
         vm.etch(hookAddr, address(mockContract).code);
 
@@ -628,6 +623,20 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.etch(hookAddr, address(mockContract).code);
 
         MockContract(hookAddr).setImplementation(address(hook));
+
+        Hooks.validateHookAddress(
+            IHooks(hookAddr),
+            Hooks.Calls({
+                beforeInitialize: false,
+                afterInitialize: false,
+                beforeModifyPosition: false,
+                afterModifyPosition: false,
+                beforeSwap: true,
+                afterSwap: true,
+                beforeDonate: false,
+                afterDonate: false
+            })
+        );
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
