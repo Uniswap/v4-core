@@ -25,6 +25,7 @@ import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
 import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import {EmptyTestHooks} from "../../contracts/test/TestHooksImpl.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
@@ -66,6 +67,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
     address ADDRESS_ZERO = address(0);
     address EMPTY_HOOKS = address(0xf000000000000000000000000000000000000000);
+    address ALL_HOOKS = address(0xff00000000000000000000000000000000000001);
+    address MOCK_HOOKS = address(0xfF00000000000000000000000000000000000000);
 
     function setUp() public {
         initializeTokens();
@@ -148,9 +151,14 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
+        // address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
+        address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
 
-        MockHooksSimple hook = new MockHooksSimple();
+        // MockHooksSimple hook = new MockHooksSimple();
+        // MockContract mockContract = new MockContract();
+        // vm.etch(hookAddr, address(mockContract).code);
+
+        EmptyTestHooks hook = new EmptyTestHooks();
         MockContract mockContract = new MockContract();
         vm.etch(hookAddr, address(mockContract).code);
 
