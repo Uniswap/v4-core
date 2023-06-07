@@ -9,9 +9,9 @@ body:
               Please ensure that the feature has not already been requested.
     - type: checkboxes
       attributes:
-      label: Components
-      description: What architectural feature or area of code does your idea improve?
-      options:
+        label: Components
+        description: What architectural feature or area of code does your idea improve?
+        options:
         - label: Hooks
         - label: Singleton
         - label: Lock and Call
