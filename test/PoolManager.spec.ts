@@ -91,7 +91,7 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ; ({
+    ;({
       manager,
       tokens,
       modifyPositionTest,
@@ -1185,9 +1185,9 @@ describe('PoolManager', () => {
       await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
       var protocolSwapFee: number
-        ; ({
-          slot0: { protocolSwapFee },
-        } = await manager.pools(getPoolId(poolKey)))
+      ;({
+        slot0: { protocolSwapFee },
+      } = await manager.pools(getPoolId(poolKey)))
       expect(protocolSwapFee).to.eq(0)
 
       await manager.setProtocolFeeController(feeControllerTest.address)
@@ -1199,9 +1199,9 @@ describe('PoolManager', () => {
       await expect(manager.setProtocolFee(poolKey))
         .to.emit(manager, 'ProtocolFeeUpdated')
         .withArgs(poolID, poolProtocolFee, 0)
-        ; ({
-          slot0: { protocolSwapFee },
-        } = await manager.pools(poolID))
+      ;({
+        slot0: { protocolSwapFee },
+      } = await manager.pools(poolID))
       expect(protocolSwapFee).to.eq(poolProtocolFee)
     })
   })
