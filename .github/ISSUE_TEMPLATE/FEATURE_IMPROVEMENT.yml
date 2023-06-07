@@ -17,9 +17,9 @@ body:
         - label: Lock and Call
         - label: Delta accounting
         - label: 1155 Balances
-        - label: Pool Actions: swap, modifyPosition, donate, take, settle, mint
+        - label: Pool Actions (swap, modifyPosition, donate, take, settle, mint)
         - label: Gas Optimization
-        - label: General design optimization: improving efficiency, cleanliness, or developer experience
+        - label: General design optimization (improving efficiency, cleanliness, or developer experience)
         - label: Documentation
       validations:
         required: true
