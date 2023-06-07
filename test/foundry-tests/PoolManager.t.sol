@@ -153,7 +153,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         address payable mockAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
         address payable hookAddr = payable(MOCK_HOOKS);
 
-        vm.etch(hookAddr, vm.getDeployedCode("TestHooksImpl.sol:EmptyTestHooks"));
+        vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
         vm.etch(mockAddr, address(mockContract).code);
 
@@ -439,7 +439,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             payable(address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
         address payable hookAddr = payable(MOCK_HOOKS);
 
-        vm.etch(hookAddr, vm.getDeployedCode("TestHooksImpl.sol:EmptyTestHooks"));
+        vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
         vm.etch(mockAddr, address(mockContract).code);
 
@@ -665,7 +665,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         address payable mockAddr = payable(address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
         address payable hookAddr = payable(MOCK_HOOKS);
 
-        vm.etch(hookAddr, vm.getDeployedCode("TestHooksImpl.sol:EmptyTestHooks"));
+        vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
         vm.etch(mockAddr, address(mockContract).code);
 
