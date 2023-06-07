@@ -40,4 +40,4 @@ body:
     - type: textarea
       attributes:
           label: Additional context.
-          description: If there is any additional context needed like a dependency or integrating contract that is affected please describe it below.
+          description: Please list any additional dependencies or integrating contacts that are affected.
