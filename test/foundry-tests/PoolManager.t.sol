@@ -18,14 +18,13 @@ import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTes
 import {Currency, CurrencyLibrary} from "../../contracts/libraries/CurrencyLibrary.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
-import {MockHooksSimple} from "../../contracts/test/MockHooksSimple.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
 import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import {EmptyTestHooks} from "../../contracts/test/TestHooksImpl.sol";
+import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
