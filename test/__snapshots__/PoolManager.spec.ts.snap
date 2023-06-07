@@ -24,7 +24,7 @@ Object {
 exports[`PoolManager #mint gas cost with native tokens 1`] = `
 Object {
   "calldataByteLength": 260,
-  "gasUsed": 247210,
+  "gasUsed": 247148,
 }
 `;
 
@@ -45,7 +45,7 @@ Object {
 exports[`PoolManager #swap gas cost for swap with native tokens against liquidity 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 179938,
+  "gasUsed": 179876,
 }
 `;
 
@@ -63,4 +63,4 @@ Object {
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `26095`;
+exports[`PoolManager bytecode size 1`] = `26026`;

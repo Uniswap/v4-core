@@ -19,14 +19,18 @@ library CurrencyLibrary {
     Currency public constant NATIVE = Currency.wrap(address(0));
 
     function transfer(Currency currency, address to, uint256 amount) internal {
+        // implementation from
+        // https://github.com/Rari-Capital/solmate/blob/3c738133a0c1697096d63d28ef7a8ef298f9af6b/src/utils/SafeTransferLib.sol
+
+        bool success;
         if (currency.isNative()) {
-            (bool success,) = to.call{value: amount}("");
+            assembly {
+                // Transfer the ETH and store if it succeeded or not.
+                success := call(gas(), to, amount, 0, 0, 0, 0)
+            }
+
             if (!success) revert NativeTransferFailed();
         } else {
-            // implementation from
-            // https://github.com/Rari-Capital/solmate/blob/3c738133a0c1697096d63d28ef7a8ef298f9af6b/src/utils/SafeTransferLib.sol
-            bool success;
-
             assembly {
                 // Get a pointer to some free memory.
                 let freeMemoryPointer := mload(0x40)
