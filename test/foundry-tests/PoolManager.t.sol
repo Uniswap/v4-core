@@ -151,19 +151,20 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
-
-        MockHooksSimple hook = new MockHooksSimple();
+        // address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
+        address payable hookAddr = payable(MOCK_HOOKS);
+        vm.etch(hookAddr, vm.getDeployedCode("TestHooksImpl.sol:EmptyTestHooks"));
+        EmptyTestHooks hook = EmptyTestHooks(hookAddr);
         MockContract mockContract = new MockContract();
-        vm.etch(hookAddr, address(mockContract).code);
+        // vm.etch(hookAddr, address(mockContract).code);
 
-        MockContract(hookAddr).setImplementation(address(hook));
+        mockContract.setImplementation(address(hook));
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
             currency1: currency1,
             fee: 3000,
-            hooks: IHooks(hookAddr),
+            hooks: IHooks(address(mockContract)),
             tickSpacing: 60
         });
 
@@ -177,10 +178,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         bytes32 afterSelector = MockHooks.afterInitialize.selector;
         bytes memory afterParams = abi.encode(address(this), key, sqrtPriceX96, tick);
 
-        assertEq(MockContract(hookAddr).timesCalledSelector(beforeSelector), 1);
-        assertTrue(MockContract(hookAddr).calledWithSelector(beforeSelector, beforeParams));
-        assertEq(MockContract(hookAddr).timesCalledSelector(afterSelector), 1);
-        assertTrue(MockContract(hookAddr).calledWithSelector(afterSelector, afterParams));
+        assertEq(mockContract.timesCalledSelector(beforeSelector), 1);
+        assertTrue(mockContract.calledWithSelector(beforeSelector, beforeParams));
+        assertEq(mockContract.timesCalledSelector(afterSelector), 1);
+        assertTrue(mockContract.calledWithSelector(afterSelector, afterParams));
     }
 
     function testPoolManagerInitializeSucceedsWithMaxTickSpacing(uint160 sqrtPriceX96) public {
