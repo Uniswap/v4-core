@@ -35,6 +35,9 @@ library PoolGetters {
             keccak256(abi.encode(tick, uint256(keccak256(abi.encode(poolId, POOL_SLOT))) + TICKS_OFFSET)), 3
         );
 
+
+        // mstore each struct value into its fully padded memory slot since in-memory structs are formatted with
+        // full padding.
         assembly {
             mstore(info, and(sub(shl(128, 1), 1), mload(add(value, 0x20))))
             mstore(add(info, 0x20), shr(128, and(mload(add(value, 0x20)), shl(128, sub(shl(128, 1), 1)))))

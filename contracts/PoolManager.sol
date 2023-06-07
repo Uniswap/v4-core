@@ -395,7 +395,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     function extsload(bytes32 slot) external view returns (bytes32 value) {
-        assembly {
+        assembly ("memory-safe") {
             value := sload(slot)
         }
     }
@@ -403,7 +403,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
         bytes memory value = new bytes(32 * nSlots);
 
-        assembly {
+        assembly ("memory-safe") {
             for { let i := 0 } lt(i, nSlots) { i := add(i, 1) } {
                 mstore(add(value, mul(add(i, 1), 0x20)), sload(add(startSlot, i)))
             }
