@@ -151,20 +151,20 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        // address payable hookAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
+        address payable mockAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
         address payable hookAddr = payable(MOCK_HOOKS);
-        vm.etch(hookAddr, vm.getDeployedCode("TestHooksImpl.sol:EmptyTestHooks"));
-        EmptyTestHooks hook = EmptyTestHooks(hookAddr);
-        MockContract mockContract = new MockContract();
-        // vm.etch(hookAddr, address(mockContract).code);
 
-        mockContract.setImplementation(address(hook));
+        vm.etch(hookAddr, vm.getDeployedCode("TestHooksImpl.sol:EmptyTestHooks"));
+        MockContract mockContract = new MockContract();
+        vm.etch(mockAddr, address(mockContract).code);
+
+        MockContract(mockAddr).setImplementation(hookAddr);
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
             currency1: currency1,
             fee: 3000,
-            hooks: IHooks(address(mockContract)),
+            hooks: IHooks(mockAddr),
             tickSpacing: 60
         });
 
@@ -178,10 +178,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         bytes32 afterSelector = MockHooks.afterInitialize.selector;
         bytes memory afterParams = abi.encode(address(this), key, sqrtPriceX96, tick);
 
-        assertEq(mockContract.timesCalledSelector(beforeSelector), 1);
-        assertTrue(mockContract.calledWithSelector(beforeSelector, beforeParams));
-        assertEq(mockContract.timesCalledSelector(afterSelector), 1);
-        assertTrue(mockContract.calledWithSelector(afterSelector, afterParams));
+        assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
+        assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
+        assertEq(MockContract(mockAddr).timesCalledSelector(afterSelector), 1);
+        assertTrue(MockContract(mockAddr).calledWithSelector(afterSelector, afterParams));
     }
 
     function testPoolManagerInitializeSucceedsWithMaxTickSpacing(uint160 sqrtPriceX96) public {
@@ -436,20 +436,21 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address payable hookAddr =
+        address payable mockAddr =
             payable(address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
+        address payable hookAddr = payable(MOCK_HOOKS);
 
-        MockHooksSimple hook = new MockHooksSimple();
+        vm.etch(hookAddr, vm.getDeployedCode("TestHooksImpl.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
-        vm.etch(hookAddr, address(mockContract).code);
+        vm.etch(mockAddr, address(mockContract).code);
 
-        MockContract(hookAddr).setImplementation(address(hook));
+        MockContract(mockAddr).setImplementation(hookAddr);
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
             currency1: currency1,
             fee: 3000,
-            hooks: IHooks(hookAddr),
+            hooks: IHooks(mockAddr),
             tickSpacing: 60
         });
 
@@ -466,10 +467,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         bytes32 afterSelector = MockHooks.afterModifyPosition.selector;
         bytes memory afterParams = abi.encode(address(modifyPositionRouter), key, params, balanceDelta);
 
-        assertEq(MockContract(hookAddr).timesCalledSelector(beforeSelector), 1);
-        assertTrue(MockContract(hookAddr).calledWithSelector(beforeSelector, beforeParams));
-        assertEq(MockContract(hookAddr).timesCalledSelector(afterSelector), 1);
-        assertTrue(MockContract(hookAddr).calledWithSelector(afterSelector, afterParams));
+        assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
+        assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
+        assertEq(MockContract(mockAddr).timesCalledSelector(afterSelector), 1);
+        assertTrue(MockContract(mockAddr).calledWithSelector(afterSelector, afterParams));
     }
 
     function testMintFailsWithIncorrectSelectors() public {
@@ -662,33 +663,20 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function testSwapSucceedsWithHooksIfInitialized() public {
-        address payable hookAddr = payable(address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
+        address payable mockAddr = payable(address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
+        address payable hookAddr = payable(MOCK_HOOKS);
 
-        MockHooksSimple hook = new MockHooksSimple();
+        vm.etch(hookAddr, vm.getDeployedCode("TestHooksImpl.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
-        vm.etch(hookAddr, address(mockContract).code);
+        vm.etch(mockAddr, address(mockContract).code);
 
-        MockContract(hookAddr).setImplementation(address(hook));
-
-        Hooks.validateHookAddress(
-            IHooks(hookAddr),
-            Hooks.Calls({
-                beforeInitialize: false,
-                afterInitialize: false,
-                beforeModifyPosition: false,
-                afterModifyPosition: false,
-                beforeSwap: true,
-                afterSwap: true,
-                beforeDonate: false,
-                afterDonate: false
-            })
-        );
+        MockContract(mockAddr).setImplementation(hookAddr);
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
             currency0: currency0,
             currency1: currency1,
             fee: 3000,
-            hooks: IHooks(hookAddr),
+            hooks: IHooks(mockAddr),
             tickSpacing: 60
         });
 
@@ -708,10 +696,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         bytes32 afterSelector = MockHooks.afterSwap.selector;
         bytes memory afterParams = abi.encode(address(swapTest), key, params, balanceDelta);
 
-        assertEq(MockContract(hookAddr).timesCalledSelector(beforeSelector), 1);
-        assertTrue(MockContract(hookAddr).calledWithSelector(beforeSelector, beforeParams));
-        assertEq(MockContract(hookAddr).timesCalledSelector(afterSelector), 1);
-        assertTrue(MockContract(hookAddr).calledWithSelector(afterSelector, afterParams));
+        assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
+        assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
+        assertEq(MockContract(mockAddr).timesCalledSelector(afterSelector), 1);
+        assertTrue(MockContract(mockAddr).calledWithSelector(afterSelector, afterParams));
     }
 
     function testSwapFailsWithIncorrectSelectors() public {
