@@ -343,7 +343,7 @@ describe('PoolManager', () => {
       const poolProtocolFee = 4
 
       const poolID = getPoolId(poolKey)
-      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+      await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
       await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
@@ -1194,7 +1194,7 @@ describe('PoolManager', () => {
       expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
       const poolProtocolFee = 4
       // withdraw fee auto set to 0
-      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+      await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
       await expect(manager.setProtocolFee(poolKey))
         .to.emit(manager, 'ProtocolFeeUpdated')
@@ -1221,7 +1221,7 @@ describe('PoolManager', () => {
         expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
         const poolProtocolFee = 68 // 0x 0100 0100
         const poolID = getPoolId(poolKey)
-        await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+        await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
         await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
@@ -1337,7 +1337,7 @@ describe('PoolManager', () => {
         expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
         const poolProtocolFee = 68 // 0x 0100 0100
         const poolID = getPoolId(poolKey)
-        await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+        await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
         await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
