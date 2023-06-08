@@ -42,9 +42,23 @@ contract FixedPoint128Test is Test {
         }
     }
 
-    function testNoOverflowUncheckedSub(UQ128x128 a, UQ128x128 b) public {
-        // assume no overflow
-        vm.assume(a.toUint256() > b.toUint256() && a.toUint256() - b.toUint256() < type(uint256).max);
+    function testUnderflowUncheckedSub(UQ128x128 a, UQ128x128 b) public {
+        vm.assume(a != b);
+        uint256 underflowCheck;
+        unchecked {
+            underflowCheck = a.toUint256() - b.toUint256();
+        }
+        if (b > a) {
+            // assume underflow
+            vm.assume(b.toUint256() < underflowCheck);
+            vm.expectRevert();
+            UQ128x128 result = a - b;
+        }
+    }
+
+    function testNoUnderflowUncheckedSub(UQ128x128 a, UQ128x128 b) public {
+        // assume no underflow
+        vm.assume(a.toUint256() > b.toUint256());
         UQ128x128 result = a - b;
         assertEq(UQ128x128.unwrap(result), UQ128x128.unwrap(FixedPoint128.uncheckedSub(a, b)));
     }
