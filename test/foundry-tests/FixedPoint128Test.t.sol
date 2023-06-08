@@ -42,7 +42,7 @@ contract FixedPoint128Test is Test {
         }
     }
 
-    function testUnderflowUncheckedSub(UQ128x128 a, UQ128x128 b) public {
+    function testUnderflowCheckedSub(UQ128x128 a, UQ128x128 b) public {
         vm.assume(a != b);
         uint256 underflowCheck;
         unchecked {
