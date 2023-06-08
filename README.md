@@ -25,7 +25,9 @@ Additionally, a pool may be initialized with a hook contract, that can implement
 - {before,after}Swap
 - {before,after}Donate
 
-Hooks may also elect to specify fees. The fee callbacks must be set on pool initialization. While the fee values may change and be updated by the hooks, the type of fee, or lack of fee cannot change after initialization.
+Hooks may also elect to specify fees on swaps, or liquidity withdrawal. Much like the actions above, fees are implemented using callback functions.
+
+The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after  pool initialization.
 
 Read a more in-depth overview of the design decisions in the working v4-whitepaper.
 
