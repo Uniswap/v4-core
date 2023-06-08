@@ -7,8 +7,6 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 
 contract MockHooks is IHooks {
-    using Hooks for IHooks;
-
     mapping(bytes4 => bytes4) public returnValues;
 
     function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external view override returns (bytes4) {
