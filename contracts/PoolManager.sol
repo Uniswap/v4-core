@@ -391,7 +391,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         /// @solidity memory-safe-assembly
         assembly {
             for { let i := 0 } lt(i, nSlots) { i := add(i, 1) } {
-                mstore(add(value, mul(add(i, 1), 0x20)), sload(add(startSlot, i)))
+                mstore(add(value, mul(add(i, 1), 32)), sload(add(startSlot, i)))
             }
         }
 
