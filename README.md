@@ -18,7 +18,7 @@ Uniswap v4 is a new automated market market protocol that provides extensibility
 
 Only the net balances owed to the pool (negative) or to the user (positive) are tracked throughout the duration of a lock. This is the `delta` field held in the lock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the lock reach 0 by the lock’s release. This lock and call style architecture gives callers maximum flexibility in integrating with the core code.
 
-In addition, a pool may be initialized with a hook contract, whose logic can be run at any of the following callbacks in the lifecycle of a pool actions:
+Additionally, a pool may be initialized with a hook contract, that can implement any of the following callbacks in the lifecycle of pool actions:
 
 - {before,after}Initialize
 - {before,after}ModifyPosition
