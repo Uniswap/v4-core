@@ -7,7 +7,7 @@ Uniswap v4 is a new automated market market protocol that provides extensibility
 
 ## Architecture
 
-v4-core uses a singleton style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by requesting a lock on the contract and implementing the `lockAcquired` callback to then proceed with any of the following requests on the pools: 
+`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by acquiring a lock on the contract and implementing the `lockAcquired` callback to then proceed with any of the following actions on the pools: 
 
 - `swap`
 - `modifyPosition`
