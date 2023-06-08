@@ -178,4 +178,15 @@ interface IPoolManager is IERC1155 {
 
     /// @notice sets the protocol fee for the given pool
     function setPoolProtocolFee(PoolKey memory key) external;
+
+    /// @notice Called by external contracts to access granular pool state
+    /// @param slot Key of slot to sload
+    /// @return value The value of the slot as bytes32
+    function extsload(bytes32 slot) external returns (bytes32 value);
+
+    /// @notice Called by external contracts to access granular pool state
+    /// @param slot Key of slot to start sloading from
+    /// @param nSlots Number of slots to load into return value
+    /// @return value The value of the sload-ed slots concatentated as dynamic bytes
+    function extsload(bytes32 slot, uint256 nSlots) external returns (bytes memory value);
 }

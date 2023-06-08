@@ -378,6 +378,26 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return amount;
     }
 
+    function extsload(bytes32 slot) external view returns (bytes32 value) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            value := sload(slot)
+        }
+    }
+
+    function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
+        bytes memory value = new bytes(32 * nSlots);
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            for { let i := 0 } lt(i, nSlots) { i := add(i, 1) } {
+                mstore(add(value, mul(add(i, 1), 32)), sload(add(startSlot, i)))
+            }
+        }
+
+        return value;
+    }
+
     /// @notice receive native tokens for native pools
     receive() external payable {}
 }
