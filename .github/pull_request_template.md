@@ -1,4 +1,4 @@
 ## Related Issue
-What issue does pull request resolve?
+Which issue does this pull request resolve?
 
 ## Description of changes
