@@ -69,16 +69,16 @@ import {IPoolManager} from 'core-next/contracts/interfaces/IPoolManager.sol';
 import {ILockCallback} from 'core-next/contracts/interfaces/callback/ILockCallback.sol';
 
 contract MyContract is ILockCallback {
-    IPoolManager pool;
+    IPoolManager poolManager;
 
-    function doSomethingWithPool() {
+    function doSomethingWithPools() {
         // this function will call `lockAcquired` below
-        pool.lock(...);
+        poolManager.lock(...);
     }
 
     function lockAcquired(uint256 id, bytes calldata data) external returns (bytes memory) {
         // perform pool actions
-        pool.swap(...)
+        poolManager.swap(...)
     }
 }
 
