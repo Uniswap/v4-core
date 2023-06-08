@@ -61,6 +61,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     PoolManager manager;
     PoolDonateTest donateRouter;
     PoolModifyPositionTest modifyPositionRouter;
+    PoolSwapTest swapRouter;
     PoolLockTest lockTest;
     ProtocolFeeControllerTest feeTest;
     PoolSwapTest swapTest;
@@ -75,6 +76,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager = Deployers.createFreshManager();
         donateRouter = new PoolDonateTest(manager);
         modifyPositionRouter = new PoolModifyPositionTest(manager);
+        swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
+
         lockTest = new PoolLockTest(manager);
         feeTest = new ProtocolFeeControllerTest();
         swapTest = new PoolSwapTest(manager);
@@ -88,8 +91,11 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         MockERC20(Currency.unwrap(currency0)).approve(address(swapTest), 1 ether);
         MockERC20(Currency.unwrap(currency0)).approve(address(swapTest), 1 ether);
 
-        MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 1 ether);
-        MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 1 ether);
+        MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ether);
+
+        MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), 10 ether);
     }
 
     function testPoolManagerInitialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) public {
@@ -1148,6 +1154,73 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.expectEmit(false, false, false, true);
         emit LockAcquired(0);
         lockTest.lock();
+    }
+
+    uint256 constant POOL_SLOT = 4;
+    uint256 constant TICKS_OFFSET = 4;
+
+    function testExtsloadForPoolPrice() public {
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: IHooks(address(0)),
+            tickSpacing: 10
+        });
+        manager.initialize(key, SQRT_RATIO_1_1);
+
+        bytes32 poolId = PoolId.toId(key);
+        snapStart("poolExtsloadSlot0");
+        bytes32 slot0Bytes = manager.extsload(keccak256(abi.encode(poolId, POOL_SLOT)));
+        snapEnd();
+
+        uint160 sqrtPriceX96Extsload;
+        assembly {
+            sqrtPriceX96Extsload := and(slot0Bytes, sub(shl(160, 1), 1))
+        }
+        (uint160 sqrtPriceX96Slot0,,) = manager.getSlot0(poolId);
+
+        // assert that extsload loads the correct storage slot which matches the true slot0
+        assertEq(sqrtPriceX96Extsload, sqrtPriceX96Slot0);
+    }
+
+    function testExtsloadMultipleSlots() public {
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: IHooks(address(0)),
+            tickSpacing: 10
+        });
+        manager.initialize(key, SQRT_RATIO_1_1);
+
+        // populate feeGrowthGlobalX128 struct w/ modify + swap
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 5 ether));
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams(false, 1 ether, TickMath.MAX_SQRT_RATIO - 1),
+            PoolSwapTest.TestSettings(true, true)
+        );
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams(true, 5 ether, TickMath.MIN_SQRT_RATIO + 1),
+            PoolSwapTest.TestSettings(true, true)
+        );
+
+        bytes32 poolId = PoolId.toId(key);
+        snapStart("poolExtsloadTickInfoStruct");
+        bytes memory value = manager.extsload(bytes32(uint256(keccak256(abi.encode(poolId, POOL_SLOT))) + 1), 2);
+        snapEnd();
+
+        uint256 feeGrowthGlobal0X128Extsload;
+        uint256 feeGrowthGlobal1X128Extsload;
+        assembly {
+            feeGrowthGlobal0X128Extsload := and(mload(add(value, 0x20)), sub(shl(256, 1), 1))
+            feeGrowthGlobal1X128Extsload := and(mload(add(value, 0x40)), sub(shl(256, 1), 1))
+        }
+
+        assertEq(feeGrowthGlobal0X128Extsload, 408361710565269213475534193967158);
+        assertEq(feeGrowthGlobal1X128Extsload, 204793365386061595215803889394593);
     }
 
     receive() external payable {}
