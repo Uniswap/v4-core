@@ -241,7 +241,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         // assert that extsload loads the correct storage slot which matches the true slot0
         assertEq(sqrtPriceX96Extsload, sqrtPriceX96Slot0);
-
     }
 
     function testExtsloadMultipleSlots() public {
