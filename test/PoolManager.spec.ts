@@ -15,8 +15,8 @@ import {
 import { ADDRESS_ZERO, MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { deployMockContract, MockedContract, setCode } from './shared/mockContract'
-import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId, MaxUint128 } from './shared/utilities'
+import { MockedContract, deployMockContract, setCode } from './shared/mockContract'
+import { FeeAmount, MaxUint128, encodeSqrtPriceX96, expandTo18Decimals, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -475,7 +475,10 @@ describe('PoolManager', () => {
           liquidityDelta: 100,
         },
       ]
-      const argsAfterModify = [...argsBeforeModify, { amount0: 1, amount1: 0 }]
+      const argsAfterModify = [
+        ...argsBeforeModify,
+        '0x0000000000000000000000000000000100000000000000000000000000000000', // { amount0: 1, amount1: 0 }
+      ]
 
       expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.true
       expect(await hooksMock.calledWith('beforeModifyPosition', argsBeforeModify)).to.be.true
@@ -704,7 +707,10 @@ describe('PoolManager', () => {
         },
       ]
 
-      const argsAfterSwap = [...argsBeforeSwap, { amount0: 0, amount1: 0 }]
+      const argsAfterSwap = [
+        ...argsBeforeSwap,
+        '0x0000000000000000000000000000000000000000000000000000000000000000', // { amount0: 0, amount1: 0 }
+      ]
 
       expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.false
       expect(await hooksMock.calledOnce('afterModifyPosition')).to.be.false

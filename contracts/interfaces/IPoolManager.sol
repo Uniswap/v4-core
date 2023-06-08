@@ -5,6 +5,7 @@ import {Currency} from "../libraries/CurrencyLibrary.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IHooks} from "./IHooks.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 
 interface IPoolManager is IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256
@@ -68,8 +69,8 @@ interface IPoolManager is IERC1155 {
     event Swap(
         bytes32 indexed poolId,
         address indexed sender,
-        int256 amount0,
-        int256 amount1,
+        int128 amount0,
+        int128 amount1,
         uint160 sqrtPriceX96,
         uint128 liquidity,
         int24 tick,
@@ -115,13 +116,6 @@ interface IPoolManager is IERC1155 {
     // @notice Given a currency address, returns the protocol fees accrued in that currency
     function protocolFeesAccrued(Currency) external view returns (uint256);
 
-    /// @notice Represents a change in the pool's balance of currency0 and currency1.
-    /// @dev This is returned from most pool operations
-    struct BalanceDelta {
-        int256 amount0;
-        int256 amount1;
-    }
-
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
@@ -158,9 +152,7 @@ interface IPoolManager is IERC1155 {
     }
 
     /// @notice Modify the position for the given pool
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
-        external
-        returns (BalanceDelta memory delta);
+    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params) external returns (BalanceDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -169,12 +161,10 @@ interface IPoolManager is IERC1155 {
     }
 
     /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta memory delta);
+    function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1)
-        external
-        returns (BalanceDelta memory delta);
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1) external returns (BalanceDelta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans

@@ -1,40 +1,70 @@
-# Uniswap Protocol
+# Uniswap v4 Core
 
 [![Lint](https://github.com/Uniswap/core-next/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/core-next/actions/workflows/lint.yml)
 [![Tests](https://github.com/Uniswap/core-next/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/core-next/actions/workflows/tests.yml)
-[![Mythx](https://github.com/Uniswap/core-next/actions/workflows/mythx.yml/badge.svg)](https://github.com/Uniswap/core-next/actions/workflows/mythx.yml)
-[![npm version](https://img.shields.io/npm/v/@uniswap/core-next/latest.svg)](https://www.npmjs.com/package/@uniswap/core-next/v/latest)
 
-This repository contains the smart contracts for the Uniswap Protocol.
+Uniswap v4 is a new automated market market protocol that provides extensibility and customizability to pools. `v4-core` hosts the core pool logic for creating pools and executing pool actions like swapping and providing liquidity. 
 
-## Local deployment
+## Architecture
 
-In order to deploy this code to a local testnet, you should install the npm package
-`@uniswap/core-next`
-and import the factory bytecode located at
-`@uniswap/core-next/artifacts/contracts/PoolManager.sol/PoolManager.json`.
-For example:
+`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by acquiring a lock on the contract and implementing the `lockAcquired` callback to then proceed with any of the following actions on the pools: 
 
-```typescript
-import {
-  abi as FACTORY_ABI,
-  bytecode as FACTORY_BYTECODE,
-} from '@uniswap/core-next/artifacts/contracts/PoolManager.sol/PoolManager.json'
+- `swap`
+- `modifyPosition`
+- `donate`
+- `take`
+- `settle`
+- `mint`
 
-// deploy the bytecode
+Only the net balances owed to the pool (negative) or to the user (positive) are tracked throughout the duration of a lock. This is the `delta` field held in the lock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the lock reach 0 by the lock’s release. This lock and call style architecture gives callers maximum flexibility in integrating with the core code.
+
+Additionally, a pool may be initialized with a hook contract, that can implement any of the following callbacks in the lifecycle of pool actions:
+
+- {before,after}Initialize
+- {before,after}ModifyPosition
+- {before,after}Swap
+- {before,after}Donate
+
+Hooks may also elect to specify fees on swaps, or liquidity withdrawal. Much like the actions above, fees are implemented using callback functions.
+
+The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after  pool initialization.
+
+Read a more in-depth overview of the design decisions in the working v4-whitepaper.
+
+## Repository Structure
+
+All contracts are held within the `core-next/contracts` folder. 
+
+Note that helper contracts used by tests are held in the `core-next/contracts/test` subfolder within the contracts folder. Any new test helper contracts should be added here, but all foundry tests are in the `core-next/test/foundry-tests` folder.
+
+```markdown
+contracts/
+---interfaces/
+     | IPoolManager.sol
+     | ...
+---libraries/
+		 | Position.sol
+		 | Pool.sol
+     | ...
+---test
+...
+PoolManager.sol
+test/
+---foundry-tests/
 ```
 
-This will ensure that you are testing against the same bytecode that is deployed to
-mainnet and public testnets, and all Uniswap code will correctly interoperate with
-your local deployment.
+## Local deployment and Usage
 
-## Using solidity interfaces
+To utilize the contracts and deploy to a local testnet, you can install the code in your repo with forge:
 
-The Uniswap v3 interfaces are available for import into solidity smart contracts
-via the npm artifact `@uniswap/core-next`, e.g.:
+```markdown
+forge install https://github.com/Uniswap/core-next
+```
+
+To integrate with the contracts, the interfaces are available to use:
 
 ```solidity
-import '@uniswap/core-next/contracts/interfaces/IPoolManager.sol';
+import {IPoolManager} from 'core-next/contracts/interfaces/IPoolManager.sol';
 
 contract MyContract {
   IPoolManager pool;
@@ -43,4 +73,14 @@ contract MyContract {
     // pool.swap(...);
   }
 }
+
 ```
+
+## Contributing
+
+If you’re interested in contributing please see the [contribution guidelines](https://github.com/Uniswap/core-next/blob/main/CONTRIBUTING.md)!
+
+## License
+
+The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/core-next/blob/main/LICENSE)
+

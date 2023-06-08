@@ -4,6 +4,7 @@ pragma solidity =0.8.19;
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 
 contract EmptyTestHooks is IHooks {
     using Hooks for IHooks;
@@ -49,7 +50,7 @@ contract EmptyTestHooks is IHooks {
         address,
         IPoolManager.PoolKey calldata,
         IPoolManager.ModifyPositionParams calldata,
-        IPoolManager.BalanceDelta calldata
+        BalanceDelta
     ) external pure override returns (bytes4) {
         return IHooks.afterModifyPosition.selector;
     }
@@ -63,12 +64,12 @@ contract EmptyTestHooks is IHooks {
         return IHooks.beforeSwap.selector;
     }
 
-    function afterSwap(
-        address,
-        IPoolManager.PoolKey calldata,
-        IPoolManager.SwapParams calldata,
-        IPoolManager.BalanceDelta calldata
-    ) external pure override returns (bytes4) {
+    function afterSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return IHooks.afterSwap.selector;
     }
 
