@@ -15,8 +15,8 @@ import {
 import { ADDRESS_ZERO, MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { deployMockContract, MockedContract, setCode } from './shared/mockContract'
-import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId, MaxUint128 } from './shared/utilities'
+import { MockedContract, deployMockContract, setCode } from './shared/mockContract'
+import { FeeAmount, MaxUint128, encodeSqrtPriceX96, expandTo18Decimals, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 

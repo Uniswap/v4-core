@@ -25,6 +25,7 @@ import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControl
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
+import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
@@ -45,8 +46,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     event Swap(
         bytes32 indexed poolId,
         address indexed sender,
-        int256 amount0,
-        int256 amount1,
+        int128 amount0,
+        int128 amount1,
         uint160 sqrtPriceX96,
         uint128 liquidity,
         int24 tick,
@@ -458,7 +459,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.initialize(key, sqrtPriceX96);
 
-        IPoolManager.BalanceDelta memory balanceDelta = modifyPositionRouter.modifyPosition(key, params);
+        BalanceDelta balanceDelta = modifyPositionRouter.modifyPosition(key, params);
 
         bytes32 beforeSelector = MockHooks.beforeModifyPosition.selector;
         bytes memory beforeParams = abi.encode(address(modifyPositionRouter), key, params);
@@ -687,7 +688,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.initialize(key, SQRT_RATIO_1_1);
 
-        IPoolManager.BalanceDelta memory balanceDelta = swapTest.swap(key, params, testSettings);
+        BalanceDelta balanceDelta = swapTest.swap(key, params, testSettings);
 
         bytes32 beforeSelector = MockHooks.beforeSwap.selector;
         bytes memory beforeParams = abi.encode(address(swapTest), key, params);

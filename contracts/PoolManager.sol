@@ -18,6 +18,7 @@ import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {PoolId} from "./libraries/PoolId.sol";
+import {BalanceDelta} from "./types/BalanceDelta.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
@@ -150,7 +151,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         lockedBy.pop();
     }
 
-    function _accountDelta(Currency currency, int256 delta) internal {
+    function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
         LockState storage lockState = lockStates[lockedBy.length - 1];
@@ -169,9 +170,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, IPoolManager.BalanceDelta memory delta) internal {
-        _accountDelta(key.currency0, delta.amount0);
-        _accountDelta(key.currency1, delta.amount1);
+    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta) internal {
+        _accountDelta(key.currency0, delta.amount0());
+        _accountDelta(key.currency1, delta.amount1());
     }
 
     modifier onlyByLocker() {
@@ -186,7 +187,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         override
         noDelegateCall
         onlyByLocker
-        returns (IPoolManager.BalanceDelta memory delta)
+        returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             if (key.hooks.beforeModifyPosition(msg.sender, key, params) != IHooks.beforeModifyPosition.selector) {
@@ -222,7 +223,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         override
         noDelegateCall
         onlyByLocker
-        returns (IPoolManager.BalanceDelta memory delta)
+        returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
             if (key.hooks.beforeSwap(msg.sender, key, params) != IHooks.beforeSwap.selector) {
@@ -265,7 +266,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         emit Swap(
-            poolId, msg.sender, delta.amount0, delta.amount1, state.sqrtPriceX96, state.liquidity, state.tick, fee
+            poolId, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, fee
         );
     }
 
@@ -275,7 +276,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         override
         noDelegateCall
         onlyByLocker
-        returns (IPoolManager.BalanceDelta memory delta)
+        returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeDonate()) {
             if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1) != IHooks.beforeDonate.selector) {
@@ -296,14 +297,14 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt256());
+        _accountDelta(currency, amount.toInt128());
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
 
     /// @inheritdoc IPoolManager
     function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt256());
+        _accountDelta(currency, amount.toInt128());
         _mint(to, currency.toId(), amount, "");
     }
 
@@ -313,12 +314,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt256()));
+        _accountDelta(currency, -(paid.toInt128()));
     }
 
     function _burnAndAccount(Currency currency, uint256 amount) internal {
         _burn(address(this), currency.toId(), amount);
-        _accountDelta(currency, -(amount.toInt256()));
+        _accountDelta(currency, -(amount.toInt128()));
     }
 
     function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata) external returns (bytes4) {
