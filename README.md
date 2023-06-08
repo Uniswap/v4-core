@@ -39,18 +39,18 @@ Note that helper contracts used by tests are held in the `core-next/contracts/te
 
 ```markdown
 contracts/
----interfaces/
-     | IPoolManager.sol
-     | ...
----libraries/
-		 | Position.sol
-		 | Pool.sol
-     | ...
----test
+----interfaces/
+    | IPoolManager.sol
+    | ...
+----libraries/
+    | Position.sol
+    | Pool.sol
+    | ...
+----test
 ...
 PoolManager.sol
 test/
----foundry-tests/
+----foundry-tests/
 ```
 
 ## Local deployment and Usage
@@ -64,14 +64,22 @@ forge install https://github.com/Uniswap/core-next
 To integrate with the contracts, the interfaces are available to use:
 
 ```solidity
+
 import {IPoolManager} from 'core-next/contracts/interfaces/IPoolManager.sol';
+import {ILockCallback} from 'core-next/contracts/interfaces/callback/ILockCallback.sol';
 
-contract MyContract {
-  IPoolManager pool;
+contract MyContract is ILockCallback {
+    IPoolManager poolManager;
 
-  function doSomethingWithPool() {
-    // pool.swap(...);
-  }
+    function doSomethingWithPools() {
+        // this function will call `lockAcquired` below
+        poolManager.lock(...);
+    }
+
+    function lockAcquired(uint256 id, bytes calldata data) external returns (bytes memory) {
+        // perform pool actions
+        poolManager.swap(...)
+    }
 }
 
 ```
