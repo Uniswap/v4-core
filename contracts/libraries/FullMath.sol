@@ -28,7 +28,7 @@ library FullMath {
 
             // Handle non-overflow cases, 256 by 256 division
             if (prod1 == 0) {
-                require(denominator > 0, "div by 0");
+                require(denominator > 0);
                 assembly {
                     result := div(prod0, denominator)
                 }
@@ -37,7 +37,7 @@ library FullMath {
 
             // Make sure the result is less than 2**256.
             // Also prevents denominator == 0
-            require(denominator > prod1, "fail");
+            require(denominator > prod1);
 
             ///////////////////////////////////////////////
             // 512 by 256 division.
