@@ -67,12 +67,25 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         external
         view
         override
-        returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee)
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint8 protocolSwapFee,
+            uint8 protocolWithdrawFee,
+            uint8 hookSwapFee,
+            uint8 hookWithdrawFee
+        )
     {
         Pool.Slot0 memory slot0 = pools[poolId].slot0;
 
-        // S TODO: update with new slot information once finalized
-        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolSwapFee);
+        return (
+            slot0.sqrtPriceX96,
+            slot0.tick,
+            slot0.protocolSwapFee,
+            slot0.protocolWithdrawFee,
+            slot0.hookSwapFee,
+            slot0.hookWithdrawFee
+        );
     }
 
     /// @inheritdoc IPoolManager

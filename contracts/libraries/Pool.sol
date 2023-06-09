@@ -60,7 +60,9 @@ library Pool {
     error NoLiquidityToReceiveFees();
 
     // S: Consider using more bits to make the protocolFee and hookFee more granular.
-    /// uint8 fees, split into 4 bits each:
+    /// The uint8 fees variables are represented as integer denominators (1/x)
+    /// For swap fees, the upper 4 bits are the fee for trading 1 for 0, and the lower 4 are for 0 for 1 and are taken as a percentage of the lp swap fee.
+    /// For withdraw fees the upper 4 bits are the fee on amount1, and the lower 4 are for amount0 and are taken as a percentage of the principle amount of the underlying position.
     /// swapFee:     1->0  | 0->1
     /// withdrawFee: fee1  | fee0
     struct Slot0 {
@@ -68,24 +70,12 @@ library Pool {
         uint160 sqrtPriceX96;
         // the current tick
         int24 tick;
-        // the current protocol fee as a percentage of the swap fee taken on swap
-        // represented as an integer denominator (1/x)%
-        // First 4 bits are the fee for trading 1 for 0, and the latter 4 for 0 for 1
         uint8 protocolSwapFee;
-        // the current protocol fee as a percentage of the swap fee taken on withdrawal
-        // represented as an integer denominator (1/x)%
-        // First 4 bits are the fee for currency1, and the latter 4 for currency0
         uint8 protocolWithdrawFee;
-        // the current fee as a percentage of the swap fee accrued to the hook
-        // represented as an integeter denominator
-        // First 4 bits are the fee for trading 1 for 0, and the latter 4 for 0 for 1
         uint8 hookSwapFee;
-        // the current fee as a percentage of the principle amount of the underlying position
-        // represented as an integeter denominator
-        // First 4 bits are the fee on amount1, and the latter on amount0
         uint8 hookWithdrawFee;
     }
-    // 56 bits left!
+    // 40 bits left!
 
     // info stored for each initialized individual tick
     struct TickInfo {
@@ -287,8 +277,8 @@ library Pool {
             (fees) = _calculateExternalFees(self, result);
 
             // Amounts are balances owed to the pool. When negative, they represent the balance a user can take.
-            // Since protocol and hook fees are extracted on the balance a user can take, they are owed (added) back to the pool
-            // where they are kept to be collected by the fee recipients.
+            // Since protocol and hook fees are extracted on the balance a user can take
+            // they are owed (added) back to the pool where they are kept to be collected by the fee recipients.
             result = result
                 + toBalanceDelta(
                     fees.feeForHook0.toInt128() + fees.feeForProtocol0.toInt128(),

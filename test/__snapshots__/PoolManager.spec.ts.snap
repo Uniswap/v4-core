@@ -7,4 +7,4 @@ Object {
 }
 `;
 
-exports[`PoolManager bytecode size 1`] = `29014`;
+exports[`PoolManager bytecode size 1`] = `29047`;

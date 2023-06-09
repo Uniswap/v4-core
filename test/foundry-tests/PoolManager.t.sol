@@ -1177,7 +1177,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assembly {
             sqrtPriceX96Extsload := and(slot0Bytes, sub(shl(160, 1), 1))
         }
-        (uint160 sqrtPriceX96Slot0,,) = manager.getSlot0(poolId);
+        (uint160 sqrtPriceX96Slot0,,,,,) = manager.getSlot0(poolId);
 
         // assert that extsload loads the correct storage slot which matches the true slot0
         assertEq(sqrtPriceX96Extsload, sqrtPriceX96Slot0);

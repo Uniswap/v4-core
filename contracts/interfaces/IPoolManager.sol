@@ -89,7 +89,7 @@ interface IPoolManager is IERC1155 {
         Currency currency0;
         /// @notice The higher currency of the pool, sorted numerically
         Currency currency1;
-        /// @notice The fee for the pool, capped at 1_000_000. The last 4 bits are used to determine if a hook sets any fees.
+        /// @notice The fee for the pool, capped at 1_000_000. The upper 4 bits are used to determine if a hook sets any fees.
         uint24 fee;
         /// @notice Ticks that involve positions must be a multiple of tick spacing
         int24 tickSpacing;
@@ -104,7 +104,17 @@ interface IPoolManager is IERC1155 {
     function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(bytes32 id) external view returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee);
+    function getSlot0(bytes32 id)
+        external
+        view
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint8 protocolSwapFee,
+            uint8 protocolWithdrawFee,
+            uint8 hookSwapFee,
+            uint8 hookWithdrawFee
+        );
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
@@ -178,6 +188,12 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
 
+    /// @notice Sets the protocol fee for the given pool
+    function setProtocolFee(PoolKey memory key) external;
+
+    /// @notice Sets the hook fee for the given pool
+    function setHookFee(PoolKey memory key) external;
+
     /// @notice Called by external contracts to access granular pool state
     /// @param slot Key of slot to sload
     /// @return value The value of the slot as bytes32
@@ -188,6 +204,4 @@ interface IPoolManager is IERC1155 {
     /// @param nSlots Number of slots to load into return value
     /// @return value The value of the sload-ed slots concatentated as dynamic bytes
     function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
-
-    function setProtocolFee(PoolKey memory key) external;
 }
