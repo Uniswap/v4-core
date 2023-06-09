@@ -205,8 +205,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         // Fees dont accrue for positive liquidity delta.
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(manager.hookFeesAccrued(key0.toId(), currency0), 0);
-        assertEq(manager.hookFeesAccrued(key0.toId(), currency1), 0);
+        assertEq(manager.hookFeesAccrued(address(key0.hooks), currency0), 0);
+        assertEq(manager.hookFeesAccrued(address(key0.hooks), currency1), 0);
 
         IPoolManager.ModifyPositionParams memory params2 = IPoolManager.ModifyPositionParams(-60, 60, -10e18);
         modifyPositionRouter.modifyPosition(key0, params2);
@@ -214,8 +214,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         // Fees dont accrue for negative liquidity delta, when key.fee does not specify a withdrawal param even if the protocol fee is set.
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(manager.hookFeesAccrued(key0.toId(), currency0), 0);
-        assertEq(manager.hookFeesAccrued(key0.toId(), currency1), 0);
+        assertEq(manager.hookFeesAccrued(address(key0.hooks), currency0), 0);
+        assertEq(manager.hookFeesAccrued(address(key0.hooks), currency1), 0);
     }
 
     function testHookWithdrawFeeProtocolWithdrawFee(uint8 hookWithdrawFee, uint8 protocolWithdrawFee) public {
@@ -242,8 +242,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         // Fees dont accrue for positive liquidity delta.
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(manager.hookFeesAccrued(key1.toId(), currency0), 0);
-        assertEq(manager.hookFeesAccrued(key1.toId(), currency1), 0);
+        assertEq(manager.hookFeesAccrued(address(key1.hooks), currency0), 0);
+        assertEq(manager.hookFeesAccrued(address(key1.hooks), currency1), 0);
 
         IPoolManager.ModifyPositionParams memory params2 = IPoolManager.ModifyPositionParams(-60, 60, -10000);
         modifyPositionRouter.modifyPosition(key1, params2);
@@ -264,8 +264,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint256 expectedHookFee1 = initialHookAmount1 - expectedProtocolAmount1;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolAmount0);
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolAmount1);
-        assertEq(manager.hookFeesAccrued(key1.toId(), currency0), expectedHookFee0);
-        assertEq(manager.hookFeesAccrued(key1.toId(), currency1), expectedHookFee1);
+        assertEq(manager.hookFeesAccrued(address(key1.hooks), currency0), expectedHookFee0);
+        assertEq(manager.hookFeesAccrued(address(key1.hooks), currency1), expectedHookFee1);
     }
 
     function testNoHookProtocolFee(uint8 protocolSwapFee, uint8 protocolWithdrawFee) public {
@@ -291,15 +291,12 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         // Fees dont accrue for positive liquidity delta.
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(manager.hookFeesAccrued(key3.toId(), currency0), 0);
-        assertEq(manager.hookFeesAccrued(key3.toId(), currency1), 0);
+        assertEq(manager.hookFeesAccrued(address(key3.hooks), currency0), 0);
+        assertEq(manager.hookFeesAccrued(address(key3.hooks), currency1), 0);
 
         IPoolManager.ModifyPositionParams memory params2 = IPoolManager.ModifyPositionParams(-60, 60, -10000);
         modifyPositionRouter.modifyPosition(key3, params2);
 
-        uint8 protocolWithdrawFee0 = (protocolWithdrawFee % 16);
-        uint8 protocolWithdrawFee1 = (protocolWithdrawFee >> 4);
-        uint8 protocolSwapFee0 = (protocolSwapFee % 16);
         uint8 protocolSwapFee1 = (protocolSwapFee >> 4);
 
         // No fees should accrue bc there is no hook so the protocol cant take withdraw fees.
@@ -349,7 +346,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         );
 
         assertEq(manager.protocolFeesAccrued(currency1), 3); // 10% of 30 is 3
-        assertEq(manager.hookFeesAccrued(key0.toId(), currency1), 5); // 27 * .2 is 5.4 so 5 rounding down
+        assertEq(manager.hookFeesAccrued(address(key0.hooks), currency1), 5); // 27 * .2 is 5.4 so 5 rounding down
     }
 
     function testInitializeWithSwapProtocolFeeAndHookFeeDifferentDirections() public {
@@ -378,7 +375,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         );
 
         assertEq(manager.protocolFeesAccrued(currency1), 3); // 10% of 30 is 3
-        assertEq(manager.hookFeesAccrued(key0.toId(), currency1), 0); // hook fee only taken on 0 to 1 swaps
+        assertEq(manager.hookFeesAccrued(address(key0.hooks), currency1), 0); // hook fee only taken on 0 to 1 swaps
     }
 
     function testInitializeWithWithdrawProtocolFeeAndSwapHookFee() public {
@@ -411,14 +408,14 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         assertEq(manager.protocolFeesAccrued(currency1), 0); // No protocol fee was accrued on swap
         assertEq(manager.protocolFeesAccrued(currency0), 0); // No protocol fee was accrued on swap
-        assertEq(manager.hookFeesAccrued(key0.toId(), currency1), 7); // 25% on 1 to 0, 25% of 30 is 7.5 so 7
+        assertEq(manager.hookFeesAccrued(address(key0.hooks), currency1), 7); // 25% on 1 to 0, 25% of 30 is 7.5 so 7
 
         modifyPositionRouter.modifyPosition(key0, IPoolManager.ModifyPositionParams(-120, 120, -10e18));
 
         assertEq(manager.protocolFeesAccrued(currency1), 0); // No protocol fee was accrued on withdraw
         assertEq(manager.protocolFeesAccrued(currency0), 0); // No protocol fee was accrued on withdraw
-        assertEq(manager.hookFeesAccrued(key0.toId(), currency1), 7); // Same amount of fees for hook.
-        assertEq(manager.hookFeesAccrued(key0.toId(), currency0), 0); // Same amount of fees for hook.
+        assertEq(manager.hookFeesAccrued(address(key0.hooks), currency1), 7); // Same amount of fees for hook.
+        assertEq(manager.hookFeesAccrued(address(key0.hooks), currency0), 0); // Same amount of fees for hook.
     }
 
     function testCollectHookFees() public {
@@ -446,7 +443,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         );
 
         vm.prank(address(hook));
-        manager.collectHookFees(address(hook), key0, currency1, 0);
+        // Addr(0) recipient will be the hook.
+        manager.collectHookFees(address(0), currency1, 0);
 
         assertEq(MockERC20(Currency.unwrap(currency1)).balanceOf(address(hook)), 5);
     }
