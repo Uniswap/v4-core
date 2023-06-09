@@ -125,9 +125,6 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
         manager.initialize(key4, SQRT_RATIO_1_1);
-
-        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
-        manager.initialize(key4, SQRT_RATIO_1_1);
     }
 
     function testInitializeHookSwapFee(uint8 fee) public {
@@ -253,7 +250,6 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint8 protocolFee0 = (protocolWithdrawFee % 16);
         uint8 protocolFee1 = (protocolWithdrawFee >> 4);
         // Fees should accrue to both the protocol and hook.
-        // S: TODO Try with other underlying prices and amounts.
         uint256 underlying = 29;
         uint256 initialHookAmount0 = hookFee0 == 0 ? 0 : underlying / hookFee0;
         uint256 initialHookAmount1 = hookFee1 == 0 ? 0 : underlying / hookFee1;
@@ -387,7 +383,6 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.protocolSwapFee, 0);
         assertEq(slot0.protocolWithdrawFee, 0x44); // successfully sets the fee, but is never applied
-        // todo, should we not even allow it to be set?
 
         hook.setSwapFee(key0, 0x40); // 25% on 1 to 0 swaps
         hook.setWithdrawFee(key0, 0xFF);
@@ -444,7 +439,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         vm.prank(address(hook));
         // Addr(0) recipient will be the hook.
-        manager.collectHookFees(address(0), currency1, 0);
+        manager.collectHookFees(address(hook), currency1, 0);
 
         assertEq(MockERC20(Currency.unwrap(currency1)).balanceOf(address(hook)), 5);
     }

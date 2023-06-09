@@ -59,8 +59,9 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
+        // If there is no hook contract set, then fee cannot be dynamic and there cannot be a hook fee on swap or withdrawal.
         return address(hook) == address(0)
-            ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee() // having no hooks is fine, but the fee must not be dynamic and there must not be a hook swap or withdraw fee
+            ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
             : (
                 uint160(address(hook)) >= AFTER_DONATE_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
                     || fee.hasHookWithdrawFee()

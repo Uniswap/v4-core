@@ -59,7 +59,6 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
-    // S: Consider using more bits to make the protocolFee and hookFee more granular.
     /// The uint8 fees variables are represented as integer denominators (1/x)
     /// For swap fees, the upper 4 bits are the fee for trading 1 for 0, and the lower 4 are for 0 for 1 and are taken as a percentage of the lp swap fee.
     /// For withdraw fees the upper 4 bits are the fee on amount1, and the lower 4 are for amount0 and are taken as a percentage of the principle amount of the underlying position.

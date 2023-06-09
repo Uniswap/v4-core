@@ -58,10 +58,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return pools[key.toId()];
     }
 
-    function _getPool(bytes32 key) private view returns (Pool.State storage) {
-        return pools[key];
-    }
-
     /// @inheritdoc IPoolManager
     function getSlot0(bytes32 poolId)
         external
@@ -105,7 +101,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
-        if (key.fee & Fees.CLEAR_UPPER_FOUR_BITS >= 1000000) revert FeeTooLarge();
+        if (key.fee & Fees.STATIC_FEE_MASK >= 1000000) revert FeeTooLarge();
 
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
@@ -283,7 +279,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             if (fee >= 1000000) revert FeeTooLarge();
         } else {
             // clear the top 4 bits since they may be flagged for hook fees
-            fee = key.fee & Fees.CLEAR_UPPER_FOUR_BITS;
+            fee = key.fee & Fees.STATIC_FEE_MASK;
         }
 
         uint256 feeForProtocol;
@@ -402,9 +398,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function setProtocolFee(PoolKey memory key) external {
         (uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) = fetchProtocolFee(key);
-        bytes32 id = key.toId();
-        _getPool(id).setProtocolFee(newProtocolSwapFee, newProtocolWithdrawFee);
-        emit ProtocolFeeUpdated(id, newProtocolSwapFee, newProtocolWithdrawFee);
+        bytes32 poolId = key.toId();
+        pools[poolId].setProtocolFee(newProtocolSwapFee, newProtocolWithdrawFee);
+        emit ProtocolFeeUpdated(poolId, newProtocolSwapFee, newProtocolWithdrawFee);
     }
 
     function fetchProtocolFee(PoolKey memory key)
@@ -444,9 +440,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function setHookFee(PoolKey memory key) external {
         (uint8 newHookSwapFee, uint8 newHookWithdrawFee) = fetchHookFee(key);
-        bytes32 id = key.toId();
-        _getPool(id).setHookFee(newHookSwapFee, newHookWithdrawFee);
-        emit HookFeeUpdated(id, newHookSwapFee, newHookWithdrawFee);
+        bytes32 poolId = key.toId();
+        pools[poolId].setHookFee(newHookSwapFee, newHookWithdrawFee);
+        emit HookFeeUpdated(poolId, newHookSwapFee, newHookWithdrawFee);
     }
 
     /// @notice There is no cap on the hook fee, but it is specified as a percentage taken on the amount after the protocol fee is applied, if there is a protocol fee.
@@ -460,26 +456,28 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    function collectProtocolFees(address recipient, Currency currency, uint256 amount) external returns (uint256) {
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected)
+    {
         if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
 
-        amount = (amount == 0) ? protocolFeesAccrued[currency] : amount;
-        protocolFeesAccrued[currency] -= amount;
-        currency.transfer(recipient, amount);
-
-        return amount;
+        amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
+        protocolFeesAccrued[currency] -= amountCollected;
+        currency.transfer(recipient, amountCollected);
     }
 
-    function collectHookFees(address recipient, Currency currency, uint256 amount) external returns (uint256) {
+    function collectHookFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected)
+    {
         address hookAddress = msg.sender;
 
-        amount = (amount == 0) ? hookFeesAccrued[hookAddress][currency] : amount;
+        amountCollected = (amount == 0) ? hookFeesAccrued[hookAddress][currency] : amount;
         recipient = (recipient == address(0)) ? hookAddress : recipient;
 
-        hookFeesAccrued[hookAddress][currency] -= amount;
-        currency.transfer(recipient, amount);
-
-        return amount;
+        hookFeesAccrued[hookAddress][currency] -= amountCollected;
+        currency.transfer(recipient, amountCollected);
     }
 
     function extsload(bytes32 slot) external view returns (bytes32 value) {

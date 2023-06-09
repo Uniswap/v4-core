@@ -105,7 +105,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // tested in Hooks.t.sol
         key.hooks = IHooks(address(0));
 
-        if (key.fee & Fees.CLEAR_UPPER_FOUR_BITS >= 1000000) {
+        if (key.fee & Fees.STATIC_FEE_MASK >= 1000000) {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.FeeTooLarge.selector));
             manager.initialize(key, sqrtPriceX96);
         } else if (key.tickSpacing > manager.MAX_TICK_SPACING()) {
