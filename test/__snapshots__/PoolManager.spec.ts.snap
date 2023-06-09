@@ -1,3 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PoolManager bytecode size 1`] = `26295`;
+exports[`PoolManager #initialize gas cost 1`] = `
+Object {
+  "calldataByteLength": 196,
+  "gasUsed": 54920,
+}
+`;
+
+exports[`PoolManager bytecode size 1`] = `29054`;
