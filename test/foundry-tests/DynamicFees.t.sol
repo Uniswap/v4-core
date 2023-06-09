@@ -65,8 +65,8 @@ contract TestDynamicFees is Test, Deployers {
     event Swap(
         bytes32 indexed poolId,
         address indexed sender,
-        int256 amount0,
-        int256 amount1,
+        int128 amount0,
+        int128 amount1,
         uint160 sqrtPriceX96,
         uint128 liquidity,
         int24 tick,
