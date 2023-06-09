@@ -475,8 +475,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         return value;
-
     }
+
     // Alternatively we could just send to the hook address itself and make callable by anyone.
     function collectHookFees(address recipient, PoolKey memory key, Currency currency, uint256 amount)
         external
