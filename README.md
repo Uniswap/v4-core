@@ -88,10 +88,6 @@ contract MyContract is ILockCallback {
 
 ```
 
-## Contributing
-
-If you’re interested in contributing please see the [contribution guidelines](https://github.com/Uniswap/v4-core/blob/main/CONTRIBUTING.md)!
-
 ## License
 
 The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/v4-core/blob/main/LICENSE). Minus the following exceptions:
