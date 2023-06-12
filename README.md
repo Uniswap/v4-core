@@ -1,13 +1,13 @@
 # Uniswap v4 Core
 
-[![Lint](https://github.com/Uniswap/core-next/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/core-next/actions/workflows/lint.yml)
-[![Tests](https://github.com/Uniswap/core-next/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/core-next/actions/workflows/tests.yml)
+[![Lint](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml)
+[![Tests](https://github.com/Uniswap/v4-core/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/tests.yml)
 
-Uniswap v4 is a new automated market market protocol that provides extensibility and customizability to pools. `v4-core` hosts the core pool logic for creating pools and executing pool actions like swapping and providing liquidity. 
+Uniswap v4 is a new automated market market protocol that provides extensibility and customizability to pools. `v4-core` hosts the core pool logic for creating pools and executing pool actions like swapping and providing liquidity.
 
 ## Architecture
 
-`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by acquiring a lock on the contract and implementing the `lockAcquired` callback to then proceed with any of the following actions on the pools: 
+`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by acquiring a lock on the contract and implementing the `lockAcquired` callback to then proceed with any of the following actions on the pools:
 
 - `swap`
 - `modifyPosition`
@@ -33,9 +33,9 @@ Read a more in-depth overview of the design decisions in the working v4-whitepap
 
 ## Repository Structure
 
-All contracts are held within the `core-next/contracts` folder. 
+All contracts are held within the `v4-core/contracts` folder.
 
-Note that helper contracts used by tests are held in the `core-next/contracts/test` subfolder within the contracts folder. Any new test helper contracts should be added here, but all foundry tests are in the `core-next/test/foundry-tests` folder.
+Note that helper contracts used by tests are held in the `v4-core/contracts/test` subfolder within the contracts folder. Any new test helper contracts should be added here, but all foundry tests are in the `v4-core/test/foundry-tests` folder.
 
 ```markdown
 contracts/
@@ -58,15 +58,15 @@ test/
 To utilize the contracts and deploy to a local testnet, you can install the code in your repo with forge:
 
 ```markdown
-forge install https://github.com/Uniswap/core-next
+forge install https://github.com/Uniswap/v4-core
 ```
 
 To integrate with the contracts, the interfaces are available to use:
 
 ```solidity
 
-import {IPoolManager} from 'core-next/contracts/interfaces/IPoolManager.sol';
-import {ILockCallback} from 'core-next/contracts/interfaces/callback/ILockCallback.sol';
+import {IPoolManager} from 'v4-core/contracts/interfaces/IPoolManager.sol';
+import {ILockCallback} from 'v4-core/contracts/interfaces/callback/ILockCallback.sol';
 
 contract MyContract is ILockCallback {
     IPoolManager poolManager;
@@ -86,9 +86,14 @@ contract MyContract is ILockCallback {
 
 ## Contributing
 
-If you’re interested in contributing please see the [contribution guidelines](https://github.com/Uniswap/core-next/blob/main/CONTRIBUTING.md)!
+If you’re interested in contributing please see the [contribution guidelines](https://github.com/Uniswap/v4-core/blob/main/CONTRIBUTING.md)!
 
 ## License
 
-The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/core-next/blob/main/LICENSE)
+The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/v4-core/blob/main/LICENSE). Minus the following exceptions:
 
+- [Interfaces](./contracts/interfaces) have a General Public License
+- Some [libraries](./contracts/libraries) and [types](./contracts/types/) have a General Public License
+- [FullMath.sol](./contracts/libraries/FullMath.sol) has an MIT License
+
+Each of these files states their license type.
