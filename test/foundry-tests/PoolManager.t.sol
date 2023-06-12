@@ -805,7 +805,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
 
-        snapStart("swap");
+        snapStart("simple swap");
         swapTest.swap(key, params, testSettings);
         snapEnd();
     }
@@ -831,7 +831,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
 
-        snapStart("swap");
+        snapStart("swap with native");
         swapTest.swap(key, params, testSettings);
         snapEnd();
     }
@@ -863,7 +863,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
-        snapStart("swap");
+        snapStart("swap with hooks");
         swapTest.swap(key, params, testSettings);
         snapEnd();
     }
