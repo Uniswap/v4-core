@@ -14,7 +14,7 @@ There are many ways to contribute, but here are a few if you want a place to sta
 
 ## Opening an Issue
 
-When opening an [issue](https://github.com/Uniswap/core-next/issues/new/choose), choose a template to start from: Bug Report or Feature Improvement. For bug reports, you should be able to reproduce the bug through tests or proof of concept integrations. For feature improvements, please title it with a concise problem statement and check that a similar request is not already open or already in progress. Not all issues may be deemed worth resolving, so please follow through with responding to any questions or comments that others may have regarding the issue.
+When opening an [issue](https://github.com/Uniswap/v4-core/issues/new/choose), choose a template to start from: Bug Report or Feature Improvement. For bug reports, you should be able to reproduce the bug through tests or proof of concept integrations. For feature improvements, please title it with a concise problem statement and check that a similar request is not already open or already in progress. Not all issues may be deemed worth resolving, so please follow through with responding to any questions or comments that others may have regarding the issue.
 
 Feel free to tag the issue as a “good first issue” for any clean-up related issues, or small scoped changes to help encourage pull requests from first time contributors!
 
@@ -22,7 +22,7 @@ Feel free to tag the issue as a “good first issue” for any clean-up related 
 
 All pull requests should be opened against the `main` branch.  In the pull request, please reference the issue you are fixing.
 
-Pull requests can be reviewed by community members, but to be merged they will need approval from 2 of the repository maintainers. Please allow up to a week to receive a response, although the maintainers will aim to respond and comment as soon as possible.
+Pull requests can be reviewed by community members, but to be merged they will need approval from the repository maintainers. Please understand it will take time to receive a response, although the maintainers will aim to respond and comment as soon as possible.
 
 **For larger, more substantial changes to the code, it is best to open an issue and start a discussion with the maintainers to align on the change before spending time on the development.**
 
@@ -58,8 +58,6 @@ This repo currently uses hardhat and forge tests.* Please run both test suites b
 `forge test` to run forge tests
 
 Any new tests that you add should be written with forge, as the repo is undergoing a full migration to the forge test suite.
-
-*Mythx was also used but is no longer run and in the process of being deprecated fully from the repo.
 
 ## Code of Conduct
 
