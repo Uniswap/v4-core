@@ -192,6 +192,7 @@ interface IPoolManager is IERC1155 {
     function settle(Currency token) external payable returns (uint256 paid);
 
     /// @notice Sets the protocol's swap and withdrawal fees for the given pool
+    /// Protocol fees are always a portion of a fee that is owed. If that underlying fee is 0, no protocol fees will accrue even if it is set to > 0.
     function setProtocolFees(PoolKey memory key) external;
 
     /// @notice Sets the hook's swap and withdrawal fees for the given pool
