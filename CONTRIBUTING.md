@@ -8,9 +8,9 @@ If you need to get in contact with the repository maintainers, please reach out 
 
 There are many ways to contribute, but here are a few if you want a place to start:
 
-1. **Opening an issue.** Before opening an issue please check that there is not an issue already open. If there is, feel free to comment more details, explanations, or examples within the open issue rather than duplicating it. Suggesting changes to the open development process are within the bounds of opening issues. We are always open to feedback and receptive to suggestions!
+1. **Opening an issue.** Before opening an issue, please check that there is not an issue already open. If there is, feel free to comment more details, explanations, or examples within the open issue rather than duplicating it. Suggesting changes to the open development process are within the bounds of opening issues. We are always open to feedback and receptive to suggestions!
 2. **Resolving an issue.** You can resolve an issue either by showing that it is not an issue or by fixing the issue with code changes, additional tests, etc. Any pull request fixing an issue should reference that issue.
-3. **Reviewing open PRs.** You can provide comments, standards guidance, naming suggesetions, gas optimizations, or ideas for alternative designs on any open pull request. 
+3. **Reviewing open PRs.** You can provide comments, standards guidance, naming suggestions, gas optimizations, or ideas for alternative designs on any open pull request.
 
 ## Opening an Issue
 
@@ -43,9 +43,9 @@ All contributions must follow the below standards. Maintainers will close out PR
 4. Picking up stale issues by other authors is fine! Please just communicate with them ahead of time and it is best practice to include co-authors in any commits.
 5. Squash commits where possible to make reviews clean and efficient. PRs that are merged to main will be squashed into 1 commit.
 
-## Tests 
+## Tests
 
-This repo currently uses hardhat and forge tests.* Please run both test suites before opening a PR. 
+This repo currently uses hardhat and forge tests.* Please run both test suites before opening a PR.
 
 `yarn snapshots` to update the hardhat gas snapshots
 
@@ -61,8 +61,8 @@ Any new tests that you add should be written with forge, as the repo is undergoi
 
 *Mythx was also used but is no longer run and in the process of being deprecated fully from the repo.
 
-## Code of Conduct 
+## Code of Conduct
 
-Above all else, please be respectful of the people behind the code. Any kind of aggressive or disrespectful comments, issues, and language will be removed. 
+Above all else, please be respectful of the people behind the code. Any kind of aggressive or disrespectful comments, issues, and language will be removed.
 
-Issues and PRs that are obviously spam and unhelpful to the development process or unrelated  to the core code will also be closed.
+Issues and PRs that are obviously spam and unhelpful to the development process or unrelated to the core code will also be closed.
