@@ -7,22 +7,21 @@ body:
       attributes:
           value: |
               Please ensure that the feature has not already been requested.
-    - type: checkboxes
+    - type: dropdown
       attributes:
-        label: Components
-        description: What architectural feature or area of code does your idea improve?
-        options:
-        - label: Hooks
-        - label: Singleton
-        - label: Lock and Call
-        - label: Delta accounting
-        - label: 1155 Balances
-        - label: Pool Actions (swap, modifyPosition, donate, take, settle, mint)
-        - label: Gas Optimization
-        - label: General design optimization (improving efficiency, cleanliness, or developer experience)
-        - label: Documentation
-      validations:
-        required: true
+          label: Component
+          description: Which area of code does your idea improve?
+          multiple: true
+          options:
+            - Hooks
+            - Singleton
+            - Lock and Call
+            - Delta accounting
+            - 1155 Balances
+            - Pool Actions (swap, modifyPosition, donate, take, settle, mint)
+            - Gas Optimization
+            - General design optimization (improving efficiency, cleanliness, or developer experience)
+            - Documentation
     - type: textarea
       attributes:
           label: Describe the suggested feature and problem it solves.
