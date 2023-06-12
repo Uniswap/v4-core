@@ -11,7 +11,7 @@ If you’re interested in contributing please see our [contribution guidelines](
 
 ## Architecture
 
-`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by acquiring a lock on the contract and implementing the `lockAcquired` callback to then proceed with any of the following actions on the pools: 
+`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by acquiring a lock on the contract and implementing the `lockAcquired` callback to then proceed with any of the following actions on the pools:
 
 - `swap`
 - `modifyPosition`
@@ -37,7 +37,7 @@ Read a more in-depth overview of the design decisions in the working v4-whitepap
 
 ## Repository Structure
 
-All contracts are held within the `v4-core/contracts` folder. 
+All contracts are held within the `v4-core/contracts` folder.
 
 Note that helper contracts used by tests are held in the `v4-core/contracts/test` subfolder within the contracts folder. Any new test helper contracts should be added here, but all foundry tests are in the `v4-core/test/foundry-tests` folder.
 
@@ -88,7 +88,16 @@ contract MyContract is ILockCallback {
 
 ```
 
+## Contributing
+
+If you’re interested in contributing please see the [contribution guidelines](https://github.com/Uniswap/v4-core/blob/main/CONTRIBUTING.md)!
+
 ## License
 
-The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/v4-core/blob/main/LICENSE)
+The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/v4-core/blob/main/LICENSE). Minus the following exceptions:
 
+- [Interfaces](./contracts/interfaces) have a General Public License
+- Some [libraries](./contracts/libraries) and [types](./contracts/types/) have a General Public License
+- [FullMath.sol](./contracts/libraries/FullMath.sol) has an MIT License
+
+Each of these files states their license type.
