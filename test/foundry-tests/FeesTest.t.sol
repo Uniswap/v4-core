@@ -213,9 +213,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.hookFeesAccrued(address(key0.hooks), currency1), 0);
     }
 
-    function testHookWithdrawFeeProtocolWithdrawFee() public {
-        uint8 hookWithdrawFee = 1;
-        uint8 protocolWithdrawFee = 68;
+    function testHookWithdrawFeeProtocolWithdrawFee(uint8 hookWithdrawFee, uint8 protocolWithdrawFee) public {
         vm.assume(protocolWithdrawFee >> 4 >= 4);
         vm.assume(protocolWithdrawFee % 16 >= 4);
 
