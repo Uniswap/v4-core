@@ -250,7 +250,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         vm.assume(protocolWithdrawFee >> 4 >= 4);
         vm.assume(protocolWithdrawFee % 16 >= 4);
 
-        // On a pool who's hook has not set a withdraw fee, the protocol should not accrue any value even if it has set a withdraw fee.
+        // On a pool whose hook has not set a withdraw fee, the protocol should not accrue any value even if it has set a withdraw fee.
         hook.setSwapFee(key0, hookSwapFee);
         manager.setHookFees(key0);
 
