@@ -116,6 +116,9 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 60
         });
 
+        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
+        manager.initialize(key4, SQRT_RATIO_1_1);
+
         key4 = IPoolManager.PoolKey({
             currency0: currency0,
             currency1: currency1,

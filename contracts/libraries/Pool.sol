@@ -273,7 +273,7 @@ library Pool {
 
         if (params.liquidityDelta < 0 && self.slot0.hookWithdrawFee > 0) {
             // Only take fees if the hook withdraw fee is set and the liquidity is being removed.
-            (fees) = _calculateExternalFees(self, result);
+            fees = _calculateExternalFees(self, result);
 
             // Amounts are balances owed to the pool. When negative, they represent the balance a user can take.
             // Since protocol and hook fees are extracted on the balance a user can take

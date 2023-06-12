@@ -273,13 +273,14 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        uint24 fee;
+        // Set the total swap fee, either through the hook or as the static fee set an initialization.
+        uint24 totalSwapFee;
         if (key.fee.isDynamicFee()) {
-            fee = IDynamicFeeManager(address(key.hooks)).getFee(key);
-            if (fee >= 1000000) revert FeeTooLarge();
+            totalSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(key);
+            if (totalSwapFee >= 1000000) revert FeeTooLarge();
         } else {
             // clear the top 4 bits since they may be flagged for hook fees
-            fee = key.fee & Fees.STATIC_FEE_MASK;
+            totalSwapFee = key.fee & Fees.STATIC_FEE_MASK;
         }
 
         uint256 feeForProtocol;
@@ -288,7 +289,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         bytes32 poolId = key.toId();
         (delta, feeForProtocol, feeForHook, state) = pools[poolId].swap(
             Pool.SwapParams({
-                fee: fee,
+                fee: totalSwapFee,
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
@@ -315,7 +316,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         emit Swap(
-            poolId, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, fee
+            poolId, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, totalSwapFee
         );
     }
 
