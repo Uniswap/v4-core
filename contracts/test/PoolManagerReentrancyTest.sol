@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.19;
+pragma solidity ^0.8.19;
 
 import {Currency, CurrencyLibrary} from "../libraries/CurrencyLibrary.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
