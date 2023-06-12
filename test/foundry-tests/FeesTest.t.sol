@@ -130,7 +130,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
     function testInitializeHookSwapFee(uint8 fee) public {
         hook.setSwapFee(key0, fee);
-        manager.setHookFee(key0);
+        manager.setHookFees(key0);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.hookSwapFee, fee);
@@ -141,7 +141,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
     function testInitializeHookWithdrawFee(uint8 fee) public {
         hook.setWithdrawFee(key1, fee);
-        manager.setHookFee(key1);
+        manager.setHookFees(key1);
         (Pool.Slot0 memory slot0,,,) = manager.pools(key1.toId());
         assertEq(slot0.hookWithdrawFee, fee);
         assertEq(slot0.hookSwapFee, 0);
@@ -152,7 +152,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     function testInitializeBothHookFee(uint8 swapFee, uint8 withdrawFee) public {
         hook.setSwapFee(key2, swapFee);
         hook.setWithdrawFee(key2, withdrawFee);
-        manager.setHookFee(key2);
+        manager.setHookFees(key2);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key2.toId());
         assertEq(slot0.hookSwapFee, swapFee);
@@ -164,11 +164,11 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         vm.assume(protocolSwapFee % 16 >= 4);
 
         hook.setSwapFee(key0, hookSwapFee);
-        manager.setHookFee(key0);
+        manager.setHookFees(key0);
 
         protocolFeeController.setSwapFeeForPool(key0.toId(), protocolSwapFee);
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setProtocolFee(key0);
+        manager.setProtocolFees(key0);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
 
@@ -187,12 +187,12 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         // On a pool who's hook has not set a withdraw fee, the protocol should not accrue any value even if it has set a withdraw fee.
         hook.setSwapFee(key0, hookSwapFee);
-        manager.setHookFee(key0);
+        manager.setHookFees(key0);
 
         // set fee on the fee controller
         protocolFeeController.setWithdrawFeeForPool(key0.toId(), protocolWithdrawFee);
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setProtocolFee(key0);
+        manager.setProtocolFees(key0);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.hookWithdrawFee, 0);
@@ -218,11 +218,11 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         vm.assume(protocolWithdrawFee % 16 >= 4);
 
         hook.setWithdrawFee(key1, hookWithdrawFee);
-        manager.setHookFee(key1);
+        manager.setHookFees(key1);
 
         protocolFeeController.setWithdrawFeeForPool(key1.toId(), protocolWithdrawFee);
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setProtocolFee(key1);
+        manager.setProtocolFees(key1);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key1.toId());
 
@@ -278,7 +278,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         protocolFeeController.setSwapFeeForPool(key3.toId(), protocolSwapFee);
         protocolFeeController.setWithdrawFeeForPool(key3.toId(), protocolWithdrawFee);
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setProtocolFee(key3);
+        manager.setProtocolFees(key3);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key3.toId());
         assertEq(slot0.hookWithdrawFee, 0);
@@ -327,7 +327,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint8 protocolFee = _computeFee(false, 10); // 10% on 1 to 0 swaps
         protocolFeeController.setSwapFeeForPool(key0.toId(), protocolFee);
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setProtocolFee(key0);
+        manager.setProtocolFees(key0);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.protocolSwapFee, protocolFee);
@@ -335,7 +335,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         uint8 hookFee = _computeFee(false, 5); // 20% on 1 to 0 swaps
         hook.setSwapFee(key0, hookFee);
-        manager.setHookFee(key0);
+        manager.setHookFees(key0);
         (slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.hookSwapFee, hookFee);
         assertEq(slot0.hookWithdrawFee, 0);
@@ -358,7 +358,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint8 protocolFee = _computeFee(false, 10); // 10% fee on 1 to 0 swaps
         protocolFeeController.setSwapFeeForPool(key0.toId(), protocolFee);
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setProtocolFee(key0);
+        manager.setProtocolFees(key0);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.protocolSwapFee, protocolFee);
@@ -367,7 +367,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint8 hookFee = _computeFee(true, 5); // 20% on 0 to 1 swaps
 
         hook.setSwapFee(key0, hookFee);
-        manager.setHookFee(key0);
+        manager.setHookFees(key0);
         (slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.hookSwapFee, hookFee);
         assertEq(slot0.hookWithdrawFee, 0);
@@ -391,7 +391,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint8 protocolFee = _computeFee(false, 4) | _computeFee(true, 4); // max fees on both amounts
         protocolFeeController.setWithdrawFeeForPool(key0.toId(), protocolFee); //
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setProtocolFee(key0);
+        manager.setProtocolFees(key0);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.protocolSwapFee, 0);
@@ -401,7 +401,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint8 hookWithdrawFee = _computeFee(false, 4) | _computeFee(true, 4); // max fees on both amounts
         hook.setSwapFee(key0, hookSwapFee);
         hook.setWithdrawFee(key0, hookWithdrawFee);
-        manager.setHookFee(key0);
+        manager.setHookFees(key0);
         (slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.hookSwapFee, hookSwapFee);
         assertEq(slot0.hookWithdrawFee, 0); // Even though the contract sets a withdraw fee it will not be applied bc the pool key.fee did not assert a withdraw flag.
@@ -432,14 +432,14 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint8 protocolFee = _computeFee(false, 10); // 10% on 1 to 0 swaps
         protocolFeeController.setSwapFeeForPool(key0.toId(), protocolFee);
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setProtocolFee(key0);
+        manager.setProtocolFees(key0);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.protocolSwapFee, protocolFee);
 
         uint8 hookFee = _computeFee(false, 5); // 20% on 1 to 0 swaps
         hook.setSwapFee(key0, hookFee);
-        manager.setHookFee(key0);
+        manager.setHookFees(key0);
 
         (slot0,,,) = manager.pools(key0.toId());
         assertEq(slot0.hookSwapFee, hookFee);

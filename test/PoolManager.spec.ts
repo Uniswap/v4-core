@@ -280,7 +280,7 @@ describe('PoolManager', () => {
       const poolProtocolFee = 4
       await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
-      await expect(manager.setProtocolFee(poolKey))
+      await expect(manager.setProtocolFees(poolKey))
         .to.emit(manager, 'ProtocolFeeUpdated')
         .withArgs(poolID, poolProtocolFee, 0)
       ;({

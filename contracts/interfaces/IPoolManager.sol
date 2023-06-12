@@ -103,6 +103,9 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
+    /// @notice Returns the minimum denominator for the protocol fee, which restricts it to a maximum of 25%
+    function MIN_PROTOCOL_FEE_DENOMINATOR() external view returns (uint8);
+
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(bytes32 id)
         external
