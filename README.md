@@ -3,7 +3,11 @@
 [![Lint](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml)
 [![Tests](https://github.com/Uniswap/v4-core/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/tests.yml)
 
-Uniswap v4 is a new automated market market protocol that provides extensibility and customizability to pools. `v4-core` hosts the core pool logic for creating pools and executing pool actions like swapping and providing liquidity.
+Uniswap v4 is a new automated market maker protocol that provides extensible and customizable pools. `v4-core` hosts the core pool logic for creating pools and executing pool actions like swapping and providing liquidity.
+
+## Contributing
+
+If you’re interested in contributing please see our [contribution guidelines](https://github.com/Uniswap/v4-core/blob/main/CONTRIBUTING.md)!
 
 ## Architecture
 
@@ -83,10 +87,6 @@ contract MyContract is ILockCallback {
 }
 
 ```
-
-## Contributing
-
-If you’re interested in contributing please see the [contribution guidelines](https://github.com/Uniswap/v4-core/blob/main/CONTRIBUTING.md)!
 
 ## License
 
