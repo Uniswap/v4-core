@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity >=0.6.2;
 
 import {Currency} from "../libraries/CurrencyLibrary.sol";

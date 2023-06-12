@@ -90,5 +90,10 @@ If you’re interested in contributing please see the [contribution guidelines](
 
 ## License
 
-The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/core-next/blob/main/LICENSE)
+The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/core-next/blob/main/LICENSE). Minus the following exceptions:
 
+- [Interfaces](./contracts/interfaces) have a General Public License
+- Some [libraries](./contracts/libraries) and [types](./contracts/types/) have a General Public License
+- [FullMath.sol](./contracts/libraries/FullMath.sol) has an MIT License
+
+Each of these files states their license type.
