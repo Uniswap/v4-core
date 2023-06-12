@@ -11,7 +11,7 @@ contract ProtocolFeeControllerTest is IProtocolFeeController {
     mapping(bytes32 => uint8) public swapFeeForPool;
     mapping(bytes32 => uint8) public withdrawFeeForPool;
 
-    function protocolFeeForPool(IPoolManager.PoolKey memory key) external view returns (uint8, uint8) {
+    function protocolFeesForPool(IPoolManager.PoolKey memory key) external view returns (uint8, uint8) {
         return (swapFeeForPool[key.toId()], withdrawFeeForPool[key.toId()]);
     }
 

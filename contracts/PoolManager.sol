@@ -396,14 +396,14 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         emit ProtocolFeeControllerUpdated(address(controller));
     }
 
-    function setProtocolFee(PoolKey memory key) external {
-        (uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) = fetchProtocolFee(key);
+    function setProtocolFees(PoolKey memory key) external {
+        (uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) = fetchProtocolFees(key);
         bytes32 poolId = key.toId();
-        pools[poolId].setProtocolFee(newProtocolSwapFee, newProtocolWithdrawFee);
+        pools[poolId].setProtocolFees(newProtocolSwapFee, newProtocolWithdrawFee);
         emit ProtocolFeeUpdated(poolId, newProtocolSwapFee, newProtocolWithdrawFee);
     }
 
-    function fetchProtocolFee(PoolKey memory key)
+    function fetchProtocolFees(PoolKey memory key)
         internal
         view
         returns (uint8 protocolSwapFee, uint8 protocolWithdrawFee)
@@ -413,7 +413,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
             // in mind.
             if (gasleft() < controllerGasLimit) revert ProtocolFeeCannotBeFetched();
-            try protocolFeeController.protocolFeeForPool{gas: controllerGasLimit}(key) returns (
+            try protocolFeeController.protocolFeesForPool{gas: controllerGasLimit}(key) returns (
                 uint8 updatedProtocolSwapFee, uint8 updatedProtocolWithdrawFee
             ) {
                 protocolSwapFee = updatedProtocolSwapFee;
@@ -425,7 +425,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    function _checkProtocolFee(uint8 fee) internal pure {
+    function _checkProtocolFees(uint8 fee) internal pure {
         if (fee != 0) {
             uint8 fee0 = fee % 16;
             uint8 fee1 = fee >> 4;
@@ -438,15 +438,15 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    function setHookFee(PoolKey memory key) external {
-        (uint8 newHookSwapFee, uint8 newHookWithdrawFee) = fetchHookFee(key);
+    function setHookFees(PoolKey memory key) external {
+        (uint8 newHookSwapFee, uint8 newHookWithdrawFee) = fetchHookFees(key);
         bytes32 poolId = key.toId();
-        pools[poolId].setHookFee(newHookSwapFee, newHookWithdrawFee);
+        pools[poolId].setHookFees(newHookSwapFee, newHookWithdrawFee);
         emit HookFeeUpdated(poolId, newHookSwapFee, newHookWithdrawFee);
     }
 
     /// @notice There is no cap on the hook fee, but it is specified as a percentage taken on the amount after the protocol fee is applied, if there is a protocol fee.
-    function fetchHookFee(PoolKey memory key) internal view returns (uint8 hookSwapFee, uint8 hookWithdrawFee) {
+    function fetchHookFees(PoolKey memory key) internal view returns (uint8 hookSwapFee, uint8 hookWithdrawFee) {
         if (key.fee.hasHookSwapFee()) {
             hookSwapFee = IHookFeeManager(address(key.hooks)).getHookSwapFee(key);
         }

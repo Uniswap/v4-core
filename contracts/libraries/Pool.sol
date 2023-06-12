@@ -128,14 +128,14 @@ library Pool {
         });
     }
 
-    function setProtocolFee(State storage self, uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) internal {
+    function setProtocolFees(State storage self, uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) internal {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
         self.slot0.protocolSwapFee = newProtocolSwapFee;
         self.slot0.protocolWithdrawFee = newProtocolWithdrawFee;
     }
 
-    function setHookFee(State storage self, uint8 newHookSwapFee, uint8 newHookWithdrawFee) internal {
+    function setHookFees(State storage self, uint8 newHookSwapFee, uint8 newHookWithdrawFee) internal {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
         self.slot0.hookSwapFee = newHookSwapFee;
