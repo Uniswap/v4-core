@@ -18,6 +18,7 @@ import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {IDynamicFeeManager} from "././../../contracts/interfaces/IDynamicFeeManager.sol";
+import {Fees} from "./../../contracts/libraries/Fees.sol";
 
 contract DynamicFees is IDynamicFeeManager {
     uint24 internal fee;
@@ -50,7 +51,7 @@ contract TestDynamicFees is Test, Deployers {
         DynamicFees impl = new DynamicFees();
         vm.etch(address(dynamicFees), address(impl).code);
 
-        (manager, key,) = Deployers.createFreshPool(IHooks(address(dynamicFees)), Hooks.DYNAMIC_FEE, SQRT_RATIO_1_1);
+        (manager, key,) = Deployers.createFreshPool(IHooks(address(dynamicFees)), Fees.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1);
         swapRouter = new PoolSwapTest(manager);
     }
 
@@ -65,8 +66,8 @@ contract TestDynamicFees is Test, Deployers {
     event Swap(
         bytes32 indexed poolId,
         address indexed sender,
-        int256 amount0,
-        int256 amount1,
+        int128 amount0,
+        int128 amount1,
         uint160 sqrtPriceX96,
         uint128 liquidity,
         int24 tick,

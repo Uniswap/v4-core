@@ -1,10 +1,11 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.6.2;
+// SPDX-License-Identifier: GPL-2.0-or-later
+pragma solidity ^0.8.19;
 
 import {Currency} from "../libraries/CurrencyLibrary.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IHooks} from "./IHooks.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 
 interface IPoolManager is IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256
@@ -68,17 +69,19 @@ interface IPoolManager is IERC1155 {
     event Swap(
         bytes32 indexed poolId,
         address indexed sender,
-        int256 amount0,
-        int256 amount1,
+        int128 amount0,
+        int128 amount1,
         uint160 sqrtPriceX96,
         uint128 liquidity,
         int24 tick,
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolFee);
+    event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolSwapFee, uint8 protocolWithdrawFee);
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
+
+    event HookFeeUpdated(bytes32 indexed poolKey, uint8 hookSwapFee, uint8 hookWithdrawFee);
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -86,7 +89,7 @@ interface IPoolManager is IERC1155 {
         Currency currency0;
         /// @notice The higher currency of the pool, sorted numerically
         Currency currency1;
-        /// @notice The fee for the pool
+        /// @notice The pool swap fee, capped at 1_000_000. The upper 4 bits determine if the hook sets any fees.
         uint24 fee;
         /// @notice Ticks that involve positions must be a multiple of tick spacing
         int24 tickSpacing;
@@ -100,8 +103,21 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
+    /// @notice Returns the minimum denominator for the protocol fee, which restricts it to a maximum of 25%
+    function MIN_PROTOCOL_FEE_DENOMINATOR() external view returns (uint8);
+
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(bytes32 id) external view returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee);
+    function getSlot0(bytes32 id)
+        external
+        view
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint8 protocolSwapFee,
+            uint8 protocolWithdrawFee,
+            uint8 hookSwapFee,
+            uint8 hookWithdrawFee
+        );
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
@@ -114,13 +130,6 @@ interface IPoolManager is IERC1155 {
 
     // @notice Given a currency address, returns the protocol fees accrued in that currency
     function protocolFeesAccrued(Currency) external view returns (uint256);
-
-    /// @notice Represents a change in the pool's balance of currency0 and currency1.
-    /// @dev This is returned from most pool operations
-    struct BalanceDelta {
-        int256 amount0;
-        int256 amount1;
-    }
 
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
@@ -168,9 +177,7 @@ interface IPoolManager is IERC1155 {
     }
 
     /// @notice Modify the position for the given pool
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params)
-        external
-        returns (BalanceDelta memory delta);
+    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params) external returns (BalanceDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -179,12 +186,10 @@ interface IPoolManager is IERC1155 {
     }
 
     /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta memory delta);
+    function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1)
-        external
-        returns (BalanceDelta memory delta);
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1) external returns (BalanceDelta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
@@ -196,6 +201,21 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
 
-    /// @notice sets the protocol fee for the given pool
-    function setPoolProtocolFee(PoolKey memory key) external;
+    /// @notice Sets the protocol's swap and withdrawal fees for the given pool
+    /// Protocol fees are always a portion of a fee that is owed. If that underlying fee is 0, no protocol fees will accrue even if it is set to > 0.
+    function setProtocolFees(PoolKey memory key) external;
+
+    /// @notice Sets the hook's swap and withdrawal fees for the given pool
+    function setHookFees(PoolKey memory key) external;
+
+    /// @notice Called by external contracts to access granular pool state
+    /// @param slot Key of slot to sload
+    /// @return value The value of the slot as bytes32
+    function extsload(bytes32 slot) external view returns (bytes32 value);
+
+    /// @notice Called by external contracts to access granular pool state
+    /// @param slot Key of slot to start sloading from
+    /// @param nSlots Number of slots to load into return value
+    /// @return value The value of the sload-ed slots concatentated as dynamic bytes
+    function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
 }

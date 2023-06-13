@@ -1,0 +1,42 @@
+name: Feature Improvement
+description: Suggest an improvement to v4-core.
+labels: ["triage"]
+
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Please ensure that the feature has not already been requested.
+    - type: dropdown
+      attributes:
+          label: Component
+          description: Which area of code does your idea improve?
+          multiple: true
+          options:
+            - Hooks
+            - Singleton
+            - Lock and Call
+            - Delta accounting
+            - 1155 Balances
+            - Pool Actions (swap, modifyPosition, donate, take, settle, mint)
+            - Gas Optimization
+            - General design optimization (improving efficiency, cleanliness, or developer experience)
+            - Documentation
+    - type: textarea
+      attributes:
+          label: Describe the suggested feature and problem it solves.
+          description: Provide a clear and concise description of what feature you would like to see, and what problems it solves.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Describe the desired implementation.
+          description: If possible, provide a suggested architecture change or implementation.
+    - type: textarea
+      attributes:
+          label: Describe alternatives.
+          description: If possible, describe the alternatives you've considered, or describe the current functionality and how it may be sub-optimal.
+    - type: textarea
+      attributes:
+          label: Additional context.
+          description: Please list any additional dependencies or integrating contacts that are affected.

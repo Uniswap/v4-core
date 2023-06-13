@@ -4,7 +4,7 @@ out = 'foundry-out'
 solc_version = '0.8.19'
 optimizer_runs = 800
 ffi = true
-fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}]
+fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./foundry-out"}]
 
 [profile.ci]
 fuzz_runs = 100000
