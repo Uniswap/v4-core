@@ -154,8 +154,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         mapping(Currency currency => int256) currencyDelta;
     }
 
-    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
-    /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
+    /// @dev Represents the state of the given locker. Each locker must have net 0 currencies due/owed after the
+    /// last lock is released. Note this is private because the nested mappings cannot be exposed as a public variable.
     mapping(address locker => LockState) private lockStates;
 
     /// @inheritdoc IPoolManager
@@ -181,8 +181,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             if (lockIndex == 0) {
                 for (uint256 i; i < locks.length; i++) {
                     address locker = locks[i].locker;
-                    LockState storage lockState = lockStates[locker];
-                    if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled(locker);
+                    if (lockStates[locker].nonzeroDeltaCount != 0) revert CurrencyNotSettled(locker);
                 }
                 delete locks;
             } else {
