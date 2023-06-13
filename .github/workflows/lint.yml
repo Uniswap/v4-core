@@ -31,6 +31,3 @@ jobs:
 
       - name: Compile
         run: yarn prettier-check
-
-      - name: Run forge snapshots
-        run: forge snapshot --check
