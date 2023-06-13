@@ -40,7 +40,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    mapping(PoolId poolId => Pool.State) public pools;
+    mapping(PoolId id => Pool.State) public pools;
 
     mapping(Currency currency => uint256) public override protocolFeesAccrued;
 
@@ -59,7 +59,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getSlot0(PoolId poolId)
+    function getSlot0(PoolId id)
         external
         view
         override
@@ -72,7 +72,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             uint8 hookWithdrawFee
         )
     {
-        Pool.Slot0 memory slot0 = pools[poolId].slot0;
+        Pool.Slot0 memory slot0 = pools[id].slot0;
 
         return (
             slot0.sqrtPriceX96,
@@ -85,18 +85,18 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(PoolId poolId) external view override returns (uint128 liquidity) {
-        return pools[poolId].liquidity;
+    function getLiquidity(PoolId id) external view override returns (uint128 liquidity) {
+        return pools[id].liquidity;
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(PoolId poolId, address owner, int24 tickLower, int24 tickUpper)
+    function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper)
         external
         view
         override
         returns (uint128 liquidity)
     {
-        return pools[poolId].positions.get(owner, tickLower, tickUpper).liquidity;
+        return pools[id].positions.get(owner, tickLower, tickUpper).liquidity;
     }
 
     /// @inheritdoc IPoolManager
@@ -114,11 +114,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        PoolId poolId = key.toId();
+        PoolId id = key.toId();
         (uint8 protocolSwapFee, uint8 protocolWithdrawFee) = _fetchProtocolFees(key);
         (uint8 hookSwapFee, uint8 hookWithdrawFee) = _fetchHookFees(key);
         tick =
-            pools[poolId].initialize(sqrtPriceX96, protocolSwapFee, hookSwapFee, protocolWithdrawFee, hookWithdrawFee);
+            pools[id].initialize(sqrtPriceX96, protocolSwapFee, hookSwapFee, protocolWithdrawFee, hookWithdrawFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
@@ -126,7 +126,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit Initialize(poolId, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
     }
 
     /// @inheritdoc IPoolManager
@@ -221,9 +221,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        PoolId poolId = key.toId();
+        PoolId id = key.toId();
         Pool.Fees memory fees;
-        (delta, fees) = pools[poolId].modifyPosition(
+        (delta, fees) = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -256,7 +256,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        emit ModifyPosition(poolId, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
+        emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
 
     /// @inheritdoc IPoolManager
@@ -286,8 +286,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256 feeForProtocol;
         uint256 feeForHook;
         Pool.SwapState memory state;
-        PoolId poolId = key.toId();
-        (delta, feeForProtocol, feeForHook, state) = pools[poolId].swap(
+        PoolId id = key.toId();
+        (delta, feeForProtocol, feeForHook, state) = pools[id].swap(
             Pool.SwapParams({
                 fee: totalSwapFee,
                 tickSpacing: key.tickSpacing,
@@ -316,7 +316,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         emit Swap(
-            poolId,
+            id,
             msg.sender,
             delta.amount0(),
             delta.amount1(),
@@ -406,9 +406,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function setProtocolFees(PoolKey memory key) external {
         (uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) = _fetchProtocolFees(key);
-        PoolId poolId = key.toId();
-        pools[poolId].setProtocolFees(newProtocolSwapFee, newProtocolWithdrawFee);
-        emit ProtocolFeeUpdated(poolId, newProtocolSwapFee, newProtocolWithdrawFee);
+        PoolId id = key.toId();
+        pools[id].setProtocolFees(newProtocolSwapFee, newProtocolWithdrawFee);
+        emit ProtocolFeeUpdated(id, newProtocolSwapFee, newProtocolWithdrawFee);
     }
 
     function _fetchProtocolFees(PoolKey memory key)
@@ -448,9 +448,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function setHookFees(PoolKey memory key) external {
         (uint8 newHookSwapFee, uint8 newHookWithdrawFee) = _fetchHookFees(key);
-        PoolId poolId = key.toId();
-        pools[poolId].setHookFees(newHookSwapFee, newHookWithdrawFee);
-        emit HookFeeUpdated(poolId, newHookSwapFee, newHookWithdrawFee);
+        PoolId id = key.toId();
+        pools[id].setHookFees(newHookSwapFee, newHookWithdrawFee);
+        emit HookFeeUpdated(id, newHookSwapFee, newHookWithdrawFee);
     }
 
     /// @notice There is no cap on the hook fee, but it is specified as a percentage taken on the amount after the protocol fee is applied, if there is a protocol fee.

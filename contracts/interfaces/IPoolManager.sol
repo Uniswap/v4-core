@@ -34,14 +34,14 @@ interface IPoolManager is IERC1155 {
     error TickSpacingTooSmall();
 
     /// @notice Emitted when a new pool is initialized
-    /// @param poolId The abi encoded hash of the pool key struct for the new pool
+    /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
     /// @param currency1 The second currency of the pool by address sort order
     /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     event Initialize(
-        PoolId indexed poolId,
+        PoolId indexed id,
         Currency indexed currency0,
         Currency indexed currency1,
         uint24 fee,
@@ -50,17 +50,17 @@ interface IPoolManager is IERC1155 {
     );
 
     /// @notice Emitted when a liquidity position is modified
-    /// @param poolId The abi encoded hash of the pool key struct for the pool that was modified
+    /// @param id The abi encoded hash of the pool key struct for the pool that was modified
     /// @param sender The address that modified the pool
     /// @param tickLower The lower tick of the position
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
     event ModifyPosition(
-        PoolId indexed poolId, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
+        PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
     );
 
     /// @notice Emitted for swaps between currency0 and currency1
-    /// @param poolId The abi encoded hash of the pool key struct for the pool that was modified
+    /// @param id The abi encoded hash of the pool key struct for the pool that was modified
     /// @param sender The address that initiated the swap call, and that received the callback
     /// @param amount0 The delta of the currency0 balance of the pool
     /// @param amount1 The delta of the currency1 balance of the pool
@@ -68,7 +68,7 @@ interface IPoolManager is IERC1155 {
     /// @param liquidity The liquidity of the pool after the swap
     /// @param tick The log base 1.0001 of the price of the pool after the swap
     event Swap(
-        PoolId indexed poolId,
+        PoolId indexed id,
         address indexed sender,
         int128 amount0,
         int128 amount1,
@@ -78,11 +78,11 @@ interface IPoolManager is IERC1155 {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(PoolId indexed poolId, uint8 protocolSwapFee, uint8 protocolWithdrawFee);
+    event ProtocolFeeUpdated(PoolId indexed id, uint8 protocolSwapFee, uint8 protocolWithdrawFee);
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
-    event HookFeeUpdated(PoolId indexed poolId, uint8 hookSwapFee, uint8 hookWithdrawFee);
+    event HookFeeUpdated(PoolId indexed id, uint8 hookSwapFee, uint8 hookWithdrawFee);
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
