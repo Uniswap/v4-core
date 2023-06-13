@@ -22,7 +22,7 @@ contract Owned {
     }
 
     function setOwner(address _owner) external onlyOwner {
-        emit OwnerChanged(owner, _owner);
+        emit OwnerChanged(msg.sender, _owner);
         owner = _owner;
     }
 }
