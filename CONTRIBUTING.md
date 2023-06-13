@@ -1,4 +1,4 @@
-# Contribution Guidelines 
+# Contribution Guidelines
 
 Thanks for your interest in contributing to v4 of the Uniswap Protocol! The contracts in this repo are in early stages - we are releasing the draft code now so that v4 can be built in public, with open feedback and meaningful community contribution. We expect this will be a months-long process, and we appreciate any kind of contribution, no matter how small.
 
@@ -32,6 +32,7 @@ Finally, before opening a pull request please do the following:
 - Run the tests and snapshots. Commands are outlined in the [tests](#tests) section.
 - Document any new functions, structs, or interfaces following the natspec standard.
 - Add tests! For smaller contributions, they should be tested with unit tests, and fuzz tests where possible. For bigger contributions, they should be tested with integration tests and invariant tests where possible.
+- Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) 
 
 ## Standards
 
