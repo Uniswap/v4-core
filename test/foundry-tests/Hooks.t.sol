@@ -331,7 +331,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testValidateHookAddressBeforeInitializeAfterModify(uint152 addr) public {
         uint160 preAddr = uint160(uint256(addr));
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
+        IHooks hookAddr =
+            IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
