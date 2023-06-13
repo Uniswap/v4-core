@@ -140,7 +140,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function locksLength() external view returns (uint256) {
+    function locksLength() public view returns (uint256) {
         return locks.length;
     }
 
@@ -179,7 +179,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
             // only enforce that deltas are 0 when the outermost lock frame is expiring
             if (lockIndex == 0) {
-                for (uint256 i; i < locks.length; i++) {
+                uint256 length = locksLength();
+                for (uint256 i; i < length; i++) {
                     address locker = locks[i].locker;
                     if (lockStates[locker].nonzeroDeltaCount != 0) revert CurrencyNotSettled(locker);
                 }
