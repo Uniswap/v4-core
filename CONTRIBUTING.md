@@ -14,7 +14,7 @@ There are many ways to contribute, but here are a few if you want a place to sta
 
 ## Opening an Issue
 
-When opening an [issue](https://github.com/Uniswap/v4-core/issues/new/choose), choose a template to start from: Bug Report or Feature Improvement. For bug reports, you should be able to reproduce the bug through tests or proof of concept integrations. For feature improvements, please title it with a concise problem statement and check that a similar request is not already open or already in progress. Not all issues may be deemed worth resolving, so please follow through with responding to any questions or comments that others may have regarding the issue.
+When opening an [issue](https://github.com/Uniswap/v4-core/issues/new/choose), choose a template to start from: Bug Report or Feature Improvement. For bug reports, you should be able to reproduce the bug through tests or proof of concept implementations. For feature improvements, please title it with a concise problem statement and check that a similar request is not already open or already in progress. Not all issues may be deemed worth resolving, so please follow through with responding to any questions or comments that others may have regarding the issue.
 
 Feel free to tag the issue as a “good first issue” for any clean-up related issues, or small scoped changes to help encourage pull requests from first time contributors!
 
@@ -45,7 +45,7 @@ All contributions must follow the below standards. Maintainers will close out PR
 
 ## Tests
 
-This repo currently uses hardhat and forge tests.* Please run both test suites before opening a PR.
+This repo currently uses hardhat and forge tests. Please run both test suites before opening a PR.
 
 `yarn snapshots` to update the hardhat gas snapshots
 
