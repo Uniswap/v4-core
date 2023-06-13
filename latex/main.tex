@@ -115,7 +115,7 @@
 
 While concentrated liquidity and fee tiers increased flexibility for liquidity providers and allowed for new strategies to be implemented, \textsc{Uniswap v3} was not flexible enough to support new functionalities invented as AMMs and markets have evolved.
 
-Some features, like the price oracle originally introduced in \textsc{Uniswap v2}, allowed integrators to utilize decentralized onchain pricing data, at the expense of increased gas costs for swappers. Other ideas for enhancements, including time-weighted average price orders (TWAP) through a time-weighted average market maker (TWAMM) \cite{White2021}, volatility oracles, limit orders, or dynamic fees, would have required reimplementations of the core protocol, and could not be added to \textsc{Uniswap v3} by third-party developers.
+Some features, like the price oracle originally introduced in \textsc{Uniswap v2}, allowed integrators to utilize decentralized onchain pricing data, at the expense of increased gas costs for swappers and without customizeability for integrators. Other ideas for enhancements, including time-weighted average price orders (TWAP) through a time-weighted average market maker (TWAMM) \cite{White2021}, volatility oracles, limit orders, or dynamic fees, would have required reimplementations of the core protocol, and could not be added to \textsc{Uniswap v3} by third-party developers.
 
 Additionally, in previous versions of \textsc{Uniswap}, deployment of new pools involves deploying a new contract—where cost scales with the size of the bytecode—and trades with multiple \textsc{Uniswap} pools involve transfers and redundant state updates across multiple contracts. And since \textsc{Uniswap v2}, \textsc{Uniswap} has required ETH to be wrapped into an ERC-20, rather than supporting native ETH. These come with gas costs.
 
@@ -240,13 +240,13 @@ The address of the hook contract determines which of these hook callbacks are ex
 
 \textsc{Uniswap v4} allows fees to be taken on both swapping and withdrawing liquidity. 
 
-Swap fees can be either static, or dynamically managed by a hook contract. The hook contract can also choose to allocate a percentage of the swap fees to itself. Withdraw fees cannot be set natively in the pool. To set a withdrawal fee, pool creators must set a hook contract to manage that fee, and the collected withdrawal fees go to the hook contract. Fees that accrue to hook contracts can be allocated arbitrarily by the hook’s code, including to liquidity providers, swappers, hook creators, or any other party. 
+Swap fees can be either static, or dynamically managed by a hook contract. The hook contract can also choose to allocate a percentage of the swap fees to itself. Withdrawal fees cannot be set natively in the pool. To set a withdrawal fee, pool creators must set a hook contract to manage that fee, and the collected withdrawal fees go to the hook contract. Fees that accrue to hook contracts can be allocated arbitrarily by the hook’s code, including to liquidity providers, swappers, hook creators, or any other party. 
 
 The capabilities of the hook are limited by immutable flags chosen when the pool is created. The fee settings a pool creator can choose are:
 \begin{itemize}
     \item Whether a pool has a static fee (and what that fee is) or dynamic fees
     \item Permission for a hook to take a percentage of swap fees 
-    \item Permission for a hook to take withdraw fees
+    \item Permission for a hook to take withdrawal fees
 \end{itemize}
 
 Governance also can take a capped percentage of swap or withdrawal fees, as discussed below in the Governance section. 
@@ -255,7 +255,7 @@ Governance also can take a capped percentage of swap or withdrawal fees, as disc
 
 Previous versions of the \textsc{Uniswap Protocol} use the factory/pool pattern, where the factory creates separate contracts for new token pairs. \textsc{Uniswap v4} uses a \emph{singleton} design pattern where all pools are managed by a single contract, making pool deployment ~99\% cheaper. 
 
-The singleton design complements another architectural change in \textsc{v4}: \emph{flash accounting}. In previous versions of the \textsc{Uniswap Protocol}, each operation (such as swapping or adding liquidity to a pool) ended by transferring tokens. In \textsc{v4}, each operation updates an internal net balance, known as a \verb|delta|, only making external transfers at the end of the lock. The new \verb|take()| and  \verb|settle()| functions can be used to borrow or deposit funds to the pool, respectively. By requiring that no tokens are owed to the pool or to the caller by the end of the call, the pool's solvency is enforced. 
+The singleton design complements another architectural change in \textsc{v4}: \emph{flash accounting}. In previous versions of the \textsc{Uniswap Protocol}, each operation (such as swapping or adding liquidity to a pool) ended by transferring tokens. In \textsc{v4}, each operation updates an internal net balance, known as a \verb|delta|, only making external transfers at the end of the lock. The new \verb|take()| and  \verb|settle()| functions can be used to borrow or deposit funds to the pool, respectively. By requiring that no tokens are owed to the pool manager or to the caller by the end of the call, the pool's solvency is enforced. 
 
 Flash accounting simplifies complex pool operations, such as atomic swapping and adding. When combined with the singleton model, it also simplifies multi-hop trades.
 
@@ -268,7 +268,7 @@ Together, singleton and flash accounting enable more efficient routing across mu
 
 \textsc{Uniswap v4} is bringing back native ETH in trading pairs. While \textsc{Uniswap v1} was strictly ETH paired against ERC-20 tokens, native ETH pairs were removed in \textsc{Uniswap v2} due to implementation complexity and concerns of liquidity fragmentation across WETH and ETH pairs. Singleton and flash accounting mitigate these problems, so \textsc{Uniswap v4} allows for both WETH and ETH pairs.
 
-Native ETH transfers are about half the gas cost of ERC-20 transfers (21k gas for ETH and around 40k gas for ERC-20s). Currently \textsc{Uniswap v2} and \textsc{v3} require the vast majority of users to wrap (unwrap) their ETH to WETH before (after) trading on the Uniswap Protocol, requiring extra gas. 
+Native ETH transfers are about half the gas cost of ERC-20 transfers (21k gas for ETH and around 40k gas for ERC-20s). Currently \textsc{Uniswap v2} and \textsc{v3} require the vast majority of users to wrap (unwrap) their ETH to (from) WETH before (after) trading on the Uniswap Protocol, requiring extra gas. 
 
 \section{Other Notable Features} 
 \label{other}
@@ -277,7 +277,7 @@ Native ETH transfers are about half the gas cost of ERC-20 transfers (21k gas fo
 \textsc{Uniswap v4} will support the minting/burning of singleton-implemented ERC-1155 tokens for additional token accounting. Users can now keep tokens within the singleton and avoid ERC-20 transfers to and from the contract. This will be especially valuable for users and hooks who continually use the same tokens over multiple blocks or transactions, like frequent swappers or liquidity providers. 
 
 \subsection{Governance updates} 
-\textsc{Uniswap v4} has two separate governance fee mechanisms, swap fees and withdrawal fees, each with different mechanisms. First, similar to \textsc{Uniswap v3}, governance can elect to take  up to a capped percentage of the swap fee on a particular pool. With \textsc{v4}, if hooks initially choose to turn on withdrawal fees for a pool, Uniswap Governance also has the ability to take up to a capped percentage of that withdrawal fee.
+\textsc{Uniswap v4} has two separate governance fee mechanisms, swap fees and withdrawal fees, each with different mechanisms. First, similar to \textsc{Uniswap v3}, governance can elect to take  up to a capped percentage of the swap fee on a particular pool. With \textsc{v4}, if hooks initially choose to turn on withdrawal fees for a pool, governance also has the ability to take up to a capped percentage of that withdrawal fee.
 Unlike in \textsc{Uniswap v3}, governance does not control the permissible fee tiers or tick spacings.
 
 \subsection{Gas reductions}
