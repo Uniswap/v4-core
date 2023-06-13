@@ -805,7 +805,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
 
         snapStart("simple swap");
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
         snapEnd();
     }
 
@@ -831,7 +831,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
 
         snapStart("swap with native");
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
         snapEnd();
     }
 
@@ -863,7 +863,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
         snapStart("swap with hooks");
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
         snapEnd();
     }
 
