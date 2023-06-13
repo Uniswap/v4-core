@@ -77,9 +77,11 @@ interface IPoolManager is IERC1155 {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolFee);
+    event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolSwapFee, uint8 protocolWithdrawFee);
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
+
+    event HookFeeUpdated(bytes32 indexed poolKey, uint8 hookSwapFee, uint8 hookWithdrawFee);
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -87,7 +89,7 @@ interface IPoolManager is IERC1155 {
         Currency currency0;
         /// @notice The higher currency of the pool, sorted numerically
         Currency currency1;
-        /// @notice The fee for the pool
+        /// @notice The pool swap fee, capped at 1_000_000. The upper 4 bits determine if the hook sets any fees.
         uint24 fee;
         /// @notice Ticks that involve positions must be a multiple of tick spacing
         int24 tickSpacing;
@@ -101,8 +103,21 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
+    /// @notice Returns the minimum denominator for the protocol fee, which restricts it to a maximum of 25%
+    function MIN_PROTOCOL_FEE_DENOMINATOR() external view returns (uint8);
+
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(bytes32 id) external view returns (uint160 sqrtPriceX96, int24 tick, uint8 protocolFee);
+    function getSlot0(bytes32 id)
+        external
+        view
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint8 protocolSwapFee,
+            uint8 protocolWithdrawFee,
+            uint8 hookSwapFee,
+            uint8 hookWithdrawFee
+        );
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
@@ -176,8 +191,12 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
 
-    /// @notice sets the protocol fee for the given pool
-    function setPoolProtocolFee(PoolKey memory key) external;
+    /// @notice Sets the protocol's swap and withdrawal fees for the given pool
+    /// Protocol fees are always a portion of a fee that is owed. If that underlying fee is 0, no protocol fees will accrue even if it is set to > 0.
+    function setProtocolFees(PoolKey memory key) external;
+
+    /// @notice Sets the hook's swap and withdrawal fees for the given pool
+    function setHookFees(PoolKey memory key) external;
 
     /// @notice Called by external contracts to access granular pool state
     /// @param slot Key of slot to sload

@@ -8,8 +8,11 @@ import {IHooks} from "../../../contracts/interfaces/IHooks.sol";
 import {IPoolManager} from "../../../contracts/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../../contracts/PoolManager.sol";
 import {PoolId} from "../../../contracts/libraries/PoolId.sol";
+import {Fees} from "../../../contracts/libraries/Fees.sol";
 
 contract Deployers {
+    using Fees for uint24;
+
     uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
     uint160 constant SQRT_RATIO_1_2 = 56022770974786139918731938227;
     uint160 constant SQRT_RATIO_1_4 = 39614081257132168796771975168;
@@ -31,7 +34,7 @@ contract Deployers {
             Currency.wrap(address(tokens[0])),
             Currency.wrap(address(tokens[1])),
             fee,
-            fee == Hooks.DYNAMIC_FEE ? int24(60) : int24(fee / 100 * 2),
+            fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2),
             hooks
         );
         id = PoolId.toId(key);

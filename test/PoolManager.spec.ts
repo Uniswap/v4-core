@@ -269,24 +269,24 @@ describe('PoolManager', () => {
 
       await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
-      var protocolFee: number
+      var protocolSwapFee: number
       ;({
-        slot0: { protocolFee },
+        slot0: { protocolSwapFee },
       } = await manager.pools(getPoolId(poolKey)))
-      expect(protocolFee).to.eq(0)
+      expect(protocolSwapFee).to.eq(0)
 
       await manager.setProtocolFeeController(feeControllerTest.address)
       expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
       const poolProtocolFee = 4
-      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+      await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
-      await expect(manager.setPoolProtocolFee(poolKey))
+      await expect(manager.setProtocolFees(poolKey))
         .to.emit(manager, 'ProtocolFeeUpdated')
-        .withArgs(poolID, poolProtocolFee)
+        .withArgs(poolID, poolProtocolFee, 0)
       ;({
-        slot0: { protocolFee },
+        slot0: { protocolSwapFee },
       } = await manager.pools(poolID))
-      expect(protocolFee).to.eq(poolProtocolFee)
+      expect(protocolSwapFee).to.eq(poolProtocolFee)
     })
   })
 
@@ -305,14 +305,14 @@ describe('PoolManager', () => {
         expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
         const poolProtocolFee = 68 // 0x 0100 0100
         const poolID = getPoolId(poolKey)
-        await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+        await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
         await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
         const {
-          slot0: { protocolFee },
+          slot0: { protocolSwapFee },
         } = await manager.pools(getPoolId(poolKey))
-        expect(protocolFee).to.eq(poolProtocolFee)
+        expect(protocolSwapFee).to.eq(poolProtocolFee)
 
         // add liquidity around the initial price
         await modifyPositionTest.modifyPosition(poolKey, {
@@ -421,14 +421,14 @@ describe('PoolManager', () => {
         expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
         const poolProtocolFee = 68 // 0x 0100 0100
         const poolID = getPoolId(poolKey)
-        await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+        await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
         await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
         const {
-          slot0: { protocolFee },
+          slot0: { protocolSwapFee },
         } = await manager.pools(getPoolId(poolKey))
-        expect(protocolFee).to.eq(poolProtocolFee)
+        expect(protocolSwapFee).to.eq(poolProtocolFee)
 
         // add liquidity around the initial price
         await modifyPositionTest.modifyPosition(

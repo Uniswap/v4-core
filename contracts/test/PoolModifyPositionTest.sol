@@ -64,6 +64,13 @@ contract PoolModifyPositionTest is ILockCallback {
             }
         }
 
+        if (delta.amount0() < 0) {
+            manager.take(data.key.currency0, data.sender, uint128(-delta.amount0()));
+        }
+        if (delta.amount1() < 0) {
+            manager.take(data.key.currency1, data.sender, uint128(-delta.amount1()));
+        }
+
         return abi.encode(delta);
     }
 }

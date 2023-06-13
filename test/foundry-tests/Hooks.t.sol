@@ -17,6 +17,7 @@ import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTes
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
+import {Fees} from "../../contracts/libraries/Fees.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
@@ -39,7 +40,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testInitializeSucceedsWithHook() public {
         (PoolManager _manager,, bytes32 id) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
-        (uint160 sqrtPriceX96,,) = _manager.getSlot0(id);
+        (uint160 sqrtPriceX96,,,,,) = _manager.getSlot0(id);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
     }
 
@@ -142,8 +143,10 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     // hook validation
-    function testValidateHookAddressNoHooks(uint152 preAddr) public {
-        IHooks hookAddr = IHooks(address(uint160(preAddr)));
+    function testValidateHookAddressNoHooks(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
+
+        IHooks hookAddr = IHooks(address(preAddr));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -167,7 +170,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressBeforeInitialize(uint152 preAddr) public {
+    function testValidateHookAddressBeforeInitialize(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
+
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -192,7 +197,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressAfterInitialize(uint152 preAddr) public {
+    function testValidateHookAddressAfterInitialize(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
+
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_INITIALIZE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -217,7 +224,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressBeforeAndAfterInitialize(uint152 preAddr) public {
+    function testValidateHookAddressBeforeAndAfterInitialize(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -242,7 +250,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressBeforeModify(uint152 preAddr) public {
+    function testValidateHookAddressBeforeModify(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -267,7 +276,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressAfterModify(uint152 preAddr) public {
+    function testValidateHookAddressAfterModify(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -292,7 +302,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressBeforeAndAfterModify(uint152 preAddr) public {
+    function testValidateHookAddressBeforeAndAfterModify(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr =
             IHooks(address(uint160(preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
@@ -318,7 +329,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressBeforeSwap(uint152 preAddr) public {
+    function testValidateHookAddressBeforeSwap(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -343,7 +355,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressAfterSwap(uint152 preAddr) public {
+    function testValidateHookAddressAfterSwap(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_SWAP_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -368,7 +381,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressBeforeAndAfterSwap(uint152 preAddr) public {
+    function testValidateHookAddressBeforeAndAfterSwap(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -393,7 +407,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressBeforeDonate(uint152 preAddr) public {
+    function testValidateHookAddressBeforeDonate(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -418,7 +433,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressAfterDonate(uint152 preAddr) public {
+    function testValidateHookAddressAfterDonate(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_DONATE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -443,7 +459,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressBeforeAndAfterDonate(uint152 preAddr) public {
+    function testValidateHookAddressBeforeAndAfterDonate(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_DONATE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -468,7 +485,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressAllHooks(uint152 preAddr) public {
+    function testValidateHookAddressAllHooks(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr) | (0xfF << 152)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -493,7 +511,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressFailsAllHooks(uint152 preAddr, uint8 mask) public {
+    function testValidateHookAddressFailsAllHooks(uint152 addr, uint8 mask) public {
+        uint160 preAddr = uint160(uint256(addr));
         vm.assume(mask != 0xff);
         IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 152)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
@@ -512,7 +531,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
     }
 
-    function testValidateHookAddressFailsNoHooks(uint152 preAddr, uint8 mask) public {
+    function testValidateHookAddressFailsNoHooks(uint152 addr, uint8 mask) public {
+        uint160 preAddr = uint160(uint256(addr));
         vm.assume(mask != 0);
         IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 152)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
@@ -553,14 +573,19 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testIsValidIfDynamicFee() public {
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), Hooks.DYNAMIC_FEE));
+        assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), Fees.DYNAMIC_FEE_FLAG));
+        assertTrue(
+            Hooks.isValidHookAddress(
+                IHooks(0x0000000000000000000000000000000000000001), Fees.DYNAMIC_FEE_FLAG | uint24(3000)
+            )
+        );
         assertTrue(Hooks.isValidHookAddress(IHooks(0x8000000000000000000000000000000000000000), 3000));
     }
 
     function testInvalidIfNoFlags() public {
         assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), 3000));
-        assertFalse(Hooks.isValidHookAddress(IHooks(0x0010000000000000000000000000000000000001), 3000));
-        assertFalse(Hooks.isValidHookAddress(IHooks(0x009840A85D5af5BF1D1762f925BDaddC4201f984), 3000));
+        assertFalse(Hooks.isValidHookAddress(IHooks(0x0040000000000000000000000000000000000001), 3000));
+        assertFalse(Hooks.isValidHookAddress(IHooks(0x007840A85d5aF5BF1D1762f925bdADDC4201F984), 3000));
     }
 
     function addLiquidity(int24 tickLower, int24 tickUpper, int256 amount) internal {

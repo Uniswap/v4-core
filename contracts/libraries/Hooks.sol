@@ -3,13 +3,14 @@ pragma solidity ^0.8.19;
 
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {Fees} from "../libraries/Fees.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
 /// has leading bits '1001' which would cause the 'before initialize' and 'after swap' hooks to be used.
 library Hooks {
-    uint24 internal constant DYNAMIC_FEE = type(uint24).max;
+    using Fees for uint24;
 
     uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
     uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
@@ -58,9 +59,13 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
+        // If there is no hook contract set, then fee cannot be dynamic and there cannot be a hook fee on swap or withdrawal.
         return address(hook) == address(0)
-            ? fee != DYNAMIC_FEE // having no hooks is fine, but the fee must not be dynamic
-            : (uint160(address(hook)) >= AFTER_DONATE_FLAG || fee == DYNAMIC_FEE);
+            ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
+            : (
+                uint160(address(hook)) >= AFTER_DONATE_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
+                    || fee.hasHookWithdrawFee()
+            );
     }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {

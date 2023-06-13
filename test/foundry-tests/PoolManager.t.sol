@@ -11,7 +11,6 @@ import {PoolManager} from "../../contracts/PoolManager.sol";
 import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
-import {PoolId} from "../../contracts/libraries/PoolId.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
@@ -19,17 +18,21 @@ import {Currency, CurrencyLibrary} from "../../contracts/libraries/CurrencyLibra
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
-import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
-import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
+import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
+import {PoolId} from "../../contracts/libraries/PoolId.sol";
+import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
+import {Fees} from "../../contracts/libraries/Fees.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
     using Pool for Pool.State;
+    using PoolId for IPoolManager.PoolKey;
+    using Fees for uint24;
 
     event LockAcquired(uint256 id);
     event Initialize(
@@ -63,8 +66,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     PoolModifyPositionTest modifyPositionRouter;
     PoolSwapTest swapRouter;
     PoolLockTest lockTest;
-    ProtocolFeeControllerTest feeTest;
-    PoolSwapTest swapTest;
+    ProtocolFeeControllerTest protocolFeeController;
 
     address ADDRESS_ZERO = address(0);
     address EMPTY_HOOKS = address(0xf000000000000000000000000000000000000000);
@@ -79,23 +81,20 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
 
         lockTest = new PoolLockTest(manager);
-        feeTest = new ProtocolFeeControllerTest();
-        swapTest = new PoolSwapTest(manager);
+        swapRouter = new PoolSwapTest(manager);
+        protocolFeeController = new ProtocolFeeControllerTest();
 
-        MockERC20(Currency.unwrap(currency0)).mint(address(this), 3 ether);
-        MockERC20(Currency.unwrap(currency1)).mint(address(this), 3 ether);
-
-        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 2 ether);
-        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 2 ether);
-
-        MockERC20(Currency.unwrap(currency0)).approve(address(swapTest), 1 ether);
-        MockERC20(Currency.unwrap(currency0)).approve(address(swapTest), 1 ether);
-
-        MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ether);
-        MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ether);
 
         MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), 10 ether);
         MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), 10 ether);
+
+        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 10 ether);
+
+        MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ether);
     }
 
     function testPoolManagerInitialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) public {
@@ -106,7 +105,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // tested in Hooks.t.sol
         key.hooks = IHooks(address(0));
 
-        if (key.fee >= 1000000 && key.fee != Hooks.DYNAMIC_FEE) {
+        if (key.fee & Fees.STATIC_FEE_MASK >= 1000000) {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.FeeTooLarge.selector));
             manager.initialize(key, sqrtPriceX96);
         } else if (key.tickSpacing > manager.MAX_TICK_SPACING()) {
@@ -125,7 +124,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
             (Pool.Slot0 memory slot0,,,) = manager.pools(PoolId.toId(key));
             assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(slot0.protocolFee, 0);
+            assertEq(slot0.protocolSwapFee, 0);
         }
     }
 
@@ -148,7 +147,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(PoolId.toId(key));
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-        assertEq(slot0.protocolFee, 0);
+        assertEq(slot0.protocolSwapFee, 0);
         assertEq(slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
     }
 
@@ -338,8 +337,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
     function testPoolManagerFeeControllerSet() public {
         assertEq(address(manager.protocolFeeController()), address(0));
-        manager.setProtocolFeeController(feeTest);
-        assertEq(address(manager.protocolFeeController()), address(feeTest));
+        manager.setProtocolFeeController(protocolFeeController);
+        assertEq(address(manager.protocolFeeController()), address(protocolFeeController));
     }
 
     function testPoolManagerFetchFeeWhenController(uint160 sqrtPriceX96) public {
@@ -355,16 +354,16 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             tickSpacing: 60
         });
 
-        manager.setProtocolFeeController(feeTest);
+        manager.setProtocolFeeController(protocolFeeController);
 
         uint8 poolProtocolFee = 4;
-        feeTest.setFeeForPool(PoolId.toId(key), poolProtocolFee);
+        protocolFeeController.setSwapFeeForPool(PoolId.toId(key), poolProtocolFee);
 
         manager.initialize(key, sqrtPriceX96);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(PoolId.toId(key));
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-        assertEq(slot0.protocolFee, poolProtocolFee);
+        assertEq(slot0.protocolSwapFee, poolProtocolFee);
     }
 
     function testGasPoolManagerInitialize() public {
@@ -619,7 +618,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
         vm.expectRevert();
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
     }
 
     function testSwapSucceedsIfInitialized() public {
@@ -640,9 +639,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(key, SQRT_RATIO_1_1);
 
         vm.expectEmit(true, true, true, true);
-        emit Swap(PoolId.toId(key), address(swapTest), 0, 0, SQRT_RATIO_1_2, 0, -6932, 3000);
+        emit Swap(PoolId.toId(key), address(swapRouter), 0, 0, SQRT_RATIO_1_2, 0, -6932, 3000);
 
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
     }
 
     function testSwapSucceedsWithNativeTokensIfInitialized() public {
@@ -663,9 +662,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(key, SQRT_RATIO_1_1);
 
         vm.expectEmit(true, true, true, true);
-        emit Swap(PoolId.toId(key), address(swapTest), 0, 0, SQRT_RATIO_1_2, 0, -6932, 3000);
+        emit Swap(PoolId.toId(key), address(swapRouter), 0, 0, SQRT_RATIO_1_2, 0, -6932, 3000);
 
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
     }
 
     function testSwapSucceedsWithHooksIfInitialized() public {
@@ -694,13 +693,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.initialize(key, SQRT_RATIO_1_1);
 
-        BalanceDelta balanceDelta = swapTest.swap(key, params, testSettings);
+        BalanceDelta balanceDelta = swapRouter.swap(key, params, testSettings);
 
         bytes32 beforeSelector = MockHooks.beforeSwap.selector;
-        bytes memory beforeParams = abi.encode(address(swapTest), key, params);
+        bytes memory beforeParams = abi.encode(address(swapRouter), key, params);
 
         bytes32 afterSelector = MockHooks.afterSwap.selector;
-        bytes memory afterParams = abi.encode(address(swapTest), key, params, balanceDelta);
+        bytes memory afterParams = abi.encode(address(swapRouter), key, params, balanceDelta);
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
@@ -740,12 +739,12 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         // Fails at beforeModifyPosition hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        swapTest.swap(key, swapParams, testSettings);
+        swapRouter.swap(key, swapParams, testSettings);
 
         // Fail at afterModifyPosition hook.
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, mockHooks.beforeSwap.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        swapTest.swap(key, swapParams, testSettings);
+        swapRouter.swap(key, swapParams, testSettings);
     }
 
     function testSwapSucceedsWithCorrectSelectors() public {
@@ -779,9 +778,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, mockHooks.afterSwap.selector);
 
         vm.expectEmit(true, true, true, true);
-        emit Swap(PoolId.toId(key), address(swapTest), 0, 0, SQRT_RATIO_1_2, 0, -6932, 100);
+        emit Swap(PoolId.toId(key), address(swapRouter), 0, 0, SQRT_RATIO_1_2, 0, -6932, 100);
 
-        swapTest.swap(key, swapParams, testSettings);
+        swapRouter.swap(key, swapParams, testSettings);
     }
 
     function testGasSwap() public {
@@ -800,13 +799,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
         manager.initialize(key, SQRT_RATIO_1_1);
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
 
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
 
         snapStart("simple swap");
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
         snapEnd();
     }
 
@@ -826,13 +825,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
         manager.initialize(key, SQRT_RATIO_1_1);
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
 
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
 
         snapStart("swap with native");
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
         snapEnd();
     }
 
@@ -858,13 +857,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
         manager.initialize(key, SQRT_RATIO_1_1);
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
 
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
         snapStart("swap with hooks");
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
         snapEnd();
     }
 
@@ -890,8 +889,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         );
 
         vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapTest), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
-        swapTest.swap(key, params, testSettings);
+        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        swapRouter.swap(key, params, testSettings);
 
         uint256 erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
         assertEq(erc1155Balance, 98);
@@ -918,14 +917,14 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000000000000000000})
         );
         vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapTest), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
-        swapTest.swap(key, params, testSettings);
+        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        swapRouter.swap(key, params, testSettings);
 
         uint256 erc1155Balance = manager.balanceOf(address(this), uint256(uint160(Currency.unwrap(currency1))));
         assertEq(erc1155Balance, 98);
 
-        // give permission for swapTest to burn the 1155s
-        manager.setApprovalForAll(address(swapTest), true);
+        // give permission for swapRouter to burn the 1155s
+        manager.setApprovalForAll(address(swapRouter), true);
 
         // swap from currency1 to currency0 again, using 1155s as input tokens
         params = IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -25, sqrtPriceLimitX96: SQRT_RATIO_4_1});
@@ -934,7 +933,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         vm.expectEmit(true, true, true, true);
         emit TransferSingle(address(manager), address(manager), address(0), CurrencyLibrary.toId(currency1), 27);
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
 
         erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
         assertEq(erc1155Balance, 71);
@@ -961,12 +960,12 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000000000000000000})
         );
 
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
 
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
 
         snapStart("swap against liquidity");
-        swapTest.swap(key, params, testSettings);
+        swapRouter.swap(key, params, testSettings);
         snapEnd();
     }
 
@@ -990,12 +989,12 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             key, IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1 ether})
         );
 
-        swapTest.swap{value: 1 ether}(key, params, testSettings);
+        swapRouter.swap{value: 1 ether}(key, params, testSettings);
 
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
 
         snapStart("swap against liquidity with native token");
-        swapTest.swap{value: 1 ether}(key, params, testSettings);
+        swapRouter.swap{value: 1 ether}(key, params, testSettings);
         snapEnd();
     }
 
@@ -1178,7 +1177,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assembly {
             sqrtPriceX96Extsload := and(slot0Bytes, sub(shl(160, 1), 1))
         }
-        (uint160 sqrtPriceX96Slot0,,) = manager.getSlot0(poolId);
+        (uint160 sqrtPriceX96Slot0,,,,,) = manager.getSlot0(poolId);
 
         // assert that extsload loads the correct storage slot which matches the true slot0
         assertEq(sqrtPriceX96Extsload, sqrtPriceX96Slot0);
