@@ -117,8 +117,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         PoolId id = key.toId();
         (uint8 protocolSwapFee, uint8 protocolWithdrawFee) = _fetchProtocolFees(key);
         (uint8 hookSwapFee, uint8 hookWithdrawFee) = _fetchHookFees(key);
-        tick =
-            pools[id].initialize(sqrtPriceX96, protocolSwapFee, hookSwapFee, protocolWithdrawFee, hookWithdrawFee);
+        tick = pools[id].initialize(sqrtPriceX96, protocolSwapFee, hookSwapFee, protocolWithdrawFee, hookWithdrawFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
