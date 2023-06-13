@@ -6,17 +6,17 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IHookFeeManager} from "../interfaces/IHookFeeManager.sol";
-import {PoolId} from "../libraries/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "../libraries/PoolId.sol";
 
 contract MockHooks is IHooks, IHookFeeManager {
-    using PoolId for IPoolManager.PoolKey;
+    using PoolIdLibrary for IPoolManager.PoolKey;
     using Hooks for IHooks;
 
     mapping(bytes4 => bytes4) public returnValues;
 
-    mapping(bytes32 => uint8) public swapFees;
+    mapping(PoolId => uint8) public swapFees;
 
-    mapping(bytes32 => uint8) public withdrawFees;
+    mapping(PoolId => uint8) public withdrawFees;
 
     function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external view override returns (bytes4) {
         bytes4 selector = MockHooks.beforeInitialize.selector;

@@ -18,12 +18,12 @@ import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./libraries/Fees.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import {PoolId} from "./libraries/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "./libraries/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
-    using PoolId for PoolKey;
+    using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
@@ -40,7 +40,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    mapping(bytes32 poolId => Pool.State) public pools;
+    mapping(PoolId poolId => Pool.State) public pools;
 
     mapping(Currency currency => uint256) public override protocolFeesAccrued;
 
@@ -59,7 +59,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getSlot0(bytes32 poolId)
+    function getSlot0(PoolId poolId)
         external
         view
         override
@@ -85,12 +85,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(bytes32 poolId) external view override returns (uint128 liquidity) {
+    function getLiquidity(PoolId poolId) external view override returns (uint128 liquidity) {
         return pools[poolId].liquidity;
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(bytes32 poolId, address owner, int24 tickLower, int24 tickUpper)
+    function getLiquidity(PoolId poolId, address owner, int24 tickLower, int24 tickUpper)
         external
         view
         override
@@ -114,7 +114,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        bytes32 poolId = key.toId();
+        PoolId poolId = key.toId();
         (uint8 protocolSwapFee, uint8 protocolWithdrawFee) = _fetchProtocolFees(key);
         (uint8 hookSwapFee, uint8 hookWithdrawFee) = _fetchHookFees(key);
         tick =
@@ -221,7 +221,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        bytes32 poolId = key.toId();
+        PoolId poolId = key.toId();
         Pool.Fees memory fees;
         (delta, fees) = pools[poolId].modifyPosition(
             Pool.ModifyPositionParams({
@@ -286,7 +286,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint256 feeForProtocol;
         uint256 feeForHook;
         Pool.SwapState memory state;
-        bytes32 poolId = key.toId();
+        PoolId poolId = key.toId();
         (delta, feeForProtocol, feeForHook, state) = pools[poolId].swap(
             Pool.SwapParams({
                 fee: totalSwapFee,
@@ -406,7 +406,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function setProtocolFees(PoolKey memory key) external {
         (uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) = _fetchProtocolFees(key);
-        bytes32 poolId = key.toId();
+        PoolId poolId = key.toId();
         pools[poolId].setProtocolFees(newProtocolSwapFee, newProtocolWithdrawFee);
         emit ProtocolFeeUpdated(poolId, newProtocolSwapFee, newProtocolWithdrawFee);
     }
@@ -448,7 +448,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     function setHookFees(PoolKey memory key) external {
         (uint8 newHookSwapFee, uint8 newHookWithdrawFee) = _fetchHookFees(key);
-        bytes32 poolId = key.toId();
+        PoolId poolId = key.toId();
         pools[poolId].setHookFees(newHookSwapFee, newHookWithdrawFee);
         emit HookFeeUpdated(poolId, newHookSwapFee, newHookWithdrawFee);
     }
