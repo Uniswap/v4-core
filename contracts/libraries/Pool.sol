@@ -59,17 +59,22 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
+    /// The uint8 fees variables are represented as integer denominators (1/x)
+    /// For swap fees, the upper 4 bits are the fee for trading 1 for 0, and the lower 4 are for 0 for 1 and are taken as a percentage of the lp swap fee.
+    /// For withdraw fees the upper 4 bits are the fee on amount1, and the lower 4 are for amount0 and are taken as a percentage of the principle amount of the underlying position.
+    /// swapFee:     1->0  | 0->1
+    /// withdrawFee: fee1  | fee0
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
         // the current tick
         int24 tick;
-        // the current protocol fee as a percentage of the swap fee taken on withdrawal
-        // represented as an integer denominator (1/x)%
-        // First 4 bits are the fee for trading 1 for 0, and the latter 4 for 0 for 1
-        uint8 protocolFee;
+        uint8 protocolSwapFee;
+        uint8 protocolWithdrawFee;
+        uint8 hookSwapFee;
+        uint8 hookWithdrawFee;
     }
-    // 64 bits left!
+    // 40 bits left!
 
     // info stored for each initialized individual tick
     struct TickInfo {
@@ -101,18 +106,40 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint8 protocolFee) internal returns (int24 tick) {
+    function initialize(
+        State storage self,
+        uint160 sqrtPriceX96,
+        uint8 protocolSwapFee,
+        uint8 hookSwapFee,
+        uint8 protocolWithdrawFee,
+        uint8 hookWithdrawFee
+    ) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee});
+        self.slot0 = Slot0({
+            sqrtPriceX96: sqrtPriceX96,
+            tick: tick,
+            protocolSwapFee: protocolSwapFee,
+            hookSwapFee: hookSwapFee,
+            protocolWithdrawFee: protocolWithdrawFee,
+            hookWithdrawFee: hookWithdrawFee
+        });
     }
 
-    function setProtocolFee(State storage self, uint8 newProtocolFee) internal {
+    function setProtocolFees(State storage self, uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) internal {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
-        self.slot0.protocolFee = newProtocolFee;
+        self.slot0.protocolSwapFee = newProtocolSwapFee;
+        self.slot0.protocolWithdrawFee = newProtocolWithdrawFee;
+    }
+
+    function setHookFees(State storage self, uint8 newHookSwapFee, uint8 newHookWithdrawFee) internal {
+        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
+
+        self.slot0.hookSwapFee = newHookSwapFee;
+        self.slot0.hookWithdrawFee = newHookWithdrawFee;
     }
 
     struct ModifyPositionParams {
@@ -136,20 +163,30 @@ library Pool {
         uint256 feeGrowthInside1X128;
     }
 
+    struct Fees {
+        uint256 feeForProtocol0;
+        uint256 feeForProtocol1;
+        uint256 feeForHook0;
+        uint256 feeForHook1;
+    }
+
     /// @dev Effect changes to a position in a pool
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
     function modifyPosition(State storage self, ModifyPositionParams memory params)
         internal
-        returns (BalanceDelta result)
+        returns (BalanceDelta result, Fees memory fees)
     {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
         checkTicks(params.tickLower, params.tickUpper);
 
+        uint256 feesOwed0;
+        uint256 feesOwed1;
         {
             ModifyPositionState memory state;
             // if we need to update the ticks, do it
+
             if (params.liquidityDelta != 0) {
                 (state.flippedLower, state.liquidityGrossAfterLower) =
                     updateTick(self, params.tickLower, params.liquidityDelta, false);
@@ -177,10 +214,9 @@ library Pool {
             (state.feeGrowthInside0X128, state.feeGrowthInside1X128) =
                 getFeeGrowthInside(self, params.tickLower, params.tickUpper);
 
-            (uint256 feesOwed0, uint256 feesOwed1) = self.positions.get(
-                params.owner, params.tickLower, params.tickUpper
-            ).update(params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
-            result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
+            (feesOwed0, feesOwed1) = self.positions.get(params.owner, params.tickLower, params.tickUpper).update(
+                params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128
+            );
 
             // clear any tick data that is no longer needed
             if (params.liquidityDelta < 0) {
@@ -234,6 +270,54 @@ library Pool {
                     );
             }
         }
+
+        if (params.liquidityDelta < 0 && self.slot0.hookWithdrawFee > 0) {
+            // Only take fees if the hook withdraw fee is set and the liquidity is being removed.
+            fees = _calculateExternalFees(self, result);
+
+            // Amounts are balances owed to the pool. When negative, they represent the balance a user can take.
+            // Since protocol and hook fees are extracted on the balance a user can take
+            // they are owed (added) back to the pool where they are kept to be collected by the fee recipients.
+            result = result
+                + toBalanceDelta(
+                    fees.feeForHook0.toInt128() + fees.feeForProtocol0.toInt128(),
+                    fees.feeForHook1.toInt128() + fees.feeForProtocol1.toInt128()
+                );
+        }
+
+        // Fees earned from LPing are removed from the pool balance.
+        result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
+    }
+
+    function _calculateExternalFees(State storage self, BalanceDelta result) internal view returns (Fees memory fees) {
+        int128 amount0 = result.amount0();
+        int128 amount1 = result.amount1();
+
+        uint8 hookFee0 = self.slot0.hookWithdrawFee % 16;
+        uint8 hookFee1 = self.slot0.hookWithdrawFee >> 4;
+
+        uint8 protocolFee0 = self.slot0.protocolWithdrawFee % 16;
+        uint8 protocolFee1 = self.slot0.protocolWithdrawFee >> 4;
+
+        if (amount0 < 0 && hookFee0 > 0) {
+            fees.feeForHook0 = uint128(-amount0) / hookFee0;
+        }
+        if (amount1 < 0 && hookFee1 > 0) {
+            fees.feeForHook1 = uint128(-amount1) / hookFee1;
+        }
+
+        // A protocol fee is only applied if the hook fee is applied.
+        if (protocolFee0 > 0 && fees.feeForHook0 > 0) {
+            fees.feeForProtocol0 = fees.feeForHook0 / protocolFee0;
+            fees.feeForHook0 -= fees.feeForProtocol0;
+        }
+
+        if (protocolFee1 > 0 && fees.feeForHook1 > 0) {
+            fees.feeForProtocol1 = fees.feeForHook1 / protocolFee1;
+            fees.feeForHook1 -= fees.feeForProtocol1;
+        }
+
+        return fees;
     }
 
     struct SwapCache {
@@ -241,6 +325,8 @@ library Pool {
         uint128 liquidityStart;
         // the protocol fee for the input token
         uint8 protocolFee;
+        // the hook fee for the input token
+        uint8 hookFee;
     }
 
     // the top level state of the swap, the results of which are recorded in storage at the end
@@ -287,7 +373,7 @@ library Pool {
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 feeForProtocol, SwapState memory state)
+        returns (BalanceDelta result, uint256 feeForProtocol, uint256 feeForHook, SwapState memory state)
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
@@ -311,7 +397,8 @@ library Pool {
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
-            protocolFee: params.zeroForOne ? (slot0Start.protocolFee % 16) : (slot0Start.protocolFee >> 4)
+            protocolFee: params.zeroForOne ? (slot0Start.protocolSwapFee % 16) : (slot0Start.protocolSwapFee >> 4),
+            hookFee: params.zeroForOne ? (slot0Start.hookSwapFee % 16) : (slot0Start.hookSwapFee >> 4)
         });
 
         bool exactInput = params.amountSpecified > 0;
@@ -378,6 +465,15 @@ library Pool {
                 unchecked {
                     step.feeAmount -= delta;
                     feeForProtocol += delta;
+                }
+            }
+
+            if (cache.hookFee > 0) {
+                // step.feeAmount has already been updated to account for the protocol fee
+                uint256 delta = step.feeAmount / cache.hookFee;
+                unchecked {
+                    step.feeAmount -= delta;
+                    feeForHook += delta;
                 }
             }
 
