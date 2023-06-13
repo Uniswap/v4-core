@@ -2,7 +2,7 @@
 
 Thanks for your interest in contributing to v4 of the Uniswap Protocol! The contracts in this repo are in early stages - we are releasing the draft code now so that v4 can be built in public, with open feedback and meaningful community contribution. We expect this will be a months-long process, and we appreciate any kind of contribution, no matter how small.
 
-If you need to get in contact with the repository maintainers, please reach out in our [Discord](https://discord.com/invite/FCfyBSbCU5) .
+If you need to get in contact with the repository maintainers, please reach out in our [Discord](https://discord.com/invite/FCfyBSbCU5).
 
 ## Types of Contributing
 
