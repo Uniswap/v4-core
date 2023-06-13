@@ -20,7 +20,7 @@ body:
           description: Provide a clear and concise description of the desired fix.
       validations:
           required: true
-    - type: input
+    - type: textarea
       attributes:
           label: To Reproduce
           description: If you have written tests to showcase the bug, what can we run to reproduce the issue?

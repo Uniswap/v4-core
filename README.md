@@ -5,9 +5,15 @@
 
 Uniswap v4 is a new automated market maker protocol that provides extensible and customizable pools. `v4-core` hosts the core pool logic for creating pools and executing pool actions like swapping and providing liquidity.
 
+The contracts in this repo are in early stages - we are releasing the draft code now so that v4 can be built in public, with open feedback and meaningful community contribution. We expect this will be a months-long process, and we appreciate any kind of contribution, no matter how small.
+
 ## Contributing
 
-If you’re interested in contributing please see our [contribution guidelines](https://github.com/Uniswap/v4-core/blob/main/CONTRIBUTING.md)!
+If you’re interested in contributing please see our [contribution guidelines](./CONTRIBUTING.md)!
+
+## Whitepaper
+
+A more detailed description of Uniswap v4 Core can be found in the draft of the [Uniswap v4 Core Whitepaper](./whitepaper-v4-draft.pdf).
 
 ## Architecture
 
@@ -32,8 +38,6 @@ Additionally, a pool may be initialized with a hook contract, that can implement
 Hooks may also elect to specify fees on swaps, or liquidity withdrawal. Much like the actions above, fees are implemented using callback functions.
 
 The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after  pool initialization.
-
-Read a more in-depth overview of the design decisions in the working v4-whitepaper.
 
 ## Repository Structure
 
