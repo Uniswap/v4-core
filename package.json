@@ -1,7 +1,7 @@
 {
   "name": "@uniswap/core-next",
   "description": "🦄 Uniswap Protocol smart contracts",
-  "license": "UNLICENSED",
+  "license": "BUSL-1.1",
   "publishConfig": {
     "access": "restricted"
   },
