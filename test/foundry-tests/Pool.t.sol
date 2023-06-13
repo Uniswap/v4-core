@@ -3,14 +3,10 @@ pragma solidity ^0.8.19;
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
-import {Deployers} from "./utils/Deployers.sol";
-import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
-import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
-import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
