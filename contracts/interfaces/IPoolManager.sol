@@ -15,7 +15,7 @@ interface IPoolManager is IERC1155 {
     error ProtocolFeeCannotBeFetched();
 
     /// @notice Thrown when a currency is not netted out after a lock
-    error CurrencyNotSettled(address locker);
+    error CurrencyNotSettled();
 
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
@@ -151,14 +151,13 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the index of the current locker
     function lockIndex() external view returns (uint256);
 
+    /// @notice Returns the count of nonzero deltas across all lockers
+    function nonzeroDeltaCount() external view returns (uint256);
+
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
-    /// @notice Returns the count of nonzero deltas for the given locker ID
-    /// @param locker The address of the locker
-    function getNonzeroDeltaCount(address locker) external view returns (uint256);
-
-    /// @notice Get the current delta for a given currency, and its position in the currencies touched array
+    /// @notice Get the current delta for a locker in the given currency
     /// @param locker The address of the locker
     /// @param currency The currency for which to lookup the delta
     function getCurrencyDelta(address locker, Currency currency) external view returns (int256);
