@@ -90,13 +90,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(bytes32 poolId, address owner, int24 tickLower, int24 tickUpper)
+    function getLiquidity(bytes32 poolId, address _owner, int24 tickLower, int24 tickUpper)
         external
         view
         override
         returns (uint128 liquidity)
     {
-        return pools[poolId].positions.get(owner, tickLower, tickUpper).liquidity;
+        return pools[poolId].positions.get(_owner, tickLower, tickUpper).liquidity;
     }
 
     /// @inheritdoc IPoolManager
