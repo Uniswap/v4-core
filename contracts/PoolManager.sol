@@ -35,20 +35,35 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
     /// @inheritdoc IPoolManager
-    uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
+    uint8 public constant override MIN_PROTOCOL_FEE_DENOMINATOR = 4;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    mapping(bytes32 poolId => Pool.State) public pools;
-
-    mapping(Currency currency => uint256) public override protocolFeesAccrued;
-
-    mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
+    uint256 private immutable controllerGasLimit;
 
     IProtocolFeeController public protocolFeeController;
 
-    uint256 private immutable controllerGasLimit;
+    /// @inheritdoc IPoolManager
+    uint128 public override lockIndex;
+
+    /// @inheritdoc IPoolManager
+    uint128 public override nonzeroDeltaCount;
+
+    IPoolManager.Lock[] private locks;
+
+    /// @inheritdoc IPoolManager
+    mapping(Currency currency => uint256) public override reservesOf;
+
+    /// @dev Represents the state of the given locker. Each locker must have net 0 currencies due/owed after the
+    /// last lock is released.
+    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) private currencyDeltas;
+
+    mapping(bytes32 poolId => Pool.State) public pools;
+
+    mapping(Currency currency => uint256) public protocolFeesAccrued;
+
+    mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
 
     constructor(uint256 _controllerGasLimit) ERC1155("") {
         controllerGasLimit = _controllerGasLimit;
@@ -130,11 +145,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    mapping(Currency currency => uint256) public override reservesOf;
-
-    IPoolManager.Lock[] private locks;
-
-    /// @inheritdoc IPoolManager
     function locksGetter(uint256 i) external view override returns (IPoolManager.Lock memory) {
         return locks[i];
     }
@@ -145,16 +155,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    uint256 public override lockIndex;
-
-    /// @inheritdoc IPoolManager
-    uint256 public override nonzeroDeltaCount;
-
-    /// @dev Represents the state of the given locker. Each locker must have net 0 currencies due/owed after the
-    /// last lock is released.
-    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) private currencyDeltas;
-
-    /// @inheritdoc IPoolManager
     function getCurrencyDelta(address locker, Currency currency) external view returns (int256) {
         return currencyDeltas[locker][currency];
     }
@@ -163,7 +163,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function lock(bytes calldata data) external override returns (bytes memory result) {
         locks.push(Lock({locker: msg.sender, parentLockIndex: uint96(lockIndex)}));
         unchecked {
-            lockIndex = locks.length - 1;
+            lockIndex = uint128(locks.length - 1);
         }
 
         // the caller does everything in this callback, including paying what they owe via calls to settle

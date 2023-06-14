@@ -149,10 +149,10 @@ interface IPoolManager is IERC1155 {
     function locksLength() external view returns (uint256);
 
     /// @notice Returns the index of the current locker
-    function lockIndex() external view returns (uint256);
+    function lockIndex() external view returns (uint128);
 
     /// @notice Returns the count of nonzero deltas across all lockers
-    function nonzeroDeltaCount() external view returns (uint256);
+    function nonzeroDeltaCount() external view returns (uint128);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
