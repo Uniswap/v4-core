@@ -12,7 +12,6 @@ import {IHooks} from "../../contracts/interfaces/IHooks.sol";
 import {Currency} from "../../contracts/libraries/CurrencyLibrary.sol";
 import {IERC20Minimal} from "../../contracts/interfaces/external/IERC20Minimal.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
-import {SqrtPriceMath} from "../../contracts/libraries/SqrtPriceMath.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";

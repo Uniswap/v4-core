@@ -9,7 +9,6 @@ import {FixedPoint128} from "./FixedPoint128.sol";
 import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
-import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 
 library Pool {
