@@ -37,7 +37,7 @@ Additionally, a pool may be initialized with a hook contract, that can implement
 
 Hooks may also elect to specify fees on swaps, or liquidity withdrawal. Much like the actions above, fees are implemented using callback functions.
 
-The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after  pool initialization.
+The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after pool initialization.
 
 ## Repository Structure
 
@@ -48,12 +48,12 @@ Note that helper contracts used by tests are held in the `v4-core/contracts/test
 ```markdown
 contracts/
 ----interfaces/
-    | IPoolManager.sol
-    | ...
+| IPoolManager.sol
+| ...
 ----libraries/
-    | Position.sol
-    | Pool.sol
-    | ...
+| Position.sol
+| Pool.sol
+| ...
 ----test
 ...
 PoolManager.sol
@@ -67,6 +67,20 @@ To utilize the contracts and deploy to a local testnet, you can install the code
 
 ```markdown
 forge install https://github.com/Uniswap/v4-core
+```
+
+To run Foundry and Yarn tests:
+
+```
+yarn install
+
+forge build
+
+yarn compile
+
+yarn test
+
+forge test
 ```
 
 To integrate with the contracts, the interfaces are available to use:
