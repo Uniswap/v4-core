@@ -13,12 +13,12 @@ import {TokenFixture} from "./utils/TokenFixture.sol";
 contract TokenLocker is ILockCallback {
     using CurrencyLibrary for Currency;
 
-    function main(IPoolManager manager, Currency currency) external {
-        manager.lock(abi.encode(currency));
+    function main(IPoolManager manager, Currency currency, bool reclaim) external {
+        manager.lock(abi.encode(currency, reclaim));
     }
 
     function lockAcquired(bytes calldata data) external returns (bytes memory) {
-        (Currency currency) = abi.decode(data, (Currency));
+        (Currency currency, bool reclaim) = abi.decode(data, (Currency, bool));
 
         IPoolManager manager = IPoolManager(msg.sender);
 
@@ -35,10 +35,12 @@ contract TokenLocker is ILockCallback {
         assert(delta == -1);
 
         // take them back
-        manager.take(currency, address(this), 1);
-        assert(manager.getNonzeroDeltaCount(address(this)) == 0);
-        delta = manager.getCurrencyDelta(address(this), currency);
-        assert(delta == 0);
+        if (reclaim) {
+            manager.take(currency, address(this), 1);
+            assert(manager.getNonzeroDeltaCount(address(this)) == 0);
+            delta = manager.getCurrencyDelta(address(this), currency);
+            assert(delta == 0);
+        }
 
         return "";
     }
@@ -78,26 +80,43 @@ contract ParallelLocker is ILockCallback {
         assert(manager.locksLength() == 2);
         assert(manager.lockIndex() == 1);
         assert(manager.locksGetter(1).locker == msg.sender);
+        assert(manager.locksGetter(1).parentLockIndex == 0);
     }
 
-    function checker1(uint256) external view {
-        assert(manager.locksLength() == 3);
-        assert(manager.lockIndex() == 2);
-        assert(manager.locksGetter(2).locker == msg.sender);
+    function checker1(uint256 depth) external view {
+        assert(manager.locksLength() == depth + 3);
+        assert(manager.lockIndex() == depth + 2);
+        assert(manager.locksGetter(depth + 2).locker == msg.sender);
+        if (depth == 0) assert(manager.locksGetter(depth + 2).parentLockIndex == 0);
+        else assert(manager.locksGetter(depth + 2).parentLockIndex == depth + 1);
+    }
+
+    function checker2(uint256) external view {
+        assert(manager.locksLength() == 5);
+        assert(manager.lockIndex() == 4);
+        assert(manager.locksGetter(4).locker == msg.sender);
+        assert(manager.locksGetter(4).parentLockIndex == 0);
     }
 
     function lockAcquired(bytes calldata) external returns (bytes memory) {
         SimpleLinearLocker locker0 = new SimpleLinearLocker();
         SimpleLinearLocker locker1 = new SimpleLinearLocker();
+        SimpleLinearLocker locker2 = new SimpleLinearLocker();
 
         assert(manager.locksLength() == 1);
         assert(manager.lockIndex() == 0);
         assert(manager.locksGetter(0).locker == address(this));
+
         locker0.main(manager, 0, this.checker0);
         assert(manager.locksLength() == 2);
         assert(manager.lockIndex() == 0);
-        locker1.main(manager, 0, this.checker1);
-        assert(manager.locksLength() == 3);
+
+        locker1.main(manager, 1, this.checker1);
+        assert(manager.locksLength() == 4);
+        assert(manager.lockIndex() == 0);
+
+        locker2.main(manager, 0, this.checker2);
+        assert(manager.locksLength() == 5);
         assert(manager.lockIndex() == 0);
 
         return "";
@@ -116,13 +135,22 @@ contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
         TokenLocker locker = new TokenLocker();
         MockERC20(Currency.unwrap(currency0)).mint(address(locker), 1);
         MockERC20(Currency.unwrap(currency0)).approve(address(locker), 1);
-        locker.main(manager, currency0);
+        locker.main(manager, currency0, true);
+    }
+
+    function testTokenRevert() public {
+        TokenLocker locker = new TokenLocker();
+        MockERC20(Currency.unwrap(currency0)).mint(address(locker), 1);
+        MockERC20(Currency.unwrap(currency0)).approve(address(locker), 1);
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.CurrencyNotSettled.selector, address(locker)));
+        locker.main(manager, currency0, false);
     }
 
     function checker(uint256 depth) external {
         assertEq(manager.locksLength(), depth + 1);
         assertEq(manager.lockIndex(), depth);
         assertEq(manager.locksGetter(depth).locker, msg.sender);
+        assertEq(manager.locksGetter(depth).parentLockIndex, depth == 0 ? 0 : depth - 1);
     }
 
     function testSimpleLinearLocker() public {
