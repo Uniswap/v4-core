@@ -2,7 +2,6 @@
 pragma solidity ^0.8.19;
 
 import {IHooks} from "../interfaces/IHooks.sol";
-import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Fees} from "../libraries/Fees.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
