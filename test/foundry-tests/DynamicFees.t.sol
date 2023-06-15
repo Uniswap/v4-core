@@ -3,16 +3,19 @@ pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {PoolId, PoolIdLibrary} from "../../contracts/libraries/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "../../contracts/types/PoolId.sol";
 import {Hooks} from "../../contracts/libraries/Hooks.sol";
+import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
+import {IFees} from "../../contracts/interfaces/IFees.sol";
 import {IHooks} from "../../contracts/interfaces/IHooks.sol";
-import {Currency} from "../../contracts/libraries/CurrencyLibrary.sol";
+import {Currency} from "../../contracts/types/Currency.sol";
+import {PoolKey} from "../../contracts/types/PoolKey.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {IDynamicFeeManager} from "././../../contracts/interfaces/IDynamicFeeManager.sol";
-import {Fees} from "./../../contracts/libraries/Fees.sol";
+import {Fees} from "./../../contracts/Fees.sol";
 
 contract DynamicFees is IDynamicFeeManager {
     uint24 internal fee;
@@ -21,13 +24,13 @@ contract DynamicFees is IDynamicFeeManager {
         fee = _fee;
     }
 
-    function getFee(IPoolManager.PoolKey calldata) public view returns (uint24) {
+    function getFee(PoolKey calldata) public view returns (uint24) {
         return fee;
     }
 }
 
 contract TestDynamicFees is Test, Deployers {
-    using PoolIdLibrary for IPoolManager.PoolKey;
+    using PoolIdLibrary for PoolKey;
 
     DynamicFees dynamicFees = DynamicFees(
         address(
@@ -40,20 +43,21 @@ contract TestDynamicFees is Test, Deployers {
         )
     );
     PoolManager manager;
-    IPoolManager.PoolKey key;
+    PoolKey key;
     PoolSwapTest swapRouter;
 
     function setUp() public {
         DynamicFees impl = new DynamicFees();
         vm.etch(address(dynamicFees), address(impl).code);
 
-        (manager, key,) = Deployers.createFreshPool(IHooks(address(dynamicFees)), Fees.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1);
+        (manager, key,) =
+            Deployers.createFreshPool(IHooks(address(dynamicFees)), FeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1);
         swapRouter = new PoolSwapTest(manager);
     }
 
     function testSwapFailsWithTooLargeFee() public {
         dynamicFees.setFee(1000000);
-        vm.expectRevert(IPoolManager.FeeTooLarge.selector);
+        vm.expectRevert(IFees.FeeTooLarge.selector);
         swapRouter.swap(
             key, IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1), PoolSwapTest.TestSettings(false, false)
         );

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import {Currency, CurrencyLibrary} from "../libraries/CurrencyLibrary.sol";
+import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 

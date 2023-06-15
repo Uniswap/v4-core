@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {MockERC20} from "./MockERC20.sol";
-import {Currency} from "../../../contracts/libraries/CurrencyLibrary.sol";
+import {Currency} from "../../../contracts/types/Currency.sol";
 
 contract TokenFixture {
     Currency internal currency1;

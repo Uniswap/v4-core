@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import {Currency, CurrencyLibrary} from "../libraries/CurrencyLibrary.sol";
+import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 
 contract PoolTakeTest is ILockCallback {
     using CurrencyLibrary for Currency;
@@ -18,12 +19,12 @@ contract PoolTakeTest is ILockCallback {
 
     struct CallbackData {
         address sender;
-        IPoolManager.PoolKey key;
+        PoolKey key;
         uint256 amount0;
         uint256 amount1;
     }
 
-    function take(IPoolManager.PoolKey memory key, uint256 amount0, uint256 amount1) external payable {
+    function take(PoolKey memory key, uint256 amount0, uint256 amount1) external payable {
         manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
     }
 

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import {Currency, CurrencyLibrary} from "../libraries/CurrencyLibrary.sol";
+import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
-import {Currency} from "../libraries/CurrencyLibrary.sol";
+import {Currency} from "../types/Currency.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 
 contract PoolDonateTest is ILockCallback {
@@ -20,12 +21,12 @@ contract PoolDonateTest is ILockCallback {
 
     struct CallbackData {
         address sender;
-        IPoolManager.PoolKey key;
+        PoolKey key;
         uint256 amount0;
         uint256 amount1;
     }
 
-    function donate(IPoolManager.PoolKey memory key, uint256 amount0, uint256 amount1)
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1)
         external
         payable
         returns (BalanceDelta delta)
