@@ -20,7 +20,7 @@ library CurrencyLibrary {
 
     function transfer(Currency currency, address to, uint256 amount) internal {
         // implementation from
-        // https://github.com/transmissions11/solmate/blob/v7/src/utils/SafeTransferLib.sol
+        // https://github.com/transmissions11/solmate/blob/e8f96f25d48fe702117ce76c79228ca4f20206cb/src/utils/SafeTransferLib.sol
 
         bool success;
         if (currency.isNative()) {
