@@ -6,6 +6,7 @@ import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
 import {Position} from "./libraries/Position.sol";
 import {Currency, CurrencyLibrary} from "./libraries/CurrencyLibrary.sol";
+import {LockDataLibrary} from "./libraries/LockDataLibrary.sol";
 
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
@@ -29,6 +30,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
+    using LockDataLibrary for IPoolManager.LockData;
     using Fees for uint24;
 
     /// @inheritdoc IPoolManager
@@ -45,13 +47,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     IProtocolFeeController public protocolFeeController;
 
     /// @inheritdoc IPoolManager
-    uint128 public override lockIndex;
-
-    /// @inheritdoc IPoolManager
-    uint128 public override nonzeroDeltaCount;
-
-    /// @inheritdoc IPoolManager
-    IPoolManager.Lock[] public override locks;
+    IPoolManager.LockData public override lockData;
 
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
@@ -117,6 +113,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
+    function getLock(uint256 i) external view override returns (address locker, uint96 parentLockIndex) {
+        return LockDataLibrary.getLock(i);
+    }
+
+    /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         if (key.fee & Fees.STATIC_FEE_MASK >= 1000000) revert FeeTooLarge();
 
@@ -146,40 +147,33 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function locksLength() public view returns (uint256) {
-        return locks.length;
-    }
-
-    /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        locks.push(Lock({locker: msg.sender, parentLockIndex: uint96(lockIndex)}));
-        unchecked {
-            lockIndex = uint128(locks.length - 1);
-        }
+        lockData.push(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
-        if (lockIndex == 0) {
-            if (nonzeroDeltaCount != 0) revert CurrencyNotSettled();
-            delete locks;
+        if (lockData.index == 0) {
+            if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            delete lockData;
         } else {
-            lockIndex = locks[lockIndex].parentLockIndex;
+            (, uint96 parentLockIndex) = lockData.getActiveLock();
+            lockData.index = parentLockIndex;
         }
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        address locker = locks[lockIndex].locker;
+        (address locker,) = lockData.getActiveLock();
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
         unchecked {
             if (next == 0) {
-                nonzeroDeltaCount--;
+                lockData.nonzeroDeltaCount--;
             } else if (current == 0) {
-                nonzeroDeltaCount++;
+                lockData.nonzeroDeltaCount++;
             }
         }
 
@@ -195,7 +189,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     modifier onlyByLocker() {
         // we use locks[lockIndex].locker directly instead of caching,
         // because this saves gas in the happy path
-        if (msg.sender != locks[lockIndex].locker) revert LockedBy(locks[lockIndex].locker);
+        (address locker,) = lockData.getActiveLock();
+        if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
 
