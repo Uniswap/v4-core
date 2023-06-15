@@ -52,12 +52,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     IPoolManager.Lock[] private locks;
 
+    /// @dev Represents the currencies due/owed to each locker.
+    /// Must all net to zero when the last lock is released.
+    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) private currencyDeltas;
+
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
-
-    /// @dev Represents the state of the given locker. Each locker must have net 0 currencies due/owed after the
-    /// last lock is released.
-    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) private currencyDeltas;
 
     mapping(bytes32 poolId => Pool.State) public pools;
 
@@ -169,7 +169,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
-        // only enforce that deltas are 0 when the outermost lock frame is expiring
         if (lockIndex == 0) {
             if (nonzeroDeltaCount != 0) revert CurrencyNotSettled();
             delete locks;
@@ -181,9 +180,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        int256 current = currencyDeltas[locks[lockIndex].locker][currency];
-
+        address locker = locks[lockIndex].locker;
+        int256 current = currencyDeltas[locker][currency];
         int256 next = current + delta;
+
         unchecked {
             if (next == 0) {
                 nonzeroDeltaCount--;
@@ -192,7 +192,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        currencyDeltas[locks[lockIndex].locker][currency] = next;
+        currencyDeltas[locker][currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
