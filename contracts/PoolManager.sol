@@ -35,20 +35,35 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
     /// @inheritdoc IPoolManager
-    uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
+    uint8 public constant override MIN_PROTOCOL_FEE_DENOMINATOR = 4;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    mapping(bytes32 poolId => Pool.State) public pools;
-
-    mapping(Currency currency => uint256) public override protocolFeesAccrued;
-
-    mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
+    uint256 private immutable controllerGasLimit;
 
     IProtocolFeeController public protocolFeeController;
 
-    uint256 private immutable controllerGasLimit;
+    /// @inheritdoc IPoolManager
+    uint128 public override lockIndex;
+
+    /// @inheritdoc IPoolManager
+    uint128 public override nonzeroDeltaCount;
+
+    IPoolManager.Lock[] private locks;
+
+    /// @dev Represents the currencies due/owed to each locker.
+    /// Must all net to zero when the last lock is released.
+    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) private currencyDeltas;
+
+    /// @inheritdoc IPoolManager
+    mapping(Currency currency => uint256) public override reservesOf;
+
+    mapping(bytes32 poolId => Pool.State) public pools;
+
+    mapping(Currency currency => uint256) public protocolFeesAccrued;
+
+    mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
 
     constructor(uint256 _controllerGasLimit) ERC1155("") {
         controllerGasLimit = _controllerGasLimit;
@@ -130,11 +145,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    mapping(Currency currency => uint256) public override reservesOf;
-
-    IPoolManager.Lock[] private locks;
-
-    /// @inheritdoc IPoolManager
     function locksGetter(uint256 i) external view override returns (IPoolManager.Lock memory) {
         return locks[i];
     }
@@ -145,68 +155,44 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    uint256 public override lockIndex;
-
-    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
-    /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
-    struct LockState {
-        uint256 nonzeroDeltaCount;
-        mapping(Currency currency => int256) currencyDelta;
-    }
-
-    /// @dev Represents the state of the given locker. Each locker must have net 0 currencies due/owed after the
-    /// last lock is released. Note this is private because the nested mappings cannot be exposed as a public variable.
-    mapping(address locker => LockState) private lockStates;
-
-    /// @inheritdoc IPoolManager
-    function getNonzeroDeltaCount(address locker) external view returns (uint256) {
-        return lockStates[locker].nonzeroDeltaCount;
-    }
-
-    /// @inheritdoc IPoolManager
     function getCurrencyDelta(address locker, Currency currency) external view returns (int256) {
-        return lockStates[locker].currencyDelta[currency];
+        return currencyDeltas[locker][currency];
     }
 
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
+        locks.push(Lock({locker: msg.sender, parentLockIndex: uint96(lockIndex)}));
         unchecked {
-            locks.push(Lock({locker: msg.sender, parentLockIndex: uint96(lockIndex)}));
-            lockIndex = locks.length - 1;
+            lockIndex = uint128(locks.length - 1);
+        }
 
-            // the caller does everything in this callback, including paying what they owe via calls to settle
-            result = ILockCallback(msg.sender).lockAcquired(data);
+        // the caller does everything in this callback, including paying what they owe via calls to settle
+        result = ILockCallback(msg.sender).lockAcquired(data);
 
-            // only enforce that deltas are 0 when the outermost lock frame is expiring
-            if (lockIndex == 0) {
-                uint256 length = locksLength();
-                for (uint256 i; i < length; i++) {
-                    address locker = locks[i].locker;
-                    if (lockStates[locker].nonzeroDeltaCount != 0) revert CurrencyNotSettled(locker);
-                }
-                delete locks;
-            } else {
-                lockIndex = locks[lockIndex].parentLockIndex;
-            }
+        if (lockIndex == 0) {
+            if (nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            delete locks;
+        } else {
+            lockIndex = locks[lockIndex].parentLockIndex;
         }
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        LockState storage lockState = lockStates[locks[lockIndex].locker];
-        int256 current = lockState.currencyDelta[currency];
-
+        address locker = locks[lockIndex].locker;
+        int256 current = currencyDeltas[locker][currency];
         int256 next = current + delta;
+
         unchecked {
             if (next == 0) {
-                lockState.nonzeroDeltaCount--;
+                nonzeroDeltaCount--;
             } else if (current == 0) {
-                lockState.nonzeroDeltaCount++;
+                nonzeroDeltaCount++;
             }
         }
 
-        lockState.currencyDelta[currency] = next;
+        currencyDeltas[locker][currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes

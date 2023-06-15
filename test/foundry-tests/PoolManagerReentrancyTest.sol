@@ -22,7 +22,7 @@ contract TokenLocker is ILockCallback {
 
         IPoolManager manager = IPoolManager(msg.sender);
 
-        assert(manager.getNonzeroDeltaCount(address(this)) == 0);
+        assert(manager.nonzeroDeltaCount() == 0);
 
         int256 delta = manager.getCurrencyDelta(address(this), currency);
         assert(delta == 0);
@@ -30,14 +30,14 @@ contract TokenLocker is ILockCallback {
         // deposit some tokens
         currency.transfer(address(manager), 1);
         manager.settle(currency);
-        assert(manager.getNonzeroDeltaCount(address(this)) == 1);
+        assert(manager.nonzeroDeltaCount() == 1);
         delta = manager.getCurrencyDelta(address(this), currency);
         assert(delta == -1);
 
         // take them back
         if (reclaim) {
             manager.take(currency, address(this), 1);
-            assert(manager.getNonzeroDeltaCount(address(this)) == 0);
+            assert(manager.nonzeroDeltaCount() == 0);
             delta = manager.getCurrencyDelta(address(this), currency);
             assert(delta == 0);
         }
@@ -142,7 +142,7 @@ contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
         TokenLocker locker = new TokenLocker();
         MockERC20(Currency.unwrap(currency0)).mint(address(locker), 1);
         MockERC20(Currency.unwrap(currency0)).approve(address(locker), 1);
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.CurrencyNotSettled.selector, address(locker)));
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.CurrencyNotSettled.selector));
         locker.main(manager, currency0, false);
     }
 
