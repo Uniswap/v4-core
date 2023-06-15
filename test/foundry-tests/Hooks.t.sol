@@ -17,6 +17,7 @@ import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {Fees} from "../../contracts/libraries/Fees.sol";
+import {PoolId} from "../../contracts/libraries/PoolId.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
@@ -38,7 +39,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testInitializeSucceedsWithHook() public {
-        (PoolManager _manager,, bytes32 id) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
+        (PoolManager _manager,, PoolId id) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
         (uint160 sqrtPriceX96,,,,,) = _manager.getSlot0(id);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
     }
