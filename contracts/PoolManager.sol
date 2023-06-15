@@ -187,8 +187,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     modifier onlyByLocker() {
-        // we use locks[lockIndex].locker directly instead of caching,
-        // because this saves gas in the happy path
         (address locker,) = lockData.getActiveLock();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
