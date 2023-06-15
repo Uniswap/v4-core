@@ -6,6 +6,7 @@ import {Pool} from "../libraries/Pool.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IHooks} from "./IHooks.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {PoolId} from "../libraries/PoolId.sol";
 
 interface IPoolManager is IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256
@@ -33,14 +34,14 @@ interface IPoolManager is IERC1155 {
     error TickSpacingTooSmall();
 
     /// @notice Emitted when a new pool is initialized
-    /// @param poolId The abi encoded hash of the pool key struct for the new pool
+    /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
     /// @param currency1 The second currency of the pool by address sort order
     /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     event Initialize(
-        bytes32 indexed poolId,
+        PoolId indexed id,
         Currency indexed currency0,
         Currency indexed currency1,
         uint24 fee,
@@ -49,17 +50,17 @@ interface IPoolManager is IERC1155 {
     );
 
     /// @notice Emitted when a liquidity position is modified
-    /// @param poolId The abi encoded hash of the pool key struct for the pool that was modified
+    /// @param id The abi encoded hash of the pool key struct for the pool that was modified
     /// @param sender The address that modified the pool
     /// @param tickLower The lower tick of the position
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
     event ModifyPosition(
-        bytes32 indexed poolId, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
+        PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
     );
 
     /// @notice Emitted for swaps between currency0 and currency1
-    /// @param poolId The abi encoded hash of the pool key struct for the pool that was modified
+    /// @param id The abi encoded hash of the pool key struct for the pool that was modified
     /// @param sender The address that initiated the swap call, and that received the callback
     /// @param amount0 The delta of the currency0 balance of the pool
     /// @param amount1 The delta of the currency1 balance of the pool
@@ -67,7 +68,7 @@ interface IPoolManager is IERC1155 {
     /// @param liquidity The liquidity of the pool after the swap
     /// @param tick The log base 1.0001 of the price of the pool after the swap
     event Swap(
-        bytes32 indexed poolId,
+        PoolId indexed id,
         address indexed sender,
         int128 amount0,
         int128 amount1,
@@ -77,11 +78,11 @@ interface IPoolManager is IERC1155 {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(bytes32 indexed poolKey, uint8 protocolSwapFee, uint8 protocolWithdrawFee);
+    event ProtocolFeeUpdated(PoolId indexed id, uint8 protocolSwapFee, uint8 protocolWithdrawFee);
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
-    event HookFeeUpdated(bytes32 indexed poolKey, uint8 hookSwapFee, uint8 hookWithdrawFee);
+    event HookFeeUpdated(PoolId indexed id, uint8 hookSwapFee, uint8 hookWithdrawFee);
 
     /// @notice Returns the key for identifying a pool
     struct PoolKey {
@@ -107,7 +108,7 @@ interface IPoolManager is IERC1155 {
     function MIN_PROTOCOL_FEE_DENOMINATOR() external view returns (uint8);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(bytes32 id)
+    function getSlot0(PoolId id)
         external
         view
         returns (
@@ -120,10 +121,10 @@ interface IPoolManager is IERC1155 {
         );
 
     /// @notice Get the current value of liquidity of the given pool
-    function getLiquidity(bytes32 id) external view returns (uint128 liquidity);
+    function getLiquidity(PoolId id) external view returns (uint128 liquidity);
 
     /// @notice Get the current value of liquidity for the specified pool and position
-    function getLiquidity(bytes32 id, address owner, int24 tickLower, int24 tickUpper)
+    function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper)
         external
         view
         returns (uint128 liquidity);
