@@ -25,7 +25,7 @@ interface IPoolManager is IERC1155 {
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
 
-    /// @notice Pools must have a fee that is <100%, enforced in #intialize and for dynamic fee pools
+    /// @notice Pools must have a fee that is <100%, enforced in #initialize and for dynamic fee pools
     error FeeTooLarge();
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
@@ -129,7 +129,7 @@ interface IPoolManager is IERC1155 {
         view
         returns (uint128 liquidity);
 
-    // @notice Given a currency address, returns the protocol fees accrued in that currency
+    /// @notice Given a currency address, returns the protocol fees accrued in that currency
     function protocolFeesAccrued(Currency) external view returns (uint256);
 
     /// @notice Returns the reserves for a given ERC20 currency
@@ -207,6 +207,6 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by external contracts to access granular pool state
     /// @param slot Key of slot to start sloading from
     /// @param nSlots Number of slots to load into return value
-    /// @return value The value of the sload-ed slots concatentated as dynamic bytes
+    /// @return value The value of the sload-ed slots concatenated as dynamic bytes
     function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
 }
