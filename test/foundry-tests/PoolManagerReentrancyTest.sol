@@ -76,7 +76,7 @@ contract ParallelLocker is ILockCallback {
         manager.lock("");
     }
 
-    function checker0(uint256) external view {
+    function assertionChecker0(uint256) external view {
         assert(manager.locksLength() == 2);
         assert(manager.lockIndex() == 1);
         (address locker, uint96 parentLockIndex) = manager.locks(1);
@@ -84,7 +84,7 @@ contract ParallelLocker is ILockCallback {
         assert(parentLockIndex == 0);
     }
 
-    function checker1(uint256 depth) external view {
+    function assertionChecker1(uint256 depth) external view {
         assert(manager.locksLength() == depth + 3);
         assert(manager.lockIndex() == depth + 2);
         (address locker, uint96 parentLockIndex) = manager.locks(depth + 2);
@@ -93,7 +93,7 @@ contract ParallelLocker is ILockCallback {
         else assert(parentLockIndex == depth + 1);
     }
 
-    function checker2(uint256) external view {
+    function assertionChecker2(uint256) external view {
         assert(manager.locksLength() == 5);
         assert(manager.lockIndex() == 4);
         (address locker, uint96 parentLockIndex) = manager.locks(4);
@@ -111,15 +111,15 @@ contract ParallelLocker is ILockCallback {
         (address locker,) = manager.locks(0);
         assert(locker == address(this));
 
-        locker0.main(manager, 0, this.checker0);
+        locker0.main(manager, 0, this.assertionChecker0);
         assert(manager.locksLength() == 2);
         assert(manager.lockIndex() == 0);
 
-        locker1.main(manager, 1, this.checker1);
+        locker1.main(manager, 1, this.assertionChecker1);
         assert(manager.locksLength() == 4);
         assert(manager.lockIndex() == 0);
 
-        locker2.main(manager, 0, this.checker2);
+        locker2.main(manager, 0, this.assertionChecker2);
         assert(manager.locksLength() == 5);
         assert(manager.lockIndex() == 0);
 
@@ -150,7 +150,7 @@ contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
         locker.main(manager, currency0, false);
     }
 
-    function checker(uint256 depth) external {
+    function assertionChecker(uint256 depth) external {
         assertEq(manager.locksLength(), depth + 1);
         assertEq(manager.lockIndex(), depth);
         (address locker, uint96 parentLockIndex) = manager.locks(depth);
@@ -160,9 +160,9 @@ contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
 
     function testSimpleLinearLocker() public {
         SimpleLinearLocker locker = new SimpleLinearLocker();
-        locker.main(manager, 0, this.checker);
-        locker.main(manager, 1, this.checker);
-        locker.main(manager, 2, this.checker);
+        locker.main(manager, 0, this.assertionChecker);
+        locker.main(manager, 1, this.assertionChecker);
+        locker.main(manager, 2, this.assertionChecker);
     }
 
     function testParallelLocker() public {
