@@ -129,7 +129,7 @@ interface IPoolManager is IERC1155 {
         view
         returns (uint128 liquidity);
 
-    // @notice Given a currency address, returns the protocol fees accrued in that currency
+    /// @notice Given a currency address, returns the protocol fees accrued in that currency
     function protocolFeesAccrued(Currency) external view returns (uint256);
 
     /// @notice Returns the reserves for a given ERC20 currency
