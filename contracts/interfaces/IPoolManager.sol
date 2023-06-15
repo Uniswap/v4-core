@@ -207,6 +207,6 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by external contracts to access granular pool state
     /// @param slot Key of slot to start sloading from
     /// @param nSlots Number of slots to load into return value
-    /// @return value The value of the sload-ed slots concatentated as dynamic bytes
+    /// @return value The value of the sload-ed slots concatenated as dynamic bytes
     function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
 }
