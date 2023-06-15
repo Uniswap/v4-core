@@ -24,21 +24,21 @@ contract TokenLocker is ILockCallback {
 
         assert(manager.nonzeroDeltaCount() == 0);
 
-        int256 delta = manager.getCurrencyDelta(address(this), currency);
+        int256 delta = manager.currencyDelta(address(this), currency);
         assert(delta == 0);
 
         // deposit some tokens
         currency.transfer(address(manager), 1);
         manager.settle(currency);
         assert(manager.nonzeroDeltaCount() == 1);
-        delta = manager.getCurrencyDelta(address(this), currency);
+        delta = manager.currencyDelta(address(this), currency);
         assert(delta == -1);
 
         // take them back
         if (reclaim) {
             manager.take(currency, address(this), 1);
             assert(manager.nonzeroDeltaCount() == 0);
-            delta = manager.getCurrencyDelta(address(this), currency);
+            delta = manager.currencyDelta(address(this), currency);
             assert(delta == 0);
         }
 
@@ -79,23 +79,26 @@ contract ParallelLocker is ILockCallback {
     function checker0(uint256) external view {
         assert(manager.locksLength() == 2);
         assert(manager.lockIndex() == 1);
-        assert(manager.locksGetter(1).locker == msg.sender);
-        assert(manager.locksGetter(1).parentLockIndex == 0);
+        (address locker, uint96 parentLockIndex) = manager.locks(1);
+        assert(locker == msg.sender);
+        assert(parentLockIndex == 0);
     }
 
     function checker1(uint256 depth) external view {
         assert(manager.locksLength() == depth + 3);
         assert(manager.lockIndex() == depth + 2);
-        assert(manager.locksGetter(depth + 2).locker == msg.sender);
-        if (depth == 0) assert(manager.locksGetter(depth + 2).parentLockIndex == 0);
-        else assert(manager.locksGetter(depth + 2).parentLockIndex == depth + 1);
+        (address locker, uint96 parentLockIndex) = manager.locks(depth + 2);
+        assert(locker == msg.sender);
+        if (depth == 0) assert(parentLockIndex == 0);
+        else assert(parentLockIndex == depth + 1);
     }
 
     function checker2(uint256) external view {
         assert(manager.locksLength() == 5);
         assert(manager.lockIndex() == 4);
-        assert(manager.locksGetter(4).locker == msg.sender);
-        assert(manager.locksGetter(4).parentLockIndex == 0);
+        (address locker, uint96 parentLockIndex) = manager.locks(4);
+        assert(locker == msg.sender);
+        assert(parentLockIndex == 0);
     }
 
     function lockAcquired(bytes calldata) external returns (bytes memory) {
@@ -105,7 +108,8 @@ contract ParallelLocker is ILockCallback {
 
         assert(manager.locksLength() == 1);
         assert(manager.lockIndex() == 0);
-        assert(manager.locksGetter(0).locker == address(this));
+        (address locker,) = manager.locks(0);
+        assert(locker == address(this));
 
         locker0.main(manager, 0, this.checker0);
         assert(manager.locksLength() == 2);
@@ -149,8 +153,9 @@ contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
     function checker(uint256 depth) external {
         assertEq(manager.locksLength(), depth + 1);
         assertEq(manager.lockIndex(), depth);
-        assertEq(manager.locksGetter(depth).locker, msg.sender);
-        assertEq(manager.locksGetter(depth).parentLockIndex, depth == 0 ? 0 : depth - 1);
+        (address locker, uint96 parentLockIndex) = manager.locks(depth);
+        assertEq(locker, msg.sender);
+        assertEq(parentLockIndex, depth == 0 ? 0 : depth - 1);
     }
 
     function testSimpleLinearLocker() public {

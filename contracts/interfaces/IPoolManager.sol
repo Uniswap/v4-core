@@ -129,7 +129,7 @@ interface IPoolManager is IERC1155 {
         view
         returns (uint128 liquidity);
 
-    // @notice Given a currency address, returns the protocol fees accrued in that currency
+    /// @notice Given a currency address, returns the protocol fees accrued in that currency
     function protocolFeesAccrued(Currency) external view returns (uint256);
 
     /// @notice Returns the reserves for a given ERC20 currency
@@ -144,7 +144,7 @@ interface IPoolManager is IERC1155 {
     }
 
     /// @notice Returns the ith element of the locker array
-    function locksGetter(uint256) external view returns (IPoolManager.Lock memory);
+    function locks(uint256 i) external view returns (address locker, uint96 parentLockIndex);
 
     /// @notice Returns the length of the locker array
     function locksLength() external view returns (uint256);
@@ -161,7 +161,7 @@ interface IPoolManager is IERC1155 {
     /// @notice Get the current delta for a locker in the given currency
     /// @param locker The address of the locker
     /// @param currency The currency for which to lookup the delta
-    function getCurrencyDelta(address locker, Currency currency) external view returns (int256);
+    function currencyDelta(address locker, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`

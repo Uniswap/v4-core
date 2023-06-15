@@ -50,17 +50,19 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @inheritdoc IPoolManager
     uint128 public override nonzeroDeltaCount;
 
-    IPoolManager.Lock[] private locks;
+    /// @inheritdoc IPoolManager
+    IPoolManager.Lock[] public override locks;
 
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
-    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) private currencyDeltas;
+    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
 
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
 
     mapping(PoolId id => Pool.State) public pools;
 
+    /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override protocolFeesAccrued;
 
     mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
@@ -144,18 +146,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function locksGetter(uint256 i) external view override returns (IPoolManager.Lock memory) {
-        return locks[i];
-    }
-
-    /// @inheritdoc IPoolManager
     function locksLength() public view returns (uint256) {
         return locks.length;
-    }
-
-    /// @inheritdoc IPoolManager
-    function getCurrencyDelta(address locker, Currency currency) external view returns (int256) {
-        return currencyDeltas[locker][currency];
     }
 
     /// @inheritdoc IPoolManager
@@ -180,7 +172,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         if (delta == 0) return;
 
         address locker = locks[lockIndex].locker;
-        int256 current = currencyDeltas[locker][currency];
+        int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
         unchecked {
@@ -191,7 +183,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        currencyDeltas[locker][currency] = next;
+        currencyDelta[locker][currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
