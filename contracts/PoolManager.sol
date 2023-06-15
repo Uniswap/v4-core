@@ -35,20 +35,38 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
     /// @inheritdoc IPoolManager
-    uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
+    uint8 public constant override MIN_PROTOCOL_FEE_DENOMINATOR = 4;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    mapping(PoolId id => Pool.State) public pools;
-
-    mapping(Currency currency => uint256) public override protocolFeesAccrued;
-
-    mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
+    uint256 private immutable controllerGasLimit;
 
     IProtocolFeeController public protocolFeeController;
 
-    uint256 private immutable controllerGasLimit;
+    /// @inheritdoc IPoolManager
+    address[] public override lockedBy;
+
+    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
+    /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
+    struct LockState {
+        uint256 nonzeroDeltaCount;
+        mapping(Currency currency => int256) currencyDelta;
+    }
+
+    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
+    /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
+    mapping(uint256 index => LockState) private lockStates;
+
+    /// @inheritdoc IPoolManager
+    mapping(Currency currency => uint256) public override reservesOf;
+
+    mapping(PoolId id => Pool.State) public pools;
+
+    /// @inheritdoc IPoolManager
+    mapping(Currency currency => uint256) public override protocolFeesAccrued;
+
+    mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
 
     constructor(uint256 _controllerGasLimit) ERC1155("") {
         controllerGasLimit = _controllerGasLimit;
@@ -129,26 +147,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    mapping(Currency currency => uint256) public override reservesOf;
-
-    /// @inheritdoc IPoolManager
-    address[] public override lockedBy;
-
-    /// @inheritdoc IPoolManager
     function lockedByLength() external view returns (uint256) {
         return lockedBy.length;
     }
-
-    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
-    /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
-    struct LockState {
-        uint256 nonzeroDeltaCount;
-        mapping(Currency currency => int256) currencyDelta;
-    }
-
-    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
-    /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
-    mapping(uint256 index => LockState) private lockStates;
 
     /// @inheritdoc IPoolManager
     function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
