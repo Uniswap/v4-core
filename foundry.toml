@@ -1,8 +1,7 @@
 [profile.default]
 src = 'contracts'
 out = 'foundry-out'
-solc_version = '0.8.19'
-
+solc_version = '0.8.20'
 ffi = true
 fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./foundry-out"}]
 via_ir = true

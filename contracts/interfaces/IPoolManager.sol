@@ -120,27 +120,11 @@ interface IPoolManager is IERC1155 {
             uint8 hookWithdrawFee
         );
 
-    /// @notice Get the current value of liquidity of the given pool
-    function getLiquidity(PoolId id) external view returns (uint128 liquidity);
-
-    /// @notice Get the current value of liquidity for the specified pool and position
-    function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper)
-        external
-        view
-        returns (uint128 liquidity);
-
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
-
-    /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
-    /// @param index The index of the locker, also known as the id of the locker
-    function lockedBy(uint256 index) external view returns (address);
-
-    /// @notice Getter for the length of the lockedBy array
-    function lockedByLength() external view returns (uint256);
 
     /// @notice Returns the count of nonzero deltas for the given locker ID
     /// @param id The ID of the locker
@@ -189,21 +173,6 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
 
-    /// @notice Sets the protocol's swap and withdrawal fees for the given pool
-    /// Protocol fees are always a portion of a fee that is owed. If that underlying fee is 0, no protocol fees will accrue even if it is set to > 0.
-    function setProtocolFees(PoolKey memory key) external;
-
     /// @notice Sets the hook's swap and withdrawal fees for the given pool
     function setHookFees(PoolKey memory key) external;
-
-    /// @notice Called by external contracts to access granular pool state
-    /// @param slot Key of slot to sload
-    /// @return value The value of the slot as bytes32
-    function extsload(bytes32 slot) external view returns (bytes32 value);
-
-    /// @notice Called by external contracts to access granular pool state
-    /// @param slot Key of slot to start sloading from
-    /// @param nSlots Number of slots to load into return value
-    /// @return value The value of the sload-ed slots concatenated as dynamic bytes
-    function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
 }

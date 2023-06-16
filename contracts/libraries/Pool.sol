@@ -362,11 +362,11 @@ library Pool {
     }
 
     struct SwapParams {
+        uint160 sqrtPriceLimitX96;
         uint24 fee;
         int24 tickSpacing;
         bool zeroForOne;
         int256 amountSpecified;
-        uint160 sqrtPriceLimitX96;
     }
 
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
