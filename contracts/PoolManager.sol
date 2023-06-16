@@ -119,7 +119,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
-        if (key.fee & Fees.STATIC_FEE_MASK >= 1000000) revert FeeTooLarge();
+        if (key.fee & Fees.STATIC_FEE_MASK >= 1_000_000) revert FeeTooLarge();
 
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
@@ -277,7 +277,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         uint24 totalSwapFee;
         if (key.fee.isDynamicFee()) {
             totalSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(key);
-            if (totalSwapFee >= 1000000) revert FeeTooLarge();
+            if (totalSwapFee >= 1_000_000) revert FeeTooLarge();
         } else {
             // clear the top 4 bits since they may be flagged for hook fees
             totalSwapFee = key.fee & Fees.STATIC_FEE_MASK;
