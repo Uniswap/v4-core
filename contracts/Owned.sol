@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 contract Owned {
     address public owner;
+    bytes12 private STORAGE_PLACEHOLDER;
 
     error InvalidCaller();
 
