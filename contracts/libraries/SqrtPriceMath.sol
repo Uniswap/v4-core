@@ -145,6 +145,16 @@ library SqrtPriceMath {
             : getNextSqrtPriceFromAmount0RoundingUp(sqrtPX96, liquidity, amountOut, false);
     }
 
+    /// @notice Sorts two `uint160`s and returns them in ascending order
+    function sort2(uint160 a, uint160 b) internal pure returns (uint160, uint160) {
+        assembly {
+            let diff := mul(xor(a, b), lt(b, a))
+            a := xor(a, diff)
+            b := xor(b, diff)
+        }
+        return (a, b);
+    }
+
     /// @notice Gets the amount0 delta between two prices
     /// @dev Calculates liquidity / sqrt(lower) - liquidity / sqrt(upper),
     /// i.e. liquidity * (sqrt(upper) - sqrt(lower)) / (sqrt(upper) * sqrt(lower))
@@ -158,17 +168,33 @@ library SqrtPriceMath {
         pure
         returns (uint256 amount0)
     {
-        unchecked {
-            if (sqrtRatioAX96 > sqrtRatioBX96) (sqrtRatioAX96, sqrtRatioBX96) = (sqrtRatioBX96, sqrtRatioAX96);
-
-            uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
-            uint256 numerator2 = sqrtRatioBX96 - sqrtRatioAX96;
-
-            require(sqrtRatioAX96 > 0);
-
-            return roundUp
-                ? UnsafeMath.divRoundingUp(FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtRatioBX96), sqrtRatioAX96)
-                : FullMath.mulDiv(numerator1, numerator2, sqrtRatioBX96) / sqrtRatioAX96;
+        (sqrtRatioAX96, sqrtRatioBX96) = sort2(sqrtRatioAX96, sqrtRatioBX96);
+        /// @solidity memory-safe-assembly
+        assembly {
+            if iszero(sqrtRatioAX96) { revert(0, 0) }
+        }
+        uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
+        uint256 numerator2 = sqrtRatioBX96.sub(sqrtRatioAX96);
+        /**
+         * Equivalent to:
+         *   roundUp
+         *       ? FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtRatioBX96).divRoundingUp(sqrtRatioAX96)
+         *       : FullMath.mulDiv(numerator1, numerator2, sqrtRatioBX96) / sqrtRatioAX96;
+         * If `md = mulDiv(n1, n2, srb) == mulDivRoundingUp(n1, n2, srb)`, then `mulmod(n1, n2, srb) == 0`.
+         * Add `roundUp && md % sra > 0` to `div(md, sra)`.
+         * If `md = mulDiv(n1, n2, srb)` and `mulDivRoundingUp(n1, n2, srb)` differs by 1 and `sra > 0`,
+         * then `(md + 1).divRoundingUp(sra) == md.div(sra) + 1` whether `sra` fully divides `md` or not.
+         */
+        uint256 mulDivResult = FullMath.mulDiv(numerator1, numerator2, sqrtRatioBX96);
+        assembly {
+            amount0 :=
+                add(
+                    div(mulDivResult, sqrtRatioAX96),
+                    and(
+                        gt(or(mod(mulDivResult, sqrtRatioAX96), mulmod(numerator1, numerator2, sqrtRatioBX96)), 0),
+                        roundUp
+                    )
+                )
         }
     }
 
