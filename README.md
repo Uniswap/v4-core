@@ -94,7 +94,7 @@ contract MyContract is ILockCallback {
 
 ## License
 
-The primary license for Uniswap V4 Core is the GNU Affero General Public License v3.0 (`AGPL-3.0`), see [LICENSE](./LICENSE). Minus the following exceptions:
+The primary license for Uniswap V4 Core is the GNU Affero General Public License v3.0 (`AGPL-3.0-only`), see [LICENSE](./LICENSE). Minus the following exceptions:
 
 - [Interfaces](./contracts/interfaces) have a General Public License
 - Some [libraries](./contracts/libraries) and [types](./contracts/types/) have a General Public License
