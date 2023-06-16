@@ -10,7 +10,7 @@ import {Currency, CurrencyLibrary} from "./libraries/CurrencyLibrary.sol";
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
-import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
+
 import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
 import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
@@ -42,7 +42,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     uint256 private immutable controllerGasLimit;
 
-    IProtocolFeeController public protocolFeeController;
+    address public protocolFeeController;
 
     /// @inheritdoc IPoolManager
     address[] public override lockedBy;
@@ -62,9 +62,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     mapping(Currency currency => uint256) public override reservesOf;
 
     mapping(PoolId id => Pool.State) public pools;
-
-    /// @inheritdoc IPoolManager
-    mapping(Currency currency => uint256) public override protocolFeesAccrued;
 
     mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
 
@@ -133,7 +130,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
 
         PoolId id = key.toId();
-        (uint8 protocolSwapFee, uint8 protocolWithdrawFee) = _fetchProtocolFees(key);
+        uint8 protocolSwapFee = 0;
+        uint8 protocolWithdrawFee = 0;
         (uint8 hookSwapFee, uint8 hookWithdrawFee) = _fetchHookFees(key);
         tick = pools[id].initialize(sqrtPriceX96, protocolSwapFee, hookSwapFee, protocolWithdrawFee, hookWithdrawFee);
 
@@ -236,12 +234,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         _accountPoolBalanceDelta(key, delta);
 
         unchecked {
-            if (fees.feeForProtocol0 > 0) {
-                protocolFeesAccrued[key.currency0] += fees.feeForProtocol0;
-            }
-            if (fees.feeForProtocol1 > 0) {
-                protocolFeesAccrued[key.currency1] += fees.feeForProtocol1;
-            }
             if (fees.feeForHook0 > 0) {
                 hookFeesAccrued[address(key.hooks)][key.currency0] += fees.feeForHook0;
             }
@@ -301,9 +293,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         // the fee is on the input currency
 
         unchecked {
-            if (feeForProtocol > 0) {
-                protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
-            }
             if (feeForHook > 0) {
                 hookFeesAccrued[address(key.hooks)][params.zeroForOne ? key.currency0 : key.currency1] += feeForHook;
             }
@@ -399,52 +388,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
-    function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
-        protocolFeeController = controller;
-        emit ProtocolFeeControllerUpdated(address(controller));
-    }
+    function setProtocolFeeController(address) external {}
 
-    function setProtocolFees(PoolKey memory key) external {
-        (uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) = _fetchProtocolFees(key);
-        PoolId id = key.toId();
-        pools[id].setProtocolFees(newProtocolSwapFee, newProtocolWithdrawFee);
-        emit ProtocolFeeUpdated(id, newProtocolSwapFee, newProtocolWithdrawFee);
-    }
-
-    function _fetchProtocolFees(PoolKey memory key)
-        internal
-        view
-        returns (uint8 protocolSwapFee, uint8 protocolWithdrawFee)
-    {
-        if (address(protocolFeeController) != address(0)) {
-            // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
-            // will be allotted no more than this amount, so controllerGasLimit must be set with this
-            // in mind.
-            if (gasleft() < controllerGasLimit) revert ProtocolFeeCannotBeFetched();
-            try protocolFeeController.protocolFeesForPool{gas: controllerGasLimit}(key) returns (
-                uint8 updatedProtocolSwapFee, uint8 updatedProtocolWithdrawFee
-            ) {
-                protocolSwapFee = updatedProtocolSwapFee;
-                protocolWithdrawFee = updatedProtocolWithdrawFee;
-            } catch {}
-
-            _checkProtocolFee(protocolSwapFee);
-            _checkProtocolFee(protocolWithdrawFee);
-        }
-    }
-
-    function _checkProtocolFee(uint8 fee) internal pure {
-        if (fee != 0) {
-            uint8 fee0 = fee % 16;
-            uint8 fee1 = fee >> 4;
-            // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-            if (
-                (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
-            ) {
-                revert FeeTooLarge();
-            }
-        }
-    }
+    function setProtocolFees(PoolKey memory key) external {}
 
     function setHookFees(PoolKey memory key) external {
         (uint8 newHookSwapFee, uint8 newHookWithdrawFee) = _fetchHookFees(key);
@@ -464,16 +410,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+    function collectProtocolFees(address, Currency, uint256)
         external
-        returns (uint256 amountCollected)
-    {
-        if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
-
-        amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
-        protocolFeesAccrued[currency] -= amountCollected;
-        currency.transfer(recipient, amountCollected);
-    }
+        returns (uint256)
+    {}
 
     function collectHookFees(address recipient, Currency currency, uint256 amount)
         external
