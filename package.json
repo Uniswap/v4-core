@@ -1,7 +1,7 @@
 {
   "name": "@uniswap/v4-core",
   "description": "🦄 Uniswap Protocol smart contracts",
-  "license": "BUSL-1.1",
+  "license": "AGPL-3.0",
   "publishConfig": {
     "access": "restricted"
   },
