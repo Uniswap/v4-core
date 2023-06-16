@@ -113,9 +113,10 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
-        require(sqrtPX96 > 0);
-        require(liquidity > 0);
-
+        /// @solidity memory-safe-assembly
+        assembly {
+            if or(iszero(sqrtPX96), iszero(liquidity)) { revert(0, 0) }
+        }
         // round to make sure that we don't pass the target price
         return zeroForOne
             ? getNextSqrtPriceFromAmount0RoundingUp(sqrtPX96, liquidity, amountIn, true)
@@ -134,9 +135,10 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
-        require(sqrtPX96 > 0);
-        require(liquidity > 0);
-
+        /// @solidity memory-safe-assembly
+        assembly {
+            if or(iszero(sqrtPX96), iszero(liquidity)) { revert(0, 0) }
+        }
         // round to make sure that we pass the target price
         return zeroForOne
             ? getNextSqrtPriceFromAmount1RoundingDown(sqrtPX96, liquidity, amountOut, false)
