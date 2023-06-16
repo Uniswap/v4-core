@@ -1,3 +1,22 @@
+## Uni v4 core piracy
+
+This repo is in violation of the terms of the BSL. The BSL is dumb and we should all collectively agree to violate it.
+
+Changes made
+- deleted protocol fee stuff because it's stupid overhead that never gets turned on
+- updated the readme
+- disabled tests b/c i didn't feel like updating them)
+- documented deployment command
+
+### Deploying:
+
+Currently the contract is too large to deploy. Eventually that will change I assume.
+
+```
+forge c PoolManager --rpc-url $MY_RPC --private-key $MY_PRIVATE_KEY --constructor-args $CONTROLLER_GAS_LIMIT --verify
+```
+
+
 # Uniswap v4 Core
 
 [![Lint](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml)
