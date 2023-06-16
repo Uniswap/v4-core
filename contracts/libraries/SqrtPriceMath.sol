@@ -11,6 +11,7 @@ import {FixedPoint96} from "./FixedPoint96.sol";
 /// @notice Contains the math that uses square root of price as a Q64.96 and liquidity to compute deltas
 library SqrtPriceMath {
     using SafeCast for uint256;
+    using UnsafeMath for *;
 
     /// @notice Gets the next sqrt price given a delta of currency0
     /// @dev Always rounds up, because in the exact output case (increasing price) we need to move the price at least
@@ -18,7 +19,7 @@ library SqrtPriceMath {
     /// price less in order to not send too much output.
     /// The most precise formula for this is liquidity * sqrtPX96 / (liquidity +- amount * sqrtPX96),
     /// if this is impossible because of overflow, we calculate liquidity / (liquidity / sqrtPX96 +- amount).
-    /// @param sqrtPX96 The starting price, i.e. before accounting for the currency0 delta
+    /// @param sqrtPX96 The starting price, i.e. before accounting for the currency0 delta, must be checked to be > 0
     /// @param liquidity The amount of usable liquidity
     /// @param amount How much of currency0 to add or remove from virtual reserves
     /// @param add Whether to add or remove the amount of currency0
@@ -34,8 +35,9 @@ library SqrtPriceMath {
 
         if (add) {
             unchecked {
-                uint256 product;
-                if ((product = amount * sqrtPX96) / amount == sqrtPX96) {
+                uint256 product = amount * sqrtPX96;
+                // checks for overflow
+                if (product.div(amount) == sqrtPX96) {
                     uint256 denominator = numerator1 + product;
                     if (denominator >= numerator1) {
                         // always fits in 160 bits
@@ -44,16 +46,18 @@ library SqrtPriceMath {
                 }
             }
             // denominator is checked for overflow
-            return uint160(UnsafeMath.divRoundingUp(numerator1, (numerator1 / sqrtPX96) + amount));
+            return uint160(numerator1.divRoundingUp(numerator1.div(sqrtPX96) + amount));
         } else {
-            unchecked {
-                uint256 product;
+            uint256 denominator;
+            /// @solidity memory-safe-assembly
+            assembly {
                 // if the product overflows, we know the denominator underflows
                 // in addition, we must check that the denominator does not underflow
-                require((product = amount * sqrtPX96) / amount == sqrtPX96 && numerator1 > product);
-                uint256 denominator = numerator1 - product;
-                return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
+                let product := mul(amount, sqrtPX96)
+                if iszero(and(eq(div(product, amount), sqrtPX96), gt(numerator1, product))) { revert(0, 0) }
+                denominator := sub(numerator1, product)
             }
+            return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
         }
     }
 
@@ -63,7 +67,7 @@ library SqrtPriceMath {
     /// price less in order to not send too much output.
     /// The formula we compute is within <1 wei of the lossless version: sqrtPX96 +- amount / liquidity
     /// @param sqrtPX96 The starting price, i.e., before accounting for the currency1 delta
-    /// @param liquidity The amount of usable liquidity
+    /// @param liquidity The amount of usable liquidity, must be checked to be > 0 externally
     /// @param amount How much of currency1 to add, or remove, from virtual reserves
     /// @param add Whether to add, or remove, the amount of currency1
     /// @return The price after adding or removing `amount`
