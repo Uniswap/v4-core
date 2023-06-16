@@ -233,10 +233,31 @@ library SqrtPriceMath {
         pure
         returns (int256 amount0)
     {
-        unchecked {
-            return liquidity < 0
-                ? -getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(-liquidity), false).toInt256()
-                : getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(liquidity), true).toInt256();
+        /**
+         * Equivalent to:
+         *   amount0 = liquidity < 0
+         *       ? -getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(-liquidity), false).toInt256()
+         *       : getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(liquidity), true).toInt256();
+         */
+        bool sign;
+        uint256 mask;
+        uint128 liquidityAbs;
+        assembly {
+            // In case the upper bits are not clean.
+            liquidity := signextend(15, liquidity)
+            // sign = 1 if liquidity >= 0 else 0
+            sign := iszero(slt(liquidity, 0))
+            // mask = 0 if liquidity >= 0 else -1
+            mask := sub(sign, 1)
+            liquidityAbs := xor(mask, add(mask, liquidity))
+        }
+        // amount0Abs = liquidity / sqrt(lower) - liquidity / sqrt(upper) < type(uint224).max
+        // always fits in 224 bits, no need for toInt256()
+        uint256 amount0Abs = getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, liquidityAbs, sign);
+        assembly {
+            // If liquidity >= 0, amount0 = |amount0| = 0 ^ |amount0|
+            // If liquidity < 0, amount0 = -|amount0| = ~|amount0| + 1 = (-1) ^ |amount0| - (-1)
+            amount0 := sub(xor(amount0Abs, mask), mask)
         }
     }
 
@@ -250,10 +271,31 @@ library SqrtPriceMath {
         pure
         returns (int256 amount1)
     {
-        unchecked {
-            return liquidity < 0
-                ? -getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(-liquidity), false).toInt256()
-                : getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(liquidity), true).toInt256();
+        /**
+         * Equivalent to:
+         *   amount1 = liquidity < 0
+         *       ? -getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(-liquidity), false).toInt256()
+         *       : getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(liquidity), true).toInt256();
+         */
+        bool sign;
+        uint256 mask;
+        uint128 liquidityAbs;
+        assembly {
+            // In case the upper bits are not clean.
+            liquidity := signextend(15, liquidity)
+            // sign = 1 if liquidity >= 0 else 0
+            sign := iszero(slt(liquidity, 0))
+            // mask = 0 if liquidity >= 0 else -1
+            mask := sub(sign, 1)
+            liquidityAbs := xor(mask, add(mask, liquidity))
+        }
+        // amount1Abs = liquidity * (sqrt(upper) - sqrt(lower)) < type(uint192).max
+        // always fits in 192 bits, no need for toInt256()
+        uint256 amount1Abs = getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidityAbs, sign);
+        assembly {
+            // If liquidity >= 0, amount1 = |amount1| = 0 ^ |amount1|
+            // If liquidity < 0, amount1 = -|amount1| = ~|amount1| + 1 = (-1) ^ |amount1| - (-1)
+            amount1 := sub(xor(amount1Abs, mask), mask)
         }
     }
 }
