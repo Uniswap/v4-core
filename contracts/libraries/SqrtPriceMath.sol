@@ -190,10 +190,7 @@ library SqrtPriceMath {
             amount0 :=
                 add(
                     div(mulDivResult, sqrtRatioAX96),
-                    and(
-                        gt(or(mod(mulDivResult, sqrtRatioAX96), mulmod(numerator1, numerator2, sqrtRatioBX96)), 0),
-                        roundUp
-                    )
+                    and(gt(or(mod(mulDivResult, sqrtRatioAX96), mulmod(numerator1, numerator2, sqrtRatioBX96)), 0), roundUp)
                 )
         }
     }
@@ -210,11 +207,20 @@ library SqrtPriceMath {
         pure
         returns (uint256 amount1)
     {
-        if (sqrtRatioAX96 > sqrtRatioBX96) (sqrtRatioAX96, sqrtRatioBX96) = (sqrtRatioBX96, sqrtRatioAX96);
-
-        return roundUp
-            ? FullMath.mulDivRoundingUp(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96)
-            : FullMath.mulDiv(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96);
+        (sqrtRatioAX96, sqrtRatioBX96) = sort2(sqrtRatioAX96, sqrtRatioBX96);
+        uint256 numerator = sqrtRatioBX96.sub(sqrtRatioAX96);
+        uint256 denominator = FixedPoint96.Q96;
+        /**
+         * Equivalent to:
+         *   amount1 = roundUp
+         *       ? FullMath.mulDivRoundingUp(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96)
+         *       : FullMath.mulDiv(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96);
+         * Cannot overflow because `type(uint128).max * type(uint160).max >> 96 < (1 << 192)`.
+         */
+        amount1 = FullMath.mulDiv96(liquidity, numerator);
+        assembly {
+            amount1 := add(amount1, and(gt(mulmod(liquidity, numerator, denominator), 0), roundUp))
+        }
     }
 
     /// @notice Helper that gets signed currency0 delta

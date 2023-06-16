@@ -39,6 +39,22 @@ contract TestSqrtPriceMath is Test, GasSnapshot {
         return int128(int256(pseudoRandom(seed)));
     }
 
+    /// @notice Test `mulDiv96` against `mulDiv` with a denominator of `Q96`.
+    /// TODO: move it to FullMath.t.sol when available
+    function testFuzzMulDiv96(uint256 a, uint256 b) external {
+        // Most significant 256 bits of the product.
+        uint256 prod1;
+        assembly {
+            // Least significant 256 bits of the product.
+            let prod0 := mul(a, b)
+            let mm := mulmod(a, b, not(0))
+            prod1 := sub(mm, add(prod0, lt(mm, prod0)))
+        }
+        // assume that the `mulDiv` will not overflow
+        vm.assume(FixedPoint96.Q96 > prod1);
+        assertEq(FullMath.mulDiv96(a, b), FullMath.mulDiv(a, b, FixedPoint96.Q96));
+    }
+
     function testFuzzGetNextSqrtPriceFromAmount0RoundingUp(
         uint160 sqrtPX96,
         uint128 liquidity,

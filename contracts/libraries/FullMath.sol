@@ -103,6 +103,35 @@ library FullMath {
         }
     }
 
+    /// @notice Calculates x * y / 2^96 with full precision.
+    function mulDiv96(uint256 x, uint256 y) internal pure returns (uint256 result) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            // 512-bit multiply `[prod1 prod0] = x * y`.
+            // Compute the product mod `2**256` and mod `2**256 - 1`
+            // then use the Chinese Remainder Theorem to reconstruct
+            // the 512 bit result. The result is stored in two 256
+            // variables such that `product = prod1 * 2**256 + prod0`.
+
+            // Least significant 256 bits of the product.
+            let prod0 := mul(x, y)
+            let mm := mulmod(x, y, not(0))
+            // Most significant 256 bits of the product.
+            let prod1 := sub(mm, add(prod0, lt(mm, prod0)))
+
+            // Make sure the result is less than `2**256`.
+            if iszero(gt(0x1000000000000000000000000, prod1)) {
+                // Store the function selector of `FullMulDivFailed()`.
+                mstore(0x00, 0xae47f702)
+                // Revert with (offset, size).
+                revert(0x1c, 0x04)
+            }
+
+            // Divide [prod1 prod0] by 2^96.
+            result := or(shr(96, prod0), shl(160, prod1))
+        }
+    }
+
     /// @notice Calculates ceil(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0
     /// @param a The multiplicand
     /// @param b The multiplier
