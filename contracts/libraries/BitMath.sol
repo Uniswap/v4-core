@@ -8,41 +8,29 @@ library BitMath {
     ///     where the least significant bit is at index 0 and the most significant bit is at index 255
     /// @dev The function satisfies the property:
     ///     x >= 2**mostSignificantBit(x) and x < 2**(mostSignificantBit(x)+1)
+    /// @dev Modified from [Solady](https://github.com/Vectorized/solady/blob/37b4fd04dd82977eb0161839389187abb7afdb58/src/utils/LibBit.sol#L17)
     /// @param x the value for which to compute the most significant bit, must be greater than 0
     /// @return r the index of the most significant bit
     function mostSignificantBit(uint256 x) internal pure returns (uint8 r) {
-        require(x > 0);
+        /// @solidity memory-safe-assembly
+        assembly {
+            if iszero(x) { revert(0, 0) }
 
-        unchecked {
-            if (x >= 0x100000000000000000000000000000000) {
-                x >>= 128;
-                r += 128;
-            }
-            if (x >= 0x10000000000000000) {
-                x >>= 64;
-                r += 64;
-            }
-            if (x >= 0x100000000) {
-                x >>= 32;
-                r += 32;
-            }
-            if (x >= 0x10000) {
-                x >>= 16;
-                r += 16;
-            }
-            if (x >= 0x100) {
-                x >>= 8;
-                r += 8;
-            }
-            if (x >= 0x10) {
-                x >>= 4;
-                r += 4;
-            }
-            if (x >= 0x4) {
-                x >>= 2;
-                r += 2;
-            }
-            if (x >= 0x2) r += 1;
+            r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+            r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
+            r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
+
+            // For the remaining 32 bits, use a De Bruijn lookup.
+            x := shr(r, x)
+            x := or(x, shr(1, x))
+            x := or(x, shr(2, x))
+            x := or(x, shr(4, x))
+            x := or(x, shr(8, x))
+            x := or(x, shr(16, x))
+
+            // forgefmt: disable-next-item
+            r := or(r, byte(shr(251, mul(x, shl(224, 0x07c4acdd))),
+                0x0009010a0d15021d0b0e10121619031e080c141c0f111807131b17061a05041f))
         }
     }
 
@@ -50,49 +38,25 @@ library BitMath {
     ///     where the least significant bit is at index 0 and the most significant bit is at index 255
     /// @dev The function satisfies the property:
     ///     (x & 2**leastSignificantBit(x)) != 0 and (x & (2**(leastSignificantBit(x)) - 1)) == 0)
+    /// @dev Modified from [Solady](https://github.com/Vectorized/solady/blob/37b4fd04dd82977eb0161839389187abb7afdb58/src/utils/LibBit.sol#L72)
     /// @param x the value for which to compute the least significant bit, must be greater than 0
     /// @return r the index of the least significant bit
     function leastSignificantBit(uint256 x) internal pure returns (uint8 r) {
-        require(x > 0);
+        /// @solidity memory-safe-assembly
+        assembly {
+            if iszero(x) { revert(0, 0) }
 
-        unchecked {
-            r = 255;
-            if (x & type(uint128).max > 0) {
-                r -= 128;
-            } else {
-                x >>= 128;
-            }
-            if (x & type(uint64).max > 0) {
-                r -= 64;
-            } else {
-                x >>= 64;
-            }
-            if (x & type(uint32).max > 0) {
-                r -= 32;
-            } else {
-                x >>= 32;
-            }
-            if (x & type(uint16).max > 0) {
-                r -= 16;
-            } else {
-                x >>= 16;
-            }
-            if (x & type(uint8).max > 0) {
-                r -= 8;
-            } else {
-                x >>= 8;
-            }
-            if (x & 0xf > 0) {
-                r -= 4;
-            } else {
-                x >>= 4;
-            }
-            if (x & 0x3 > 0) {
-                r -= 2;
-            } else {
-                x >>= 2;
-            }
-            if (x & 0x1 > 0) r -= 1;
+            // Isolate the least significant bit.
+            x := and(x, add(not(x), 1))
+
+            r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+            r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
+            r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
+
+            // For the remaining 32 bits, use a De Bruijn lookup.
+            // forgefmt: disable-next-item
+            r := or(r, byte(shr(251, mul(shr(r, x), shl(224, 0x077cb531))),
+                0x00011c021d0e18031e16140f191104081f1b0d17151310071a0c12060b050a09))
         }
     }
 }
