@@ -179,7 +179,7 @@ describe('PoolManager', () => {
       ).to.be.reverted
     })
 
-    it('fails for invalid tokens that dont return true on transfer', async () => {
+    it('fails for invalid tokens that don\'t return true on transfer', async () => {
       const tokenFactory = await ethers.getContractFactory('TestInvalidERC20')
       const invalidToken = (await tokenFactory.deploy(BigNumber.from(2).pow(255))) as TestERC20
       const currency0Invalid = invalidToken.address.toLowerCase() < tokens.currency0.address.toLowerCase()
