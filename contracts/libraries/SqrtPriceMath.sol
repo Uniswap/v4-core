@@ -70,32 +70,34 @@ library SqrtPriceMath {
     /// @param liquidity The amount of usable liquidity, must be checked to be > 0 externally
     /// @param amount How much of currency1 to add, or remove, from virtual reserves
     /// @param add Whether to add, or remove, the amount of currency1
-    /// @return The price after adding or removing `amount`
+    /// @return nextSqrtPrice The price after adding or removing `amount`
     function getNextSqrtPriceFromAmount1RoundingDown(uint160 sqrtPX96, uint128 liquidity, uint256 amount, bool add)
         internal
         pure
-        returns (uint160)
+        returns (uint160 nextSqrtPrice)
     {
         // if we're adding (subtracting), rounding down requires rounding the quotient down (up)
         // in both cases, avoid a mulDiv for most inputs
         if (add) {
             uint256 quotient = (
                 amount <= type(uint160).max
-                    ? (amount << FixedPoint96.RESOLUTION) / liquidity
+                    ? (amount << FixedPoint96.RESOLUTION).div(liquidity)
                     : FullMath.mulDiv(amount, FixedPoint96.Q96, liquidity)
             );
 
-            return (uint256(sqrtPX96) + quotient).toUint160();
+            nextSqrtPrice = (sqrtPX96 + quotient).toUint160();
         } else {
             uint256 quotient = (
                 amount <= type(uint160).max
-                    ? UnsafeMath.divRoundingUp(amount << FixedPoint96.RESOLUTION, liquidity)
+                    ? (amount << FixedPoint96.RESOLUTION).divRoundingUp(liquidity)
                     : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity)
             );
-
-            require(sqrtPX96 > quotient);
-            // always fits 160 bits
-            return uint160(sqrtPX96 - quotient);
+            /// @solidity memory-safe-assembly
+            assembly {
+                if iszero(gt(sqrtPX96, quotient)) { revert(0, 0) }
+                // always fits 160 bits
+                nextSqrtPrice := sub(sqrtPX96, quotient)
+            }
         }
     }
 
