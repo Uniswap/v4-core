@@ -434,14 +434,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     function _checkProtocolFee(uint8 fee) internal pure {
-        if (fee != 0) {
-            uint8 fee0 = fee % 16;
-            uint8 fee1 = fee >> 4;
-            // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-            if (
-                (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
-            ) {
-                revert FeeTooLarge();
+           // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
+           //no possibility of underflow or overflow
+           assembly {
+            if gt(fee, 0) {
+                let fee0 := mod(fee, 16)
+                let fee1 := shr(4, fee)
+                if or(and(gt(fee0, 0), lt(fee0, 4)), and(gt(fee1, 0), lt(fee1, 4))) {
+                    mstore(0x00, 0xd078e549)
+                    revert(0x00, 0x20)
+                }
             }
         }
     }
