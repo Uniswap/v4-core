@@ -8,18 +8,14 @@ library LockDataLibrary {
 
     function push(IPoolManager.LockData storage self, address locker) internal {
         uint96 length = self.length;
-        uint96 index = self.index;
+        uint256 index = self.index; // only 96 bits, but we expand to 256 for clarity when using bitwise or below
+
         unchecked {
             uint256 indexToWrite = OFFSET + length;
             /// @solidity memory-safe-assembly
             assembly {
-                let valueToWrite :=
-                    or(
-                        shl(96, locker),
-                        // TODO might not be necessary to clean the upper bits of parentLockIndex?
-                        and(0x0000000000000000000000000000000000000000ffffffffffffffffffffffff, index)
-                    )
-                sstore(indexToWrite, valueToWrite)
+                // note that the current index becomes the parent lock index
+                sstore(indexToWrite, or(shl(96, locker), index))
             }
             self.length = length + 1;
             self.index = length;
