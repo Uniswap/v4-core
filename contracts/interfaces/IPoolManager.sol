@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// 中文注释由 WTF Academy 贡献
 pragma solidity ^0.8.19;
 
 import {Currency} from "../libraries/CurrencyLibrary.sol";
@@ -9,37 +10,37 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../libraries/PoolId.sol";
 
 interface IPoolManager is IERC1155 {
-    /// @notice Thrown when currencies touched has exceeded max of 256
+    /// @notice 当涉及的货币超过最大值256时抛出异常
     error MaxCurrenciesTouched();
 
-    /// @notice Thrown when not enough gas is provided to look up the protocol fee
+    /// @notice 当提供的燃料不足以查找协议费用时抛出异常
     error ProtocolFeeCannotBeFetched();
 
-    /// @notice Thrown when a currency is not netted out after a lock
+    /// @notice 当锁定后未净额结算货币时抛出异常
     error CurrencyNotSettled();
 
-    /// @notice Thrown when a function is called by an address that is not the current locker
-    /// @param locker The current locker
+    /// @notice 当被调用的函数的地址不是当前锁定者时抛出异常
+    /// @param locker 当前锁定者地址
     error LockedBy(address locker);
 
-    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
+    /// @notice 存款的 ERC1155 不是 Uniswap ERC1155
     error NotPoolManagerToken();
 
-    /// @notice Pools must have a fee that is <100%, enforced in #intialize and for dynamic fee pools
+    /// @notice 池子必须具有小于100%的费用，在#initialize和动态费用池中强制执行
     error FeeTooLarge();
 
-    /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
+    /// @notice 池子的tickSpacing在#initialize中受到type(int16).max的限制，以防止溢出
     error TickSpacingTooLarge();
-    /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
+    /// @notice 池子在#initialize中必须具有正的非零tickSpacing
     error TickSpacingTooSmall();
 
-    /// @notice Emitted when a new pool is initialized
-    /// @param id The abi encoded hash of the pool key struct for the new pool
-    /// @param currency0 The first currency of the pool by address sort order
-    /// @param currency1 The second currency of the pool by address sort order
-    /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
-    /// @param tickSpacing The minimum number of ticks between initialized ticks
-    /// @param hooks The hooks contract address for the pool, or address(0) if none
+    /// @notice 初始化新池子时触发的事件
+    /// @param id 新池子的池子键的abi编码哈希
+    /// @param currency0 池子中的第一种货币，按地址排序
+    /// @param currency1 池子中的第二种货币，按地址排序
+    /// @param fee 池子中每次交换收取的费用，以百分之一的bip记
+    /// @param tickSpacing 初始化的ticks之间的最小数量
+    /// @param hooks 池子的hooks合约地址，如果没有则为address(0)
     event Initialize(
         PoolId indexed id,
         Currency indexed currency0,
@@ -49,24 +50,24 @@ interface IPoolManager is IERC1155 {
         IHooks hooks
     );
 
-    /// @notice Emitted when a liquidity position is modified
-    /// @param id The abi encoded hash of the pool key struct for the pool that was modified
-    /// @param sender The address that modified the pool
-    /// @param tickLower The lower tick of the position
-    /// @param tickUpper The upper tick of the position
-    /// @param liquidityDelta The amount of liquidity that was added or removed
+    /// @notice 修改流动性持仓时触发的事件
+    /// @param id 被修改的池子的PoolKey的abi编码哈希
+    /// @param sender 修改池子的地址
+    /// @param tickLower 持仓的较低tick
+    /// @param tickUpper 持仓的较高tick
+    /// @param liquidityDelta 增加或减少的流动性数量
     event ModifyPosition(
         PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
     );
 
-    /// @notice Emitted for swaps between currency0 and currency1
-    /// @param id The abi encoded hash of the pool key struct for the pool that was modified
-    /// @param sender The address that initiated the swap call, and that received the callback
-    /// @param amount0 The delta of the currency0 balance of the pool
-    /// @param amount1 The delta of the currency1 balance of the pool
-    /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
-    /// @param liquidity The liquidity of the pool after the swap
-    /// @param tick The log base 1.0001 of the price of the pool after the swap
+    /// @notice 在货币0和货币1之间进行兑换时触发的事件
+    /// @param id 被修改的池子的池子键的abi编码哈希
+    /// @param sender 启动兑换调用并接收回调的地址
+    /// @param amount0 池子中货币0余额的变化量
+    /// @param amount1 池子中货币1余额的变化量
+    /// @param sqrtPriceX96 兑换后池子的sqrt(价格)，以Q64.96表示
+    /// @param liquidity 兑换后池子的流动性
+    /// @param tick 兑换后池子价格的log base 1.0001
     event Swap(
         PoolId indexed id,
         address indexed sender,
@@ -84,30 +85,30 @@ interface IPoolManager is IERC1155 {
 
     event HookFeeUpdated(PoolId indexed id, uint8 hookSwapFee, uint8 hookWithdrawFee);
 
-    /// @notice Returns the key for identifying a pool
+    /// @notice 返回用于标识池子的键
     struct PoolKey {
-        /// @notice The lower currency of the pool, sorted numerically
+        /// @notice 池子的较低货币，按数字顺序排序
         Currency currency0;
-        /// @notice The higher currency of the pool, sorted numerically
+        /// @notice 池子的较高货币，按数字顺序排序
         Currency currency1;
-        /// @notice The pool swap fee, capped at 1_000_000. The upper 4 bits determine if the hook sets any fees.
+        /// @notice 池子的交换费用，上限为1_000_000。最高4位确定hook是否设置了任何费用。
         uint24 fee;
-        /// @notice Ticks that involve positions must be a multiple of tick spacing
+        /// @notice 涉及持仓的ticks必须是tick间距的倍数
         int24 tickSpacing;
-        /// @notice The hooks of the pool
+        /// @notice 池子的hooks
         IHooks hooks;
     }
 
-    /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
+    /// @notice 返回已初始化池子键的最大tickSpacing常量
     function MAX_TICK_SPACING() external view returns (int24);
 
-    /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
+    /// @notice 返回已初始化池子键的最小tickSpacing常量
     function MIN_TICK_SPACING() external view returns (int24);
 
-    /// @notice Returns the minimum denominator for the protocol fee, which restricts it to a maximum of 25%
+    /// @notice 返回协议费用的最小分母，将其限制为最大25%
     function MIN_PROTOCOL_FEE_DENOMINATOR() external view returns (uint8);
 
-    /// @notice Get the current value in slot0 of the given pool
+    /// @notice 获取给定池子的slot0的当前值
     function getSlot0(PoolId id)
         external
         view
@@ -120,54 +121,54 @@ interface IPoolManager is IERC1155 {
             uint8 hookWithdrawFee
         );
 
-    /// @notice Get the current value of liquidity of the given pool
+    /// @notice 获取给定池子的当前流动性值
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);
 
-    /// @notice Get the current value of liquidity for the specified pool and position
+    /// @notice 获取指定池子和持仓的当前流动性值
     function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper)
         external
         view
         returns (uint128 liquidity);
 
-    // @notice Given a currency address, returns the protocol fees accrued in that currency
+    // @notice 给定货币地址，返回在该货币中应计提的协议费用
     function protocolFeesAccrued(Currency) external view returns (uint256);
 
-    /// @notice Returns the reserves for a given ERC20 currency
+    /// @notice 返回给定ERC20货币的储备
     function reservesOf(Currency currency) external view returns (uint256);
 
-    /// @notice Initialize the state for a given pool ID
+    /// @notice 初始化给定池子ID的状态
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
-    /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
-    /// @param index The index of the locker, also known as the id of the locker
+    /// @notice 表示锁定池子的地址堆栈。每次调用#lock都会将地址推送到堆栈上
+    /// @param index 锁定者的索引，也称为锁定者的ID
     function lockedBy(uint256 index) external view returns (address);
 
-    /// @notice Getter for the length of the lockedBy array
+    /// @notice 获取lockedBy数组的长度
     function lockedByLength() external view returns (uint256);
 
-    /// @notice Returns the count of nonzero deltas for the given locker ID
-    /// @param id The ID of the locker
+    /// @notice 返回给定locker ID的非零delta计数
+    /// @param id locker的ID
     function getNonzeroDeltaCount(uint256 id) external view returns (uint256);
 
-    /// @notice Get the current delta for a given currency, and its position in the currencies touched array
-    /// @param id The ID of the locker
-    /// @param currency The currency for which to lookup the delta
+    /// @notice 获取给定locker ID的特定货币的当前delta值和其在currencies touched数组中的位置
+    /// @param id locker的ID
+    /// @param currency 要查找delta的货币
     function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256);
 
-    /// @notice All operations go through this function
-    /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
-    /// @return The data returned by the call to `ILockCallback(msg.sender).lockCallback(data)`
+    /// @notice 所有操作都通过此函数进行
+    /// @param data 通过`ILockCallback(msg.sender).lockCallback(data)`传递给回调函数的任何数据
+    /// @return 调用`ILockCallback(msg.sender).lockCallback(data)`返回的数据
     function lock(bytes calldata data) external returns (bytes memory);
 
     struct ModifyPositionParams {
-        // the lower and upper tick of the position
+        // 持仓的较低tick和较高tick
         int24 tickLower;
         int24 tickUpper;
-        // how to modify the liquidity
+        // 修改流动性的方式
         int256 liquidityDelta;
     }
 
-    /// @notice Modify the position for the given pool
+    /// @notice 修改给定池子的持仓
     function modifyPosition(PoolKey memory key, ModifyPositionParams memory params) external returns (BalanceDelta);
 
     struct SwapParams {
@@ -176,37 +177,37 @@ interface IPoolManager is IERC1155 {
         uint160 sqrtPriceLimitX96;
     }
 
-    /// @notice Swap against the given pool
+    /// @notice 对给定池子进行兑换
     function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta);
 
-    /// @notice Donate the given currency amounts to the pool with the given pool key
+    /// @notice 将指定货币金额捐赠给具有给定池子键的池子
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1) external returns (BalanceDelta);
 
-    /// @notice Called by the user to net out some value owed to the user
-    /// @dev Can also be used as a mechanism for _free_ flash loans
+    /// @notice 用户调用以结算池子对用户所欠的一些值
+    /// @dev 也可用作“免费”闪电贷款的机制
     function take(Currency currency, address to, uint256 amount) external;
 
-    /// @notice Called by the user to move value into ERC1155 balance
+    /// @notice 用户调用以将值转移至ERC1155余额
     function mint(Currency token, address to, uint256 amount) external;
 
-    /// @notice Called by the user to pay what is owed
+    /// @notice 用户调用以支付所欠款
     function settle(Currency token) external payable returns (uint256 paid);
 
-    /// @notice Sets the protocol's swap and withdrawal fees for the given pool
-    /// Protocol fees are always a portion of a fee that is owed. If that underlying fee is 0, no protocol fees will accrue even if it is set to > 0.
+    /// @notice 设置给定池子的协议交换和提现费用
+    /// 协议费用始终是欠费的一部分。如果底层费用为0，则不会产生任何协议费用，即使设置为>0。
     function setProtocolFees(PoolKey memory key) external;
 
-    /// @notice Sets the hook's swap and withdrawal fees for the given pool
+    /// @notice 设置给定池子hook的交换和提现费用
     function setHookFees(PoolKey memory key) external;
 
-    /// @notice Called by external contracts to access granular pool state
-    /// @param slot Key of slot to sload
-    /// @return value The value of the slot as bytes32
+    /// @notice 外部合约调用以访问细粒度的池子状态
+    /// @param slot 要sload的槽的键
+    /// @return value 作为bytes32的槽的值
     function extsload(bytes32 slot) external view returns (bytes32 value);
 
-    /// @notice Called by external contracts to access granular pool state
-    /// @param slot Key of slot to start sloading from
-    /// @param nSlots Number of slots to load into return value
-    /// @return value The value of the sload-ed slots concatentated as dynamic bytes
+    /// @notice 外部合约调用以访问细粒度的池子状态
+    /// @param slot 要开始sload的槽的键
+    /// @param nSlots 要加载到返回值中的槽的数量
+    /// @return value 作为动态字节数组连接的sload的槽的值
     function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
 }
