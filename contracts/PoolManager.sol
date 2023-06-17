@@ -137,6 +137,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
+        // 释放Initialize事件
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
     }
 
@@ -181,17 +182,20 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     /// @param data 通过`ILockCallback(msg.sender).lockCallback(data)`传递给回调函数的任何数据
     /// @return 调用`ILockCallback(msg.sender).lockCallback(data)`返回的数据
     function lock(bytes calldata data) external override returns (bytes memory result) {
+        // 将msg.sender添加到locker中
         uint256 id = lockedBy.length;
         lockedBy.push(msg.sender);
 
         // 调用者在此回调函数中完成所有操作，包括通过调用 settle 支付所欠的款项
         result = ILockCallback(msg.sender).lockAcquired(id, data);
 
+        // 检查delta是否都为0
         unchecked {
             LockState storage lockState = lockStates[id];
             if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
         }
 
+        // 将msg.sender从locker中删除
         lockedBy.pop();
     }
 
