@@ -13,6 +13,7 @@ import {Pool} from "../../contracts/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
+import {PoolBurnTest} from "../../contracts/test/PoolBurnTest.sol";
 import {Currency, CurrencyLibrary} from "../../contracts/libraries/CurrencyLibrary.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
@@ -63,6 +64,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     PoolManager manager;
     PoolDonateTest donateRouter;
     PoolModifyPositionTest modifyPositionRouter;
+    PoolBurnTest burnRouter;
     PoolSwapTest swapRouter;
     PoolLockTest lockTest;
     ProtocolFeeControllerTest protocolFeeController;
@@ -77,7 +79,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager = Deployers.createFreshManager();
         donateRouter = new PoolDonateTest(manager);
         modifyPositionRouter = new PoolModifyPositionTest(manager);
-        swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
+        burnRouter = new PoolBurnTest(manager);
 
         lockTest = new PoolLockTest(manager);
         swapRouter = new PoolSwapTest(manager);
@@ -91,6 +93,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 10 ether);
         MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 10 ether);
+
+        MockERC20(Currency.unwrap(currency0)).approve(address(burnRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(burnRouter), 10 ether);
 
         MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ether);
         MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ether);
@@ -537,6 +542,49 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         emit ModifyPosition(PoolId.toId(key), address(modifyPositionRouter), 0, 60, 100);
 
         modifyPositionRouter.modifyPosition(key, params);
+    }
+
+    function testBurnSucceedsWithLock() public {
+        uint256 amount0 = 1 ether;
+        uint256 amount1 = 1 ether;
+
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 3000,
+            hooks: IHooks(address(0)),
+            tickSpacing: 60
+        });
+
+        manager.initialize(key, SQRT_RATIO_1_1);
+        manager.setApprovalForAll(address(burnRouter), true);
+        burnRouter.mint(key, amount0, amount1);
+
+        burnRouter.burn(key, amount0, amount1);
+    }
+
+    function testBurnFailsWithoutLock() public {
+        uint256 amount0 = 1 ether;
+        uint256 amount1 = 1 ether;
+
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 3000,
+            hooks: IHooks(address(0)),
+            tickSpacing: 60
+        });
+
+        manager.initialize(key, SQRT_RATIO_1_1);
+        manager.setApprovalForAll(address(burnRouter), true);
+        burnRouter.mint(key, amount0, amount1);
+
+        // -vvv "ERC1155: transfer to non ERC1155Receiver implementer" => "Arithmetic over/underflow"
+        vm.expectRevert(bytes("ERC1155: transfer to non ERC1155Receiver implementer"));
+        burnRouter.transferToManager(key.currency0, amount0);
+
+        vm.expectRevert(bytes("ERC1155: transfer to non ERC1155Receiver implementer"));
+        burnRouter.transferToManager(key.currency1, amount1);
     }
 
     function testGasMint() public {
