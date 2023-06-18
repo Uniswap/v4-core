@@ -34,6 +34,7 @@ contract TestTickMath is Test, GasSnapshot {
     }
 
     /// @notice Test the equivalence of the original and new `getSqrtRatioAtTick`
+    /// forge-config: default.fuzz.runs = 100000
     function testFuzzGetSqrtRatioAtTick(int24 tick) public {
         tick = int24(bound(tick, TickMath.MIN_TICK, TickMath.MAX_TICK));
         uint160 sqrtPriceX96 = TickMath.getSqrtRatioAtTick(tick);
@@ -60,6 +61,7 @@ contract TestTickMath is Test, GasSnapshot {
     }
 
     /// @notice Test the equivalence of `getTickAtSqrtRatio` and the original library
+    /// forge-config: default.fuzz.runs = 100000
     function testFuzzGetTickAtSqrtRatio(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
         assertEq(TickMath.getTickAtSqrtRatio(sqrtPriceX96), refWrapper.getTickAtSqrtRatio(sqrtPriceX96));
