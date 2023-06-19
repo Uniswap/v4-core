@@ -107,6 +107,9 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the minimum denominator for the protocol fee, which restricts it to a maximum of 25%
     function MIN_PROTOCOL_FEE_DENOMINATOR() external view returns (uint8);
 
+    /// @notice Returns the constant representing the maximum swap fee for pool initialization and dynamic fee swaps
+    function MAX_POOL_SWAP_FEE() external view returns (uint24);
+
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(PoolId id)
         external
