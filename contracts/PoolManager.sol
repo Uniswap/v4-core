@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BUSL-1.1
-// 中文注释由 WTF Academy 贡献
 pragma solidity ^0.8.19;
 
 import {Hooks} from "./libraries/Hooks.sol";
@@ -22,9 +21,8 @@ import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Re
 import {PoolId, PoolIdLibrary} from "./libraries/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
-/// @notice 保管所有池子的状态
+/// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
-    /* ============ 库 ============ */
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -33,40 +31,34 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using CurrencyLibrary for Currency;
     using Fees for uint24;
 
-    /* ============ 状态变量 ============ */
-    /// @notice 返回已初始化池子键的最大tickSpacing常量
+    /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
-    /// @notice 返回协议费用的最小分母，将其限制为最大25%
+    /// @inheritdoc IPoolManager
     uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
 
-    /// @notice 返回已初始化池子键的最小tickSpacing常量
+    /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
 
-    /// @notice 记录所有池子状态
     mapping(PoolId id => Pool.State) public pools;
-    /// @notice 记录protocol fee
+
     mapping(Currency currency => uint256) public override protocolFeesAccrued;
-    /// @notice 记录hook fee
+
     mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
 
     IProtocolFeeController public protocolFeeController;
 
     uint256 private immutable controllerGasLimit;
-    
-    /* ============ 函数 ============ */
-    // 构造器
+
     constructor(uint256 _controllerGasLimit) ERC1155("") {
         controllerGasLimit = _controllerGasLimit;
     }
 
-    /* ============ view 函数 ============ */
-    /// @notice 通过PoolKey查询池子状态
     function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
         return pools[key.toId()];
     }
 
-    /// @notice 获取给定池子的slot0的当前值
+    /// @inheritdoc IPoolManager
     function getSlot0(PoolId id)
         external
         view
@@ -92,12 +84,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         );
     }
 
-    /// @notice 获取给定池子的当前流动性值
+    /// @inheritdoc IPoolManager
     function getLiquidity(PoolId id) external view override returns (uint128 liquidity) {
         return pools[id].liquidity;
     }
 
-    /// @notice 获取指定池子和持仓的当前流动性值
+    /// @inheritdoc IPoolManager
     function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper)
         external
         view
@@ -107,30 +99,26 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return pools[id].positions.get(owner, tickLower, tickUpper).liquidity;
     }
 
-    /* ============ 初始化池子相关函数 ============ */
-    /// @notice 初始化给定池子ID的状态
+    /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         if (key.fee & Fees.STATIC_FEE_MASK >= 1000000) revert FeeTooLarge();
 
-        // 检查tick spacing可能溢出的情况，具体参考 TickBitmap.sol 
+        // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
-        // 调用 BeforeInitialize hook
         if (key.hooks.shouldCallBeforeInitialize()) {
             if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96) != IHooks.beforeInitialize.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
 
-        // 初始化池子
         PoolId id = key.toId();
         (uint8 protocolSwapFee, uint8 protocolWithdrawFee) = _fetchProtocolFees(key);
         (uint8 hookSwapFee, uint8 hookWithdrawFee) = _fetchHookFees(key);
         tick = pools[id].initialize(sqrtPriceX96, protocolSwapFee, hookSwapFee, protocolWithdrawFee, hookWithdrawFee);
 
-        // 调用 AfterInitialize hook
         if (key.hooks.shouldCallAfterInitialize()) {
             if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick) != IHooks.afterInitialize.selector) {
                 revert Hooks.InvalidHookResponse();
@@ -140,51 +128,44 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
     }
 
-    /* ============ Lock相关函数 ============ */
-    /// @notice 返回给定ERC20货币的储备
+    /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
 
-    /// @notice 表示锁定池子的地址堆栈。每次调用#lock都会将地址推送到堆栈上
-    /// @param index 锁定者的索引，也称为锁定者的ID
+    /// @inheritdoc IPoolManager
     address[] public override lockedBy;
 
-    /// @notice 获取lockedBy数组的长度
+    /// @inheritdoc IPoolManager
     function lockedByLength() external view returns (uint256) {
         return lockedBy.length;
     }
 
-    /// @notice Lock 状态 struct
-    /// @member nonzeroDeltaCount 非零值的 currencyDelta 映射条目的数量
-    /// @member currencyDelta 记录应付给 locker（正数）或应付给池（负数）的货币金额
+    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
+    /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
     struct LockState {
         uint256 nonzeroDeltaCount;
-        mapping(Currency => int256) currencyDelta;
+        mapping(Currency currency => int256) currencyDelta;
     }
 
-    /// @dev 表示给定索引处的 locker 的状态。每个 locker 在释放锁之前必须拥有净 0 的欠款。注意，此处为 private，因为无法将嵌套的映射公开为公共变量。
-    mapping(uint256 => LockState) private lockStates;
+    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
+    /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
+    mapping(uint256 index => LockState) private lockStates;
 
-    /// @notice 返回给定locker ID的非零delta计数
-    /// @param id locker的ID
+    /// @inheritdoc IPoolManager
     function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
         return lockStates[id].nonzeroDeltaCount;
     }
 
-    /// @notice 获取给定locker ID的特定货币的当前delta值和其在currencies touched数组中的位置
-    /// @param id locker的ID
-    /// @param currency 要查找delta的货币
+    /// @inheritdoc IPoolManager
     function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256) {
         return lockStates[id].currencyDelta[currency];
     }
 
-    /// @notice 所有操作都通过此函数进行
-    /// @param data 通过`ILockCallback(msg.sender).lockCallback(data)`传递给回调函数的任何数据
-    /// @return 调用`ILockCallback(msg.sender).lockCallback(data)`返回的数据
+    /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
         uint256 id = lockedBy.length;
         lockedBy.push(msg.sender);
 
-        // 调用者在此回调函数中完成所有操作，包括通过调用 settle 支付所欠的款项
+        // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(id, data);
 
         unchecked {
@@ -195,16 +176,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         lockedBy.pop();
     }
 
-    /// @dev 累积对单个货币余额变化的映射 
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
-        // 获取当前lock状态
+
         LockState storage lockState = lockStates[lockedBy.length - 1];
-        // 获取当前delta
         int256 current = lockState.currencyDelta[currency];
-        // 计算delta
+
         int256 next = current + delta;
-        // 更新nonzeroDeltaCount
         unchecked {
             if (next == 0) {
                 lockState.nonzeroDeltaCount--;
@@ -212,25 +190,23 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 lockState.nonzeroDeltaCount++;
             }
         }
-        // 更新currencyDelta
+
         lockState.currencyDelta[currency] = next;
     }
 
-    /// @dev 累积对货币余额变化的映射
+    /// @dev Accumulates a balance change to a map of currency to balance changes
     function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta) internal {
         _accountDelta(key.currency0, delta.amount0());
         _accountDelta(key.currency1, delta.amount1());
     }
 
-    /// @dev 修饰器，只能被locker调用
     modifier onlyByLocker() {
         address locker = lockedBy[lockedBy.length - 1];
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
 
-    /* ============ 修改LP持仓相关函数 ============ */
-    /// @notice 修改给定池子的持仓
+    /// @inheritdoc IPoolManager
     function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
         external
         override
@@ -238,14 +214,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        // 调用BeforeModifyPosition hook
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             if (key.hooks.beforeModifyPosition(msg.sender, key, params) != IHooks.beforeModifyPosition.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
 
-        // 获取池子fee和delta
         PoolId id = key.toId();
         Pool.Fees memory fees;
         (delta, fees) = pools[id].modifyPosition(
@@ -258,10 +232,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             })
         );
 
-        // 更新delta
         _accountPoolBalanceDelta(key, delta);
 
-        // 更新Fee相关变量
         unchecked {
             if (fees.feeForProtocol0 > 0) {
                 protocolFeesAccrued[key.currency0] += fees.feeForProtocol0;
@@ -277,18 +249,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        // 调用AfterModifyPosition hook
         if (key.hooks.shouldCallAfterModifyPosition()) {
             if (key.hooks.afterModifyPosition(msg.sender, key, params, delta) != IHooks.afterModifyPosition.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
-        // 释放ModifyPosition事件
+
         emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
 
-    /* ============ Swap相关函数 ============ */
-    /// @notice 对给定池子进行兑换
+    /// @inheritdoc IPoolManager
     function swap(PoolKey memory key, IPoolManager.SwapParams memory params)
         external
         override
@@ -296,25 +266,22 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        // 调用CallBeforeSwap hook
         if (key.hooks.shouldCallBeforeSwap()) {
             if (key.hooks.beforeSwap(msg.sender, key, params) != IHooks.beforeSwap.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
 
-        // 设置总的交换手续费，可以通过钩子函数设置或作为初始化时的静态手续费
+        // Set the total swap fee, either through the hook or as the static fee set an initialization.
         uint24 totalSwapFee;
         if (key.fee.isDynamicFee()) {
-            // 动态手续费
             totalSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(key);
             if (totalSwapFee >= 1000000) revert FeeTooLarge();
         } else {
-            // 清除前四位，因为它们可能被用于钩子手续费
+            // clear the top 4 bits since they may be flagged for hook fees
             totalSwapFee = key.fee & Fees.STATIC_FEE_MASK;
         }
 
-        // 调用Pool的swap函数执行swap
         uint256 feeForProtocol;
         uint256 feeForHook;
         Pool.SwapState memory state;
@@ -329,10 +296,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             })
         );
 
-        // 更新delta
         _accountPoolBalanceDelta(key, delta);
+        // the fee is on the input currency
 
-        // 对input货币收取手续费
         unchecked {
             if (feeForProtocol > 0) {
                 protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
@@ -342,14 +308,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
-        // 调用CallAfterSwap hook
         if (key.hooks.shouldCallAfterSwap()) {
             if (key.hooks.afterSwap(msg.sender, key, params, delta) != IHooks.afterSwap.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
 
-        // 释放Swap事件
         emit Swap(
             id,
             msg.sender,
@@ -362,7 +326,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         );
     }
 
-    /// @notice 将指定货币金额捐赠给具有给定池子键的池子
+    /// @inheritdoc IPoolManager
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1)
         external
         override
@@ -370,20 +334,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        // 调用CallBeforeDonate hook
         if (key.hooks.shouldCallBeforeDonate()) {
             if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1) != IHooks.beforeDonate.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
 
-        // 执行donate
         delta = _getPool(key).donate(amount0, amount1);
 
-        // 更新delta
         _accountPoolBalanceDelta(key, delta);
-        
-        // 调用CallAfterDonate hook
+
         if (key.hooks.shouldCallAfterDonate()) {
             if (key.hooks.afterDonate(msg.sender, key, amount0, amount1) != IHooks.afterDonate.selector) {
                 revert Hooks.InvalidHookResponse();
@@ -391,50 +351,39 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    /// @notice 用户调用以结算池子对用户所欠的一些值
-    /// @dev 也可用作“免费”闪电贷款的机制
+    /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        // 更新delta
         _accountDelta(currency, amount.toInt128());
-        // 更新余额
         reservesOf[currency] -= amount;
-        // 转账
         currency.transfer(to, amount);
     }
 
-    /// @notice 用户调用以将值转移至ERC1155余额
+    /// @inheritdoc IPoolManager
     function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        // 更新delta
         _accountDelta(currency, amount.toInt128());
-        // mint erc1155
         _mint(to, currency.toId(), amount, "");
     }
 
-    /// @notice 用户调用以支付所欠款
+    /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
-        // 更新 reserve
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
-        // 更新delta
-        // 这里的减法必须安全
+        // subtraction must be safe
         _accountDelta(currency, -(paid.toInt128()));
     }
 
-    /// @notice 销毁erc1155，并更新delta
     function _burnAndAccount(Currency currency, uint256 amount) internal {
         _burn(address(this), currency.toId(), amount);
         _accountDelta(currency, -(amount.toInt128()));
     }
 
-    /// @notice 回调函数，在接收ERC1155代币转账时被调用
     function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata) external returns (bytes4) {
         if (msg.sender != address(this)) revert NotPoolManagerToken();
         _burnAndAccount(CurrencyLibrary.fromId(id), value);
         return IERC1155Receiver.onERC1155Received.selector;
     }
 
-    /// @notice 回调函数，在接收ERC1155代币批量转账时被调用
     function onERC1155BatchReceived(address, address, uint256[] calldata ids, uint256[] calldata values, bytes calldata)
         external
         returns (bytes4)
@@ -538,9 +487,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         currency.transfer(recipient, amountCollected);
     }
 
-    /// @notice 外部合约调用以访问细粒度的池子状态
-    /// @param slot 要sload的槽的键
-    /// @return value 作为bytes32的槽的值
     function extsload(bytes32 slot) external view returns (bytes32 value) {
         /// @solidity memory-safe-assembly
         assembly {
@@ -548,10 +494,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    /// @notice 外部合约调用以访问细粒度的池子状态
-    /// @param slot 要开始sload的槽的键
-    /// @param nSlots 要加载到返回值中的槽的数量
-    /// @return value 作为动态字节数组连接的sload的槽的值
     function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
         bytes memory value = new bytes(32 * nSlots);
 
