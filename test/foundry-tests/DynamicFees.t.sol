@@ -3,13 +3,19 @@ pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {PoolId, PoolIdLibrary} from "../../contracts/libraries/PoolId.sol";
+import {PoolId} from "../../contracts/libraries/PoolId.sol";
 import {Hooks} from "../../contracts/libraries/Hooks.sol";
+import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
+import {TestERC20} from "../../contracts/test/TestERC20.sol";
 import {IHooks} from "../../contracts/interfaces/IHooks.sol";
 import {Currency} from "../../contracts/libraries/CurrencyLibrary.sol";
+import {IERC20Minimal} from "../../contracts/interfaces/external/IERC20Minimal.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
+import {SqrtPriceMath} from "../../contracts/libraries/SqrtPriceMath.sol";
+import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
+import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {IDynamicFeeManager} from "././../../contracts/interfaces/IDynamicFeeManager.sol";
 import {Fees} from "./../../contracts/libraries/Fees.sol";
@@ -27,8 +33,6 @@ contract DynamicFees is IDynamicFeeManager {
 }
 
 contract TestDynamicFees is Test, Deployers {
-    using PoolIdLibrary for IPoolManager.PoolKey;
-
     DynamicFees dynamicFees = DynamicFees(
         address(
             uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
@@ -60,7 +64,7 @@ contract TestDynamicFees is Test, Deployers {
     }
 
     event Swap(
-        PoolId indexed poolId,
+        bytes32 indexed poolId,
         address indexed sender,
         int128 amount0,
         int128 amount1,
@@ -73,7 +77,7 @@ contract TestDynamicFees is Test, Deployers {
     function testSwapWorks() public {
         dynamicFees.setFee(123);
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 123);
+        emit Swap(PoolId.toId(key), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 123);
         swapRouter.swap(
             key, IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1), PoolSwapTest.TestSettings(false, false)
         );

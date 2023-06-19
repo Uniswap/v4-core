@@ -9,15 +9,17 @@ import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
-import {PoolIdLibrary} from "../../contracts/libraries/PoolId.sol";
+import {PoolId} from "../../contracts/libraries/PoolId.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
-import {Currency} from "../../contracts/libraries/CurrencyLibrary.sol";
+import {Currency, CurrencyLibrary} from "../../contracts/libraries/CurrencyLibrary.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
+import {PoolId} from "../../contracts/libraries/PoolId.sol";
 import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
 import {IProtocolFeeController} from "../../contracts/interfaces/IProtocolFeeController.sol";
 import {Fees} from "../../contracts/libraries/Fees.sol";
@@ -26,7 +28,7 @@ import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
 contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
     using Pool for Pool.State;
-    using PoolIdLibrary for IPoolManager.PoolKey;
+    using PoolId for IPoolManager.PoolKey;
 
     Pool.State state;
     PoolManager manager;
