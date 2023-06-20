@@ -1,6 +1,7 @@
 import snapshotGasCost from '@uniswap/snapshot-gas-cost'
 import Decimal from 'decimal.js'
 import { BigNumber } from 'ethers'
+import { ErrorFragment, Interface } from '@ethersproject/abi'
 import { ethers } from 'hardhat'
 import { TickMathTest } from '../typechain/TickMathTest'
 import { MAX_TICK, MIN_TICK } from './shared/constants'
@@ -19,11 +20,15 @@ describe('TickMath', () => {
 
   describe('#getSqrtRatioAtTick', () => {
     it('throws for too low', async () => {
-      await expect(tickMath.getSqrtRatioAtTick(MIN_TICK - 1)).to.be.revertedWith('InvalidTick()')
+      await expect(tickMath.getSqrtRatioAtTick(MIN_TICK - 1)).to.be.revertedWith(
+        Interface.getSighash(ErrorFragment.from('InvalidTick()'))
+      )
     })
 
-    it('throws for too low', async () => {
-      await expect(tickMath.getSqrtRatioAtTick(MAX_TICK + 1)).to.be.revertedWith('InvalidTick()')
+    it('throws for too high', async () => {
+      await expect(tickMath.getSqrtRatioAtTick(MAX_TICK + 1)).to.be.revertedWith(
+        Interface.getSighash(ErrorFragment.from('InvalidTick()'))
+      )
     })
 
     it('min tick', async () => {
@@ -109,11 +114,15 @@ describe('TickMath', () => {
 
   describe('#getTickAtSqrtRatio', () => {
     it('throws for too low', async () => {
-      await expect(tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO.sub(1))).to.be.revertedWith('InvalidSqrtRatio()')
+      await expect(tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO.sub(1))).to.be.revertedWith(
+        Interface.getSighash(ErrorFragment.from('InvalidSqrtRatio()'))
+      )
     })
 
     it('throws for too high', async () => {
-      await expect(tickMath.getTickAtSqrtRatio(BigNumber.from(MAX_SQRT_RATIO))).to.be.revertedWith('InvalidSqrtRatio()')
+      await expect(tickMath.getTickAtSqrtRatio(BigNumber.from(MAX_SQRT_RATIO))).to.be.revertedWith(
+        Interface.getSighash(ErrorFragment.from('InvalidSqrtRatio()'))
+      )
     })
 
     it('ratio of min tick', async () => {
