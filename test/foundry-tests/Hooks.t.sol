@@ -329,6 +329,33 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
+    function testValidateHookAddressBeforeInitializeAfterModify(uint152 addr) public {
+        uint160 preAddr = uint160(uint256(addr));
+        IHooks hookAddr =
+            IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
+        Hooks.validateHookAddress(
+            hookAddr,
+            Hooks.Calls({
+                beforeInitialize: true,
+                afterInitialize: false,
+                beforeModifyPosition: false,
+                afterModifyPosition: true,
+                beforeSwap: false,
+                afterSwap: false,
+                beforeDonate: false,
+                afterDonate: false
+            })
+        );
+        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+    }
+
     function testValidateHookAddressBeforeSwap(uint152 addr) public {
         uint160 preAddr = uint160(uint256(addr));
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG)));
