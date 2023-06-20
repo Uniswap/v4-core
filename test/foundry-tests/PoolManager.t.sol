@@ -1237,7 +1237,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         Position.Info memory managerPosition = manager.getPosition(key.toId(), address(modifyPositionRouter), -120, 120);
 
         assertEq(managerPosition.liquidity, 5 ether);
-
     }
 
     receive() external payable {}
