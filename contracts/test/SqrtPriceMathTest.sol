@@ -4,6 +4,22 @@ pragma solidity ^0.8.19;
 import {SqrtPriceMath} from "../libraries/SqrtPriceMath.sol";
 
 contract SqrtPriceMathTest {
+    function getNextSqrtPriceFromAmount0RoundingUp(uint160 sqrtPX96, uint128 liquidity, uint256 amount, bool add)
+        external
+        pure
+        returns (uint160)
+    {
+        return SqrtPriceMath.getNextSqrtPriceFromAmount0RoundingUp(sqrtPX96, liquidity, amount, add);
+    }
+
+    function getNextSqrtPriceFromAmount1RoundingDown(uint160 sqrtPX96, uint128 liquidity, uint256 amount, bool add)
+        external
+        pure
+        returns (uint160)
+    {
+        return SqrtPriceMath.getNextSqrtPriceFromAmount1RoundingDown(sqrtPX96, liquidity, amount, add);
+    }
+
     function getNextSqrtPriceFromInput(uint160 sqrtP, uint128 liquidity, uint256 amountIn, bool zeroForOne)
         external
         pure
@@ -75,5 +91,21 @@ contract SqrtPriceMathTest {
         uint256 gasBefore = gasleft();
         SqrtPriceMath.getAmount1Delta(sqrtLower, sqrtUpper, liquidity, roundUp);
         return gasBefore - gasleft();
+    }
+
+    function getAmount0DeltaSigned(uint160 sqrtRatioAX96, uint160 sqrtRatioBX96, int128 liquidity)
+        external
+        pure
+        returns (int256)
+    {
+        return SqrtPriceMath.getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity);
+    }
+
+    function getAmount1DeltaSigned(uint160 sqrtRatioAX96, uint160 sqrtRatioBX96, int128 liquidity)
+        external
+        pure
+        returns (int256)
+    {
+        return SqrtPriceMath.getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidity);
     }
 }
