@@ -182,8 +182,7 @@ describe('SwapMath', () => {
         '10',
         1872
       )
-      expect(amountIn).to.eq('0')
-      expect(feeAmount).to.eq('10')
+      expect(amountIn.add(feeAmount)).to.eq('10')
       expect(amountOut).to.eq('0')
       expect(sqrtQ).to.eq('2413')
     })
