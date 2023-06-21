@@ -1154,7 +1154,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         lockTest.lock();
     }
 
-    uint256 constant POOL_SLOT = 4;
+    uint256 constant POOL_SLOT = 8;
     uint256 constant TICKS_OFFSET = 4;
 
     function testExtsloadForPoolPrice() public {

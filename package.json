@@ -1,5 +1,5 @@
 {
-  "name": "@uniswap/core-next",
+  "name": "@uniswap/v4-core",
   "description": "🦄 Uniswap Protocol smart contracts",
   "license": "BUSL-1.1",
   "publishConfig": {
@@ -10,11 +10,11 @@
   "keywords": [
     "uniswap",
     "core",
-    "v3"
+    "v4"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Uniswap/core-next"
+    "url": "https://github.com/Uniswap/v4-core"
   },
   "files": [
     "contracts/interfaces",
