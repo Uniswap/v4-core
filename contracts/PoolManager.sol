@@ -117,6 +117,15 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return pools[id].positions.get(owner, tickLower, tickUpper).liquidity;
     }
 
+    function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
+        external
+        view
+        override
+        returns (Position.Info memory position)
+    {
+        return pools[id].positions.get(owner, tickLower, tickUpper);
+    }
+
     /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         if (key.fee & Fees.STATIC_FEE_MASK >= 1000000) revert FeeTooLarge();

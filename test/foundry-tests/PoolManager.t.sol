@@ -26,6 +26,7 @@ import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
 import {PoolId, PoolIdLibrary} from "../../contracts/libraries/PoolId.sol";
 import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
 import {Fees} from "../../contracts/libraries/Fees.sol";
+import {Position} from "../../contracts/libraries/Position.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
@@ -1219,6 +1220,23 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         assertEq(feeGrowthGlobal0X128Extsload, 408361710565269213475534193967158);
         assertEq(feeGrowthGlobal1X128Extsload, 204793365386061595215803889394593);
+    }
+
+    function testGetPosition() public {
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: IHooks(address(0)),
+            tickSpacing: 10
+        });
+        manager.initialize(key, SQRT_RATIO_1_1);
+
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 5 ether));
+
+        Position.Info memory managerPosition = manager.getPosition(key.toId(), address(modifyPositionRouter), -120, 120);
+
+        assertEq(managerPosition.liquidity, 5 ether);
     }
 
     receive() external payable {}
