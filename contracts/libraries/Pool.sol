@@ -48,7 +48,7 @@ library Pool {
 
     /// @notice Thrown when sqrtPriceLimitX96 on a swap has already exceeded its limit
     /// @param sqrtPriceCurrentX96 The invalid, already surpassed sqrtPriceLimitX96
-    /// @param sqrtPriceLimitX96 The invalid, already surpassed sqrtPriceLimitX96
+    /// @param sqrtPriceLimitX96 The surpassed price limit
     error PriceLimitAlreadyExceeded(uint160 sqrtPriceCurrentX96, uint160 sqrtPriceLimitX96);
 
     /// @notice Thrown when sqrtPriceLimitX96 lies outside of valid tick/price range
