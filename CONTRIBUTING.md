@@ -44,6 +44,14 @@ All contributions must follow the below standards. Maintainers will close out PR
 4. Picking up stale issues by other authors is fine! Please just communicate with them ahead of time and it is best practice to include co-authors in any commits.
 5. Squash commits where possible to make reviews clean and efficient. PRs that are merged to main will be squashed into 1 commit.
 
+## Setup
+
+`yarn install` to install dependencies for hardhat
+
+`yarn compile` to compile contracts for hardhat
+
+`forge build` to get contract artifacts and dependencies for forge
+
 ## Tests
 
 This repo currently uses hardhat and forge tests. Please run both test suites before opening a PR.
