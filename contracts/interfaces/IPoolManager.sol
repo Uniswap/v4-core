@@ -9,7 +9,7 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../libraries/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IERC1155 {
+interface IPoolManager {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
@@ -192,9 +192,6 @@ interface IPoolManager is IERC1155 {
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(Currency currency, address to, uint256 amount) external;
-
-    /// @notice Called by the user to move value into ERC1155 balance
-    function mint(Currency token, address to, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);

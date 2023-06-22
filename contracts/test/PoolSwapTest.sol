@@ -63,20 +63,20 @@ contract PoolSwapTest is ILockCallback {
                     }
                 } else {
                     // the received hook on this transfer will burn the tokens
-                    manager.safeTransferFrom(
-                        data.sender,
-                        address(manager),
-                        uint256(uint160(Currency.unwrap(data.key.currency0))),
-                        uint128(delta.amount0()),
-                        ""
-                    );
+                    // manager.safeTransferFrom(
+                    //     data.sender,
+                    //     address(manager),
+                    //     uint256(uint160(Currency.unwrap(data.key.currency0))),
+                    //     uint128(delta.amount0()),
+                    //     ""
+                    // );
                 }
             }
             if (delta.amount1() < 0) {
                 if (data.testSettings.withdrawTokens) {
                     manager.take(data.key.currency1, data.sender, uint128(-delta.amount1()));
                 } else {
-                    manager.mint(data.key.currency1, data.sender, uint128(-delta.amount1()));
+                    // manager.mint(data.key.currency1, data.sender, uint128(-delta.amount1()));
                 }
             }
         } else {
@@ -92,20 +92,20 @@ contract PoolSwapTest is ILockCallback {
                     }
                 } else {
                     // the received hook on this transfer will burn the tokens
-                    manager.safeTransferFrom(
-                        data.sender,
-                        address(manager),
-                        uint256(uint160(Currency.unwrap(data.key.currency1))),
-                        uint128(delta.amount1()),
-                        ""
-                    );
+                    // manager.safeTransferFrom(
+                    //     data.sender,
+                    //     address(manager),
+                    //     uint256(uint160(Currency.unwrap(data.key.currency1))),
+                    //     uint128(delta.amount1()),
+                    //     ""
+                    // );
                 }
             }
             if (delta.amount0() < 0) {
                 if (data.testSettings.withdrawTokens) {
                     manager.take(data.key.currency0, data.sender, uint128(-delta.amount0()));
                 } else {
-                    manager.mint(data.key.currency0, data.sender, uint128(-delta.amount0()));
+                    // manager.mint(data.key.currency0, data.sender, uint128(-delta.amount0()));
                 }
             }
         }

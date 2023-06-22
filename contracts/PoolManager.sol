@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
+
+
+// Condensed bytecode version of v4-core for internal hackathon
+
 pragma solidity ^0.8.19;
 
 import {Hooks} from "./libraries/Hooks.sol";
@@ -22,7 +26,7 @@ import {PoolId, PoolIdLibrary} from "./libraries/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
+contract PoolManager is IPoolManager, Owned, NoDelegateCall {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -68,7 +72,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
 
-    constructor(uint256 _controllerGasLimit) ERC1155("") {
+    constructor(uint256 _controllerGasLimit) {
         controllerGasLimit = _controllerGasLimit;
     }
 
@@ -369,43 +373,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-        _mint(to, currency.toId(), amount, "");
-    }
-
-    /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
         _accountDelta(currency, -(paid.toInt128()));
-    }
-
-    function _burnAndAccount(Currency currency, uint256 amount) internal {
-        _burn(address(this), currency.toId(), amount);
-        _accountDelta(currency, -(amount.toInt128()));
-    }
-
-    function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata) external returns (bytes4) {
-        if (msg.sender != address(this)) revert NotPoolManagerToken();
-        _burnAndAccount(CurrencyLibrary.fromId(id), value);
-        return IERC1155Receiver.onERC1155Received.selector;
-    }
-
-    function onERC1155BatchReceived(address, address, uint256[] calldata ids, uint256[] calldata values, bytes calldata)
-        external
-        returns (bytes4)
-    {
-        if (msg.sender != address(this)) revert NotPoolManagerToken();
-        // unchecked to save gas on incrementations of i
-        unchecked {
-            for (uint256 i; i < ids.length; i++) {
-                _burnAndAccount(CurrencyLibrary.fromId(ids[i]), values[i]);
-            }
-        }
-        return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
