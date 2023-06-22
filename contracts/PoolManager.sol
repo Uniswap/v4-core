@@ -230,6 +230,14 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             }
         }
 
+        int128 liquidityDelta = params.liquidityDelta.toInt128();
+
+        require(liquidityDelta != 0, "Invalid liquidityDelta");
+        require(
+            liquidityDelta > -(2**127) && liquidityDelta < 2**127,
+            "liquidityDelta out of range"
+        );
+
         PoolId id = key.toId();
         Pool.Fees memory fees;
         (delta, fees) = pools[id].modifyPosition(
@@ -237,7 +245,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                 owner: msg.sender,
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,
-                liquidityDelta: params.liquidityDelta.toInt128(),
+                liquidityDelta: liquidityDelta,
                 tickSpacing: key.tickSpacing
             })
         );
