@@ -3,32 +3,32 @@
 exports[`TickBitmap #flipTick gas cost of flipping a tick that results in deleting a word 1`] = `
 Object {
   "calldataByteLength": 36,
-  "gasUsed": 22214,
+  "gasUsed": 22212,
 }
 `;
 
 exports[`TickBitmap #flipTick gas cost of flipping first tick in word to initialized 1`] = `
 Object {
   "calldataByteLength": 36,
-  "gasUsed": 44126,
+  "gasUsed": 44124,
 }
 `;
 
 exports[`TickBitmap #flipTick gas cost of flipping second tick in word to initialized 1`] = `
 Object {
   "calldataByteLength": 36,
-  "gasUsed": 27026,
+  "gasUsed": 27024,
 }
 `;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost for entire word 1`] = `2572`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost for entire word 1`] = `2558`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost just below boundary 1`] = `2572`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost just below boundary 1`] = `2558`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost on boundary 1`] = `2572`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost on boundary 1`] = `2558`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost for entire word 1`] = `2570`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost for entire word 1`] = `2535`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost just below boundary 1`] = `2880`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost just below boundary 1`] = `2845`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost on boundary 1`] = `2570`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost on boundary 1`] = `2535`;

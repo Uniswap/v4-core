@@ -292,12 +292,13 @@ library Pool {
         int128 amount0 = result.amount0();
         int128 amount1 = result.amount1();
 
-        uint8 hookFee0 = self.slot0.hookWithdrawFee % 16;
+        uint8 hookFee0 = self.slot0.hookWithdrawFee & 15;
         uint8 hookFee1 = self.slot0.hookWithdrawFee >> 4;
 
-        uint8 protocolFee0 = self.slot0.protocolWithdrawFee % 16;
+        uint8 protocolFee0 = self.slot0.protocolWithdrawFee & 15;
         uint8 protocolFee1 = self.slot0.protocolWithdrawFee >> 4;
 
+    
         if (amount0 < 0 && hookFee0 > 0) {
             fees.feeForHook0 = uint128(-amount0) / hookFee0;
         }
