@@ -36,6 +36,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     /// @inheritdoc IPoolManager
     uint8 public constant override MIN_PROTOCOL_FEE_DENOMINATOR = 4;
+    /// `MIN_PROTOCOL_FEE_DENOMINATOR` - 1, used to compare against `fee0`
+    uint8 internal constant MIN_PROTOCOL_FEE0_DENOMINATOR_MINUS_ONE = 4 - 1;
+    /// MIN_PROTOCOL_FEE0_DENOMINATOR_MINUS_ONE << 4, used to compare against `fee1 << 4`
+    uint8 internal constant MIN_PROTOCOL_FEE1_DENOMINATOR_MINUS_ONE = (4 - 1) << 4;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
@@ -443,14 +447,24 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     function _checkProtocolFee(uint8 fee) internal pure {
-        if (fee != 0) {
-            uint8 fee0 = fee % 16;
-            uint8 fee1 = fee >> 4;
-            // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-            if (
-                (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
+        // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
+        /// @solidity memory-safe-assembly
+        assembly {
+            // Perform the check by subtracting `1` from `fee0` (lower 4 bits of `fee`) where `fee0 = fee & 0x0f`.
+            // For brevity, say `MIN_PROTOCOL_FEE_DENOMINATOR = 4`.
+            // If `fee0 == 0`, `sub` underflows and `lt` is false. If `fee0 - 1 >= 4 - 1`, `lt` is also false.
+            // The first `lt` is only true when `fee0` is in the range `(0, 4)`.
+            // Similarly, we do the same for `fee1` (upper 4 bits of `fee`) but operate on `fee` directly.
+            // Because if `fee - 16` underflows and `lt` is false, then `fee1 == 0` no matter what `fee0` is.
+            // If `fee - 16 >= (4 - 1) * 16` and `lt` is false, then `fee1 - 1 >= 4 - 1` regardless of `fee0`.
+            // The second `lt` is only true when `fee1` is in the range `(0, 4)` and `fee - 16 < (4 - 1) * 16`.
+            if or(
+                lt(sub(and(fee, 0x0f), 1), MIN_PROTOCOL_FEE0_DENOMINATOR_MINUS_ONE),
+                lt(sub(fee, 16), MIN_PROTOCOL_FEE1_DENOMINATOR_MINUS_ONE)
             ) {
-                revert FeeTooLarge();
+                // revert FeeTooLarge();
+                mstore(0, 0xfc5bee12)
+                revert(0x1c, 0x04)
             }
         }
     }
