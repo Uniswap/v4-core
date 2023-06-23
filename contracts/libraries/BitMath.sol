@@ -16,11 +16,15 @@ library BitMath {
         assembly {
             if iszero(x) { revert(0, 0) }
 
+            // r = x >= 2**128 ? 128 : 0
             r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+            // r += (x >> r) >= 2**64 ? 64 : 0
             r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
+            // r += (x >> r) >= 2**32 ? 32 : 0
             r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
 
             // For the remaining 32 bits, use a De Bruijn lookup.
+            // https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogDeBruijn
             x := shr(r, x)
             x := or(x, shr(1, x))
             x := or(x, shr(2, x))
@@ -46,14 +50,18 @@ library BitMath {
         assembly {
             if iszero(x) { revert(0, 0) }
 
-            // Isolate the least significant bit.
-            x := and(x, add(not(x), 1))
+            // Isolate the least significant bit, x = x & -x = x & (~x + 1)
+            x := and(x, sub(0, x))
 
+            // r = x >= 2**128 ? 128 : 0
             r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+            // r += (x >> r) >= 2**64 ? 64 : 0
             r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
+            // r += (x >> r) >= 2**32 ? 32 : 0
             r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
 
             // For the remaining 32 bits, use a De Bruijn lookup.
+            // https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightMultLookup
             // forgefmt: disable-next-item
             r := or(r, byte(shr(251, mul(shr(r, x), shl(224, 0x077cb531))),
                 0x00011c021d0e18031e16140f191104081f1b0d17151310071a0c12060b050a09))
