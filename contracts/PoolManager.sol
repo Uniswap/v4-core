@@ -442,15 +442,18 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         }
     }
 
-    function _checkProtocolFee(uint8 fee) internal pure {
-        if (fee != 0) {
-            uint8 fee0 = fee % 16;
-            uint8 fee1 = fee >> 4;
-            // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-            if (
-                (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
-            ) {
-                revert FeeTooLarge();
+    function _checkProtocolFee(uint256 fee) internal pure {
+    unchecked {
+            if (fee > 0) {
+                uint256 fee0 = fee & 0xF;
+                uint256 fee1 = fee >> 4;
+                // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
+                if (
+                    (fee0 > 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR)
+                        || (fee1 > 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
+                ) {
+                    revert FeeTooLarge();
+                }
             }
         }
     }
