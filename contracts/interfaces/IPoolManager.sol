@@ -7,6 +7,7 @@ import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IHooks} from "./IHooks.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../libraries/PoolId.sol";
+import {Position} from "../libraries/Position.sol";
 
 interface IPoolManager is IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256
@@ -128,6 +129,12 @@ interface IPoolManager is IERC1155 {
         external
         view
         returns (uint128 liquidity);
+
+    /// @notice Get the position struct for a specified pool and position
+    function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
+        external
+        view
+        returns (Position.Info memory position);
 
     /// @notice Given a currency address, returns the protocol fees accrued in that currency
     function protocolFeesAccrued(Currency) external view returns (uint256);

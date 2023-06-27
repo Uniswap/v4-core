@@ -112,6 +112,15 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return pools[id].positions.get(owner, tickLower, tickUpper).liquidity;
     }
 
+    function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
+        external
+        view
+        override
+        returns (Position.Info memory position)
+    {
+        return pools[id].positions.get(owner, tickLower, tickUpper);
+    }
+
     /// @inheritdoc IPoolManager
     function getLock(uint256 i) external view override returns (address locker, uint96 parentLockIndex) {
         return LockDataLibrary.getLock(i);

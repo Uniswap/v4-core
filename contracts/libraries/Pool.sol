@@ -48,7 +48,7 @@ library Pool {
 
     /// @notice Thrown when sqrtPriceLimitX96 on a swap has already exceeded its limit
     /// @param sqrtPriceCurrentX96 The invalid, already surpassed sqrtPriceLimitX96
-    /// @param sqrtPriceLimitX96 The invalid, already surpassed sqrtPriceLimitX96
+    /// @param sqrtPriceLimitX96 The surpassed price limit
     error PriceLimitAlreadyExceeded(uint160 sqrtPriceCurrentX96, uint160 sqrtPriceLimitX96);
 
     /// @notice Thrown when sqrtPriceLimitX96 lies outside of valid tick/price range
@@ -411,10 +411,9 @@ library Pool {
             liquidity: cache.liquidityStart
         });
 
+        StepComputations memory step;
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
-            StepComputations memory step;
-
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
             (step.tickNext, step.initialized) =
