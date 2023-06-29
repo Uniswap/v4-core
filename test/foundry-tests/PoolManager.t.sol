@@ -549,7 +549,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         uint256 amount1 = 1 ether;
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
-            currency0: currency0,
+            currency0: Currency.wrap(address(0)),
             currency1: currency1,
             fee: 3000,
             hooks: IHooks(address(0)),
@@ -558,7 +558,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.initialize(key, SQRT_RATIO_1_1);
         manager.setApprovalForAll(address(burnRouter), true);
-        burnRouter.mint(key, amount0, amount1);
+        burnRouter.mint{value: amount0}(key, amount0, amount1);
 
         burnRouter.burn(key, amount0, amount1);
     }
@@ -568,7 +568,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         uint256 amount1 = 1 ether;
 
         IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
-            currency0: currency0,
+            currency0: Currency.wrap(address(0)),
             currency1: currency1,
             fee: 3000,
             hooks: IHooks(address(0)),
@@ -577,7 +577,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.initialize(key, SQRT_RATIO_1_1);
         manager.setApprovalForAll(address(burnRouter), true);
-        burnRouter.mint(key, amount0, amount1);
+        burnRouter.mint{value: amount0}(key, amount0, amount1);
 
         // -vvv "ERC1155: transfer to non ERC1155Receiver implementer" => "Arithmetic over/underflow"
         vm.expectRevert(bytes("ERC1155: transfer to non ERC1155Receiver implementer"));
