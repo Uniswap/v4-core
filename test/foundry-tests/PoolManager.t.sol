@@ -561,6 +561,12 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         burnRouter.mint{value: amount0}(key, amount0, amount1);
 
         burnRouter.burn(key, amount0, amount1);
+
+        uint256 erc1155Currency0Balance =
+            manager.balanceOf(address(this), CurrencyLibrary.toId(Currency.wrap(address(0))));
+        uint256 erc1155Currency1Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
+        assertEq(erc1155Currency0Balance, 0);
+        assertEq(erc1155Currency1Balance, 0);
     }
 
     function testBurnFailsWithoutLock() public {
@@ -585,6 +591,12 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         vm.expectRevert(bytes("ERC1155: transfer to non ERC1155Receiver implementer"));
         burnRouter.transferToManager(key.currency1, amount1);
+
+        uint256 erc1155Currency0Balance =
+            manager.balanceOf(address(this), CurrencyLibrary.toId(Currency.wrap(address(0))));
+        uint256 erc1155Currency1Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
+        assertEq(erc1155Currency0Balance, amount0);
+        assertEq(erc1155Currency1Balance, amount1);
     }
 
     function testGasMint() public {

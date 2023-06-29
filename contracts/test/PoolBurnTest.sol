@@ -49,7 +49,6 @@ contract PoolBurnTest is ILockCallback {
         if (data.isMint) {
             if (data.amount0 > 0) {
                 uint256 currencyBalBefore = balanceOf(data.key.currency0, data.sender);
-                uint256 managerBalBefore = manager.balanceOf(data.sender, data.key.currency0.toId());
                 manager.mint(data.key.currency0, data.sender, data.amount0);
 
                 if (data.key.currency0.isNative()) {
@@ -62,13 +61,10 @@ contract PoolBurnTest is ILockCallback {
                 }
 
                 uint256 currencyBalAfter = balanceOf(data.key.currency0, data.sender);
-                uint256 managerBalAfter = manager.balanceOf(data.sender, data.key.currency0.toId());
                 require(data.key.currency0.isNative() || currencyBalBefore - currencyBalAfter == data.amount0);
-                require(managerBalAfter - managerBalBefore == data.amount0);
             }
             if (data.amount1 > 0) {
                 uint256 currencyBalBefore = balanceOf(data.key.currency1, data.sender);
-                uint256 managerBalBefore = manager.balanceOf(data.sender, data.key.currency1.toId());
                 manager.mint(data.key.currency1, data.sender, data.amount1);
 
                 if (data.key.currency1.isNative()) {
@@ -81,32 +77,24 @@ contract PoolBurnTest is ILockCallback {
                 }
 
                 uint256 currencyBalAfter = balanceOf(data.key.currency1, data.sender);
-                uint256 managerBalAfter = manager.balanceOf(data.sender, data.key.currency1.toId());
                 require(data.key.currency1.isNative() || currencyBalBefore - currencyBalAfter == data.amount1);
-                require(managerBalAfter - managerBalBefore == data.amount1);
             }
         } else {
             if (data.amount0 > 0) {
                 uint256 currencyBalBefore = balanceOf(data.key.currency0, data.sender);
-                uint256 managerBalBefore = manager.balanceOf(data.sender, data.key.currency0.toId());
                 manager.take(data.key.currency0, data.sender, data.amount0);
                 manager.safeTransferFrom(data.sender, address(manager), data.key.currency0.toId(), data.amount0, "");
                 manager.settle(data.key.currency0);
                 uint256 currencyBalAfter = balanceOf(data.key.currency0, data.sender);
-                uint256 managerBalAfter = manager.balanceOf(data.sender, data.key.currency0.toId());
                 require(currencyBalAfter - currencyBalBefore == data.amount0);
-                require(managerBalBefore - managerBalAfter == data.amount0);
             }
             if (data.amount1 > 0) {
                 uint256 currencyBalBefore = balanceOf(data.key.currency1, data.sender);
-                uint256 managerBalBefore = manager.balanceOf(data.sender, data.key.currency1.toId());
                 manager.take(data.key.currency1, data.sender, data.amount1);
                 manager.safeTransferFrom(data.sender, address(manager), data.key.currency1.toId(), data.amount1, "");
                 manager.settle(data.key.currency1);
                 uint256 currencyBalAfter = balanceOf(data.key.currency1, data.sender);
-                uint256 managerBalAfter = manager.balanceOf(data.sender, data.key.currency1.toId());
                 require(currencyBalAfter - currencyBalBefore == data.amount1);
-                require(managerBalBefore - managerBalAfter == data.amount1);
             }
         }
 
