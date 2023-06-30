@@ -343,8 +343,8 @@ describe('PoolManager', () => {
         )
 
         const expectedFees = 7
-        expect(await manager.protocolFeesAccrued(tokens.currency0.address)).to.be.eq(BigNumber.from(expectedFees))
-        expect(await manager.protocolFeesAccrued(tokens.currency1.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.balanceOf(feeControllerTest.address, tokens.currency0.address)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.balanceOf(feeControllerTest.address, tokens.currency1.address)).to.be.eq(BigNumber.from(0))
 
         // allows the owner to collect the fees
         const recipientBalanceBefore = await tokens.currency0.balanceOf(other.address)
@@ -361,7 +361,7 @@ describe('PoolManager', () => {
         expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
         expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
 
-        expect(await manager.protocolFeesAccrued(tokens.currency0.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.balanceOf(feeControllerTest.address, tokens.currency0.address)).to.be.eq(BigNumber.from(0))
       })
 
       it('returns all fees if 0 is provided', async () => {
@@ -385,8 +385,8 @@ describe('PoolManager', () => {
         )
 
         const expectedFees = 7
-        expect(await manager.protocolFeesAccrued(tokens.currency0.address)).to.be.eq(BigNumber.from(expectedFees))
-        expect(await manager.protocolFeesAccrued(tokens.currency1.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.balanceOf(feeControllerTest.address, tokens.currency0.address)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.balanceOf(feeControllerTest.address, tokens.currency1.address)).to.be.eq(BigNumber.from(0))
 
         // allows the owner to collect the fees
         const recipientBalanceBefore = await tokens.currency0.balanceOf(other.address)
@@ -403,7 +403,7 @@ describe('PoolManager', () => {
         expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
         expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
 
-        expect(await manager.protocolFeesAccrued(tokens.currency0.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.balanceOf(feeControllerTest.address, tokens.currency0.address)).to.be.eq(BigNumber.from(0))
       })
     })
 
@@ -468,8 +468,8 @@ describe('PoolManager', () => {
         )
 
         const expectedFees = 7
-        expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(expectedFees))
-        expect(await manager.protocolFeesAccrued(tokens.currency1.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.balanceOf(feeControllerTest.address, ADDRESS_ZERO)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.balanceOf(feeControllerTest.address, tokens.currency1.address)).to.be.eq(BigNumber.from(0))
 
         // allows the owner to collect the fees
         const recipientBalanceBefore = await other.getBalance()
@@ -486,7 +486,7 @@ describe('PoolManager', () => {
         expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
         expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
 
-        expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(0))
+        expect(await manager.balanceOf(feeControllerTest.address, ADDRESS_ZERO)).to.be.eq(BigNumber.from(0))
       })
 
       it('returns all fees if 0 is provided', async () => {
@@ -513,8 +513,8 @@ describe('PoolManager', () => {
         )
 
         const expectedFees = 7
-        expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(expectedFees))
-        expect(await manager.protocolFeesAccrued(tokens.currency1.address)).to.be.eq(BigNumber.from(0))
+        expect(await manager.balanceOf(feeControllerTest.address, ADDRESS_ZERO)).to.be.eq(BigNumber.from(expectedFees))
+        expect(await manager.balanceOf(feeControllerTest.address, tokens.currency1.address)).to.be.eq(BigNumber.from(0))
 
         // allows the owner to collect the fees
         const recipientBalanceBefore = await other.getBalance()
@@ -531,7 +531,7 @@ describe('PoolManager', () => {
         expect(recipientBalanceAfter).to.be.eq(recipientBalanceBefore.add(expectedFees))
         expect(managerBalanceAfter).to.be.eq(managerBalanceBefore.sub(expectedFees))
 
-        expect(await manager.protocolFeesAccrued(ADDRESS_ZERO)).to.be.eq(BigNumber.from(0))
+        expect(await manager.balanceOf(feeControllerTest.address, ADDRESS_ZERO)).to.be.eq(BigNumber.from(0))
       })
     })
   })

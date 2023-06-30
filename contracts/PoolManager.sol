@@ -63,11 +63,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     mapping(PoolId id => Pool.State) public pools;
 
-    /// @inheritdoc IPoolManager
-    mapping(Currency currency => uint256) public override protocolFeesAccrued;
-
-    mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
-
     constructor(uint256 _controllerGasLimit) ERC1155("") {
         controllerGasLimit = _controllerGasLimit;
     }
@@ -246,16 +241,16 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         unchecked {
             if (fees.feeForProtocol0 > 0) {
-                protocolFeesAccrued[key.currency0] += fees.feeForProtocol0;
+                _mint(address(protocolFeeController), key.currency0.toId(), fees.feeForProtocol0, "");
             }
             if (fees.feeForProtocol1 > 0) {
-                protocolFeesAccrued[key.currency1] += fees.feeForProtocol1;
+                _mint(address(protocolFeeController), key.currency1.toId(), fees.feeForProtocol1, "");
             }
             if (fees.feeForHook0 > 0) {
-                hookFeesAccrued[address(key.hooks)][key.currency0] += fees.feeForHook0;
+                _mint(address(key.hooks), key.currency0.toId(), fees.feeForHook0, "");
             }
             if (fees.feeForHook1 > 0) {
-                hookFeesAccrued[address(key.hooks)][key.currency1] += fees.feeForHook1;
+                _mint(address(key.hooks), key.currency1.toId(), fees.feeForHook1, "");
             }
         }
 
@@ -311,10 +306,17 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
         unchecked {
             if (feeForProtocol > 0) {
-                protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
+                _mint(
+                    address(protocolFeeController),
+                    params.zeroForOne ? key.currency0.toId() : key.currency1.toId(),
+                    feeForProtocol,
+                    ""
+                );
             }
             if (feeForHook > 0) {
-                hookFeesAccrued[address(key.hooks)][params.zeroForOne ? key.currency0 : key.currency1] += feeForHook;
+                _mint(
+                    address(key.hooks), params.zeroForOne ? key.currency0.toId() : key.currency1.toId(), feeForHook, ""
+                );
             }
         }
 
@@ -479,8 +481,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     {
         if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
 
-        amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
-        protocolFeesAccrued[currency] -= amountCollected;
+        amountCollected = (amount == 0) ? balanceOf(address(protocolFeeController), currency.toId()) : amount;
+
+        _burn(address(protocolFeeController), currency.toId(), amountCollected);
         currency.transfer(recipient, amountCollected);
     }
 
@@ -490,10 +493,10 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     {
         address hookAddress = msg.sender;
 
-        amountCollected = (amount == 0) ? hookFeesAccrued[hookAddress][currency] : amount;
+        amountCollected = (amount == 0) ? balanceOf(address(hookAddress), currency.toId()) : amount;
         recipient = (recipient == address(0)) ? hookAddress : recipient;
 
-        hookFeesAccrued[hookAddress][currency] -= amountCollected;
+        _burn(hookAddress, currency.toId(), amountCollected);
         currency.transfer(recipient, amountCollected);
     }
 
