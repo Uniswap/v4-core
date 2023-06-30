@@ -20,6 +20,7 @@ import {MockContract} from "../../contracts/test/MockContract.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
 import {NoOpTestHooks} from "../../contracts/test/NoOpTestHooks.sol";
+import {GracefulReturnTestHooks} from "../../contracts/test/GracefulReturnTestHooks.sol";
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";

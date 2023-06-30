@@ -136,8 +136,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
-            if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96) != IHooks.beforeInitialize.selector) {
-                revert Hooks.InvalidHookResponse();
+            bytes4 selector = key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
+            if (selector != IHooks.beforeInitialize.selector) {
+                if (selector == Hooks.RETURN_BEFORE_INITIALIZE) {
+                    return tick;
+                } else {
+                    revert Hooks.InvalidHookResponse();
+                }
             }
         }
 
@@ -225,8 +230,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            if (key.hooks.beforeModifyPosition(msg.sender, key, params) != IHooks.beforeModifyPosition.selector) {
-                revert Hooks.InvalidHookResponse();
+            bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params);
+            if (selector != IHooks.beforeModifyPosition.selector) {
+                if (selector == Hooks.RETURN_BEFORE_MODIFY) {
+                    return delta;
+                } else {
+                    revert Hooks.InvalidHookResponse();
+                }
             }
         }
 
@@ -367,8 +377,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeDonate()) {
-            if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1) != IHooks.beforeDonate.selector) {
-                revert Hooks.InvalidHookResponse();
+            bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+            if (selector != IHooks.beforeDonate.selector) {
+                if (selector == Hooks.RETURN_BEFORE_DONATE) {
+                    return delta;
+                } else {
+                    revert Hooks.InvalidHookResponse();
+                }
             }
         }
 
