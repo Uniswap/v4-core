@@ -73,63 +73,99 @@ Object {
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 159378,
+=======
+  "gasUsed": 192287,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 153673,
+=======
+  "gasUsed": 186517,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 180371,
+=======
+  "gasUsed": 211111,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 221839,
+=======
+  "gasUsed": 252793,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 170981,
+=======
+  "gasUsed": 204024,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 159378,
+=======
+  "gasUsed": 192287,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 153761,
+=======
+  "gasUsed": 186606,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 172543,
+=======
+  "gasUsed": 205458,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 213986,
+=======
+  "gasUsed": 247116,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
@@ -199,7 +235,11 @@ Object {
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
+<<<<<<< HEAD
   "gasUsed": 146745,
+=======
+  "gasUsed": 179642,
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 }
 `;
 
@@ -213,7 +253,7 @@ Object {
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 167738,
+  "gasUsed": 198466,
 }
 `;
 
@@ -227,34 +267,34 @@ Object {
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 158348,
+  "gasUsed": 191379,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 146745,
+  "gasUsed": 179642,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 141128,
+  "gasUsed": 173961,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 159910,
+  "gasUsed": 192813,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 201353,
+  "gasUsed": 234471,
 }
 `;

@@ -20,7 +20,11 @@ import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
+<<<<<<< HEAD
 import {PoolKey} from "../../contracts/types/PoolKey.sol";
+=======
+import {GracefulReturnTestHooks} from "../../contracts/test/GracefulReturnTestHooks.sol";
+>>>>>>> f4d259f (added four bytes4 constants to the Hooks.sol library that can be returned to indicate to the pool manager to gracefully return before a call, thus preserving any storage writes made by the hook.  Added in checks and handling to the PoolManager.sol to gracefully return should it receive such a selector. added test for verification of hook storage persistence.  Included verification of NOP on pool itself when return is triggered by hook)
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
@@ -982,6 +986,96 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapStart("donate gas with 1 token");
         donateRouter.donate(key, 100, 0);
         snapEnd();
+    }
+
+    function testPoolManagerGracefulReturnsOnHook(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable hookAddr = payable(ALL_HOOKS);
+
+        vm.etch(hookAddr, vm.getDeployedCode("GracefulReturnTestHooks.sol:GracefulReturnTestHooks"));
+
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: IHooks(hookAddr),
+            tickSpacing: 10
+        });
+
+        address[] memory callers = new address[](4);
+
+        bytes32 simulatedHead = bytes32(0);
+        bytes32 actualHead = bytes32(0);
+
+        // Null Storage Test
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(address(0), 0, 0, bytes32(0));
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Initialize Test
+        int24 tick = manager.initialize(key, SQRT_RATIO_1_1);
+
+        assertEq(tick, int24(0));
+
+        callers[0] = GracefulReturnTestHooks(hookAddr).lastCaller();
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(callers[0], 1, 1, simulatedHead);
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Modify Positions Test
+        IPoolManager.ModifyPositionParams memory modifyParams =
+            IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 1000});
+
+        BalanceDelta delta = modifyPositionRouter.modifyPosition(key, modifyParams);
+
+        assertEq(BalanceDelta.unwrap(delta), int256(0));
+
+        callers[1] = GracefulReturnTestHooks(hookAddr).lastCaller();
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(callers[1], 2, 2, simulatedHead);
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Swap Test
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
+
+        delta = swapRouter.swap(key, swapParams, testSettings);
+
+        assertEq(BalanceDelta.unwrap(delta), int256(0));
+
+        callers[2] = GracefulReturnTestHooks(hookAddr).lastCaller();
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(callers[2], 3, 3, simulatedHead);
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Donate test
+        delta = donateRouter.donate(key, 100, 200);
+
+        assertEq(BalanceDelta.unwrap(delta), int256(0));
+
+        callers[3] = GracefulReturnTestHooks(hookAddr).lastCaller();
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(callers[3], 4, 4, simulatedHead);
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Composite test
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead =
+            GracefulReturnTestHooks(hookAddr).simulateQueueFullCycle(callers[0], callers[1], callers[2], callers[3]);
+
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
     }
 
     function testNoOpLockIsOk() public {
