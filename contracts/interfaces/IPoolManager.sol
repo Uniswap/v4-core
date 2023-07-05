@@ -152,7 +152,7 @@ interface IPoolManager is IERC1155 {
         uint64 nonzeroDeltaCount;
     }
 
-    /// @notice Returns the ith element of the locker array
+    /// @notice Returns the locker and the parent lock index in the ith position of the locker array
     function getLock(uint256 i) external view returns (address locker, uint96 parentLockIndex);
 
     /// @notice Returns lock data

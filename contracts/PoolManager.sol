@@ -166,8 +166,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
             if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
             delete lockData;
         } else {
-            (, uint96 parentLockIndex) = lockData.getActiveLock();
-            lockData.index = parentLockIndex;
+            lockData.pop();
         }
     }
 
