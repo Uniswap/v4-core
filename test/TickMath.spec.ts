@@ -22,7 +22,7 @@ describe('TickMath', () => {
       await expect(tickMath.getSqrtRatioAtTick(MIN_TICK - 1)).to.be.revertedWith('InvalidTick()')
     })
 
-    it('throws for too low', async () => {
+    it('throws for too high', async () => {
       await expect(tickMath.getSqrtRatioAtTick(MAX_TICK + 1)).to.be.revertedWith('InvalidTick()')
     })
 
