@@ -7,6 +7,31 @@ import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 /// @title Computes the result of a swap within ticks
 /// @notice Contains methods for computing the result of a swap within a single tick price range, i.e., a single tick.
 library SwapMath {
+    uint24 internal constant MAX_FEE_PIPS = 1e6;
+
+    /// @notice Computes the sqrt price target for the next swap step
+    /// @param zeroForOne The direction of the swap, true for token0 to token1, false for token1 to token0
+    /// @param sqrtPriceNextX96 The Q64.96 sqrt price for the next initialized tick
+    /// @param sqrtPriceLimitX96 The Q64.96 sqrt price limit. If zero for one, the price cannot be less than this
+    /// value after the swap. If one for zero, the price cannot be greater than this value after the swap
+    /// @return sqrtRatioTargetX96 The price target for the next swap step
+    function getSqrtRatioTarget(bool zeroForOne, uint160 sqrtPriceNextX96, uint160 sqrtPriceLimitX96)
+        internal
+        pure
+        returns (uint160 sqrtRatioTargetX96)
+    {
+        assembly {
+            // a flag to toggle between sqrtPriceNextX96 and sqrtPriceLimitX96
+            // when zeroForOne == true, nextOrLimit reduces to sqrtPriceNextX96 > sqrtPriceLimitX96
+            // sqrtRatioTargetX96 = max(sqrtPriceNextX96, sqrtPriceLimitX96)
+            // when zeroForOne == false, nextOrLimit reduces to sqrtPriceNextX96 <= sqrtPriceLimitX96
+            // sqrtRatioTargetX96 = min(sqrtPriceNextX96, sqrtPriceLimitX96)
+            let nextOrLimit := xor(gt(sqrtPriceNextX96, sqrtPriceLimitX96), iszero(zeroForOne))
+            let symDiff := xor(sqrtPriceNextX96, sqrtPriceLimitX96)
+            sqrtRatioTargetX96 := xor(sqrtPriceLimitX96, mul(symDiff, nextOrLimit))
+        }
+    }
+
     /// @notice Computes the result of swapping some amount in, or amount out, given the parameters of the swap
     /// @dev The fee, plus the amount in, will never exceed the amount remaining if the swap's `amountSpecified` is positive
     /// @param sqrtRatioCurrentX96 The current sqrt price of the pool
@@ -27,62 +52,54 @@ library SwapMath {
     ) internal pure returns (uint160 sqrtRatioNextX96, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
         unchecked {
             bool zeroForOne = sqrtRatioCurrentX96 >= sqrtRatioTargetX96;
-            bool exactIn = amountRemaining >= 0;
+            uint256 feeComplement = MAX_FEE_PIPS - feePips;
+            bool exactIn;
+            uint256 amountRemainingAbs;
+            assembly {
+                // exactIn = 1 if amountRemaining >= 0 else 0
+                exactIn := iszero(slt(amountRemaining, 0))
+                // mask = 0 if amountRemaining >= 0 else -1
+                let mask := sub(exactIn, 1)
+                amountRemainingAbs := xor(mask, add(mask, amountRemaining))
+            }
 
             if (exactIn) {
-                uint256 amountRemainingLessFee = FullMath.mulDiv(uint256(amountRemaining), 1e6 - feePips, 1e6);
+                uint256 amountRemainingLessFee = FullMath.mulDiv(amountRemainingAbs, feeComplement, MAX_FEE_PIPS);
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, true);
                 if (amountRemainingLessFee >= amountIn) {
+                    // `amountIn` is capped by the target price
                     sqrtRatioNextX96 = sqrtRatioTargetX96;
+                    feeAmount = FullMath.mulDivRoundingUp(amountIn, feePips, feeComplement);
                 } else {
-                    sqrtRatioNextX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
-                        sqrtRatioCurrentX96, liquidity, amountRemainingLessFee, zeroForOne
-                    );
+                    // exhaust the remaining amount
+                    amountIn = amountRemainingLessFee;
+                    sqrtRatioNextX96 =
+                        SqrtPriceMath.getNextSqrtPriceFromInput(sqrtRatioCurrentX96, liquidity, amountIn, zeroForOne);
+                    // we didn't reach the target, so take the remainder of the maximum input as fee
+                    feeAmount = amountRemainingAbs - amountIn;
                 }
+                amountOut = zeroForOne
+                    ? SqrtPriceMath.getAmount1Delta(sqrtRatioNextX96, sqrtRatioCurrentX96, liquidity, false)
+                    : SqrtPriceMath.getAmount0Delta(sqrtRatioCurrentX96, sqrtRatioNextX96, liquidity, false);
             } else {
                 amountOut = zeroForOne
                     ? SqrtPriceMath.getAmount1Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, false)
                     : SqrtPriceMath.getAmount0Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, false);
-                if (uint256(-amountRemaining) >= amountOut) {
+                if (amountRemainingAbs >= amountOut) {
+                    // `amountOut` is capped by the target price
                     sqrtRatioNextX96 = sqrtRatioTargetX96;
                 } else {
-                    sqrtRatioNextX96 = SqrtPriceMath.getNextSqrtPriceFromOutput(
-                        sqrtRatioCurrentX96, liquidity, uint256(-amountRemaining), zeroForOne
-                    );
+                    // cap the output amount to not exceed the remaining output amount
+                    amountOut = amountRemainingAbs;
+                    sqrtRatioNextX96 =
+                        SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtRatioCurrentX96, liquidity, amountOut, zeroForOne);
                 }
-            }
-
-            bool max = sqrtRatioTargetX96 == sqrtRatioNextX96;
-
-            // get the input/output amounts
-            if (zeroForOne) {
-                amountIn = max && exactIn
-                    ? amountIn
-                    : SqrtPriceMath.getAmount0Delta(sqrtRatioNextX96, sqrtRatioCurrentX96, liquidity, true);
-                amountOut = max && !exactIn
-                    ? amountOut
-                    : SqrtPriceMath.getAmount1Delta(sqrtRatioNextX96, sqrtRatioCurrentX96, liquidity, false);
-            } else {
-                amountIn = max && exactIn
-                    ? amountIn
+                amountIn = zeroForOne
+                    ? SqrtPriceMath.getAmount0Delta(sqrtRatioNextX96, sqrtRatioCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioNextX96, liquidity, true);
-                amountOut = max && !exactIn
-                    ? amountOut
-                    : SqrtPriceMath.getAmount0Delta(sqrtRatioCurrentX96, sqrtRatioNextX96, liquidity, false);
-            }
-
-            // cap the output amount to not exceed the remaining output amount
-            if (!exactIn && amountOut > uint256(-amountRemaining)) {
-                amountOut = uint256(-amountRemaining);
-            }
-
-            if (exactIn && sqrtRatioNextX96 != sqrtRatioTargetX96) {
-                // we didn't reach the target, so take the remainder of the maximum input as fee
-                feeAmount = uint256(amountRemaining) - amountIn;
-            } else {
-                feeAmount = FullMath.mulDivRoundingUp(amountIn, feePips, 1e6 - feePips);
+                feeAmount = FullMath.mulDivRoundingUp(amountIn, feePips, feeComplement);
             }
         }
     }
