@@ -29,6 +29,6 @@ exports[`TickBitmap #nextInitializedTickWithinOneWord lte = false gas cost on bo
 
 exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost for entire word 1`] = `2570`;
 
-exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost just below boundary 1`] = `2880`;
+exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost just below boundary 1`] = `2791`;
 
 exports[`TickBitmap #nextInitializedTickWithinOneWord lte = true gas cost on boundary 1`] = `2570`;
