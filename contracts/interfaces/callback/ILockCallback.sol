@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 interface ILockCallback {
     /// @notice Called by the pool manager on `msg.sender` when a lock is acquired
