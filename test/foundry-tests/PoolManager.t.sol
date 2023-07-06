@@ -78,7 +78,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager = Deployers.createFreshManager();
         donateRouter = new PoolDonateTest(manager);
         modifyPositionRouter = new PoolModifyPositionTest(manager);
-        swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
 
         lockTest = new PoolLockTest(manager);
         swapRouter = new PoolSwapTest(manager);
