@@ -18,26 +18,24 @@ library FullMath {
             // then use the Chinese Remainder Theorem to reconstruct
             // the 512 bit result. The result is stored in two 256
             // variables such that product = prod1 * 2**256 + prod0
-            uint256 prod0; // Least significant 256 bits of the product
+            uint256 prod0 = a * b; // Least significant 256 bits of the product
             uint256 prod1; // Most significant 256 bits of the product
             assembly {
                 let mm := mulmod(a, b, not(0))
-                prod0 := mul(a, b)
                 prod1 := sub(sub(mm, prod0), lt(mm, prod0))
-            }
-
-            // Handle non-overflow cases, 256 by 256 division
-            if (prod1 == 0) {
-                require(denominator > 0);
-                assembly {
-                    result := div(prod0, denominator)
-                }
-                return result;
             }
 
             // Make sure the result is less than 2**256.
             // Also prevents denominator == 0
             require(denominator > prod1);
+
+            // Handle non-overflow cases, 256 by 256 division
+            if (prod1 == 0) {
+                assembly {
+                    result := div(prod0, denominator)
+                }
+                return result;
+            }
 
             ///////////////////////////////////////////////
             // 512 by 256 division.
