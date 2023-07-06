@@ -18,6 +18,7 @@ import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {Fees} from "../../contracts/libraries/Fees.sol";
 import {PoolId} from "../../contracts/libraries/PoolId.sol";
+import {toBalanceDelta} from "../../contracts/types/BalanceDelta.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
@@ -95,6 +96,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testBeforeSwapInvalidReturn() public {
+        // mockHooks.setReturnValue(mockHooks.beforeSwap.selector, (bytes4(0xdeadbeef), toBalanceDelta(0, 0)));
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
         TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);

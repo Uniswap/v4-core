@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {IHookFeeManager} from "../interfaces/IHookFeeManager.sol";
 import {PoolId, PoolIdLibrary} from "../libraries/PoolId.sol";
 
@@ -57,10 +57,10 @@ contract MockHooks is IHooks, IHookFeeManager {
         external
         view
         override
-        returns (bytes4)
+        returns (bytes4, BalanceDelta)
     {
         bytes4 selector = MockHooks.beforeSwap.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        return returnValues[selector] == bytes4(0) ? (selector, toBalanceDelta(0, 0)) : (returnValues[selector], toBalanceDelta(0, 0));
     }
 
     function afterSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)

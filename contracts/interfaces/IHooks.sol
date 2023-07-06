@@ -58,7 +58,7 @@ interface IHooks {
     /// @return bytes4 The function selector for the hook
     function beforeSwap(address sender, IPoolManager.PoolKey calldata key, IPoolManager.SwapParams calldata params)
         external
-        returns (bytes4);
+        returns (bytes4, BalanceDelta);
 
     /// @notice The hook called after a swap
     /// @param sender The initial msg.sender for the swap call

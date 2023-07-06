@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
+import "forge-std/console2.sol";
 
 contract TestERC20 is IERC20Minimal {
     mapping(address => uint256) public override balanceOf;
@@ -37,16 +38,20 @@ contract TestERC20 is IERC20Minimal {
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
+        console2.log('hi1');
         uint256 allowanceBefore = allowance[sender][msg.sender];
         require(allowanceBefore >= amount, "allowance insufficient");
+        console2.log('hi2');
 
         allowance[sender][msg.sender] = allowanceBefore - amount;
 
         uint256 balanceRecipient = balanceOf[recipient];
+        console2.log('hi3');
         require(balanceRecipient + amount >= balanceRecipient, "overflow balance recipient");
         balanceOf[recipient] = balanceRecipient + amount;
         uint256 balanceSender = balanceOf[sender];
         require(balanceSender >= amount, "underflow balance sender");
+        console2.log('hi');
         balanceOf[sender] = balanceSender - amount;
 
         emit Transfer(sender, recipient, amount);

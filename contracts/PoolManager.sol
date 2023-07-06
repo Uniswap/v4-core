@@ -277,8 +277,30 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
-            if (key.hooks.beforeSwap(msg.sender, key, params) != IHooks.beforeSwap.selector) {
-                revert Hooks.InvalidHookResponse();
+            (bytes4 selector, BalanceDelta hookDelta) = key.hooks.beforeSwap(msg.sender, key, params);
+            if (selector != IHooks.beforeSwap.selector) {
+                if (selector == Hooks.RETURN_BEFORE_SWAP) {
+                    // We are in the lock state of the user
+                    // Mint 1155 for token0
+                    _accountDelta(key.currency0, hookDelta.amount0());
+                    if (hookDelta.amount0() > 0) {
+                        // User now owes the pool
+                        _mint(address(key.hooks), key.currency0.toId(), uint256(uint128(hookDelta.amount0())), "");
+                    } else if (hookDelta.amount0() < 0) {
+                        _burn(address(key.hooks), key.currency0.toId(), uint256(uint128(-hookDelta.amount0())));
+                    }
+                    // else, that is the amount the pool should give to the user
+                    // this means the user has to burn their 1155 to get back their tokens
+                     _accountDelta(key.currency1, hookDelta.amount1());
+                    if (hookDelta.amount1() > 0) {
+                        _mint(address(key.hooks), key.currency1.toId(), uint256(uint128(hookDelta.amount1())), "");
+                    } else if (hookDelta.amount1() < 0) {
+                        _burn(address(key.hooks), key.currency1.toId(), uint256(uint128(-hookDelta.amount1())));
+                    }
+                    return hookDelta;
+                } else {
+                    revert Hooks.InvalidHookResponse();
+                }
             }
         }
 

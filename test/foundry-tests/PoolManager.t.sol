@@ -19,6 +19,7 @@ import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
+import {NoOpTestHooks} from "../../contracts/test/NoOpTestHooks.sol";
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
@@ -33,6 +34,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     using Pool for Pool.State;
     using PoolIdLibrary for IPoolManager.PoolKey;
     using Fees for uint24;
+    using CurrencyLibrary for Currency;
 
     event LockAcquired(uint256 id);
     event Initialize(
@@ -83,17 +85,17 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         swapRouter = new PoolSwapTest(manager);
         protocolFeeController = new ProtocolFeeControllerTest();
 
-        MockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
-        MockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).mint(address(this), 100 ether);
+        MockERC20(Currency.unwrap(currency1)).mint(address(this), 100 ether);
 
-        MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), 10 ether);
-        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), 100 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), 100 ether);
 
-        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 10 ether);
-        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 100 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 100 ether);
 
-        MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ether);
-        MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 100 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 100 ether);
     }
 
     function testPoolManagerInitialize(IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) public {
@@ -1140,6 +1142,46 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapStart("donate gas with 1 token");
         donateRouter.donate(key, 100, 0);
         snapEnd();
+    }
+
+    function testPoolManagerNoOpHook(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable hookAddr = payable(address(uint160(Hooks.BEFORE_SWAP_FLAG)));
+
+        vm.etch(hookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
+
+        IPoolManager.PoolKey memory key = IPoolManager.PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 100,
+            hooks: IHooks(hookAddr),
+            tickSpacing: 10
+        });
+
+        manager.initialize(key, SQRT_RATIO_1_1);
+
+        // manager.setApprovalForAll(address(manager), true);
+        MockERC20(Currency.unwrap(currency0)).approve(hookAddr, 100 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(hookAddr, 100 ether);
+
+        NoOpTestHooks(hookAddr).setManager(manager);
+
+        BalanceDelta delta = NoOpTestHooks(hookAddr).addLiquidity(key, 10 ether, 10 ether);
+
+        // Swap Test
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        delta = swapRouter.swap(key, swapParams, testSettings);
+
+        assertEq(delta.amount0(), 1 ether); 
+        assertEq(delta.amount1(), -1 ether);
     }
 
     function testNoOpLockIsOk() public {
