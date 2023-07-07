@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import {TestERC20} from "../../../contracts/test/TestERC20.sol";
 import {Hooks} from "../../../contracts/libraries/Hooks.sol";
