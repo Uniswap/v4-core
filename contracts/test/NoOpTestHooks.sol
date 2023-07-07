@@ -12,8 +12,6 @@ import {CurrencyLibrary, Currency} from "../libraries/CurrencyLibrary.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 
-import "forge-std/console2.sol";
-
 contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
     using PoolIdLibrary for IPoolManager.PoolKey;
     using Hooks for IHooks;
@@ -26,7 +24,6 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
     mapping(PoolId => uint8) public swapFees;
 
     mapping(PoolId => uint8) public withdrawFees;
-
 
     constructor() {
         IHooks(this).validateHookAddress(
@@ -42,7 +39,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
             })
         );
     }
-    
+
     function setManager(IPoolManager _manager) external {
         manager = _manager;
     }
@@ -64,11 +61,11 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         return bytes4(0);
     }
 
-    function beforeModifyPosition(
-        address,
-        IPoolManager.PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata
-    ) external override returns (bytes4) {
+    function beforeModifyPosition(address, IPoolManager.PoolKey calldata, IPoolManager.ModifyPositionParams calldata)
+        external
+        override
+        returns (bytes4)
+    {
         return bytes4(0);
     }
 
@@ -118,11 +115,11 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
     struct CallbackData {
         address sender;
         IPoolManager.PoolKey key;
-        uint256 amount0;
-        uint256 amount1;
+        int128 amount0;
+        int128 amount1;
     }
 
-    function addLiquidity(IPoolManager.PoolKey memory key, uint256 amount0, uint256 amount1)
+    function modifyLiquidity(IPoolManager.PoolKey memory key, int128 amount0, int128 amount1)
         external
         payable
         returns (BalanceDelta delta)
@@ -141,22 +138,21 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
         if (data.amount0 > 0) {
+            manager.mint(data.key.currency0, address(this), uint128(data.amount0));
             if (data.key.currency0.isNative()) {
                 manager.settle{value: uint128(data.amount0)}(data.key.currency0);
             } else {
-                manager.mint(data.key.currency0, address(this), data.amount0);
                 IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
-                    data.sender, address(manager), data.amount0
+                    data.sender, address(manager), uint128(data.amount0)
                 );
                 manager.settle(data.key.currency0);
-
             }
         }
         if (data.amount1 > 0) {
+            manager.mint(data.key.currency1, address(this), uint128(data.amount1));
             if (data.key.currency1.isNative()) {
                 manager.settle{value: uint128(data.amount1)}(data.key.currency1);
             } else {
-                manager.mint(data.key.currency1, address(this), uint128(data.amount1));
                 IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
                     data.sender, address(manager), uint128(data.amount1)
                 );
@@ -164,10 +160,24 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
             }
         }
 
-        return abi.encode(toBalanceDelta(int128(int(data.amount0)), int128(int(data.amount1))));
+        if (data.amount0 < 0) {
+            // TODO: approve the manager for the transfer
+            manager.safeTransferFrom(
+                address(this), address(manager), data.key.currency0.toId(), uint128(-data.amount0), ""
+            );
+            manager.take(data.key.currency0, data.sender, uint128(-data.amount0));
+        }
+        if (data.amount1 < 0) {
+            manager.safeTransferFrom(
+                address(this), address(manager), data.key.currency1.toId(), uint128(-data.amount1), ""
+            );
+            manager.take(data.key.currency1, data.sender, uint128(-data.amount1));
+        }
+
+        return abi.encode(toBalanceDelta(int128(int256(data.amount0)), int128(int256(data.amount1))));
     }
 
-       function getHookSwapFee(IPoolManager.PoolKey calldata key) external view override returns (uint8) {
+    function getHookSwapFee(IPoolManager.PoolKey calldata key) external view override returns (uint8) {
         return swapFees[key.toId()];
     }
 

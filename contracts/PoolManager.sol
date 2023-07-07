@@ -291,7 +291,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
                     }
                     // else, that is the amount the pool should give to the user
                     // this means the user has to burn their 1155 to get back their tokens
-                     _accountDelta(key.currency1, hookDelta.amount1());
+                    _accountDelta(key.currency1, hookDelta.amount1());
                     if (hookDelta.amount1() > 0) {
                         _mint(address(key.hooks), key.currency1.toId(), uint256(uint128(hookDelta.amount1())), "");
                     } else if (hookDelta.amount1() < 0) {

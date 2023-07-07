@@ -61,7 +61,7 @@ contract EmptyTestHooks is IHooks {
         override
         returns (bytes4 selector, BalanceDelta hookDelta)
     {
-        return (IHooks.beforeSwap.selector, toBalanceDelta(0,0));
+        return (IHooks.beforeSwap.selector, toBalanceDelta(0, 0));
     }
 
     function afterSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)

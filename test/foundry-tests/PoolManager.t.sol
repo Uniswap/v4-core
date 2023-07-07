@@ -1163,25 +1163,34 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.initialize(key, SQRT_RATIO_1_1);
 
-        // manager.setApprovalForAll(address(manager), true);
         MockERC20(Currency.unwrap(currency0)).approve(hookAddr, 100 ether);
         MockERC20(Currency.unwrap(currency1)).approve(hookAddr, 100 ether);
 
         NoOpTestHooks(hookAddr).setManager(manager);
 
-        BalanceDelta delta = NoOpTestHooks(hookAddr).addLiquidity(key, 10 ether, 10 ether);
+        // Add liquidity
+        NoOpTestHooks(hookAddr).modifyLiquidity(key, 10 ether, 10 ether);
 
-        // Swap Test
+        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 10 ether);
+        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency1)), 10 ether);
+
+        // Swap
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
-        delta = swapRouter.swap(key, swapParams, testSettings);
+        BalanceDelta delta = swapRouter.swap(key, swapParams, testSettings);
 
-        assertEq(delta.amount0(), 1 ether); 
+        assertEq(delta.amount0(), 1 ether);
         assertEq(delta.amount1(), -1 ether);
+
+        // Remove liquidity
+        NoOpTestHooks(hookAddr).modifyLiquidity(key, -1 ether, -1 ether);
+
+        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 10 ether);
+        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency1)), 8 ether);
     }
 
     function testNoOpLockIsOk() public {

@@ -60,7 +60,9 @@ contract MockHooks is IHooks, IHookFeeManager {
         returns (bytes4, BalanceDelta)
     {
         bytes4 selector = MockHooks.beforeSwap.selector;
-        return returnValues[selector] == bytes4(0) ? (selector, toBalanceDelta(0, 0)) : (returnValues[selector], toBalanceDelta(0, 0));
+        return returnValues[selector] == bytes4(0)
+            ? (selector, toBalanceDelta(0, 0))
+            : (returnValues[selector], toBalanceDelta(0, 0));
     }
 
     function afterSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
