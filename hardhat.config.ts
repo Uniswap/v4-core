@@ -1,7 +1,7 @@
-import 'hardhat-typechain'
 import '@nomiclabs/hardhat-ethers'
-import '@nomiclabs/hardhat-waffle'
 import '@nomiclabs/hardhat-etherscan'
+import '@nomiclabs/hardhat-waffle'
+import 'hardhat-typechain'
 
 const importToml = require('import-toml')
 const foundryConfig = importToml.sync('foundry.toml')
@@ -35,6 +35,7 @@ export default {
   solidity: {
     version: foundryConfig.profile.default.solc_version,
     settings: {
+      viaIR: foundryConfig.profile.default.via_ir,
       optimizer: {
         enabled: true,
         runs: foundryConfig.profile.default.optimizer_runs,
@@ -42,7 +43,7 @@ export default {
       metadata: {
         // do not include the metadata hash, since this is machine dependent
         // and we want all generated code to be deterministic
-        // https://docs.soliditylang.org/en/v0.8.19/metadata.html
+        // https://docs.soliditylang.org/en/v0.8.20/metadata.html
         bytecodeHash: 'none',
       },
     },
