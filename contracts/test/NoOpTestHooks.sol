@@ -12,6 +12,8 @@ import {CurrencyLibrary, Currency} from "../libraries/CurrencyLibrary.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 
+import "forge-std/console2.sol";
+
 contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
     using PoolIdLibrary for IPoolManager.PoolKey;
     using Hooks for IHooks;
@@ -30,7 +32,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeModifyPosition: false,
+                beforeModifyPosition: true,
                 afterModifyPosition: false,
                 beforeSwap: true,
                 afterSwap: false,
@@ -47,9 +49,9 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
     function beforeInitialize(address caller, IPoolManager.PoolKey memory, uint160)
         external
         override
-        returns (bytes4)
+        returns (bytes32)
     {
-        return bytes4(0);
+        return bytes32(0);
     }
 
     function afterInitialize(address, IPoolManager.PoolKey memory, uint160, int24)
@@ -61,12 +63,27 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         return bytes4(0);
     }
 
-    function beforeModifyPosition(address, IPoolManager.PoolKey calldata, IPoolManager.ModifyPositionParams calldata)
-        external
-        override
-        returns (bytes4)
-    {
-        return bytes4(0);
+    function beforeModifyPosition(
+        address,
+        IPoolManager.PoolKey calldata key,
+        IPoolManager.ModifyPositionParams calldata params
+    ) external override returns (bytes32) {
+        bytes32 selector = Hooks.NO_OP;
+        int112 amt = int112(params.liquidityDelta);
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            // 0xAAAAAAAA_112 bits of amt0, 112 bits of amt1
+            selector :=
+                or(
+                    selector,
+                    or(
+                        and(0x00000000ffffffffffffffffffffffffffff0000000000000000000000000000, shl(112, amt)),
+                        and(0x000000000000000000000000000000000000ffffffffffffffffffffffffffff, amt)
+                    )
+                )
+        }
+        return selector;
     }
 
     function afterModifyPosition(
@@ -81,9 +98,24 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
     function beforeSwap(address caller, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata)
         external
         override
-        returns (bytes4, BalanceDelta)
+        returns (bytes32)
     {
-        return (Hooks.RETURN_BEFORE_SWAP, toBalanceDelta(1 ether, -1 ether));
+        // 0xAAAAAAAA_00000............. padding of bytes4
+        // 112 bits per amount in BalanceDelta, 224 bits total since 256 - 32 = 224, as bytes4 takes up 32 bits
+        bytes32 selector = Hooks.NO_OP;
+        int112 amt0 = 1 ether;
+        int112 amt1 = -1 ether;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            // 0xAAAAAAAA_112 bits of amt0, 112 bits of amt1
+            selector :=
+                or(
+                    selector,
+                    or(and(0x00000000ffffffffffffffffffffffffffff0000000000000000000000000000, shl(112, amt1)), amt0)
+                )
+        }
+        return selector;
     }
 
     function afterSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
@@ -98,9 +130,9 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
     function beforeDonate(address caller, IPoolManager.PoolKey calldata, uint256, uint256)
         external
         override
-        returns (bytes4)
+        returns (bytes32)
     {
-        return bytes4(0);
+        return bytes32(0);
     }
 
     function afterDonate(address, IPoolManager.PoolKey calldata, uint256, uint256)
@@ -110,71 +142,6 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         returns (bytes4)
     {
         return bytes4(0);
-    }
-
-    struct CallbackData {
-        address sender;
-        IPoolManager.PoolKey key;
-        int128 amount0;
-        int128 amount1;
-    }
-
-    function modifyLiquidity(IPoolManager.PoolKey memory key, int128 amount0, int128 amount1)
-        external
-        payable
-        returns (BalanceDelta delta)
-    {
-        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1))), (BalanceDelta));
-
-        uint256 ethBalance = address(this).balance;
-        if (ethBalance > 0) {
-            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
-        }
-    }
-
-    function lockAcquired(uint256, bytes calldata rawData) external returns (bytes memory) {
-        require(msg.sender == address(manager));
-
-        CallbackData memory data = abi.decode(rawData, (CallbackData));
-
-        if (data.amount0 > 0) {
-            manager.mint(data.key.currency0, address(this), uint128(data.amount0));
-            if (data.key.currency0.isNative()) {
-                manager.settle{value: uint128(data.amount0)}(data.key.currency0);
-            } else {
-                IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
-                    data.sender, address(manager), uint128(data.amount0)
-                );
-                manager.settle(data.key.currency0);
-            }
-        }
-        if (data.amount1 > 0) {
-            manager.mint(data.key.currency1, address(this), uint128(data.amount1));
-            if (data.key.currency1.isNative()) {
-                manager.settle{value: uint128(data.amount1)}(data.key.currency1);
-            } else {
-                IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
-                    data.sender, address(manager), uint128(data.amount1)
-                );
-                manager.settle(data.key.currency1);
-            }
-        }
-
-        if (data.amount0 < 0) {
-            // TODO: approve the manager for the transfer
-            manager.safeTransferFrom(
-                address(this), address(manager), data.key.currency0.toId(), uint128(-data.amount0), ""
-            );
-            manager.take(data.key.currency0, data.sender, uint128(-data.amount0));
-        }
-        if (data.amount1 < 0) {
-            manager.safeTransferFrom(
-                address(this), address(manager), data.key.currency1.toId(), uint128(-data.amount1), ""
-            );
-            manager.take(data.key.currency1, data.sender, uint128(-data.amount1));
-        }
-
-        return abi.encode(toBalanceDelta(int128(int256(data.amount0)), int128(int256(data.amount1))));
     }
 
     function getHookSwapFee(IPoolManager.PoolKey calldata key) external view override returns (uint8) {

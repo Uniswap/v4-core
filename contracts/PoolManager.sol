@@ -19,7 +19,7 @@ import {Fees} from "./libraries/Fees.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {PoolId, PoolIdLibrary} from "./libraries/PoolId.sol";
-import {BalanceDelta} from "./types/BalanceDelta.sol";
+import {BalanceDelta, noOpToBalanceDelta} from "./types/BalanceDelta.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Receiver {
@@ -126,6 +126,25 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         return pools[id].positions.get(owner, tickLower, tickUpper);
     }
 
+    function _accountNoOp(PoolKey memory key, BalanceDelta hookDelta) internal {
+        // NOTE: we are in the lock state of the user, not the hook, unless the hook is the user
+        _accountDelta(key.currency0, hookDelta.amount0());
+        if (hookDelta.amount0() > 0) {
+            // User now owes the pool
+            _mint(address(key.hooks), key.currency0.toId(), uint256(uint128(hookDelta.amount0())), "");
+        } else if (hookDelta.amount0() < 0) {
+            _burn(address(key.hooks), key.currency0.toId(), uint256(uint128(-hookDelta.amount0())));
+        }
+        // else, that is the amount the pool should give to the user
+        // this means the user has to burn their 1155 to get back their tokens
+        _accountDelta(key.currency1, hookDelta.amount1());
+        if (hookDelta.amount1() > 0) {
+            _mint(address(key.hooks), key.currency1.toId(), uint256(uint128(hookDelta.amount1())), "");
+        } else if (hookDelta.amount1() < 0) {
+            _burn(address(key.hooks), key.currency1.toId(), uint256(uint128(-hookDelta.amount1())));
+        }
+    }
+
     /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         if (key.fee & Fees.STATIC_FEE_MASK >= 1000000) revert FeeTooLarge();
@@ -136,9 +155,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
-            bytes4 selector = key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
+            bytes32 selector = key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
             if (selector != IHooks.beforeInitialize.selector) {
-                if (selector == Hooks.RETURN_BEFORE_INITIALIZE) {
+                if (bytes4(selector) == Hooks.NO_OP) {
                     return tick;
                 } else {
                     revert Hooks.InvalidHookResponse();
@@ -230,10 +249,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params);
+            bytes32 selector = key.hooks.beforeModifyPosition(msg.sender, key, params);
             if (selector != IHooks.beforeModifyPosition.selector) {
-                if (selector == Hooks.RETURN_BEFORE_MODIFY) {
-                    return delta;
+                if (bytes4(selector) == Hooks.NO_OP) {
+                    BalanceDelta hookDelta = noOpToBalanceDelta(selector);
+                    _accountNoOp(key, hookDelta);
+                    return hookDelta;
                 } else {
                     revert Hooks.InvalidHookResponse();
                 }
@@ -287,26 +308,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
-            (bytes4 selector, BalanceDelta hookDelta) = key.hooks.beforeSwap(msg.sender, key, params);
+            bytes32 selector = key.hooks.beforeSwap(msg.sender, key, params);
             if (selector != IHooks.beforeSwap.selector) {
-                if (selector == Hooks.RETURN_BEFORE_SWAP) {
-                    // We are in the lock state of the user
-                    // Mint 1155 for token0
-                    _accountDelta(key.currency0, hookDelta.amount0());
-                    if (hookDelta.amount0() > 0) {
-                        // User now owes the pool
-                        _mint(address(key.hooks), key.currency0.toId(), uint256(uint128(hookDelta.amount0())), "");
-                    } else if (hookDelta.amount0() < 0) {
-                        _burn(address(key.hooks), key.currency0.toId(), uint256(uint128(-hookDelta.amount0())));
-                    }
-                    // else, that is the amount the pool should give to the user
-                    // this means the user has to burn their 1155 to get back their tokens
-                    _accountDelta(key.currency1, hookDelta.amount1());
-                    if (hookDelta.amount1() > 0) {
-                        _mint(address(key.hooks), key.currency1.toId(), uint256(uint128(hookDelta.amount1())), "");
-                    } else if (hookDelta.amount1() < 0) {
-                        _burn(address(key.hooks), key.currency1.toId(), uint256(uint128(-hookDelta.amount1())));
-                    }
+                if (bytes4(selector) == Hooks.NO_OP) {
+                    // TODO: potentially change this
+                    BalanceDelta hookDelta = noOpToBalanceDelta(selector);
+                    _accountNoOp(key, hookDelta);
                     return hookDelta;
                 } else {
                     revert Hooks.InvalidHookResponse();
@@ -377,9 +384,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeDonate()) {
-            bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+            bytes32 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
             if (selector != IHooks.beforeDonate.selector) {
-                if (selector == Hooks.RETURN_BEFORE_DONATE) {
+                if (bytes4(selector) == Hooks.NO_OP) {
                     return delta;
                 } else {
                     revert Hooks.InvalidHookResponse();

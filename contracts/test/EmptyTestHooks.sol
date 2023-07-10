@@ -24,7 +24,7 @@ contract EmptyTestHooks is IHooks {
         );
     }
 
-    function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external pure override returns (bytes4) {
+    function beforeInitialize(address, IPoolManager.PoolKey memory, uint160) external pure override returns (bytes32) {
         return IHooks.beforeInitialize.selector;
     }
 
@@ -41,7 +41,7 @@ contract EmptyTestHooks is IHooks {
         external
         pure
         override
-        returns (bytes4)
+        returns (bytes32)
     {
         return IHooks.beforeModifyPosition.selector;
     }
@@ -59,9 +59,9 @@ contract EmptyTestHooks is IHooks {
         external
         pure
         override
-        returns (bytes4 selector, BalanceDelta hookDelta)
+        returns (bytes32 selector)
     {
-        return (IHooks.beforeSwap.selector, toBalanceDelta(0, 0));
+        return IHooks.beforeSwap.selector;
     }
 
     function afterSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
@@ -77,7 +77,7 @@ contract EmptyTestHooks is IHooks {
         external
         pure
         override
-        returns (bytes4)
+        returns (bytes32)
     {
         return IHooks.beforeDonate.selector;
     }

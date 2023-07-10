@@ -20,10 +20,7 @@ library Hooks {
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
 
-    bytes4 public constant RETURN_BEFORE_INITIALIZE = 0xa31db647; // bytes4(keccak256(abi.encodePacked("ReturnBeforeInitialize")));
-    bytes4 public constant RETURN_BEFORE_MODIFY = 0xfd3b7a02; // bytes4(keccak256(abi.encodePacked("ReturnBeforeModify")));
-    bytes4 public constant RETURN_BEFORE_SWAP = 0x1ec7530b; // bytes4(keccak256(abi.encodePacked("ReturnBeforeSwap")));
-    bytes4 public constant RETURN_BEFORE_DONATE = 0x0f7ee481; // bytes4(keccak256(abi.encodePacked("ReturnBeforeDonate")));
+    bytes4 public constant NO_OP = 0xc71dfe5e; // bytes4(keccak256(abi.encodePacked("NoOp")))
 
     struct Calls {
         bool beforeInitialize;
