@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.20;
 
-import "forge-std/console2.sol";
-
 type BalanceDelta is int256;
 
 using {add as +, sub as -} for BalanceDelta global;

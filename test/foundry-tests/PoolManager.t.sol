@@ -30,8 +30,6 @@ import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControl
 import {Fees} from "../../contracts/libraries/Fees.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 
-import "forge-std/console2.sol";
-
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
     using Pool for Pool.State;

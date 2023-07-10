@@ -12,8 +12,6 @@ import {CurrencyLibrary, Currency} from "../libraries/CurrencyLibrary.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 
-import "forge-std/console2.sol";
-
 contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
     using PoolIdLibrary for IPoolManager.PoolKey;
     using Hooks for IHooks;
