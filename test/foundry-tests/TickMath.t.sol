@@ -44,6 +44,20 @@ contract TickMathTestTest is Test {
         assertEq(tickMath.getSqrtRatioAtTick(MAX_TICK - 1), 1461373636630004318706518188784493106690254656249);
     }
 
+    function test_getSqrtRatioAtTick_isLessThanJSImplMinTick() public {
+        // sqrt(1 / 2 ** 127) * 2 ** 96
+        uint160 jsMinSqrtRatio = 6085630636;
+        uint160 solMinSqrtRatio = tickMath.getSqrtRatioAtTick(MIN_TICK);
+        assertLt(solMinSqrtRatio, jsMinSqrtRatio);
+    }
+
+    function test_getSqrtRatioAtTick_isGreaterThanJSImplMaxTick() public {
+        // sqrt(2 ** 127) * 2 ** 96
+        uint160 jsMinSqrtRatio = 1033437718471923706666374484006904511252097097914;
+        uint160 solMinSqrtRatio = tickMath.getSqrtRatioAtTick(MAX_TICK);
+        assertGt(solMinSqrtRatio, jsMinSqrtRatio);
+    }
+
     function testGetSqrtRatioAtTickMatchesJavaScriptImplByOneHundrethOfABip() public {
         string memory ciEnvVar;
         try vm.envString("FOUNDRY_PROFILE") returns (string memory result) {
