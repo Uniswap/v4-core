@@ -47,9 +47,9 @@ contract TickMathTestTest is Test {
     function testGetSqrtRatioAtTickMatchesJavaScriptImplByOneHundrethOfABip() public {
         string memory ciEnvVar;
         try vm.envString("FOUNDRY_PROFILE") returns (string memory result) {
-          ciEnvVar = result;
+            ciEnvVar = result;
         } catch {
-          ciEnvVar = "";
+            ciEnvVar = "";
         }
 
         // only run on ci since fuzzing with javascript is SLOW
@@ -66,27 +66,27 @@ contract TickMathTestTest is Test {
 
             int24 tick = 50;
 
-            while(true) {
-              if (tick > MAX_TICK) break;
+            while (true) {
+                if (tick > MAX_TICK) break;
 
-              // test negative and positive tick
-              for(uint256 i = 0; i < 2; i++) {
-                tick = tick * -1;
-                runJsInputs[6] = vm.toString(int256(tick));
+                // test negative and positive tick
+                for (uint256 i = 0; i < 2; i++) {
+                    tick = tick * -1;
+                    runJsInputs[6] = vm.toString(int256(tick));
 
-                bytes memory jsResult = vm.ffi(runJsInputs);
-                uint160 jsSqrtRatio = uint160(abi.decode(jsResult, (uint256)));
-                uint160 solResult = tickMath.getSqrtRatioAtTick(tick);
+                    bytes memory jsResult = vm.ffi(runJsInputs);
+                    uint160 jsSqrtRatio = uint160(abi.decode(jsResult, (uint256)));
+                    uint160 solResult = tickMath.getSqrtRatioAtTick(tick);
 
-                (uint160 gtResult, uint160 ltResult) =
-                    jsSqrtRatio > solResult ? (jsSqrtRatio, solResult) : (solResult, jsSqrtRatio);
-                uint160 resultsDiff = gtResult - ltResult;
+                    (uint160 gtResult, uint160 ltResult) =
+                        jsSqrtRatio > solResult ? (jsSqrtRatio, solResult) : (solResult, jsSqrtRatio);
+                    uint160 resultsDiff = gtResult - ltResult;
 
-                // assert solc/js result is at most off by 1/100th of a bip (aka one pip)
-                assertEq(resultsDiff * ONE_PIP / jsSqrtRatio, 0);
-              }
+                    // assert solc/js result is at most off by 1/100th of a bip (aka one pip)
+                    assertEq(resultsDiff * ONE_PIP / jsSqrtRatio, 0);
+                }
 
-              tick = tick * 2;
+                tick = tick * 2;
             }
         }
     }
