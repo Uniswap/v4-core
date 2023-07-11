@@ -6,7 +6,7 @@ import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
 import {Position} from "./libraries/Position.sol";
 import {Currency, CurrencyLibrary} from "./libraries/CurrencyLibrary.sol";
-import {LockDataLibrary} from "./libraries/LockDataLibrary.sol";
+// import {LockDataLibrary} from "./libraries/LockDataLibrary.sol";
 
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
@@ -30,7 +30,6 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
-    using LockDataLibrary for IPoolManager.LockData;
     using Fees for uint24;
 
     /// @inheritdoc IPoolManager
@@ -46,8 +45,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
 
     IProtocolFeeController public protocolFeeController;
 
-    /// @inheritdoc IPoolManager
-    IPoolManager.LockData public override lockData;
+    address[] public lockData;
 
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
@@ -62,6 +60,8 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     mapping(Currency currency => uint256) public override protocolFeesAccrued;
 
     mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
+
+    uint256 nonzeroDeltaCount;
 
     constructor(uint256 _controllerGasLimit) ERC1155("") {
         controllerGasLimit = _controllerGasLimit;
@@ -122,9 +122,9 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getLock(uint256 i) external view override returns (address locker) {
-        return LockDataLibrary.getLock(i);
-    }
+    // function getLock(uint256 i) external view override returns (address locker) {
+    //     return LockDataLibrary.getLock(i);
+    // }
 
     /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
@@ -163,7 +163,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         if (lockData.length == 1) {
-            if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            if (nonzeroDeltaCount != 0) revert CurrencyNotSettled();
             delete lockData;
         } else {
             lockData.pop();
@@ -173,15 +173,15 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        address locker = lockData.getActiveLock();
+        address locker = lockData[lockData.length - 1];
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
         unchecked {
             if (next == 0) {
-                lockData.nonzeroDeltaCount--;
+                nonzeroDeltaCount--;
             } else if (current == 0) {
-                lockData.nonzeroDeltaCount++;
+                nonzeroDeltaCount++;
             }
         }
 
@@ -195,7 +195,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     modifier onlyByLocker() {
-        address locker = lockData.getActiveLock();
+        address locker = lockData[lockData.length - 1];
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
