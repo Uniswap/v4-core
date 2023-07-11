@@ -1165,7 +1165,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(key, SQRT_RATIO_1_1);
 
         // Test add liquidity
+        snapStart("modify position with noop");
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether));
+        snapEnd();
 
         assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 10 ether);
         assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency1)), 10 ether);
@@ -1177,7 +1179,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
+        snapStart("swap with noop");
         BalanceDelta delta = swapRouter.swap(key, swapParams, testSettings);
+        snapEnd();
 
         assertEq(delta.amount0(), 1 ether);
         assertEq(delta.amount1(), -1 ether);
