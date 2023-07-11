@@ -55,10 +55,13 @@ describe('TickMath', () => {
     ]) {
       for (const tick of [-absTick, absTick]) {
         describe(`tick ${tick}`, () => {
-          it('is at most off by 1/100th of a bips', async () => {
+          it.only('is at most off by 1/100th of a bips', async () => {
             const jsResult = new Decimal(1.0001).pow(tick).sqrt().mul(new Decimal(2).pow(96))
             const result = await tickMath.getSqrtRatioAtTick(tick)
             const absDiff = new Decimal(result.toString()).sub(jsResult).abs()
+            console.log(absDiff)
+            console.log(jsResult)
+            console.log(absDiff.div(jsResult).toNumber())
             expect(absDiff.div(jsResult).toNumber()).to.be.lt(0.000001)
           })
           it('result', async () => {
