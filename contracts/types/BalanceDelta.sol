@@ -22,13 +22,8 @@ function noOpToBalanceDelta(bytes32 input) view returns (BalanceDelta balanceDel
         amt0 := and(0x000000000000000000000000000000000000ffffffffffffffffffffffffffff, input)
         amt1 := and(0x000000000000000000000000000000000000ffffffffffffffffffffffffffff, shr(112, input))
     }
-    int128 _amount0 = int128(amt0);
-    int128 _amount1 = int128(amt1);
 
-    assembly {
-        balanceDelta :=
-            or(shl(128, _amount0), and(0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff, _amount1))
-    }
+    balanceDelta = toBalanceDelta(int128(amt0), int128(amt1));
 }
 
 function add(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
