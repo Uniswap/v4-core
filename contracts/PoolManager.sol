@@ -155,21 +155,14 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
-            bytes32 selector = key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
-            if (selector != IHooks.beforeInitialize.selector) {
-                if (bytes4(selector) == Hooks.NO_OP) {
-                    if (key.hooks.shouldCallAfterInitialize()) {
-                        if (
-                            key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick)
-                                != IHooks.afterInitialize.selector
-                        ) {
-                            revert Hooks.InvalidHookResponse();
-                        }
-                    }
-                    return tick;
-                } else {
-                    revert Hooks.InvalidHookResponse();
-                }
+            bytes32 hookReturn = key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
+            if (bytes4(hookReturn) != IHooks.beforeInitialize.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
+            // Check if the hook returned a BalanceDelta
+            if (uint224(uint256(hookReturn)) != 0) {
+                BalanceDelta delta = noOpToBalanceDelta(hookReturn);
+                _accountNoOp(key, delta);
             }
         }
 
@@ -257,20 +250,12 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            bytes32 selector = key.hooks.beforeModifyPosition(msg.sender, key, params);
-            if (selector != IHooks.beforeModifyPosition.selector) {
-                if (bytes4(selector) == Hooks.NO_OP) {
-                    BalanceDelta hookDelta = noOpToBalanceDelta(selector);
-                    _accountNoOp(key, hookDelta);
-                    if (key.hooks.shouldCallAfterModifyPosition()) {
-                        if (
-                            key.hooks.afterModifyPosition(msg.sender, key, params, delta)
-                                != IHooks.afterModifyPosition.selector
-                        ) {
-                            revert Hooks.InvalidHookResponse();
-                        }
-                    }
-                    return hookDelta;
+            bytes32 hookReturn = key.hooks.beforeModifyPosition(msg.sender, key, params);
+            if (bytes4(hookReturn) != IHooks.beforeModifyPosition.selector) {
+                if (bytes4(hookReturn) == Hooks.NO_OP) {
+                    delta = noOpToBalanceDelta(hookReturn);
+                    _accountNoOp(key, delta);
+                    return delta;
                 } else {
                     revert Hooks.InvalidHookResponse();
                 }
@@ -324,18 +309,13 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
-            bytes32 selector = key.hooks.beforeSwap(msg.sender, key, params);
-            if (selector != IHooks.beforeSwap.selector) {
-                if (bytes4(selector) == Hooks.NO_OP) {
+            bytes32 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
+            if (bytes4(hookReturn) != IHooks.beforeSwap.selector) {
+                if (bytes4(hookReturn) == Hooks.NO_OP) {
                     // TODO: potentially change this
-                    BalanceDelta hookDelta = noOpToBalanceDelta(selector);
-                    _accountNoOp(key, hookDelta);
-                    if (key.hooks.shouldCallAfterSwap()) {
-                        if (key.hooks.afterSwap(msg.sender, key, params, delta) != IHooks.afterSwap.selector) {
-                            revert Hooks.InvalidHookResponse();
-                        }
-                    }
-                    return hookDelta;
+                    delta = noOpToBalanceDelta(hookReturn);
+                    _accountNoOp(key, delta);
+                    return delta;
                 } else {
                     revert Hooks.InvalidHookResponse();
                 }
@@ -405,14 +385,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeDonate()) {
-            bytes32 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
-            if (selector != IHooks.beforeDonate.selector) {
-                if (bytes4(selector) == Hooks.NO_OP) {
-                    if (key.hooks.shouldCallAfterDonate()) {
-                        if (key.hooks.afterDonate(msg.sender, key, amount0, amount1) != IHooks.afterDonate.selector) {
-                            revert Hooks.InvalidHookResponse();
-                        }
-                    }
+            bytes32 hookReturn = key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+            if (bytes4(hookReturn) != IHooks.beforeDonate.selector) {
+                if (bytes4(hookReturn) == Hooks.NO_OP) {
+                    delta = noOpToBalanceDelta(hookReturn);
+                    _accountNoOp(key, delta);
                     return delta;
                 } else {
                     revert Hooks.InvalidHookResponse();
