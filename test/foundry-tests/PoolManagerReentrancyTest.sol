@@ -23,7 +23,7 @@ contract TokenLocker is ILockCallback {
 
         IPoolManager manager = IPoolManager(msg.sender);
 
-        (,, uint64 nonzeroDeltaCount) = manager.lockData();
+        (, uint128 nonzeroDeltaCount) = manager.lockData();
         assert(nonzeroDeltaCount == 0);
 
         int256 delta = manager.currencyDelta(address(this), currency);
@@ -32,7 +32,7 @@ contract TokenLocker is ILockCallback {
         // deposit some tokens
         currency.transfer(address(manager), 1);
         manager.settle(currency);
-        (,, nonzeroDeltaCount) = manager.lockData();
+        (, nonzeroDeltaCount) = manager.lockData();
         assert(nonzeroDeltaCount == 1);
         delta = manager.currencyDelta(address(this), currency);
         assert(delta == -1);
@@ -40,7 +40,7 @@ contract TokenLocker is ILockCallback {
         // take them back
         if (reclaim) {
             manager.take(currency, address(this), 1);
-            (,, nonzeroDeltaCount) = manager.lockData();
+            (, nonzeroDeltaCount) = manager.lockData();
             assert(nonzeroDeltaCount == 0);
             delta = manager.currencyDelta(address(this), currency);
             assert(delta == 0);
@@ -81,31 +81,24 @@ contract ParallelLocker is ILockCallback {
     }
 
     function assertionChecker0(uint256) external view {
-        (uint96 length, uint96 index,) = manager.lockData();
+        (uint128 length,) = manager.lockData();
         assert(length == 2);
-        assert(index == 1);
-        (address locker, uint96 parentLockIndex) = manager.getLock(1);
+        address locker = manager.getLock(1);
         assert(locker == msg.sender);
-        assert(parentLockIndex == 0);
     }
 
     function assertionChecker1(uint256 depth) external view {
-        (uint96 length, uint96 index,) = manager.lockData();
-        assert(length == depth + 3);
-        assert(index == depth + 2);
-        (address locker, uint96 parentLockIndex) = manager.getLock(depth + 2);
+        (uint128 length,) = manager.lockData();
+        assert(length == depth + 2);
+        address locker = manager.getLock(depth + 1);
         assert(locker == msg.sender);
-        if (depth == 0) assert(parentLockIndex == 0);
-        else assert(parentLockIndex == depth + 1);
     }
 
     function assertionChecker2(uint256) external view {
-        (uint96 length, uint96 index,) = manager.lockData();
-        assert(length == 5);
-        assert(index == 4);
-        (address locker, uint96 parentLockIndex) = manager.getLock(4);
+        (uint128 length,) = manager.lockData();
+        assert(length == 2);
+        address locker = manager.getLock(1);
         assert(locker == msg.sender);
-        assert(parentLockIndex == 0);
     }
 
     function lockAcquired(bytes calldata) external returns (bytes memory) {
@@ -113,26 +106,22 @@ contract ParallelLocker is ILockCallback {
         SimpleLinearLocker locker1 = new SimpleLinearLocker();
         SimpleLinearLocker locker2 = new SimpleLinearLocker();
 
-        (uint96 length, uint96 index,) = manager.lockData();
+        (uint128 length,) = manager.lockData();
         assert(length == 1);
-        assert(index == 0);
-        (address locker,) = manager.getLock(0);
+        address locker = manager.getLock(0);
         assert(locker == address(this));
 
         locker0.main(manager, 0, this.assertionChecker0);
-        (length, index,) = manager.lockData();
-        assert(length == 2);
-        assert(index == 0);
+        (length,) = manager.lockData();
+        assert(length == 1);
 
         locker1.main(manager, 1, this.assertionChecker1);
-        (length, index,) = manager.lockData();
-        assert(length == 4);
-        assert(index == 0);
+        (length,) = manager.lockData();
+        assert(length == 1);
 
         locker2.main(manager, 0, this.assertionChecker2);
-        (length, index,) = manager.lockData();
-        assert(length == 5);
-        assert(index == 0);
+        (length,) = manager.lockData();
+        assert(length == 1);
 
         return "";
     }
@@ -162,12 +151,10 @@ contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
     }
 
     function assertionChecker(uint256 depth) external {
-        (uint96 length, uint96 index,) = manager.lockData();
+        (uint128 length,) = manager.lockData();
         assertEq(length, depth + 1);
-        assertEq(index, depth);
-        (address locker, uint96 parentLockIndex) = manager.getLock(depth);
+        address locker = manager.getLock(depth);
         assertEq(locker, msg.sender);
-        assertEq(parentLockIndex, depth == 0 ? 0 : depth - 1);
     }
 
     function testSimpleLinearLocker() public {

@@ -122,7 +122,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function getLock(uint256 i) external view override returns (address locker, uint96 parentLockIndex) {
+    function getLock(uint256 i) external view override returns (address locker) {
         return LockDataLibrary.getLock(i);
     }
 
@@ -162,7 +162,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
-        if (lockData.index == 0) {
+        if (lockData.length == 1) {
             if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
             delete lockData;
         } else {
@@ -173,7 +173,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        (address locker,) = lockData.getActiveLock();
+        address locker = lockData.getActiveLock();
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
@@ -195,7 +195,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     modifier onlyByLocker() {
-        (address locker,) = lockData.getActiveLock();
+        address locker = lockData.getActiveLock();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
