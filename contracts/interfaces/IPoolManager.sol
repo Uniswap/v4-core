@@ -142,24 +142,27 @@ interface IPoolManager is IERC1155 {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
+    /// @notice Contains data about pool lockers.
+    struct LockData {
+        /// @notice The current number of active lockers
+        uint128 length;
+        /// @notice The total number of nonzero deltas over all active + completed lockers
+        uint128 nonzeroDeltaCount;
+    }
+
+    /// @notice Returns the locker in the ith position of the locker queue.
+    function getLock(uint256 i) external view returns (address locker);
+
+    /// @notice Returns lock data
+    function lockData() external view returns (uint128 length, uint128 nonzeroDeltaCount);
+
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
-    /// @notice Represents the stack of addresses that have locked the pool. Each call to #lock pushes the address onto the stack
-    /// @param index The index of the locker, also known as the id of the locker
-    function lockedBy(uint256 index) external view returns (address);
-
-    /// @notice Getter for the length of the lockedBy array
-    function lockedByLength() external view returns (uint256);
-
-    /// @notice Returns the count of nonzero deltas for the given locker ID
-    /// @param id The ID of the locker
-    function getNonzeroDeltaCount(uint256 id) external view returns (uint256);
-
-    /// @notice Get the current delta for a given currency, and its position in the currencies touched array
-    /// @param id The ID of the locker
+    /// @notice Get the current delta for a locker in the given currency
+    /// @param locker The address of the locker
     /// @param currency The currency for which to lookup the delta
-    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256);
+    function currencyDelta(address locker, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`

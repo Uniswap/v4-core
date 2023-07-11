@@ -6,6 +6,7 @@ import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
 import {Position} from "./libraries/Position.sol";
 import {Currency, CurrencyLibrary} from "./libraries/CurrencyLibrary.sol";
+import {LockDataLibrary} from "./libraries/LockDataLibrary.sol";
 
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
@@ -29,6 +30,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
+    using LockDataLibrary for IPoolManager.LockData;
     using Fees for uint24;
 
     /// @inheritdoc IPoolManager
@@ -45,18 +47,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     IProtocolFeeController public protocolFeeController;
 
     /// @inheritdoc IPoolManager
-    address[] public override lockedBy;
+    IPoolManager.LockData public override lockData;
 
-    /// @member nonzeroDeltaCount The number of entries in the currencyDelta mapping that have a non-zero value
-    /// @member currencyDelta The amount owed to the locker (positive) or owed to the pool (negative) of the currency
-    struct LockState {
-        uint256 nonzeroDeltaCount;
-        mapping(Currency currency => int256) currencyDelta;
-    }
-
-    /// @dev Represents the state of the locker at the given index. Each locker must have net 0 currencies owed before
-    /// releasing their lock. Note this is private because the nested mappings cannot be exposed as a public variable.
-    mapping(uint256 index => LockState) private lockStates;
+    /// @dev Represents the currencies due/owed to each locker.
+    /// Must all net to zero when the last lock is released.
+    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
 
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
@@ -127,6 +122,11 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
+    function getLock(uint256 i) external view override returns (address locker) {
+        return LockDataLibrary.getLock(i);
+    }
+
+    /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external override returns (int24 tick) {
         if (key.fee & Fees.STATIC_FEE_MASK >= 1000000) revert FeeTooLarge();
 
@@ -156,52 +156,36 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     /// @inheritdoc IPoolManager
-    function lockedByLength() external view returns (uint256) {
-        return lockedBy.length;
-    }
-
-    /// @inheritdoc IPoolManager
-    function getNonzeroDeltaCount(uint256 id) external view returns (uint256) {
-        return lockStates[id].nonzeroDeltaCount;
-    }
-
-    /// @inheritdoc IPoolManager
-    function getCurrencyDelta(uint256 id, Currency currency) external view returns (int256) {
-        return lockStates[id].currencyDelta[currency];
-    }
-
-    /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        uint256 id = lockedBy.length;
-        lockedBy.push(msg.sender);
+        lockData.push(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(msg.sender).lockAcquired(id, data);
+        result = ILockCallback(msg.sender).lockAcquired(data);
 
-        unchecked {
-            LockState storage lockState = lockStates[id];
-            if (lockState.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+        if (lockData.length == 1) {
+            if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            delete lockData;
+        } else {
+            lockData.pop();
         }
-
-        lockedBy.pop();
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        LockState storage lockState = lockStates[lockedBy.length - 1];
-        int256 current = lockState.currencyDelta[currency];
-
+        address locker = lockData.getActiveLock();
+        int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
+
         unchecked {
             if (next == 0) {
-                lockState.nonzeroDeltaCount--;
+                lockData.nonzeroDeltaCount--;
             } else if (current == 0) {
-                lockState.nonzeroDeltaCount++;
+                lockData.nonzeroDeltaCount++;
             }
         }
 
-        lockState.currencyDelta[currency] = next;
+        currencyDelta[locker][currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
@@ -211,7 +195,7 @@ contract PoolManager is IPoolManager, Owned, NoDelegateCall, ERC1155, IERC1155Re
     }
 
     modifier onlyByLocker() {
-        address locker = lockedBy[lockedBy.length - 1];
+        address locker = lockData.getActiveLock();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
