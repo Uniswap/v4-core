@@ -17,7 +17,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
     using Hooks for IHooks;
     using CurrencyLibrary for Currency;
 
-    IPoolManager public manager;
+    IPoolManager manager;
 
     mapping(bytes4 => bytes4) public returnValues;
 
@@ -25,23 +25,68 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
 
     mapping(PoolId => uint8) public withdrawFees;
 
+    struct CallbackData {
+        address sender;
+        IPoolManager.PoolKey key;
+        uint160 sqrtPriceX96;
+    }
+
     constructor() {
         IHooks(this).validateHookAddress(
             Hooks.Calls({
-                beforeInitialize: false,
+                beforeInitialize: true,
                 afterInitialize: false,
                 beforeModifyPosition: true,
                 afterModifyPosition: false,
                 beforeSwap: true,
                 afterSwap: false,
-                beforeDonate: false,
+                beforeDonate: true,
                 afterDonate: false
             })
         );
     }
 
-    function setManager(IPoolManager _manager) external {
+    function initialize(IPoolManager _manager, IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external {
         manager = _manager;
+        abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, sqrtPriceX96))), (BalanceDelta));
+
+        uint256 ethBalance = address(this).balance;
+        if (ethBalance > 0) {
+            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+        }
+    }
+
+    function lockAcquired(uint256, bytes calldata rawData) external returns (bytes memory) {
+        require(msg.sender == address(manager));
+
+        CallbackData memory data = abi.decode(rawData, (CallbackData));
+
+        // TODO: rename lol
+        uint256 prev0of1155 = manager.balanceOf(address(this), CurrencyLibrary.toId(data.key.currency0));
+        uint256 prev1of1155 = manager.balanceOf(address(this), CurrencyLibrary.toId(data.key.currency1));
+
+        manager.initialize(data.key, data.sqrtPriceX96);
+
+        uint256 amount0Owe = manager.balanceOf(address(this), CurrencyLibrary.toId(data.key.currency0)) - prev0of1155;
+        uint256 amount1Owe = manager.balanceOf(address(this), CurrencyLibrary.toId(data.key.currency1)) - prev1of1155;
+
+        if (data.key.currency0.isNative()) {
+            manager.settle{value: uint128(amount0Owe)}(data.key.currency0);
+        } else {
+            IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(data.sender, address(manager), amount0Owe);
+            manager.settle(data.key.currency0);
+        }
+
+        if (data.key.currency1.isNative()) {
+            manager.settle{value: uint128(amount1Owe)}(data.key.currency1);
+        } else {
+            IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
+                data.sender, address(manager), uint128(amount1Owe)
+            );
+            manager.settle(data.key.currency1);
+        }
+
+        return abi.encode(toBalanceDelta(int128(int256(amount0Owe)), int128(int256(amount1Owe))));
     }
 
     function beforeInitialize(address caller, IPoolManager.PoolKey memory, uint160)
@@ -49,7 +94,23 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         override
         returns (bytes32)
     {
-        return bytes32(0);
+        // 0xAAAAAAAA_00000............. padding of bytes4
+        // 112 bits per amount in BalanceDelta, 224 bits total since 256 - 32 = 224, as bytes4 takes up 32 bits
+        int112 amt0 = 1 ether;
+        int112 amt1 = 0 ether;
+
+        bytes32 selector = IHooks.beforeInitialize.selector;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            // 0xAAAAAAAA_112 bits of amt0, 112 bits of amt1
+            selector :=
+                or(
+                    selector,
+                    or(and(0x00000000ffffffffffffffffffffffffffff0000000000000000000000000000, shl(112, amt1)), amt0)
+                )
+        }
+        return selector;
     }
 
     function afterInitialize(address, IPoolManager.PoolKey memory, uint160, int24)
@@ -125,12 +186,27 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         return bytes4(0);
     }
 
-    function beforeDonate(address caller, IPoolManager.PoolKey calldata, uint256, uint256)
+    function beforeDonate(address caller, IPoolManager.PoolKey calldata, uint256 amount1, uint256 amount0)
         external
         override
         returns (bytes32)
     {
-        return bytes32(0);
+        // 0xAAAAAAAA_00000............. padding of bytes4
+        // 112 bits per amount in BalanceDelta, 224 bits total since 256 - 32 = 224, as bytes4 takes up 32 bits
+        bytes32 selector = Hooks.NO_OP;
+        int112 amt0 = 1 ether + int112(int256(amount0));
+        int112 amt1 = 1 ether + int112(int256(amount1));
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            // 0xAAAAAAAA_112 bits of amt0, 112 bits of amt1
+            selector :=
+                or(
+                    selector,
+                    or(and(0x00000000ffffffffffffffffffffffffffff0000000000000000000000000000, shl(112, amt1)), amt0)
+                )
+        }
+        return selector;
     }
 
     function afterDonate(address, IPoolManager.PoolKey calldata, uint256, uint256)

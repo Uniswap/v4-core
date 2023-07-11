@@ -1145,12 +1145,19 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function testPoolManagerNoOpSwap(uint160 sqrtPriceX96) public {
+    function testPoolManagerNoOp(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address payable hookAddr = payable(address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG)));
+        address payable hookAddr = payable(
+            address(
+                uint160(
+                    Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG
+                        | Hooks.BEFORE_DONATE_FLAG
+                )
+            )
+        );
 
         vm.etch(hookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
 
@@ -1162,14 +1169,19 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             tickSpacing: 10
         });
 
-        manager.initialize(key, SQRT_RATIO_1_1);
+        // Test initialize with balance delta
+        MockERC20(Currency.unwrap(currency0)).approve(hookAddr, 100 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(hookAddr, 100 ether);
+
+        NoOpTestHooks(hookAddr).initialize(manager, key, SQRT_RATIO_1_1);
+        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 1 ether);
 
         // Test add liquidity
         snapStart("modify position with noop");
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether));
         snapEnd();
 
-        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 10 ether);
+        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 11 ether);
         assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency1)), 10 ether);
 
         // Swap
@@ -1189,8 +1201,15 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // Remove liquidity
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, -1 ether));
 
-        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 10 ether);
+        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 11 ether);
         assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency1)), 8 ether);
+
+        // Donate
+        donateRouter.donate(key, 0, 0);
+
+        // should have donated 1 eth based on hook donate logic
+        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 12 ether);
+        assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency1)), 9 ether);
     }
 
     function testNoOpLockIsOk() public {
