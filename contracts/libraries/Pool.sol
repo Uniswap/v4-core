@@ -162,7 +162,7 @@ library Pool {
         uint256 feeGrowthInside1X128;
     }
 
-    struct Fees {
+    struct FeeAmounts {
         uint256 feeForProtocol0;
         uint256 feeForProtocol1;
         uint256 feeForHook0;
@@ -174,7 +174,7 @@ library Pool {
     /// @return result the deltas of the token balances of the pool
     function modifyPosition(State storage self, ModifyPositionParams memory params)
         internal
-        returns (BalanceDelta result, Fees memory fees)
+        returns (BalanceDelta result, FeeAmounts memory fees)
     {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
@@ -288,7 +288,11 @@ library Pool {
         result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
-    function _calculateExternalFees(State storage self, BalanceDelta result) internal view returns (Fees memory fees) {
+    function _calculateExternalFees(State storage self, BalanceDelta result)
+        internal
+        view
+        returns (FeeAmounts memory fees)
+    {
         int128 amount0 = result.amount0();
         int128 amount1 = result.amount1();
 

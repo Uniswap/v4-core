@@ -3,7 +3,7 @@
 exports[`PoolManager gas tests ERC20 tokens #initialize initialize pool with no hooks and no protocol fee 1`] = `
 Object {
   "calldataByteLength": 196,
-  "gasUsed": 54644,
+  "gasUsed": 54647,
 }
 `;
 

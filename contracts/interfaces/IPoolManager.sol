@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.20;
 
-import {Currency} from "../libraries/CurrencyLibrary.sol";
+import {Currency} from "../types/Currency.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IHooks} from "./IHooks.sol";
+import {IFees} from "./IFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
-import {PoolId} from "../libraries/PoolId.sol";
+import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IERC1155 {
+interface IPoolManager is IFees, IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
-
-    /// @notice Thrown when not enough gas is provided to look up the protocol fee
-    error ProtocolFeeCannotBeFetched();
 
     /// @notice Thrown when a currency is not netted out after a lock
     error CurrencyNotSettled();
@@ -25,9 +24,6 @@ interface IPoolManager is IERC1155 {
 
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
-
-    /// @notice Pools must have a fee that is <100%, enforced in #initialize and for dynamic fee pools
-    error FeeTooLarge();
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
@@ -81,32 +77,13 @@ interface IPoolManager is IERC1155 {
 
     event ProtocolFeeUpdated(PoolId indexed id, uint8 protocolSwapFee, uint8 protocolWithdrawFee);
 
-    event ProtocolFeeControllerUpdated(address protocolFeeController);
-
     event HookFeeUpdated(PoolId indexed id, uint8 hookSwapFee, uint8 hookWithdrawFee);
-
-    /// @notice Returns the key for identifying a pool
-    struct PoolKey {
-        /// @notice The lower currency of the pool, sorted numerically
-        Currency currency0;
-        /// @notice The higher currency of the pool, sorted numerically
-        Currency currency1;
-        /// @notice The pool swap fee, capped at 1_000_000. The upper 4 bits determine if the hook sets any fees.
-        uint24 fee;
-        /// @notice Ticks that involve positions must be a multiple of tick spacing
-        int24 tickSpacing;
-        /// @notice The hooks of the pool
-        IHooks hooks;
-    }
 
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
 
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
-
-    /// @notice Returns the minimum denominator for the protocol fee, which restricts it to a maximum of 25%
-    function MIN_PROTOCOL_FEE_DENOMINATOR() external view returns (uint8);
 
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(PoolId id)
@@ -135,9 +112,6 @@ interface IPoolManager is IERC1155 {
         external
         view
         returns (Position.Info memory position);
-
-    /// @notice Given a currency address, returns the protocol fees accrued in that currency
-    function protocolFeesAccrued(Currency) external view returns (uint256);
 
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);

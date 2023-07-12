@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
-import {Currency, CurrencyLibrary} from "../../contracts/libraries/CurrencyLibrary.sol";
+import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
 import {LockDataLibrary} from "../../contracts/libraries/LockDataLibrary.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {ILockCallback} from "../../contracts/interfaces/callback/ILockCallback.sol";
