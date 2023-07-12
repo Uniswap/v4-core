@@ -2,14 +2,14 @@
 pragma solidity ^0.8.20;
 
 import {IHooks} from "../interfaces/IHooks.sol";
-import {Fees} from "../libraries/Fees.sol";
+import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
 /// has leading bits '1001' which would cause the 'before initialize' and 'after modify position' hooks to be used.
 library Hooks {
-    using Fees for uint24;
+    using FeeLibrary for uint24;
 
     uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
     uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;

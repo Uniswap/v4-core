@@ -6,14 +6,15 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {IHookFeeManager} from "../interfaces/IHookFeeManager.sol";
-import {PoolId, PoolIdLibrary} from "../libraries/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import {CurrencyLibrary, Currency} from "../libraries/CurrencyLibrary.sol";
+import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 
-contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
-    using PoolIdLibrary for IPoolManager.PoolKey;
+contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallback {
+    using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
     using CurrencyLibrary for Currency;
 
@@ -27,7 +28,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
 
     struct CallbackData {
         address sender;
-        IPoolManager.PoolKey key;
+        PoolKey key;
         uint160 sqrtPriceX96;
     }
 
@@ -46,7 +47,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         );
     }
 
-    function initialize(IPoolManager _manager, IPoolManager.PoolKey memory key, uint160 sqrtPriceX96) external {
+    function initialize(IPoolManager _manager, PoolKey memory key, uint160 sqrtPriceX96) external {
         manager = _manager;
         abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, sqrtPriceX96))), (BalanceDelta));
 
@@ -56,7 +57,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         }
     }
 
-    function lockAcquired(uint256, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
@@ -89,11 +90,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         return abi.encode(toBalanceDelta(int128(int256(amount0Owe)), int128(int256(amount1Owe))));
     }
 
-    function beforeInitialize(address caller, IPoolManager.PoolKey memory, uint160)
-        external
-        override
-        returns (bytes32)
-    {
+    function beforeInitialize(address caller, PoolKey memory, uint160) external override returns (bytes32) {
         // 0xAAAAAAAA_00000............. padding of bytes4
         // 112 bits per amount in BalanceDelta, 224 bits total since 256 - 32 = 224, as bytes4 takes up 32 bits
         int112 amt0 = 1 ether;
@@ -113,20 +110,15 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         return selector;
     }
 
-    function afterInitialize(address, IPoolManager.PoolKey memory, uint160, int24)
-        external
-        pure
-        override
-        returns (bytes4)
-    {
+    function afterInitialize(address, PoolKey memory, uint160, int24) external pure override returns (bytes4) {
         return bytes4(0);
     }
 
-    function beforeModifyPosition(
-        address,
-        IPoolManager.PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params
-    ) external override returns (bytes32) {
+    function beforeModifyPosition(address, PoolKey calldata key, IPoolManager.ModifyPositionParams calldata params)
+        external
+        override
+        returns (bytes32)
+    {
         bytes32 selector = Hooks.NO_OP;
         int112 amt = int112(params.liquidityDelta);
 
@@ -145,16 +137,16 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         return selector;
     }
 
-    function afterModifyPosition(
-        address,
-        IPoolManager.PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
-        BalanceDelta
-    ) external pure override returns (bytes4) {
+    function afterModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, BalanceDelta)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return bytes4(0);
     }
 
-    function beforeSwap(address caller, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata)
+    function beforeSwap(address caller, PoolKey calldata, IPoolManager.SwapParams calldata)
         external
         override
         returns (bytes32)
@@ -177,7 +169,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         return selector;
     }
 
-    function afterSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
+    function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
         external
         pure
         override
@@ -186,7 +178,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         return bytes4(0);
     }
 
-    function beforeDonate(address caller, IPoolManager.PoolKey calldata, uint256 amount1, uint256 amount0)
+    function beforeDonate(address caller, PoolKey calldata, uint256 amount1, uint256 amount0)
         external
         override
         returns (bytes32)
@@ -209,20 +201,15 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         return selector;
     }
 
-    function afterDonate(address, IPoolManager.PoolKey calldata, uint256, uint256)
-        external
-        pure
-        override
-        returns (bytes4)
-    {
+    function afterDonate(address, PoolKey calldata, uint256, uint256) external pure override returns (bytes4) {
         return bytes4(0);
     }
 
-    function getHookSwapFee(IPoolManager.PoolKey calldata key) external view override returns (uint8) {
+    function getHookSwapFee(PoolKey calldata key) external view override returns (uint8) {
         return swapFees[key.toId()];
     }
 
-    function getHookWithdrawFee(IPoolManager.PoolKey calldata key) external view override returns (uint8) {
+    function getHookWithdrawFee(PoolKey calldata key) external view override returns (uint8) {
         return withdrawFees[key.toId()];
     }
 
@@ -230,11 +217,11 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver {
         returnValues[key] = value;
     }
 
-    function setSwapFee(IPoolManager.PoolKey calldata key, uint8 value) external {
+    function setSwapFee(PoolKey calldata key, uint8 value) external {
         swapFees[key.toId()] = value;
     }
 
-    function setWithdrawFee(IPoolManager.PoolKey calldata key, uint8 value) external {
+    function setWithdrawFee(PoolKey calldata key, uint8 value) external {
         withdrawFees[key.toId()] = value;
     }
 

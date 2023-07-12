@@ -4,12 +4,13 @@ pragma solidity ^0.8.19;
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IHookFeeManager} from "../interfaces/IHookFeeManager.sol";
-import {PoolId, PoolIdLibrary} from "../libraries/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 
 contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
-    using PoolIdLibrary for IPoolManager.PoolKey;
+    using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
 
     mapping(bytes4 => bytes4) public returnValues;
@@ -54,11 +55,7 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
         lastCaller = address(0);
     }
 
-    function beforeInitialize(address caller, IPoolManager.PoolKey memory, uint160)
-        external
-        override
-        returns (bytes32)
-    {
+    function beforeInitialize(address caller, PoolKey memory, uint160) external override returns (bytes32) {
         CallerQueue memory previous = queue;
 
         queue = CallerQueue({
@@ -70,23 +67,18 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
 
         lastCaller = caller;
 
-        return Hooks.NO_OP;
+        return IHooks.beforeInitialize.selector;
     }
 
-    function afterInitialize(address, IPoolManager.PoolKey memory, uint160, int24)
-        external
-        pure
-        override
-        returns (bytes4)
-    {
+    function afterInitialize(address, PoolKey memory, uint160, int24) external pure override returns (bytes4) {
         return bytes4(0);
     }
 
-    function beforeModifyPosition(
-        address caller,
-        IPoolManager.PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata
-    ) external override returns (bytes32) {
+    function beforeModifyPosition(address caller, PoolKey calldata, IPoolManager.ModifyPositionParams calldata)
+        external
+        override
+        returns (bytes32)
+    {
         CallerQueue memory previous = queue;
 
         queue = CallerQueue({
@@ -101,16 +93,16 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
         return Hooks.NO_OP;
     }
 
-    function afterModifyPosition(
-        address,
-        IPoolManager.PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
-        BalanceDelta
-    ) external pure override returns (bytes4) {
+    function afterModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, BalanceDelta)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
         return bytes4(0);
     }
 
-    function beforeSwap(address caller, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata)
+    function beforeSwap(address caller, PoolKey calldata, IPoolManager.SwapParams calldata)
         external
         override
         returns (bytes32)
@@ -126,10 +118,10 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
 
         lastCaller = caller;
 
-        return (Hooks.NO_OP);
+        return Hooks.NO_OP;
     }
 
-    function afterSwap(address, IPoolManager.PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
+    function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
         external
         pure
         override
@@ -138,11 +130,7 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
         return bytes4(0);
     }
 
-    function beforeDonate(address caller, IPoolManager.PoolKey calldata, uint256, uint256)
-        external
-        override
-        returns (bytes32)
-    {
+    function beforeDonate(address caller, PoolKey calldata, uint256, uint256) external override returns (bytes32) {
         CallerQueue memory previous = queue;
 
         queue = CallerQueue({
@@ -157,20 +145,15 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
         return Hooks.NO_OP;
     }
 
-    function afterDonate(address, IPoolManager.PoolKey calldata, uint256, uint256)
-        external
-        pure
-        override
-        returns (bytes4)
-    {
+    function afterDonate(address, PoolKey calldata, uint256, uint256) external pure override returns (bytes4) {
         return bytes4(0);
     }
 
-    function getHookSwapFee(IPoolManager.PoolKey calldata key) external view override returns (uint8) {
+    function getHookSwapFee(PoolKey calldata key) external view override returns (uint8) {
         return swapFees[key.toId()];
     }
 
-    function getHookWithdrawFee(IPoolManager.PoolKey calldata key) external view override returns (uint8) {
+    function getHookWithdrawFee(PoolKey calldata key) external view override returns (uint8) {
         return withdrawFees[key.toId()];
     }
 
@@ -178,11 +161,11 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
         returnValues[key] = value;
     }
 
-    function setSwapFee(IPoolManager.PoolKey calldata key, uint8 value) external {
+    function setSwapFee(PoolKey calldata key, uint8 value) external {
         swapFees[key.toId()] = value;
     }
 
-    function setWithdrawFee(IPoolManager.PoolKey calldata key, uint8 value) external {
+    function setWithdrawFee(PoolKey calldata key, uint8 value) external {
         withdrawFees[key.toId()] = value;
     }
 
