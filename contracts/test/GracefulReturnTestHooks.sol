@@ -41,13 +41,13 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
         IHooks(this).validateHookAddress(
             Hooks.Calls({
                 beforeInitialize: true,
-                afterInitialize: false,
+                afterInitialize: true,
                 beforeModifyPosition: true,
-                afterModifyPosition: false,
+                afterModifyPosition: true,
                 beforeSwap: true,
-                afterSwap: false,
+                afterSwap: true,
                 beforeDonate: true,
-                afterDonate: false
+                afterDonate: true
             })
         );
 
@@ -71,7 +71,7 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
     }
 
     function afterInitialize(address, PoolKey memory, uint160, int24) external pure override returns (bytes4) {
-        return bytes4(0);
+        return IHooks.afterInitialize.selector;
     }
 
     function beforeModifyPosition(address caller, PoolKey calldata, IPoolManager.ModifyPositionParams calldata)
@@ -99,7 +99,7 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
         override
         returns (bytes4)
     {
-        return bytes4(0);
+        return IHooks.afterModifyPosition.selector;
     }
 
     function beforeSwap(address caller, PoolKey calldata, IPoolManager.SwapParams calldata)
@@ -127,7 +127,7 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
         override
         returns (bytes4)
     {
-        return bytes4(0);
+        return IHooks.afterSwap.selector;
     }
 
     function beforeDonate(address caller, PoolKey calldata, uint256, uint256) external override returns (bytes32) {
@@ -146,7 +146,7 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
     }
 
     function afterDonate(address, PoolKey calldata, uint256, uint256) external pure override returns (bytes4) {
-        return bytes4(0);
+        return IHooks.afterDonate.selector;
     }
 
     function getHookSwapFee(PoolKey calldata key) external view override returns (uint8) {

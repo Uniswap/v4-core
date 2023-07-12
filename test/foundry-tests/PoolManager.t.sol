@@ -3,33 +3,34 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {IHooks} from "../../contracts/interfaces/IHooks.sol";
-import {Hooks} from "../../contracts/libraries/Hooks.sol";
-import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
-import {IFees} from "../../contracts/interfaces/IFees.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
-import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
-import {Deployers} from "./utils/Deployers.sol";
-import {TokenFixture} from "./utils/TokenFixture.sol";
-import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
-import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
-import {MockERC20} from "./utils/MockERC20.sol";
-import {MockHooks} from "../../contracts/test/MockHooks.sol";
-import {MockContract} from "../../contracts/test/MockContract.sol";
-import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
-import {NoOpTestHooks} from "../../contracts/test/NoOpTestHooks.sol";
-import {PoolKey} from "../../contracts/types/PoolKey.sol";
-import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
-import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
-import {PoolId, PoolIdLibrary} from "../../contracts/types/PoolId.sol";
-import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
+import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
+import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
+import {IHooks} from "../../contracts/interfaces/IHooks.sol";
+import {IFees} from "../../contracts/interfaces/IFees.sol";
+import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import {Deployers} from "./utils/Deployers.sol";
+import {TokenFixture} from "./utils/TokenFixture.sol";
+import {MockERC20} from "./utils/MockERC20.sol";
+import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
+import {PoolKey} from "../../contracts/types/PoolKey.sol";
+import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
+import {PoolId, PoolIdLibrary} from "../../contracts/types/PoolId.sol";
+import {MockHooks} from "../../contracts/test/MockHooks.sol";
+import {MockContract} from "../../contracts/test/MockContract.sol";
+import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
+import {NoOpTestHooks} from "../../contracts/test/NoOpTestHooks.sol";
+import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
+import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
+import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
+import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
+import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
+import {GracefulReturnTestHooks} from "../../contracts/test/GracefulReturnTestHooks.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
@@ -1045,6 +1046,91 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // should have donated 1 eth based on hook donate logic
         assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency0)), 12 ether);
         assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency1)), 9 ether);
+    }
+
+    function testPoolManagerGracefulReturnsOnHook(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable hookAddr = payable(ALL_HOOKS);
+
+        vm.etch(hookAddr, vm.getDeployedCode("GracefulReturnTestHooks.sol:GracefulReturnTestHooks"));
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(hookAddr), tickSpacing: 10});
+
+        address[] memory callers = new address[](4);
+
+        bytes32 simulatedHead = bytes32(0);
+        bytes32 actualHead = bytes32(0);
+
+        // Null Storage Test
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(address(0), 0, 0, bytes32(0));
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Initialize Test
+        int24 tick = manager.initialize(key, SQRT_RATIO_1_1);
+
+        assertEq(tick, int24(0));
+
+        callers[0] = GracefulReturnTestHooks(hookAddr).lastCaller();
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(callers[0], 1, 1, simulatedHead);
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Modify Positions Test
+        IPoolManager.ModifyPositionParams memory modifyParams =
+            IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 1000});
+
+        BalanceDelta delta = modifyPositionRouter.modifyPosition(key, modifyParams);
+
+        assertEq(BalanceDelta.unwrap(delta), int256(0));
+
+        callers[1] = GracefulReturnTestHooks(hookAddr).lastCaller();
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(callers[1], 2, 2, simulatedHead);
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Swap Test
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false});
+
+        delta = swapRouter.swap(key, swapParams, testSettings);
+
+        assertEq(BalanceDelta.unwrap(delta), int256(0));
+
+        callers[2] = GracefulReturnTestHooks(hookAddr).lastCaller();
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(callers[2], 3, 3, simulatedHead);
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Donate test
+        delta = donateRouter.donate(key, 100, 200);
+
+        assertEq(BalanceDelta.unwrap(delta), int256(0));
+
+        callers[3] = GracefulReturnTestHooks(hookAddr).lastCaller();
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead = GracefulReturnTestHooks(hookAddr).simulateHead(callers[3], 4, 4, simulatedHead);
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
+
+        // Composite test
+        actualHead = GracefulReturnTestHooks(hookAddr).checkHead();
+        simulatedHead =
+            GracefulReturnTestHooks(hookAddr).simulateQueueFullCycle(callers[0], callers[1], callers[2], callers[3]);
+
+        assertEq(simulatedHead, actualHead);
+        assertTrue(actualHead != bytes32(0));
     }
 
     function testNoOpLockIsOk() public {
