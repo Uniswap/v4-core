@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import {UQ64x96, FixedPoint96} from "./FixedPoint96.sol";
 

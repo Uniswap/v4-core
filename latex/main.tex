@@ -1,0 +1,300 @@
+\documentclass[sigconf,nonacm,prologue,table]{acmart}
+\usepackage{listings}
+
+%% labels
+%% sections:    "sec"
+%% definitions: "def"
+%% equations:   "eq"
+%% figures:     "fig"
+%% tables:      "tab"
+
+%% packages
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage{subcaption}
+\usepackage{commath}
+\usepackage[utf8]{inputenc}
+\usetikzlibrary{positioning, arrows.meta, shapes, calc}
+%% \usepackage{tikz}
+
+\pagenumbering{arabic}
+
+%% hide ACM reference
+\settopmatter{printacmref=false}
+
+%% hide copyright
+\renewcommand\footnotetextcopyrightpermission[1]{}
+
+%% \pagestyle{plain}
+\settopmatter{printfolios=true}
+
+\numberwithin{equation}{section}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\captionsetup[subfigure]{
+    labelfont=bf,
+    textfont=normalfont,
+}
+\renewcommand{\thesubfigure}{\Roman{subfigure}}
+
+\definecolor{rowA}{gray}{0.9}
+\definecolor{rowB}{gray}{0.8}
+
+\newcommand{\rplus}{\mathbb{R}_{\geq 0}}
+\newcommand{\rpos}{\mathbb{R}_{>0}}
+
+\begin{document}
+\title{Uniswap v4 Core [Draft]}
+\subtitle{June 2023}
+\date{June 2023}
+
+\author{Hayden Adams}
+\affiliation{}
+\email{hayden@uniswap.org}
+
+\author{Moody Salem}
+\affiliation{}
+\email{moody.salem@gmail.com}
+
+\author{Noah Zinsmeister}
+\affiliation{}
+\email{noah@uniswap.org}
+
+\author{Sara Reynolds}
+\affiliation{}
+\email{sara@uniswap.org}
+
+\author{Austin Adams}
+\affiliation{}
+\email{austin@uniswap.org}
+
+\author{Will Pote}
+\affiliation{}
+\email{pote@uniswap.org}
+
+\author{Mark Toda}
+\affiliation{}
+\email{mark@uniswap.org}
+
+\author{Alice Henshaw}
+\affiliation{}
+\email{alice@uniswap.org}
+
+\author{Emily Williams}
+\affiliation{}
+\email{emily@uniswap.org}
+
+\author{Dan Robinson}
+\affiliation{}
+\email{dan@paradigm.xyz}
+
+\begin{teaserfigure}
+\caption*{
+    \hspace{\textwidth}
+    }
+\end{teaserfigure}
+
+\renewcommand{\shortauthors}{Adams et al.}
+
+\begin{abstract}
+
+\textsc{Uniswap v4} is a non-custodial automated market maker implemented for the Ethereum Virtual Machine. \textsc{Uniswap v4} offers customizability via arbitrary code hooks, allowing developers to augment the concentrated liquidity model introduced in \textsc{Uniswap v3} with new functionality. In \textsc{Uniswap v4}, anyone can create a new pool with a specified hook, which can run before or after pre-determined pool actions. Hooks can be used to implement features that were previously built into the protocol, like oracles, as well as new features that previously would have required independent implementations of the protocol. \textsc{Uniswap v4} also offers improved gas efficiency and developer experience through a singleton implementation, flash accounting, and support for native ETH.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction} \label{sec:introduction}
+\textsc{Uniswap v4} is an automated market maker (AMM) facilitating efficient exchange of value on the Ethereum Virtual Machine (EVM). As with previous versions of the \textsc{Uniswap Protocol}, it is non-custodial, non-upgradable, and permissionless. The focus of \textsc{Uniswap v4} is on customization and architectural changes for gas efficiency upgrades, building on the AMM model built by \textsc{Uniswap v1} and \textsc{v2} and the concentrated liquidity model introduced in \textsc{Uniswap v3}.
+
+\textsc{Uniswap v1} \cite{Adams18} and \textsc{v2} \cite{Adams20} were the first two iterations of the \textsc{Uniswap Protocol}, facilitating ERC-20 <> ETH and ERC-20 <> ERC-20 transactions, respectively, both using a constant product market maker (CPMM) model. \textsc{Uniswap v3} \cite{Adams21} introduced concentrated liquidity, providing more capital efficient liquidity through the use of positions that provide liquidity within a limited price range, and introduced multiple fee tiers.
+
+While concentrated liquidity and fee tiers increased flexibility for liquidity providers and allowed for new strategies to be implemented, \textsc{Uniswap v3} was not flexible enough to support new functionalities invented as AMMs and markets have evolved.
+
+Some features, like the price oracle originally introduced in \textsc{Uniswap v2}, allowed integrators to utilize decentralized onchain pricing data, at the expense of increased gas costs for swappers and without customizeability for integrators. Other ideas for enhancements, including time-weighted average price orders (TWAP) through a time-weighted average market maker (TWAMM) \cite{White2021}, volatility oracles, limit orders, or dynamic fees, would have required reimplementations of the core protocol, and could not be added to \textsc{Uniswap v3} by third-party developers.
+
+Additionally, in previous versions of \textsc{Uniswap}, deployment of new pools involves deploying a new contract—where cost scales with the size of the bytecode—and trades with multiple \textsc{Uniswap} pools involve transfers and redundant state updates across multiple contracts. And since \textsc{Uniswap v2}, \textsc{Uniswap} has required ETH to be wrapped into an ERC-20, rather than supporting native ETH. These come with gas costs.
+
+In \textsc{Uniswap v4}, we improve on this through a few notable features:
+\begin{itemize}
+    \item \emph{Hooks}: \textsc{Uniswap v4} allows anyone to deploy new concentrated liquidity pools with custom functionality. For each pool, the creator can define a “hook contract” that implements logic executed at key points in a call’s lifecycle. These hooks can also manage the swap fee of the pool, as well as withdrawal fees charged to liquidity providers.
+    \item \emph{Singleton}: \textsc{Uniswap v4} moves away from the factory model used in previous versions, instead implementing a single contract that holds all pools. The singleton model reduces the cost of pool creation and multi-hop trades.
+    \item \emph{Flash accounting}:  The singleton uses “flash accounting,” which requires that no tokens are owed to the pool or to the caller by the end of the lock. During the call, tokens can be used for any number of operations inside and outside the singleton. This functionality is made efficient by the transient storage opcodes proposed in EIP-1153 \cite{Akhunov2018}. Flash accounting further reduces the gas cost of trades that cross multiple pools and supports more complex integrations with \textsc{Uniswap v4}.
+    \item \emph{Native ETH}: \textsc{Uniswap v4} brings back support for native ETH, with support for pairs with native tokens inside \textsc{v4} pools. ETH swappers and liquidity providers benefit from gas cost reductions from cheaper transfers and removal of additional wrapping costs.
+\end{itemize}
+%% \ref{sec:liquidity-oracle}).
+
+The following sections provide in-depth explanations of these changes and the architectural changes that help make them possible.
+
+\section{Hooks} 
+\label{sec:Hooks}
+
+\emph{Hooks} are externally deployed contracts that execute some developer-defined logic at a specified point in a pool’s execution. These hooks allow integrators to create a concentrated liquidity pool with flexible and customizable execution.
+
+Hooks can modify pool parameters, or add new features and functionality. Example functionalities that could be implemented with hooks include: 
+\begin{itemize}
+\item Executing large orders over time through TWAMM 
+\item Onchain limit orders that fill at tick prices
+\item Volatility-shifting dynamic fees
+\item Mechanisms to internalize MEV for liquidity providers
+\item Median, truncated, or other custom oracle implementations
+\end{itemize}
+
+We envision that future independent whitepapers will be drafted for selected hook designs, as many will be as complex as protocols themselves.
+
+\begin{figure*}[ht!]
+    \centering
+    \scalebox{.7225}{
+    \begin{tikzpicture}[
+            every node/.style = {inner sep = 2ex},
+            flow/.style = {thick, arrows = {-To[scale=2]}},
+            decision/.style = {
+                draw,
+                rectangle split,
+                rectangle split horizontal,
+                rectangle split parts = 2,
+                rectangle split draw splits = false,
+                align = left,
+                rounded corners = 3ex
+            },
+            block/.style = {
+                draw,
+                rectangle split,
+                rectangle split horizontal,
+                rectangle split parts = 2,
+                rectangle split draw splits = false,
+                align = left
+            },
+            universal/.style = {draw, diamond, inner sep = .5ex},
+        ]
+
+        \node (start) [universal] at (0,0) {Start swap};
+
+        \node [decision, below=3em of start] (S0) {
+            S0.
+            \nodepart{two}
+            Check beforeSwap flag
+        };
+
+        \node (H1) [block, right=4em of S0] {
+            H1.
+            \nodepart{two}
+            Run beforeSwap Hook
+        };
+
+        \node [block, below=3em of S0] (S1) {
+            S1.
+            \nodepart{two}
+            Execute swap
+        };
+
+        \node (S2) [decision, below=3em of S1] {
+            S2.
+            \nodepart{two}
+            Check afterSwap flag
+        };
+
+        \node (H2) [block, right=4em of S2] {
+            H2.
+            \nodepart{two}
+            Run afterSwap Hook
+        };
+
+        \node (stop) [universal, below=3em of S2] {
+            End swap
+        };
+
+        \draw [flow] (start) -- (S0);
+        \draw [flow] (S0) -- node[midway, above] {True} (H1);
+        \draw [flow] (S0) -- node[midway, right] {False} (S1);
+        \draw [flow] (H1) .. controls + (0,-2) .. node[near end, above] {Return} (S1);
+        \draw [flow] (S1) -- (S2);
+        \draw [flow] (S2) -- node[midway, above] {True} (H2);
+        \draw [flow] (S2) -- node[midway, right] {False} (stop);
+        \draw [flow] (H2) .. controls + (0,-2.5) .. node[near end, above] {Return} (stop);
+    \end{tikzpicture}
+    }
+    \caption{Swap Hook Flow}
+    \label{fig:swapflow}
+\end{figure*}
+
+\subsection{Action Hooks} \label{actionhooks}
+
+When someone creates a pool on \textsc{Uniswap v4}, they can specify a hook contract. This hook contract implements custom logic that the pool will call out to during its execution. 
+\textsc{Uniswap v4} currently supports eight such hook callbacks:
+
+\begin{itemize}
+\item beforeInitialize/afterInitialize
+\item beforeModifyPosition/afterModifyPosition
+\item beforeSwap/afterSwap
+\item beforeDonate/afterDonate
+\end{itemize}
+
+The address of the hook contract determines which of these hook callbacks are executed. This creates a gas efficient and expressive methodology for determining the desired callbacks to execute, and ensures that even upgradeable hooks obey certain invariants. There are minimal requirements for creating a working hook. In Figure \ref{fig:swapflow}, we describe how the beforeSwap and afterSwap hooks work as part of swap execution flow.
+
+\subsection{Hook-managed fees} \label{hookfees}
+
+\textsc{Uniswap v4} allows fees to be taken on both swapping and withdrawing liquidity. 
+
+Swap fees can be either static, or dynamically managed by a hook contract. The hook contract can also choose to allocate a percentage of the swap fees to itself. Withdrawal fees cannot be set natively in the pool. To set a withdrawal fee, pool creators must set a hook contract to manage that fee, and the collected withdrawal fees go to the hook contract. Fees that accrue to hook contracts can be allocated arbitrarily by the hook’s code, including to liquidity providers, swappers, hook creators, or any other party. 
+
+The capabilities of the hook are limited by immutable flags chosen when the pool is created. The fee settings a pool creator can choose are:
+\begin{itemize}
+    \item Whether a pool has a static fee (and what that fee is) or dynamic fees
+    \item Permission for a hook to take a percentage of swap fees 
+    \item Permission for a hook to take withdrawal fees
+\end{itemize}
+
+Governance also can take a capped percentage of swap or withdrawal fees, as discussed below in the Governance section. 
+
+\section{Singleton and Flash Accounting} \label{flashaccounting}
+
+Previous versions of the \textsc{Uniswap Protocol} use the factory/pool pattern, where the factory creates separate contracts for new token pairs. \textsc{Uniswap v4} uses a \emph{singleton} design pattern where all pools are managed by a single contract, making pool deployment ~99\% cheaper. 
+
+The singleton design complements another architectural change in \textsc{v4}: \emph{flash accounting}. In previous versions of the \textsc{Uniswap Protocol}, each operation (such as swapping or adding liquidity to a pool) ended by transferring tokens. In \textsc{v4}, each operation updates an internal net balance, known as a \verb|delta|, only making external transfers at the end of the lock. The new \verb|take()| and  \verb|settle()| functions can be used to borrow or deposit funds to the pool, respectively. By requiring that no tokens are owed to the pool manager or to the caller by the end of the call, the pool's solvency is enforced. 
+
+Flash accounting simplifies complex pool operations, such as atomic swapping and adding. When combined with the singleton model, it also simplifies multi-hop trades.
+
+In the current execution environment, the flash accounting architecture is expensive because it requires storage updates at every balance change. Even though the contract guarantees that internal accounting data is never actually serialized to storage, users will still pay those same costs once the storage refund cap is exceeded \cite{Buterin2021}. But, because balances must be 0 by the end of the transaction, accounting for these balances can be implemented with transient storage, as specified by EIP-1153 \cite{Akhunov2018}.
+
+Together, singleton and flash accounting enable more efficient routing across multiple \textsc{v4} pools, reducing the cost of liquidity fragmentation. This is especially useful given the introduction of hooks, which will greatly increase the number of pools. 
+
+\section{Native ETH} 
+\label{nativeeth}
+
+\textsc{Uniswap v4} is bringing back native ETH in trading pairs. While \textsc{Uniswap v1} was strictly ETH paired against ERC-20 tokens, native ETH pairs were removed in \textsc{Uniswap v2} due to implementation complexity and concerns of liquidity fragmentation across WETH and ETH pairs. Singleton and flash accounting mitigate these problems, so \textsc{Uniswap v4} allows for both WETH and ETH pairs.
+
+Native ETH transfers are about half the gas cost of ERC-20 transfers (21k gas for ETH and around 40k gas for ERC-20s). Currently \textsc{Uniswap v2} and \textsc{v3} require the vast majority of users to wrap (unwrap) their ETH to (from) WETH before (after) trading on the Uniswap Protocol, requiring extra gas. 
+
+\section{Other Notable Features} 
+\label{other}
+
+\subsection{ERC1155 Accounting} 
+\textsc{Uniswap v4} will support the minting/burning of singleton-implemented ERC-1155 tokens for additional token accounting. Users can now keep tokens within the singleton and avoid ERC-20 transfers to and from the contract. This will be especially valuable for users and hooks who continually use the same tokens over multiple blocks or transactions, like frequent swappers or liquidity providers. 
+
+\subsection{Governance updates} 
+\textsc{Uniswap v4} has two separate governance fee mechanisms, swap fees and withdrawal fees, each with different mechanisms. First, similar to \textsc{Uniswap v3}, governance can elect to take  up to a capped percentage of the swap fee on a particular pool. With \textsc{v4}, if hooks initially choose to turn on withdrawal fees for a pool, governance also has the ability to take up to a capped percentage of that withdrawal fee.
+Unlike in \textsc{Uniswap v3}, governance does not control the permissible fee tiers or tick spacings.
+
+\subsection{Gas reductions}
+As discussed above, \textsc{Uniswap v4} introduces meaningful gas optimizations through flash accounting, the singleton model, and support for native ETH. Additionally, the introduction of hooks makes the protocol-enshrined price oracle that was included in \textsc{Uniswap v2} and \textsc{Uniswap v3} unnecessary, which also means some pools could forgo the oracle altogether and save around 15k gas on the first swap on a pool in each block. 
+
+\subsection{donate()}
+\verb|donate()| allows users, integrators, and hooks to directly pay in-range liquidity providers in either or both of the tokens of the pool. This functionality relies on the fee accounting system to facilitate efficient payments. The fee payment system can only support either of the tokens in the token pair for the pool. Potential use-cases could be tipping in-range liquidity providers on TWAMM orders or new types of fee systems.
+
+\section{Summary}
+In summary, \textsc{Uniswap v4} is a non-custodial, non-upgradeable, and permissionless AMM protocol. It builds upon the concentrated liquidity model introduced in \textsc{Uniswap v3} with customizable pools through hooks. Complementary to hooks are other architectural changes like the singleton contract which holds all pool state in one contract, and flash accounting which enforces pool solvency across each pool efficiently. Some other improvements are native ETH support, ERC-1155 balance accounting, new fee mechanisms, and the ability to donate to in-range liquidity providers.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{main}
+
+\section*{Disclaimer}
+
+This paper is for general information purposes only. It does not constitute investment advice or a recommendation or solicitation to buy or sell any investment and should not be used in the evaluation of the merits of making any investment decision. It should not be relied upon for accounting, legal or tax advice or investment recommendations.  This paper reflects current opinions of the authors and is not made on behalf of Uniswap Labs, Paradigm, or their affiliates and does not necessarily reflect the opinions of Uniswap Labs, Paradigm, their affiliates or individuals associated with them. The opinions reflected herein are subject to change without being updated. 
+
+\end{document}
+\endinput

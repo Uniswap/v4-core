@@ -5,7 +5,6 @@ import {
   EmptyTestHooks,
   PoolDonateTest,
   PoolManager,
-  PoolManagerReentrancyTest,
   PoolModifyPositionTest,
   PoolSwapTest,
   PoolTakeTest,
@@ -15,8 +14,8 @@ import {
 import { ADDRESS_ZERO, MAX_TICK_SPACING } from './shared/constants'
 import { expect } from './shared/expect'
 import { tokensFixture } from './shared/fixtures'
-import { deployMockContract, MockedContract, setCode } from './shared/mockContract'
-import { encodeSqrtPriceX96, expandTo18Decimals, FeeAmount, getPoolId, MaxUint128 } from './shared/utilities'
+import { MockedContract, deployMockContract, setCode } from './shared/mockContract'
+import { FeeAmount, MaxUint128, encodeSqrtPriceX96, expandTo18Decimals, getPoolId } from './shared/utilities'
 
 const createFixtureLoader = waffle.createFixtureLoader
 
@@ -91,7 +90,7 @@ describe('PoolManager', () => {
   })
 
   beforeEach('deploy fixture', async () => {
-    ;({
+    ; ({
       manager,
       tokens,
       modifyPositionTest,
@@ -108,48 +107,6 @@ describe('PoolManager', () => {
     expect(((await waffle.provider.getCode(manager.address)).length - 2) / 2).to.matchSnapshot()
   })
 
-  describe('#lock', () => {
-    it('can be reentered', async () => {
-      const reenterTest = (await (
-        await ethers.getContractFactory('PoolManagerReentrancyTest')
-      ).deploy()) as PoolManagerReentrancyTest
-
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
-
-      await modifyPositionTest.modifyPosition(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        {
-          tickLower: 0,
-          tickUpper: 60,
-          liquidityDelta: 100,
-        }
-      )
-
-      await expect(reenterTest.reenter(manager.address, tokens.currency0.address, 3))
-        .to.emit(reenterTest, 'LockAcquired')
-        .withArgs(3)
-        .to.emit(reenterTest, 'LockAcquired')
-        .withArgs(2)
-        .to.emit(reenterTest, 'LockAcquired')
-        .withArgs(1)
-    })
-  })
-
   describe('#setProtocolFeeController', () => {
     it('allows the owner to set a fee controller', async () => {
       expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
@@ -161,921 +118,924 @@ describe('PoolManager', () => {
     })
   })
 
-  describe('#initialize', async () => {
-    it('initializes a pool', async () => {
-      const poolKey = {
-        currency0: tokens.currency0.address,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-
-      await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
-        .to.emit(manager, 'Initialize')
-        .withArgs(
-          getPoolId(poolKey),
-          poolKey.currency0,
-          poolKey.currency1,
-          poolKey.fee,
-          poolKey.tickSpacing,
-          poolKey.hooks
-        )
-
-      const {
-        slot0: { sqrtPrice, protocolFee },
-      } = await manager.pools(getPoolId(poolKey))
-      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
-      expect(protocolFee).to.eq(0)
-    })
-
-    it('initializes a pool with native tokens', async () => {
-      const poolKey = {
-        currency0: tokens.currency0.address,
-        currency1: ADDRESS_ZERO,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-
-      await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
-        .to.emit(manager, 'Initialize')
-        .withArgs(
-          getPoolId(poolKey),
-          poolKey.currency0,
-          poolKey.currency1,
-          poolKey.fee,
-          poolKey.tickSpacing,
-          poolKey.hooks
-        )
-
-      const {
-        slot0: { sqrtPrice, protocolFee },
-      } = await manager.pools(getPoolId(poolKey))
-      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
-      expect(protocolFee).to.eq(0)
-    })
-
-    it('initializes a pool with hooks', async () => {
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: hooksMock.address,
-        },
-        encodeSqrtPriceX96(10, 1)
-      )
-
-      const {
-        slot0: { sqrtPrice },
-      } = await manager.pools(
-        getPoolId({
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: hooksMock.address,
-        })
-      )
-      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
-    })
-
-    it('can be initialized with MAX_TICK_SPACING', async () => {
-      await expect(
-        manager.initialize(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: MAX_TICK_SPACING,
-            hooks: ADDRESS_ZERO,
-          },
-          encodeSqrtPriceX96(10, 1)
-        )
-      ).to.not.be.reverted
-    })
-
-    it('fails if hook does not return selector', async () => {
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: testHooksEmpty.address,
-        },
-        encodeSqrtPriceX96(10, 1)
-      )
-
-      const {
-        slot0: { sqrtPrice },
-      } = await manager.pools(
-        getPoolId({
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: testHooksEmpty.address,
-        })
-      )
-      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
-    })
-
-    it('fails if tickSpacing is too large', async () => {
-      await expect(
-        manager.initialize(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: MAX_TICK_SPACING + 1,
-            hooks: ADDRESS_ZERO,
-          },
-          encodeSqrtPriceX96(10, 1)
-        )
-      ).to.be.revertedWith('TickSpacingTooLarge()')
-    })
-
-    it('fails if tickSpacing is 0', async () => {
-      await expect(
-        manager.initialize(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 0,
-            hooks: ADDRESS_ZERO,
-          },
-          encodeSqrtPriceX96(10, 1)
-        )
-      ).to.be.revertedWith('TickSpacingTooSmall()')
-    })
-
-    it('fails if tickSpacing is negative', async () => {
-      await expect(
-        manager.initialize(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: -1,
-            hooks: ADDRESS_ZERO,
-          },
-          encodeSqrtPriceX96(10, 1)
-        )
-      ).to.be.revertedWith('TickSpacingTooSmall()')
-    })
-
-    it('fetches a fee for new pools when theres a fee controller', async () => {
-      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
-      await manager.setProtocolFeeController(feeControllerTest.address)
-      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
-
-      const poolKey = {
-        currency0: tokens.currency0.address,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-      const poolProtocolFee = 4
-
-      const poolID = getPoolId(poolKey)
-      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
-
-      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
-
-      const {
-        slot0: { sqrtPrice, protocolFee },
-      } = await manager.pools(getPoolId(poolKey))
-      expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
-      expect(protocolFee).to.eq(poolProtocolFee)
-    })
-
-    it('gas cost', async () => {
-      await snapshotGasCost(
-        manager.initialize(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
-          encodeSqrtPriceX96(10, 1)
-        )
-      )
-    })
-  })
-
-  describe('#mint', async () => {
-    it('reverts if pool not initialized', async () => {
-      await expect(
-        modifyPositionTest.modifyPosition(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
-          {
-            tickLower: 0,
-            tickUpper: 60,
-            liquidityDelta: 100,
-          }
-        )
-      ).to.be.revertedWith('I')
-    })
-
-    it('succeeds if pool is initialized', async () => {
-      const poolKey = {
-        currency0: tokens.currency0.address,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-
-      await expect(
-        modifyPositionTest.modifyPosition(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
-          {
-            tickLower: 0,
-            tickUpper: 60,
-            liquidityDelta: 100,
-          }
-        )
-      )
-        .to.emit(manager, 'ModifyPosition')
-        .withArgs(getPoolId(poolKey), modifyPositionTest.address, 0, 60, 100)
-    })
-
-    it('succeeds with native tokens if pool is initialized', async () => {
-      const poolKey = {
-        currency0: ADDRESS_ZERO,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-
-      await expect(
-        modifyPositionTest.modifyPosition(
-          poolKey,
-          {
-            tickLower: 0,
-            tickUpper: 60,
-            liquidityDelta: 100,
-          },
-          {
-            value: 100,
-          }
-        )
-      )
-        .to.emit(manager, 'ModifyPosition')
-        .withArgs(getPoolId(poolKey), modifyPositionTest.address, 0, 60, 100)
-    })
-
-    it('succeeds if pool is initialized and hook is provided', async () => {
-      const poolKey = {
-        currency0: tokens.currency0.address,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: hooksMock.address,
-      }
-
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-
-      await modifyPositionTest.modifyPosition(poolKey, {
-        tickLower: 0,
-        tickUpper: 60,
-        liquidityDelta: 100,
-      })
-
-      const argsBeforeModify = [
-        modifyPositionTest.address,
-        poolKey,
-        {
-          tickLower: 0,
-          tickUpper: 60,
-          liquidityDelta: 100,
-        },
-      ]
-      const argsAfterModify = [...argsBeforeModify, { amount0: 1, amount1: 0 }]
-
-      expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.true
-      expect(await hooksMock.calledWith('beforeModifyPosition', argsBeforeModify)).to.be.true
-      expect(await hooksMock.calledOnce('afterModifyPosition')).to.be.true
-      expect(await hooksMock.calledWith('afterModifyPosition', argsAfterModify)).to.be.true
-
-      expect(await hooksMock.called('beforeSwap')).to.be.false
-      expect(await hooksMock.called('afterSwap')).to.be.false
-    })
-
-    it('gas cost', async () => {
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
-
-      await snapshotGasCost(
-        modifyPositionTest.modifyPosition(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
-          {
-            tickLower: 0,
-            tickUpper: 60,
-            liquidityDelta: 100,
-          }
-        )
-      )
-    })
-
-    it('gas cost with native tokens', async () => {
-      const poolKey = {
-        currency0: ADDRESS_ZERO,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-
-      await snapshotGasCost(
-        modifyPositionTest.modifyPosition(
-          poolKey,
-          {
-            tickLower: 0,
-            tickUpper: 60,
-            liquidityDelta: 100,
-          },
-          {
-            value: 100,
-          }
-        )
-      )
-    })
-
-    it('gas cost with hooks', async () => {
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: testHooksEmpty.address,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
-
-      await snapshotGasCost(
-        modifyPositionTest.modifyPosition(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: testHooksEmpty.address,
-          },
-          {
-            tickLower: 0,
-            tickUpper: 60,
-            liquidityDelta: 100,
-          }
-        )
-      )
-    })
-  })
-
-  describe('#swap', () => {
-    it('fails if pool is not initialized', async () => {
-      await expect(
-        swapTest.swap(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: true,
-            settleUsingTransfer: true,
-          }
-        )
-      ).to.be.revertedWith('I')
-    })
-
-    it('succeeds if pool is initialized', async () => {
-      const poolKey = {
-        currency0: tokens.currency0.address,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-      await expect(
-        swapTest.swap(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: false,
-            settleUsingTransfer: false,
-          }
-        )
-      )
-        .to.emit(manager, 'Swap')
-        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932, 3000)
-    })
-
-    it('succeeds with native tokens if pool is initialized', async () => {
-      const poolKey = {
-        currency0: ADDRESS_ZERO,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-      await expect(
-        swapTest.swap(
-          poolKey,
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: false,
-            settleUsingTransfer: false,
-          }
-        )
-      )
-        .to.emit(manager, 'Swap')
-        .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932, 3000)
-    })
-
-    it('succeeds if pool is initialized and hook is provided', async () => {
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: hooksMock.address,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
-      await swapTest.swap(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: hooksMock.address,
-        },
-        {
-          amountSpecified: 100,
-          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        {
-          withdrawTokens: false,
-          settleUsingTransfer: false,
-        }
-      )
-
-      const argsBeforeSwap = [
-        swapTest.address,
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: hooksMock.address,
-        },
-        {
-          amountSpecified: 100,
-          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-      ]
-
-      const argsAfterSwap = [...argsBeforeSwap, { amount0: 0, amount1: 0 }]
-
-      expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.false
-      expect(await hooksMock.calledOnce('afterModifyPosition')).to.be.false
-
-      expect(await hooksMock.calledOnce('beforeSwap')).to.be.true
-      expect(await hooksMock.calledOnce('afterSwap')).to.be.true
-      expect(await hooksMock.calledWith('beforeSwap', argsBeforeSwap)).to.be.true
-      expect(await hooksMock.calledWith('afterSwap', argsAfterSwap)).to.be.true
-    })
-
-    it('gas cost', async () => {
-      const poolKey = {
-        currency0: tokens.currency0.address,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-
-      await swapTest.swap(
-        poolKey,
-        {
-          amountSpecified: 100,
-          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        {
-          withdrawTokens: true,
-          settleUsingTransfer: true,
-        }
-      )
-
-      await snapshotGasCost(
-        swapTest.swap(
-          poolKey,
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: false,
-            settleUsingTransfer: false,
-          }
-        )
-      )
-    })
-
-    it('gas cost with native tokens', async () => {
-      const poolKey = {
-        currency0: ADDRESS_ZERO,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-
-      await swapTest.swap(
-        poolKey,
-        {
-          amountSpecified: 100,
-          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        {
-          withdrawTokens: true,
-          settleUsingTransfer: true,
-        }
-      )
-
-      await snapshotGasCost(
-        swapTest.swap(
-          poolKey,
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: false,
-            settleUsingTransfer: false,
-          }
-        )
-      )
-    })
-
-    it('gas cost with hooks', async () => {
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: testHooksEmpty.address,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
-
-      await swapTest.swap(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: testHooksEmpty.address,
-        },
-        {
-          amountSpecified: 100,
-          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        {
-          withdrawTokens: true,
-          settleUsingTransfer: true,
-        }
-      )
-
-      await snapshotGasCost(
-        swapTest.swap(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: testHooksEmpty.address,
-          },
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: true,
-            settleUsingTransfer: true,
-          }
-        )
-      )
-    })
-    it('mints erc1155s if the output token isnt taken', async () => {
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
-      await modifyPositionTest.modifyPosition(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        {
-          tickLower: -120,
-          tickUpper: 120,
-          liquidityDelta: expandTo18Decimals(1),
-        }
-      )
-
-      await expect(
-        swapTest.swap(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: false,
-            settleUsingTransfer: true,
-          }
-        )
-      ).to.emit(manager, 'TransferSingle')
-
-      const erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
-      expect(erc1155Balance).to.be.eq(98)
-    })
-    it('uses 1155s as input from an account that owns them', async () => {
-      await manager.initialize(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        encodeSqrtPriceX96(1, 1)
-      )
-      await modifyPositionTest.modifyPosition(
-        {
-          currency0: tokens.currency0.address,
-          currency1: tokens.currency1.address,
-          fee: FeeAmount.MEDIUM,
-          tickSpacing: 60,
-          hooks: ADDRESS_ZERO,
-        },
-        {
-          tickLower: -120,
-          tickUpper: 120,
-          liquidityDelta: expandTo18Decimals(1),
-        }
-      )
-
-      // perform a swap and claim 1155s from it, so that they can be used in another trade
-      await expect(
-        swapTest.swap(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: false,
-            settleUsingTransfer: true,
-          }
-        )
-      ).to.emit(manager, 'TransferSingle')
-
-      let erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
-      expect(erc1155Balance).to.be.eq(98)
-
-      // give permission for swapTest to burn the 1155s
-      await manager.setApprovalForAll(swapTest.address, true)
-
-      // now swap from currency1 to currency0 again, using 1155s as input tokens
-      await expect(
-        swapTest.swap(
-          {
-            currency0: tokens.currency0.address,
-            currency1: tokens.currency1.address,
-            fee: FeeAmount.MEDIUM,
-            tickSpacing: 60,
-            hooks: ADDRESS_ZERO,
-          },
-          {
-            amountSpecified: -25,
-            sqrtPriceLimit: encodeSqrtPriceX96(4, 1),
-            zeroForOne: false,
-          },
-          {
-            withdrawTokens: true,
-            settleUsingTransfer: false,
-          }
-        )
-      ).to.emit(manager, 'TransferSingle')
-
-      erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
-      expect(erc1155Balance).to.be.eq(71)
-    })
-    it('gas cost for swap against liquidity', async () => {
-      const poolKey = {
-        currency0: tokens.currency0.address,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-      await modifyPositionTest.modifyPosition(poolKey, {
-        tickLower: -120,
-        tickUpper: 120,
-        liquidityDelta: expandTo18Decimals(1),
-      })
-
-      await swapTest.swap(
-        poolKey,
-        {
-          amountSpecified: 100,
-          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        {
-          withdrawTokens: true,
-          settleUsingTransfer: true,
-        }
-      )
-
-      await snapshotGasCost(
-        swapTest.swap(
-          poolKey,
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: true,
-            settleUsingTransfer: true,
-          }
-        )
-      )
-    })
-
-    it('gas cost for swap with native tokens against liquidity', async () => {
-      const poolKey = {
-        currency0: ADDRESS_ZERO,
-        currency1: tokens.currency1.address,
-        fee: FeeAmount.MEDIUM,
-        tickSpacing: 60,
-        hooks: ADDRESS_ZERO,
-      }
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
-      await modifyPositionTest.modifyPosition(
-        poolKey,
-        {
-          tickLower: -120,
-          tickUpper: 120,
-          liquidityDelta: expandTo18Decimals(1),
-        },
-        {
-          value: expandTo18Decimals(1),
-        }
-      )
-
-      await swapTest.swap(
-        poolKey,
-        {
-          amountSpecified: 100,
-          sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
-          zeroForOne: true,
-        },
-        {
-          withdrawTokens: true,
-          settleUsingTransfer: true,
-        },
-        {
-          value: expandTo18Decimals(1),
-        }
-      )
-
-      await snapshotGasCost(
-        swapTest.swap(
-          poolKey,
-          {
-            amountSpecified: 100,
-            sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
-            zeroForOne: true,
-          },
-          {
-            withdrawTokens: true,
-            settleUsingTransfer: true,
-          },
-          {
-            value: expandTo18Decimals(1),
-          }
-        )
-      )
-    })
-  })
-
+  // <<<<<<< HEAD
+  //   describe('#initialize', async () => {
+  //     it('initializes a pool', async () => {
+  //       const poolKey = {
+  //         currency0: tokens.currency0.address,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+
+  //       await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
+  //         .to.emit(manager, 'Initialize')
+  //         .withArgs(
+  //           getPoolId(poolKey),
+  //           poolKey.currency0,
+  //           poolKey.currency1,
+  //           poolKey.fee,
+  //           poolKey.tickSpacing,
+  //           poolKey.hooks
+  //         )
+
+  //       const {
+  //         slot0: { sqrtPrice, protocolFee },
+  //       } = await manager.pools(getPoolId(poolKey))
+  //       expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
+  //       expect(protocolFee).to.eq(0)
+  //     })
+
+  //     it('initializes a pool with native tokens', async () => {
+  //       const poolKey = {
+  //         currency0: tokens.currency0.address,
+  //         currency1: ADDRESS_ZERO,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+
+  //       await expect(manager.initialize(poolKey, encodeSqrtPriceX96(10, 1)))
+  //         .to.emit(manager, 'Initialize')
+  //         .withArgs(
+  //           getPoolId(poolKey),
+  //           poolKey.currency0,
+  //           poolKey.currency1,
+  //           poolKey.fee,
+  //           poolKey.tickSpacing,
+  //           poolKey.hooks
+  //         )
+
+  //       const {
+  //         slot0: { sqrtPrice, protocolFee },
+  //       } = await manager.pools(getPoolId(poolKey))
+  //       expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
+  //       expect(protocolFee).to.eq(0)
+  //     })
+
+  //     it('initializes a pool with hooks', async () => {
+  //       await manager.initialize(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: hooksMock.address,
+  //         },
+  //         encodeSqrtPriceX96(10, 1)
+  //       )
+
+  //       const {
+  //         slot0: { sqrtPrice },
+  //       } = await manager.pools(
+  //         getPoolId({
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: hooksMock.address,
+  //         })
+  //       )
+  //       expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
+  //     })
+
+  //     it('can be initialized with MAX_TICK_SPACING', async () => {
+  //       await expect(
+  //         manager.initialize(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: MAX_TICK_SPACING,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           encodeSqrtPriceX96(10, 1)
+  //         )
+  //       ).to.not.be.reverted
+  //     })
+
+  //     it('fails if hook does not return selector', async () => {
+  //       await manager.initialize(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: testHooksEmpty.address,
+  //         },
+  //         encodeSqrtPriceX96(10, 1)
+  //       )
+
+  //       const {
+  //         slot0: { sqrtPrice },
+  //       } = await manager.pools(
+  //         getPoolId({
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: testHooksEmpty.address,
+  //         })
+  //       )
+  //       expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
+  //     })
+
+  //     it('fails if tickSpacing is too large', async () => {
+  //       await expect(
+  //         manager.initialize(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: MAX_TICK_SPACING + 1,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           encodeSqrtPriceX96(10, 1)
+  //         )
+  //       ).to.be.revertedWith('TickSpacingTooLarge()')
+  //     })
+
+  //     it('fails if tickSpacing is 0', async () => {
+  //       await expect(
+  //         manager.initialize(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 0,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           encodeSqrtPriceX96(10, 1)
+  //         )
+  //       ).to.be.revertedWith('TickSpacingTooSmall()')
+  //     })
+
+  //     it('fails if tickSpacing is negative', async () => {
+  //       await expect(
+  //         manager.initialize(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: -1,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           encodeSqrtPriceX96(10, 1)
+  //         )
+  //       ).to.be.revertedWith('TickSpacingTooSmall()')
+  //     })
+
+  //     it('fetches a fee for new pools when theres a fee controller', async () => {
+  //       expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
+  //       await manager.setProtocolFeeController(feeControllerTest.address)
+  //       expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+
+  //       const poolKey = {
+  //         currency0: tokens.currency0.address,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+  //       const poolProtocolFee = 4
+
+  //       const poolID = getPoolId(poolKey)
+  //       await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
+
+  //       const {
+  //         slot0: { sqrtPrice, protocolFee },
+  //       } = await manager.pools(getPoolId(poolKey))
+  //       expect(sqrtPrice).to.eq(encodeSqrtPriceX96(10, 1))
+  //       expect(protocolFee).to.eq(poolProtocolFee)
+  //     })
+
+  //     it('gas cost', async () => {
+  //       await snapshotGasCost(
+  //         manager.initialize(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           encodeSqrtPriceX96(10, 1)
+  //         )
+  //       )
+  //     })
+  //   })
+
+  //   describe('#mint', async () => {
+  //     it('reverts if pool not initialized', async () => {
+  //       await expect(
+  //         modifyPositionTest.modifyPosition(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           {
+  //             tickLower: 0,
+  //             tickUpper: 60,
+  //             liquidityDelta: 100,
+  //           }
+  //         )
+  //       ).to.be.revertedWith('I')
+  //     })
+
+  //     it('succeeds if pool is initialized', async () => {
+  //       const poolKey = {
+  //         currency0: tokens.currency0.address,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+  //       await expect(
+  //         modifyPositionTest.modifyPosition(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           {
+  //             tickLower: 0,
+  //             tickUpper: 60,
+  //             liquidityDelta: 100,
+  //           }
+  //         )
+  //       )
+  //         .to.emit(manager, 'ModifyPosition')
+  //         .withArgs(getPoolId(poolKey), modifyPositionTest.address, 0, 60, 100)
+  //     })
+
+  //     it('succeeds with native tokens if pool is initialized', async () => {
+  //       const poolKey = {
+  //         currency0: ADDRESS_ZERO,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+  //       await expect(
+  //         modifyPositionTest.modifyPosition(
+  //           poolKey,
+  //           {
+  //             tickLower: 0,
+  //             tickUpper: 60,
+  //             liquidityDelta: 100,
+  //           },
+  //           {
+  //             value: 100,
+  //           }
+  //         )
+  //       )
+  //         .to.emit(manager, 'ModifyPosition')
+  //         .withArgs(getPoolId(poolKey), modifyPositionTest.address, 0, 60, 100)
+  //     })
+
+  //     it('succeeds if pool is initialized and hook is provided', async () => {
+  //       const poolKey = {
+  //         currency0: tokens.currency0.address,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: hooksMock.address,
+  //       }
+
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+  //       await modifyPositionTest.modifyPosition(poolKey, {
+  //         tickLower: 0,
+  //         tickUpper: 60,
+  //         liquidityDelta: 100,
+  //       })
+
+  //       const argsBeforeModify = [
+  //         modifyPositionTest.address,
+  //         poolKey,
+  //         {
+  //           tickLower: 0,
+  //           tickUpper: 60,
+  //           liquidityDelta: 100,
+  //         },
+  //       ]
+  //       const argsAfterModify = [...argsBeforeModify, { amount0: 1, amount1: 0 }]
+
+  //       expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.true
+  //       expect(await hooksMock.calledWith('beforeModifyPosition', argsBeforeModify)).to.be.true
+  //       expect(await hooksMock.calledOnce('afterModifyPosition')).to.be.true
+  //       expect(await hooksMock.calledWith('afterModifyPosition', argsAfterModify)).to.be.true
+
+  //       expect(await hooksMock.called('beforeSwap')).to.be.false
+  //       expect(await hooksMock.called('afterSwap')).to.be.false
+  //     })
+
+  //     it('gas cost', async () => {
+  //       await manager.initialize(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: ADDRESS_ZERO,
+  //         },
+  //         encodeSqrtPriceX96(1, 1)
+  //       )
+
+  //       await snapshotGasCost(
+  //         modifyPositionTest.modifyPosition(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           {
+  //             tickLower: 0,
+  //             tickUpper: 60,
+  //             liquidityDelta: 100,
+  //           }
+  //         )
+  //       )
+  //     })
+
+  //     it('gas cost with native tokens', async () => {
+  //       const poolKey = {
+  //         currency0: ADDRESS_ZERO,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+  //       await snapshotGasCost(
+  //         modifyPositionTest.modifyPosition(
+  //           poolKey,
+  //           {
+  //             tickLower: 0,
+  //             tickUpper: 60,
+  //             liquidityDelta: 100,
+  //           },
+  //           {
+  //             value: 100,
+  //           }
+  //         )
+  //       )
+  //     })
+
+  //     it('gas cost with hooks', async () => {
+  //       await manager.initialize(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: testHooksEmpty.address,
+  //         },
+  //         encodeSqrtPriceX96(1, 1)
+  //       )
+
+  //       await snapshotGasCost(
+  //         modifyPositionTest.modifyPosition(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: testHooksEmpty.address,
+  //           },
+  //           {
+  //             tickLower: 0,
+  //             tickUpper: 60,
+  //             liquidityDelta: 100,
+  //           }
+  //         )
+  //       )
+  //     })
+  //   })
+
+  //   describe('#swap', () => {
+  //     it('fails if pool is not initialized', async () => {
+  //       await expect(
+  //         swapTest.swap(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: true,
+  //             settleUsingTransfer: true,
+  //           }
+  //         )
+  //       ).to.be.revertedWith('I')
+  //     })
+
+  //     it('succeeds if pool is initialized', async () => {
+  //       const poolKey = {
+  //         currency0: tokens.currency0.address,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+  //       await expect(
+  //         swapTest.swap(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: false,
+  //             settleUsingTransfer: false,
+  //           }
+  //         )
+  //       )
+  //         .to.emit(manager, 'Swap')
+  //         .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932, 3000)
+  //     })
+
+  //     it('succeeds with native tokens if pool is initialized', async () => {
+  //       const poolKey = {
+  //         currency0: ADDRESS_ZERO,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+  //       await expect(
+  //         swapTest.swap(
+  //           poolKey,
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: false,
+  //             settleUsingTransfer: false,
+  //           }
+  //         )
+  //       )
+  //         .to.emit(manager, 'Swap')
+  //         .withArgs(getPoolId(poolKey), swapTest.address, 0, 0, encodeSqrtPriceX96(1, 2), 0, -6932, 3000)
+  //     })
+
+  //     it('succeeds if pool is initialized and hook is provided', async () => {
+  //       await manager.initialize(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: hooksMock.address,
+  //         },
+  //         encodeSqrtPriceX96(1, 1)
+  //       )
+  //       await swapTest.swap(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: hooksMock.address,
+  //         },
+  //         {
+  //           amountSpecified: 100,
+  //           sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //           zeroForOne: true,
+  //         },
+  //         {
+  //           withdrawTokens: false,
+  //           settleUsingTransfer: false,
+  //         }
+  //       )
+
+  //       const argsBeforeSwap = [
+  //         swapTest.address,
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: hooksMock.address,
+  //         },
+  //         {
+  //           amountSpecified: 100,
+  //           sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //           zeroForOne: true,
+  //         },
+  //       ]
+
+  //       const argsAfterSwap = [...argsBeforeSwap, { amount0: 0, amount1: 0 }]
+
+  //       expect(await hooksMock.calledOnce('beforeModifyPosition')).to.be.false
+  //       expect(await hooksMock.calledOnce('afterModifyPosition')).to.be.false
+
+  //       expect(await hooksMock.calledOnce('beforeSwap')).to.be.true
+  //       expect(await hooksMock.calledOnce('afterSwap')).to.be.true
+  //       expect(await hooksMock.calledWith('beforeSwap', argsBeforeSwap)).to.be.true
+  //       expect(await hooksMock.calledWith('afterSwap', argsAfterSwap)).to.be.true
+  //     })
+
+  //     it('gas cost', async () => {
+  //       const poolKey = {
+  //         currency0: tokens.currency0.address,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+  //       await swapTest.swap(
+  //         poolKey,
+  //         {
+  //           amountSpecified: 100,
+  //           sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //           zeroForOne: true,
+  //         },
+  //         {
+  //           withdrawTokens: true,
+  //           settleUsingTransfer: true,
+  //         }
+  //       )
+
+  //       await snapshotGasCost(
+  //         swapTest.swap(
+  //           poolKey,
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: false,
+  //             settleUsingTransfer: false,
+  //           }
+  //         )
+  //       )
+  //     })
+
+  //     it('gas cost with native tokens', async () => {
+  //       const poolKey = {
+  //         currency0: ADDRESS_ZERO,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+
+  //       await swapTest.swap(
+  //         poolKey,
+  //         {
+  //           amountSpecified: 100,
+  //           sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //           zeroForOne: true,
+  //         },
+  //         {
+  //           withdrawTokens: true,
+  //           settleUsingTransfer: true,
+  //         }
+  //       )
+
+  //       await snapshotGasCost(
+  //         swapTest.swap(
+  //           poolKey,
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: false,
+  //             settleUsingTransfer: false,
+  //           }
+  //         )
+  //       )
+  //     })
+
+  //     it('gas cost with hooks', async () => {
+  //       await manager.initialize(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: testHooksEmpty.address,
+  //         },
+  //         encodeSqrtPriceX96(1, 1)
+  //       )
+
+  //       await swapTest.swap(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: testHooksEmpty.address,
+  //         },
+  //         {
+  //           amountSpecified: 100,
+  //           sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //           zeroForOne: true,
+  //         },
+  //         {
+  //           withdrawTokens: true,
+  //           settleUsingTransfer: true,
+  //         }
+  //       )
+
+  //       await snapshotGasCost(
+  //         swapTest.swap(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: testHooksEmpty.address,
+  //           },
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: true,
+  //             settleUsingTransfer: true,
+  //           }
+  //         )
+  //       )
+  //     })
+  //     it('mints erc1155s if the output token isnt taken', async () => {
+  //       await manager.initialize(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: ADDRESS_ZERO,
+  //         },
+  //         encodeSqrtPriceX96(1, 1)
+  //       )
+  //       await modifyPositionTest.modifyPosition(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: ADDRESS_ZERO,
+  //         },
+  //         {
+  //           tickLower: -120,
+  //           tickUpper: 120,
+  //           liquidityDelta: expandTo18Decimals(1),
+  //         }
+  //       )
+
+  //       await expect(
+  //         swapTest.swap(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: false,
+  //             settleUsingTransfer: true,
+  //           }
+  //         )
+  //       ).to.emit(manager, 'TransferSingle')
+
+  //       const erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
+  //       expect(erc1155Balance).to.be.eq(98)
+  //     })
+  //     it('uses 1155s as input from an account that owns them', async () => {
+  //       await manager.initialize(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: ADDRESS_ZERO,
+  //         },
+  //         encodeSqrtPriceX96(1, 1)
+  //       )
+  //       await modifyPositionTest.modifyPosition(
+  //         {
+  //           currency0: tokens.currency0.address,
+  //           currency1: tokens.currency1.address,
+  //           fee: FeeAmount.MEDIUM,
+  //           tickSpacing: 60,
+  //           hooks: ADDRESS_ZERO,
+  //         },
+  //         {
+  //           tickLower: -120,
+  //           tickUpper: 120,
+  //           liquidityDelta: expandTo18Decimals(1),
+  //         }
+  //       )
+
+  //       // perform a swap and claim 1155s from it, so that they can be used in another trade
+  //       await expect(
+  //         swapTest.swap(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: false,
+  //             settleUsingTransfer: true,
+  //           }
+  //         )
+  //       ).to.emit(manager, 'TransferSingle')
+
+  //       let erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
+  //       expect(erc1155Balance).to.be.eq(98)
+
+  //       // give permission for swapTest to burn the 1155s
+  //       await manager.setApprovalForAll(swapTest.address, true)
+
+  //       // now swap from currency1 to currency0 again, using 1155s as input tokens
+  //       await expect(
+  //         swapTest.swap(
+  //           {
+  //             currency0: tokens.currency0.address,
+  //             currency1: tokens.currency1.address,
+  //             fee: FeeAmount.MEDIUM,
+  //             tickSpacing: 60,
+  //             hooks: ADDRESS_ZERO,
+  //           },
+  //           {
+  //             amountSpecified: -25,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(4, 1),
+  //             zeroForOne: false,
+  //           },
+  //           {
+  //             withdrawTokens: true,
+  //             settleUsingTransfer: false,
+  //           }
+  //         )
+  //       ).to.emit(manager, 'TransferSingle')
+
+  //       erc1155Balance = await manager.balanceOf(wallet.address, tokens.currency1.address)
+  //       expect(erc1155Balance).to.be.eq(71)
+  //     })
+  //     it('gas cost for swap against liquidity', async () => {
+  //       const poolKey = {
+  //         currency0: tokens.currency0.address,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+  //       await modifyPositionTest.modifyPosition(poolKey, {
+  //         tickLower: -120,
+  //         tickUpper: 120,
+  //         liquidityDelta: expandTo18Decimals(1),
+  //       })
+
+  //       await swapTest.swap(
+  //         poolKey,
+  //         {
+  //           amountSpecified: 100,
+  //           sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //           zeroForOne: true,
+  //         },
+  //         {
+  //           withdrawTokens: true,
+  //           settleUsingTransfer: true,
+  //         }
+  //       )
+
+  //       await snapshotGasCost(
+  //         swapTest.swap(
+  //           poolKey,
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: true,
+  //             settleUsingTransfer: true,
+  //           }
+  //         )
+  //       )
+  //     })
+
+  //     it('gas cost for swap with native tokens against liquidity', async () => {
+  //       const poolKey = {
+  //         currency0: ADDRESS_ZERO,
+  //         currency1: tokens.currency1.address,
+  //         fee: FeeAmount.MEDIUM,
+  //         tickSpacing: 60,
+  //         hooks: ADDRESS_ZERO,
+  //       }
+  //       await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+  //       await modifyPositionTest.modifyPosition(
+  //         poolKey,
+  //         {
+  //           tickLower: -120,
+  //           tickUpper: 120,
+  //           liquidityDelta: expandTo18Decimals(1),
+  //         },
+  //         {
+  //           value: expandTo18Decimals(1),
+  //         }
+  //       )
+
+  //       await swapTest.swap(
+  //         poolKey,
+  //         {
+  //           amountSpecified: 100,
+  //           sqrtPriceLimit: encodeSqrtPriceX96(1, 2),
+  //           zeroForOne: true,
+  //         },
+  //         {
+  //           withdrawTokens: true,
+  //           settleUsingTransfer: true,
+  //         },
+  //         {
+  //           value: expandTo18Decimals(1),
+  //         }
+  //       )
+
+  //       await snapshotGasCost(
+  //         swapTest.swap(
+  //           poolKey,
+  //           {
+  //             amountSpecified: 100,
+  //             sqrtPriceLimit: encodeSqrtPriceX96(1, 4),
+  //             zeroForOne: true,
+  //           },
+  //           {
+  //             withdrawTokens: true,
+  //             settleUsingTransfer: true,
+  //           },
+  //           {
+  //             value: expandTo18Decimals(1),
+  //           }
+  //         )
+  //       )
+  //     })
+  //   })
+
+  // =======
+  // >>>>>>> main
   describe('#take', () => {
     it('fails if no liquidity', async () => {
       await tokens.currency0.connect(wallet).transfer(ADDRESS_ZERO, constants.MaxUint256.div(2))
@@ -1184,24 +1144,24 @@ describe('PoolManager', () => {
 
       await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
 
-      var protocolFee: number
-      ;({
-        slot0: { protocolFee },
-      } = await manager.pools(getPoolId(poolKey)))
-      expect(protocolFee).to.eq(0)
+      var protocolSwapFee: number
+        ; ({
+          slot0: { protocolSwapFee },
+        } = await manager.pools(getPoolId(poolKey)))
+      expect(protocolSwapFee).to.eq(0)
 
       await manager.setProtocolFeeController(feeControllerTest.address)
       expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
       const poolProtocolFee = 4
-      await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+      await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
-      await expect(manager.setPoolProtocolFee(poolKey))
+      await expect(manager.setProtocolFees(poolKey))
         .to.emit(manager, 'ProtocolFeeUpdated')
-        .withArgs(poolID, poolProtocolFee)
-      ;({
-        slot0: { protocolFee },
-      } = await manager.pools(poolID))
-      expect(protocolFee).to.eq(poolProtocolFee)
+        .withArgs(poolID, poolProtocolFee, 0)
+        ; ({
+          slot0: { protocolSwapFee },
+        } = await manager.pools(poolID))
+      expect(protocolSwapFee).to.eq(poolProtocolFee)
     })
   })
 
@@ -1220,14 +1180,14 @@ describe('PoolManager', () => {
         expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
         const poolProtocolFee = 68 // 0x 0100 0100
         const poolID = getPoolId(poolKey)
-        await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+        await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
         await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
         const {
-          slot0: { protocolFee },
+          slot0: { protocolSwapFee },
         } = await manager.pools(getPoolId(poolKey))
-        expect(protocolFee).to.eq(poolProtocolFee)
+        expect(protocolSwapFee).to.eq(poolProtocolFee)
 
         // add liquidity around the initial price
         await modifyPositionTest.modifyPosition(poolKey, {
@@ -1336,14 +1296,14 @@ describe('PoolManager', () => {
         expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
         const poolProtocolFee = 68 // 0x 0100 0100
         const poolID = getPoolId(poolKey)
-        await feeControllerTest.setFeeForPool(poolID, poolProtocolFee)
+        await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
         await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
         const {
-          slot0: { protocolFee },
+          slot0: { protocolSwapFee },
         } = await manager.pools(getPoolId(poolKey))
-        expect(protocolFee).to.eq(poolProtocolFee)
+        expect(protocolSwapFee).to.eq(poolProtocolFee)
 
         // add liquidity around the initial price
         await modifyPositionTest.modifyPosition(

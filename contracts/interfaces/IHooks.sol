@@ -1,7 +1,9 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.19;
+// SPDX-License-Identifier: GPL-2.0-or-later
+pragma solidity ^0.8.20;
 
 import {UQ64x96} from "../libraries/FixedPoint96.sol";
+import {PoolKey} from "../types/PoolKey.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "./IPoolManager.sol";
 
 /// @notice The PoolManager contract decides whether to invoke specific hooks by inspecting the leading bits
@@ -14,9 +16,7 @@ interface IHooks {
     /// @param key The key for the pool being initialized
     /// @param sqrtPrice The sqrt(price) of the pool as a Q64.96
     /// @return bytes4 The function selector for the hook
-    function beforeInitialize(address sender, IPoolManager.PoolKey calldata key, UQ64x96 sqrtPrice)
-        external
-        returns (bytes4);
+    function beforeInitialize(address sender, PoolKey calldata key, UQ64x96 sqrtPrice) external returns (bytes4);
 
     /// @notice The hook called after the state of a pool is initialized
     /// @param sender The initial msg.sender for the initialize call
@@ -24,7 +24,7 @@ interface IHooks {
     /// @param sqrtPrice The sqrt(price) of the pool as a Q64.96
     /// @param tick The current tick after the state of a pool is initialized
     /// @return bytes4 The function selector for the hook
-    function afterInitialize(address sender, IPoolManager.PoolKey calldata key, UQ64x96 sqrtPrice, int24 tick)
+    function afterInitialize(address sender, PoolKey calldata key, UQ64x96 sqrtPrice, int24 tick)
         external
         returns (bytes4);
 
@@ -35,7 +35,7 @@ interface IHooks {
     /// @return bytes4 The function selector for the hook
     function beforeModifyPosition(
         address sender,
-        IPoolManager.PoolKey calldata key,
+        PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata params
     ) external returns (bytes4);
 
@@ -46,9 +46,9 @@ interface IHooks {
     /// @return bytes4 The function selector for the hook
     function afterModifyPosition(
         address sender,
-        IPoolManager.PoolKey calldata key,
+        PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata params,
-        IPoolManager.BalanceDelta calldata delta
+        BalanceDelta delta
     ) external returns (bytes4);
 
     /// @notice The hook called before a swap
@@ -56,7 +56,7 @@ interface IHooks {
     /// @param key The key for the pool
     /// @param params The parameters for the swap
     /// @return bytes4 The function selector for the hook
-    function beforeSwap(address sender, IPoolManager.PoolKey calldata key, IPoolManager.SwapParams calldata params)
+    function beforeSwap(address sender, PoolKey calldata key, IPoolManager.SwapParams calldata params)
         external
         returns (bytes4);
 
@@ -68,9 +68,9 @@ interface IHooks {
     /// @return bytes4 The function selector for the hook
     function afterSwap(
         address sender,
-        IPoolManager.PoolKey calldata key,
+        PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
-        IPoolManager.BalanceDelta calldata delta
+        BalanceDelta delta
     ) external returns (bytes4);
 
     /// @notice The hook called before donate
@@ -79,7 +79,7 @@ interface IHooks {
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
     /// @return bytes4 The function selector for the hook
-    function beforeDonate(address sender, IPoolManager.PoolKey calldata key, uint256 amount0, uint256 amount1)
+    function beforeDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1)
         external
         returns (bytes4);
 
@@ -89,7 +89,7 @@ interface IHooks {
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
     /// @return bytes4 The function selector for the hook
-    function afterDonate(address sender, IPoolManager.PoolKey calldata key, uint256 amount0, uint256 amount1)
+    function afterDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1)
         external
         returns (bytes4);
 }
