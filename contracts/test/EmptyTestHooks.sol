@@ -55,7 +55,7 @@ contract EmptyTestHooks is IHooks {
         external
         pure
         override
-        returns (bytes32 selector)
+        returns (bytes32)
     {
         return IHooks.beforeSwap.selector;
     }
