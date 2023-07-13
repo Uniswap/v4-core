@@ -20,7 +20,7 @@ import {Fees} from "./Fees.sol";
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
-import {BalanceDelta, noOpToBalanceDelta} from "./types/BalanceDelta.sol";
+import {BalanceDelta, toBalanceDelta, noOpToBalanceDelta} from "./types/BalanceDelta.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 
 /// @notice Holds the state for all pools
@@ -280,12 +280,55 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
+            if (key.hooks.isNoOp() && params.amountSpecified > 0) {
+                // update swap params based on protocol fee
+                Pool.Slot0 memory slot0 = pools[key.toId()].slot0;
+                // NOTE: a lower protocol fee is recommended, since we're taking a portion of the entire input amount
+                uint8 protocolFee = params.zeroForOne ? (slot0.protocolSwapFee % 16) : (slot0.protocolSwapFee >> 4);
+
+                if (protocolFee > 0) {
+                    uint256 feeFromAmount = uint256(params.amountSpecified) / protocolFee;
+                    params = SwapParams({
+                        zeroForOne: params.zeroForOne,
+                        amountSpecified: params.amountSpecified - int256(feeFromAmount),
+                        sqrtPriceLimitX96: params.sqrtPriceLimitX96
+                    });
+
+                    protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
+
+                }
+            }
+
             bytes32 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
+
+            // TODO: calculate actual input amount for neg amountSpecified here with fee
             if (bytes4(hookReturn) != IHooks.beforeSwap.selector) {
                 if (bytes4(hookReturn) == Hooks.NO_OP) {
                     // TODO: potentially change this
                     delta = noOpToBalanceDelta(hookReturn);
                     _accountNoOp(key, delta);
+
+                    if (params.amountSpecified < 0) {
+                        // update swap params based on protocol fee
+                        Pool.Slot0 memory slot0 = pools[key.toId()].slot0;
+                        // NOTE: a lower protocol fee is recommended, since we're taking a portion of the entire input amount
+                        uint8 protocolFee;
+                        uint256 feeFromAmount;
+                        if (params.zeroForOne) {
+                            protocolFee = slot0.protocolSwapFee % 16;
+                            if (protocolFee > 0) {
+                                feeFromAmount = uint(uint128(delta.amount0())) / protocolFee;
+                                delta = toBalanceDelta(delta.amount0() + int128(int(feeFromAmount)), delta.amount1());
+                            }
+                        } else {
+                            protocolFee = slot0.protocolSwapFee >> 4;
+                            if (protocolFee > 0) {
+                                feeFromAmount = uint(uint128(delta.amount1())) / protocolFee;
+                                delta = toBalanceDelta(delta.amount0(), delta.amount1() + int128(int(feeFromAmount)));
+                            }
+                        }
+                        protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
+                    }
                     return delta;
                 } else {
                     revert Hooks.InvalidHookResponse();

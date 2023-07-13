@@ -19,6 +19,7 @@ library Hooks {
     uint256 internal constant AFTER_SWAP_FLAG = 1 << 154;
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
+    uint256 internal constant NO_OP_FLAG = 1 << 151;
 
     bytes4 public constant NO_OP = 0xc71dfe5e; // bytes4(keccak256(abi.encodePacked("NoOp")))
 
@@ -99,5 +100,9 @@ library Hooks {
 
     function shouldCallAfterDonate(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
+    }
+
+    function isNoOp(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & NO_OP_FLAG != 0;
     }
 }
