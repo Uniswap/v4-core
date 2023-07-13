@@ -90,7 +90,7 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
 
         lastCaller = caller;
 
-        return Hooks.NO_OP;
+        return IHooks.beforeModifyPosition.selector;
     }
 
     function afterModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, BalanceDelta)
@@ -118,7 +118,7 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
 
         lastCaller = caller;
 
-        return Hooks.NO_OP;
+        return IHooks.beforeSwap.selector;
     }
 
     function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
@@ -142,7 +142,7 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
 
         lastCaller = caller;
 
-        return Hooks.NO_OP;
+        return IHooks.beforeDonate.selector;
     }
 
     function afterDonate(address, PoolKey calldata, uint256, uint256) external pure override returns (bytes4) {

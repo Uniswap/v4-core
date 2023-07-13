@@ -1048,13 +1048,19 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(manager.balanceOf(hookAddr, CurrencyLibrary.toId(currency1)), 9 ether);
     }
 
-    // TODO: support NO_OP_FLAG
     function testPoolManagerGracefulReturnsOnHook(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address payable hookAddr = payable(ALL_HOOKS);
+        address payable hookAddr = payable(
+            address(
+                uint160(
+                    Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG
+                        | Hooks.BEFORE_DONATE_FLAG | Hooks.NO_OP_FLAG
+                )
+            )
+        );
 
         vm.etch(hookAddr, vm.getDeployedCode("GracefulReturnTestHooks.sol:GracefulReturnTestHooks"));
 

@@ -21,8 +21,6 @@ library Hooks {
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
     uint256 internal constant NO_OP_FLAG = 1 << 151;
 
-    bytes4 public constant NO_OP = 0xc71dfe5e; // bytes4(keccak256(abi.encodePacked("NoOp")))
-
     struct Calls {
         bool beforeInitialize;
         bool afterInitialize;

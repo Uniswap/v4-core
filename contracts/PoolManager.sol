@@ -23,6 +23,8 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, toBalanceDelta, noOpToBalanceDelta} from "./types/BalanceDelta.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 
+import "forge-std/console2.sol";
+
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Receiver {
     using PoolIdLibrary for PoolKey;
@@ -222,14 +224,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes32 hookReturn = key.hooks.beforeModifyPosition(msg.sender, key, params);
+            if (key.hooks.isNoOp()) {
+                delta = noOpToBalanceDelta(hookReturn);
+                _accountNoOp(key, delta);
+                return delta;
+            }
             if (bytes4(hookReturn) != IHooks.beforeModifyPosition.selector) {
-                if (bytes4(hookReturn) == Hooks.NO_OP) {
-                    delta = noOpToBalanceDelta(hookReturn);
-                    _accountNoOp(key, delta);
-                    return delta;
-                } else {
-                    revert Hooks.InvalidHookResponse();
-                }
+                revert Hooks.InvalidHookResponse();
             }
         }
 
@@ -280,59 +281,41 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
-            if (key.hooks.isNoOp() && params.amountSpecified > 0) {
-                // update swap params based on protocol fee
+            bytes32 hookReturn;
+            if (key.hooks.isNoOp()) {
+                console2.log("hi it's a noop");
                 Pool.Slot0 memory slot0 = pools[key.toId()].slot0;
                 // NOTE: a lower protocol fee is recommended, since we're taking a portion of the entire input amount
                 uint8 protocolFee = params.zeroForOne ? (slot0.protocolSwapFee % 16) : (slot0.protocolSwapFee >> 4);
-
-                if (protocolFee > 0) {
+                if (params.amountSpecified > 0 && protocolFee > 0) {
                     uint256 feeFromAmount = uint256(params.amountSpecified) / protocolFee;
-                    params = SwapParams({
-                        zeroForOne: params.zeroForOne,
-                        amountSpecified: params.amountSpecified - int256(feeFromAmount),
-                        sqrtPriceLimitX96: params.sqrtPriceLimitX96
-                    });
-
+                    params.amountSpecified = params.amountSpecified - int256(feeFromAmount);
                     protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
-
                 }
-            }
+                hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
+                delta = noOpToBalanceDelta(hookReturn);
+                console2.logInt(delta.amount0());
+                console2.logInt(delta.amount1());
+                _accountNoOp(key, delta);
 
-            bytes32 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
-
-            // TODO: calculate actual input amount for neg amountSpecified here with fee
-            if (bytes4(hookReturn) != IHooks.beforeSwap.selector) {
-                if (bytes4(hookReturn) == Hooks.NO_OP) {
-                    // TODO: potentially change this
-                    delta = noOpToBalanceDelta(hookReturn);
-                    _accountNoOp(key, delta);
-
-                    if (params.amountSpecified < 0) {
-                        // update swap params based on protocol fee
-                        Pool.Slot0 memory slot0 = pools[key.toId()].slot0;
-                        // NOTE: a lower protocol fee is recommended, since we're taking a portion of the entire input amount
-                        uint8 protocolFee;
-                        uint256 feeFromAmount;
-                        if (params.zeroForOne) {
-                            protocolFee = slot0.protocolSwapFee % 16;
-                            if (protocolFee > 0) {
-                                feeFromAmount = uint(uint128(delta.amount0())) / protocolFee;
-                                delta = toBalanceDelta(delta.amount0() + int128(int(feeFromAmount)), delta.amount1());
-                            }
-                        } else {
-                            protocolFee = slot0.protocolSwapFee >> 4;
-                            if (protocolFee > 0) {
-                                feeFromAmount = uint(uint128(delta.amount1())) / protocolFee;
-                                delta = toBalanceDelta(delta.amount0(), delta.amount1() + int128(int(feeFromAmount)));
-                            }
-                        }
-                        protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
+                if (params.amountSpecified < 0 && protocolFee > 0) {
+                    // NOTE: a lower protocol fee is recommended, since we're taking a portion of the entire input amount
+                    uint256 feeFromAmount;
+                    if (params.zeroForOne) {
+                        feeFromAmount = uint256(uint128(delta.amount0())) / protocolFee;
+                        delta = toBalanceDelta(delta.amount0() + int128(int256(feeFromAmount)), delta.amount1());
+                    } else {
+                        feeFromAmount = uint256(uint128(delta.amount1())) / protocolFee;
+                        delta = toBalanceDelta(delta.amount0(), delta.amount1() + int128(int256(feeFromAmount)));
                     }
-                    return delta;
-                } else {
-                    revert Hooks.InvalidHookResponse();
+                    protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
                 }
+                return delta;
+            } else {
+                hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
+            }
+            if (bytes4(hookReturn) != IHooks.beforeSwap.selector) {
+                revert Hooks.InvalidHookResponse();
             }
         }
 
@@ -400,14 +383,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     {
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes32 hookReturn = key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
+            if (key.hooks.isNoOp()) {
+                delta = noOpToBalanceDelta(hookReturn);
+                _accountNoOp(key, delta);
+                return delta;
+            }
             if (bytes4(hookReturn) != IHooks.beforeDonate.selector) {
-                if (bytes4(hookReturn) == Hooks.NO_OP) {
-                    delta = noOpToBalanceDelta(hookReturn);
-                    _accountNoOp(key, delta);
-                    return delta;
-                } else {
-                    revert Hooks.InvalidHookResponse();
-                }
+                revert Hooks.InvalidHookResponse();
             }
         }
 

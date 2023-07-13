@@ -119,7 +119,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallba
         override
         returns (bytes32)
     {
-        bytes32 selector = Hooks.NO_OP;
+        bytes32 selector = IHooks.beforeModifyPosition.selector;
         int112 amt = int112(params.liquidityDelta);
 
         /// @solidity memory-safe-assembly
@@ -153,7 +153,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallba
     {
         // 0xAAAAAAAA_00000............. padding of bytes4
         // 112 bits per amount in BalanceDelta, 224 bits total since 256 - 32 = 224, as bytes4 takes up 32 bits
-        bytes32 selector = Hooks.NO_OP;
+        bytes32 selector = IHooks.beforeSwap.selector;
         int112 amt0 = 1 ether;
         int112 amt1 = -1 ether;
 
@@ -185,7 +185,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallba
     {
         // 0xAAAAAAAA_00000............. padding of bytes4
         // 112 bits per amount in BalanceDelta, 224 bits total since 256 - 32 = 224, as bytes4 takes up 32 bits
-        bytes32 selector = Hooks.NO_OP;
+        bytes32 selector = IHooks.beforeDonate.selector;
         int112 amt0 = 1 ether + int112(int256(amount0));
         int112 amt1 = 1 ether + int112(int256(amount1));
 
