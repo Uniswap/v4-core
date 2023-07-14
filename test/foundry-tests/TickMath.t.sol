@@ -17,6 +17,8 @@ contract TickMathTestTest is Test {
 
     uint256 constant ONE_PIP = 1e6;
 
+    uint160[] getSqrtRatioAtTickFuzzResults;
+
     TickMathTest tickMath;
 
     function setUp() public {
@@ -116,6 +118,7 @@ contract TickMathTestTest is Test {
 
         // only run on ci since fuzzing with javascript is SLOW
         if (keccak256(abi.encode(ciEnvVar)) == keccak256(abi.encode("ci"))) {
+            string memory jsParameters = "";
             string[] memory runJsInputs = new string[](6);
 
             // build ffi command string
@@ -129,25 +132,29 @@ contract TickMathTestTest is Test {
 
             while (true) {
                 if (tick > MAX_TICK) break;
-
                 // test negative and positive tick
                 for (uint256 i = 0; i < 2; i++) {
                     tick = tick * -1;
-                    runJsInputs[5] = vm.toString(int256(tick));
-
-                    bytes memory jsResult = vm.ffi(runJsInputs);
-                    uint160 jsSqrtRatio = uint160(abi.decode(jsResult, (uint256)));
-                    uint160 solResult = tickMath.getSqrtRatioAtTick(tick);
-
-                    (uint160 gtResult, uint160 ltResult) =
-                        jsSqrtRatio > solResult ? (jsSqrtRatio, solResult) : (solResult, jsSqrtRatio);
-                    uint160 resultsDiff = gtResult - ltResult;
-
-                    // assert solc/js result is at most off by 1/100th of a bip (aka one pip)
-                    assertEq(resultsDiff * ONE_PIP / jsSqrtRatio, 0);
+                    if (tick != -50) jsParameters = string(abi.encodePacked(jsParameters, ","));
+                    jsParameters = string(abi.encodePacked(jsParameters, vm.toString(int256(tick))));
+                    getSqrtRatioAtTickFuzzResults.push(tickMath.getSqrtRatioAtTick(tick));
                 }
-
                 tick = tick * 2;
+            }
+
+            runJsInputs[5] = jsParameters;
+            bytes memory jsResult = vm.ffi(runJsInputs);
+            uint160[] memory jsSqrtRatios = abi.decode(jsResult, (uint160[]));
+
+            for (uint256 i = 0; i < jsSqrtRatios.length; i++) {
+                uint160 jsSqrtRatio = jsSqrtRatios[i];
+                uint160 solResult = getSqrtRatioAtTickFuzzResults[i];
+                (uint160 gtResult, uint160 ltResult) =
+                    jsSqrtRatio > solResult ? (jsSqrtRatio, solResult) : (solResult, jsSqrtRatio);
+                uint160 resultsDiff = gtResult - ltResult;
+
+                // assert solc/js result is at most off by 1/100th of a bip (aka one pip)
+                assertEq(resultsDiff * ONE_PIP / jsSqrtRatio, 0);
             }
         }
     }
