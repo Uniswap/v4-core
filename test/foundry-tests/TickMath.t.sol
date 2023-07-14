@@ -195,18 +195,18 @@ contract TickMathTestTest is Test {
                 }
             }
 
-          runJsInputs[4] = jsParameters;
-          bytes memory jsResult = vm.ffi(runJsInputs);
-          int24[] memory jsTicks = abi.decode(jsResult, (int24[]));
+            runJsInputs[4] = jsParameters;
+            bytes memory jsResult = vm.ffi(runJsInputs);
+            int24[] memory jsTicks = abi.decode(jsResult, (int24[]));
 
-          for (uint256 i = 0; i < jsTicks.length; i++) {
-              int24 jsTick = jsTicks[i];
-              int24 solTick = getTickAtSqrtRatioFuzzResults[i];
+            for (uint256 i = 0; i < jsTicks.length; i++) {
+                int24 jsTick = jsTicks[i];
+                int24 solTick = getTickAtSqrtRatioFuzzResults[i];
 
-              (int24 gtResult, int24 ltResult) = jsTick > solTick ? (jsTick, solTick) : (solTick, jsTick);
-              int24 resultsDiff = gtResult - ltResult;
-              assertLt(resultsDiff, 2);
-          }
+                (int24 gtResult, int24 ltResult) = jsTick > solTick ? (jsTick, solTick) : (solTick, jsTick);
+                int24 resultsDiff = gtResult - ltResult;
+                assertLt(resultsDiff, 2);
+            }
         }
     }
 }
