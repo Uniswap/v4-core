@@ -1,6 +1,5 @@
 pragma solidity ^0.8.20;
 
-import "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {TickMathTest} from "../../contracts/test/TickMathTest.sol";
@@ -30,17 +29,17 @@ contract TickMathTestTest is Test {
 
     function test_MIN_TICK_equalsNegativeMAX_TICK() public {
         // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
+        int24 minTick = tickMath.MIN_TICK();
+        assertEq(minTick, tickMath.MAX_TICK() * -1);
+        assertEq(minTick, MIN_TICK);
+    }
+
+    function test_MAX_TICK_equalsNegativeMIX_TICK() public {
+        // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
         // this test is redundant with the above MIN_TICK test
         int24 maxTick = tickMath.MAX_TICK();
         assertEq(maxTick, tickMath.MIN_TICK() * -1);
         assertEq(maxTick, MAX_TICK);
-    }
-
-    function test_MAX_TICK_equalsNegativeMIN_TICK() public {
-        // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
-        int24 minTick = tickMath.MIN_TICK();
-        assertEq(minTick, tickMath.MAX_TICK() * -1);
-        assertEq(minTick, MIN_TICK);
     }
 
     function test_getSqrtRatioAtTick_throwsForTooLow() public {
@@ -80,9 +79,9 @@ contract TickMathTestTest is Test {
 
     function test_getSqrtRatioAtTick_isGreaterThanJSImplMaxTick() public {
         // sqrt(2 ** 127) * 2 ** 96
-        uint160 jsMinSqrtRatio = 1033437718471923706666374484006904511252097097914;
-        uint160 solMinSqrtRatio = tickMath.getSqrtRatioAtTick(MAX_TICK);
-        assertGt(solMinSqrtRatio, jsMinSqrtRatio);
+        uint160 jsMaxSqrtRatio = 1033437718471923706666374484006904511252097097914;
+        uint160 solMaxSqrtRatio = tickMath.getSqrtRatioAtTick(MAX_TICK);
+        assertGt(solMaxSqrtRatio, jsMaxSqrtRatio);
     }
 
     function test_getTickAtSqrtRatio_throwsForTooLow() public {
@@ -129,7 +128,7 @@ contract TickMathTestTest is Test {
             // test negative and positive tick
             for (uint256 i = 0; i < 2; i++) {
                 tick = tick * -1;
-                if (tick != -50) jsParameters = string(abi.encodePacked(jsParameters, ","));
+                if (tick != -50) jsParameters = string(abi.encodePacked(jsParameters, ",")); // do not leave comma in front of first number
                 // add tick to javascript parameters to be calulated inside script
                 jsParameters = string(abi.encodePacked(jsParameters, vm.toString(int256(tick))));
                 // track solidity result for tick
@@ -167,7 +166,7 @@ contract TickMathTestTest is Test {
         uint160 sqrtRatio = MIN_SQRT_RATIO;
         unchecked {
             while (sqrtRatio < sqrtRatio * 16) {
-                if (sqrtRatio != MIN_SQRT_RATIO) jsParameters = string(abi.encodePacked(jsParameters, ","));
+                if (sqrtRatio != MIN_SQRT_RATIO) jsParameters = string(abi.encodePacked(jsParameters, ",")); // do not leave comma in front of first number
                 // add tick to javascript parameters to be calulated inside script
                 jsParameters = string(abi.encodePacked(jsParameters, vm.toString(sqrtRatio)));
                 // track solidity result for sqrtRatio
