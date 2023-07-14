@@ -18,11 +18,14 @@ contract TickMathTestTest is Test {
     uint256 constant ONE_PIP = 1e6;
 
     uint160[] getSqrtRatioAtTickFuzzResults;
+    int24[] getTickAtSqrtRatioFuzzResults;
 
     TickMathTest tickMath;
 
     function setUp() public {
         tickMath = new TickMathTest();
+        delete getSqrtRatioAtTickFuzzResults;
+        delete getTickAtSqrtRatioFuzzResults;
     }
 
     function test_MIN_TICK_equalsNegativeMAX_TICK() public {
@@ -136,7 +139,9 @@ contract TickMathTestTest is Test {
                 for (uint256 i = 0; i < 2; i++) {
                     tick = tick * -1;
                     if (tick != -50) jsParameters = string(abi.encodePacked(jsParameters, ","));
+                    // add tick to javascript parameters to be calulated inside script
                     jsParameters = string(abi.encodePacked(jsParameters, vm.toString(int256(tick))));
+                    // track solidity result for tick
                     getSqrtRatioAtTickFuzzResults.push(tickMath.getSqrtRatioAtTick(tick));
                 }
                 tick = tick * 2;
@@ -169,6 +174,7 @@ contract TickMathTestTest is Test {
 
         // only run on ci since fuzzing with javascript is SLOW
         if (keccak256(abi.encode(ciEnvVar)) == keccak256(abi.encode("ci"))) {
+            string memory jsParameters = "";
             string[] memory runJsInputs = new string[](5);
 
             // build ffi command string
@@ -180,19 +186,27 @@ contract TickMathTestTest is Test {
             uint160 sqrtRatio = MIN_SQRT_RATIO;
             unchecked {
                 while (sqrtRatio < sqrtRatio * 16) {
-                    runJsInputs[4] = vm.toString(sqrtRatio);
-
-                    bytes memory jsResult = vm.ffi(runJsInputs);
-                    int24 jsTick = int24(abi.decode(jsResult, (int256)));
-                    int24 solTick = tickMath.getTickAtSqrtRatio(sqrtRatio);
-
-                    (int24 gtResult, int24 ltResult) = jsTick > solTick ? (jsTick, solTick) : (solTick, jsTick);
-                    int24 resultsDiff = gtResult - ltResult;
-                    assertLt(resultsDiff, 2);
-
+                    if (sqrtRatio != MIN_SQRT_RATIO) jsParameters = string(abi.encodePacked(jsParameters, ","));
+                    // add tick to javascript parameters to be calulated inside script
+                    jsParameters = string(abi.encodePacked(jsParameters, vm.toString(sqrtRatio)));
+                    // track solidity result for sqrtRatio
+                    getTickAtSqrtRatioFuzzResults.push(tickMath.getTickAtSqrtRatio(sqrtRatio));
                     sqrtRatio = sqrtRatio * 16;
                 }
             }
+
+          runJsInputs[4] = jsParameters;
+          bytes memory jsResult = vm.ffi(runJsInputs);
+          int24[] memory jsTicks = abi.decode(jsResult, (int24[]));
+
+          for (uint256 i = 0; i < jsTicks.length; i++) {
+              int24 jsTick = jsTicks[i];
+              int24 solTick = getTickAtSqrtRatioFuzzResults[i];
+
+              (int24 gtResult, int24 ltResult) = jsTick > solTick ? (jsTick, solTick) : (solTick, jsTick);
+              int24 resultsDiff = gtResult - ltResult;
+              assertLt(resultsDiff, 2);
+          }
         }
     }
 }
