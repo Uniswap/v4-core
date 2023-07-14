@@ -23,8 +23,6 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, toBalanceDelta, noOpToBalanceDelta} from "./types/BalanceDelta.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 
-import "forge-std/console2.sol";
-
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Receiver {
     using PoolIdLibrary for PoolKey;
@@ -227,6 +225,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
             if (key.hooks.isNoOp()) {
                 delta = noOpToBalanceDelta(hookReturn);
                 _accountNoOp(key, delta);
+
                 return delta;
             }
             if (bytes4(hookReturn) != IHooks.beforeModifyPosition.selector) {
@@ -283,7 +282,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes32 hookReturn;
             if (key.hooks.isNoOp()) {
-                console2.log("hi it's a noop");
                 Pool.Slot0 memory slot0 = pools[key.toId()].slot0;
                 // NOTE: a lower protocol fee is recommended, since we're taking a portion of the entire input amount
                 uint8 protocolFee = params.zeroForOne ? (slot0.protocolSwapFee % 16) : (slot0.protocolSwapFee >> 4);
@@ -294,12 +292,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
                 }
                 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
                 delta = noOpToBalanceDelta(hookReturn);
-                console2.logInt(delta.amount0());
-                console2.logInt(delta.amount1());
                 _accountNoOp(key, delta);
 
                 if (params.amountSpecified < 0 && protocolFee > 0) {
-                    // NOTE: a lower protocol fee is recommended, since we're taking a portion of the entire input amount
                     uint256 feeFromAmount;
                     if (params.zeroForOne) {
                         feeFromAmount = uint256(uint128(delta.amount0())) / protocolFee;

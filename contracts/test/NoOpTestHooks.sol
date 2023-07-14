@@ -146,7 +146,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallba
         return bytes4(0);
     }
 
-    function beforeSwap(address caller, PoolKey calldata, IPoolManager.SwapParams calldata)
+    function beforeSwap(address caller, PoolKey calldata, IPoolManager.SwapParams calldata params)
         external
         override
         returns (bytes32)
@@ -154,7 +154,7 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallba
         // 0xAAAAAAAA_00000............. padding of bytes4
         // 112 bits per amount in BalanceDelta, 224 bits total since 256 - 32 = 224, as bytes4 takes up 32 bits
         bytes32 selector = IHooks.beforeSwap.selector;
-        int112 amt0 = 1 ether;
+        int112 amt0 = int112(params.amountSpecified);
         int112 amt1 = -1 ether;
 
         /// @solidity memory-safe-assembly
