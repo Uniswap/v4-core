@@ -29,7 +29,6 @@ export function expandTo18Decimals(n: number): BigNumber {
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 })
 
 // returns the sqrt price as a 64x96
-sqrt(price)
 export function encodeSqrtPriceX96(reserve1: BigNumberish, reserve0: BigNumberish): BigNumber {
   return BigNumber.from(
     new bn(reserve1.toString())
