@@ -10,12 +10,32 @@ contract TickMathTestTest is Test {
     int24 constant MIN_TICK = -887272;
     int24 constant MAX_TICK = -MIN_TICK;
 
+    uint160 constant MIN_SQRT_RATIO = 4295128739;
+    uint160 constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
+
+    uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
+
     uint256 constant ONE_PIP = 1e6;
 
     TickMathTest tickMath;
 
     function setUp() public {
         tickMath = new TickMathTest();
+    }
+
+    function test_MIN_TICK_equalsNegativeMAX_TICK() public {
+        // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
+        // this test is redundant with the above MIN_TICK test
+        int24 maxTick = tickMath.MAX_TICK();
+        assertEq(maxTick, tickMath.MIN_TICK() * -1);
+        assertEq(maxTick, MAX_TICK);
+    }
+
+    function test_MAX_TICK_equalsNegativeMIN_TICK() public {
+        // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
+        int24 minTick = tickMath.MIN_TICK();
+        assertEq(minTick, tickMath.MAX_TICK() * -1);
+        assertEq(minTick, MIN_TICK);
     }
 
     function test_getSqrtRatioAtTick_throwsForTooLow() public {
@@ -29,6 +49,7 @@ contract TickMathTestTest is Test {
     }
 
     function test_getSqrtRatioAtTick_isValidMinTick() public {
+        assertEq(tickMath.getSqrtRatioAtTick(MIN_TICK), tickMath.MIN_SQRT_RATIO());
         assertEq(tickMath.getSqrtRatioAtTick(MIN_TICK), 4295128739);
     }
 
@@ -37,6 +58,7 @@ contract TickMathTestTest is Test {
     }
 
     function test_getSqrtRatioAtTick_isValidMaxTick() public {
+        assertEq(tickMath.getSqrtRatioAtTick(MAX_TICK), tickMath.MAX_SQRT_RATIO());
         assertEq(tickMath.getSqrtRatioAtTick(MAX_TICK), 1461446703485210103287273052203988822378723970342);
     }
 
@@ -58,7 +80,33 @@ contract TickMathTestTest is Test {
         assertGt(solMinSqrtRatio, jsMinSqrtRatio);
     }
 
-    function testGetSqrtRatioAtTickMatchesJavaScriptImplByOneHundrethOfABip() public {
+    function test_getTickAtSqrtRatio_throwsForTooLow() public {
+        vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
+        tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO - 1);
+    }
+
+    function test_getTickAtSqrtRatio_throwsForTooHigh() public {
+        vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
+        tickMath.getTickAtSqrtRatio(MAX_SQRT_RATIO + 1);
+    }
+
+    function test_getTickAtSqrtRatio_isValidMinSqrtRatio() public {
+        assertEq(tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO), MIN_TICK);
+    }
+
+    function test_getTickAtSqrtRatio_isValidMinSqrtRatioPlusOne() public {
+        assertEq(tickMath.getTickAtSqrtRatio(4295343490), MIN_TICK + 1);
+    }
+
+    function test_getTickAtSqrtRatio_isValidRatioClosestToMaxTick() public {
+        assertEq(tickMath.getTickAtSqrtRatio(MAX_SQRT_RATIO - 1), MAX_TICK - 1);
+    }
+
+    function test_getTickAtSqrtRatio_isValidMaxSqrtRatioMinusOne() public {
+        assertEq(tickMath.getTickAtSqrtRatio(1461373636630004318706518188784493106690254656249), MAX_TICK - 1);
+    }
+
+    function test_getSqrtRatioAtTick_matchesJavaScriptImplByOneHundrethOfABip() public {
         string memory ciEnvVar;
         try vm.envString("FOUNDRY_PROFILE") returns (string memory result) {
             ciEnvVar = result;
@@ -68,15 +116,14 @@ contract TickMathTestTest is Test {
 
         // only run on ci since fuzzing with javascript is SLOW
         if (keccak256(abi.encode(ciEnvVar)) == keccak256(abi.encode("ci"))) {
-            string[] memory runJsInputs = new string[](7);
+            string[] memory runJsInputs = new string[](6);
 
             // build ffi command string
-            runJsInputs[0] = "yarn";
-            runJsInputs[1] = "--cwd";
-            runJsInputs[2] = "js-scripts/";
-            runJsInputs[3] = "--silent";
-            runJsInputs[4] = "run";
-            runJsInputs[5] = "forge-test-getSqrtRatioAtTick";
+            runJsInputs[0] = "npm";
+            runJsInputs[1] = "--silent";
+            runJsInputs[2] = "run";
+            runJsInputs[3] = "forge-test-getSqrtRatioAtTick";
+            runJsInputs[4] = "--";
 
             int24 tick = 50;
 
@@ -86,7 +133,7 @@ contract TickMathTestTest is Test {
                 // test negative and positive tick
                 for (uint256 i = 0; i < 2; i++) {
                     tick = tick * -1;
-                    runJsInputs[6] = vm.toString(int256(tick));
+                    runJsInputs[5] = vm.toString(int256(tick));
 
                     bytes memory jsResult = vm.ffi(runJsInputs);
                     uint160 jsSqrtRatio = uint160(abi.decode(jsResult, (uint256)));
@@ -101,6 +148,43 @@ contract TickMathTestTest is Test {
                 }
 
                 tick = tick * 2;
+            }
+        }
+    }
+
+    function test_getTickAtSqrtRatio_matchesJavascriptImplWithin1() public {
+        string memory ciEnvVar;
+        try vm.envString("FOUNDRY_PROFILE") returns (string memory result) {
+            ciEnvVar = result;
+        } catch {
+            ciEnvVar = "";
+        }
+
+        // only run on ci since fuzzing with javascript is SLOW
+        if (keccak256(abi.encode(ciEnvVar)) == keccak256(abi.encode("ci"))) {
+            string[] memory runJsInputs = new string[](5);
+
+            // build ffi command string
+            runJsInputs[0] = "npm";
+            runJsInputs[1] = "--silent";
+            runJsInputs[2] = "run";
+            runJsInputs[3] = "forge-test-getTickAtSqrtRatio";
+
+            uint160 sqrtRatio = MIN_SQRT_RATIO;
+            unchecked {
+                while (sqrtRatio < sqrtRatio * 16) {
+                    runJsInputs[4] = vm.toString(sqrtRatio);
+
+                    bytes memory jsResult = vm.ffi(runJsInputs);
+                    int24 jsTick = int24(abi.decode(jsResult, (int256)));
+                    int24 solTick = tickMath.getTickAtSqrtRatio(sqrtRatio);
+
+                    (int24 gtResult, int24 ltResult) = jsTick > solTick ? (jsTick, solTick) : (solTick, jsTick);
+                    int24 resultsDiff = gtResult - ltResult;
+                    assertLt(resultsDiff, 2);
+
+                    sqrtRatio = sqrtRatio * 16;
+                }
             }
         }
     }
