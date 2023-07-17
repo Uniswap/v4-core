@@ -154,8 +154,15 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallba
         // 0xAAAAAAAA_00000............. padding of bytes4
         // 112 bits per amount in BalanceDelta, 224 bits total since 256 - 32 = 224, as bytes4 takes up 32 bits
         bytes32 selector = IHooks.beforeSwap.selector;
-        int112 amt0 = int112(params.amountSpecified);
-        int112 amt1 = -1 ether;
+        int112 amt0;
+        int112 amt1;
+        if (params.zeroForOne) {
+            amt0 = params.amountSpecified > 0 ? int112(params.amountSpecified) : int112(1 ether);
+            amt1 = params.amountSpecified > 0 ? -1 ether : int112(params.amountSpecified);
+        } else {
+            amt0 = params.amountSpecified > 0 ? -1 ether : int112(params.amountSpecified);
+            amt1 = params.amountSpecified > 0 ? int112(params.amountSpecified) : int112(1 ether);
+        }
 
         /// @solidity memory-safe-assembly
         assembly {
@@ -163,7 +170,10 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallba
             selector :=
                 or(
                     selector,
-                    or(and(0x00000000ffffffffffffffffffffffffffff0000000000000000000000000000, shl(112, amt1)), amt0)
+                    or(
+                        and(0x00000000ffffffffffffffffffffffffffff0000000000000000000000000000, shl(112, amt1)),
+                        and(0x000000000000000000000000000000000000ffffffffffffffffffffffffffff, amt0)
+                    )
                 )
         }
         return selector;
@@ -195,7 +205,10 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallba
             selector :=
                 or(
                     selector,
-                    or(and(0x00000000ffffffffffffffffffffffffffff0000000000000000000000000000, shl(112, amt1)), amt0)
+                    or(
+                        and(0x00000000ffffffffffffffffffffffffffff0000000000000000000000000000, shl(112, amt1)),
+                        and(0x000000000000000000000000000000000000ffffffffffffffffffffffffffff, amt0)
+                    )
                 )
         }
         return selector;

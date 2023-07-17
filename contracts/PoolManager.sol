@@ -224,7 +224,27 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
             bytes32 hookReturn = key.hooks.beforeModifyPosition(msg.sender, key, params);
             if (key.hooks.isNoOp()) {
                 delta = noOpToBalanceDelta(hookReturn);
-                _accountNoOp(key, delta);
+                uint128 fees0;
+                uint128 fees1;
+                Pool.Slot0 memory slot0 = pools[key.toId()].slot0;
+                if (params.liquidityDelta < 0 && slot0.hookWithdrawFee > 0) {
+                    uint8 protocolFee0 = slot0.protocolWithdrawFee % 16;
+                    uint8 protocolFee1 = slot0.protocolWithdrawFee >> 4;
+                    // don't incorporate the hook fee, we only consider protocol fee on NoOp
+                    if (delta.amount0() < 0) {
+                        fees0 = uint128(-delta.amount0()) / protocolFee0;
+                        _accountDelta(key.currency0, fees0.toInt128());
+                        protocolFeesAccrued[key.currency0] += fees0;
+                    }
+                    if (delta.amount1() < 0) {
+                        fees1 = uint128(-delta.amount1()) / protocolFee1;
+                        _accountDelta(key.currency1, fees1.toInt128());
+                        protocolFeesAccrued[key.currency1] += fees1;
+                    }
+                }
+
+                BalanceDelta noOpDelta = delta - toBalanceDelta(fees0.toInt128(), fees1.toInt128());
+                _accountNoOp(key, noOpDelta); // we still burn the original delta amount
 
                 return delta;
             }
@@ -285,23 +305,29 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
                 Pool.Slot0 memory slot0 = pools[key.toId()].slot0;
                 // NOTE: a lower protocol fee is recommended, since we're taking a portion of the entire input amount
                 uint8 protocolFee = params.zeroForOne ? (slot0.protocolSwapFee % 16) : (slot0.protocolSwapFee >> 4);
+                uint256 feeFromAmount;
                 if (params.amountSpecified > 0 && protocolFee > 0) {
-                    uint256 feeFromAmount = uint256(params.amountSpecified) / protocolFee;
+                    feeFromAmount = uint256(params.amountSpecified) / protocolFee;
                     params.amountSpecified = params.amountSpecified - int256(feeFromAmount);
                     protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
+                    _accountDelta(params.zeroForOne ? key.currency0 : key.currency1, feeFromAmount.toInt128());
                 }
                 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
                 delta = noOpToBalanceDelta(hookReturn);
                 _accountNoOp(key, delta);
+                delta = params.zeroForOne
+                    ? toBalanceDelta(delta.amount0() + feeFromAmount.toInt128(), delta.amount1())
+                    : toBalanceDelta(delta.amount0(), delta.amount1() + feeFromAmount.toInt128());
 
                 if (params.amountSpecified < 0 && protocolFee > 0) {
-                    uint256 feeFromAmount;
                     if (params.zeroForOne) {
                         feeFromAmount = uint256(uint128(delta.amount0())) / protocolFee;
-                        delta = toBalanceDelta(delta.amount0() + int128(int256(feeFromAmount)), delta.amount1());
+                        delta = toBalanceDelta(delta.amount0() + feeFromAmount.toInt128(), delta.amount1());
+                        _accountDelta(key.currency0, feeFromAmount.toInt128());
                     } else {
                         feeFromAmount = uint256(uint128(delta.amount1())) / protocolFee;
-                        delta = toBalanceDelta(delta.amount0(), delta.amount1() + int128(int256(feeFromAmount)));
+                        delta = toBalanceDelta(delta.amount0(), delta.amount1() + feeFromAmount.toInt128());
+                        _accountDelta(key.currency1, feeFromAmount.toInt128());
                     }
                     protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
                 }

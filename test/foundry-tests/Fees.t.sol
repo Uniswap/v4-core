@@ -18,6 +18,7 @@ import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTes
 import {Currency} from "../../contracts/types/Currency.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
+import {NoOpTestHooks} from "../../contracts/test/NoOpTestHooks.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
@@ -39,6 +40,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     ProtocolFeeControllerTest protocolFeeController;
 
     MockHooks hook;
+    NoOpTestHooks noOpHook;
 
     // key0 hook enabled fee on swap
     PoolKey key0;
@@ -48,6 +50,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     PoolKey key2;
     // key3 no hook
     PoolKey key3;
+    // noOp key
+    PoolKey keyNoOp;
 
     bool _zeroForOne = true;
     bool _oneForZero = false;
@@ -63,13 +67,21 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         MockERC20(Currency.unwrap(currency0)).mint(address(this), 100 ether);
         MockERC20(Currency.unwrap(currency1)).mint(address(this), 100 ether);
 
-        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 10 ether);
-        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 100 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 100 ether);
 
         address hookAddr = address(99); // can't be a zero address, but does not have to have any other hook flags specified
         MockHooks impl = new MockHooks();
         vm.etch(hookAddr, address(impl).code);
         hook = MockHooks(hookAddr);
+
+        address noOpHookAddr = address(
+            uint160(
+                Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG | Hooks.NO_OP_FLAG
+            )
+        );
+        vm.etch(noOpHookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
+        noOpHook = NoOpTestHooks(noOpHookAddr);
 
         key0 = PoolKey({
             currency0: currency0,
@@ -103,10 +115,19 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 60
         });
 
+        keyNoOp = PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: FeeLibrary.HOOK_WITHDRAW_FEE_FLAG | uint24(3000),
+            hooks: noOpHook,
+            tickSpacing: 60
+        });
+
         manager.initialize(key0, SQRT_RATIO_1_1);
         manager.initialize(key1, SQRT_RATIO_1_1);
         manager.initialize(key2, SQRT_RATIO_1_1);
         manager.initialize(key3, SQRT_RATIO_1_1);
+        manager.initialize(keyNoOp, SQRT_RATIO_1_1);
     }
 
     function testInitializeFailsNoHook() public {
@@ -498,34 +519,18 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     }
 
     function testSwapWithNoOpAndProtocolSwapFee() public {
-        address payable hookAddr = payable(
-            address(
-                uint160(
-                    Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG
-                        | Hooks.NO_OP_FLAG
-                )
-            )
-        );
-
-        vm.etch(hookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
-
-        PoolKey memory keyNoOp =
-            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(hookAddr), tickSpacing: 10});
-
-        manager.initialize(keyNoOp, SQRT_RATIO_1_1);
-
-        uint8 protocolFee = _computeFee(_oneForZero, 4) | _computeFee(_zeroForOne, 4); // 25% fees for both directions
-        protocolFeeController.setSwapFeeForPool(keyNoOp.toId(), protocolFee);
+        uint8 protocolSwapFee = _computeFee(_oneForZero, 4) | _computeFee(_zeroForOne, 4); // 25% fees for both directions
+        protocolFeeController.setSwapFeeForPool(keyNoOp.toId(), protocolSwapFee);
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
         manager.setProtocolFees(keyNoOp);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(keyNoOp.toId());
-        assertEq(slot0.protocolSwapFee, protocolFee);
+        assertEq(slot0.protocolSwapFee, protocolSwapFee);
         assertEq(slot0.protocolWithdrawFee, 0);
 
-        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 10e18);
         modifyPositionRouter.modifyPosition(keyNoOp, params);
-        // 0 for 1 swap
+        // 0 for 1 swap, exact input
         MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
             keyNoOp,
@@ -533,9 +538,85 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
             PoolSwapTest.TestSettings(true, true)
         );
 
-        assertEq(manager.protocolFeesAccrued(currency1), 0); // No protocol fee was accrued on swap
-        assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether); // No protocol fee was accrued on swap
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether);
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
+
+        // 1 for 0 swap, exact input
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
+        swapRouter.swap(
+            keyNoOp,
+            IPoolManager.SwapParams(false, 1 ether, TickMath.MAX_SQRT_RATIO - 1),
+            PoolSwapTest.TestSettings(true, true)
+        );
+
+        assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether);
+        assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether);
         assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency1), 0);
+
+        // 0 for 1 swap, exact output
+        MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), type(uint256).max);
+        swapRouter.swap(
+            keyNoOp,
+            IPoolManager.SwapParams(true, -1 ether, TickMath.MAX_SQRT_RATIO - 1),
+            PoolSwapTest.TestSettings(true, true)
+        );
+
+        assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether);
+        assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether + 0.25 ether);
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
+
+        // 1 for 0 swap, exact output
+        MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), type(uint256).max);
+        swapRouter.swap(
+            keyNoOp,
+            IPoolManager.SwapParams(false, -1 ether, TickMath.MAX_SQRT_RATIO - 1),
+            PoolSwapTest.TestSettings(true, true)
+        );
+
+        assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether + 0.25 ether);
+        assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether + 0.25 ether);
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
+    }
+
+    function testModifyPositionWithNoOpAndProtocolWithdrawFee() public {
+        uint8 protocolWithdrawFee = _computeFee(_oneForZero, 4) | _computeFee(_zeroForOne, 4); // 25% fees for both directions
+
+        protocolFeeController.setWithdrawFeeForPool(keyNoOp.toId(), protocolWithdrawFee);
+        manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
+        manager.setProtocolFees(keyNoOp);
+
+        uint8 hookWithdrawFee = _computeFee(_oneForZero, 4) | _computeFee(_zeroForOne, 4); // max fees on both amounts
+
+        noOpHook.setWithdrawFee(keyNoOp, hookWithdrawFee);
+        manager.setHookFees(keyNoOp);
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(keyNoOp.toId());
+
+        assertEq(slot0.hookWithdrawFee, hookWithdrawFee);
+        assertEq(slot0.protocolWithdrawFee, protocolWithdrawFee);
+
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
+        modifyPositionRouter.modifyPosition(keyNoOp, params);
+
+        // 0 for 1 swap, exact input, gain no fees
+        MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), type(uint256).max);
+        swapRouter.swap(
+            keyNoOp,
+            IPoolManager.SwapParams(true, 1 ether, TickMath.MAX_SQRT_RATIO - 1),
+            PoolSwapTest.TestSettings(true, true)
+        );
+
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(manager.protocolFeesAccrued(currency0), 0 ether);
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
+
+        modifyPositionRouter.modifyPosition(keyNoOp, IPoolManager.ModifyPositionParams(-120, 120, -1 ether));
+
+        assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether); // No protocol fee was accrued on withdraw
+        assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether); // No protocol fee was accrued on withdraw
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency1), 0); // Same amount of fees for hook.
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0); // Same amount of fees for hook.
     }
 
     function testCollectFees() public {
