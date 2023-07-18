@@ -100,5 +100,4 @@ contract FullMathTestTest is Test {
     function test_mulDivRoundingUp_accurateWithPhantomOverflowAndRepeatingDecimal() public {
         assertEq(fullMath.mulDivRoundingUp(Q128, 1000 * Q128, 3000 * Q128), Q128 / 3 + 1);
     }
-
 }
