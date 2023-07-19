@@ -5,28 +5,31 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {IHooks} from "../../contracts/interfaces/IHooks.sol";
 import {Hooks} from "../../contracts/libraries/Hooks.sol";
+import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
+import {IFees} from "../../contracts/interfaces/IFees.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
-import {PoolIdLibrary} from "../../contracts/libraries/PoolId.sol";
+import {PoolIdLibrary} from "../../contracts/types/PoolId.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
-import {Currency} from "../../contracts/libraries/CurrencyLibrary.sol";
+import {Currency} from "../../contracts/types/Currency.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
 import {IProtocolFeeController} from "../../contracts/interfaces/IProtocolFeeController.sol";
-import {Fees} from "../../contracts/libraries/Fees.sol";
+import {Fees} from "../../contracts/Fees.sol";
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
+import {PoolKey} from "../../contracts/types/PoolKey.sol";
 
 contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
     using Pool for Pool.State;
-    using PoolIdLibrary for IPoolManager.PoolKey;
+    using PoolIdLibrary for PoolKey;
 
     Pool.State state;
     PoolManager manager;
@@ -38,13 +41,13 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     MockHooks hook;
 
     // key0 hook enabled fee on swap
-    IPoolManager.PoolKey key0;
+    PoolKey key0;
     // key1 hook enabled fee on withdraw
-    IPoolManager.PoolKey key1;
+    PoolKey key1;
     // key2 hook enabled fee on swap and withdraw
-    IPoolManager.PoolKey key2;
+    PoolKey key2;
     // key3 no hook
-    IPoolManager.PoolKey key3;
+    PoolKey key3;
 
     bool _zeroForOne = true;
     bool _oneForZero = false;
@@ -68,31 +71,31 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         hook = MockHooks(hookAddr);
 
-        key0 = IPoolManager.PoolKey({
+        key0 = PoolKey({
             currency0: currency0,
             currency1: currency1,
-            fee: Fees.HOOK_SWAP_FEE_FLAG | uint24(3000),
+            fee: FeeLibrary.HOOK_SWAP_FEE_FLAG | uint24(3000),
             hooks: hook,
             tickSpacing: 60
         });
 
-        key1 = IPoolManager.PoolKey({
+        key1 = PoolKey({
             currency0: currency0,
             currency1: currency1,
-            fee: Fees.HOOK_WITHDRAW_FEE_FLAG | uint24(3000),
+            fee: FeeLibrary.HOOK_WITHDRAW_FEE_FLAG | uint24(3000),
             hooks: hook,
             tickSpacing: 60
         });
 
-        key2 = IPoolManager.PoolKey({
+        key2 = PoolKey({
             currency0: currency0,
             currency1: currency1,
-            fee: Fees.HOOK_WITHDRAW_FEE_FLAG | Fees.HOOK_SWAP_FEE_FLAG | uint24(3000),
+            fee: FeeLibrary.HOOK_WITHDRAW_FEE_FLAG | FeeLibrary.HOOK_SWAP_FEE_FLAG | uint24(3000),
             hooks: hook,
             tickSpacing: 60
         });
 
-        key3 = IPoolManager.PoolKey({
+        key3 = PoolKey({
             currency0: currency0,
             currency1: currency1,
             fee: uint24(3000),
@@ -107,10 +110,10 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     }
 
     function testInitializeFailsNoHook() public {
-        IPoolManager.PoolKey memory key4 = IPoolManager.PoolKey({
+        PoolKey memory key4 = PoolKey({
             currency0: currency0,
             currency1: currency1,
-            fee: Fees.HOOK_WITHDRAW_FEE_FLAG | Fees.HOOK_SWAP_FEE_FLAG | uint24(3000),
+            fee: FeeLibrary.HOOK_WITHDRAW_FEE_FLAG | FeeLibrary.HOOK_SWAP_FEE_FLAG | uint24(3000),
             hooks: IHooks(address(0)),
             tickSpacing: 60
         });
@@ -118,10 +121,10 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
         manager.initialize(key4, SQRT_RATIO_1_1);
 
-        key4 = IPoolManager.PoolKey({
+        key4 = PoolKey({
             currency0: currency0,
             currency1: currency1,
-            fee: Fees.DYNAMIC_FEE_FLAG,
+            fee: FeeLibrary.DYNAMIC_FEE_FLAG,
             hooks: IHooks(address(0)),
             tickSpacing: 60
         });
@@ -185,7 +188,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         if (protocolSwapFee0 != 0 && protocolSwapFee0 < 4 || protocolSwapFee1 != 0 && protocolSwapFee1 < 4) {
             protocolSwapFee = 0;
-            vm.expectRevert(IPoolManager.FeeTooLarge.selector);
+            vm.expectRevert(IFees.FeeTooLarge.selector);
         }
         manager.setProtocolFees(key0);
 
@@ -228,7 +231,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         ) {
             protocolSwapFee = 0;
             protocolWithdrawFee = 0;
-            vm.expectRevert(IPoolManager.FeeTooLarge.selector);
+            vm.expectRevert(IFees.FeeTooLarge.selector);
         }
         manager.setProtocolFees(key2);
 

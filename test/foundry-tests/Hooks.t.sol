@@ -5,25 +5,27 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Hooks} from "../../contracts/libraries/Hooks.sol";
+import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {TestERC20} from "../../contracts/test/TestERC20.sol";
 import {IHooks} from "../../contracts/interfaces/IHooks.sol";
-import {Currency} from "../../contracts/libraries/CurrencyLibrary.sol";
+import {Currency} from "../../contracts/types/Currency.sol";
 import {IERC20Minimal} from "../../contracts/interfaces/external/IERC20Minimal.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {Fees} from "../../contracts/libraries/Fees.sol";
-import {PoolId} from "../../contracts/libraries/PoolId.sol";
+import {Fees} from "../../contracts/Fees.sol";
+import {PoolId} from "../../contracts/types/PoolId.sol";
+import {PoolKey} from "../../contracts/types/PoolKey.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
     MockHooks mockHooks;
     PoolManager manager;
-    IPoolManager.PoolKey key;
+    PoolKey key;
     PoolModifyPositionTest modifyPositionRouter;
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
@@ -47,7 +49,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testBeforeInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
         TestERC20[] memory tokens = Deployers.deployTokens(2, 2 ** 255);
-        IPoolManager.PoolKey memory _key = IPoolManager.PoolKey(
+        PoolKey memory _key = PoolKey(
             Currency.wrap(address(tokens[0])), Currency.wrap(address(tokens[1])), 3000, int24(3000 / 100 * 2), mockHooks
         );
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
@@ -57,7 +59,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testAfterInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
         TestERC20[] memory tokens = Deployers.deployTokens(2, 2 ** 255);
-        IPoolManager.PoolKey memory _key = IPoolManager.PoolKey(
+        PoolKey memory _key = PoolKey(
             Currency.wrap(address(tokens[0])), Currency.wrap(address(tokens[1])), 3000, int24(3000 / 100 * 2), mockHooks
         );
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
@@ -600,10 +602,12 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testIsValidIfDynamicFee() public {
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), Fees.DYNAMIC_FEE_FLAG));
+        assertTrue(
+            Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), FeeLibrary.DYNAMIC_FEE_FLAG)
+        );
         assertTrue(
             Hooks.isValidHookAddress(
-                IHooks(0x0000000000000000000000000000000000000001), Fees.DYNAMIC_FEE_FLAG | uint24(3000)
+                IHooks(0x0000000000000000000000000000000000000001), FeeLibrary.DYNAMIC_FEE_FLAG | uint24(3000)
             )
         );
         assertTrue(Hooks.isValidHookAddress(IHooks(0x8000000000000000000000000000000000000000), 3000));
