@@ -47,7 +47,8 @@ contract GracefulReturnTestHooks is IHooks, IHookFeeManager {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                noOp: true
             })
         );
 

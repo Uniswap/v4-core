@@ -42,7 +42,8 @@ contract NoOpTestHooks is IHooks, IHookFeeManager, IERC1155Receiver, ILockCallba
                 beforeSwap: true,
                 afterSwap: false,
                 beforeDonate: true,
-                afterDonate: false
+                afterDonate: false,
+                noOp: true
             })
         );
     }
