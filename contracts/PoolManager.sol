@@ -304,6 +304,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
                 if (params.amountSpecified > 0 && protocolFee > 0) {
                     feeFromAmount = uint256(params.amountSpecified) / protocolFee;
                     params.amountSpecified = params.amountSpecified - int256(feeFromAmount);
+                    _accountDelta(params.zeroForOne ? key.currency0 : key.currency1, feeFromAmount.toInt128());
+                    protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
                 }
                 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
                 delta = noOpToBalanceDelta(hookReturn);
@@ -312,13 +314,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
                     feeFromAmount = (
                         params.zeroForOne ? uint256(uint128(delta.amount0())) : uint256(uint128(delta.amount1()))
                     ) / protocolFee;
+                    _accountDelta(params.zeroForOne ? key.currency0 : key.currency1, feeFromAmount.toInt128());
+                    protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
                 }
-                _accountDelta(params.zeroForOne ? key.currency0 : key.currency1, feeFromAmount.toInt128());
                 delta = params.zeroForOne
                     ? toBalanceDelta(delta.amount0() + feeFromAmount.toInt128(), delta.amount1())
                     : toBalanceDelta(delta.amount0(), delta.amount1() + feeFromAmount.toInt128());
 
-                protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
                 return delta;
             } else {
                 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
