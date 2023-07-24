@@ -64,11 +64,20 @@ library Hooks {
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
         // If the hook NoOps, check that beforeModifyPosition, beforeSwap, and beforeDonate are all set
-        return address(hook) == address(0)
-            ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
-            : (
-                uint160(address(hook)) >= AFTER_DONATE_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
-                    || fee.hasHookWithdrawFee()
+        bool noOpCorrect = true;
+        if (isNoOp(hook)) {
+            noOpCorrect =
+                shouldCallBeforeModifyPosition(hook) && shouldCallBeforeSwap(hook) && shouldCallBeforeDonate(hook);
+        }
+        // If there is no hook contract set, then fee cannot be dynamic and there cannot be a hook fee on swap or withdrawal.
+        return noOpCorrect
+            && (
+                address(hook) == address(0)
+                    ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
+                    : (
+                        uint160(address(hook)) >= AFTER_DONATE_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
+                            || fee.hasHookWithdrawFee()
+                    )
             );
     }
 
