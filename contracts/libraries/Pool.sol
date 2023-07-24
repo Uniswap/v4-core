@@ -288,6 +288,18 @@ library Pool {
         result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
+    function modifyPositionNoOpFees(State storage self, BalanceDelta delta) internal returns (FeeAmounts memory fees) {
+        if (self.slot0.hookWithdrawFee > 0) {
+            // don't incorporate the hook fee, we only consider protocol fee on NoOp
+            if (delta.amount0() < 0) {
+                fees.feeForProtocol0 = uint128(-delta.amount0()) / (self.slot0.protocolWithdrawFee % 16);
+            }
+            if (delta.amount1() < 0) {
+                fees.feeForProtocol1 = uint128(-delta.amount1()) / (self.slot0.protocolWithdrawFee >> 4);
+            }
+        }
+    }
+
     function _calculateExternalFees(State storage self, BalanceDelta result)
         internal
         view

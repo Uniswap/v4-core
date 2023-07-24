@@ -220,31 +220,28 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         onlyByLocker
         returns (BalanceDelta delta)
     {
+        PoolId id = key.toId();
+        Pool.FeeAmounts memory feeAmounts;
+
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes32 hookReturn = key.hooks.beforeModifyPosition(msg.sender, key, params);
             if (key.hooks.isNoOp()) {
-                delta = noOpToBalanceDelta(hookReturn);
-                uint128 fees0;
-                uint128 fees1;
-                Pool.Slot0 memory slot0 = pools[key.toId()].slot0;
-                if (params.liquidityDelta < 0 && slot0.hookWithdrawFee > 0) {
-                    uint8 protocolFee0 = slot0.protocolWithdrawFee % 16;
-                    uint8 protocolFee1 = slot0.protocolWithdrawFee >> 4;
-                    // don't incorporate the hook fee, we only consider protocol fee on NoOp
-                    if (delta.amount0() < 0) {
-                        fees0 = uint128(-delta.amount0()) / protocolFee0;
-                        _accountDelta(key.currency0, fees0.toInt128());
-                        protocolFeesAccrued[key.currency0] += fees0;
-                    }
-                    if (delta.amount1() < 0) {
-                        fees1 = uint128(-delta.amount1()) / protocolFee1;
-                        _accountDelta(key.currency1, fees1.toInt128());
-                        protocolFeesAccrued[key.currency1] += fees1;
+                BalanceDelta hookDelta = noOpToBalanceDelta(hookReturn);
+                if (params.liquidityDelta < 0) {
+                    feeAmounts = pools[id].modifyPositionNoOpFees(hookDelta);
+                    unchecked {
+                        if (feeAmounts.feeForProtocol0 > 0) {
+                            protocolFeesAccrued[key.currency0] += feeAmounts.feeForProtocol0;
+                        }
+                        if (feeAmounts.feeForProtocol1 > 0) {
+                            protocolFeesAccrued[key.currency1] += feeAmounts.feeForProtocol1;
+                        }
                     }
                 }
-
-                BalanceDelta noOpDelta = delta - toBalanceDelta(fees0.toInt128(), fees1.toInt128());
-                _accountNoOp(key, noOpDelta); // we still burn the original delta amount
+                // amount the user can take, without the withdraw fee.
+                delta = hookDelta
+                    + toBalanceDelta(feeAmounts.feeForProtocol0.toInt128(), feeAmounts.feeForProtocol1.toInt128());
+                _accountNoOp(key, delta);
 
                 return delta;
             }
@@ -253,8 +250,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
             }
         }
 
-        PoolId id = key.toId();
-        Pool.FeeAmounts memory feeAmounts;
         (delta, feeAmounts) = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
@@ -299,41 +294,31 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         onlyByLocker
         returns (BalanceDelta delta)
     {
+        PoolId id = key.toId();
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes32 hookReturn;
             if (key.hooks.isNoOp()) {
-                Pool.Slot0 memory slot0 = pools[key.toId()].slot0;
-                uint8 protocolFee = params.zeroForOne ? (slot0.protocolSwapFee % 16) : (slot0.protocolSwapFee >> 4);
                 uint256 feeFromAmount;
-
+                Pool.Slot0 memory slot0 = pools[id].slot0;
+                uint8 protocolFee = params.zeroForOne ? (slot0.protocolSwapFee % 16) : (slot0.protocolSwapFee >> 4);
                 if (params.amountSpecified > 0 && protocolFee > 0) {
                     feeFromAmount = uint256(params.amountSpecified) / protocolFee;
                     params.amountSpecified = params.amountSpecified - int256(feeFromAmount);
-                    _accountDelta(params.zeroForOne ? key.currency0 : key.currency1, feeFromAmount.toInt128());
-                    protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
                 }
-
                 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
                 delta = noOpToBalanceDelta(hookReturn);
                 _accountNoOp(key, delta);
-
-                delta = params.zeroForOne
-                    ? toBalanceDelta(delta.amount0() + feeFromAmount.toInt128(), delta.amount1())
-                    : toBalanceDelta(delta.amount0(), delta.amount1() + feeFromAmount.toInt128());
-
                 if (params.amountSpecified < 0 && protocolFee > 0) {
                     feeFromAmount = (
                         params.zeroForOne ? uint256(uint128(delta.amount0())) : uint256(uint128(delta.amount1()))
                     ) / protocolFee;
-                    delta = delta
-                        + (
-                            params.zeroForOne
-                                ? toBalanceDelta(feeFromAmount.toInt128(), 0)
-                                : toBalanceDelta(0, feeFromAmount.toInt128())
-                        );
-                    _accountDelta(params.zeroForOne ? key.currency0 : key.currency1, feeFromAmount.toInt128());
-                    protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
                 }
+                _accountDelta(params.zeroForOne ? key.currency0 : key.currency1, feeFromAmount.toInt128());
+                delta = params.zeroForOne
+                    ? toBalanceDelta(delta.amount0() + feeFromAmount.toInt128(), delta.amount1())
+                    : toBalanceDelta(delta.amount0(), delta.amount1() + feeFromAmount.toInt128());
+
+                protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeFromAmount;
                 return delta;
             } else {
                 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
@@ -356,7 +341,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         uint256 feeForProtocol;
         uint256 feeForHook;
         Pool.SwapState memory state;
-        PoolId id = key.toId();
         (delta, feeForProtocol, feeForHook, state) = pools[id].swap(
             Pool.SwapParams({
                 fee: totalSwapFee,

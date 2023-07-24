@@ -596,7 +596,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(slot0.hookWithdrawFee, hookWithdrawFee);
         assertEq(slot0.protocolWithdrawFee, protocolWithdrawFee);
 
-        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
         modifyPositionRouter.modifyPosition(keyNoOp, params);
 
         // 0 for 1 swap, exact input, gain no fees
@@ -613,10 +613,10 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         modifyPositionRouter.modifyPosition(keyNoOp, IPoolManager.ModifyPositionParams(-120, 120, -1 ether));
 
-        assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether); // No protocol fee was accrued on withdraw
-        assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether); // No protocol fee was accrued on withdraw
-        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency1), 0); // Same amount of fees for hook.
-        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0); // Same amount of fees for hook.
+        assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether);
+        assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether);
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency1), 0);
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
     }
 
     function testCollectFees() public {
