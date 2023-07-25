@@ -57,6 +57,8 @@
     "test": "hardhat test",
     "snapshots": "UPDATE_SNAPSHOT=1 hardhat test",
     "prettier": "forge fmt contracts/ && forge fmt test/ && prettier --write 'test/**/*.ts'",
-    "prettier-check": "forge fmt --check && prettier --check 'test/**/*.ts'"
+    "prettier-check": "forge fmt --check && prettier --check 'test/**/*.ts'",
+    "forge-test-getSqrtRatioAtTick": "npx ts-node js-scripts/getSqrtRatioAtTick.ts",
+    "forge-test-getTickAtSqrtRatio": "npx ts-node js-scripts/getTickAtSqrtRatio.ts"
   }
 }
