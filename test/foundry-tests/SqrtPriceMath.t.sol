@@ -365,4 +365,20 @@ contract SqrtPriceMathTestTest is Test {
 
         assertGt(gasCost, 0);
     }
+
+    // #swap computation
+
+    function test_swapComputation_sqrtPTimessqrtQOverflows() public {
+        // getNextSqrtPriceInvariants(1025574284609383690408304870162715216695788925244,50015962439936049619261659728067971248,406,true)
+        uint160 sqrtP = 1025574284609383690408304870162715216695788925244;
+        uint128 liquidity = 50015962439936049619261659728067971248;
+        bool zeroForOne = true;
+        uint128 amountIn = 406;
+
+        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, amountIn, zeroForOne);
+        assertEq(sqrtQ, 1025574284609383582644711336373707553698163132913);
+
+        uint256 amount0Delta = sqrtPriceMath.getAmount0Delta(sqrtQ, sqrtP, liquidity, true);
+        assertEq(amount0Delta, 406);
+    }
 }
