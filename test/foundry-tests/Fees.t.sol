@@ -12,6 +12,7 @@ import {PoolManager} from "../../contracts/PoolManager.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
 import {PoolIdLibrary} from "../../contracts/types/PoolId.sol";
+import {CurrencyLibrary} from "../../contracts/types/Currency.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
@@ -528,7 +529,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(slot0.protocolSwapFee, protocolSwapFee);
         assertEq(slot0.protocolWithdrawFee, 0);
 
-        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 10e18);
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 10 ether);
         modifyPositionRouter.modifyPosition(keyNoOp, params);
         // 0 for 1 swap, exact input
         MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), type(uint256).max);
@@ -538,9 +539,12 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
             PoolSwapTest.TestSettings(true, true)
         );
 
-        assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether);
+        assertEq(manager.protocolFeesAccrued(currency1), 0 ether);
         assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
+
+        assertEq(manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency0)), 10 ether + 0.75 ether);
+        assertEq(manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency1)), 10 ether - 1 ether);
 
         // 1 for 0 swap, exact input
         MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
@@ -554,6 +558,13 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether);
         assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency1), 0);
 
+        assertEq(
+            manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency0)), 10 ether + 0.75 ether - 1 ether
+        );
+        assertEq(
+            manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency1)), 10 ether - 1 ether + 0.75 ether
+        );
+
         // 0 for 1 swap, exact output
         MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
@@ -565,6 +576,14 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether);
         assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether + 0.25 ether);
         assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
+        assertEq(
+            manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency0)),
+            10 ether + 0.75 ether - 1 ether + 1 ether
+        );
+        assertEq(
+            manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency1)),
+            10 ether - 1 ether + 0.75 ether - 1 ether
+        );
 
         // 1 for 0 swap, exact output
         MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), type(uint256).max);
@@ -577,6 +596,14 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether + 0.25 ether);
         assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether + 0.25 ether);
         assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
+        assertEq(
+            manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency0)),
+            10 ether + 0.75 ether - 1 ether
+        );
+        assertEq(
+            manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency1)),
+            10 ether - 1 ether + 0.75 ether
+        );
     }
 
     function testModifyPositionWithNoOpAndProtocolWithdrawFee() public {
@@ -599,6 +626,19 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
         modifyPositionRouter.modifyPosition(keyNoOp, params);
 
+        assertEq(manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency0)), 10 ether);
+        assertEq(manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency1)), 10 ether);
+
+        modifyPositionRouter.modifyPosition(keyNoOp, IPoolManager.ModifyPositionParams(-120, 120, -1 ether));
+
+        assertEq(manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency0)), 9.25 ether);
+        assertEq(manager.balanceOf(address(keyNoOp.hooks), CurrencyLibrary.toId(currency1)), 9.25 ether);
+
+        assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether);
+        assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether);
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency1), 0);
+        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
+
         // 0 for 1 swap, exact input, gain no fees
         MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
@@ -607,15 +647,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
             PoolSwapTest.TestSettings(true, true)
         );
 
-        assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(manager.protocolFeesAccrued(currency0), 0 ether);
-        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
-
-        modifyPositionRouter.modifyPosition(keyNoOp, IPoolManager.ModifyPositionParams(-120, 120, -1 ether));
-
-        assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether);
         assertEq(manager.protocolFeesAccrued(currency0), 0.25 ether);
-        assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency1), 0);
+        assertEq(manager.protocolFeesAccrued(currency1), 0.25 ether);
         assertEq(manager.hookFeesAccrued(address(keyNoOp.hooks), currency0), 0);
     }
 
