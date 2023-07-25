@@ -543,4 +543,35 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
             fee = value << 4;
         }
     }
+
+    function testHookFeeOnWithdrawalShouldNotSteallAllWithdrawnTokens() public {
+
+        int128 liquidity = 10e18;
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
+        assertEq(slot0.protocolSwapFee, 0);
+        assertEq(slot0.protocolWithdrawFee, 0); // successfully sets the fee, but is never applied
+
+        uint8 hookWithdrawFee = _computeFee(_oneForZero, 1) | _computeFee(_zeroForOne, 1); // max fees on both amounts (100%)
+        hook.setWithdrawFee(key1, hookWithdrawFee);
+        manager.setHookFees(key1);
+
+        (slot0,,,) = manager.pools(key1.toId());
+        assertEq(slot0.hookWithdrawFee, hookWithdrawFee); // Even though the contract sets a withdraw fee it will not be applied bc the pool key.fee did not assert a withdraw flag.
+
+        // User adds liquidity
+        BalanceDelta balanceDelta = modifyPositionRouter.modifyPosition(key1, IPoolManager.ModifyPositionParams(-120, 120, liquidity));
+
+        uint256 addedAmount0 = uint256(uint128(balanceDelta.amount0()));
+        uint256 addedAmount1 = uint256(uint128(balanceDelta.amount1()));
+
+        // assertGt(addedAmount0, 0);
+        // assertGt(addedAmount1, 0);
+
+        // User removes liquidity
+        modifyPositionRouter.modifyPosition(key1, IPoolManager.ModifyPositionParams(-120, 120, -liquidity));
+
+        assertLt(manager.hookFeesAccrued(address(key1.hooks), currency0), addedAmount0/4); // Hook should be able to get at most 25% fee on withdrawal.
+        assertLt(manager.hookFeesAccrued(address(key1.hooks), currency1), addedAmount1/4); // Hook should be able to get at most 25% fee on withdrawal.
+    }
 }
