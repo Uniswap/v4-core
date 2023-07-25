@@ -34,7 +34,7 @@ contract TickMathTestTest is Test {
         assertEq(minTick, MIN_TICK);
     }
 
-    function test_MAX_TICK_equalsNegativeMIX_TICK() public {
+    function test_MAX_TICK_equalsNegativeMIN_TICK() public {
         // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
         // this test is redundant with the above MIN_TICK test
         int24 maxTick = tickMath.MAX_TICK();
