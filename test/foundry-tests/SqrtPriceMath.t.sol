@@ -265,4 +265,60 @@ contract SqrtPriceMathTestTest is Test {
         assertGt(gasCost, 0);
     }
 
+    // #getAmount0Delta
+
+    function test_getAmount0Delta_returns0IfLiquidityIs0() public {
+        uint256 amount0 = sqrtPriceMath.getAmount0Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_2_1, 0, true);
+
+        assertEq(amount0, 0);
+    }
+
+    function test_getAmount0Delta_returns0IfPricesAreEqual() public {
+        uint256 amount0 = sqrtPriceMath.getAmount0Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_1_1, 0, true);
+
+        assertEq(amount0, 0);
+    }
+
+    function test_getAmount0Delta_returns0_1Amount1ForPriceOf1To1_21() public {
+        uint256 amount0 = sqrtPriceMath.getAmount0Delta(
+            Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_121_100, uint128(expandTo18Decimals(1)), true
+        );
+
+        assertEq(amount0, 90909090909090910);
+
+        uint256 amount0RoundedDown = sqrtPriceMath.getAmount0Delta(
+            Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_121_100, uint128(expandTo18Decimals(1)), false
+        );
+
+        assertEq(amount0RoundedDown, amount0 - 1);
+    }
+
+    function test_getAmount0Delta_worksForPricesThatOverflow() public {
+        // sqrtP_1 = encodeSqrtPriceX96(2^90, 1)
+        uint160 sqrtP_1 = 2787593149816327892691964784081045188247552;
+        // sqrtP_2 = encodeSqrtPriceX96(2^96, 1)
+        uint160 sqrtP_2 = 22300745198530623141535718272648361505980416;
+
+        uint256 amount0Up = sqrtPriceMath.getAmount0Delta(sqrtP_1, sqrtP_2, uint128(expandTo18Decimals(1)), true);
+
+        uint256 amount0Down = sqrtPriceMath.getAmount0Delta(sqrtP_1, sqrtP_2, uint128(expandTo18Decimals(1)), false);
+
+        assertEq(amount0Up, amount0Down + 1);
+    }
+
+    function test_getAmount0Delta_gasCostForAmount0WhereRoundUpIsTrue() public {
+        uint256 gasCost = sqrtPriceMath.getGasCostOfGetAmount0Delta(
+            Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(expandTo18Decimals(1)), true
+        );
+
+        assertGt(gasCost, 0);
+    }
+
+    function test_getAmount0Delta_gasCostForAmount0WhereRoundUpIsFalse() public {
+        uint256 gasCost = sqrtPriceMath.getGasCostOfGetAmount0Delta(
+            Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(expandTo18Decimals(1)), false
+        );
+
+        assertGt(gasCost, 0);
+    }
 }
