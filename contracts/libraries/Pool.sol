@@ -67,9 +67,12 @@ library Pool {
     /// Each uint24 variable packs both the swap fees and the withdraw fees. The upper 12 bits are the swap fees, and the lower 12 bits are the withdraw fees.
     /// For swap fees, the upper 6 bits are the fee for trading 1 for 0, and the lower 6 are for 0 for 1 and are taken as a percentage of the lp swap fee.
     /// For withdraw fees the upper 6 bits are the fee on amount1, and the lower 6 are for amount0 and are taken as a percentage of the principle amount of the underlying position.
-    ///                   withdrawFees    |    swapFees
-    /// protocolFees:      1->0 | 0->1        1->0 |  0->1
-    /// hookFees:          fee1 | fee0        fee1 | fee0
+    /// bits          0  2  4  6  8  10 12 14 16 18 20 22 24
+    ///               |  withdrawFees   |    swapFees     |
+    ///               ┌────────┬────────┬────────┬────────┐
+    /// protocolFees: | fee0   |  fee1  |  0->1  |  1->0  |
+    /// hookFees:     | fee0   |  fee1  |  0->1  |  1->0  |
+    ///               └────────┴────────┴────────┴────────┘
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
