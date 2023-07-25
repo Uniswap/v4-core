@@ -125,4 +125,144 @@ contract SqrtPriceMathTestTest is Test {
 
         assertGt(gasCost, 0);
     }
+
+    // #getNextSqrtPriceFromOutput
+
+    function test_getNextSqrtPriceFromOutput_revertsIfPriceIsZero() public {
+        vm.expectRevert();
+        sqrtPriceMath.getNextSqrtPriceFromOutput(0, 0, expandTo18Decimals(1) / 10, false);
+    }
+
+    function test_getNextSqrtPriceFromOutput_revertsIfLiquidityIsZero() public {
+        vm.expectRevert();
+        sqrtPriceMath.getNextSqrtPriceFromOutput(1, 0, expandTo18Decimals(1) / 10, true);
+    }
+
+    function test_getNextSqrtPriceFromOutput_revertsIfOutputAmountIsExactlyTheVirtualReservesOfCurrency0() public {
+        uint160 price = 20282409603651670423947251286016;
+        uint128 liquidity = 1024;
+        uint256 amountOut = 4;
+
+        vm.expectRevert();
+        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
+    }
+
+    function test_getNextSqrtPriceFromOutput_revertsIfOutputAmountIsGreaterThanTheVirtualReservesOfCurrency0() public {
+        uint160 price = 20282409603651670423947251286016;
+        uint128 liquidity = 1024;
+        uint256 amountOut = 5;
+
+        vm.expectRevert();
+        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
+    }
+
+    function test_getNextSqrtPriceFromOutput_revertsIfOutputAmountIsGreaterThanTheVirtualReservesOfCurrency1() public {
+        uint160 price = 20282409603651670423947251286016;
+        uint128 liquidity = 1024;
+        uint256 amountOut = 262145;
+
+        vm.expectRevert();
+        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
+    }
+
+    function test_getNextSqrtPriceFromOutput_revertsIfOutputAmountIsExactlyTheVirtualReservesOfCurrency1() public {
+        uint160 price = 20282409603651670423947251286016;
+        uint128 liquidity = 1024;
+        uint256 amountOut = 262144;
+
+        vm.expectRevert();
+        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
+    }
+
+    function test_getNextSqrtPriceFromOutput_succeedsIfOutputAmountIsJustLessThanTheVirtualReservesOfCurrency1()
+        public
+    {
+        uint160 price = 20282409603651670423947251286016;
+        uint128 liquidity = 1024;
+        uint256 amountOut = 262143;
+
+        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
+
+        assertEq(sqrtQ, 77371252455336267181195264);
+    }
+
+    function test_getNextSqrtPriceFromOutput_puzzlingEchidnaTest() public {
+        uint160 price = 20282409603651670423947251286016;
+        uint128 liquidity = 1024;
+        uint256 amountOut = 4;
+
+        vm.expectRevert();
+        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
+    }
+
+    function test_getNextSqrtPriceFromOutput_returnsInputPriceIfAmountInIsZeroAndZeroForOneEqualsTrue() public {
+        uint160 sqrtP = Constants.SQRT_RATIO_1_1; // sqrtP = encodeSqrtPriceX96(1, 1)
+
+        uint256 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(expandTo18Decimals(1) / 10), 0, true);
+
+        assertEq(sqrtP, sqrtQ);
+    }
+
+    function test_getNextSqrtPriceFromOutput_returnsInputPriceIfAmountInIsZeroAndZeroForOneEqualsFalse() public {
+        uint160 sqrtP = Constants.SQRT_RATIO_1_1; // sqrtP = encodeSqrtPriceX96(1, 1)
+
+        uint256 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(expandTo18Decimals(1) / 10), 0, false);
+
+        assertEq(sqrtP, sqrtQ);
+    }
+
+    function test_getNextSqrtPriceFromOutput_outputAmountOf0_1Currency1() public {
+        uint160 sqrtP = Constants.SQRT_RATIO_1_1; // sqrtP = encodeSqrtPriceX96(1, 1)
+
+        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(
+            sqrtP, uint128(expandTo18Decimals(1)), expandTo18Decimals(1) / 10, false
+        );
+
+        assertEq(sqrtQ, 88031291682515930659493278152);
+    }
+
+    function test_getNextSqrtPriceFromOutput_outputAmountOf0_1Currency0() public {
+        uint160 sqrtP = Constants.SQRT_RATIO_1_1; // sqrtP = encodeSqrtPriceX96(1, 1)
+
+        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(
+            sqrtP, uint128(expandTo18Decimals(1)), expandTo18Decimals(1) / 10, true
+        );
+
+        assertEq(sqrtQ, 71305346262837903834189555302);
+    }
+
+    function test_getNextSqrtPriceFromOutput_revertsIfAmountOutIsImpossibleInZeroForOneDirection() public {
+        uint160 sqrtP = Constants.SQRT_RATIO_1_1; // sqrtP = encodeSqrtPriceX96(1, 1)
+
+        vm.expectRevert();
+        sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, 1, Constants.MAX_UINT256, true);
+    }
+
+    function test_getNextSqrtPriceFromOutput_revertsIfAmountOutIsImpossibleInOneForZeroDirection() public {
+        uint160 sqrtP = Constants.SQRT_RATIO_1_1; // sqrtP = encodeSqrtPriceX96(1, 1)
+
+        vm.expectRevert();
+        sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, 1, Constants.MAX_UINT256, false);
+    }
+
+    function test_getNextSqrtPriceFromOutput_zeroForOneEqualsTrueGas() public {
+        uint160 sqrtP = Constants.SQRT_RATIO_1_1; // sqrtP = encodeSqrtPriceX96(1, 1)
+
+        uint256 gasCost = sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromOutput(
+            sqrtP, uint128(expandTo18Decimals(1)), expandTo18Decimals(1) / 10, true
+        );
+
+        assertGt(gasCost, 0);
+    }
+
+    function test_getNextSqrtPriceFromOutput_zeroForOneEqualsFalseGas() public {
+        uint160 sqrtP = Constants.SQRT_RATIO_1_1; // sqrtP = encodeSqrtPriceX96(1, 1)
+
+        uint256 gasCost = sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromOutput(
+            sqrtP, uint128(expandTo18Decimals(1)), expandTo18Decimals(1) / 10, false
+        );
+
+        assertGt(gasCost, 0);
+    }
+
 }
