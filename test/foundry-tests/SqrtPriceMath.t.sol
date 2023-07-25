@@ -8,9 +8,6 @@ import {SqrtPriceMathTest} from "../../contracts/test/SqrtPriceMathTest.sol";
 import {Constants} from "./utils/Constants.sol";
 
 contract SqrtPriceMathTestTest is Test {
-    uint256 constant MAX_UINT256 = type(uint256).max;
-    uint128 constant MAX_UINT128 = type(uint128).max;
-
     SqrtPriceMathTest sqrtPriceMath;
 
     function setUp() public {
@@ -65,8 +62,8 @@ contract SqrtPriceMathTestTest is Test {
 
     function test_getNextSqrtPriceFromInput_returnsTheMinimumPriceForMaxInputs() public {
         uint160 sqrtP = 2 ** 160 - 1;
-        uint128 liquidity = MAX_UINT128;
-        uint256 maxAmountNoOverflow = MAX_UINT256 - MAX_UINT128 << 96 / sqrtP;
+        uint128 liquidity = Constants.MAX_UINT128;
+        uint256 maxAmountNoOverflow = Constants.MAX_UINT256 - Constants.MAX_UINT128 << 96 / sqrtP;
 
         assertEq(sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, maxAmountNoOverflow, true), 1);
     }
@@ -104,7 +101,7 @@ contract SqrtPriceMathTestTest is Test {
     function test_getNextSqrtPriceFromInput_canReturn1WithEnoughAmountInAndZeroForOneEqualsTrue() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1; // sqrtP = encodeSqrtPriceX96(1, 1)
 
-        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, 1, MAX_UINT256 / 2, true);
+        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, 1, Constants.MAX_UINT256 / 2, true);
 
         assertEq(sqrtQ, 1);
     }
