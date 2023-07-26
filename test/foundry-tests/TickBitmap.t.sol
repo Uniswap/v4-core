@@ -44,4 +44,57 @@ contract TickBitmapTestTest is Test {
         assertEq(tickBitmap.isInitialized(257), true);
         assertEq(tickBitmap.isInitialized(1), false);
     }
+    // #flipTick
+
+    function test_flipTick_flipsOnlyTheSpecifiedTick() public {
+        tickBitmap.flipTick(-230);
+
+        assertEq(tickBitmap.isInitialized(-230), true);
+        assertEq(tickBitmap.isInitialized(-231), false);
+        assertEq(tickBitmap.isInitialized(-229), false);
+        assertEq(tickBitmap.isInitialized(-230 + 256), false);
+        assertEq(tickBitmap.isInitialized(-230 - 256), false);
+
+        tickBitmap.flipTick(-230);
+        assertEq(tickBitmap.isInitialized(-230), false);
+        assertEq(tickBitmap.isInitialized(-231), false);
+        assertEq(tickBitmap.isInitialized(-229), false);
+        assertEq(tickBitmap.isInitialized(-230 + 256), false);
+        assertEq(tickBitmap.isInitialized(-230 - 256), false);
+
+        assertEq(tickBitmap.isInitialized(1), false);
+    }
+
+    function test_flipTick_revertsOnlyItself() public {
+        tickBitmap.flipTick(-230);
+        tickBitmap.flipTick(-259);
+        tickBitmap.flipTick(-229);
+        tickBitmap.flipTick(500);
+        tickBitmap.flipTick(-259);
+        tickBitmap.flipTick(-229);
+        tickBitmap.flipTick(-259);
+
+        assertEq(tickBitmap.isInitialized(-259), true);
+        assertEq(tickBitmap.isInitialized(-229), false);
+    }
+
+    function test_flipTick_gasCostOfFlippingFirstTickInWordToInitialized() public {
+        uint256 gasCost = tickBitmap.getGasCostOfFlipTick(1);
+
+        assertGt(gasCost, 0);
+    }
+
+    function test_flipTick_gasCostOfFlippingSecondTickInWordToInitialized() public {
+        tickBitmap.flipTick(0);
+        uint256 gasCost = tickBitmap.getGasCostOfFlipTick(1);
+
+        assertGt(gasCost, 0);
+    }
+
+    function test_flipTick_gasCostOfFlippingATickThatResultsInDeletingAWord() public {
+        tickBitmap.flipTick(0);
+        uint256 gasCost = tickBitmap.getGasCostOfFlipTick(0);
+
+        assertGt(gasCost, 0);
+    }
 }
