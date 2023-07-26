@@ -42,7 +42,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testInitializeSucceedsWithHook() public {
         (PoolManager _manager,, PoolId id) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
-        (uint160 sqrtPriceX96,,,,,) = _manager.getSlot0(id);
+        (uint160 sqrtPriceX96,,,) = _manager.getSlot0(id);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
     }
 

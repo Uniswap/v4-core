@@ -31,7 +31,7 @@ abstract contract Fees is IFees, Owned {
     function _fetchProtocolFees(PoolKey memory key)
         internal
         view
-        returns (uint8 protocolSwapFee, uint8 protocolWithdrawFee)
+        returns (uint16 protocolSwapFee, uint16 protocolWithdrawFee)
     {
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
@@ -39,19 +39,18 @@ abstract contract Fees is IFees, Owned {
             // in mind.
             if (gasleft() < controllerGasLimit) revert ProtocolFeeCannotBeFetched();
             try protocolFeeController.protocolFeesForPool{gas: controllerGasLimit}(key) returns (
-                uint8 updatedProtocolSwapFee, uint8 updatedProtocolWithdrawFee
+                uint16 updatedProtocolSwapFee, uint16 updatedProtocolWithdrawFee
             ) {
                 protocolSwapFee = updatedProtocolSwapFee;
                 protocolWithdrawFee = updatedProtocolWithdrawFee;
             } catch {}
-
             _checkProtocolFee(protocolSwapFee);
             _checkProtocolFee(protocolWithdrawFee);
         }
     }
 
     /// @notice There is no cap on the hook fee, but it is specified as a percentage taken on the amount after the protocol fee is applied, if there is a protocol fee.
-    function _fetchHookFees(PoolKey memory key) internal view returns (uint8 hookSwapFee, uint8 hookWithdrawFee) {
+    function _fetchHookFees(PoolKey memory key) internal view returns (uint16 hookSwapFee, uint16 hookWithdrawFee) {
         if (key.fee.hasHookSwapFee()) {
             hookSwapFee = IHookFeeManager(address(key.hooks)).getHookSwapFee(key);
         }
@@ -61,10 +60,10 @@ abstract contract Fees is IFees, Owned {
         }
     }
 
-    function _checkProtocolFee(uint8 fee) internal pure {
+    function _checkProtocolFee(uint16 fee) internal pure {
         if (fee != 0) {
-            uint8 fee0 = fee % 16;
-            uint8 fee1 = fee >> 4;
+            uint16 fee0 = fee % 64;
+            uint16 fee1 = fee >> 6;
             // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
             if (
                 (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)

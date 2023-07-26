@@ -9,10 +9,10 @@ interface IHookFeeManager {
     /// @notice Sets the fee a hook can take at swap.
     /// @param key The pool key
     /// @return The fee as an integer denominator for 1 to 0 swaps (upper bits set) or 0 to 1 swaps (lower bits set).
-    function getHookSwapFee(PoolKey calldata key) external view returns (uint8);
+    function getHookSwapFee(PoolKey calldata key) external view returns (uint16);
 
     /// @notice Sets the fee a hook can take at withdraw.
     /// @param key The pool key
     /// @return The fee as an integer denominator for amount1 (upper bits set) or amount0 (lower bits set).
-    function getHookWithdrawFee(PoolKey calldata key) external view returns (uint8);
+    function getHookWithdrawFee(PoolKey calldata key) external view returns (uint16);
 }
