@@ -1,7 +1,3 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-<<<<<<< HEAD
 exports[`PoolManager bytecode size 1`] = `28650`;
-=======
-exports[`PoolManager bytecode size 1`] = `29278`;
->>>>>>> b98f617 (increase fee bits precision)
