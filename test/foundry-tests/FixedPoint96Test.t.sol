@@ -16,9 +16,9 @@ contract FixedPoint96Test is Test {
         assertEq(UQ64x96.unwrap(result), UQ64x96.unwrap(FixedPoint96.uncheckedAdd(a, b)));
     }
 
-    function testNoOverflowUncheckedSub(UQ64x96 a, UQ64x96 b) public {
-        // assume no overflow
-        vm.assume(a.toUint256() > b.toUint256() && a.toUint256() - b.toUint256() < 2 ** 160);
+    function testNoUnderflowUncheckedSub(UQ64x96 a, UQ64x96 b) public {
+        // assume no underflow
+        vm.assume(a.toUint256() > b.toUint256());
         UQ64x96 result = a - b;
         assertEq(UQ64x96.unwrap(result), UQ64x96.unwrap(FixedPoint96.uncheckedSub(a, b)));
     }
