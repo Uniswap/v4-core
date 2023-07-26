@@ -97,4 +97,156 @@ contract TickBitmapTestTest is Test {
 
         assertGt(gasCost, 0);
     }
+
+    // #nextInitializedTickWithinOneWord
+
+    function setUpSomeTicks() internal {
+        int24[9] memory ticks = [int24(-200), -55, -4, 70, 78, 84, 139, 240, 535];
+
+        for (uint256 i; i < ticks.length - 1; i++) {
+            tickBitmap.flipTick(ticks[i]);
+        }
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTickToRightIfAtInitializedTick() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(78, false);
+
+        assertEq(next, 84);
+        assertEq(initialized, true);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTickToRightIfAtInitializedTick2() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(-55, false);
+
+        assertEq(next, -4);
+        assertEq(initialized, true);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheTickDirectlyToTheRight() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(77, false);
+
+        assertEq(next, 78);
+        assertEq(initialized, true);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheTickDirectlyToTheRight2() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(-56, false);
+
+        assertEq(next, -55);
+        assertEq(initialized, true);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheNextWordsInitializedTickIfOnTheRightBoundary() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(255, false);
+
+        assertEq(next, 511);
+        assertEq(initialized, false);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheNextWordsInitializedTickIfOnTheRightBoundary2() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(-257, false);
+
+        assertEq(next, -200);
+        assertEq(initialized, true);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheNextInitializedTickFromTheNextWord() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+        tickBitmap.flipTick(340);
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(328, false);
+
+        assertEq(next, 340);
+        assertEq(initialized, true);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_doesNotExceedBoundary() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(508, false);
+
+        assertEq(next, 511);
+        assertEq(initialized, false);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_skipsEntireWord() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(255, false);
+
+        assertEq(next, 511);
+        assertEq(initialized, false);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_skipsHalfWord() public {
+        int24 next;
+        bool initialized;
+
+        setUpSomeTicks();
+
+        (next, initialized) = tickBitmap.nextInitializedTickWithinOneWord(383, false);
+
+        assertEq(next, 511);
+        assertEq(initialized, false);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_gasCostOnBoundary() public {
+        setUpSomeTicks();
+
+        uint256 gasCost = tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(255, false);
+        assertGt(gasCost, 0);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_gasCostJustBelowBoundary() public {
+        setUpSomeTicks();
+
+        uint256 gasCost = tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(254, false);
+        assertGt(gasCost, 0);
+    }
+
+    function test_nextInitializedTickWithinOneWord_lteFalse_gasCostForEntireWord() public {
+        setUpSomeTicks();
+
+        uint256 gasCost = tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(768, false);
+        assertGt(gasCost, 0);
+    }
 }
