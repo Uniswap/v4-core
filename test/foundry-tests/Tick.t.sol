@@ -72,4 +72,37 @@ contract TickTestTest is Test {
         assertEq(maxLiquidityPerTick, 191757530477355301479181766273477); // 126 bits
         checkCantOverflow(1, maxLiquidityPerTick);
     }
+
+    function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForEntireRange() public {
+        uint128 maxLiquidityPerTick = tick.tickSpacingToMaxLiquidityPerTick(887272);
+
+        assertEq(maxLiquidityPerTick, Constants.MAX_UINT128 / 3); // 126 bits
+        checkCantOverflow(887272, maxLiquidityPerTick);
+    }
+
+    function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor2302() public {
+        uint128 maxLiquidityPerTick = tick.tickSpacingToMaxLiquidityPerTick(2302);
+
+        assertEq(maxLiquidityPerTick, 440854192570431170114173285871668350); // 118 bits
+        checkCantOverflow(2302, maxLiquidityPerTick);
+    }
+
+    function test_tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing() public {
+        uint256 gasCost = tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(1);
+
+        assertGt(gasCost, 0);
+    }
+
+    function test_tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing() public {
+        uint256 gasCost = tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(60);
+
+        assertGt(gasCost, 0);
+    }
+
+    function test_tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing() public {
+        int24 MAX_TICK_SPACING = 32767;
+        uint256 gasCost = tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(MAX_TICK_SPACING);
+
+        assertGt(gasCost, 0);
+    }
 }
