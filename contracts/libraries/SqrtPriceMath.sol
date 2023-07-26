@@ -32,34 +32,30 @@ library SqrtPriceMath {
         if (amount == 0) return sqrtPrice;
         uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
 
+        uint256 sqrtPriceUint256 = sqrtPrice.toUint256();
+
         if (add) {
             unchecked {
                 uint256 product;
-                if ((product = amount * sqrtPrice.toUint256()) / amount == sqrtPrice.toUint256()) {
+                if ((product = amount * sqrtPriceUint256) / amount == sqrtPriceUint256) {
                     uint256 denominator = numerator1 + product;
                     if (denominator >= numerator1) {
                         // always fits in 160 bits
-                        return UQ64x96.wrap(
-                            uint160(FullMath.mulDivRoundingUp(numerator1, sqrtPrice.toUint256(), denominator))
-                        );
+                        return
+                            UQ64x96.wrap(uint160(FullMath.mulDivRoundingUp(numerator1, sqrtPriceUint256, denominator)));
                     }
                 }
-                // denominator is checked for overflow
-                return UQ64x96.wrap(
-                    uint160(UnsafeMath.divRoundingUp(numerator1, (numerator1 / sqrtPrice.toUint256()) + amount))
-                );
             }
+            // denominator is checked for overflow
+            return UQ64x96.wrap(uint160(UnsafeMath.divRoundingUp(numerator1, (numerator1 / sqrtPriceUint256) + amount)));
         } else {
             unchecked {
                 uint256 product;
                 // if the product overflows, we know the denominator underflows
                 // in addition, we must check that the denominator does not underflow
-                require(
-                    (product = amount * sqrtPrice.toUint256()) / amount == sqrtPrice.toUint256() && numerator1 > product
-                );
+                require((product = amount * sqrtPriceUint256) / amount == sqrtPriceUint256 && numerator1 > product);
                 uint256 denominator = numerator1 - product;
-                return
-                    UQ64x96.wrap(FullMath.mulDivRoundingUp(numerator1, sqrtPrice.toUint256(), denominator).toUint160());
+                return UQ64x96.wrap(FullMath.mulDivRoundingUp(numerator1, sqrtPriceUint256, denominator).toUint160());
             }
         }
     }
@@ -79,6 +75,7 @@ library SqrtPriceMath {
         pure
         returns (UQ64x96)
     {
+        uint256 sqrtPriceUint256 = sqrtPrice.toUint256();
         // if we're adding (subtracting), rounding down requires rounding the quotient down (up)
         // in both cases, avoid a mulDiv for most inputs
         if (add) {
@@ -88,7 +85,7 @@ library SqrtPriceMath {
                     : FullMath.mulDiv(amount, FixedPoint96.ONE, liquidity)
             );
 
-            return UQ64x96.wrap((sqrtPrice.toUint256() + quotient).toUint160());
+            return UQ64x96.wrap((sqrtPriceUint256 + quotient).toUint160());
         } else {
             uint256 quotient = (
                 amount <= type(uint160).max
@@ -96,9 +93,9 @@ library SqrtPriceMath {
                     : FullMath.mulDivRoundingUp(amount, FixedPoint96.ONE, liquidity)
             );
 
-            require(sqrtPrice.toUint256() > quotient);
+            require(sqrtPriceUint256 > quotient);
             // always fits 160 bits
-            return UQ64x96.wrap(uint160(sqrtPrice.toUint256() - quotient));
+            return UQ64x96.wrap(uint160(sqrtPriceUint256 - quotient));
         }
     }
 
@@ -157,19 +154,22 @@ library SqrtPriceMath {
         pure
         returns (uint256 amount0)
     {
+        uint256 sqrtRatioBUint256 = sqrtRatioB.toUint256();
+        uint256 sqrtRatioAUint256 = sqrtRatioA.toUint256();
+
         unchecked {
             if (sqrtRatioA > sqrtRatioB) (sqrtRatioA, sqrtRatioB) = (sqrtRatioB, sqrtRatioA);
 
             uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
-            uint256 numerator2 = (sqrtRatioB.uncheckedSub(sqrtRatioA)).toUint256();
+            uint256 numerator2 = sqrtRatioBUint256 - sqrtRatioAUint256;
 
             require(sqrtRatioA > UQ64x96.wrap(0));
 
             return roundUp
                 ? UnsafeMath.divRoundingUp(
-                    FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtRatioB.toUint256()), sqrtRatioA.toUint256()
+                    FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtRatioBUint256), sqrtRatioAUint256
                 )
-                : FullMath.mulDiv(numerator1, numerator2, sqrtRatioB.toUint256()) / sqrtRatioA.toUint256();
+                : FullMath.mulDiv(numerator1, numerator2, sqrtRatioBUint256) / sqrtRatioAUint256;
         }
     }
 
@@ -187,9 +187,17 @@ library SqrtPriceMath {
     {
         if (sqrtRatioA > sqrtRatioB) (sqrtRatioA, sqrtRatioB) = (sqrtRatioB, sqrtRatioA);
 
+        uint256 sqrtRatioBUint256 = sqrtRatioB.toUint256();
+        uint256 sqrtRatioAUint256 = sqrtRatioA.toUint256();
+
+        uint256 numerator1;
+        unchecked {
+            numerator1 = sqrtRatioBUint256 - sqrtRatioAUint256;
+        }
+
         return roundUp
-            ? FullMath.mulDivRoundingUp(liquidity, (sqrtRatioB.uncheckedSub(sqrtRatioA)).toUint256(), FixedPoint96.ONE)
-            : FullMath.mulDiv(liquidity, (sqrtRatioB.uncheckedSub(sqrtRatioA)).toUint256(), FixedPoint96.ONE);
+            ? FullMath.mulDivRoundingUp(liquidity, numerator1, FixedPoint96.ONE)
+            : FullMath.mulDiv(liquidity, numerator1, FixedPoint96.ONE);
     }
 
     /// @notice Helper that gets signed currency0 delta

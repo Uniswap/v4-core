@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 import {FullMath} from "./FullMath.sol";
 import {SafeCast} from "./SafeCast.sol";
 
-// Using custom type UQ64x96 with Unsafe math on Q64.96 numbers
 type UQ64x96 is uint160;
 
 using {
