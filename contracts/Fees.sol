@@ -15,6 +15,7 @@ abstract contract Fees is IFees, Owned {
     using CurrencyLibrary for Currency;
 
     uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
+    uint16 private constant MAX_FEE_DENOMINATOR = 0xFFF;
 
     mapping(Currency currency => uint256) public protocolFeesAccrued;
 
@@ -28,11 +29,9 @@ abstract contract Fees is IFees, Owned {
         controllerGasLimit = _controllerGasLimit;
     }
 
-    function _fetchProtocolFees(PoolKey memory key)
-        internal
-        view
-        returns (uint16 protocolSwapFee, uint16 protocolWithdrawFee)
-    {
+    function _fetchProtocolFees(PoolKey memory key) internal view returns (uint24 protocolFees) {
+        uint16 protocolSwapFee;
+        uint16 protocolWithdrawFee;
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
@@ -43,6 +42,11 @@ abstract contract Fees is IFees, Owned {
             ) {
                 protocolSwapFee = updatedProtocolSwapFee;
                 protocolWithdrawFee = updatedProtocolWithdrawFee;
+
+                if (protocolSwapFee > MAX_FEE_DENOMINATOR) revert FeeDenominatorOutOfBounds(protocolSwapFee);
+                if (protocolWithdrawFee > MAX_FEE_DENOMINATOR) revert FeeDenominatorOutOfBounds(protocolWithdrawFee);
+
+                protocolFees = (uint24(protocolSwapFee) << 12) | protocolWithdrawFee;
             } catch {}
             _checkProtocolFee(protocolSwapFee);
             _checkProtocolFee(protocolWithdrawFee);
@@ -50,13 +54,17 @@ abstract contract Fees is IFees, Owned {
     }
 
     /// @notice There is no cap on the hook fee, but it is specified as a percentage taken on the amount after the protocol fee is applied, if there is a protocol fee.
-    function _fetchHookFees(PoolKey memory key) internal view returns (uint16 hookSwapFee, uint16 hookWithdrawFee) {
+    function _fetchHookFees(PoolKey memory key) internal view returns (uint24 hookFees) {
         if (key.fee.hasHookSwapFee()) {
-            hookSwapFee = IHookFeeManager(address(key.hooks)).getHookSwapFee(key);
+            uint16 swapFee = IHookFeeManager(address(key.hooks)).getHookSwapFee(key);
+            if (swapFee > MAX_FEE_DENOMINATOR) revert FeeDenominatorOutOfBounds(swapFee);
+            hookFees |= (uint24(swapFee) << 12);
         }
 
         if (key.fee.hasHookWithdrawFee()) {
-            hookWithdrawFee = IHookFeeManager(address(key.hooks)).getHookWithdrawFee(key);
+            uint16 withdrawFee = IHookFeeManager(address(key.hooks)).getHookWithdrawFee(key);
+            if (withdrawFee > MAX_FEE_DENOMINATOR) revert FeeDenominatorOutOfBounds(withdrawFee);
+            hookFees |= withdrawFee;
         }
     }
 

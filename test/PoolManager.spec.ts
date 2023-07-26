@@ -239,7 +239,7 @@ describe('PoolManager', () => {
 
       await expect(manager.setProtocolFees(poolKey))
         .to.emit(manager, 'ProtocolFeeUpdated')
-        .withArgs(poolID, poolProtocolSwapFee, 0)
+        .withArgs(poolID, BigNumber.from(poolProtocolSwapFee).shl(12))
       ;({
         slot0: { protocolFees },
       } = await manager.pools(poolID))

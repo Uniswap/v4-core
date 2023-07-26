@@ -296,6 +296,28 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.hookFeesAccrued(address(key0.hooks), currency1), 0);
     }
 
+    function testFeeOutOfBoundsReverts(uint16 newFee) external {
+        newFee = uint16(bound(newFee, 2 ** 12, type(uint16).max));
+
+        hook.setSwapFee(key0, newFee);
+        vm.expectRevert(abi.encodeWithSelector(IFees.FeeDenominatorOutOfBounds.selector, newFee));
+        manager.setHookFees(key0);
+
+        hook.setWithdrawFee(key0, newFee);
+        vm.expectRevert(abi.encodeWithSelector(IFees.FeeDenominatorOutOfBounds.selector, newFee));
+        manager.setHookFees(key0);
+
+        manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
+
+        protocolFeeController.setSwapFeeForPool(key0.toId(), newFee);
+        vm.expectRevert(abi.encodeWithSelector(IFees.FeeDenominatorOutOfBounds.selector, newFee));
+        manager.setProtocolFees(key0);
+
+        protocolFeeController.setWithdrawFeeForPool(key0.toId(), newFee);
+        vm.expectRevert(abi.encodeWithSelector(IFees.FeeDenominatorOutOfBounds.selector, newFee));
+        manager.setProtocolFees(key0);
+    }
+
     function testHookWithdrawFeeProtocolWithdrawFee(uint16 hookWithdrawFee, uint16 protocolWithdrawFee) public {
         vm.assume(protocolWithdrawFee < 2 ** 12);
         vm.assume(hookWithdrawFee < 2 ** 12);

@@ -17,12 +17,6 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
 
-    uint16 private constant FEE_MAX = 2 ** 12 - 1;
-
-    /// @notice Thrown when fee exceeds FEE_MAX
-    /// @param fee The invalid fee
-    error FeeOutOfBounds(uint16 fee);
-
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
     /// @param tickUpper The invalid tickUpper
@@ -64,14 +58,14 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
-    /// Each uint24 variable packs both the swap fees and the withdraw fees. The upper 12 bits are the swap fees, and the lower 12 bits are the withdraw fees.
-    /// For swap fees, the upper 6 bits are the fee for trading 1 for 0, and the lower 6 are for 0 for 1 and are taken as a percentage of the lp swap fee.
+    /// Each uint24 variable packs both the swap fees and the withdraw fees represented as integer denominators (1/x). The upper 12 bits are the swap fees, and the lower 12 bits
+    /// are the withdraw fees. For swap fees, the upper 6 bits are the fee for trading 1 for 0, and the lower 6 are for 0 for 1 and are taken as a percentage of the lp swap fee.
     /// For withdraw fees the upper 6 bits are the fee on amount1, and the lower 6 are for amount0 and are taken as a percentage of the principle amount of the underlying position.
-    /// bits          0  2  4  6  8  10 12 14 16 18 20 22 24
-    ///               |  withdrawFees   |    swapFees     |
+    /// bits          24 22 20 18 16 14 12 10 8  6  4  2  0
+    ///               |    swapFees     |   withdrawFees  |
     ///               ┌────────┬────────┬────────┬────────┐
-    /// protocolFees: | fee0   |  fee1  |  0->1  |  1->0  |
-    /// hookFees:     | fee0   |  fee1  |  0->1  |  1->0  |
+    /// protocolFees: | 1->0   |  0->1  |  fee1  |  fee0  |
+    /// hookFees:     | 1->0   |  0->1  |  fee1  |  fee0  |
     ///               └────────┴────────┴────────┴────────┘
     struct Slot0 {
         // the current price
@@ -113,24 +107,15 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(
-        State storage self,
-        uint160 sqrtPriceX96,
-        uint16 protocolSwapFee,
-        uint16 hookSwapFee,
-        uint16 protocolWithdrawFee,
-        uint16 hookWithdrawFee
-    ) internal returns (int24 tick) {
+    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFees, uint24 hookFees)
+        internal
+        returns (int24 tick)
+    {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        self.slot0 = Slot0({
-            sqrtPriceX96: sqrtPriceX96,
-            tick: tick,
-            protocolFees: _calculateFeesFromSwapAndWithdraw(protocolSwapFee, protocolWithdrawFee),
-            hookFees: _calculateFeesFromSwapAndWithdraw(hookSwapFee, hookWithdrawFee)
-        });
+        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFees: protocolFees, hookFees: hookFees});
     }
 
     function getSwapFee(uint24 feesStorage) internal pure returns (uint16) {
@@ -141,23 +126,16 @@ library Pool {
         return uint16(feesStorage & 0xFFF);
     }
 
-    function setProtocolFees(State storage self, uint16 newProtocolSwapFee, uint16 newProtocolWithdrawFee) internal {
+    function setProtocolFees(State storage self, uint24 protocolFees) internal {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
-        self.slot0.protocolFees = _calculateFeesFromSwapAndWithdraw(newProtocolSwapFee, newProtocolWithdrawFee);
+        self.slot0.protocolFees = protocolFees;
     }
 
-    function setHookFees(State storage self, uint16 newHookSwapFee, uint16 newHookWithdrawFee) internal {
+    function setHookFees(State storage self, uint24 hookFees) internal {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
-        self.slot0.hookFees = _calculateFeesFromSwapAndWithdraw(newHookSwapFee, newHookWithdrawFee);
-    }
-
-    function _calculateFeesFromSwapAndWithdraw(uint16 swapFee, uint16 withdrawFee) internal pure returns (uint24) {
-        if (swapFee > FEE_MAX) revert FeeOutOfBounds(swapFee);
-        if (withdrawFee > FEE_MAX) revert FeeOutOfBounds(withdrawFee);
-
-        return (uint24(swapFee) << 12) | withdrawFee;
+        self.slot0.hookFees = hookFees;
     }
 
     struct ModifyPositionParams {

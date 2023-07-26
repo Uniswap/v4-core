@@ -78,9 +78,9 @@ interface IPoolManager is IFees, IERC1155 {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolSwapFee, uint16 protocolWithdrawFee);
+    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
 
-    event HookFeeUpdated(PoolId indexed id, uint16 hookSwapFee, uint16 hookWithdrawFee);
+    event HookFeeUpdated(PoolId indexed id, uint24 hookFees);
 
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);

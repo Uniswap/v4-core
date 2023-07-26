@@ -12,7 +12,7 @@ contract ProtocolFeeControllerTest is IProtocolFeeController {
     mapping(PoolId => uint16) public swapFeeForPool;
     mapping(PoolId => uint16) public withdrawFeeForPool;
 
-    uint16 private constant FEE_MAX = 2 ** 12 - 1;
+    uint16 private constant MAX_FEE_DENOMINATOR = 0xFFF;
 
     function protocolFeesForPool(PoolKey memory key) external view returns (uint16, uint16) {
         return (swapFeeForPool[key.toId()], withdrawFeeForPool[key.toId()]);
@@ -20,12 +20,10 @@ contract ProtocolFeeControllerTest is IProtocolFeeController {
 
     // for tests to set pool protocol fees
     function setSwapFeeForPool(PoolId id, uint16 fee) external {
-        require(fee <= FEE_MAX, "ProtocolFeeControllerTest: fee too high");
         swapFeeForPool[id] = fee;
     }
 
     function setWithdrawFeeForPool(PoolId id, uint16 fee) external {
-        require(fee <= FEE_MAX, "ProtocolFeeControllerTest: fee too high");
         withdrawFeeForPool[id] = fee;
     }
 }

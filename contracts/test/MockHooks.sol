@@ -92,12 +92,10 @@ contract MockHooks is IHooks, IHookFeeManager {
     }
 
     function setSwapFee(PoolKey calldata key, uint16 value) external {
-        require(value < 2 ** 12);
         swapFees[key.toId()] = value;
     }
 
     function setWithdrawFee(PoolKey calldata key, uint16 value) external {
-        require(value < 2 ** 12);
         withdrawFees[key.toId()] = value;
     }
 }
