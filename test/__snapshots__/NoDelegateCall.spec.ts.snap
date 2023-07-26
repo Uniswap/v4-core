@@ -1,3 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`NoDelegateCall runtime overhead 1`] = `41`;

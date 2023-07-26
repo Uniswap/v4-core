@@ -84,7 +84,7 @@ contract MyContract is ILockCallback {
         poolManager.lock(...);
     }
 
-    function lockAcquired(uint256 id, bytes calldata data) external returns (bytes memory) {
+    function lockAcquired(bytes calldata data) external returns (bytes memory) {
         // perform pool actions
         poolManager.swap(...)
     }
