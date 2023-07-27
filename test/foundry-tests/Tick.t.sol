@@ -17,54 +17,59 @@ contract TickTestTest is Test {
         HIGH
     }
 
-    uint24[3] TICK_SPACINGS = [uint24(10), 60, 200];
+    int24[3] TICK_SPACINGS = [int24(10), 60, 200];
+
+    int24 constant MIN_TICK = -887272;
+    int24 constant MAX_TICK = 887272;
 
     function setUp() public {
         tick = new TickTest();
     }
 
-    function getMinTick(uint24 tickSpacing) internal pure returns (uint256) {
-        return 0;
-        // return (-887272 / tickSpacing) * tickSpacing; // ceil
+    function getMinTick(int24 tickSpacing) internal pure returns (int256) {
+        return (MIN_TICK / tickSpacing) * tickSpacing;
     }
 
-    function getMaxTick(uint24 tickSpacing) internal pure returns (uint256) {
-        return uint256((87272 / tickSpacing) * tickSpacing);
+    function getMaxTick(int24 tickSpacing) internal pure returns (int256) {
+        return (MAX_TICK / tickSpacing) * tickSpacing;
     }
 
-    function checkCantOverflow(uint24 tickSpacing, uint128 maxLiquidityPerTick) internal {
+    function checkCantOverflow(int24 tickSpacing, uint128 maxLiquidityPerTick) internal {
         assertLe(
-            maxLiquidityPerTick * ((getMaxTick(tickSpacing) - getMinTick(tickSpacing)) / tickSpacing + 1),
-            Constants.MAX_UINT128
+            uint256(
+                uint256(maxLiquidityPerTick)
+                    * uint256((getMaxTick(tickSpacing) - getMinTick(tickSpacing)) / tickSpacing + 1)
+            ),
+            uint256(Constants.MAX_UINT128)
         );
     }
 
     // #tickSpacingToMaxLiquidityPerTick
     function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFeeTickSpacing() public {
-        uint24 tickSpacing = TICK_SPACINGS[uint256(FeeAmount.LOW)];
+        int24 tickSpacing = TICK_SPACINGS[uint256(FeeAmount.LOW)];
 
-        uint128 maxLiquidityPerTick = tick.tickSpacingToMaxLiquidityPerTick(int24(tickSpacing));
+        uint128 maxLiquidityPerTick = tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
 
         assertEq(maxLiquidityPerTick, 1917565579412846627735051215301243);
         checkCantOverflow(TICK_SPACINGS[uint256(FeeAmount.LOW)], maxLiquidityPerTick);
     }
 
     function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMediumFeeTickSpacing() public {
-        uint24 tickSpacing = TICK_SPACINGS[uint256(FeeAmount.MEDIUM)];
+        int24 tickSpacing = TICK_SPACINGS[uint256(FeeAmount.MEDIUM)];
 
-        uint128 maxLiquidityPerTick = tick.tickSpacingToMaxLiquidityPerTick(int24(tickSpacing));
+        uint128 maxLiquidityPerTick = tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
 
         assertEq(maxLiquidityPerTick, 11505069308564788430434325881101413); // 113.1 bits
-        checkCantOverflow(TICK_SPACINGS[uint256(FeeAmount.LOW)], maxLiquidityPerTick);
+        checkCantOverflow(TICK_SPACINGS[uint256(FeeAmount.MEDIUM)], maxLiquidityPerTick);
     }
 
     function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForHighFeeTickSpacing() public {
-        uint24 tickSpacing = TICK_SPACINGS[uint256(FeeAmount.HIGH)];
+        int24 tickSpacing = TICK_SPACINGS[uint256(FeeAmount.HIGH)];
 
-        uint128 maxLiquidityPerTick = tick.tickSpacingToMaxLiquidityPerTick(int24(tickSpacing));
+        uint128 maxLiquidityPerTick = tick.tickSpacingToMaxLiquidityPerTick(tickSpacing);
 
         assertEq(maxLiquidityPerTick, 38347205785278154309959589375342946); // 114.7 bits
-        checkCantOverflow(TICK_SPACINGS[uint256(FeeAmount.LOW)], maxLiquidityPerTick);
+        checkCantOverflow(TICK_SPACINGS[uint256(FeeAmount.HIGH)], maxLiquidityPerTick);
     }
 
     function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor1() public {
