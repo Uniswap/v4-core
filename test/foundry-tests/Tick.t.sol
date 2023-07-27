@@ -206,4 +206,87 @@ contract TickTestTest is Test {
         assertEq(feeGrowthInside0X128, 16);
         assertEq(feeGrowthInside1X128, 13);
     }
+
+    // #update
+    function test_update_flipsFromZeroToNonzero() public {
+        (bool flipped, uint128 liquidityGrossAfter) = tick.update(0, 0, 1, 0, 0, false);
+
+        assertEq(flipped, true);
+        assertEq(liquidityGrossAfter, 1);
+    }
+
+    function test_update_doesNotFlipFromNonzeroToGreaterNonzero() public {
+        tick.update(0, 0, 1, 0, 0, false);
+        (bool flipped, uint128 liquidityGrossAfter) = tick.update(0, 0, 1, 0, 0, false);
+
+        assertEq(flipped, false);
+        assertEq(liquidityGrossAfter, 2);
+    }
+
+    function test_update_flipsFromNonzeroToZero() public {
+        tick.update(0, 0, 1, 0, 0, false);
+        (bool flipped, uint128 liquidityGrossAfter) = tick.update(0, 0, -1, 0, 0, false);
+
+        assertEq(flipped, true);
+        assertEq(liquidityGrossAfter, 0);
+    }
+
+    function test_update_doesNotFlipFromNonzeroToLesserZero() public {
+        tick.update(0, 0, 2, 0, 0, false);
+        (bool flipped, uint128 liquidityGrossAfter) = tick.update(0, 0, -1, 0, 0, false);
+
+        assertEq(flipped, false);
+        assertEq(liquidityGrossAfter, 1);
+    }
+
+    function test_update_netsTheLiquidityBasedOnUpperFlag() public {
+        Pool.TickInfo memory tickInfo;
+
+        tick.update(0, 0, 2, 0, 0, false);
+        tick.update(0, 0, 1, 0, 0, true);
+        tick.update(0, 0, 3, 0, 0, true);
+        tick.update(0, 0, 1, 0, 0, false);
+        tickInfo = tick.ticks(0);
+
+        assertEq(tickInfo.liquidityGross, 2 + 1 + 3 + 1);
+        assertEq(tickInfo.liquidityNet, 2 - 1 - 3 + 1);
+    }
+
+    function test_update_revertsOnOverflowLiquidityGross() public {
+        tick.update(0, 0, int128(Constants.MAX_UINT128 / 2 - 1), 0, 0, false);
+
+        vm.expectRevert();
+        tick.update(0, 0, int128(Constants.MAX_UINT128 / 2 - 1), 0, 0, false);
+    }
+
+    function test_update_assumesAllGrowthHappensBelowTicksLteCurrentTick() public {
+        Pool.TickInfo memory tickInfo;
+
+        tick.update(1, 1, 1, 1, 2, false);
+        tickInfo = tick.ticks(1);
+
+        assertEq(tickInfo.feeGrowthOutside0X128, 1);
+        assertEq(tickInfo.feeGrowthOutside1X128, 2);
+    }
+
+    function test_update_doesNotSetAnyGrowthFieldsIfTickIsAlreadyInitialized() public {
+        Pool.TickInfo memory tickInfo;
+
+        tick.update(1, 1, 1, 1, 2, false);
+        tick.update(1, 1, 1, 6, 7, false);
+        tickInfo = tick.ticks(1);
+
+        assertEq(tickInfo.feeGrowthOutside0X128, 1);
+        assertEq(tickInfo.feeGrowthOutside1X128, 2);
+    }
+
+    function test_update_doesNotSetAnyGrowthFieldsForTicksGtCurrentTick() public {
+        Pool.TickInfo memory tickInfo;
+
+        tick.update(2, 1, 1, 1, 2, false);
+        tickInfo = tick.ticks(2);
+
+        assertEq(tickInfo.feeGrowthOutside0X128, 0);
+        assertEq(tickInfo.feeGrowthOutside1X128, 0);
+    }
 }
