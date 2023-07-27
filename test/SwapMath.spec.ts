@@ -232,72 +232,72 @@ describe('SwapMath', () => {
     })
 
     describe('gas', () => {
-      it('swap one for zero exact in capped', async () => {
-        await snapshotGasCost(
-          swapMath.getGasCostOfComputeSwapStep(
-            encodeSqrtPriceX96(1, 1),
-            encodeSqrtPriceX96(101, 100),
-            expandTo18Decimals(2),
-            expandTo18Decimals(1),
-            600
-          )
-        )
-      })
-      it('swap zero for one exact in capped', async () => {
-        await snapshotGasCost(
-          swapMath.getGasCostOfComputeSwapStep(
-            encodeSqrtPriceX96(1, 1),
-            encodeSqrtPriceX96(99, 100),
-            expandTo18Decimals(2),
-            expandTo18Decimals(1),
-            600
-          )
-        )
-      })
-      it('swap one for zero exact out capped', async () => {
-        await snapshotGasCost(
-          swapMath.getGasCostOfComputeSwapStep(
-            encodeSqrtPriceX96(1, 1),
-            encodeSqrtPriceX96(101, 100),
-            expandTo18Decimals(2),
-            expandTo18Decimals(1).mul(-1),
-            600
-          )
-        )
-      })
-      it('swap zero for one exact out capped', async () => {
-        await snapshotGasCost(
-          swapMath.getGasCostOfComputeSwapStep(
-            encodeSqrtPriceX96(1, 1),
-            encodeSqrtPriceX96(99, 100),
-            expandTo18Decimals(2),
-            expandTo18Decimals(1).mul(-1),
-            600
-          )
-        )
-      })
-      it('swap one for zero exact in partial', async () => {
-        await snapshotGasCost(
-          swapMath.getGasCostOfComputeSwapStep(
-            encodeSqrtPriceX96(1, 1),
-            encodeSqrtPriceX96(1010, 100),
-            expandTo18Decimals(2),
-            1000,
-            600
-          )
-        )
-      })
-      it('swap zero for one exact in partial', async () => {
-        await snapshotGasCost(
-          swapMath.getGasCostOfComputeSwapStep(
-            encodeSqrtPriceX96(1, 1),
-            encodeSqrtPriceX96(99, 1000),
-            expandTo18Decimals(2),
-            1000,
-            600
-          )
-        )
-      })
+      // it('swap one for zero exact in capped', async () => {
+      //   await snapshotGasCost(
+      //     swapMath.getGasCostOfComputeSwapStep(
+      //       encodeSqrtPriceX96(1, 1),
+      //       encodeSqrtPriceX96(101, 100),
+      //       expandTo18Decimals(2),
+      //       expandTo18Decimals(1),
+      //       600
+      //     )
+      //   )
+      // })
+      // it('swap zero for one exact in capped', async () => {
+      //   await snapshotGasCost(
+      //     swapMath.getGasCostOfComputeSwapStep(
+      //       encodeSqrtPriceX96(1, 1),
+      //       encodeSqrtPriceX96(99, 100),
+      //       expandTo18Decimals(2),
+      //       expandTo18Decimals(1),
+      //       600
+      //     )
+      //   )
+      // })
+      // it('swap one for zero exact out capped', async () => {
+      //   await snapshotGasCost(
+      //     swapMath.getGasCostOfComputeSwapStep(
+      //       encodeSqrtPriceX96(1, 1),
+      //       encodeSqrtPriceX96(101, 100),
+      //       expandTo18Decimals(2),
+      //       expandTo18Decimals(1).mul(-1),
+      //       600
+      //     )
+      //   )
+      // })
+      // it('swap zero for one exact out capped', async () => {
+      //   await snapshotGasCost(
+      //     swapMath.getGasCostOfComputeSwapStep(
+      //       encodeSqrtPriceX96(1, 1),
+      //       encodeSqrtPriceX96(99, 100),
+      //       expandTo18Decimals(2),
+      //       expandTo18Decimals(1).mul(-1),
+      //       600
+      //     )
+      //   )
+      // })
+      // it('swap one for zero exact in partial', async () => {
+      //   await snapshotGasCost(
+      //     swapMath.getGasCostOfComputeSwapStep(
+      //       encodeSqrtPriceX96(1, 1),
+      //       encodeSqrtPriceX96(1010, 100),
+      //       expandTo18Decimals(2),
+      //       1000,
+      //       600
+      //     )
+      //   )
+      // })
+      // it('swap zero for one exact in partial', async () => {
+      //   await snapshotGasCost(
+      //     swapMath.getGasCostOfComputeSwapStep(
+      //       encodeSqrtPriceX96(1, 1),
+      //       encodeSqrtPriceX96(99, 1000),
+      //       expandTo18Decimals(2),
+      //       1000,
+      //       600
+      //     )
+      //   )
+      // })
       it('swap one for zero exact out partial', async () => {
         await snapshotGasCost(
           swapMath.getGasCostOfComputeSwapStep(

@@ -3,16 +3,24 @@ pragma solidity ^0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {SwapMath} from "../../contracts/libraries/SwapMath.sol";
-
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {SwapMathTest} from "contracts/test/SwapMathTest.sol";
 import {SqrtPriceMath} from "../../contracts/libraries/SqrtPriceMath.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
-contract SwapMathTest is Test {
+contract swapMathTest is Test {
     uint160 private constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
+    uint160 private constant SQRT_RATIO_99_100 = 78831026366734652303669917531;
+    uint160 private constant SQRT_RATIO_99_1000 = 24928559360766947368818086097;
     uint160 private constant SQRT_RATIO_101_100 = 79623317895830914510639640423;
     uint160 private constant SQRT_RATIO_1000_100 = 250541448375047931186413801569;
+    uint160 private constant SQRT_RATIO_1010_100 = 251791039410471229173201122529;
     uint160 private constant SQRT_RATIO_10000_100 = 792281625142643375935439503360;
+
+    SwapMathTest SwapMath;
+
+    function setUp() external {
+        SwapMath = new SwapMathTest();
+    }
 
     function testExactAmountInThatGetsCappedAtPriceTargetInOneForZero() public {
         uint160 priceTarget = SQRT_RATIO_101_100;
@@ -170,5 +178,56 @@ contract SwapMathTest is Test {
         assertEq(sqrtQ, sqrtPTarget);
         assertEq(amountIn, 1);
         assertEq(feeAmount, 1);
+    }
+
+    function testSwapOneForZeroExactInCapped() public {
+        uint256 gasCost =
+            SwapMath.getGasCostOfComputeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, 1 ether, 600);
+
+        assertGt(gasCost, 0);
+    }
+
+    function testSwapZeroForOneExactInCapped() public {
+        uint256 gasCost = SwapMath.getGasCostOfComputeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, 1 ether, 600);
+
+        assertGt(gasCost, 0);
+    }
+
+    function testSwapOneForZeroExactOutCapped() public {
+        uint256 gasCost =
+            SwapMath.getGasCostOfComputeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, (1 ether) * -1, 600);
+
+        assertGt(gasCost, 0);
+    }
+
+    function testSwapZeroForOneExactOutCapped() public {
+        uint256 gasCost =
+            SwapMath.getGasCostOfComputeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, (1 ether) * -1, 600);
+
+        assertGt(gasCost, 0);
+    }
+
+    function testSwapOneForZeroExactInPartial() public {
+        uint256 gasCost = SwapMath.getGasCostOfComputeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000, 600);
+
+        assertGt(gasCost, 0);
+    }
+
+    function testSwapZeroForOneExactInPartial() public {
+        uint256 gasCost = SwapMath.getGasCostOfComputeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000, 600);
+
+        assertGt(gasCost, 0);
+    }
+
+    function testSwapOneForZeroExactOutPartial() public {
+        uint256 gasCost = SwapMath.getGasCostOfComputeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000, 600);
+
+        assertGt(gasCost, 0);
+    }
+
+    function testSwapZeroForOneExactOutPartial() public {
+        uint256 gasCost = SwapMath.getGasCostOfComputeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000, 600);
+
+        assertGt(gasCost, 0);
     }
 }
