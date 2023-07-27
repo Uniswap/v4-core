@@ -1,11 +1,11 @@
-import { BigNumber } from 'ethers'
-import { ethers } from 'hardhat'
-import { SwapMathTest } from '../typechain/SwapMathTest'
+import { BigNumber } from 'ethers' //
+import { ethers } from 'hardhat' //
+import { SwapMathTest } from '../typechain/SwapMathTest' //
 
-import { expect } from './shared/expect'
-import snapshotGasCost from '@uniswap/snapshot-gas-cost'
+import { expect } from './shared/expect' //
+import snapshotGasCost from '@uniswap/snapshot-gas-cost' //
 import { encodeSqrtPriceX96, expandTo18Decimals } from './shared/utilities'
-import { SqrtPriceMathTest } from '../typechain/SqrtPriceMathTest'
+import { SqrtPriceMathTest } from '../typechain/SqrtPriceMathTest' //
 
 describe('SwapMath', () => {
   let swapMath: SwapMathTest
@@ -153,6 +153,7 @@ describe('SwapMath', () => {
         '-1',
         1
       )
+
       expect(amountIn).to.eq('1')
       expect(feeAmount).to.eq('1')
       expect(amountOut).to.eq('1') // would be 2 if not capped
