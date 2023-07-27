@@ -381,4 +381,42 @@ contract TickTestTest is Test {
         assertEq(info.liquidityGross, 0);
         assertEq(info.liquidityNet, 0);
     }
+
+    // #cross
+    function test_cross_flipsTheGrowthVariables() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 1;
+        info.feeGrowthOutside1X128 = 2;
+        info.liquidityGross = 3;
+        info.liquidityNet = 4;
+
+        tick.setTick(2, info);
+
+        tick.cross(2, 7, 9);
+
+        info = tick.ticks(2);
+
+        assertEq(info.feeGrowthOutside0X128, 6);
+        assertEq(info.feeGrowthOutside1X128, 7);
+    }
+
+    function test_cross_twoFlipsAreNoOp() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 1;
+        info.feeGrowthOutside1X128 = 2;
+        info.liquidityGross = 3;
+        info.liquidityNet = 4;
+
+        tick.setTick(2, info);
+
+        tick.cross(2, 7, 9);
+        tick.cross(2, 7, 9);
+
+        info = tick.ticks(2);
+
+        assertEq(info.feeGrowthOutside0X128, 1);
+        assertEq(info.feeGrowthOutside1X128, 2);
+    }
 }
