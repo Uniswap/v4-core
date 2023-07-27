@@ -6,6 +6,7 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {TickTest} from "../../contracts/test/TickTest.sol";
 import {Constants} from "./utils/Constants.sol";
+import {Pool} from "../../contracts/libraries/Pool.sol";
 
 contract TickTestTest is Test {
     TickTest tick;
@@ -104,5 +105,105 @@ contract TickTestTest is Test {
         uint256 gasCost = tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(MAX_TICK_SPACING);
 
         assertGt(gasCost, 0);
+    }
+
+    // #getFeeGrowthInside
+    function test_getFeeGrowthInside_returnsAllForTwoUninitializedTicksIfTickIsInside() public {
+        (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = tick.getFeeGrowthInside(-2, 2, 0, 15, 15);
+
+        assertEq(feeGrowthInside0X128, 15);
+        assertEq(feeGrowthInside1X128, 15);
+    }
+
+    function test_getFeeGrowthInside_returns0ForTwoUninitializedTicksIfTickIsAbove() public {
+        (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = tick.getFeeGrowthInside(-2, 2, 4, 15, 15);
+
+        assertEq(feeGrowthInside0X128, 0);
+        assertEq(feeGrowthInside1X128, 0);
+    }
+
+    function test_getFeeGrowthInside_returns0ForTwoUninitializedTicksIfTickIsBelow() public {
+        (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = tick.getFeeGrowthInside(-2, 2, -4, 15, 15);
+
+        assertEq(feeGrowthInside0X128, 0);
+        assertEq(feeGrowthInside1X128, 0);
+    }
+
+    function test_getFeeGrowthInside_subtractsUpperTickIfBelow() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 2;
+        info.feeGrowthOutside1X128 = 3;
+        info.liquidityGross = 0;
+        info.liquidityNet = 0;
+
+        tick.setTick(2, info);
+
+        (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = tick.getFeeGrowthInside(-2, 2, 0, 15, 15);
+
+        assertEq(feeGrowthInside0X128, 13);
+        assertEq(feeGrowthInside1X128, 12);
+    }
+
+    function test_getFeeGrowthInside_subtractsLowerTickIfAbove() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 2;
+        info.feeGrowthOutside1X128 = 3;
+        info.liquidityGross = 0;
+        info.liquidityNet = 0;
+
+        tick.setTick(-2, info);
+
+        (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = tick.getFeeGrowthInside(-2, 2, 0, 15, 15);
+
+        assertEq(feeGrowthInside0X128, 13);
+        assertEq(feeGrowthInside1X128, 12);
+    }
+
+    function test_getFeeGrowthInside_subtractsUpperAndLowerTickIfInside() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 2;
+        info.feeGrowthOutside1X128 = 3;
+        info.liquidityGross = 0;
+        info.liquidityNet = 0;
+
+        tick.setTick(-2, info);
+
+        info.feeGrowthOutside0X128 = 4;
+        info.feeGrowthOutside1X128 = 1;
+        info.liquidityGross = 0;
+        info.liquidityNet = 0;
+
+        tick.setTick(2, info);
+
+        (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = tick.getFeeGrowthInside(-2, 2, 0, 15, 15);
+
+        assertEq(feeGrowthInside0X128, 9);
+        assertEq(feeGrowthInside1X128, 11);
+    }
+
+    function test_getFeeGrowthInside_worksCorrectlyWithOverflowOnInsideTick() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = Constants.MAX_UINT256 - 3;
+        info.feeGrowthOutside1X128 = Constants.MAX_UINT256 - 2;
+        info.liquidityGross = 0;
+        info.liquidityNet = 0;
+
+        tick.setTick(-2, info);
+
+        info.feeGrowthOutside0X128 = 3;
+        info.feeGrowthOutside1X128 = 5;
+        info.liquidityGross = 0;
+        info.liquidityNet = 0;
+
+        tick.setTick(2, info);
+
+        (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = tick.getFeeGrowthInside(-2, 2, 0, 15, 15);
+
+        assertEq(feeGrowthInside0X128, 16);
+        assertEq(feeGrowthInside1X128, 13);
     }
 }
