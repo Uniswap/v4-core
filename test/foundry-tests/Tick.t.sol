@@ -289,4 +289,76 @@ contract TickTestTest is Test {
         assertEq(tickInfo.feeGrowthOutside0X128, 0);
         assertEq(tickInfo.feeGrowthOutside1X128, 0);
     }
+
+    // #update liquidity parsing
+    function test_update_liquidityParsingParsesMaxUint128StoredLiquidityGrossBeforeUpdate() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 0;
+        info.feeGrowthOutside1X128 = 0;
+        info.liquidityGross = Constants.MAX_UINT128;
+        info.liquidityNet = 0;
+
+        tick.setTick(2, info);
+        tick.update(2, 1, -1, 1, 2, false);
+
+        info = tick.ticks(2);
+
+        assertEq(info.liquidityGross, Constants.MAX_UINT128 - 1);
+        assertEq(info.liquidityNet, -1);
+    }
+
+    function test_update_liquidityParsingParsesMaxUint128StoredLiquidityGrossAfterUpdate() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 0;
+        info.feeGrowthOutside1X128 = 0;
+        info.liquidityGross = (Constants.MAX_UINT128 / 2) + 1;
+        info.liquidityNet = 0;
+
+        tick.setTick(2, info);
+
+        tick.update(2, 1, int128(Constants.MAX_UINT128 / 2), 1, 2, false);
+
+        info = tick.ticks(2);
+
+        assertEq(info.liquidityGross, Constants.MAX_UINT128);
+        assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2));
+    }
+
+    function test_update_liquidityParsingParsesMaxInt128StoredLiquidityGrossBeforeUpdate() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 0;
+        info.feeGrowthOutside1X128 = 0;
+        info.liquidityGross = 1;
+        info.liquidityNet = int128(Constants.MAX_UINT128 / 2);
+
+        tick.setTick(2, info);
+        tick.update(2, 1, -1, 1, 2, false);
+
+        info = tick.ticks(2);
+
+        assertEq(info.liquidityGross, 0);
+        assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2 - 1));
+    }
+
+    function test_update_liquidityParsingParsesMaxInt128StoredLiquidityGrossAfterUpdate() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 0;
+        info.feeGrowthOutside1X128 = 0;
+        info.liquidityGross = 0;
+        info.liquidityNet = int128(Constants.MAX_UINT128 / 2 - 1);
+
+        tick.setTick(2, info);
+
+        tick.update(2, 1, 1, 1, 2, false);
+
+        info = tick.ticks(2);
+
+        assertEq(info.liquidityGross, 1);
+        assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2));
+    }
+
 }
