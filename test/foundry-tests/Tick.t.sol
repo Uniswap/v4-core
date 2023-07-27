@@ -361,4 +361,24 @@ contract TickTestTest is Test {
         assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2));
     }
 
+    // #clear
+    function test_clear_deletesAllTheDataInTheTick() public {
+        Pool.TickInfo memory info;
+
+        info.feeGrowthOutside0X128 = 1;
+        info.feeGrowthOutside1X128 = 2;
+        info.liquidityGross = 3;
+        info.liquidityNet = 4;
+
+        tick.setTick(2, info);
+
+        tick.clear(2);
+
+        info = tick.ticks(2);
+
+        assertEq(info.feeGrowthOutside0X128, 0);
+        assertEq(info.feeGrowthOutside1X128, 0);
+        assertEq(info.liquidityGross, 0);
+        assertEq(info.liquidityNet, 0);
+    }
 }
