@@ -108,25 +108,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         return pools[id].positions.get(owner, tickLower, tickUpper);
     }
 
-    function _accountNoOp(PoolKey memory key, BalanceDelta hookDelta) internal {
-        // NOTE: we are in the lock state of the user, not the hook, unless the hook is the user
-        _accountDelta(key.currency0, hookDelta.amount0());
-        if (hookDelta.amount0() > 0) {
-            // User now owes the pool
-            _mint(address(key.hooks), key.currency0.toId(), uint256(uint128(hookDelta.amount0())), "");
-        } else if (hookDelta.amount0() < 0) {
-            _burn(address(key.hooks), key.currency0.toId(), uint256(uint128(-hookDelta.amount0())));
-        }
-        // else, that is the amount the pool should give to the user
-        // this means the user has to burn their 1155 to get back their tokens
-        _accountDelta(key.currency1, hookDelta.amount1());
-        if (hookDelta.amount1() > 0) {
-            _mint(address(key.hooks), key.currency1.toId(), uint256(uint128(hookDelta.amount1())), "");
-        } else if (hookDelta.amount1() < 0) {
-            _burn(address(key.hooks), key.currency1.toId(), uint256(uint128(-hookDelta.amount1())));
-        }
-    }
-
     /// @inheritdoc IPoolManager
     function getLock(uint256 i) external view override returns (address locker) {
         return LockDataLibrary.getLock(i);
@@ -204,6 +185,21 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta) internal {
         _accountDelta(key.currency0, delta.amount0());
         _accountDelta(key.currency1, delta.amount1());
+    }
+
+    /// @dev on noOp, rebalance 1155 balances of hook and account deltas to the locker
+    function _accountNoOp(PoolKey memory key, BalanceDelta hookDelta) internal {
+        _accountPoolBalanceDelta(key, hookDelta);
+        if (hookDelta.amount0() > 0) {
+            _mint(address(key.hooks), key.currency0.toId(), uint256(uint128(hookDelta.amount0())), "");
+        } else if (hookDelta.amount0() < 0) {
+            _burn(address(key.hooks), key.currency0.toId(), uint256(uint128(-hookDelta.amount0())));
+        }
+        if (hookDelta.amount1() > 0) {
+            _mint(address(key.hooks), key.currency1.toId(), uint256(uint128(hookDelta.amount1())), "");
+        } else if (hookDelta.amount1() < 0) {
+            _burn(address(key.hooks), key.currency1.toId(), uint256(uint128(-hookDelta.amount1())));
+        }
     }
 
     modifier onlyByLocker() {
