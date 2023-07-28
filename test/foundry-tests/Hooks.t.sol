@@ -159,7 +159,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false, 
+                afterDonate: false,
                 noOp: false
             })
         );
