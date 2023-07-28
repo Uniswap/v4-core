@@ -223,7 +223,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes32 hookReturn = key.hooks.beforeModifyPosition(msg.sender, key, params);
             if (bytes4(hookReturn) != IHooks.beforeModifyPosition.selector) {
-                if (bytes4(hookReturn) == Hooks.NO_OP) {
+                if (key.hooks.isNoOp() && bytes4(hookReturn) == Hooks.NO_OP) {
                     delta = noOpToBalanceDelta(hookReturn);
                     _accountNoOp(key, delta);
                     return delta;
@@ -282,7 +282,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes32 hookReturn = key.hooks.beforeSwap(msg.sender, key, params);
             if (bytes4(hookReturn) != IHooks.beforeSwap.selector) {
-                if (bytes4(hookReturn) == Hooks.NO_OP) {
+                if (key.hooks.isNoOp() && bytes4(hookReturn) == Hooks.NO_OP) {
                     // TODO: potentially change this
                     delta = noOpToBalanceDelta(hookReturn);
                     _accountNoOp(key, delta);
@@ -358,7 +358,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes32 hookReturn = key.hooks.beforeDonate(msg.sender, key, amount0, amount1);
             if (bytes4(hookReturn) != IHooks.beforeDonate.selector) {
-                if (bytes4(hookReturn) == Hooks.NO_OP) {
+                if (key.hooks.isNoOp() && bytes4(hookReturn) == Hooks.NO_OP) {
                     delta = noOpToBalanceDelta(hookReturn);
                     _accountNoOp(key, delta);
                     return delta;
