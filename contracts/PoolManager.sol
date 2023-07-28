@@ -123,13 +123,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
-            bytes4 selector = key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96);
-            if (selector != IHooks.beforeInitialize.selector) {
-                if (selector == Hooks.RETURN_BEFORE_INITIALIZE) {
-                    return tick;
-                } else {
-                    revert Hooks.InvalidHookResponse();
-                }
+            if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96) != IHooks.beforeInitialize.selector) {
+                revert Hooks.InvalidHookResponse();
             }
         }
 

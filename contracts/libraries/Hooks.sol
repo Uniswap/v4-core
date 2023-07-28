@@ -19,8 +19,8 @@ library Hooks {
     uint256 internal constant AFTER_SWAP_FLAG = 1 << 154;
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
+    uint256 internal constant NO_OP_FLAG = 1 << 151;
 
-    bytes4 public constant RETURN_BEFORE_INITIALIZE = 0xa31db647; // bytes4(keccak256(abi.encodePacked("ReturnBeforeInitialize")));
     bytes4 public constant RETURN_BEFORE_MODIFY = 0xfd3b7a02; // bytes4(keccak256(abi.encodePacked("ReturnBeforeModify")));
     bytes4 public constant RETURN_BEFORE_SWAP = 0x1ec7530b; // bytes4(keccak256(abi.encodePacked("ReturnBeforeSwap")));
     bytes4 public constant RETURN_BEFORE_DONATE = 0x0f7ee481; // bytes4(keccak256(abi.encodePacked("ReturnBeforeDonate")));
@@ -34,6 +34,7 @@ library Hooks {
         bool afterSwap;
         bool beforeDonate;
         bool afterDonate;
+        bool noOp;
     }
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
@@ -55,6 +56,7 @@ library Hooks {
                 || calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
                 || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
                 || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
+                || calls.noOp != isNoOp(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -63,7 +65,7 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
-        // If there is no hook contract set, then fee cannot be dynamic and there cannot be a hook fee on swap or withdrawal.
+        // If the hook NoOps, check that beforeModifyPosition, beforeSwap, and beforeDonate are all set
         return address(hook) == address(0)
             ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
             : (
@@ -102,5 +104,9 @@ library Hooks {
 
     function shouldCallAfterDonate(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
+    }
+
+    function isNoOp(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & NO_OP_FLAG != 0;
     }
 }
