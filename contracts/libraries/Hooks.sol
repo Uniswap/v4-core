@@ -65,7 +65,6 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
-        // If the hook NoOps, check that beforeModifyPosition, beforeSwap, and beforeDonate are all set
         return address(hook) == address(0)
             ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
             : (
