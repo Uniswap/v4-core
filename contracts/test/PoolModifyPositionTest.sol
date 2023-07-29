@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import {CurrencyLibrary, Currency} from "../libraries/CurrencyLibrary.sol";
+import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 
 contract PoolModifyPositionTest is ILockCallback {
     using CurrencyLibrary for Currency;
@@ -19,11 +20,11 @@ contract PoolModifyPositionTest is ILockCallback {
 
     struct CallbackData {
         address sender;
-        IPoolManager.PoolKey key;
+        PoolKey key;
         IPoolManager.ModifyPositionParams params;
     }
 
-    function modifyPosition(IPoolManager.PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
+    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
         external
         payable
         returns (BalanceDelta delta)
@@ -36,7 +37,7 @@ contract PoolModifyPositionTest is ILockCallback {
         }
     }
 
-    function lockAcquired(uint256, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
