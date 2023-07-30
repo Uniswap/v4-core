@@ -4,11 +4,12 @@ pragma solidity ^0.8.20;
 import "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {GasSnapshot} from "../../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {TickTest} from "../../contracts/test/TickTest.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
 
-contract TickTestTest is Test {
+contract TickTestTest is Test, GasSnapshot {
     TickTest tick;
 
     enum FeeAmount {
@@ -94,22 +95,23 @@ contract TickTestTest is Test {
     }
 
     function test_tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing() public {
-        uint256 gasCost = tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(1);
-
-        assertGt(gasCost, 0);
+        snapStart("tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing");
+        tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(1);
+        snapEnd();
     }
 
     function test_tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing() public {
-        uint256 gasCost = tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(60);
-
-        assertGt(gasCost, 0);
+        snapStart("tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing");
+        tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(60);
+        snapEnd();
     }
 
     function test_tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing() public {
         int24 MAX_TICK_SPACING = 32767;
-        uint256 gasCost = tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(MAX_TICK_SPACING);
 
-        assertGt(gasCost, 0);
+        snapStart("tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing");
+        tick.getGasCostOfTickSpacingToMaxLiquidityPerTick(MAX_TICK_SPACING);
+        snapEnd();
     }
 
     // #getFeeGrowthInside
