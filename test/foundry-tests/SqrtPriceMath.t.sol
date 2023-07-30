@@ -26,7 +26,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     }
 
     function test_getNextSqrtPriceFromInput_revertsIfInputAmountOverflowsThePrice() public {
-        uint160 price = 2 ** 160 - 1;
+        uint160 price = Constants.MAX_UINT160 - 1;
         uint128 liquidity = 1024;
         uint256 amountIn = 1024;
 
@@ -57,7 +57,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     }
 
     function test_getNextSqrtPriceFromInput_returnsTheMinimumPriceForMaxInputs() public {
-        uint160 sqrtP = 2 ** 160 - 1;
+        uint160 sqrtP = Constants.MAX_UINT160 - 1;
         uint128 liquidity = Constants.MAX_UINT128;
         uint256 maxAmountNoOverflow = Constants.MAX_UINT256 - Constants.MAX_UINT128 << 96 / sqrtP;
 
