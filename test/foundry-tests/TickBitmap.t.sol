@@ -4,9 +4,10 @@ pragma solidity ^0.8.20;
 import "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {GasSnapshot} from "../../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {TickBitmapTest} from "../../contracts/test/TickBitmapTest.sol";
 
-contract TickBitmapTestTest is Test {
+contract TickBitmapTestTest is Test, GasSnapshot {
     TickBitmapTest tickBitmap;
 
     function setUp() public {
@@ -79,23 +80,25 @@ contract TickBitmapTestTest is Test {
     }
 
     function test_flipTick_gasCostOfFlippingFirstTickInWordToInitialized() public {
-        uint256 gasCost = tickBitmap.getGasCostOfFlipTick(1);
-
-        assertGt(gasCost, 0);
+        snapStart("flipTick_gasCostOfFlippingFirstTickInWordToInitialized");
+        tickBitmap.getGasCostOfFlipTick(1);
+        snapEnd();
     }
 
     function test_flipTick_gasCostOfFlippingSecondTickInWordToInitialized() public {
         tickBitmap.flipTick(0);
-        uint256 gasCost = tickBitmap.getGasCostOfFlipTick(1);
 
-        assertGt(gasCost, 0);
+        snapStart("flipTick_gasCostOfFlippingSecondTickInWordToInitialized");
+        tickBitmap.getGasCostOfFlipTick(1);
+        snapEnd();
     }
 
     function test_flipTick_gasCostOfFlippingATickThatResultsInDeletingAWord() public {
         tickBitmap.flipTick(0);
-        uint256 gasCost = tickBitmap.getGasCostOfFlipTick(0);
 
-        assertGt(gasCost, 0);
+        snapStart("flipTick_gasCostOfFlippingATickThatResultsInDeletingAWord");
+        tickBitmap.getGasCostOfFlipTick(0);
+        snapEnd();
     }
 
     // #nextInitializedTickWithinOneWord
@@ -206,22 +209,25 @@ contract TickBitmapTestTest is Test {
     function test_nextInitializedTickWithinOneWord_lteFalse_gasCostOnBoundary() public {
         setUpSomeTicks();
 
-        uint256 gasCost = tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(255, false);
-        assertGt(gasCost, 0);
+        snapStart("nextInitializedTickWithinOneWord_lteFalse_gasCostOnBoundary");
+        tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(255, false);
+        snapEnd();
     }
 
     function test_nextInitializedTickWithinOneWord_lteFalse_gasCostJustBelowBoundary() public {
         setUpSomeTicks();
 
-        uint256 gasCost = tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(254, false);
-        assertGt(gasCost, 0);
+        snapStart("nextInitializedTickWithinOneWord_lteFalse_gasCostJustBelowBoundary");
+        tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(254, false);
+        snapEnd();
     }
 
     function test_nextInitializedTickWithinOneWord_lteFalse_gasCostForEntireWord() public {
         setUpSomeTicks();
 
-        uint256 gasCost = tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(768, false);
-        assertGt(gasCost, 0);
+        snapStart("nextInitializedTickWithinOneWord_lteFalse_gasCostForEntireWord");
+        tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(768, false);
+        snapEnd();
     }
 
     function test_nextInitializedTickWithinOneWord_lteTrue_returnsSameTickIfInitialized() public {
@@ -311,21 +317,24 @@ contract TickBitmapTestTest is Test {
     function test_nextInitializedTickWithinOneWord_lteTrue_gasCostOnBoundary() public {
         setUpSomeTicks();
 
-        uint256 gasCost = tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(256, true);
-        assertGt(gasCost, 0);
+        snapStart("nextInitializedTickWithinOneWord_lteTrue_gasCostOnBoundary");
+        tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(256, true);
+        snapEnd();
     }
 
     function test_nextInitializedTickWithinOneWord_lteTrue_gasCostJustBelowBoundary() public {
         setUpSomeTicks();
 
-        uint256 gasCost = tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(255, true);
-        assertGt(gasCost, 0);
+        snapStart("nextInitializedTickWithinOneWord_lteTrue_gasCostJustBelowBoundary");
+        tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(255, true);
+        snapEnd();
     }
 
     function test_nextInitializedTickWithinOneWord_lteTrue_gasCostForEntireWord() public {
         setUpSomeTicks();
 
-        uint256 gasCost = tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(1024, true);
-        assertGt(gasCost, 0);
+        snapStart("nextInitializedTickWithinOneWord_lteTrue_gasCostForEntireWord");
+        tickBitmap.getGasCostOfNextInitializedTickWithinOneWord(1024, true);
+        snapEnd();
     }
 }
