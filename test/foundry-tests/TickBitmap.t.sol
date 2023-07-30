@@ -19,13 +19,13 @@ contract TickBitmapTestTest is Test {
         assertEq(tickBitmap.isInitialized(1), false);
     }
 
-    function test_isInitialized_isFlippedByFlapTick() public {
+    function test_isInitialized_isFlippedByFlipTick() public {
         tickBitmap.flipTick(1);
 
         assertEq(tickBitmap.isInitialized(1), true);
     }
 
-    function test_isInitialized_isFlippedBackByFlapTick() public {
+    function test_isInitialized_isFlippedBackByFlipTick() public {
         tickBitmap.flipTick(1);
         tickBitmap.flipTick(1);
 
