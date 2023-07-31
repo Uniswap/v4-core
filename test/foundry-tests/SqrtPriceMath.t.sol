@@ -114,8 +114,6 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    // #getNextSqrtPriceFromOutput
-
     function test_getNextSqrtPriceFromOutput_revertsIfPriceIsZero() public {
         vm.expectRevert();
         sqrtPriceMath.getNextSqrtPriceFromOutput(0, 0, 0.1 ether, false);
@@ -245,8 +243,6 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    // #getAmount0Delta
-
     function test_getAmount0Delta_returns0IfLiquidityIs0() public {
         uint256 amount0 = sqrtPriceMath.getAmount0Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_2_1, 0, true);
 
@@ -302,8 +298,6 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    // #getAmount1Delta
-
     function test_getAmount1Delta_returns0IfLiquidityIs0() public {
         uint256 amount1 = sqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_2_1, 0, true);
 
@@ -345,8 +339,6 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         );
         snapEnd();
     }
-
-    // #swap computation
 
     function test_swapComputation_sqrtPTimessqrtQOverflows() public {
         // getNextSqrtPriceInvariants(1025574284609383690408304870162715216695788925244,50015962439936049619261659728067971248,406,true)
