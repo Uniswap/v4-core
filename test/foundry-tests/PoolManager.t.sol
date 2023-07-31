@@ -246,7 +246,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(keyInvertedCurrency, sqrtPriceX96);
     }
 
-
     function testPoolManagerInitializeFailsWithIncorrectSelectors() public {
         address hookAddr = address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG));
 

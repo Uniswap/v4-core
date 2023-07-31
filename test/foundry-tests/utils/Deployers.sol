@@ -40,13 +40,7 @@ contract Deployers {
     {
         MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
         (Currency currency0, Currency currency1) = SortTokens.sort(tokens[0], tokens[1]);
-        key = PoolKey(
-            currency0,
-            currency1,
-            fee,
-            fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2),
-            hooks
-        );
+        key = PoolKey(currency0, currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = key.toId();
         manager.initialize(key, sqrtPriceX96);
     }
