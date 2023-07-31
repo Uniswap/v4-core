@@ -71,6 +71,10 @@ library CurrencyLibrary {
         return Currency.unwrap(currency) == Currency.unwrap(other);
     }
 
+    function greaterThan(Currency currency, Currency other) internal pure returns (bool) {
+        return Currency.unwrap(currency) > Currency.unwrap(other);
+    }
+
     function isNative(Currency currency) internal pure returns (bool) {
         return Currency.unwrap(currency) == Currency.unwrap(NATIVE);
     }

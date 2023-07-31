@@ -35,6 +35,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     using Pool for Pool.State;
     using PoolIdLibrary for PoolKey;
     using FeeLibrary for uint24;
+    using CurrencyLibrary for Currency;
 
     event LockAcquired();
     event Initialize(
@@ -102,6 +103,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        vm.assume(!key.currency0.greaterThan(key.currency1));
 
         // tested in Hooks.t.sol
         key.hooks = IHooks(address(0));
@@ -133,10 +135,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-
         PoolKey memory key = PoolKey({
-            currency0: currency0,
-            currency1: Currency.wrap(address(0)),
+            currency0: Currency.wrap(address(0)),
+            currency1: currency1,
             fee: 3000,
             hooks: IHooks(address(0)),
             tickSpacing: 60
@@ -222,6 +223,29 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
     }
+
+    function testPoolManagerInitializeRevertsWithSameTokenCombo(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address hookEmptyAddr = EMPTY_HOOKS;
+
+        MockHooks impl = new MockHooks();
+        vm.etch(hookEmptyAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
+
+        PoolKey memory keyInvertedCurrency =
+            PoolKey({currency0: currency1, currency1: currency0, fee: 3000, hooks: mockHooks, tickSpacing: 60});
+
+        manager.initialize(key, sqrtPriceX96);
+        vm.expectRevert(IPoolManager.CurrenciesInitializedOutOfOrder.selector);
+        manager.initialize(keyInvertedCurrency, sqrtPriceX96);
+    }
+
 
     function testPoolManagerInitializeFailsWithIncorrectSelectors() public {
         address hookAddr = address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG));
