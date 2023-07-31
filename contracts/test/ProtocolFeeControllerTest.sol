@@ -12,8 +12,6 @@ contract ProtocolFeeControllerTest is IProtocolFeeController {
     mapping(PoolId => uint16) public swapFeeForPool;
     mapping(PoolId => uint16) public withdrawFeeForPool;
 
-    uint16 private constant MAX_FEE_DENOMINATOR = 0xFFF;
-
     function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
         return (uint24(swapFeeForPool[key.toId()]) << 12 | withdrawFeeForPool[key.toId()]);
     }

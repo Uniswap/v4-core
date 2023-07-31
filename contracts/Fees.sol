@@ -15,7 +15,6 @@ abstract contract Fees is IFees, Owned {
     using CurrencyLibrary for Currency;
 
     uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
-    uint16 private constant MAX_FEE_DENOMINATOR = 0xFFF;
 
     mapping(Currency currency => uint256) public protocolFeesAccrued;
 
