@@ -38,15 +38,12 @@ abstract contract Fees is IFees, Owned {
             // in mind.
             if (gasleft() < controllerGasLimit) revert ProtocolFeeCannotBeFetched();
             try protocolFeeController.protocolFeesForPool{gas: controllerGasLimit}(key) returns (
-                uint16 updatedProtocolSwapFee, uint16 updatedProtocolWithdrawFee
+                uint24 updatedProtocolFees
             ) {
-                protocolSwapFee = updatedProtocolSwapFee;
-                protocolWithdrawFee = updatedProtocolWithdrawFee;
+                protocolSwapFee = uint16(updatedProtocolFees >> 12);
+                protocolWithdrawFee = uint16(updatedProtocolFees & 0xFFF);
 
-                if (protocolSwapFee > MAX_FEE_DENOMINATOR) revert FeeDenominatorOutOfBounds(protocolSwapFee);
-                if (protocolWithdrawFee > MAX_FEE_DENOMINATOR) revert FeeDenominatorOutOfBounds(protocolWithdrawFee);
-
-                protocolFees = (uint24(protocolSwapFee) << 12) | protocolWithdrawFee;
+                protocolFees = updatedProtocolFees;
             } catch {}
             _checkProtocolFee(protocolSwapFee);
             _checkProtocolFee(protocolWithdrawFee);
@@ -55,19 +52,17 @@ abstract contract Fees is IFees, Owned {
 
     /// @notice There is no cap on the hook fee, but it is specified as a percentage taken on the amount after the protocol fee is applied, if there is a protocol fee.
     function _fetchHookFees(PoolKey memory key) internal view returns (uint24 hookFees) {
-        if (key.fee.hasHookSwapFee()) {
-            uint16 swapFee = IHookFeeManager(address(key.hooks)).getHookSwapFee(key);
-            if (swapFee > MAX_FEE_DENOMINATOR) revert FeeDenominatorOutOfBounds(swapFee);
-            hookFees |= (uint24(swapFee) << 12);
-        }
-
-        if (key.fee.hasHookWithdrawFee()) {
-            uint16 withdrawFee = IHookFeeManager(address(key.hooks)).getHookWithdrawFee(key);
-            if (withdrawFee > MAX_FEE_DENOMINATOR) revert FeeDenominatorOutOfBounds(withdrawFee);
-            hookFees |= withdrawFee;
+        if (address(key.hooks) != address(0)) {
+            try IHookFeeManager(address(key.hooks)).getHookFees(key) returns (uint24 hookFeesRaw) {
+                uint24 swapFeeMask = key.fee.hasHookSwapFee() ? 0xFFF : 0;
+                uint24 withdrawFeeMask = key.fee.hasHookWithdrawFee() ? 0xFFF : 0;
+                uint24 fullFeeMask = swapFeeMask << 12 | withdrawFeeMask;
+                hookFees = hookFeesRaw & fullFeeMask;
+            } catch {}
         }
     }
 
+    /// @dev Only the lower 12 bits are used here to encode the fee denominator.
     function _checkProtocolFee(uint16 fee) internal pure {
         if (fee != 0) {
             uint16 fee0 = fee % 64;

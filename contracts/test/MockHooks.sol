@@ -79,12 +79,8 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function getHookSwapFee(PoolKey calldata key) external view override returns (uint16) {
-        return swapFees[key.toId()];
-    }
-
-    function getHookWithdrawFee(PoolKey calldata key) external view override returns (uint16) {
-        return withdrawFees[key.toId()];
+    function getHookFees(PoolKey calldata key) external view override returns (uint24) {
+        return (uint24(swapFees[key.toId()]) << 12 | withdrawFees[key.toId()]);
     }
 
     function setReturnValue(bytes4 key, bytes4 value) external {
