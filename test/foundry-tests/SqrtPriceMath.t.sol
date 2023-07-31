@@ -109,7 +109,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromInput_zeroForOneEqualsFalseGas() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        snapStart("getNextSqrtPriceFromInput_zeroForOneEqualsTrueGas");
+        snapStart("getNextSqrtPriceFromInput_zeroForOneEqualsFalseGas");
         sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, false);
         snapEnd();
     }
