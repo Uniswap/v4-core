@@ -167,7 +167,9 @@ describe('PoolManager gas tests', () => {
     describe('#initialize', () => {
       it('initialize pool with no hooks and no protocol fee', async () => {
         let currency0 = wallet.address
-        let currency1 = other.address[currency0 < currency1] ? [currency0, currency1] : [currency1, currency0]
+        let currency1 = other.address
+
+        [currency0 < currency1] ? [currency0, currency1] : [currency1, currency0]
 
         const altPoolKey = {
           currency0,
