@@ -5,24 +5,18 @@ import "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {GasSnapshot} from "../../lib/forge-gas-snapshot/src/GasSnapshot.sol";
-import {SqrtPriceMathTest} from "../../contracts/test/SqrtPriceMathTest.sol";
+import {SqrtPriceMath} from "../../contracts/libraries/SqrtPriceMath.sol";
 import {Constants} from "./utils/Constants.sol";
 
 contract SqrtPriceMathTestTest is Test, GasSnapshot {
-    SqrtPriceMathTest sqrtPriceMath;
-
-    function setUp() public {
-        sqrtPriceMath = new SqrtPriceMathTest();
-    }
-
     function test_getNextSqrtPriceFromInput_revertsIfPriceIsZero() public {
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromInput(0, 0, 0.1 ether, false);
+        SqrtPriceMath.getNextSqrtPriceFromInput(0, 0, 0.1 ether, false);
     }
 
     function test_getNextSqrtPriceFromInput_revertsIfLiquidityIsZero() public {
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromInput(1, 0, 0.1 ether, true);
+        SqrtPriceMath.getNextSqrtPriceFromInput(1, 0, 0.1 ether, true);
     }
 
     function test_getNextSqrtPriceFromInput_revertsIfInputAmountOverflowsThePrice() public {
@@ -31,7 +25,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint256 amountIn = 1024;
 
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, amountIn, false);
+        SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, amountIn, false);
     }
 
     function test_getNextSqrtPriceFromInput_anyInputAmountCannotUnderflowThePrice() public {
@@ -39,21 +33,21 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint128 liquidity = 1;
         uint256 amountIn = 2 ** 255;
 
-        assertEq(sqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, amountIn, true), 1);
+        assertEq(SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, amountIn, true), 1);
     }
 
     function test_getNextSqrtPriceFromInput_returnsInputPriceIfAmountInIsZeroAndZeroForOneEqualsTrue() public {
         uint160 price = Constants.SQRT_RATIO_1_1;
         uint128 liquidity = 1;
 
-        assertEq(sqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, 0, true), price);
+        assertEq(SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, 0, true), price);
     }
 
     function test_getNextSqrtPriceFromInput_returnsInputPriceIfAmountInIsZeroAndZeroForOneEqualsFalse() public {
         uint160 price = Constants.SQRT_RATIO_1_1;
         uint128 liquidity = 1;
 
-        assertEq(sqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, 0, false), price);
+        assertEq(SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, 0, false), price);
     }
 
     function test_getNextSqrtPriceFromInput_returnsTheMinimumPriceForMaxInputs() public {
@@ -61,13 +55,13 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint128 liquidity = Constants.MAX_UINT128;
         uint256 maxAmountNoOverflow = Constants.MAX_UINT256 - Constants.MAX_UINT128 << 96 / sqrtP;
 
-        assertEq(sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, maxAmountNoOverflow, true), 1);
+        assertEq(SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, maxAmountNoOverflow, true), 1);
     }
 
     function test_getNextSqrtPriceFromInput_inputAmountOf0_1Currency1() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, false);
+        uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, false);
 
         assertEq(sqrtQ, 87150978765690771352898345369);
     }
@@ -75,7 +69,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromInput_inputAmountOf0_1Currency0() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, true);
+        uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, true);
 
         assertEq(sqrtQ, 72025602285694852357767227579);
     }
@@ -83,7 +77,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromInput_amountInGreaterThanType_uint96_maxAndZeroForOneEqualsTrue() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(10 ether), 2 ** 100, true);
+        uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(10 ether), 2 ** 100, true);
 
         // perfect answer:
         // https://www.wolframalpha.com/input/?i=624999999995069620+-+%28%281e19+*+1+%2F+%281e19+%2B+2%5E100+*+1%29%29+*+2%5E96%29
@@ -93,7 +87,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromInput_canReturn1WithEnoughAmountInAndZeroForOneEqualsTrue() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, 1, Constants.MAX_UINT256 / 2, true);
+        uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, 1, Constants.MAX_UINT256 / 2, true);
 
         assertEq(sqrtQ, 1);
     }
@@ -102,7 +96,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
         snapStart("getNextSqrtPriceFromInput_zeroForOneEqualsTrueGas");
-        sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, true);
+        SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, true);
         snapEnd();
     }
 
@@ -110,18 +104,18 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
         snapStart("getNextSqrtPriceFromInput_zeroForOneEqualsFalseGas");
-        sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, false);
+        SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, false);
         snapEnd();
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfPriceIsZero() public {
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromOutput(0, 0, 0.1 ether, false);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(0, 0, 0.1 ether, false);
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfLiquidityIsZero() public {
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromOutput(1, 0, 0.1 ether, true);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(1, 0, 0.1 ether, true);
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfOutputAmountIsExactlyTheVirtualReservesOfCurrency0() public {
@@ -130,7 +124,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint256 amountOut = 4;
 
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfOutputAmountIsGreaterThanTheVirtualReservesOfCurrency0() public {
@@ -139,7 +133,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint256 amountOut = 5;
 
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfOutputAmountIsGreaterThanTheVirtualReservesOfCurrency1() public {
@@ -148,7 +142,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint256 amountOut = 262145;
 
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfOutputAmountIsExactlyTheVirtualReservesOfCurrency1() public {
@@ -157,7 +151,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint256 amountOut = 262144;
 
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
     }
 
     function test_getNextSqrtPriceFromOutput_succeedsIfOutputAmountIsJustLessThanTheVirtualReservesOfCurrency1()
@@ -167,7 +161,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint128 liquidity = 1024;
         uint256 amountOut = 262143;
 
-        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
+        uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
 
         assertEq(sqrtQ, 77371252455336267181195264);
     }
@@ -178,13 +172,13 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint256 amountOut = 4;
 
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
     }
 
     function test_getNextSqrtPriceFromOutput_returnsInputPriceIfAmountInIsZeroAndZeroForOneEqualsTrue() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        uint256 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(0.1 ether), 0, true);
+        uint256 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(0.1 ether), 0, true);
 
         assertEq(sqrtP, sqrtQ);
     }
@@ -192,7 +186,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromOutput_returnsInputPriceIfAmountInIsZeroAndZeroForOneEqualsFalse() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        uint256 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(0.1 ether), 0, false);
+        uint256 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(0.1 ether), 0, false);
 
         assertEq(sqrtP, sqrtQ);
     }
@@ -200,7 +194,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromOutput_outputAmountOf0_1Currency1() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, false);
+        uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, false);
 
         assertEq(sqrtQ, 88031291682515930659493278152);
     }
@@ -208,7 +202,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromOutput_outputAmountOf0_1Currency0() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, true);
+        uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, true);
 
         assertEq(sqrtQ, 71305346262837903834189555302);
     }
@@ -217,21 +211,21 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, 1, Constants.MAX_UINT256, true);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, 1, Constants.MAX_UINT256, true);
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfAmountOutIsImpossibleInOneForZeroDirection() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
         vm.expectRevert();
-        sqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, 1, Constants.MAX_UINT256, false);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, 1, Constants.MAX_UINT256, false);
     }
 
     function test_getNextSqrtPriceFromOutput_zeroForOneEqualsTrueGas() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
         snapStart("getNextSqrtPriceFromOutput_zeroForOneEqualsTrueGas");
-        sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, true);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, true);
         snapEnd();
     }
 
@@ -239,30 +233,30 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
         snapStart("getNextSqrtPriceFromOutput_zeroForOneEqualsFalseGas");
-        sqrtPriceMath.getGasCostOfGetNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, false);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, false);
         snapEnd();
     }
 
     function test_getAmount0Delta_returns0IfLiquidityIs0() public {
-        uint256 amount0 = sqrtPriceMath.getAmount0Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_2_1, 0, true);
+        uint256 amount0 = SqrtPriceMath.getAmount0Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_2_1, 0, true);
 
         assertEq(amount0, 0);
     }
 
     function test_getAmount0Delta_returns0IfPricesAreEqual() public {
-        uint256 amount0 = sqrtPriceMath.getAmount0Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_1_1, 0, true);
+        uint256 amount0 = SqrtPriceMath.getAmount0Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_1_1, 0, true);
 
         assertEq(amount0, 0);
     }
 
     function test_getAmount0Delta_returns0_1Amount1ForPriceOf1To1_21() public {
-        uint256 amount0 = sqrtPriceMath.getAmount0Delta(
+        uint256 amount0 = SqrtPriceMath.getAmount0Delta(
             Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_121_100, uint128(1 ether), true
         );
 
         assertEq(amount0, 90909090909090910);
 
-        uint256 amount0RoundedDown = sqrtPriceMath.getAmount0Delta(
+        uint256 amount0RoundedDown = SqrtPriceMath.getAmount0Delta(
             Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_121_100, uint128(1 ether), false
         );
 
@@ -275,49 +269,45 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         // sqrtP_2 = encodeSqrtPriceX96(2^96, 1)
         uint160 sqrtP_2 = 22300745198530623141535718272648361505980416;
 
-        uint256 amount0Up = sqrtPriceMath.getAmount0Delta(sqrtP_1, sqrtP_2, uint128(1 ether), true);
+        uint256 amount0Up = SqrtPriceMath.getAmount0Delta(sqrtP_1, sqrtP_2, uint128(1 ether), true);
 
-        uint256 amount0Down = sqrtPriceMath.getAmount0Delta(sqrtP_1, sqrtP_2, uint128(1 ether), false);
+        uint256 amount0Down = SqrtPriceMath.getAmount0Delta(sqrtP_1, sqrtP_2, uint128(1 ether), false);
 
         assertEq(amount0Up, amount0Down + 1);
     }
 
     function test_getAmount0Delta_gasCostForAmount0WhereRoundUpIsTrue() public {
         snapStart("getAmount0Delta_gasCostForAmount0WhereRoundUpIsTrue");
-        sqrtPriceMath.getGasCostOfGetAmount0Delta(
-            Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), true
-        );
+        SqrtPriceMath.getAmount0Delta(Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), true);
         snapEnd();
     }
 
     function test_getAmount0Delta_gasCostForAmount0WhereRoundUpIsFalse() public {
         snapStart("getAmount0Delta_gasCostForAmount0WhereRoundUpIsFalse");
-        sqrtPriceMath.getGasCostOfGetAmount0Delta(
-            Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), false
-        );
+        SqrtPriceMath.getAmount0Delta(Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), false);
         snapEnd();
     }
 
     function test_getAmount1Delta_returns0IfLiquidityIs0() public {
-        uint256 amount1 = sqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_2_1, 0, true);
+        uint256 amount1 = SqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_2_1, 0, true);
 
         assertEq(amount1, 0);
     }
 
     function test_getAmount1Delta_returns0IfPricesAreEqual() public {
-        uint256 amount1 = sqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_1_1, 0, true);
+        uint256 amount1 = SqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_1_1, 0, true);
 
         assertEq(amount1, 0);
     }
 
     function test_getAmount1Delta_returns0_1Amount1ForPriceOf1To1_21() public {
-        uint256 amount1 = sqrtPriceMath.getAmount1Delta(
+        uint256 amount1 = SqrtPriceMath.getAmount1Delta(
             Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_121_100, uint128(1 ether), true
         );
 
         assertEq(amount1, 100000000000000000);
 
-        uint256 amount1RoundedDown = sqrtPriceMath.getAmount1Delta(
+        uint256 amount1RoundedDown = SqrtPriceMath.getAmount1Delta(
             Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_121_100, uint128(1 ether), false
         );
 
@@ -326,17 +316,13 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
 
     function test_getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue() public {
         snapStart("getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue");
-        sqrtPriceMath.getGasCostOfGetAmount1Delta(
-            Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), true
-        );
+        SqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), true);
         snapEnd();
     }
 
     function test_getAmount1Delta_gasCostForAmount1WhereRoundUpIsFalse() public {
         snapStart("getAmount1Delta_gasCostForAmount1WhereRoundUpIsFalse");
-        sqrtPriceMath.getGasCostOfGetAmount1Delta(
-            Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), false
-        );
+        SqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), false);
         snapEnd();
     }
 
@@ -347,10 +333,10 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         bool zeroForOne = true;
         uint128 amountIn = 406;
 
-        uint160 sqrtQ = sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, amountIn, zeroForOne);
+        uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, amountIn, zeroForOne);
         assertEq(sqrtQ, 1025574284609383582644711336373707553698163132913);
 
-        uint256 amount0Delta = sqrtPriceMath.getAmount0Delta(sqrtQ, sqrtP, liquidity, true);
+        uint256 amount0Delta = SqrtPriceMath.getAmount0Delta(sqrtQ, sqrtP, liquidity, true);
         assertEq(amount0Delta, 406);
     }
 }
