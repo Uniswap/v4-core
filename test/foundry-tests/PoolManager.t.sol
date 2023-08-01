@@ -231,17 +231,11 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address hookEmptyAddr = EMPTY_HOOKS;
-
-        MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
-
         PoolKey memory key =
-            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
         PoolKey memory keyInvertedCurrency =
-            PoolKey({currency0: currency1, currency1: currency0, fee: 3000, hooks: mockHooks, tickSpacing: 60});
+            PoolKey({currency0: currency1, currency1: currency0, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
         manager.initialize(key, sqrtPriceX96);
         vm.expectRevert(IPoolManager.CurrenciesInitializedOutOfOrder.selector);
