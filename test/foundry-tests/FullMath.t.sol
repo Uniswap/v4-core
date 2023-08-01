@@ -10,77 +10,91 @@ contract FullMathTest is Test {
     uint256 constant Q128 = 2 ** 128;
     uint256 constant MAX_UINT256 = type(uint256).max;
 
-    function testMulDivRevertsWithZeroDenominator(uint256 x, uint256 y) public {
+    function test_mulDiv_revertsWith0Denominator(uint256 x, uint256 y) public {
         vm.expectRevert();
         x.mulDiv(y, 0);
     }
 
-    function testMulDivRevertsWithOverflowingNumeratorAndZeroDenominator() public {
+    function test_mulDiv_revertsWithOverflowingNumeratorAndZeroDenominator() public {
         vm.expectRevert();
         Q128.mulDiv(Q128, 0);
     }
 
-    function testMulDivRevertsIfOutputOverflows() public {
+    function test_mulDiv_revertsIfOutputOverflows() public {
         vm.expectRevert();
         Q128.mulDiv(Q128, 1);
     }
 
-    function testMulDivRevertsOverflowWithAllMaxInputs() public {
+    function test_mulDiv_revertsOverflowWithAllMaxInputs() public {
         vm.expectRevert();
         MAX_UINT256.mulDiv(MAX_UINT256, MAX_UINT256 - 1);
     }
 
-    function testMulDivMaxInputs() public {
+    function test_mulDiv_validAllMaxInputs() public {
         assertEq(MAX_UINT256.mulDiv(MAX_UINT256, MAX_UINT256), MAX_UINT256);
     }
 
-    function testMulDivNoPhantomOverflow() public {
+    function test_mulDiv_validWithoutPhantomOverflow() public {
         uint256 result = Q128 / 3;
         assertEq(Q128.mulDiv(50 * Q128 / 100, 150 * Q128 / 100), result);
     }
 
-    function testMulDivPhantomOverflow() public {
+    function test_mulDiv_validWithPhantomOverflow() public {
         uint256 result = 4375 * Q128 / 1000;
         assertEq(Q128.mulDiv(35 * Q128, 8 * Q128), result);
     }
 
-    function testMulDivPhantomOverflowRepeatingDecimal() public {
+    function test_mulDiv_phantomOverflowRepeatingDecimal() public {
         uint256 result = 1 * Q128 / 3;
         assertEq(Q128.mulDiv(1000 * Q128, 3000 * Q128), result);
     }
 
-    function testFuzzMulDiv(uint256 x, uint256 y, uint256 d) public {
+    function test_mulDiv_fuzz(uint256 x, uint256 y, uint256 d) public {
         vm.assume(d != 0);
         vm.assume(y != 0);
         vm.assume(x <= type(uint256).max / y);
         assertEq(FullMath.mulDiv(x, y, d), x * y / d);
     }
 
-    function testMulDivRoundingUpRevertsWithZeroDenominator(uint256 x, uint256 y) public {
+    function test_mulDivRoundingUp_revertsWith0Denominator(uint256 x, uint256 y) public {
         vm.expectRevert();
         x.mulDivRoundingUp(y, 0);
     }
 
-    function testMulDivRoundingUpAllMaxInputs() public {
+    function test_mulDivRoundingUp_validWithAllMaxInputs() public {
         assertEq(MAX_UINT256.mulDivRoundingUp(MAX_UINT256, MAX_UINT256), MAX_UINT256);
     }
 
-    function testMulDivRoundingUpNoPhantomOverflow() public {
+    function test_mulDivRoundingUp_validWNoPhantomOverflow() public {
         uint256 result = Q128 / 3 + 1;
         assertEq(Q128.mulDivRoundingUp(50 * Q128 / 100, 150 * Q128 / 100), result);
     }
 
-    function testMulDivRoundingUpPhantomOverflow() public {
+    function test_mulDivRoundingUp_validWithPhantomOverflow() public {
         uint256 result = 4375 * Q128 / 1000;
         assertEq(Q128.mulDiv(35 * Q128, 8 * Q128), result);
     }
 
-    function testMulDivRoundingUpPhantomOverflowRepeatingDecimal() public {
+    function test_mulDivRoundingUp_phantomOverflowRepeatingDecimal() public {
         uint256 result = 1 * Q128 / 3 + 1;
         assertEq(Q128.mulDivRoundingUp(1000 * Q128, 3000 * Q128), result);
     }
 
-    function testFuzzMulDivRoundingUp(uint256 x, uint256 y, uint256 d) public {
+    function test_mulDivRoundingUp_revertsIfMulDivOverflows256BitsAfterRoundingUp() public {
+        vm.expectRevert();
+        FullMath.mulDivRoundingUp(535006138814359, 432862656469423142931042426214547535783388063929571229938474969, 2);
+    }
+
+    function test_mulDivRoundingUp_revertsIfMulDivOverflows256BitsAfterRoundingUpCase2() public {
+        vm.expectRevert();
+        FullMath.mulDivRoundingUp(
+            115792089237316195423570985008687907853269984659341747863450311749907997002549,
+            115792089237316195423570985008687907853269984659341747863450311749907997002550,
+            115792089237316195423570985008687907853269984653042931687443039491902864365164
+        );
+    }
+
+    function test_mulDivRoundingUp_fuzz(uint256 x, uint256 y, uint256 d) public {
         vm.assume(d != 0);
         vm.assume(y != 0);
         vm.assume(x <= type(uint256).max / y);
@@ -89,7 +103,7 @@ contract FullMathTest is Test {
         assertTrue(result == numerator / d || result == numerator / d + 1);
     }
 
-    function testMulDivRounding(uint256 x, uint256 y, uint256 d) public {
+    function test_mulDivRounding(uint256 x, uint256 y, uint256 d) public {
         unchecked {
             vm.assume(d > 0);
             vm.assume(!resultOverflows(x, y, d));
@@ -106,7 +120,7 @@ contract FullMathTest is Test {
         }
     }
 
-    function testMulDivRecomputed(uint256 x, uint256 y, uint256 d) public {
+    function test_mulDiv_recomputed(uint256 x, uint256 y, uint256 d) public {
         unchecked {
             vm.assume(d > 0);
             vm.assume(!resultOverflows(x, y, d));
@@ -168,6 +182,7 @@ contract FullMathTest is Test {
             return false;
         }
 
+        // Iif intermediate multiplication doesn't overflow, there's no overflow
         if (x <= type(uint256).max / y) return false;
 
         uint256 remainder = mulmod(x, y, type(uint256).max);
@@ -178,6 +193,14 @@ contract FullMathTest is Test {
             big = (remainder - small) - (remainder < small ? 1 : 0);
         }
 
-        return d <= big;
+        bool mulDivResultOverflows = d <= big;
+        bool mulDivRoundingUpResultOverflows = mulDivResultOverflows;
+
+        // must catch edgecase where mulDiv doesn't overflow but roundingUp does
+        if (!mulDivResultOverflows) {
+            mulDivRoundingUpResultOverflows = FullMath.mulDiv(x, y, d) == type(uint256).max;
+        }
+
+        return mulDivResultOverflows || mulDivRoundingUpResultOverflows;
     }
 }
