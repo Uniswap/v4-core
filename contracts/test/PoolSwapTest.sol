@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.8.19;
+pragma solidity ^0.8.20;
 
-import {CurrencyLibrary, Currency} from "../libraries/CurrencyLibrary.sol";
+import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 
 contract PoolSwapTest is ILockCallback {
     using CurrencyLibrary for Currency;
@@ -19,7 +21,7 @@ contract PoolSwapTest is ILockCallback {
     struct CallbackData {
         address sender;
         TestSettings testSettings;
-        IPoolManager.PoolKey key;
+        PoolKey key;
         IPoolManager.SwapParams params;
     }
 
@@ -28,14 +30,13 @@ contract PoolSwapTest is ILockCallback {
         bool settleUsingTransfer;
     }
 
-    function swap(
-        IPoolManager.PoolKey memory key,
-        IPoolManager.SwapParams memory params,
-        TestSettings memory testSettings
-    ) external payable returns (IPoolManager.BalanceDelta memory delta) {
-        delta = abi.decode(
-            manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params))), (IPoolManager.BalanceDelta)
-        );
+    function swap(PoolKey memory key, IPoolManager.SwapParams memory params, TestSettings memory testSettings)
+        external
+        payable
+        returns (BalanceDelta delta)
+    {
+        delta =
+            abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params))), (BalanceDelta));
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {
@@ -48,16 +49,16 @@ contract PoolSwapTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        IPoolManager.BalanceDelta memory delta = manager.swap(data.key, data.params);
+        BalanceDelta delta = manager.swap(data.key, data.params);
 
         if (data.params.zeroForOne) {
-            if (delta.amount0 > 0) {
+            if (delta.amount0() > 0) {
                 if (data.testSettings.settleUsingTransfer) {
                     if (data.key.currency0.isNative()) {
-                        manager.settle{value: uint256(delta.amount0)}(data.key.currency0);
+                        manager.settle{value: uint128(delta.amount0())}(data.key.currency0);
                     } else {
                         IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
-                            data.sender, address(manager), uint256(delta.amount0)
+                            data.sender, address(manager), uint128(delta.amount0())
                         );
                         manager.settle(data.key.currency0);
                     }
@@ -67,26 +68,26 @@ contract PoolSwapTest is ILockCallback {
                         data.sender,
                         address(manager),
                         uint256(uint160(Currency.unwrap(data.key.currency0))),
-                        uint256(delta.amount0),
+                        uint128(delta.amount0()),
                         ""
                     );
                 }
             }
-            if (delta.amount1 < 0) {
+            if (delta.amount1() < 0) {
                 if (data.testSettings.withdrawTokens) {
-                    manager.take(data.key.currency1, data.sender, uint256(-delta.amount1));
+                    manager.take(data.key.currency1, data.sender, uint128(-delta.amount1()));
                 } else {
-                    manager.mint(data.key.currency1, data.sender, uint256(-delta.amount1));
+                    manager.mint(data.key.currency1, data.sender, uint128(-delta.amount1()));
                 }
             }
         } else {
-            if (delta.amount1 > 0) {
+            if (delta.amount1() > 0) {
                 if (data.testSettings.settleUsingTransfer) {
                     if (data.key.currency1.isNative()) {
-                        manager.settle{value: uint256(delta.amount1)}(data.key.currency1);
+                        manager.settle{value: uint128(delta.amount1())}(data.key.currency1);
                     } else {
                         IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
-                            data.sender, address(manager), uint256(delta.amount1)
+                            data.sender, address(manager), uint128(delta.amount1())
                         );
                         manager.settle(data.key.currency1);
                     }
@@ -96,16 +97,16 @@ contract PoolSwapTest is ILockCallback {
                         data.sender,
                         address(manager),
                         uint256(uint160(Currency.unwrap(data.key.currency1))),
-                        uint256(delta.amount1),
+                        uint128(delta.amount1()),
                         ""
                     );
                 }
             }
-            if (delta.amount0 < 0) {
+            if (delta.amount0() < 0) {
                 if (data.testSettings.withdrawTokens) {
-                    manager.take(data.key.currency0, data.sender, uint256(-delta.amount0));
+                    manager.take(data.key.currency0, data.sender, uint128(-delta.amount0()));
                 } else {
-                    manager.mint(data.key.currency0, data.sender, uint256(-delta.amount0));
+                    manager.mint(data.key.currency0, data.sender, uint128(-delta.amount0()));
                 }
             }
         }

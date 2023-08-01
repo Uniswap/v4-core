@@ -1,31 +1,26 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
-import {Deployers} from "./utils/Deployers.sol";
-import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
-import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
-import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 
-contract PoolTest is Test, Deployers {
+contract PoolTest is Test {
     using Pool for Pool.State;
 
     Pool.State state;
 
-    function testPoolInitialize(uint160 sqrtPriceX96, uint8 protocolFee) public {
+    function testPoolInitialize(uint160 sqrtPriceX96, uint8 protocolFee, uint8 hookFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
             vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
-            state.initialize(sqrtPriceX96, protocolFee);
+            state.initialize(sqrtPriceX96, protocolFee, hookFee, protocolFee, hookFee);
         } else {
-            state.initialize(sqrtPriceX96, protocolFee);
+            state.initialize(sqrtPriceX96, protocolFee, hookFee, protocolFee, hookFee);
             assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(state.slot0.protocolFee, protocolFee);
+            assertEq(state.slot0.protocolSwapFee, protocolFee);
             assertEq(state.slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
             assertLt(state.slot0.tick, TickMath.MAX_TICK);
             assertGt(state.slot0.tick, TickMath.MIN_TICK - 1);
@@ -37,7 +32,7 @@ contract PoolTest is Test, Deployers {
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
 
-        testPoolInitialize(sqrtPriceX96, 0);
+        testPoolInitialize(sqrtPriceX96, 0, 0);
 
         if (params.tickLower >= params.tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
@@ -71,7 +66,7 @@ contract PoolTest is Test, Deployers {
         vm.assume(params.tickSpacing < 32768);
         vm.assume(params.fee < 1000000);
 
-        testPoolInitialize(sqrtPriceX96, 0);
+        testPoolInitialize(sqrtPriceX96, 0, 0);
         Pool.Slot0 memory slot0 = state.slot0;
 
         if (params.amountSpecified == 0) {
@@ -105,19 +100,5 @@ contract PoolTest is Test, Deployers {
         } else {
             assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
         }
-    }
-
-    function testLastUpdateTimestamp() public {
-        vm.warp(100);
-        state.initialize(TickMath.MIN_SQRT_RATIO, 0);
-        assertEq(state.slot0.lastSwapTimestamp, 0);
-
-        vm.warp(500);
-        state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + 1));
-        assertEq(state.slot0.lastSwapTimestamp, 500);
-
-        vm.warp(700);
-        state.swap(Pool.SwapParams(300, 20, false, 1, SQRT_RATIO_1_1 + 2));
-        assertEq(state.slot0.lastSwapTimestamp, 700);
     }
 }

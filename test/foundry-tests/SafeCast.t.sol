@@ -1,4 +1,5 @@
-pragma solidity ^0.8.19;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -29,6 +30,15 @@ contract SafeCastTest is Test {
         } else {
             vm.expectRevert();
             SafeCast.toInt256(x);
+        }
+    }
+
+    function testToInt128(uint256 x) public {
+        if (x <= uint128(type(int128).max)) {
+            assertEq(uint128(SafeCast.toInt128(x)), x);
+        } else {
+            vm.expectRevert();
+            SafeCast.toInt128(x);
         }
     }
 }

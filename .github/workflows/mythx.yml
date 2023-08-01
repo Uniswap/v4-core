@@ -36,10 +36,10 @@ jobs:
         run: |
           pip3 install solc-select
 
-      - name: Install solc 0.8.19
+      - name: Install solc 0.8.20
         run: |
-          solc-select install 0.8.19
-          solc-select use 0.8.19
+          solc-select install 0.8.20
+          solc-select use 0.8.20
 
       - name: Submit code to Mythx
         run: |
@@ -50,7 +50,7 @@ jobs:
             --async \
             --create-group \
             --group-name "@uniswap/core-next@${{ github.sha }}" \
-            --solc-version 0.8.19 \
+            --solc-version 0.8.20 \
             --check-properties \
             --remap-import "@openzeppelin/contracts/=$(pwd)/node_modules/@openzeppelin/contracts/" \
             contracts/test/TickBitmapEchidnaTest.sol --include TickBitmapEchidnaTest \

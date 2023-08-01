@@ -1,7 +1,7 @@
 {
-  "name": "@uniswap/core-next",
+  "name": "@uniswap/v4-core",
   "description": "🦄 Uniswap Protocol smart contracts",
-  "license": "UNLICENSED",
+  "license": "BUSL-1.1",
   "publishConfig": {
     "access": "restricted"
   },
@@ -10,11 +10,11 @@
   "keywords": [
     "uniswap",
     "core",
-    "v3"
+    "v4"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Uniswap/core-next"
+    "url": "https://github.com/Uniswap/v4-core"
   },
   "files": [
     "contracts/interfaces",
@@ -56,7 +56,9 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "snapshots": "UPDATE_SNAPSHOT=1 hardhat test",
-    "prettier": "forge fmt contracts/**/*.sol && forge fmt test/**/*.sol && prettier --write 'test/**/*.ts'",
-    "prettier-check": "forge fmt --check && prettier --check 'test/**/*.ts'"
+    "prettier": "forge fmt contracts/ && forge fmt test/ && prettier --write 'test/**/*.ts'",
+    "prettier-check": "forge fmt --check && prettier --check 'test/**/*.ts'",
+    "forge-test-getSqrtRatioAtTick": "npx ts-node js-scripts/getSqrtRatioAtTick.ts",
+    "forge-test-getTickAtSqrtRatio": "npx ts-node js-scripts/getTickAtSqrtRatio.ts"
   }
 }
