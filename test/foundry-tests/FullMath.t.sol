@@ -65,7 +65,7 @@ contract FullMathTest is Test {
         assertEq(MAX_UINT256.mulDivRoundingUp(MAX_UINT256, MAX_UINT256), MAX_UINT256);
     }
 
-    function test_mulDivRoundingUp_validWNoPhantomOverflow() public {
+    function test_mulDivRoundingUp_validWithNoPhantomOverflow() public {
         uint256 result = Q128 / 3 + 1;
         assertEq(Q128.mulDivRoundingUp(50 * Q128 / 100, 150 * Q128 / 100), result);
     }
@@ -75,7 +75,7 @@ contract FullMathTest is Test {
         assertEq(Q128.mulDiv(35 * Q128, 8 * Q128), result);
     }
 
-    function test_mulDivRoundingUp_phantomOverflowRepeatingDecimal() public {
+    function test_mulDivRoundingUp_validWithPhantomOverflowRepeatingDecimal() public {
         uint256 result = 1 * Q128 / 3 + 1;
         assertEq(Q128.mulDivRoundingUp(1000 * Q128, 3000 * Q128), result);
     }
