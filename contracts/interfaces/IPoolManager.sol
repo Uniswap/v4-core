@@ -30,6 +30,9 @@ interface IPoolManager is IFees, IERC1155 {
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
     error TickSpacingTooSmall();
 
+    /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
+    error CurrenciesInitializedOutOfOrder();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order

@@ -8,7 +8,7 @@ import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
-import {TestERC20} from "../../contracts/test/TestERC20.sol";
+import {MockERC20} from "./utils/MockERC20.sol";
 import {IHooks} from "../../contracts/interfaces/IHooks.sol";
 import {Currency} from "../../contracts/types/Currency.sol";
 import {IERC20Minimal} from "../../contracts/interfaces/external/IERC20Minimal.sol";
@@ -48,33 +48,29 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testBeforeInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
-        TestERC20[] memory tokens = Deployers.deployTokens(2, 2 ** 255);
-        PoolKey memory _key = PoolKey(
-            Currency.wrap(address(tokens[0])), Currency.wrap(address(tokens[1])), 3000, int24(3000 / 100 * 2), mockHooks
-        );
+        (Currency currency0, Currency currency1) = Deployers.deployCurrencies(2 ** 255);
+        PoolKey memory _key = PoolKey(currency0, currency1, 3000, int24(3000 / 100 * 2), mockHooks);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         manager.initialize(_key, SQRT_RATIO_1_1);
     }
 
     function testAfterInitializeInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
-        TestERC20[] memory tokens = Deployers.deployTokens(2, 2 ** 255);
-        PoolKey memory _key = PoolKey(
-            Currency.wrap(address(tokens[0])), Currency.wrap(address(tokens[1])), 3000, int24(3000 / 100 * 2), mockHooks
-        );
+        (Currency currency0, Currency currency1) = Deployers.deployCurrencies(2 ** 255);
+        PoolKey memory _key = PoolKey(currency0, currency1, 3000, int24(3000 / 100 * 2), mockHooks);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         manager.initialize(_key, SQRT_RATIO_1_1);
     }
 
     function testModifyPositionSucceedsWithHook() public {
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
     }
 
     function testBeforeModifyPositionInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, bytes4(0xdeadbeef));
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
@@ -82,14 +78,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testAfterModifyPositionInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, bytes4(0xdeadbeef));
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
     }
 
     function testSwapSucceedsWithHook() public {
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
             key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false)
@@ -98,7 +94,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testBeforeSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
@@ -108,7 +104,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testAfterSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, bytes4(0xdeadbeef));
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
@@ -620,8 +616,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function addLiquidity(int24 tickLower, int24 tickUpper, int256 amount) internal {
-        TestERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        TestERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(tickLower, tickUpper, amount));
