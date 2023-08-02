@@ -53,9 +53,9 @@ abstract contract Fees is IFees, Owned {
     function _fetchHookFees(PoolKey memory key) internal view returns (uint24 hookFees) {
         if (address(key.hooks) != address(0)) {
             try IHookFeeManager(address(key.hooks)).getHookFees(key) returns (uint24 hookFeesRaw) {
-                uint24 swapFeeMask = key.fee.hasHookSwapFee() ? 0xFFF : 0;
+                uint24 swapFeeMask = key.fee.hasHookSwapFee() ? 0xFFF000 : 0;
                 uint24 withdrawFeeMask = key.fee.hasHookWithdrawFee() ? 0xFFF : 0;
-                uint24 fullFeeMask = swapFeeMask << 12 | withdrawFeeMask;
+                uint24 fullFeeMask = swapFeeMask | withdrawFeeMask;
                 hookFees = hookFeesRaw & fullFeeMask;
             } catch {}
         }
