@@ -81,6 +81,14 @@ library CurrencyLibrary {
         }
     }
 
+    function balanceOf(Currency currency, address owner) internal view returns (uint256) {
+        if (currency.isNative()) {
+            return owner.balance;
+        } else {
+            return IERC20Minimal(Currency.unwrap(currency)).balanceOf(owner);
+        }
+    }
+
     function isNative(Currency currency) internal pure returns (bool) {
         return Currency.unwrap(currency) == Currency.unwrap(NATIVE);
     }
