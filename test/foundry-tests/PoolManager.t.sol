@@ -20,6 +20,7 @@ import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
+import {NoOpTestHooks} from "../../contracts/test/NoOpTestHooks.sol";
 import {PoolKey} from "../../contracts/types/PoolKey.sol";
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
@@ -983,6 +984,63 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         donateRouter.donate(key, 100, 0);
         snapEnd();
     }
+
+    function testPoolManagerNoOp(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable hookAddr = payable(
+            address(
+                uint160(
+                    Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG
+                        | Hooks.NO_OP_FLAG
+                )
+            )
+        );
+
+        vm.etch(hookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(hookAddr), tickSpacing: 10});
+
+        manager.initialize(key, SQRT_RATIO_1_1);
+
+        // Test add liquidity
+        snapStart("modify position with noop");
+        BalanceDelta delta =
+            modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether));
+        snapEnd();
+
+        assertEq(delta.amount0(), 0);
+        assertEq(delta.amount1(), 0);
+
+        // Swap
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        snapStart("swap with noop");
+        delta = swapRouter.swap(key, swapParams, testSettings);
+        snapEnd();
+
+        assertEq(delta.amount0(), 0);
+        assertEq(delta.amount1(), 0);
+
+        // Donate
+        snapStart("donate with noop");
+        delta = donateRouter.donate(key, 0, 0);
+        snapStart("donate with noop");
+
+        assertEq(delta.amount0(), 0);
+        assertEq(delta.amount1(), 0);
+    }
+
+    // function testPoolManagerNoOpFlagButReturnsNormalSelector() public {
+
+    // }
 
     function testNoOpLockIsOk() public {
         snapStart("gas overhead of no-op lock");
