@@ -985,7 +985,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function testPoolManagerNoOp(uint160 sqrtPriceX96) public {
+    function testPoolManagerNoOpSelector(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
@@ -1038,9 +1038,52 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(delta.amount1(), 0);
     }
 
-    // function testPoolManagerNoOpFlagButReturnsNormalSelector() public {
+    function testPoolManagerNoOpReturnNormalSelector(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-    // }
+        address payable hookAddr = payable(
+            address(
+                uint160(
+                    Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG
+                        | Hooks.NO_OP_FLAG
+                )
+            )
+        );
+
+        vm.etch(hookAddr, vm.getDeployedCode("NoOpReturnNormalSelector.sol:NoOpReturnNormalSelector"));
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(hookAddr), tickSpacing: 10});
+
+        manager.initialize(key, SQRT_RATIO_1_1);
+
+        // Test add liquidity
+        BalanceDelta delta =
+            modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether));
+
+        assertFalse(delta.amount0() == 0);
+        assertFalse(delta.amount1() == 0);
+
+        // Swap
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        delta = swapRouter.swap(key, swapParams, testSettings);
+
+        assertFalse(delta.amount0() == 0);
+        assertFalse(delta.amount1() == 0);
+
+        // Donate
+        delta = donateRouter.donate(key, 1 ether, 1 ether);
+
+        assertEq(delta.amount0(), 1 ether);
+        assertEq(delta.amount1(), 1 ether);
+    }
 
     function testNoOpLockIsOk() public {
         snapStart("gas overhead of no-op lock");

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
@@ -7,31 +7,31 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 
-contract NoOpTestHooks is IHooks {
+contract NoOpReturnNormalSelector is IHooks {
     using Hooks for IHooks;
 
     constructor() {
         IHooks(this).validateHookAddress(
             Hooks.Calls({
-                beforeInitialize: false,
-                afterInitialize: false,
+                beforeInitialize: true,
+                afterInitialize: true,
                 beforeModifyPosition: true,
-                afterModifyPosition: false,
+                afterModifyPosition: true,
                 beforeSwap: true,
-                afterSwap: false,
+                afterSwap: true,
                 beforeDonate: true,
-                afterDonate: false,
+                afterDonate: true,
                 noOp: true
             })
         );
     }
 
     function beforeInitialize(address, PoolKey memory, uint160) external pure override returns (bytes4) {
-        return bytes4(0);
+        return IHooks.beforeInitialize.selector;
     }
 
     function afterInitialize(address, PoolKey memory, uint160, int24) external pure override returns (bytes4) {
-        return bytes4(0);
+        return IHooks.afterInitialize.selector;
     }
 
     function beforeModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata)
@@ -40,7 +40,7 @@ contract NoOpTestHooks is IHooks {
         override
         returns (bytes4)
     {
-        return Hooks.NO_OP_SELECTOR;
+        return IHooks.beforeModifyPosition.selector;
     }
 
     function afterModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, BalanceDelta)
@@ -49,7 +49,7 @@ contract NoOpTestHooks is IHooks {
         override
         returns (bytes4)
     {
-        return bytes4(0);
+        return IHooks.afterModifyPosition.selector;
     }
 
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata)
@@ -58,7 +58,7 @@ contract NoOpTestHooks is IHooks {
         override
         returns (bytes4)
     {
-        return Hooks.NO_OP_SELECTOR;
+        return IHooks.beforeSwap.selector;
     }
 
     function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
@@ -67,14 +67,14 @@ contract NoOpTestHooks is IHooks {
         override
         returns (bytes4)
     {
-        return bytes4(0);
+        return IHooks.afterSwap.selector;
     }
 
     function beforeDonate(address, PoolKey calldata, uint256, uint256) external pure override returns (bytes4) {
-        return Hooks.NO_OP_SELECTOR;
+        return IHooks.beforeDonate.selector;
     }
 
     function afterDonate(address, PoolKey calldata, uint256, uint256) external pure override returns (bytes4) {
-        return bytes4(0);
+        return IHooks.afterDonate.selector;
     }
 }
