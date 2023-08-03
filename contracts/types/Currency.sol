@@ -33,6 +33,9 @@ library CurrencyLibrary {
     /// @notice Thrown when an ERC20 transferFrom fails
     error ERC20TransferFromFailed();
 
+    /// @notice Thrown when attempting to transferFrom with a native currency
+    error NativeCurrencyTransferFrom();
+
     Currency public constant NATIVE = Currency.wrap(address(0));
 
     function transfer(Currency currency, address to, uint256 amount) internal {
@@ -80,6 +83,10 @@ library CurrencyLibrary {
         // implementation from
         // https://github.com/transmissions11/solmate/blob/e8f96f25d48fe702117ce76c79228ca4f20206cb/src/utils/SafeTransferLib.sol
         bool success;
+
+        if (currency.isNative()) {
+            revert NativeCurrencyTransferFrom();
+        }
 
         assembly {
             // We'll write our calldata to this slot below, but restore it later.
