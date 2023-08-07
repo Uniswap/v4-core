@@ -6,7 +6,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {GasSnapshot} from "../../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
 
-contract TickBitmapTestTest is Test, GasSnapshot {
+contract TickBitmapTest is Test, GasSnapshot {
     using TickBitmap for mapping(int16 => uint256);
 
     mapping(int16 => uint256) public bitmap;
