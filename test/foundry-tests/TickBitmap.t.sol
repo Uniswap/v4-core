@@ -104,14 +104,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function setUpSomeTicks() internal {
-        int24[9] memory ticks = [int24(-200), -55, -4, 70, 78, 84, 139, 240, 535];
-
-        for (uint256 i; i < ticks.length - 1; i++) {
-            flipTick(ticks[i]);
-        }
-    }
-
     function test_nextInitializedTickWithinOneWord_lteFalse_returnsTickToRightIfAtInitializedTick() public {
         setUpSomeTicks();
 
@@ -337,5 +329,13 @@ contract TickBitmapTest is Test, GasSnapshot {
         snapStart("nextInitializedTickWithinOneWord_lteTrue_gasCostForEntireWord");
         bitmap.nextInitializedTickWithinOneWord(1024, 1, true);
         snapEnd();
+    }
+
+    function setUpSomeTicks() internal {
+        int24[9] memory ticks = [int24(-200), -55, -4, 70, 78, 84, 139, 240, 535];
+
+        for (uint256 i; i < ticks.length - 1; i++) {
+            flipTick(ticks[i]);
+        }
     }
 }
