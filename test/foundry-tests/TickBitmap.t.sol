@@ -139,7 +139,6 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheNextInitializedTickFromTheNextWord() public {
-        // setUpSomeTicks();
         flipTick(340);
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(328, 1, false);
