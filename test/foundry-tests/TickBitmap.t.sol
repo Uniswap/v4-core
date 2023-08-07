@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {GasSnapshot} from "../../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
+import {TickMath} from "../../contracts/libraries/TickMath.sol";
 
 contract TickBitmapTest is Test, GasSnapshot {
     using TickBitmap for mapping(int16 => uint256);
@@ -329,6 +330,31 @@ contract TickBitmapTest is Test, GasSnapshot {
         snapStart("nextInitializedTickWithinOneWord_lteTrue_gasCostForEntireWord");
         bitmap.nextInitializedTickWithinOneWord(1024, 1, true);
         snapEnd();
+    }
+
+    function test_nextInitializedTickWithinOneWord_fuzz(int24 tick, bool lte) public {
+        // assume tick is at least one word of type(int24).(max | min)
+        vm.assume(lte ? tick >= -8388352 : tick < 8388351);
+
+        (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(tick, 1, lte);
+
+        if (lte) {
+            assertLe(next, tick);
+            assertLe(tick - next, 256);
+            // all the ticks between the input tick and the next tick should be uninitialized
+            for (int24 i = tick; i > next; i--) {
+                assertTrue(!isInitialized(i));
+            }
+            assertEq(isInitialized(next), initialized);
+        } else {
+            assertGt(next, tick);
+            assertLe(next - tick, 256);
+            // all the ticks between the input tick and the next tick should be uninitialized
+            for (int24 i = tick + 1; i < next; i++) {
+                assertTrue(!isInitialized(i));
+            }
+            assertEq(isInitialized(next), initialized);
+        }
     }
 
     function setUpSomeTicks() internal {
