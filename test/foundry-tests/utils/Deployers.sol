@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {TestERC20} from "../../../contracts/test/TestERC20.sol";
+import {MockERC20} from "./MockERC20.sol";
 import {Hooks} from "../../../contracts/libraries/Hooks.sol";
 import {Currency} from "../../../contracts/types/Currency.sol";
 import {IHooks} from "../../../contracts/interfaces/IHooks.sol";
@@ -11,6 +11,7 @@ import {PoolId, PoolIdLibrary} from "../../../contracts/types/PoolId.sol";
 import {FeeLibrary} from "../../../contracts/libraries/FeeLibrary.sol";
 import {PoolKey} from "../../../contracts/types/PoolKey.sol";
 import {Constants} from "../utils/Constants.sol";
+import {SortTokens} from "./SortTokens.sol";
 
 contract Deployers {
     using FeeLibrary for uint24;
@@ -21,10 +22,15 @@ contract Deployers {
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
     uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
 
-    function deployTokens(uint8 count, uint256 totalSupply) internal returns (TestERC20[] memory tokens) {
-        tokens = new TestERC20[](count);
+    function deployCurrencies(uint256 totalSupply) internal returns (Currency currency0, Currency currency1) {
+        MockERC20[] memory tokens = deployTokens(2, totalSupply);
+        return SortTokens.sort(tokens[0], tokens[1]);
+    }
+
+    function deployTokens(uint8 count, uint256 totalSupply) internal returns (MockERC20[] memory tokens) {
+        tokens = new MockERC20[](count);
         for (uint8 i = 0; i < count; i++) {
-            tokens[i] = new TestERC20(totalSupply);
+            tokens[i] = new MockERC20("TEST", "TEST", 18, totalSupply);
         }
     }
 
@@ -32,14 +38,9 @@ contract Deployers {
         private
         returns (PoolKey memory key, PoolId id)
     {
-        TestERC20[] memory tokens = deployTokens(2, 2 ** 255);
-        key = PoolKey(
-            Currency.wrap(address(tokens[0])),
-            Currency.wrap(address(tokens[1])),
-            fee,
-            fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2),
-            hooks
-        );
+        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
+        (Currency currency0, Currency currency1) = SortTokens.sort(tokens[0], tokens[1]);
+        key = PoolKey(currency0, currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = key.toId();
         manager.initialize(key, sqrtPriceX96);
     }

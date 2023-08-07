@@ -35,6 +35,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     using Pool for Pool.State;
     using PoolIdLibrary for PoolKey;
     using FeeLibrary for uint24;
+    using CurrencyLibrary for Currency;
 
     event LockAcquired();
     event Initialize(
@@ -115,6 +116,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         } else if (key.tickSpacing < manager.MIN_TICK_SPACING()) {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
             manager.initialize(key, sqrtPriceX96);
+        } else if (key.currency0 > key.currency1) {
+            vm.expectRevert(abi.encodeWithSelector(IPoolManager.CurrenciesInitializedOutOfOrder.selector));
+            manager.initialize(key, sqrtPriceX96);
         } else if (!key.hooks.isValidHookAddress(key.fee)) {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key.hooks)));
             manager.initialize(key, sqrtPriceX96);
@@ -133,10 +137,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-
         PoolKey memory key = PoolKey({
-            currency0: currency0,
-            currency1: Currency.wrap(address(0)),
+            currency0: Currency.wrap(address(0)),
+            currency1: currency1,
             fee: 3000,
             hooks: IHooks(address(0)),
             tickSpacing: 60
@@ -221,6 +224,22 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(key, sqrtPriceX96);
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
+    }
+
+    function testPoolManagerInitializeRevertsWithSameTokenCombo(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
+
+        PoolKey memory keyInvertedCurrency =
+            PoolKey({currency0: currency1, currency1: currency0, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
+
+        manager.initialize(key, sqrtPriceX96);
+        vm.expectRevert(IPoolManager.CurrenciesInitializedOutOfOrder.selector);
+        manager.initialize(keyInvertedCurrency, sqrtPriceX96);
     }
 
     function testPoolManagerInitializeFailsWithIncorrectSelectors() public {
