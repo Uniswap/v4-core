@@ -5,7 +5,6 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {GasSnapshot} from "../../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
-import {TickMath} from "../../contracts/libraries/TickMath.sol";
 
 contract TickBitmapTest is Test, GasSnapshot {
     using TickBitmap for mapping(int16 => uint256);
@@ -27,33 +26,28 @@ contract TickBitmapTest is Test, GasSnapshot {
 
     function test_isInitialized_isFlippedByFlipTick() public {
         flipTick(1);
-
         assertEq(isInitialized(1), true);
     }
 
     function test_isInitialized_isFlippedBackByFlipTick() public {
         flipTick(1);
         flipTick(1);
-
         assertEq(isInitialized(1), false);
     }
 
     function test_isInitialized_isNotChangedByAnotherFlipToADifferentTick() public {
         flipTick(2);
-
         assertEq(isInitialized(1), false);
     }
 
     function test_isInitialized_isNotChangedByAnotherFlipToADifferentTickOnAnotherWord() public {
         flipTick(1 + 256);
-
         assertEq(isInitialized(257), true);
         assertEq(isInitialized(1), false);
     }
 
     function test_flipTick_flipsOnlyTheSpecifiedTick() public {
         flipTick(-230);
-
         assertEq(isInitialized(-230), true);
         assertEq(isInitialized(-231), false);
         assertEq(isInitialized(-229), false);
@@ -78,7 +72,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         flipTick(-259);
         flipTick(-229);
         flipTick(-259);
-
         assertEq(isInitialized(-259), true);
         assertEq(isInitialized(-229), false);
     }
@@ -91,7 +84,6 @@ contract TickBitmapTest is Test, GasSnapshot {
 
     function test_flipTick_gasCostOfFlippingSecondTickInWordToInitialized() public {
         flipTick(0);
-
         snapStart("flipTick_gasCostOfFlippingSecondTickInWordToInitialized");
         flipTick(1);
         snapEnd();
@@ -99,7 +91,6 @@ contract TickBitmapTest is Test, GasSnapshot {
 
     function test_flipTick_gasCostOfFlippingATickThatResultsInDeletingAWord() public {
         flipTick(0);
-
         snapStart("flipTick_gasCostOfFlippingATickThatResultsInDeletingAWord");
         flipTick(0);
         snapEnd();
@@ -109,7 +100,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(78, 1, false);
-
         assertEq(next, 84);
         assertEq(initialized, true);
     }
@@ -127,7 +117,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(77, 1, false);
-
         assertEq(next, 78);
         assertEq(initialized, true);
     }
@@ -136,7 +125,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(-56, 1, false);
-
         assertEq(next, -55);
         assertEq(initialized, true);
     }
@@ -147,7 +135,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(255, 1, false);
-
         assertEq(next, 511);
         assertEq(initialized, false);
     }
@@ -158,7 +145,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(-257, 1, false);
-
         assertEq(next, -200);
         assertEq(initialized, true);
     }
@@ -168,7 +154,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         flipTick(340);
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(328, 1, false);
-
         assertEq(next, 340);
         assertEq(initialized, true);
     }
@@ -177,7 +162,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(508, 1, false);
-
         assertEq(next, 511);
         assertEq(initialized, false);
     }
@@ -186,7 +170,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(255, 1, false);
-
         assertEq(next, 511);
         assertEq(initialized, false);
     }
@@ -195,7 +178,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(383, 1, false);
-
         assertEq(next, 511);
         assertEq(initialized, false);
     }
@@ -228,7 +210,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(78, 1, true);
-
         assertEq(next, 78);
         assertEq(initialized, true);
     }
@@ -239,7 +220,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(79, 1, true);
-
         assertEq(next, 78);
         assertEq(initialized, true);
     }
@@ -248,7 +228,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(258, 1, true);
-
         assertEq(next, 256);
         assertEq(initialized, false);
     }
@@ -257,7 +236,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(256, 1, true);
-
         assertEq(next, 256);
         assertEq(initialized, false);
     }
@@ -266,7 +244,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(72, 1, true);
-
         assertEq(next, 70);
         assertEq(initialized, true);
     }
@@ -275,7 +252,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(-257, 1, true);
-
         assertEq(next, -512);
         assertEq(initialized, false);
     }
@@ -284,7 +260,6 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(1023, 1, true);
-
         assertEq(next, 768);
         assertEq(initialized, false);
     }
@@ -293,17 +268,15 @@ contract TickBitmapTest is Test, GasSnapshot {
         setUpSomeTicks();
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(900, 1, true);
-
         assertEq(next, 768);
         assertEq(initialized, false);
     }
 
     function test_nextInitializedTickWithinOneWord_lteTrue_boundaryIsInitialized() public {
         setUpSomeTicks();
+
         flipTick(329);
-
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(456, 1, true);
-
         assertEq(next, 329);
         assertEq(initialized, true);
     }
