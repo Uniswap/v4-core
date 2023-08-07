@@ -9,15 +9,13 @@ import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
 contract TickBitmapTest is Test, GasSnapshot {
     using TickBitmap for mapping(int16 => uint256);
 
+    int24 constant INITIALIZED_TICK = 256 * 10;
+
     mapping(int16 => uint256) public bitmap;
 
-    function isInitialized(int24 tick) internal view returns (bool) {
-        (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(tick, 1, true);
-        return next == tick ? initialized : false;
-    }
-
-    function flipTick(int24 tick) internal {
-        bitmap.flipTick(tick, 1);
+    function setUp() public {
+        // set dirty slot for some gas tests
+        flipTick(INITIALIZED_TICK);
     }
 
     function test_isInitialized_isFalseAtFirst() public {
@@ -83,16 +81,14 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_flipTick_gasCostOfFlippingSecondTickInWordToInitialized() public {
-        flipTick(0);
         snapStart("flipTick_gasCostOfFlippingSecondTickInWordToInitialized");
-        flipTick(1);
+        flipTick(INITIALIZED_TICK + 1);
         snapEnd();
     }
 
     function test_flipTick_gasCostOfFlippingATickThatResultsInDeletingAWord() public {
-        flipTick(0);
         snapStart("flipTick_gasCostOfFlippingATickThatResultsInDeletingAWord");
-        flipTick(0);
+        flipTick(INITIALIZED_TICK);
         snapEnd();
     }
 
@@ -328,6 +324,15 @@ contract TickBitmapTest is Test, GasSnapshot {
             }
             assertEq(isInitialized(next), initialized);
         }
+    }
+
+    function isInitialized(int24 tick) internal view returns (bool) {
+        (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(tick, 1, true);
+        return next == tick ? initialized : false;
+    }
+
+    function flipTick(int24 tick) internal {
+        bitmap.flipTick(tick, 1);
     }
 
     function setUpSomeTicks() internal {
