@@ -306,7 +306,7 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_nextInitializedTickWithinOneWord_fuzz(int24 tick, bool lte) public {
-        // assume tick is at least one word of type(int24).(max | min)
+        // assume tick is at least one word inside type(int24).(max | min)
         vm.assume(lte ? tick >= -8388352 : tick < 8388351);
 
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(tick, 1, lte);
