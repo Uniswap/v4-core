@@ -103,10 +103,10 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 60
         });
 
-        manager.initialize(key0, SQRT_RATIO_1_1);
-        manager.initialize(key1, SQRT_RATIO_1_1);
-        manager.initialize(key2, SQRT_RATIO_1_1);
-        manager.initialize(key3, SQRT_RATIO_1_1);
+        manager.initialize(key0, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key1, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key2, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key3, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testInitializeFailsNoHook() public {
@@ -119,7 +119,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         });
 
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
-        manager.initialize(key4, SQRT_RATIO_1_1);
+        manager.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
 
         key4 = PoolKey({
             currency0: currency0,
@@ -130,7 +130,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         });
 
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
-        manager.initialize(key4, SQRT_RATIO_1_1);
+        manager.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testInitializeHookSwapFee(uint8 fee) public {

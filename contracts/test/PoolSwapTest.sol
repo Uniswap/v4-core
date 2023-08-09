@@ -49,7 +49,7 @@ contract PoolSwapTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.swap(data.key, data.params);
+        BalanceDelta delta = manager.swap(data.key, data.params, new bytes(0));
 
         if (data.params.zeroForOne) {
             if (delta.amount0() > 0) {

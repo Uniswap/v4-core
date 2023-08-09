@@ -44,7 +44,7 @@ contract PoolDonateTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1);
+        BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, new bytes(0));
 
         if (delta.amount0() > 0) {
             if (data.key.currency0.isNative()) {
