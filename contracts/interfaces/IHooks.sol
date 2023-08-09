@@ -15,7 +15,9 @@ interface IHooks {
     /// @param key The key for the pool being initialized
     /// @param sqrtPriceX96 The sqrt(price) of the pool as a Q64.96
     /// @return bytes4 The function selector for the hook
-    function beforeInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, bytes memory data) external returns (bytes4);
+    function beforeInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, bytes memory data)
+        external
+        returns (bytes4);
 
     /// @notice The hook called after the state of a pool is initialized
     /// @param sender The initial msg.sender for the initialize call
@@ -57,9 +59,12 @@ interface IHooks {
     /// @param key The key for the pool
     /// @param params The parameters for the swap
     /// @return bytes4 The function selector for the hook
-    function beforeSwap(address sender, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes memory data)
-        external
-        returns (bytes4);
+    function beforeSwap(
+        address sender,
+        PoolKey calldata key,
+        IPoolManager.SwapParams calldata params,
+        bytes memory data
+    ) external returns (bytes4);
 
     /// @notice The hook called after a swap
     /// @param sender The initial msg.sender for the swap call

@@ -114,7 +114,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes memory data) external override returns (int24 tick) {
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes memory data)
+        external
+        override
+        returns (int24 tick)
+    {
         if (key.fee.isStaticFeeTooLarge()) revert FeeTooLarge();
 
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
@@ -135,7 +139,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         tick = pools[id].initialize(sqrtPriceX96, protocolSwapFee, hookSwapFee, protocolWithdrawFee, hookWithdrawFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
-            if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick, data) != IHooks.afterInitialize.selector) {
+            if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick, data) != IHooks.afterInitialize.selector)
+            {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -232,7 +237,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         }
 
         if (key.hooks.shouldCallAfterModifyPosition()) {
-            if (key.hooks.afterModifyPosition(msg.sender, key, params, delta, data) != IHooks.afterModifyPosition.selector) {
+            if (
+                key.hooks.afterModifyPosition(msg.sender, key, params, delta, data)
+                    != IHooks.afterModifyPosition.selector
+            ) {
                 revert Hooks.InvalidHookResponse();
             }
         }

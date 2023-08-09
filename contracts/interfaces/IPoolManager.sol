@@ -155,7 +155,9 @@ interface IPoolManager is IFees, IERC1155 {
     }
 
     /// @notice Modify the position for the given pool
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params, bytes memory data) external returns (BalanceDelta);
+    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params, bytes memory data)
+        external
+        returns (BalanceDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -167,7 +169,9 @@ interface IPoolManager is IFees, IERC1155 {
     function swap(PoolKey memory key, SwapParams memory params, bytes memory data) external returns (BalanceDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory data) external returns (BalanceDelta);
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory data)
+        external
+        returns (BalanceDelta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
