@@ -19,12 +19,12 @@ contract MockHooks is IHooks, IHookFeeManager {
 
     mapping(PoolId => uint8) public withdrawFees;
 
-    function beforeInitialize(address, PoolKey memory, uint160) external view override returns (bytes4) {
+    function beforeInitialize(address, PoolKey calldata, uint160) external view override returns (bytes4) {
         bytes4 selector = MockHooks.beforeInitialize.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterInitialize(address, PoolKey memory, uint160, int24) external view override returns (bytes4) {
+    function afterInitialize(address, PoolKey calldata, uint160, int24) external view override returns (bytes4) {
         bytes4 selector = MockHooks.afterInitialize.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
