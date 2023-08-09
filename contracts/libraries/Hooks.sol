@@ -54,7 +54,7 @@ library Hooks {
                 || calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
                 || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
                 || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
-                || calls.noOp != isNoOp(self)
+                || calls.noOp != shouldAllowNoOp(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -63,6 +63,11 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
+        if (shouldAllowNoOp(hook)) {
+            if (!shouldCallBeforeInitialize(hook) && !shouldCallBeforeModifyPosition(hook) && !shouldCallBeforeSwap(hook) && !shouldCallBeforeDonate(hook)) {
+                return false;
+            }
+        }
         return address(hook) == address(0)
             ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
             : (
@@ -103,7 +108,7 @@ library Hooks {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
     }
 
-    function isNoOp(IHooks self) internal pure returns (bool) {
+    function shouldAllowNoOp(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & NO_OP_FLAG != 0;
     }
 }
