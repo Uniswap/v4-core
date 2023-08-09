@@ -25,7 +25,7 @@ contract DynamicFees is IDynamicFeeManager {
         fee = _fee;
     }
 
-    function getFee(PoolKey calldata) public view returns (uint24) {
+    function getFee(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata) public view returns (uint24) {
         return fee;
     }
 }
