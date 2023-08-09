@@ -1009,19 +1009,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address payable hookAddr = payable(
-            address(
-                uint160(
-                    Hooks.NO_OP_FLAG
-                )
-            )
-        );
+        address payable hookAddr = payable(address(uint160(Hooks.NO_OP_FLAG)));
 
         vm.etch(hookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
 
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(hookAddr), tickSpacing: 10});
-            
+
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key.hooks)));
 
         manager.initialize(key, SQRT_RATIO_1_1);

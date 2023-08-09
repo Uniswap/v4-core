@@ -64,7 +64,10 @@ library Hooks {
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
         if (shouldAllowNoOp(hook)) {
-            if (!shouldCallBeforeInitialize(hook) && !shouldCallBeforeModifyPosition(hook) && !shouldCallBeforeSwap(hook) && !shouldCallBeforeDonate(hook)) {
+            if (
+                !shouldCallBeforeInitialize(hook) && !shouldCallBeforeModifyPosition(hook)
+                    && !shouldCallBeforeSwap(hook) && !shouldCallBeforeDonate(hook)
+            ) {
                 return false;
             }
         }
