@@ -8537,6 +8537,11 @@ solc@^0.6.3:
     semver "^5.5.0"
     tmp "0.0.33"
 
+solmate@6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/solmate/-/solmate-6.1.0.tgz#b85aaa8c2b34afe9c6d6d5a015c369267c576313"
+  integrity sha512-gxG4YU5nnAQ+Ac23R44GS3Xo3+X0+8XCe4/P1KvVobL5ERBzQBG/xMv7NSvVo/pkHSYGufgUAPjiueYxujKJAA==
+
 source-map-resolve@^0.5.0:
   version "0.5.3"
   resolved "https://registry.yarnpkg.com/source-map-resolve/-/source-map-resolve-0.5.3.tgz#190866bece7553e1f8f267a2ee82c606b5509a1a"
