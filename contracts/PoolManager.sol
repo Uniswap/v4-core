@@ -194,7 +194,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     /// @inheritdoc IPoolManager
-    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory data)
+    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes calldata data)
         external
         override
         noDelegateCall
@@ -249,7 +249,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     /// @inheritdoc IPoolManager
-    function swap(PoolKey memory key, IPoolManager.SwapParams memory params, bytes memory data)
+    function swap(PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata data)
         external
         override
         noDelegateCall
@@ -317,7 +317,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     /// @inheritdoc IPoolManager
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory data)
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata data)
         external
         override
         noDelegateCall

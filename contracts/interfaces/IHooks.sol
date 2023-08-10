@@ -15,7 +15,7 @@ interface IHooks {
     /// @param key The key for the pool being initialized
     /// @param sqrtPriceX96 The sqrt(price) of the pool as a Q64.96
     /// @return bytes4 The function selector for the hook
-    function beforeInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, bytes memory data)
+    function beforeInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, bytes calldata data)
         external
         returns (bytes4);
 
@@ -25,9 +25,13 @@ interface IHooks {
     /// @param sqrtPriceX96 The sqrt(price) of the pool as a Q64.96
     /// @param tick The current tick after the state of a pool is initialized
     /// @return bytes4 The function selector for the hook
-    function afterInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, int24 tick, bytes memory data)
-        external
-        returns (bytes4);
+    function afterInitialize(
+        address sender,
+        PoolKey calldata key,
+        uint160 sqrtPriceX96,
+        int24 tick,
+        bytes calldata data
+    ) external returns (bytes4);
 
     /// @notice The hook called before a position is modified
     /// @param sender The initial msg.sender for the modify position call
@@ -77,7 +81,7 @@ interface IHooks {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         BalanceDelta delta,
-        bytes memory data
+        bytes calldata data
     ) external returns (bytes4);
 
     /// @notice The hook called before donate
@@ -86,7 +90,7 @@ interface IHooks {
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
     /// @return bytes4 The function selector for the hook
-    function beforeDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes memory data)
+    function beforeDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata data)
         external
         returns (bytes4);
 
@@ -96,7 +100,7 @@ interface IHooks {
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
     /// @return bytes4 The function selector for the hook
-    function afterDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes memory data)
+    function afterDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata data)
         external
         returns (bytes4);
 }
