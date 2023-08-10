@@ -128,7 +128,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
-            if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96, hookData) != IHooks.beforeInitialize.selector) {
+            if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96, hookData) != IHooks.beforeInitialize.selector)
+            {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -139,8 +140,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         tick = pools[id].initialize(sqrtPriceX96, protocolSwapFee, hookSwapFee, protocolWithdrawFee, hookWithdrawFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
-            if (key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick, hookData) != IHooks.afterInitialize.selector)
-            {
+            if (
+                key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick, hookData)
+                    != IHooks.afterInitialize.selector
+            ) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -194,15 +197,16 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     /// @inheritdoc IPoolManager
-    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes calldata hookData)
-        external
-        override
-        noDelegateCall
-        onlyByLocker
-        returns (BalanceDelta delta)
-    {
+    function modifyPosition(
+        PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params,
+        bytes calldata hookData
+    ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            if (key.hooks.beforeModifyPosition(msg.sender, key, params, hookData) != IHooks.beforeModifyPosition.selector) {
+            if (
+                key.hooks.beforeModifyPosition(msg.sender, key, params, hookData)
+                    != IHooks.beforeModifyPosition.selector
+            ) {
                 revert Hooks.InvalidHookResponse();
             }
         }
