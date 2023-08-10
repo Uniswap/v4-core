@@ -11,6 +11,7 @@ import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 
+// TODO: bitmap to chainned list
 library Pool {
     using SafeCast for *;
     using TickBitmap for mapping(int16 => uint256);
@@ -127,14 +128,14 @@ library Pool {
         });
     }
 
-    function setProtocolFees(State storage self, uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) internal {
+    function setProtocolFees(State storage self, uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) external {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
         self.slot0.protocolSwapFee = newProtocolSwapFee;
         self.slot0.protocolWithdrawFee = newProtocolWithdrawFee;
     }
 
-    function setHookFees(State storage self, uint8 newHookSwapFee, uint8 newHookWithdrawFee) internal {
+    function setHookFees(State storage self, uint8 newHookSwapFee, uint8 newHookWithdrawFee) external {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
         self.slot0.hookSwapFee = newHookSwapFee;
@@ -173,7 +174,7 @@ library Pool {
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
     function modifyPosition(State storage self, ModifyPositionParams memory params)
-        internal
+        external
         returns (BalanceDelta result, FeeAmounts memory fees)
     {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
@@ -544,7 +545,7 @@ library Pool {
     }
 
     /// @notice Donates the given amount of currency0 and currency1 to the pool
-    function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
+    function donate(State storage state, uint256 amount0, uint256 amount1) external returns (BalanceDelta delta) {
         if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
         delta = toBalanceDelta(amount0.toInt128(), amount1.toInt128());
         unchecked {
