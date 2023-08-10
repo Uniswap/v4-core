@@ -15,7 +15,7 @@ interface IHooks {
     /// @param key The key for the pool being initialized
     /// @param sqrtPriceX96 The sqrt(price) of the pool as a Q64.96
     /// @return bytes4 The function selector for the hook
-    function beforeInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, bytes calldata data)
+    function beforeInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         returns (bytes4);
 
@@ -30,7 +30,7 @@ interface IHooks {
         PoolKey calldata key,
         uint160 sqrtPriceX96,
         int24 tick,
-        bytes calldata data
+        bytes calldata hookData
     ) external returns (bytes4);
 
     /// @notice The hook called before a position is modified
@@ -81,7 +81,7 @@ interface IHooks {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         BalanceDelta delta,
-        bytes calldata data
+        bytes calldata hookData
     ) external returns (bytes4);
 
     /// @notice The hook called before donate
@@ -90,7 +90,7 @@ interface IHooks {
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
     /// @return bytes4 The function selector for the hook
-    function beforeDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata data)
+    function beforeDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
         returns (bytes4);
 
@@ -100,7 +100,7 @@ interface IHooks {
     /// @param amount0 The amount of token0 being donated
     /// @param amount1 The amount of token1 being donated
     /// @return bytes4 The function selector for the hook
-    function afterDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata data)
+    function afterDonate(address sender, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
         returns (bytes4);
 }
