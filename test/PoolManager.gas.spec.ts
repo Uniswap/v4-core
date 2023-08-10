@@ -53,13 +53,23 @@ describe('PoolManager gas tests', () => {
   describe('ERC20 tokens', () => {
     const gasTestFixture = async ([wallet]: Wallet[]) => {
       const { currency0, currency1 } = await tokensFixture()
+      const poolLibraryFactory = await ethers.getContractFactory('Pool')
+      const poolLibrary = await poolLibraryFactory.deploy()
+      await poolLibrary.deployed()
+      const feesLibraryFactory = await ethers.getContractFactory('Fees')
+      const feesLibrary = await feesLibraryFactory.deploy()
+      await feesLibrary.deployed()
+      const singletonPoolFactory = await ethers.getContractFactory('PoolManager', {
+        libraries: {
+          Pool: poolLibrary.address,
+          Fees: feesLibrary.address,
+        },
+      })
 
-      const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
       const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
       const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
       const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
-      const CONTROLLER_GAS_LIMIT = 50000
-      const manager = (await singletonPoolFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
+      const manager = (await singletonPoolFactory.deploy()) as PoolManager
 
       const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
       const donateTest = (await donateTestFactory.deploy(manager.address)) as PoolDonateTest
@@ -338,12 +348,22 @@ describe('PoolManager gas tests', () => {
     const gasTestFixture = async ([wallet]: Wallet[]) => {
       const { currency1 } = await tokensFixture()
 
-      const singletonPoolFactory = await ethers.getContractFactory('PoolManager')
+      const poolLibraryFactory = await ethers.getContractFactory('Pool')
+      const poolLibrary = await poolLibraryFactory.deploy()
+      await poolLibrary.deployed()
+      const feesLibraryFactory = await ethers.getContractFactory('Fees')
+      const feesLibrary = await feesLibraryFactory.deploy()
+      await feesLibrary.deployed()
+      const singletonPoolFactory = await ethers.getContractFactory('PoolManager', {
+        libraries: {
+          Pool: poolLibrary.address,
+          Fees: feesLibrary.address,
+        },
+      })
       const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
       const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
       const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
-      const CONTROLLER_GAS_LIMIT = 50000
-      const manager = (await singletonPoolFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
+      const manager = (await singletonPoolFactory.deploy()) as PoolManager
 
       const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
       const donateTest = (await donateTestFactory.deploy(manager.address)) as PoolDonateTest

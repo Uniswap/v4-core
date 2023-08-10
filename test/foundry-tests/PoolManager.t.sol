@@ -7,6 +7,7 @@ import {IHooks} from "../../contracts/interfaces/IHooks.sol";
 import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {IFees} from "../../contracts/interfaces/IFees.sol";
+import {Fees} from "../../contracts/Fees.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";

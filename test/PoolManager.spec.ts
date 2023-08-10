@@ -35,7 +35,18 @@ describe('PoolManager', () => {
   let tokens: { currency0: TestERC20; currency1: TestERC20; token2: TestERC20 }
 
   const fixture = async () => {
-    const poolManagerFactory = await ethers.getContractFactory('PoolManager')
+    const poolLibraryFactory = await ethers.getContractFactory('Pool')
+    const poolLibrary = await poolLibraryFactory.deploy()
+    await poolLibrary.deployed()
+    const feesLibraryFactory = await ethers.getContractFactory('Fees')
+    const feesLibrary = await feesLibraryFactory.deploy()
+    await feesLibrary.deployed()
+    const poolManagerFactory = await ethers.getContractFactory('PoolManager', {
+      libraries: {
+        Pool: poolLibrary.address,
+        Fees: feesLibrary.address,
+      },
+    })
     const swapTestFactory = await ethers.getContractFactory('PoolSwapTest')
     const feeControllerTestFactory = await ethers.getContractFactory('ProtocolFeeControllerTest')
     const modifyPositionTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
@@ -43,8 +54,7 @@ describe('PoolManager', () => {
     const takeTestFactory = await ethers.getContractFactory('PoolTakeTest')
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
-    const CONTROLLER_GAS_LIMIT = 50000
-    const manager = (await poolManagerFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
+    const manager = (await poolManagerFactory.deploy()) as PoolManager
 
     // Deploy hooks to addresses with leading 1111 to enable all of them.
     const mockHooksAddress = '0xFF00000000000000000000000000000000000000'
@@ -109,12 +119,12 @@ describe('PoolManager', () => {
 
   describe('#setProtocolFeeController', () => {
     it('allows the owner to set a fee controller', async () => {
-      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
+      expect((await manager.feeData()).protocolFeeController).to.be.eq(ADDRESS_ZERO)
       await expect(manager.setProtocolFeeController(feeControllerTest.address)).to.emit(
         manager,
         'ProtocolFeeControllerUpdated'
       )
-      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+      expect((await manager.feeData()).protocolFeeController).to.be.eq(feeControllerTest.address)
     })
   })
 
@@ -213,7 +223,7 @@ describe('PoolManager', () => {
 
   describe('#setPoolProtocolFee', async () => {
     it('updates the protocol fee for an initialised pool', async () => {
-      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
+      expect((await manager.feeData()).protocolFeeController).to.be.eq(ADDRESS_ZERO)
 
       const poolKey = {
         currency0: tokens.currency0.address,
@@ -233,7 +243,7 @@ describe('PoolManager', () => {
       expect(protocolSwapFee).to.eq(0)
 
       await manager.setProtocolFeeController(feeControllerTest.address)
-      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+      expect((await manager.feeData()).protocolFeeController).to.be.eq(feeControllerTest.address)
       const poolProtocolFee = 4
       await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
@@ -259,7 +269,7 @@ describe('PoolManager', () => {
         }
         // set the controller, and set the pool's protocol fee
         await manager.setProtocolFeeController(feeControllerTest.address)
-        expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+        expect((await manager.feeData()).protocolFeeController).to.be.eq(feeControllerTest.address)
         const poolProtocolFee = 68 // 0x 0100 0100
         const poolID = getPoolId(poolKey)
         await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
@@ -375,7 +385,7 @@ describe('PoolManager', () => {
         }
         // set the controller, and set the pool's protocol fee
         await manager.setProtocolFeeController(feeControllerTest.address)
-        expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
+        expect((await manager.feeData()).protocolFeeController).to.be.eq(feeControllerTest.address)
         const poolProtocolFee = 68 // 0x 0100 0100
         const poolID = getPoolId(poolKey)
         await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
