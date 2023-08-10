@@ -79,43 +79,6 @@ library CurrencyLibrary {
         }
     }
 
-    function transferFrom(Currency currency, address from, address to, uint256 amount) internal {
-        // implementation from
-        // https://github.com/transmissions11/solmate/blob/e8f96f25d48fe702117ce76c79228ca4f20206cb/src/utils/SafeTransferLib.sol
-        bool success;
-
-        if (currency.isNative()) {
-            revert NativeCurrencyTransferFrom();
-        }
-
-        assembly {
-            // We'll write our calldata to this slot below, but restore it later.
-            let memPointer := mload(0x40)
-
-            // Write the abi-encoded calldata into memory, beginning with the function selector.
-            mstore(0, 0x23b872dd00000000000000000000000000000000000000000000000000000000)
-            mstore(4, from) // Append the "from" argument.
-            mstore(36, to) // Append the "to" argument.
-            mstore(68, amount) // Append the "amount" argument.
-
-            success :=
-                and(
-                    // Set success to whether the call reverted, if not we check it either
-                    // returned exactly 1 (can't just be non-zero data), or had no return data.
-                    or(and(eq(mload(0), 1), gt(returndatasize(), 31)), iszero(returndatasize())),
-                    // We use 100 because that's the total length of our calldata (4 + 32 * 3)
-                    // Counterintuitively, this call() must be positioned after the or() in the
-                    // surrounding and() because and() evaluates its arguments from right to left.
-                    call(gas(), currency, 0, 0, 100, 0, 32)
-                )
-
-            mstore(0x60, 0) // Restore the zero slot to zero.
-            mstore(0x40, memPointer) // Restore the memPointer.
-        }
-
-        if (!success) revert ERC20TransferFromFailed();
-    }
-
     function balanceOfSelf(Currency currency) internal view returns (uint256) {
         if (currency.isNative()) {
             return address(this).balance;
