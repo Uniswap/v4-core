@@ -610,7 +610,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testValidateHookAddressFailsNoHooks(uint160 addr, uint8 mask) public {
         uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         vm.assume(mask != 0);
-        IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 152)));
+        IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 151)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
         Hooks.validateHookAddress(
             hookAddr,
