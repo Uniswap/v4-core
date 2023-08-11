@@ -39,7 +39,7 @@ interface IHooks {
     /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
     /// @param params The parameters for modifying the position
-    /// @param hookData Arbitrary data handed into the PoolManager by the liquiidty provider to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function beforeModifyPosition(
         address sender,
@@ -52,7 +52,7 @@ interface IHooks {
     /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
     /// @param params The parameters for modifying the position
-    /// @param hookData Arbitrary data handed into the PoolManager by the liquiidty provider to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function afterModifyPosition(
         address sender,
