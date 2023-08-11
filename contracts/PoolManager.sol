@@ -114,7 +114,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes memory hookData)
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         override
         returns (int24 tick)
@@ -152,11 +152,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     /// @inheritdoc IPoolManager
-    function lock(bytes calldata hookData) external override returns (bytes memory result) {
+    function lock(bytes calldata data) external override returns (bytes memory result) {
         lockData.push(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(msg.sender).lockAcquired(hookData);
+        result = ILockCallback(msg.sender).lockAcquired(data);
 
         if (lockData.length == 1) {
             if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
