@@ -51,7 +51,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         (Currency currency0, Currency currency1) = Deployers.deployCurrencies(2 ** 255);
         PoolKey memory _key = PoolKey(currency0, currency1, 3000, int24(3000 / 100 * 2), mockHooks);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(_key, SQRT_RATIO_1_1);
+        manager.initialize(_key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testAfterInitializeInvalidReturn() public {
@@ -59,7 +59,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         (Currency currency0, Currency currency1) = Deployers.deployCurrencies(2 ** 255);
         PoolKey memory _key = PoolKey(currency0, currency1, 3000, int24(3000 / 100 * 2), mockHooks);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(_key, SQRT_RATIO_1_1);
+        manager.initialize(_key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testModifyPositionSucceedsWithHook() public {

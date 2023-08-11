@@ -42,7 +42,7 @@ contract PoolModifyPositionTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.modifyPosition(data.key, data.params);
+        BalanceDelta delta = manager.modifyPosition(data.key, data.params, new bytes(0));
 
         if (delta.amount0() > 0) {
             if (data.key.currency0.isNative()) {
