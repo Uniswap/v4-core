@@ -16,6 +16,7 @@ import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {IDynamicFeeManager} from "././../../contracts/interfaces/IDynamicFeeManager.sol";
 import {Fees} from "./../../contracts/Fees.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
 contract DynamicFees is IDynamicFeeManager {
     uint24 internal fee;
@@ -24,12 +25,16 @@ contract DynamicFees is IDynamicFeeManager {
         fee = _fee;
     }
 
-    function getFee(PoolKey calldata) public view returns (uint24) {
+    function getFee(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
+        public
+        view
+        returns (uint24)
+    {
         return fee;
     }
 }
 
-contract TestDynamicFees is Test, Deployers {
+contract TestDynamicFees is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
     DynamicFees dynamicFees = DynamicFees(
@@ -78,8 +83,10 @@ contract TestDynamicFees is Test, Deployers {
         dynamicFees.setFee(123);
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 123);
+        snapStart("swap with dynamic fee");
         swapRouter.swap(
             key, IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1), PoolSwapTest.TestSettings(false, false)
         );
+        snapEnd();
     }
 }

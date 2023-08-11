@@ -17,6 +17,8 @@ contract Deployers {
     using FeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
 
+    bytes constant ZERO_BYTES = new bytes(0);
+
     uint160 constant SQRT_RATIO_1_1 = Constants.SQRT_RATIO_1_1;
     uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
@@ -42,7 +44,7 @@ contract Deployers {
         (Currency currency0, Currency currency1) = SortTokens.sort(tokens[0], tokens[1]);
         key = PoolKey(currency0, currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = key.toId();
-        manager.initialize(key, sqrtPriceX96);
+        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
     }
 
     function createFreshPool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
