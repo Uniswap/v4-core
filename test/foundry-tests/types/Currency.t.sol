@@ -66,18 +66,18 @@ contract TestCurrency is Test {
     }
 
     function testCurrency_transfer_native_successfullyTransfersFunds() public {
-          uint256 balanceBefore = otherAddress.balance;
-          nativeCurrency.transfer(otherAddress, sentBalance);
-          uint256 balanceAfter = otherAddress.balance;
+        uint256 balanceBefore = otherAddress.balance;
+        nativeCurrency.transfer(otherAddress, sentBalance);
+        uint256 balanceAfter = otherAddress.balance;
 
-          assertEq(balanceAfter - balanceBefore, sentBalance);
+        assertEq(balanceAfter - balanceBefore, sentBalance);
     }
 
     function testCurrency_transfer_token_successfullyTransfersFunds() public {
-          uint256 balanceBefore = erc20Currency.balanceOf(otherAddress);
-          erc20Currency.transfer(otherAddress, sentBalance);
-          uint256 balanceAfter = erc20Currency.balanceOf(otherAddress);
+        uint256 balanceBefore = erc20Currency.balanceOf(otherAddress);
+        erc20Currency.transfer(otherAddress, sentBalance);
+        uint256 balanceAfter = erc20Currency.balanceOf(otherAddress);
 
-          assertEq(balanceAfter - balanceBefore, sentBalance);
+        assertEq(balanceAfter - balanceBefore, sentBalance);
     }
 }
