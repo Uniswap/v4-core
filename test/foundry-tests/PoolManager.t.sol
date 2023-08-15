@@ -242,6 +242,19 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(keyInvertedCurrency, sqrtPriceX96, ZERO_BYTES);
     }
 
+    function testPoolManagerInitializeRevertsWhenPoolAlreadyInitialized(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
+
+        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        vm.expectRevert(Pool.PoolAlreadyInitialized.selector);
+        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+    }
+
     function testPoolManagerInitializeFailsWithIncorrectSelectors() public {
         address hookAddr = address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG));
 
