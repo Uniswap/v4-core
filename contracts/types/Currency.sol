@@ -30,12 +30,6 @@ library CurrencyLibrary {
     /// @notice Thrown when an ERC20 transfer fails
     error ERC20TransferFailed();
 
-    /// @notice Thrown when an ERC20 transferFrom fails
-    error ERC20TransferFromFailed();
-
-    /// @notice Thrown when attempting to transferFrom with a native currency
-    error NativeCurrencyTransferFrom();
-
     Currency public constant NATIVE = Currency.wrap(address(0));
 
     function transfer(Currency currency, address to, uint256 amount) internal {
