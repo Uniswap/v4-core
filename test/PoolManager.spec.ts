@@ -148,7 +148,7 @@ describe('PoolManager', () => {
         tickSpacing: 10,
       }
       await invalidToken.approve(modifyPositionTest.address, constants.MaxUint256)
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1), '0x00')
       await modifyPositionTest.modifyPosition(key, {
         tickLower: -60,
         tickUpper: 60,
@@ -172,7 +172,7 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
       }
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1), '0x00')
       await modifyPositionTest.modifyPosition(key, {
         tickLower: -60,
         tickUpper: 60,
@@ -193,7 +193,7 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
       }
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1), '0x00')
       await modifyPositionTest.modifyPosition(
         key,
         {
@@ -224,7 +224,7 @@ describe('PoolManager', () => {
       }
       const poolID = getPoolId(poolKey)
 
-      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
+      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1), '0x00')
 
       var protocolSwapFee: number
       ;({
@@ -265,7 +265,7 @@ describe('PoolManager', () => {
         await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
-        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
         const {
           slot0: { protocolSwapFee },
         } = await manager.pools(getPoolId(poolKey))
@@ -381,7 +381,7 @@ describe('PoolManager', () => {
         await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
-        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
         const {
           slot0: { protocolSwapFee },
         } = await manager.pools(getPoolId(poolKey))

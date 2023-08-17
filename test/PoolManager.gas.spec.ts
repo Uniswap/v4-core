@@ -135,7 +135,7 @@ describe('PoolManager gas tests', () => {
         return await manager.getSlot0(getPoolId(poolKey))
       }
 
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
 
       await modifyPosition(minTick, maxTick, expandTo18Decimals(2))
 
@@ -166,14 +166,19 @@ describe('PoolManager gas tests', () => {
 
     describe('#initialize', () => {
       it('initialize pool with no hooks and no protocol fee', async () => {
+        let currency0 = wallet.address
+        let currency1 = other.address
+
+        ;[currency0, currency1] = currency0 < currency1 ? [currency0, currency1] : [currency1, currency0]
+
         const altPoolKey = {
-          currency0: wallet.address,
-          currency1: other.address,
+          currency0,
+          currency1,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: '0x0000000000000000000000000000000000000000',
         }
-        await snapshotGasCost(manager.initialize(altPoolKey, encodeSqrtPriceX96(1, 1)))
+        await snapshotGasCost(manager.initialize(altPoolKey, encodeSqrtPriceX96(1, 1), '0x00'))
       })
     })
 
@@ -422,7 +427,7 @@ describe('PoolManager gas tests', () => {
         return await manager.getSlot0(getPoolId(poolKey))
       }
 
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
 
       await modifyPosition(minTick, maxTick, expandTo18Decimals(2))
 

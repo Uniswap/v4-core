@@ -30,6 +30,9 @@ interface IPoolManager is IFees, IERC1155 {
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
     error TickSpacingTooSmall();
 
+    /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
+    error CurrenciesInitializedOutOfOrder();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
@@ -131,7 +134,9 @@ interface IPoolManager is IFees, IERC1155 {
     function lockData() external view returns (uint128 length, uint128 nonzeroDeltaCount);
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
+        external
+        returns (int24 tick);
 
     /// @notice Get the current delta for a locker in the given currency
     /// @param locker The address of the locker
@@ -152,7 +157,9 @@ interface IPoolManager is IFees, IERC1155 {
     }
 
     /// @notice Modify the position for the given pool
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params) external returns (BalanceDelta);
+    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
+        external
+        returns (BalanceDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -161,10 +168,14 @@ interface IPoolManager is IFees, IERC1155 {
     }
 
     /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params) external returns (BalanceDelta);
+    function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
+        external
+        returns (BalanceDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1) external returns (BalanceDelta);
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
+        external
+        returns (BalanceDelta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
