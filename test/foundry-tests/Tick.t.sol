@@ -463,7 +463,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.feeGrowthOutside1X128, 2);
     }
 
-    function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public pure {
+    function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public {
         vm.assume(tickSpacing <= TickMath.MAX_TICK);
         vm.assume(tickSpacing > 0);
 
@@ -473,14 +473,14 @@ contract TickTest is Test, GasSnapshot {
         uint128 maxLiquidityPerTick = Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing);
 
         // symmetry around 0 tick
-        assert(maxTick == -minTick);
+        assertEq(maxTick, -minTick);
         // positive max tick
-        assert(maxTick > 0);
+        assertGt(maxTick, 0);
         // divisibility
-        assert((maxTick - minTick) % tickSpacing == 0);
+        assertEq((maxTick - minTick) % tickSpacing, 0);
 
         uint256 numTicks = uint256(int256((maxTick - minTick) / tickSpacing)) + 1;
         // max liquidity at every tick is less than the cap
-        assert(uint256(maxLiquidityPerTick) * numTicks <= type(uint128).max);
+        assertGt(type(uint128).max, uint256(maxLiquidityPerTick) * numTicks);
     }
 }
