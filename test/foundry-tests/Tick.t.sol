@@ -6,7 +6,7 @@ import {GasSnapshot} from "../../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
 
-contract TickTestTest is Test, GasSnapshot {
+contract TickTest is Test, GasSnapshot {
     using Pool for Pool.State;
 
     Pool.State public pool;
