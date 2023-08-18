@@ -335,7 +335,6 @@ contract TickTest is Test, GasSnapshot {
         assertEq(tickInfo.feeGrowthOutside1X128, 0);
     }
 
-    // #update liquidity parsing
     function test_update_liquidityParsingParsesMaxUint128StoredLiquidityGrossBeforeUpdate() public {
         Pool.TickInfo memory info;
 
@@ -406,7 +405,6 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2));
     }
 
-    // #clear
     function test_clear_deletesAllTheDataInTheTick() public {
         Pool.TickInfo memory info;
 
@@ -427,7 +425,6 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.liquidityNet, 0);
     }
 
-    // #cross
     function test_cross_flipsTheGrowthVariables() public {
         Pool.TickInfo memory info;
 
