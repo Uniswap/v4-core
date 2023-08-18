@@ -28,23 +28,15 @@ contract PoolTakeTest is ILockCallback {
         manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
     }
 
-    function balanceOf(Currency currency, address user) internal view returns (uint256) {
-        if (currency.isNative()) {
-            return user.balance;
-        } else {
-            return IERC20Minimal(Currency.unwrap(currency)).balanceOf(user);
-        }
-    }
-
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
         if (data.amount0 > 0) {
-            uint256 balBefore = balanceOf(data.key.currency0, data.sender);
+            uint256 balBefore = data.key.currency0.balanceOf(data.sender);
             manager.take(data.key.currency0, data.sender, data.amount0);
-            uint256 balAfter = balanceOf(data.key.currency0, data.sender);
+            uint256 balAfter = data.key.currency0.balanceOf(data.sender);
             require(balAfter - balBefore == data.amount0);
 
             if (data.key.currency0.isNative()) {
@@ -58,9 +50,9 @@ contract PoolTakeTest is ILockCallback {
         }
 
         if (data.amount1 > 0) {
-            uint256 balBefore = balanceOf(data.key.currency1, data.sender);
+            uint256 balBefore = data.key.currency1.balanceOf(data.sender);
             manager.take(data.key.currency1, data.sender, data.amount1);
-            uint256 balAfter = balanceOf(data.key.currency1, data.sender);
+            uint256 balAfter = data.key.currency1.balanceOf(data.sender);
             require(balAfter - balBefore == data.amount1);
 
             if (data.key.currency1.isNative()) {
