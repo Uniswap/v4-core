@@ -135,7 +135,7 @@ describe('PoolManager gas tests', () => {
         return await manager.getSlot0(getPoolId(poolKey))
       }
 
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
 
       await modifyPosition(minTick, maxTick, expandTo18Decimals(2))
 
@@ -178,7 +178,7 @@ describe('PoolManager gas tests', () => {
           tickSpacing: 60,
           hooks: '0x0000000000000000000000000000000000000000',
         }
-        await snapshotGasCost(manager.initialize(altPoolKey, encodeSqrtPriceX96(1, 1)))
+        await snapshotGasCost(manager.initialize(altPoolKey, encodeSqrtPriceX96(1, 1), '0x00'))
       })
     })
 
@@ -427,7 +427,7 @@ describe('PoolManager gas tests', () => {
         return await manager.getSlot0(getPoolId(poolKey))
       }
 
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
 
       await modifyPosition(minTick, maxTick, expandTo18Decimals(2))
 

@@ -15,7 +15,7 @@ import {PoolIdLibrary} from "../../contracts/types/PoolId.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
-import {Currency} from "../../contracts/types/Currency.sol";
+import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
@@ -30,6 +30,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
     using Pool for Pool.State;
     using PoolIdLibrary for PoolKey;
+    using CurrencyLibrary for Currency;
 
     Pool.State state;
     PoolManager manager;
@@ -103,10 +104,10 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 60
         });
 
-        manager.initialize(key0, SQRT_RATIO_1_1);
-        manager.initialize(key1, SQRT_RATIO_1_1);
-        manager.initialize(key2, SQRT_RATIO_1_1);
-        manager.initialize(key3, SQRT_RATIO_1_1);
+        manager.initialize(key0, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key1, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key2, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key3, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testInitializeFailsNoHook() public {
@@ -119,7 +120,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         });
 
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
-        manager.initialize(key4, SQRT_RATIO_1_1);
+        manager.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
 
         key4 = PoolKey({
             currency0: currency0,
@@ -130,7 +131,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         });
 
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
-        manager.initialize(key4, SQRT_RATIO_1_1);
+        manager.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testInitializeHookSwapFee(uint8 fee) public {
@@ -526,13 +527,13 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint256 expectedProtocolFees = 3; // 10% of 30 is 3
         vm.prank(address(protocolFeeController));
         manager.collectProtocolFees(address(protocolFeeController), currency1, 0);
-        assertEq(MockERC20(Currency.unwrap(currency1)).balanceOf(address(protocolFeeController)), expectedProtocolFees);
+        assertEq(currency1.balanceOf(address(protocolFeeController)), expectedProtocolFees);
 
         uint256 expectedHookFees = 5; // 20% of 27 (30-3) is 5.4, round down is 5
         vm.prank(address(hook));
         // Addr(0) recipient will be the hook.
         manager.collectHookFees(address(hook), currency1, 0);
-        assertEq(MockERC20(Currency.unwrap(currency1)).balanceOf(address(hook)), expectedHookFees);
+        assertEq(currency1.balanceOf(address(hook)), expectedHookFees);
     }
 
     // If zeroForOne is true, then value is set on the lower bits. If zeroForOne is false, then value is set on the higher bits.
