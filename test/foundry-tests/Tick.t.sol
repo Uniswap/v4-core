@@ -10,6 +10,10 @@ import {TickMath} from "../../contracts/libraries/TickMath.sol";
 contract TickTest is Test, GasSnapshot {
     using Pool for Pool.State;
 
+    int24 constant LOW_TICK_SPACING = 10;
+    int24 constant MEDIUM_TICK_SPACING = 60;
+    int24 constant HIGH_TICK_SPACING = 200;
+
     Pool.State public pool;
 
     function ticks(int24 tick) internal view returns (Pool.TickInfo memory) {
@@ -70,13 +74,6 @@ contract TickTest is Test, GasSnapshot {
         return (Constants.MAX_TICK / tickSpacing) * tickSpacing;
     }
 
-    function getTickSpacing(uint256 feeAmount) internal pure returns (int24) {
-        // tick spacing depends on feeAmount enum value LOW / MEDIUM / HIGH
-
-        int24[3] memory TICK_SPACINGS = [int24(10), 60, 200];
-        return TICK_SPACINGS[feeAmount];
-    }
-
     function checkCantOverflow(int24 tickSpacing, uint128 maxLiquidityPerTick) internal {
         assertLe(
             uint256(
@@ -88,30 +85,24 @@ contract TickTest is Test, GasSnapshot {
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFee() public {
-        int24 tickSpacing = getTickSpacing(uint256(Constants.FeeAmount.LOW));
-
-        uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(LOW_TICK_SPACING);
 
         assertEq(maxLiquidityPerTick, 1917565579412846627735051215301243);
-        checkCantOverflow(getTickSpacing(uint256(Constants.FeeAmount.LOW)), maxLiquidityPerTick);
+        checkCantOverflow(LOW_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMediumFee() public {
-        int24 tickSpacing = getTickSpacing(uint256(Constants.FeeAmount.MEDIUM));
-
-        uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(MEDIUM_TICK_SPACING);
 
         assertEq(maxLiquidityPerTick, 11505069308564788430434325881101413); // 113.1 bits
-        checkCantOverflow(getTickSpacing(uint256(Constants.FeeAmount.MEDIUM)), maxLiquidityPerTick);
+        checkCantOverflow(MEDIUM_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForHighFee() public {
-        int24 tickSpacing = getTickSpacing(uint256(Constants.FeeAmount.HIGH));
-
-        uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(tickSpacing);
+        uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(HIGH_TICK_SPACING);
 
         assertEq(maxLiquidityPerTick, 38347205785278154309959589375342946); // 114.7 bits
-        checkCantOverflow(getTickSpacing(uint256(Constants.FeeAmount.HIGH)), maxLiquidityPerTick);
+        checkCantOverflow(HIGH_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor1() public {
