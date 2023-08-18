@@ -19,17 +19,27 @@ contract MockHooks is IHooks, IHookFeeManager {
 
     mapping(PoolId => uint8) public withdrawFees;
 
-    function beforeInitialize(address, PoolKey memory, uint160) external view override returns (bytes4) {
+    function beforeInitialize(address, PoolKey calldata, uint160, bytes calldata)
+        external
+        view
+        override
+        returns (bytes4)
+    {
         bytes4 selector = MockHooks.beforeInitialize.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterInitialize(address, PoolKey memory, uint160, int24) external view override returns (bytes4) {
+    function afterInitialize(address, PoolKey calldata, uint160, int24, bytes calldata)
+        external
+        view
+        override
+        returns (bytes4)
+    {
         bytes4 selector = MockHooks.afterInitialize.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function beforeModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata)
+    function beforeModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata)
         external
         view
         override
@@ -39,17 +49,18 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, BalanceDelta)
-        external
-        view
-        override
-        returns (bytes4)
-    {
+    function afterModifyPosition(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        BalanceDelta,
+        bytes calldata
+    ) external view override returns (bytes4) {
         bytes4 selector = MockHooks.afterModifyPosition.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata)
+    function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
         external
         view
         override
@@ -59,7 +70,7 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta)
+    function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta, bytes calldata)
         external
         view
         override
@@ -69,12 +80,22 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function beforeDonate(address, PoolKey calldata, uint256, uint256) external view override returns (bytes4) {
+    function beforeDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)
+        external
+        view
+        override
+        returns (bytes4)
+    {
         bytes4 selector = MockHooks.beforeDonate.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterDonate(address, PoolKey calldata, uint256, uint256) external view override returns (bytes4) {
+    function afterDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)
+        external
+        view
+        override
+        returns (bytes4)
+    {
         bytes4 selector = MockHooks.afterDonate.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
