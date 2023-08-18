@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {GasSnapshot} from "../../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
+import {TickMath} from "../../contracts/libraries/TickMath.sol";
 
 contract TickTest is Test, GasSnapshot {
     using Pool for Pool.State;
@@ -460,5 +461,26 @@ contract TickTest is Test, GasSnapshot {
 
         assertEq(info.feeGrowthOutside0X128, 1);
         assertEq(info.feeGrowthOutside1X128, 2);
+    }
+
+    function test_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public pure {
+        vm.assume(tickSpacing <= TickMath.MAX_TICK);
+        vm.assume(tickSpacing > 0);
+
+        int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
+        int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
+
+        uint128 maxLiquidityPerTick = Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing);
+
+        // symmetry around 0 tick
+        assert(maxTick == -minTick);
+        // positive max tick
+        assert(maxTick > 0);
+        // divisibility
+        assert((maxTick - minTick) % tickSpacing == 0);
+
+        uint256 numTicks = uint256(int256((maxTick - minTick) / tickSpacing)) + 1;
+        // max liquidity at every tick is less than the cap
+        assert(uint256(maxLiquidityPerTick) * numTicks <= type(uint128).max);
     }
 }
