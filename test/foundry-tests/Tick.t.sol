@@ -87,7 +87,7 @@ contract TickTest is Test, GasSnapshot {
         );
     }
 
-    function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFeeTickSpacing() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFee() public {
         int24 tickSpacing = getTickSpacing(uint256(Constants.FeeAmount.LOW));
 
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(tickSpacing);
@@ -96,7 +96,7 @@ contract TickTest is Test, GasSnapshot {
         checkCantOverflow(getTickSpacing(uint256(Constants.FeeAmount.LOW)), maxLiquidityPerTick);
     }
 
-    function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMediumFeegetTickSpacing() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMediumFee() public {
         int24 tickSpacing = getTickSpacing(uint256(Constants.FeeAmount.MEDIUM));
 
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(tickSpacing);
@@ -105,7 +105,7 @@ contract TickTest is Test, GasSnapshot {
         checkCantOverflow(getTickSpacing(uint256(Constants.FeeAmount.MEDIUM)), maxLiquidityPerTick);
     }
 
-    function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForHighFeegetTickSpacing() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForHighFee() public {
         int24 tickSpacing = getTickSpacing(uint256(Constants.FeeAmount.HIGH));
 
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(tickSpacing);
@@ -114,40 +114,40 @@ contract TickTest is Test, GasSnapshot {
         checkCantOverflow(getTickSpacing(uint256(Constants.FeeAmount.HIGH)), maxLiquidityPerTick);
     }
 
-    function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor1() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor1() public {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(1);
 
         assertEq(maxLiquidityPerTick, 191757530477355301479181766273477); // 126 bits
         checkCantOverflow(1, maxLiquidityPerTick);
     }
 
-    function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForEntireRange() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForEntireRange() public {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(887272);
 
         assertEq(maxLiquidityPerTick, Constants.MAX_UINT128 / 3); // 126 bits
         checkCantOverflow(887272, maxLiquidityPerTick);
     }
 
-    function test_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor2302() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor2302() public {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(2302);
 
         assertEq(maxLiquidityPerTick, 440854192570431170114173285871668350); // 118 bits
         checkCantOverflow(2302, maxLiquidityPerTick);
     }
 
-    function test_tickSpacingToMaxLiquidityPerTick_gasCostMingetTickSpacing() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing() public {
         snapStart("tickSpacingToMaxLiquidityPerTick_gasCostMinTickSpacing");
         tickSpacingToMaxLiquidityPerTick(1);
         snapEnd();
     }
 
-    function test_tickSpacingToMaxLiquidityPerTick_gasCost60getTickSpacing() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing() public {
         snapStart("tickSpacingToMaxLiquidityPerTick_gasCost60TickSpacing");
         tickSpacingToMaxLiquidityPerTick(60);
         snapEnd();
     }
 
-    function test_tickSpacingToMaxLiquidityPerTick_gasCostMaxgetTickSpacing() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing() public {
         int24 MAX_TICK_SPACING = 32767;
 
         snapStart("tickSpacingToMaxLiquidityPerTick_gasCostMaxTickSpacing");
@@ -155,28 +155,28 @@ contract TickTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_getFeeGrowthInside_returnsAllForTwoUninitializedTicksIfTickIsInside() public {
+    function testTick_getFeeGrowthInside_returnsAllForTwoUninitializedTicksIfTickIsInside() public {
         (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = getFeeGrowthInside(-2, 2, 0, 15, 15);
 
         assertEq(feeGrowthInside0X128, 15);
         assertEq(feeGrowthInside1X128, 15);
     }
 
-    function test_getFeeGrowthInside_returns0ForTwoUninitializedTicksIfTickIsAbove() public {
+    function testTick_getFeeGrowthInside_returns0ForTwoUninitializedTicksIfTickIsAbove() public {
         (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = getFeeGrowthInside(-2, 2, 4, 15, 15);
 
         assertEq(feeGrowthInside0X128, 0);
         assertEq(feeGrowthInside1X128, 0);
     }
 
-    function test_getFeeGrowthInside_returns0ForTwoUninitializedTicksIfTickIsBelow() public {
+    function testTick_getFeeGrowthInside_returns0ForTwoUninitializedTicksIfTickIsBelow() public {
         (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = getFeeGrowthInside(-2, 2, -4, 15, 15);
 
         assertEq(feeGrowthInside0X128, 0);
         assertEq(feeGrowthInside1X128, 0);
     }
 
-    function test_getFeeGrowthInside_subtractsUpperTickIfBelow() public {
+    function testTick_getFeeGrowthInside_subtractsUpperTickIfBelow() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 2;
@@ -192,7 +192,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(feeGrowthInside1X128, 12);
     }
 
-    function test_getFeeGrowthInside_subtractsLowerTickIfAbove() public {
+    function testTick_getFeeGrowthInside_subtractsLowerTickIfAbove() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 2;
@@ -208,7 +208,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(feeGrowthInside1X128, 12);
     }
 
-    function test_getFeeGrowthInside_subtractsUpperAndLowerTickIfInside() public {
+    function testTick_getFeeGrowthInside_subtractsUpperAndLowerTickIfInside() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 2;
@@ -231,7 +231,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(feeGrowthInside1X128, 11);
     }
 
-    function test_getFeeGrowthInside_worksCorrectlyWithOverflowOnInsideTick() public {
+    function testTick_getFeeGrowthInside_worksCorrectlyWithOverflowOnInsideTick() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = Constants.MAX_UINT256 - 3;
@@ -254,14 +254,14 @@ contract TickTest is Test, GasSnapshot {
         assertEq(feeGrowthInside1X128, 13);
     }
 
-    function test_update_flipsFromZeroToNonzero() public {
+    function testTick_update_flipsFromZeroToNonzero() public {
         (bool flipped, uint128 liquidityGrossAfter) = update(0, 0, 1, 0, 0, false);
 
         assertEq(flipped, true);
         assertEq(liquidityGrossAfter, 1);
     }
 
-    function test_update_doesNotFlipFromNonzeroToGreaterNonzero() public {
+    function testTick_update_doesNotFlipFromNonzeroToGreaterNonzero() public {
         update(0, 0, 1, 0, 0, false);
         (bool flipped, uint128 liquidityGrossAfter) = update(0, 0, 1, 0, 0, false);
 
@@ -269,7 +269,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(liquidityGrossAfter, 2);
     }
 
-    function test_update_flipsFromNonzeroToZero() public {
+    function testTick_update_flipsFromNonzeroToZero() public {
         update(0, 0, 1, 0, 0, false);
         (bool flipped, uint128 liquidityGrossAfter) = update(0, 0, -1, 0, 0, false);
 
@@ -277,7 +277,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(liquidityGrossAfter, 0);
     }
 
-    function test_update_doesNotFlipFromNonzeroToLesserZero() public {
+    function testTick_update_doesNotFlipFromNonzeroToLesserZero() public {
         update(0, 0, 2, 0, 0, false);
         (bool flipped, uint128 liquidityGrossAfter) = update(0, 0, -1, 0, 0, false);
 
@@ -285,7 +285,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(liquidityGrossAfter, 1);
     }
 
-    function test_update_netsTheLiquidityBasedOnUpperFlag() public {
+    function testTick_update_netsTheLiquidityBasedOnUpperFlag() public {
         Pool.TickInfo memory tickInfo;
 
         update(0, 0, 2, 0, 0, false);
@@ -298,14 +298,14 @@ contract TickTest is Test, GasSnapshot {
         assertEq(tickInfo.liquidityNet, 2 - 1 - 3 + 1);
     }
 
-    function test_update_revertsOnOverflowLiquidityGross() public {
+    function testTick_update_revertsOnOverflowLiquidityGross() public {
         update(0, 0, int128(Constants.MAX_UINT128 / 2 - 1), 0, 0, false);
 
         vm.expectRevert();
         update(0, 0, int128(Constants.MAX_UINT128 / 2 - 1), 0, 0, false);
     }
 
-    function test_update_assumesAllGrowthHappensBelowTicksLteCurrentTick() public {
+    function testTick_update_assumesAllGrowthHappensBelowTicksLteCurrentTick() public {
         Pool.TickInfo memory tickInfo;
 
         update(1, 1, 1, 1, 2, false);
@@ -315,7 +315,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(tickInfo.feeGrowthOutside1X128, 2);
     }
 
-    function test_update_doesNotSetAnyGrowthFieldsIfTickIsAlreadyInitialized() public {
+    function testTick_update_doesNotSetAnyGrowthFieldsIfTickIsAlreadyInitialized() public {
         Pool.TickInfo memory tickInfo;
 
         update(1, 1, 1, 1, 2, false);
@@ -326,7 +326,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(tickInfo.feeGrowthOutside1X128, 2);
     }
 
-    function test_update_doesNotSetAnyGrowthFieldsForTicksGtCurrentTick() public {
+    function testTick_update_doesNotSetAnyGrowthFieldsForTicksGtCurrentTick() public {
         Pool.TickInfo memory tickInfo;
 
         update(2, 1, 1, 1, 2, false);
@@ -336,7 +336,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(tickInfo.feeGrowthOutside1X128, 0);
     }
 
-    function test_update_liquidityParsingParsesMaxUint128StoredLiquidityGrossBeforeUpdate() public {
+    function testTick_update_liquidityParsing_parsesMaxUint128StoredLiquidityGrossBeforeUpdate() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 0;
@@ -353,7 +353,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.liquidityNet, -1);
     }
 
-    function test_update_liquidityParsingParsesMaxUint128StoredLiquidityGrossAfterUpdate() public {
+    function testTick_update_liquidityParsing_parsesMaxUint128StoredLiquidityGrossAfterUpdate() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 0;
@@ -371,7 +371,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2));
     }
 
-    function test_update_liquidityParsingParsesMaxInt128StoredLiquidityGrossBeforeUpdate() public {
+    function testTick_update_liquidityParsing_parsesMaxInt128StoredLiquidityGrossBeforeUpdate() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 0;
@@ -388,7 +388,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2 - 1));
     }
 
-    function test_update_liquidityParsingParsesMaxInt128StoredLiquidityGrossAfterUpdate() public {
+    function testTick_update_liquidityParsing_parsesMaxInt128StoredLiquidityGrossAfterUpdate() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 0;
@@ -406,7 +406,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2));
     }
 
-    function test_clear_deletesAllTheDataInTheTick() public {
+    function testTick_clear_deletesAllTheDataInTheTick() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 1;
@@ -426,7 +426,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.liquidityNet, 0);
     }
 
-    function test_cross_flipsTheGrowthVariables() public {
+    function testTick_cross_flipsTheGrowthVariables() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 1;
@@ -444,7 +444,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.feeGrowthOutside1X128, 7);
     }
 
-    function test_cross_twoFlipsAreNoOp() public {
+    function testTick_cross_twoFlipsAreNoOp() public {
         Pool.TickInfo memory info;
 
         info.feeGrowthOutside0X128 = 1;
@@ -463,7 +463,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.feeGrowthOutside1X128, 2);
     }
 
-    function test_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public pure {
+    function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public pure {
         vm.assume(tickSpacing <= TickMath.MAX_TICK);
         vm.assume(tickSpacing > 0);
 
