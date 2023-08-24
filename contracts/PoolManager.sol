@@ -22,7 +22,9 @@ import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Re
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
+import "forge-std/console2.sol";
 /// @notice Holds the state for all pools
+
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Receiver {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
@@ -30,7 +32,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
-    using LockDataLibrary for IPoolManager.LockData;
     using FeeLibrary for uint24;
 
     /// @inheritdoc IPoolManager
@@ -38,9 +39,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
-
-    /// @inheritdoc IPoolManager
-    IPoolManager.LockData public override lockData;
 
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
@@ -138,31 +136,33 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        lockData.push(msg.sender);
+        LockDataLibrary.push(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
-        if (lockData.length == 1) {
-            if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
-            delete lockData;
+        IPoolManager.LockSentinel memory sentinel = LockDataLibrary.getLockSentinel();
+
+        if (sentinel.length == 1) {
+            if (sentinel.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            delete sentinel; // can remove w transient storage
         } else {
-            lockData.pop();
+            LockDataLibrary.pop();
         }
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        address locker = lockData.getActiveLock();
+        address locker = LockDataLibrary.getActiveLock();
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
         unchecked {
             if (next == 0) {
-                lockData.nonzeroDeltaCount--;
+                LockDataLibrary.decreaseDeltaCount();
             } else if (current == 0) {
-                lockData.nonzeroDeltaCount++;
+                LockDataLibrary.increaseDeltaCount();
             }
         }
 
@@ -176,7 +176,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     modifier onlyByLocker() {
-        address locker = lockData.getActiveLock();
+        address locker = LockDataLibrary.getActiveLock();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }

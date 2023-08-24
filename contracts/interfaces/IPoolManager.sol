@@ -113,7 +113,8 @@ interface IPoolManager is IFees, IERC1155 {
     function reservesOf(Currency currency) external view returns (uint256);
 
     /// @notice Contains data about pool lockers.
-    struct LockData {
+    /// @dev Located in transient storage.
+    struct LockSentinel {
         /// @notice The current number of active lockers
         uint128 length;
         /// @notice The total number of nonzero deltas over all active + completed lockers
@@ -122,9 +123,6 @@ interface IPoolManager is IFees, IERC1155 {
 
     /// @notice Returns the locker in the ith position of the locker queue.
     function getLock(uint256 i) external view returns (address locker);
-
-    /// @notice Returns lock data
-    function lockData() external view returns (uint128 length, uint128 nonzeroDeltaCount);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)

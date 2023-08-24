@@ -22,9 +22,8 @@ contract TokenLocker is ILockCallback {
         (Currency currency, bool reclaim) = abi.decode(data, (Currency, bool));
 
         IPoolManager manager = IPoolManager(msg.sender);
-
-        (, uint128 nonzeroDeltaCount) = manager.lockData();
-        assert(nonzeroDeltaCount == 0);
+        IPoolManager.LockSentinel memory sentinel = LockDataLibrary.getLockSentinel();
+        assert(sentinel.nonzeroDeltaCount == 0);
 
         int256 delta = manager.currencyDelta(address(this), currency);
         assert(delta == 0);
@@ -32,16 +31,16 @@ contract TokenLocker is ILockCallback {
         // deposit some tokens
         currency.transfer(address(manager), 1);
         manager.settle(currency);
-        (, nonzeroDeltaCount) = manager.lockData();
-        assert(nonzeroDeltaCount == 1);
+        IPoolManager.LockSentinel memory sentinel1 = LockDataLibrary.getLockSentinel();
+        assert(sentinel1.nonzeroDeltaCount == 1);
         delta = manager.currencyDelta(address(this), currency);
         assert(delta == -1);
 
         // take them back
         if (reclaim) {
             manager.take(currency, address(this), 1);
-            (, nonzeroDeltaCount) = manager.lockData();
-            assert(nonzeroDeltaCount == 0);
+            IPoolManager.LockSentinel memory sentinel2 = LockDataLibrary.getLockSentinel();
+            assert(sentinel2.nonzeroDeltaCount == 0);
             delta = manager.currencyDelta(address(this), currency);
             assert(delta == 0);
         }
@@ -81,22 +80,22 @@ contract ParallelLocker is ILockCallback {
     }
 
     function assertionChecker0(uint256) external view {
-        (uint128 length,) = manager.lockData();
-        assert(length == 2);
+        IPoolManager.LockSentinel memory sentinel = LockDataLibrary.getLockSentinel();
+        assert(sentinel.length == 2);
         address locker = manager.getLock(1);
         assert(locker == msg.sender);
     }
 
     function assertionChecker1(uint256 depth) external view {
-        (uint128 length,) = manager.lockData();
-        assert(length == depth + 2);
+        IPoolManager.LockSentinel memory sentinel = LockDataLibrary.getLockSentinel();
+        assert(sentinel.length == depth + 2);
         address locker = manager.getLock(depth + 1);
         assert(locker == msg.sender);
     }
 
     function assertionChecker2(uint256) external view {
-        (uint128 length,) = manager.lockData();
-        assert(length == 2);
+        IPoolManager.LockSentinel memory sentinel = LockDataLibrary.getLockSentinel();
+        assert(sentinel.length == 2);
         address locker = manager.getLock(1);
         assert(locker == msg.sender);
     }
@@ -106,22 +105,22 @@ contract ParallelLocker is ILockCallback {
         SimpleLinearLocker locker1 = new SimpleLinearLocker();
         SimpleLinearLocker locker2 = new SimpleLinearLocker();
 
-        (uint128 length,) = manager.lockData();
-        assert(length == 1);
+        IPoolManager.LockSentinel memory sentinel = LockDataLibrary.getLockSentinel();
+        assert(sentinel.length == 1);
         address locker = manager.getLock(0);
         assert(locker == address(this));
 
         locker0.main(manager, 0, this.assertionChecker0);
-        (length,) = manager.lockData();
-        assert(length == 1);
+        IPoolManager.LockSentinel memory sentinel1 = LockDataLibrary.getLockSentinel();
+        assert(sentinel1.length == 1);
 
         locker1.main(manager, 1, this.assertionChecker1);
-        (length,) = manager.lockData();
-        assert(length == 1);
+        IPoolManager.LockSentinel memory sentinel2 = LockDataLibrary.getLockSentinel();
+        assert(sentinel2.length == 1);
 
         locker2.main(manager, 0, this.assertionChecker2);
-        (length,) = manager.lockData();
-        assert(length == 1);
+        IPoolManager.LockSentinel memory sentinel3 = LockDataLibrary.getLockSentinel();
+        assert(sentinel3.length == 1);
 
         return "";
     }
@@ -151,8 +150,8 @@ contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
     }
 
     function assertionChecker(uint256 depth) external {
-        (uint128 length,) = manager.lockData();
-        assertEq(length, depth + 1);
+        IPoolManager.LockSentinel memory sentinel = LockDataLibrary.getLockSentinel();
+        assertEq(sentinel.length, depth + 1);
         address locker = manager.getLock(depth);
         assertEq(locker, msg.sender);
     }

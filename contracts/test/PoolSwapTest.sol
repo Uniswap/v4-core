@@ -9,6 +9,8 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 
+import "forge-std/console2.sol";
+
 contract PoolSwapTest is ILockCallback {
     using CurrencyLibrary for Currency;
 
@@ -44,7 +46,7 @@ contract PoolSwapTest is ILockCallback {
         }
     }
 
-    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory delta) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
