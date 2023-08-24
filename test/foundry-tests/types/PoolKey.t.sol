@@ -6,7 +6,8 @@ import {PoolId, PoolIdLibrary, PoolKey} from "../../../contracts/types/PoolId.so
 
 contract TestPoolKey is Test {
     using PoolIdLibrary for PoolKey;
+    
     function testPoolIdCreation(PoolKey memory poolKey) public {
-        assertEq(keccak256(abi.encode(poolKey)),PoolId.unwrap(poolKey.toId()));
+        assertEq(keccak256(abi.encode(poolKey)), PoolId.unwrap(poolKey.toId()));
     }
 }
