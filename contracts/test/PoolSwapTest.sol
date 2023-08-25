@@ -53,11 +53,11 @@ contract PoolSwapTest is ILockCallback {
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {
         delta = abi.decode(
-            manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))),(BalanceDelta)
+            manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))), (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
-        if (ethBalance > 0) { CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance); }
+        if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
     }
 
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
