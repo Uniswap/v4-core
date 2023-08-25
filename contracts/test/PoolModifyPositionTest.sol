@@ -22,6 +22,7 @@ contract PoolModifyPositionTest is ILockCallback {
         address sender;
         PoolKey key;
         IPoolManager.ModifyPositionParams params;
+        bytes hookData;
     }
 
     function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
@@ -29,7 +30,15 @@ contract PoolModifyPositionTest is ILockCallback {
         payable
         returns (BalanceDelta delta)
     {
-        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, params))), (BalanceDelta));
+        return modifyPosition(key, params, new bytes(0));
+    }
+
+    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
+        public
+        payable
+        returns (BalanceDelta delta)
+    {
+        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, params, hookData))), (BalanceDelta));
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {
@@ -42,7 +51,7 @@ contract PoolModifyPositionTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.modifyPosition(data.key, data.params, new bytes(0));
+        BalanceDelta delta = manager.modifyPosition(data.key, data.params, data.hookData);
 
         if (delta.amount0() > 0) {
             if (data.key.currency0.isNative()) {
