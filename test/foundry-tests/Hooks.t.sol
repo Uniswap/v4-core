@@ -92,7 +92,10 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false), new bytes(222)
+            key,
+            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            PoolSwapTest.TestSettings(false, false),
+            new bytes(222)
         );
         assertEq(mockHooks.beforeSwapData(), new bytes(222));
         assertEq(mockHooks.afterSwapData(), new bytes(222));

@@ -40,7 +40,9 @@ contract PoolDonateTest is ILockCallback {
         payable
         returns (BalanceDelta delta)
     {
-        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDelta));
+        delta = abi.decode(
+            manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDelta)
+        );
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {

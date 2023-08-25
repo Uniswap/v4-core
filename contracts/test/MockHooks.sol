@@ -48,11 +48,12 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function beforeModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata hookData)
-        external
-        override
-        returns (bytes4)
-    {
+    function beforeModifyPosition(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        bytes calldata hookData
+    ) external override returns (bytes4) {
         beforeModifyPositionData = hookData;
         bytes4 selector = MockHooks.beforeModifyPosition.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
@@ -80,11 +81,13 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta, bytes calldata hookData)
-        external
-        override
-        returns (bytes4)
-    {
+    function afterSwap(
+        address,
+        PoolKey calldata,
+        IPoolManager.SwapParams calldata,
+        BalanceDelta,
+        bytes calldata hookData
+    ) external override returns (bytes4) {
         afterSwapData = hookData;
         bytes4 selector = MockHooks.afterSwap.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
