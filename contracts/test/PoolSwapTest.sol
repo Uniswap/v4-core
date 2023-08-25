@@ -23,6 +23,7 @@ contract PoolSwapTest is ILockCallback {
         TestSettings testSettings;
         PoolKey key;
         IPoolManager.SwapParams params;
+        bytes hookData;
     }
 
     struct TestSettings {
@@ -35,8 +36,9 @@ contract PoolSwapTest is ILockCallback {
         payable
         returns (BalanceDelta delta)
     {
-        delta =
-            abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params))), (BalanceDelta));
+        delta = abi.decode(
+            manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params, new bytes(0)))), (BalanceDelta)
+        );
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {
@@ -44,12 +46,26 @@ contract PoolSwapTest is ILockCallback {
         }
     }
 
+    function swap(
+        PoolKey memory key,
+        IPoolManager.SwapParams memory params,
+        TestSettings memory testSettings,
+        bytes memory hookData
+    ) external payable returns (BalanceDelta delta) {
+        delta = abi.decode(
+            manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))),(BalanceDelta)
+        );
+
+        uint256 ethBalance = address(this).balance;
+        if (ethBalance > 0) { CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance); }
+    }
+
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.swap(data.key, data.params, new bytes(0));
+        BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
         if (data.params.zeroForOne) {
             if (delta.amount0() > 0) {
