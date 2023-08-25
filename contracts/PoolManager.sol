@@ -99,6 +99,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         return pools[id].positions.get(_owner, tickLower, tickUpper).liquidity;
     }
 
+    /// @inheritdoc IPoolManager
     function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
         external
         view
@@ -372,12 +373,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         _accountDelta(currency, -(amount.toInt128()));
     }
 
+    /// @inheritdoc IERC1155Receiver
     function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata) external returns (bytes4) {
         if (msg.sender != address(this)) revert NotPoolManagerToken();
         _burnAndAccount(CurrencyLibrary.fromId(id), value);
         return IERC1155Receiver.onERC1155Received.selector;
     }
 
+    /// @inheritdoc IERC1155Receiver
     function onERC1155BatchReceived(address, address, uint256[] calldata ids, uint256[] calldata values, bytes calldata)
         external
         returns (bytes4)
@@ -392,6 +395,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
+    /// @inheritdoc IPoolManager
     function setProtocolFees(PoolKey memory key) external {
         (uint8 newProtocolSwapFee, uint8 newProtocolWithdrawFee) = _fetchProtocolFees(key);
         PoolId id = key.toId();
@@ -399,6 +403,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         emit ProtocolFeeUpdated(id, newProtocolSwapFee, newProtocolWithdrawFee);
     }
 
+    /// @inheritdoc IPoolManager
     function setHookFees(PoolKey memory key) external {
         (uint8 newHookSwapFee, uint8 newHookWithdrawFee) = _fetchHookFees(key);
         PoolId id = key.toId();
@@ -406,6 +411,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         emit HookFeeUpdated(id, newHookSwapFee, newHookWithdrawFee);
     }
 
+    /// @inheritdoc IPoolManager
     function extsload(bytes32 slot) external view returns (bytes32 value) {
         /// @solidity memory-safe-assembly
         assembly {
@@ -413,6 +419,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         }
     }
 
+    /// @inheritdoc IPoolManager
     function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
         bytes memory value = new bytes(32 * nSlots);
 
