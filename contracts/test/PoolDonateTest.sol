@@ -24,6 +24,7 @@ contract PoolDonateTest is ILockCallback {
         PoolKey key;
         uint256 amount0;
         uint256 amount1;
+        bytes hookData;
     }
 
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1)
@@ -31,7 +32,15 @@ contract PoolDonateTest is ILockCallback {
         payable
         returns (BalanceDelta delta)
     {
-        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1))), (BalanceDelta));
+        return donate(key, amount0, amount1, new bytes(0));
+    }
+
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory hookData)
+        public
+        payable
+        returns (BalanceDelta delta)
+    {
+        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDelta));
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {
@@ -44,7 +53,7 @@ contract PoolDonateTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, new bytes(0));
+        BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, data.hookData);
 
         if (delta.amount0() > 0) {
             if (data.key.currency0.isNative()) {
