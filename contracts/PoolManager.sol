@@ -138,10 +138,17 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     function lock(bytes calldata data) external override returns (bytes memory result) {
         LockDataLibrary.push(msg.sender);
 
+        console2.log("sentinel length before lockAcquired");
+        IPoolManager.LockSentinel memory sentinel = LockDataLibrary.getLockSentinel();
+        console2.log(sentinel.length);
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
-        IPoolManager.LockSentinel memory sentinel = LockDataLibrary.getLockSentinel();
+        console2.log("sentinel length after lockAcquired");
+        sentinel = LockDataLibrary.getLockSentinel();
+        console2.log(sentinel.length);
+
+        sentinel = LockDataLibrary.getLockSentinel();
 
         if (sentinel.length == 1) {
             if (sentinel.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
@@ -179,6 +186,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         address locker = LockDataLibrary.getActiveLock();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
+    }
+
+    function getLockSentinel() external view returns (IPoolManager.LockSentinel memory sentinel) {
+        return LockDataLibrary.getLockSentinel();
     }
 
     /// @inheritdoc IPoolManager

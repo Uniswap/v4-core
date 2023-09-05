@@ -37,6 +37,10 @@ contract PoolSwapTest is ILockCallback {
         payable
         returns (BalanceDelta delta)
     {
+        console2.log("sentinel length before lock");
+        IPoolManager.LockSentinel memory sentinel = manager.getLockSentinel();
+        console2.log(sentinel.length);
+
         delta =
             abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params))), (BalanceDelta));
 
@@ -46,12 +50,20 @@ contract PoolSwapTest is ILockCallback {
         }
     }
 
-    function lockAcquired(bytes calldata rawData) external returns (bytes memory delta) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
+        console2.log("sentinel length before swap");
+        IPoolManager.LockSentinel memory sentinel = manager.getLockSentinel();
+        console2.log(sentinel.length);
+
         BalanceDelta delta = manager.swap(data.key, data.params, new bytes(0));
+
+        sentinel = manager.getLockSentinel();
+        console2.log("sentinel length after swap");
+        console2.log(sentinel.length);
 
         if (data.params.zeroForOne) {
             if (delta.amount0() > 0) {

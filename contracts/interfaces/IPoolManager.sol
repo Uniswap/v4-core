@@ -112,6 +112,8 @@ interface IPoolManager is IFees, IERC1155 {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
+    function getLockSentinel() external view returns (IPoolManager.LockSentinel memory sentinel);
+
     /// @notice Contains data about pool lockers.
     /// @dev Located in transient storage.
     struct LockSentinel {
