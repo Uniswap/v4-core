@@ -334,7 +334,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
             }
         }
 
-        delta = _getPool(key).donate(amount0, amount1);
+        Pool.State storage pool = _getPool(key);
+        uint256[] memory amounts0 = new uint256[](1);
+        uint256[] memory amounts1 = new uint256[](1);
+        int24[] memory ticks = new int24[](1);
+        amounts0[0] = amount0;
+        amounts1[0] = amount1;
+        ticks[0] = pool.slot0.tick;
+        delta = pool.donate(amounts0, amounts1, ticks, key.tickSpacing);
 
         _accountPoolBalanceDelta(key, delta);
 
@@ -343,6 +350,35 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
                 revert Hooks.InvalidHookResponse();
             }
         }
+    }
+
+    /// @inheritdoc IPoolManager
+    function donate(PoolKey memory key, uint256[] calldata amounts0, uint256[] calldata amounts1, int24[] calldata ticks, bytes calldata hookData)
+        external
+        override
+        noDelegateCall
+        onlyByLocker
+        returns (BalanceDelta delta)
+    {
+        // TODO(DAN) fix donate hooks to take arrays
+        // if (key.hooks.shouldCallBeforeDonate()) {
+        //     if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
+        //         revert Hooks.InvalidHookResponse();
+        //     }
+        // }
+
+        // TODO(DAN): write tests
+        Pool.State storage pool = _getPool(key);
+        delta = pool.donate(amounts0, amounts1, ticks, key.tickSpacing);
+
+        _accountPoolBalanceDelta(key, delta);
+
+        // TODO(DAN) fix donate hooks to take arrays
+        // if (key.hooks.shouldCallAfterDonate()) {
+        //     if (key.hooks.afterDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.afterDonate.selector) {
+        //         revert Hooks.InvalidHookResponse();
+        //     }
+        // }
     }
 
     /// @inheritdoc IPoolManager
