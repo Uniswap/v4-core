@@ -80,7 +80,7 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function beforeDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)
+    function beforeDonate(address, PoolKey calldata, uint256[] calldata, uint256[] calldata, int24[] calldata, bytes calldata)
         external
         view
         override
@@ -90,7 +90,7 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)
+    function afterDonate(address, PoolKey calldata, uint256[] calldata, uint256[] calldata, int24[] calldata, bytes calldata)
         external
         view
         override

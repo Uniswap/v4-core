@@ -93,30 +93,34 @@ interface IHooks {
     /// @notice The hook called before donate
     /// @param sender The initial msg.sender for the donate call
     /// @param key The key for the pool
-    /// @param amount0 The amount of token0 being donated
-    /// @param amount1 The amount of token1 being donated
+    /// @param amounts0 The amounts of token0 being donated
+    /// @param amounts1 The amounts of token1 being donated
+    /// @param ticks The ticks to donate to
     /// @param hookData Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function beforeDonate(
         address sender,
         PoolKey calldata key,
-        uint256 amount0,
-        uint256 amount1,
+        uint256[] calldata amounts0,
+        uint256[] calldata amounts1,
+        int24[] calldata ticks,
         bytes calldata hookData
     ) external returns (bytes4);
 
     /// @notice The hook called after donate
     /// @param sender The initial msg.sender for the donate call
     /// @param key The key for the pool
-    /// @param amount0 The amount of token0 being donated
-    /// @param amount1 The amount of token1 being donated
+    /// @param amounts0 The amounts of token0 being donated
+    /// @param amounts1 The amounts of token1 being donated
+    /// @param ticks The ticks to donate to
     /// @param hookData Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function afterDonate(
         address sender,
         PoolKey calldata key,
-        uint256 amount0,
-        uint256 amount1,
+        uint256[] calldata amounts0,
+        uint256[] calldata amounts1,
+        int24[] calldata ticks,
         bytes calldata hookData
     ) external returns (bytes4);
 }

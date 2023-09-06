@@ -80,7 +80,7 @@ contract EmptyTestHooks is IHooks {
         return IHooks.afterSwap.selector;
     }
 
-    function beforeDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)
+    function beforeDonate(address, PoolKey calldata, uint256[] calldata, uint256[] calldata, int24[] calldata, bytes calldata)
         external
         pure
         override
@@ -89,7 +89,7 @@ contract EmptyTestHooks is IHooks {
         return IHooks.beforeDonate.selector;
     }
 
-    function afterDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)
+    function afterDonate(address, PoolKey calldata, uint256[] calldata, uint256[] calldata, int24[] calldata, bytes calldata)
         external
         pure
         override

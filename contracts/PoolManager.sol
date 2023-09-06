@@ -328,11 +328,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        if (key.hooks.shouldCallBeforeDonate()) {
-            if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
 
         Pool.State storage pool = _getPool(key);
         uint256[] memory amounts0 = new uint256[](1);
@@ -341,12 +336,18 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         amounts0[0] = amount0;
         amounts1[0] = amount1;
         ticks[0] = pool.slot0.tick;
-        delta = pool.donate(amounts0, amounts1, ticks, key.tickSpacing);
 
+        if (key.hooks.shouldCallBeforeDonate()) {
+            if (key.hooks.beforeDonate(msg.sender, key, amounts0, amounts1, ticks, hookData) != IHooks.beforeDonate.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
+        }
+
+        delta = pool.donate(amounts0, amounts1, ticks, key.tickSpacing);
         _accountPoolBalanceDelta(key, delta);
 
         if (key.hooks.shouldCallAfterDonate()) {
-            if (key.hooks.afterDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.afterDonate.selector) {
+            if (key.hooks.afterDonate(msg.sender, key, amounts0, amounts1, ticks, hookData) != IHooks.afterDonate.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -361,11 +362,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         returns (BalanceDelta delta)
     {
         // TODO(DAN) fix donate hooks to take arrays
-        // if (key.hooks.shouldCallBeforeDonate()) {
-        //     if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
-        //         revert Hooks.InvalidHookResponse();
-        //     }
-        // }
+        if (key.hooks.shouldCallBeforeDonate()) {
+            if (key.hooks.beforeDonate(msg.sender, key, amounts0, amounts1, ticks, hookData) != IHooks.beforeDonate.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
+        }
 
         // TODO(DAN): write tests
         Pool.State storage pool = _getPool(key);
@@ -374,11 +375,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         _accountPoolBalanceDelta(key, delta);
 
         // TODO(DAN) fix donate hooks to take arrays
-        // if (key.hooks.shouldCallAfterDonate()) {
-        //     if (key.hooks.afterDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.afterDonate.selector) {
-        //         revert Hooks.InvalidHookResponse();
-        //     }
-        // }
+        if (key.hooks.shouldCallAfterDonate()) {
+            if (key.hooks.afterDonate(msg.sender, key, amounts0, amounts1, ticks, hookData) != IHooks.afterDonate.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
+        }
     }
 
     /// @inheritdoc IPoolManager
