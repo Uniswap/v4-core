@@ -37,8 +37,8 @@ contract PoolSwapTest is ILockCallback {
         payable
         returns (BalanceDelta delta)
     {
-        console2.log("sentinel length before lock");
         IPoolManager.LockSentinel memory sentinel = manager.getLockSentinel();
+        console2.log("sentinel length before lock");
         console2.log(sentinel.length);
 
         delta =
@@ -55,8 +55,8 @@ contract PoolSwapTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        console2.log("sentinel length before swap");
         IPoolManager.LockSentinel memory sentinel = manager.getLockSentinel();
+        console2.log("sentinel length before swap");
         console2.log(sentinel.length);
 
         BalanceDelta delta = manager.swap(data.key, data.params, new bytes(0));

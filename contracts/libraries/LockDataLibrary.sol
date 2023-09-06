@@ -34,7 +34,6 @@ library LockDataLibrary {
                 sstore(sentinelSlot, sentinel)
             }
         }
-        IPoolManager.LockSentinel memory sentinel2 = getLockSentinel();
     }
 
     /// @dev Pops a locker off the end of the queue. Note that no storage gets cleared.
@@ -60,7 +59,7 @@ library LockDataLibrary {
         }
     }
 
-    function getActiveLock() internal view returns (address locker) {
+    function getActiveLock() internal view returns (address) {
         IPoolManager.LockSentinel memory sentinel = getLockSentinel();
 
         return getLock(sentinel.length - 1);
@@ -71,6 +70,8 @@ library LockDataLibrary {
         assembly {
             sentinel := sload(sentinelSlot)
         }
+        console2.log("length inside library");
+        console2.log(sentinel.length);
     }
 
     function increaseDeltaCount() internal {
