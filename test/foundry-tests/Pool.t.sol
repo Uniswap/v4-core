@@ -9,7 +9,6 @@ import {Position} from "../../contracts/libraries/Position.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
 
-
 contract PoolTest is Test {
     using Pool for Pool.State;
 

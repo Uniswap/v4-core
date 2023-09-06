@@ -328,7 +328,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         onlyByLocker
         returns (BalanceDelta delta)
     {
-
         Pool.State storage pool = _getPool(key);
         uint256[] memory amounts0 = new uint256[](1);
         uint256[] memory amounts1 = new uint256[](1);
@@ -338,7 +337,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         ticks[0] = pool.slot0.tick;
 
         if (key.hooks.shouldCallBeforeDonate()) {
-            if (key.hooks.beforeDonate(msg.sender, key, amounts0, amounts1, ticks, hookData) != IHooks.beforeDonate.selector) {
+            if (
+                key.hooks.beforeDonate(msg.sender, key, amounts0, amounts1, ticks, hookData)
+                    != IHooks.beforeDonate.selector
+            ) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -347,23 +349,29 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         _accountPoolBalanceDelta(key, delta);
 
         if (key.hooks.shouldCallAfterDonate()) {
-            if (key.hooks.afterDonate(msg.sender, key, amounts0, amounts1, ticks, hookData) != IHooks.afterDonate.selector) {
+            if (
+                key.hooks.afterDonate(msg.sender, key, amounts0, amounts1, ticks, hookData)
+                    != IHooks.afterDonate.selector
+            ) {
                 revert Hooks.InvalidHookResponse();
             }
         }
     }
 
     /// @inheritdoc IPoolManager
-    function donate(PoolKey memory key, uint256[] calldata amounts0, uint256[] calldata amounts1, int24[] calldata ticks, bytes calldata hookData)
-        external
-        override
-        noDelegateCall
-        onlyByLocker
-        returns (BalanceDelta delta)
-    {
+    function donate(
+        PoolKey memory key,
+        uint256[] calldata amounts0,
+        uint256[] calldata amounts1,
+        int24[] calldata ticks,
+        bytes calldata hookData
+    ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
         // TODO(DAN) fix donate hooks to take arrays
         if (key.hooks.shouldCallBeforeDonate()) {
-            if (key.hooks.beforeDonate(msg.sender, key, amounts0, amounts1, ticks, hookData) != IHooks.beforeDonate.selector) {
+            if (
+                key.hooks.beforeDonate(msg.sender, key, amounts0, amounts1, ticks, hookData)
+                    != IHooks.beforeDonate.selector
+            ) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -376,7 +384,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
         // TODO(DAN) fix donate hooks to take arrays
         if (key.hooks.shouldCallAfterDonate()) {
-            if (key.hooks.afterDonate(msg.sender, key, amounts0, amounts1, ticks, hookData) != IHooks.afterDonate.selector) {
+            if (
+                key.hooks.afterDonate(msg.sender, key, amounts0, amounts1, ticks, hookData)
+                    != IHooks.afterDonate.selector
+            ) {
                 revert Hooks.InvalidHookResponse();
             }
         }

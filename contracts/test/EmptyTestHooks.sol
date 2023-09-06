@@ -80,21 +80,25 @@ contract EmptyTestHooks is IHooks {
         return IHooks.afterSwap.selector;
     }
 
-    function beforeDonate(address, PoolKey calldata, uint256[] calldata, uint256[] calldata, int24[] calldata, bytes calldata)
-        external
-        pure
-        override
-        returns (bytes4)
-    {
+    function beforeDonate(
+        address,
+        PoolKey calldata,
+        uint256[] calldata,
+        uint256[] calldata,
+        int24[] calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         return IHooks.beforeDonate.selector;
     }
 
-    function afterDonate(address, PoolKey calldata, uint256[] calldata, uint256[] calldata, int24[] calldata, bytes calldata)
-        external
-        pure
-        override
-        returns (bytes4)
-    {
+    function afterDonate(
+        address,
+        PoolKey calldata,
+        uint256[] calldata,
+        uint256[] calldata,
+        int24[] calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         return IHooks.afterDonate.selector;
     }
 }

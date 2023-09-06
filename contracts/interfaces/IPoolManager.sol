@@ -178,9 +178,13 @@ interface IPoolManager is IFees, IERC1155 {
         returns (BalanceDelta);
 
     /// @notice Donate the respective currency amounts to liquidity providers at the respective ticks in the pool with the given pool key
-    function donate(PoolKey memory key, uint256[] calldata amounts0, uint256[] calldata amount1, int24[] calldata ticks, bytes calldata hookData)
-        external
-        returns (BalanceDelta);
+    function donate(
+        PoolKey memory key,
+        uint256[] calldata amounts0,
+        uint256[] calldata amount1,
+        int24[] calldata ticks,
+        bytes calldata hookData
+    ) external returns (BalanceDelta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans

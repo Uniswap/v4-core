@@ -546,18 +546,15 @@ library Pool {
         }
     }
 
-
     // the top level state of the swap, the results of which are recorded in storage at the end
     struct DonateState {
         // the cumulative feeGrowth (amounts divided by liquidity) added to ticks below the current tick
         // slight misnomer—it also includes any feeGrowth distributed to the current tick
         uint256 cumulativeFeeGrowthBelow0x128;
         uint256 cumulativeFeeGrowthBelow1x128;
-
         // the cumulative amounts of tokens donated to ticks below the current tick
         uint256 cumulativeAmountBelow0;
         uint256 cumulativeAmountBelow1;
-
         int24 tickNext;
         int24 tickCurrent;
         uint256 liquidityAtTick;
@@ -565,7 +562,13 @@ library Pool {
     }
 
     /// @notice Donates the given amount of currency0 and currency1 to the liquidity that would be in range at the specified ticks
-    function donate(State storage self, uint256[] memory amount0, uint256[] memory amount1, int24[] memory ticks, int24 tickSpacing) internal returns(BalanceDelta delta) {
+    function donate(
+        State storage self,
+        uint256[] memory amount0,
+        uint256[] memory amount1,
+        int24[] memory ticks,
+        int24 tickSpacing
+    ) internal returns (BalanceDelta delta) {
         if (self.liquidity == 0) revert NoLiquidityToReceiveFees();
 
         DonateState memory state;
@@ -594,7 +597,6 @@ library Pool {
             (state.tickNext, state.initialized) =
                 self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext - 1, tickSpacing, true);
         }
-
 
         // walk back over initialized ticks to the current tick
         // this will distribute fees
@@ -628,7 +630,6 @@ library Pool {
                 }
             }
 
-
             // step to the next initialized tick (or the end of the word)
             (state.tickNext, state.initialized) =
                 self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext, tickSpacing, false);
@@ -640,12 +641,14 @@ library Pool {
 
             // check if we crossed any of the ticks that we are distributing fees to
             while (i < ticks.length && ticks[i] < state.tickNext && ticks[i] <= state.tickCurrent) {
-                if (i+1 < ticks.length && ticks[i] < ticks[i+1]) revert TickListMisordered();
+                if (i + 1 < ticks.length && ticks[i] < ticks[i + 1]) revert TickListMisordered();
                 if (state.liquidityAtTick == 0) revert NoLiquidityToReceiveFees();
                 state.cumulativeAmountBelow0 += amount0[i];
                 state.cumulativeAmountBelow1 += amount1[i];
-                state.cumulativeFeeGrowthBelow0x128 += FullMath.mulDiv(amount0[i], FixedPoint128.Q128, state.liquidityAtTick);
-                state.cumulativeFeeGrowthBelow1x128 += FullMath.mulDiv(amount1[i], FixedPoint128.Q128, state.liquidityAtTick);
+                state.cumulativeFeeGrowthBelow0x128 +=
+                    FullMath.mulDiv(amount0[i], FixedPoint128.Q128, state.liquidityAtTick);
+                state.cumulativeFeeGrowthBelow1x128 +=
+                    FullMath.mulDiv(amount1[i], FixedPoint128.Q128, state.liquidityAtTick);
                 i++;
             }
         }
@@ -664,7 +667,6 @@ library Pool {
         // TODO: same logic but from the other direction, to distribute fees to ticks above the current tick
         // for now, just enforce that we exhausted the ticks
         if (i < ticks.length) revert TickListMisordered();
-
     }
 
     /// @notice Retrieves fee growth data
