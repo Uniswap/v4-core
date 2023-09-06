@@ -579,11 +579,9 @@ library Pool {
         (state.tickNext, state.initialized) =
             self.tickBitmap.nextInitializedTickWithinOneWord(state.tickCurrent, tickSpacing, true);
 
-        uint256 nLoops;
-
-        while(state.tickNext > ticks[0]) {
+        while (state.tickNext >= ticks[0]) {
             // if the tick is initialized, update state.liquidityAtTick
-            if(state.initialized) {
+            if (state.initialized) {
                 int128 liquidityNet = self.ticks[state.tickNext].liquidityNet;
 
                 // since we're moving leftward, we interpret liquidityNet as the opposite sign
@@ -594,12 +592,9 @@ library Pool {
             }
 
             (state.tickNext, state.initialized) =
-                self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext, tickSpacing, true);
-
-            nLoops++;
-            if (nLoops > 20) break;
+                self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext - 1, tickSpacing, true);
         }
-        nLoops = 0;
+
 
         // walk back over initialized ticks to the current tick
         // this will distribute fees
@@ -613,7 +608,6 @@ library Pool {
         state.tickNext = ticks[0];
 
         while (state.tickNext <= state.tickCurrent) {
-
             if (state.initialized) {
                 TickInfo storage info = self.ticks[state.tickNext];
 
@@ -634,9 +628,10 @@ library Pool {
                 }
             }
 
+
             // step to the next initialized tick (or the end of the word)
             (state.tickNext, state.initialized) =
-                self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext, tickSpacing, true);
+                self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext, tickSpacing, false);
 
             // ensure that we do not overshoot the max tick, as the tick bitmap is not aware of these bounds
             if (state.tickNext > TickMath.MAX_TICK) {
@@ -653,10 +648,7 @@ library Pool {
                 state.cumulativeFeeGrowthBelow1x128 += FullMath.mulDiv(amount1[i], FixedPoint128.Q128, state.liquidityAtTick);
                 i++;
             }
-            nLoops++;
-            if (nLoops > 20) break;
         }
-        nLoops = 0;
 
         // update the global feeGrowthGlobal values
         delta = toBalanceDelta(state.cumulativeAmountBelow0.toInt128(), state.cumulativeAmountBelow1.toInt128());
@@ -671,8 +663,7 @@ library Pool {
 
         // TODO: same logic but from the other direction, to distribute fees to ticks above the current tick
         // for now, just enforce that we exhausted the ticks
-        // TODO: [Emily] ----v this is causing a bunch of test failures
-        // if (i < ticks.length) revert TickListMisordered();
+        if (i < ticks.length) revert TickListMisordered();
 
     }
 
