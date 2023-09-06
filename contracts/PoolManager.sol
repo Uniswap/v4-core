@@ -143,6 +143,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         console2.log(sentinel.length);
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
+        console2.log('back inside lock');
 
         sentinel = LockDataLibrary.getLockSentinel();
         console2.log("sentinel length after lockAcquired");

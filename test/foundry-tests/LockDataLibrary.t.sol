@@ -6,6 +6,7 @@ import {PoolManager} from "../../contracts/PoolManager.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {ILockCallback} from "../../contracts/interfaces/callback/ILockCallback.sol";
+
 import "forge-std/console2.sol";
 
 contract LockDataLibraryTest is Test, Deployers, ILockCallback {
@@ -22,6 +23,7 @@ contract LockDataLibraryTest is Test, Deployers, ILockCallback {
     }
 
     function lockAcquired(bytes calldata) public view returns (bytes memory) {
+        console2.log('inside lock acquired');
         IPoolManager.LockSentinel memory sentinel = manager.getLockSentinel();
         console2.log("sentinel length in lockAcquired");
         console2.log(sentinel.length);
