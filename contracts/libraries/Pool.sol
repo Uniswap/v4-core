@@ -582,7 +582,7 @@ library Pool {
         (state.tickNext, state.initialized) =
             self.tickBitmap.nextInitializedTickWithinOneWord(state.tickCurrent, tickSpacing, true);
 
-        while (state.tickNext >= ticks[0]) {
+        while (state.tickNext > ticks[0]) {
             // if the tick is initialized, update state.liquidityAtTick
             if (state.initialized) {
                 int128 liquidityNet = self.ticks[state.tickNext].liquidityNet;
