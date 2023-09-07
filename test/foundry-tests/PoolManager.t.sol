@@ -29,6 +29,9 @@ import {PoolId, PoolIdLibrary} from "../../contracts/types/PoolId.sol";
 import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
+import {FullMath} from "../../contracts/libraries/FullMath.sol";
+import {FixedPoint96} from "../../contracts/libraries/FixedPoint96.sol";
+import {TickMath} from "../../contracts/libraries/TickMath.sol";
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
@@ -1015,6 +1018,166 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
+    function testDonateManyRangesBelowCurrentTick() public {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        uint256 nPositions = 3;
+        uint256 donateAmount = 3 ether;
+
+        LPInfo memory lpinfo = createLPPositions(key, nPositions);
+
+        uint256[] memory amounts0 = new uint[](nPositions);
+        amounts0[0] = donateAmount;
+        amounts0[1] = donateAmount;
+        amounts0[2] = donateAmount;
+
+        uint256[] memory amounts1 = new uint[](nPositions);
+        amounts1[0] = donateAmount;
+        amounts1[1] = donateAmount;
+        amounts1[2] = donateAmount;
+
+        int24[] memory ticks = new int24[](nPositions);
+        ticks[0] = -lpinfo.ticks[0];
+        ticks[1] = -lpinfo.ticks[1];
+        ticks[2] = -lpinfo.ticks[2];
+
+        uint256 liquidityBalance0 = key.currency0.balanceOf(address(manager));
+        uint256 liquidityBalance1 = key.currency1.balanceOf(address(manager));
+
+        // donate and make sure all balances were pulled
+        donateRouter.donateRange(key, amounts0, amounts1, ticks);
+        assertEq(key.currency0.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance0);
+        assertEq(key.currency1.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance1);
+
+        vm.prank(lpinfo.lpAddresses[0]);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[0], lpinfo.ticks[0], -lpinfo.liquidity[0])
+        );
+
+        vm.prank(lpinfo.lpAddresses[1]);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[1], lpinfo.ticks[1], -lpinfo.liquidity[1])
+        );
+
+        vm.prank(lpinfo.lpAddresses[2]);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[2], lpinfo.ticks[2], -lpinfo.liquidity[2])
+        );
+
+        // math imprecision leaves wei in pool
+        assertLt(key.currency0.balanceOf(address(manager)), 10);
+        assertLt(key.currency1.balanceOf(address(manager)), 10);
+        assertEq(manager.getLiquidity(key.toId()), 0);
+    }
+
+    function testDonateManyRangesAboveCurrentTick() public {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        uint256 nPositions = 3;
+        uint256 donateAmount = 3 ether;
+        LPInfo memory lpinfo = createLPPositions(key, nPositions);
+
+        uint256[] memory amounts0 = new uint[](nPositions);
+        amounts0[0] = donateAmount;
+        amounts0[1] = donateAmount;
+        amounts0[2] = donateAmount;
+
+        uint256[] memory amounts1 = new uint[](nPositions);
+        amounts1[0] = donateAmount;
+        amounts1[1] = donateAmount;
+        amounts1[2] = donateAmount;
+
+        int24[] memory ticks = new int24[](nPositions);
+        ticks[0] = lpinfo.ticks[2]; // reverse order highest -> lowest tick
+        ticks[1] = lpinfo.ticks[1];
+        ticks[2] = lpinfo.ticks[0];
+
+        uint256 liquidityBalance0 = key.currency0.balanceOf(address(manager));
+        uint256 liquidityBalance1 = key.currency1.balanceOf(address(manager));
+
+        // donate and make sure all balances were pulled
+        donateRouter.donateRange(key, amounts0, amounts1, ticks);
+        assertEq(key.currency0.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance0);
+        assertEq(key.currency1.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance1);
+
+        vm.prank(lpinfo.lpAddresses[0]);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[0], lpinfo.ticks[0], -lpinfo.liquidity[0])
+        );
+
+        vm.prank(lpinfo.lpAddresses[1]);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[1], lpinfo.ticks[1], -lpinfo.liquidity[1])
+        );
+
+        vm.prank(lpinfo.lpAddresses[2]);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[2], lpinfo.ticks[2], -lpinfo.liquidity[2])
+        );
+
+        // math imprecision leaves wei in pool
+        assertLt(key.currency0.balanceOf(address(manager)), 10);
+        assertLt(key.currency1.balanceOf(address(manager)), 10);
+        assertEq(manager.getLiquidity(key.toId()), 0);
+    }
+
+    function testDonateManyRangesBelowOnAndAboveCurrentTick() public {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        uint256 nPositions = 3;
+        uint256 donateAmount = 3 ether;
+        LPInfo memory lpinfo = createLPPositions(key, nPositions);
+
+        uint256[] memory amounts0 = new uint[](nPositions);
+        amounts0[0] = donateAmount;
+        amounts0[1] = donateAmount;
+        amounts0[2] = donateAmount;
+
+        uint256[] memory amounts1 = new uint[](nPositions);
+        amounts1[0] = donateAmount;
+        amounts1[1] = donateAmount;
+        amounts1[2] = donateAmount;
+
+        int24[] memory ticks = new int24[](nPositions);
+        ticks[0] = lpinfo.ticks[0];
+        ticks[1] = 0;
+        ticks[2] = -lpinfo.ticks[0];
+
+        uint256 liquidityBalance0 = key.currency0.balanceOf(address(manager));
+        uint256 liquidityBalance1 = key.currency1.balanceOf(address(manager));
+
+        // donate and make sure all balances were pulled
+        donateRouter.donateRange(key, amounts0, amounts1, ticks);
+        assertEq(key.currency0.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance0);
+        assertEq(key.currency1.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance1);
+
+        vm.prank(lpinfo.lpAddresses[0]);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[0], lpinfo.ticks[0], -lpinfo.liquidity[0])
+        );
+
+        vm.prank(lpinfo.lpAddresses[1]);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[1], lpinfo.ticks[1], -lpinfo.liquidity[1])
+        );
+
+        vm.prank(lpinfo.lpAddresses[2]);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[2], lpinfo.ticks[2], -lpinfo.liquidity[2])
+        );
+
+        // math imprecision leaves wei in pool
+        assertLt(key.currency0.balanceOf(address(manager)), 10);
+        assertLt(key.currency1.balanceOf(address(manager)), 10);
+        assertEq(manager.getLiquidity(key.toId()), 0);
+    }
+
     function testNoOpLockIsOk() public {
         snapStart("gas overhead of no-op lock");
         lockTest.lock();
@@ -1104,6 +1267,62 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         Position.Info memory managerPosition = manager.getPosition(key.toId(), address(modifyPositionRouter), -120, 120);
 
         assertEq(managerPosition.liquidity, 5 ether);
+    }
+
+    struct LPInfo {
+        // lps with positions in pool corresponding to ticks
+        address[] lpAddresses;
+        // liquidity added by each LP
+        int256[] liquidity;
+        // amount0 added by each LP
+        uint256[] lpAmounts0;
+        // amount1 added by each LP
+        uint256[] lpAmounts1;
+        // ticks as positive integers ranging to its absolute value
+        int24[] ticks;
+    }
+
+    function createLPPositions(PoolKey memory key, uint256 nPositions) internal returns (LPInfo memory lpinfo) {
+        lpinfo.lpAddresses = new address[](nPositions);
+        lpinfo.liquidity = new int256[](nPositions);
+        lpinfo.lpAmounts0 = new uint256[](nPositions);
+        lpinfo.lpAmounts1 = new uint256[](nPositions);
+        lpinfo.ticks = new int24[](nPositions);
+
+        for (uint256 i = 0; i < nPositions; i++) {
+            address lpAddr = address(uint160(i + 1));
+            int24 tick = key.tickSpacing * int24(uint24(i + 1));
+            uint256 amount = 1 ether;
+            int256 liquidityAmount =
+                int256(uint256(getLiquidityForAmount0(SQRT_RATIO_1_1, TickMath.getSqrtRatioAtTick(tick), amount)));
+
+            MockERC20(Currency.unwrap(currency0)).mint(lpAddr, amount);
+            MockERC20(Currency.unwrap(currency1)).mint(lpAddr, amount);
+
+            vm.startPrank(lpAddr);
+            MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), amount);
+            MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), amount);
+            BalanceDelta delta = modifyPositionRouter.modifyPosition(
+                key, IPoolManager.ModifyPositionParams(-tick, tick, liquidityAmount)
+            );
+            vm.stopPrank();
+
+            lpinfo.lpAddresses[i] = lpAddr;
+            lpinfo.liquidity[i] = liquidityAmount;
+            lpinfo.lpAmounts0[i] += uint256(uint128(delta.amount0()));
+            lpinfo.lpAmounts1[i] += uint256(uint128(delta.amount1()));
+            lpinfo.ticks[i] = tick;
+        }
+    }
+
+    function getLiquidityForAmount0(uint160 sqrtRatioAX96, uint160 sqrtRatioBX96, uint256 amount0)
+        internal
+        pure
+        returns (uint128 liquidity)
+    {
+        if (sqrtRatioAX96 > sqrtRatioBX96) (sqrtRatioAX96, sqrtRatioBX96) = (sqrtRatioBX96, sqrtRatioAX96);
+        uint256 intermediate = FullMath.mulDiv(sqrtRatioAX96, sqrtRatioBX96, FixedPoint96.Q96);
+        liquidity = uint128(FullMath.mulDiv(amount0, intermediate, sqrtRatioBX96 - sqrtRatioAX96));
     }
 
     receive() external payable {}
