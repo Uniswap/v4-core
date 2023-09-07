@@ -1051,20 +1051,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(key.currency0.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance0);
         assertEq(key.currency1.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance1);
 
-        vm.prank(lpinfo.lpAddresses[0]);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[0], lpinfo.ticks[0], -lpinfo.liquidity[0])
-        );
-
-        vm.prank(lpinfo.lpAddresses[1]);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[1], lpinfo.ticks[1], -lpinfo.liquidity[1])
-        );
-
-        vm.prank(lpinfo.lpAddresses[2]);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[2], lpinfo.ticks[2], -lpinfo.liquidity[2])
-        );
+        // close all positions
+        for (uint256 i = 0; i < lpinfo.lpAddresses.length; i++) {
+          vm.prank(lpinfo.lpAddresses[i]);
+          modifyPositionRouter.modifyPosition(
+              key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[i], lpinfo.ticks[i], -lpinfo.liquidity[i])
+          );
+        }
 
         // math imprecision leaves wei in pool
         assertLt(key.currency0.balanceOf(address(manager)), 10);
@@ -1104,20 +1097,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(key.currency0.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance0);
         assertEq(key.currency1.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance1);
 
-        vm.prank(lpinfo.lpAddresses[0]);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[0], lpinfo.ticks[0], -lpinfo.liquidity[0])
-        );
-
-        vm.prank(lpinfo.lpAddresses[1]);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[1], lpinfo.ticks[1], -lpinfo.liquidity[1])
-        );
-
-        vm.prank(lpinfo.lpAddresses[2]);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[2], lpinfo.ticks[2], -lpinfo.liquidity[2])
-        );
+        // close all positions
+        for (uint256 i = 0; i < lpinfo.lpAddresses.length; i++) {
+          vm.prank(lpinfo.lpAddresses[i]);
+          modifyPositionRouter.modifyPosition(
+              key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[i], lpinfo.ticks[i], -lpinfo.liquidity[i])
+          );
+        }
 
         // math imprecision leaves wei in pool
         assertLt(key.currency0.balanceOf(address(manager)), 10);
@@ -1157,20 +1143,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(key.currency0.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance0);
         assertEq(key.currency1.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance1);
 
-        vm.prank(lpinfo.lpAddresses[0]);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[0], lpinfo.ticks[0], -lpinfo.liquidity[0])
-        );
-
-        vm.prank(lpinfo.lpAddresses[1]);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[1], lpinfo.ticks[1], -lpinfo.liquidity[1])
-        );
-
-        vm.prank(lpinfo.lpAddresses[2]);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[2], lpinfo.ticks[2], -lpinfo.liquidity[2])
-        );
+        // close all positions
+        for (uint256 i = 0; i < lpinfo.lpAddresses.length; i++) {
+          vm.prank(lpinfo.lpAddresses[i]);
+          modifyPositionRouter.modifyPosition(
+              key, IPoolManager.ModifyPositionParams(-lpinfo.ticks[i], lpinfo.ticks[i], -lpinfo.liquidity[i])
+          );
+        }
 
         // math imprecision leaves wei in pool
         assertLt(key.currency0.balanceOf(address(manager)), 10);
