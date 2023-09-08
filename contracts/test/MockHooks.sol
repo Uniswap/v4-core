@@ -15,9 +15,9 @@ contract MockHooks is IHooks, IHookFeeManager {
 
     mapping(bytes4 => bytes4) public returnValues;
 
-    mapping(PoolId => uint8) public swapFees;
+    mapping(PoolId => uint16) public swapFees;
 
-    mapping(PoolId => uint8) public withdrawFees;
+    mapping(PoolId => uint16) public withdrawFees;
 
     function beforeInitialize(address, PoolKey calldata, uint160, bytes calldata)
         external
@@ -100,23 +100,19 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function getHookSwapFee(PoolKey calldata key) external view override returns (uint8) {
-        return swapFees[key.toId()];
-    }
-
-    function getHookWithdrawFee(PoolKey calldata key) external view override returns (uint8) {
-        return withdrawFees[key.toId()];
+    function getHookFees(PoolKey calldata key) external view override returns (uint24) {
+        return (uint24(swapFees[key.toId()]) << 12 | withdrawFees[key.toId()]);
     }
 
     function setReturnValue(bytes4 key, bytes4 value) external {
         returnValues[key] = value;
     }
 
-    function setSwapFee(PoolKey calldata key, uint8 value) external {
+    function setSwapFee(PoolKey calldata key, uint16 value) external {
         swapFees[key.toId()] = value;
     }
 
-    function setWithdrawFee(PoolKey calldata key, uint8 value) external {
+    function setWithdrawFee(PoolKey calldata key, uint16 value) external {
         withdrawFees[key.toId()] = value;
     }
 }

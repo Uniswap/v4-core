@@ -3,7 +3,7 @@
 exports[`PoolManager gas tests ERC20 tokens #initialize initialize pool with no hooks and no protocol fee 1`] = `
 Object {
   "calldataByteLength": 292,
-  "gasUsed": 55346,
+  "gasUsed": 55149,
 }
 `;
 
@@ -73,63 +73,63 @@ Object {
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 159922,
+  "gasUsed": 159881,
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 154217,
+  "gasUsed": 154176,
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 180915,
+  "gasUsed": 180874,
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 222383,
+  "gasUsed": 222342,
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 171525,
+  "gasUsed": 171484,
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 159922,
+  "gasUsed": 159881,
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 154305,
+  "gasUsed": 154264,
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 173087,
+  "gasUsed": 173046,
 }
 `;
 
 exports[`PoolManager gas tests ERC20 tokens #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 214530,
+  "gasUsed": 214489,
 }
 `;
 
@@ -199,62 +199,62 @@ Object {
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 147289,
+  "gasUsed": 147248,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 141584,
+  "gasUsed": 141544,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 168282,
+  "gasUsed": 168241,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 209750,
+  "gasUsed": 209709,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 first swap in block, large swap, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 158892,
+  "gasUsed": 158852,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in block moves tick, no initialized crossings 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 147289,
+  "gasUsed": 147248,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in block with no tick movement 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 141672,
+  "gasUsed": 141632,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in block, large swap crossing a single initialized tick 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 160454,
+  "gasUsed": 160413,
 }
 `;
 
 exports[`PoolManager gas tests Native Tokens #swapExact0For1 second swap in block, large swap crossing several initialized ticks 1`] = `
 Object {
   "calldataByteLength": 324,
-  "gasUsed": 201897,
+  "gasUsed": 201856,
 }
 `;
