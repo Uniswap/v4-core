@@ -6,8 +6,8 @@ import {PoolManager} from "../../contracts/PoolManager.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {ILockCallback} from "../../contracts/interfaces/callback/ILockCallback.sol";
-
-import "forge-std/console2.sol";
+import {LockDataLibrary} from "../../contracts/libraries/LockDataLibrary.sol";
+import {LockSentinel} from "../../contracts/types/LockSentinel.sol";
 
 contract LockDataLibraryTest is Test, Deployers, ILockCallback {
     PoolManager manager;
@@ -17,16 +17,12 @@ contract LockDataLibraryTest is Test, Deployers, ILockCallback {
     }
 
     function testLockerLength() public {
-        IPoolManager.LockSentinel memory sentinelDuringLockCallback =
-            abi.decode(manager.lock(""), (IPoolManager.LockSentinel));
-        assertEq(sentinelDuringLockCallback.length, 1);
+        LockSentinel sentinelDuringLockCallback = abi.decode(manager.lock(""), (LockSentinel));
+        assertEq(sentinelDuringLockCallback.length(), 1);
     }
 
     function lockAcquired(bytes calldata) public view returns (bytes memory) {
-        console2.log('inside lock acquired');
-        IPoolManager.LockSentinel memory sentinel = manager.getLockSentinel();
-        console2.log("sentinel length in lockAcquired");
-        console2.log(sentinel.length);
+        LockSentinel sentinel = manager.getLockSentinel();
         bytes memory lockData = abi.encode(sentinel);
         return lockData;
     }

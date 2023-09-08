@@ -10,6 +10,7 @@ import {IFees} from "./IFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
+import {LockSentinel} from "../types/LockSentinel.sol";
 
 interface IPoolManager is IFees, IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256
@@ -112,19 +113,11 @@ interface IPoolManager is IFees, IERC1155 {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
-    function getLockSentinel() external view returns (IPoolManager.LockSentinel memory sentinel);
-
-    /// @notice Contains data about pool lockers.
-    /// @dev Located in transient storage.
-    struct LockSentinel {
-        /// @notice The current number of active lockers
-        uint128 length;
-        /// @notice The total number of nonzero deltas over all active + completed lockers
-        uint128 nonzeroDeltaCount;
-    }
-
     /// @notice Returns the locker in the ith position of the locker queue.
     function getLock(uint256 i) external view returns (address locker);
+
+    /// @notice Returns the sentinel node for the LockData structure.
+    function getLockSentinel() external view returns (LockSentinel sentinel);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)

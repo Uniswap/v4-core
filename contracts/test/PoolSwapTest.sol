@@ -9,8 +9,6 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 
-import "forge-std/console2.sol";
-
 contract PoolSwapTest is ILockCallback {
     using CurrencyLibrary for Currency;
 
@@ -37,10 +35,6 @@ contract PoolSwapTest is ILockCallback {
         payable
         returns (BalanceDelta delta)
     {
-        IPoolManager.LockSentinel memory sentinel = manager.getLockSentinel();
-        console2.log("sentinel length before lock");
-        console2.log(sentinel.length);
-
         delta =
             abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params))), (BalanceDelta));
 
@@ -55,15 +49,7 @@ contract PoolSwapTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        IPoolManager.LockSentinel memory sentinel = manager.getLockSentinel();
-        console2.log("sentinel length before swap");
-        console2.log(sentinel.length);
-
         BalanceDelta delta = manager.swap(data.key, data.params, new bytes(0));
-
-        sentinel = manager.getLockSentinel();
-        console2.log("sentinel length after swap");
-        console2.log(sentinel.length);
 
         if (data.params.zeroForOne) {
             if (delta.amount0() > 0) {

@@ -2,8 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-
-import "forge-std/console2.sol";
+import {LockSentinel} from "../types/LockSentinel.sol";
 
 /// @dev This library manages a custom storage implementation for a queue
 ///      that tracks current lockers. The "sentinel" storage slot for this data structure,
@@ -11,47 +10,69 @@ import "forge-std/console2.sol";
 ///      length of the queue but also the global count of non-zero deltas across all lockers.
 ///      The values of the data structure start at LOCK_DATA, and each value is a locker address.
 library LockDataLibrary {
+    using LockDataLibrary for LockSentinel;
+
     uint256 private constant SENTINEL = uint256(keccak256("Sentinel"));
     uint256 private constant LOCK_DATA = uint256(keccak256("LockData"));
 
     /// @dev Pushes a locker onto the end of the queue, and updates the sentinel storage slot.
-    function push(address locker) internal {
+    function push(LockSentinel sentinel, address locker) internal {
         // read current value from the sentinel storage slot
-        IPoolManager.LockSentinel memory sentinel = getLockSentinel();
+        uint128 _length = sentinel.length();
+        sentinel.update(_length + 1, sentinel.nonzeroDeltaCount());
 
         unchecked {
-            uint128 length = sentinel.length;
-            uint256 indexToWrite = LOCK_DATA + length; // not in assembly because OFFSET is in the library scope
-
-            // update the length at the sentinel
-            sentinel.length = length + 1;
-            uint256 sentinelSlot = SENTINEL;
+            uint256 indexToWrite = LOCK_DATA + _length; // not in assembly because LOCK_DATA is in the library scope
 
             /// @solidity memory-safe-assembly
             assembly {
                 // in the next storage slot, write the locker
                 sstore(indexToWrite, locker)
-                sstore(sentinelSlot, sentinel)
             }
         }
     }
 
     /// @dev Pops a locker off the end of the queue. Note that no storage gets cleared.
-    function pop() internal {
-        IPoolManager.LockSentinel memory sentinel = getLockSentinel();
-        uint256 sentinelSlot = SENTINEL;
-        unchecked {
-            sentinel.length--;
-        }
+    function pop(LockSentinel sentinel) internal {
+        uint128 _length = sentinel.length();
+        sentinel.update(_length - 1, sentinel.nonzeroDeltaCount());
+    }
+
+    function length(LockSentinel sentinel) internal pure returns (uint128 _length) {
+        /// @solidity memory-safe-assembly
         assembly {
-            // update the length at the sentinel
+            _length := shr(128, sentinel)
+        }
+    }
+
+    function nonzeroDeltaCount(LockSentinel sentinel) internal pure returns (uint128 _nonzeroDeltaCount) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _nonzeroDeltaCount := sentinel
+        }
+    }
+
+    function update(LockSentinel sentinel, uint128 _length, uint128 _nonzeroDeltaCount) internal {
+        uint256 sentinelSlot = SENTINEL;
+        assembly {
+            sentinel :=
+                or(
+                    shl(128, _length),
+                    and(0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff, _nonzeroDeltaCount)
+                )
+
             sstore(sentinelSlot, sentinel)
         }
     }
 
+    function getActiveLock(LockSentinel sentinel) internal view returns (address) {
+        uint128 _length = sentinel.length();
+        return LockDataLibrary.getLock(_length - 1);
+    }
+
     function getLock(uint256 i) internal view returns (address locker) {
         unchecked {
-            uint256 position = LOCK_DATA + i; // not in assembly because OFFSET is in the library scope
+            uint256 position = LOCK_DATA + i; // not in assembly because LOCK_DATA is in the library scope
             /// @solidity memory-safe-assembly
             assembly {
                 locker := sload(position)
@@ -59,50 +80,10 @@ library LockDataLibrary {
         }
     }
 
-    function getActiveLock() internal view returns (address) {
-        IPoolManager.LockSentinel memory sentinel = getLockSentinel();
-
-        return getLock(sentinel.length - 1);
-    }
-
-    function getLockSentinel() internal view returns (IPoolManager.LockSentinel memory sentinel) {
+    function getLockSentinel() internal view returns (LockSentinel sentinel) {
         uint256 sentinelSlot = SENTINEL;
         assembly {
             sentinel := sload(sentinelSlot)
-        }
-        console2.log("length inside library");
-        console2.log(sentinel.length);
-    }
-
-    function increaseDeltaCount() internal {
-        uint256 sentinelSlot = SENTINEL;
-        IPoolManager.LockSentinel memory sentinel;
-
-        assembly {
-            sentinel := sload(sentinelSlot)
-        }
-        unchecked {
-            sentinel.nonzeroDeltaCount++;
-        }
-
-        assembly {
-            sstore(sentinelSlot, sentinel)
-        }
-    }
-
-    function decreaseDeltaCount() internal {
-        uint256 sentinelSlot = SENTINEL;
-        IPoolManager.LockSentinel memory sentinel;
-
-        assembly {
-            sentinel := sload(sentinelSlot)
-        }
-        unchecked {
-            sentinel.nonzeroDeltaCount--;
-        }
-
-        assembly {
-            sstore(sentinelSlot, sentinel)
         }
     }
 }
