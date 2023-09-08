@@ -129,7 +129,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
             (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
             assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(slot0.protocolSwapFee, 0);
+            assertEq(slot0.protocolFees >> 12, 0);
         }
     }
 
@@ -151,7 +151,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-        assertEq(slot0.protocolSwapFee, 0);
+        assertEq(slot0.protocolFees >> 12, 0);
         assertEq(slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
     }
 
@@ -354,14 +354,14 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.setProtocolFeeController(protocolFeeController);
 
-        uint8 poolProtocolFee = 4;
+        uint16 poolProtocolFee = 4;
         protocolFeeController.setSwapFeeForPool(key.toId(), poolProtocolFee);
 
         manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-        assertEq(slot0.protocolSwapFee, poolProtocolFee);
+        assertEq(slot0.protocolFees >> 12, poolProtocolFee);
     }
 
     function testGasPoolManagerInitialize() public {
