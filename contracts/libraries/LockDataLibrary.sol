@@ -27,14 +27,16 @@ library LockDataLibrary {
                 // in the next storage slot, write the locker
                 sstore(indexToWrite, locker)
             }
+            sentinel.update(_length + 1, sentinel.nonzeroDeltaCount());
         }
-        sentinel.update(_length + 1, sentinel.nonzeroDeltaCount());
     }
 
     /// @dev Pops a locker off the end of the queue. Note that no storage gets cleared.
     function pop(LockSentinel sentinel) internal {
         uint128 _length = sentinel.length();
-        sentinel.update(_length - 1, sentinel.nonzeroDeltaCount());
+        unchecked {
+            sentinel.update(_length - 1, sentinel.nonzeroDeltaCount());
+        }
     }
 
     function length(LockSentinel sentinel) internal pure returns (uint128 _length) {
@@ -75,8 +77,11 @@ library LockDataLibrary {
     }
 
     function getActiveLock(LockSentinel sentinel) internal view returns (address) {
-        uint128 _length = sentinel.length();
-        return getLock(_length - 1);
+        uint128 _length;
+        unchecked {
+            _length = sentinel.length() - 1;
+        }
+        return getLock(_length);
     }
 
     function getLockSentinel() internal view returns (LockSentinel sentinel) {
