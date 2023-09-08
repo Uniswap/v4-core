@@ -14,14 +14,24 @@ contract PoolTest is Test {
 
     Pool.State state;
 
-    function testPoolInitialize(uint160 sqrtPriceX96, uint8 protocolFee, uint8 hookFee) public {
+    function testPoolInitialize(uint160 sqrtPriceX96, uint16 protocolFee, uint16 hookFee) public {
+        vm.assume(protocolFee < 2 ** 12 && hookFee < 2 ** 12);
+
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
             vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
-            state.initialize(sqrtPriceX96, protocolFee, hookFee, protocolFee, hookFee);
+            state.initialize(
+                sqrtPriceX96,
+                _formatSwapAndWithdrawFee(protocolFee, protocolFee),
+                _formatSwapAndWithdrawFee(hookFee, hookFee)
+            );
         } else {
-            state.initialize(sqrtPriceX96, protocolFee, hookFee, protocolFee, hookFee);
+            state.initialize(
+                sqrtPriceX96,
+                _formatSwapAndWithdrawFee(protocolFee, protocolFee),
+                _formatSwapAndWithdrawFee(hookFee, hookFee)
+            );
             assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(state.slot0.protocolSwapFee, protocolFee);
+            assertEq(state.slot0.protocolFees >> 12, protocolFee);
             assertEq(state.slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
             assertLt(state.slot0.tick, TickMath.MAX_TICK);
             assertGt(state.slot0.tick, TickMath.MIN_TICK - 1);
@@ -101,5 +111,9 @@ contract PoolTest is Test {
         } else {
             assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
         }
+    }
+
+    function _formatSwapAndWithdrawFee(uint16 swapFee, uint16 withdrawFee) internal pure returns (uint24) {
+        return (uint24(swapFee) << 12) | withdrawFee;
     }
 }
