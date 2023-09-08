@@ -19,8 +19,6 @@ library LockDataLibrary {
     function push(LockSentinel sentinel, address locker) internal {
         // read current value from the sentinel storage slot
         uint128 _length = sentinel.length();
-        sentinel.update(_length + 1, sentinel.nonzeroDeltaCount());
-
         unchecked {
             uint256 indexToWrite = LOCK_DATA + _length; // not in assembly because LOCK_DATA is in the library scope
 
@@ -30,6 +28,7 @@ library LockDataLibrary {
                 sstore(indexToWrite, locker)
             }
         }
+        sentinel.update(_length + 1, sentinel.nonzeroDeltaCount());
     }
 
     /// @dev Pops a locker off the end of the queue. Note that no storage gets cleared.
@@ -65,11 +64,6 @@ library LockDataLibrary {
         }
     }
 
-    function getActiveLock(LockSentinel sentinel) internal view returns (address) {
-        uint128 _length = sentinel.length();
-        return LockDataLibrary.getLock(_length - 1);
-    }
-
     function getLock(uint256 i) internal view returns (address locker) {
         unchecked {
             uint256 position = LOCK_DATA + i; // not in assembly because LOCK_DATA is in the library scope
@@ -78,6 +72,11 @@ library LockDataLibrary {
                 locker := sload(position)
             }
         }
+    }
+
+    function getActiveLock(LockSentinel sentinel) internal view returns (address) {
+        uint128 _length = sentinel.length();
+        return getLock(_length - 1);
     }
 
     function getLockSentinel() internal view returns (LockSentinel sentinel) {
