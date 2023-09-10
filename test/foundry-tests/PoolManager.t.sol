@@ -1039,9 +1039,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         amounts1[2] = donateAmount;
 
         int24[] memory ticks = new int24[](nPositions);
-        ticks[0] = -lpinfo.ticks[0];
-        ticks[1] = -lpinfo.ticks[1];
-        ticks[2] = -lpinfo.ticks[2];
+        ticks[0] = lpinfo.ticks[0];
+        ticks[1] = lpinfo.ticks[1];
+        ticks[2] = lpinfo.ticks[2];
 
         uint256 liquidityBalance0 = key.currency0.balanceOf(address(manager));
         uint256 liquidityBalance1 = key.currency1.balanceOf(address(manager));

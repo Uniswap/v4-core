@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
+import "forge-std/console.sol";
 import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
 import {Position} from "./Position.sol";
@@ -552,9 +553,12 @@ library Pool {
         // slight misnomer—it also includes any feeGrowth distributed to the current tick
         uint256 cumulativeFeeGrowthBelow0x128;
         uint256 cumulativeFeeGrowthBelow1x128;
-        // the cumulative amounts of tokens donated to ticks below the current tick
-        uint256 cumulativeAmountBelow0;
-        uint256 cumulativeAmountBelow1;
+        // the cumulative feeGrowth added to ticks above the current tick
+        uint256 cumulativeFeeGrowthAbove0x128;
+        uint256 cumulativeFeeGrowthAbove1x128;
+        // the cumulative amounts of tokens donated to any ticks
+        uint256 cumulativeAmount0;
+        uint256 cumulativeAmount1;
         int24 tickNext;
         int24 tickCurrent;
         uint256 liquidityAtTick;
@@ -569,9 +573,10 @@ library Pool {
         int24[] memory ticks,
         int24 tickSpacing
     ) internal returns (BalanceDelta delta) {
-        if (self.liquidity == 0) revert NoLiquidityToReceiveFees();
-
         DonateState memory state;
+
+        if (ticks.length == 0) revert TickListMisordered();
+        if (ticks.length != amount0.length || ticks.length != amount1.length) revert TickListMisordered();
 
         // compute the liquidity that would be in range at (just right of) the leftmost tick by walking down to it
         state.liquidityAtTick = self.liquidity;
@@ -641,10 +646,10 @@ library Pool {
 
             // check if we crossed any of the ticks that we are distributing fees to
             while (i < ticks.length && ticks[i] < state.tickNext && ticks[i] <= state.tickCurrent) {
-                if (i + 1 < ticks.length && ticks[i] < ticks[i + 1]) revert TickListMisordered();
+                if (i + 1 < ticks.length && ticks[i] >= ticks[i + 1]) revert TickListMisordered();
                 if (state.liquidityAtTick == 0) revert NoLiquidityToReceiveFees();
-                state.cumulativeAmountBelow0 += amount0[i];
-                state.cumulativeAmountBelow1 += amount1[i];
+                state.cumulativeAmount0 += amount0[i];
+                state.cumulativeAmount1 += amount1[i];
                 state.cumulativeFeeGrowthBelow0x128 +=
                     FullMath.mulDiv(amount0[i], FixedPoint128.Q128, state.liquidityAtTick);
                 state.cumulativeFeeGrowthBelow1x128 +=
@@ -653,20 +658,99 @@ library Pool {
             }
         }
 
+        uint256 lastBelowTick = i;
+
+        // // now, process the ticks above the current tick
+
+        // // compute the liquidity that would be in range at (just right of) the rightmost tick by walking up to it
+        // state.liquidityAtTick = self.liquidity;
+        // state.tickCurrent = self.slot0.tick;
+
+        // if (ticks[ticks.length - 1] > TickMath.MAX_TICK) revert TickListMisordered();
+
+        // (state.tickNext, state.initialized) =
+        //     self.tickBitmap.nextInitializedTickWithinOneWord(state.tickCurrent, tickSpacing, false);
+
+        // while (state.tickNext <= ticks[ticks.length - 1]) {
+        //     // if the tick is initialized, update state.liquidityAtTick
+        //     if (state.initialized) {
+        //         int128 liquidityNet = self.ticks[state.tickNext].liquidityNet;
+
+        //         // safe because liquidityNet cannot be type(int128).min
+        //         state.liquidityAtTick = liquidityNet > 0
+        //             ? state.liquidityAtTick + uint128(liquidityNet)
+        //             : state.liquidityAtTick - uint128(-liquidityNet);
+        //     }
+
+        //     (state.tickNext, state.initialized) =
+        //         self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext, tickSpacing, true);
+        // }
+
+        // // walk back over initialized ticks to the current tick
+        // // the index of the ticks array that we're currently on
+        // i = ticks.length - 1;
+
+        // // tickNext is currently the tick above the highest tick in the list
+        // // skip the step that updates the tick on the first run through this loop
+        // state.initialized = false;
+
+        // while (state.tickNext > state.tickCurrent) {
+        //     if (state.initialized) {
+        //         TickInfo storage info = self.ticks[state.tickNext];
+
+        //         int128 liquidityNet = info.liquidityNet;
+
+        //         // update state.liquidityAtTick
+        //         // since we're moving leftward, we interpret liquidityNet as the opposite sign
+        //         // safe because liquidityNet cannot be type(int128).min
+        //         state.liquidityAtTick = liquidityNet > 0
+        //             ? state.liquidityAtTick - uint128(liquidityNet)
+        //             : state.liquidityAtTick + uint128(-liquidityNet);
+
+        //         // update the feeGrowthOutside values at the tick
+        //         if (state.cumulativeFeeGrowthAbove0x128 > 0) {
+        //             info.feeGrowthOutside0X128 += state.cumulativeFeeGrowthAbove0x128;
+        //         }
+        //         if (state.cumulativeFeeGrowthAbove1x128 > 0) {
+        //             info.feeGrowthOutside1X128 += state.cumulativeFeeGrowthAbove1x128;
+        //         }
+        //     }
+
+        //     // step to the next initialized tick (or the end of the word)
+        //     (state.tickNext, state.initialized) =
+        //         self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext - 1, tickSpacing, true);
+
+        //     // ensure that we do not overshoot the min tick, as the tick bitmap is not aware of these bounds
+        //     if (state.tickNext < TickMath.MIN_TICK) {
+        //         state.tickNext = TickMath.MIN_TICK;
+        //     }
+
+        //     // check if we crossed any of the ticks that we are distributing fees to
+        //     while (i > 0 && ticks[i] >= state.tickNext && ticks[i] > state.tickCurrent) {
+        //         if (i - 1 >= 0 && ticks[i - 1] >= ticks[i]) revert TickListMisordered();
+        //         if (state.liquidityAtTick == 0) revert NoLiquidityToReceiveFees();
+        //         state.cumulativeAmount0 += amount0[i];
+        //         state.cumulativeAmount1 += amount1[i];
+        //         state.cumulativeFeeGrowthAbove0x128 +=
+        //             FullMath.mulDiv(amount0[i], FixedPoint128.Q128, state.liquidityAtTick);
+        //         state.cumulativeFeeGrowthAbove1x128 +=
+        //             FullMath.mulDiv(amount1[i], FixedPoint128.Q128, state.liquidityAtTick);
+        //         i--;
+        //     }
+        // }
+
+        // TODO: fail if array was not contiguous
+
         // update the global feeGrowthGlobal values
-        delta = toBalanceDelta(state.cumulativeAmountBelow0.toInt128(), state.cumulativeAmountBelow1.toInt128());
+        delta = toBalanceDelta(state.cumulativeAmount0.toInt128(), state.cumulativeAmount1.toInt128());
         unchecked {
-            if (state.cumulativeFeeGrowthBelow0x128 > 0) {
-                self.feeGrowthGlobal0X128 += state.cumulativeFeeGrowthBelow0x128;
+            if (state.cumulativeFeeGrowthBelow0x128 > 0 || state.cumulativeFeeGrowthAbove0x128 > 0) {
+                self.feeGrowthGlobal0X128 += state.cumulativeFeeGrowthBelow0x128 + state.cumulativeFeeGrowthAbove0x128;
             }
-            if (state.cumulativeFeeGrowthBelow1x128 > 0) {
-                self.feeGrowthGlobal1X128 += state.cumulativeFeeGrowthBelow1x128;
+            if (state.cumulativeFeeGrowthBelow1x128 > 0 || state.cumulativeFeeGrowthAbove1x128 > 0) {
+                self.feeGrowthGlobal1X128 += state.cumulativeFeeGrowthBelow1x128 + state.cumulativeFeeGrowthAbove1x128;
             }
         }
-
-        // TODO: same logic but from the other direction, to distribute fees to ticks above the current tick
-        // for now, just enforce that we exhausted the ticks
-        if (i < ticks.length) revert TickListMisordered();
     }
 
     /// @notice Retrieves fee growth data
