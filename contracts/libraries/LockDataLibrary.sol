@@ -25,7 +25,7 @@ library LockDataLibrary {
             /// @solidity memory-safe-assembly
             assembly {
                 // in the next storage slot, write the locker
-                sstore(indexToWrite, locker)
+                tstore(indexToWrite, locker)
             }
             sentinel.update(_length + 1, sentinel.nonzeroDeltaCount());
         }
@@ -62,7 +62,7 @@ library LockDataLibrary {
                     and(0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff, _nonzeroDeltaCount)
                 )
 
-            sstore(sentinelSlot, sentinel)
+            tstore(sentinelSlot, sentinel)
         }
     }
 
@@ -71,7 +71,7 @@ library LockDataLibrary {
             uint256 position = LOCK_DATA + i; // not in assembly because LOCK_DATA is in the library scope
             /// @solidity memory-safe-assembly
             assembly {
-                locker := sload(position)
+                locker := tload(position)
             }
         }
     }
@@ -87,7 +87,7 @@ library LockDataLibrary {
     function getLockSentinel() internal view returns (LockSentinel sentinel) {
         uint256 sentinelSlot = SENTINEL;
         assembly {
-            sentinel := sload(sentinelSlot)
+            sentinel := tload(sentinelSlot)
         }
     }
 }
