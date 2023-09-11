@@ -341,7 +341,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
     function testPoolManagerFeeControllerSet() public {
         assertEq(address(manager.protocolFeeController()), address(0));
-        vm.expectEmit(false, false, false, true);
+        vm.expectEmit(false, false, false, true, address(manager));
         emit ProtocolFeeControllerUpdated(address(protocolFeeController));
         manager.setProtocolFeeController(protocolFeeController);
         assertEq(address(manager.protocolFeeController()), address(protocolFeeController));
