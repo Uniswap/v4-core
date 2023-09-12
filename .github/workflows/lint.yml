@@ -31,8 +31,6 @@ jobs:
 
       - name: Compile
         run: yarn prettier-check
-      
-      - name: Run forge snapshots
-        run: forge snapshot --check
-        env:
-          FOUNDRY_PROFILE: ci
+
+      - name: Check formatting
+        run: forge fmt --check
