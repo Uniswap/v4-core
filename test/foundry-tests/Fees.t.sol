@@ -285,10 +285,10 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(getWithdrawFee(slot0.protocolFees), protocolWithdrawFee);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 10e18);
-        modifyPositionRouter.modifyPosition(key0, params);
+        modifyPositionRouter.modifyPosition(key0, params, ZERO_BYTES);
 
         IPoolManager.ModifyPositionParams memory params2 = IPoolManager.ModifyPositionParams(-60, 60, -10e18);
-        modifyPositionRouter.modifyPosition(key0, params2);
+        modifyPositionRouter.modifyPosition(key0, params2, ZERO_BYTES);
 
         // Fees dont accrue when key.fee does not specify a withdrawal param even if the protocol fee is set.
         assertEq(manager.protocolFeesAccrued(currency0), 0);
@@ -345,7 +345,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint256 underlyingAmount1 = 29;
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, liquidityDelta);
-        BalanceDelta delta = modifyPositionRouter.modifyPosition(key1, params);
+        BalanceDelta delta = modifyPositionRouter.modifyPosition(key1, params, ZERO_BYTES);
 
         // Fees dont accrue for positive liquidity delta.
         assertEq(manager.protocolFeesAccrued(currency0), 0);
@@ -354,7 +354,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.hookFeesAccrued(address(key1.hooks), currency1), 0);
 
         IPoolManager.ModifyPositionParams memory params2 = IPoolManager.ModifyPositionParams(-60, 60, -liquidityDelta);
-        delta = modifyPositionRouter.modifyPosition(key1, params2);
+        delta = modifyPositionRouter.modifyPosition(key1, params2, ZERO_BYTES);
 
         uint16 hookFee0 = (hookWithdrawFee % 64);
         uint16 hookFee1 = (hookWithdrawFee >> 6);
@@ -398,7 +398,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         int256 liquidityDelta = 10000;
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, liquidityDelta);
-        modifyPositionRouter.modifyPosition(key3, params);
+        modifyPositionRouter.modifyPosition(key3, params, ZERO_BYTES);
 
         // Fees dont accrue for positive liquidity delta.
         assertEq(manager.protocolFeesAccrued(currency0), 0);
@@ -407,7 +407,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.hookFeesAccrued(address(key3.hooks), currency1), 0);
 
         IPoolManager.ModifyPositionParams memory params2 = IPoolManager.ModifyPositionParams(-60, 60, -liquidityDelta);
-        modifyPositionRouter.modifyPosition(key3, params2);
+        modifyPositionRouter.modifyPosition(key3, params2, ZERO_BYTES);
 
         uint16 protocolSwapFee1 = (protocolSwapFee >> 6);
 
@@ -417,7 +417,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         // add larger liquidity
         params = IPoolManager.ModifyPositionParams(-60, 60, 10e18);
-        modifyPositionRouter.modifyPosition(key3, params);
+        modifyPositionRouter.modifyPosition(key3, params, ZERO_BYTES);
 
         MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
@@ -451,7 +451,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(getWithdrawFee(slot0.hookFees), 0);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
-        modifyPositionRouter.modifyPosition(key0, params);
+        modifyPositionRouter.modifyPosition(key0, params, ZERO_BYTES);
         // 1 for 0 swap
         MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
@@ -483,7 +483,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(getWithdrawFee(slot0.hookFees), 0);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
-        modifyPositionRouter.modifyPosition(key0, params);
+        modifyPositionRouter.modifyPosition(key0, params, ZERO_BYTES);
         // 1 for 0 swap
         MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
@@ -517,7 +517,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(getWithdrawFee(slot0.hookFees), 0); // Even though the contract sets a withdraw fee it will not be applied bc the pool key.fee did not assert a withdraw flag.
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
-        modifyPositionRouter.modifyPosition(key0, params);
+        modifyPositionRouter.modifyPosition(key0, params, ZERO_BYTES);
         // 1 for 0 swap
         MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
@@ -530,7 +530,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), 0); // No protocol fee was accrued on swap
         assertEq(manager.hookFeesAccrued(address(key0.hooks), currency1), 7); // 25% on 1 to 0, 25% of 30 is 7.5 so 7
 
-        modifyPositionRouter.modifyPosition(key0, IPoolManager.ModifyPositionParams(-120, 120, -10e18));
+        modifyPositionRouter.modifyPosition(key0, IPoolManager.ModifyPositionParams(-120, 120, -10e18), ZERO_BYTES);
 
         assertEq(manager.protocolFeesAccrued(currency1), 0); // No protocol fee was accrued on withdraw
         assertEq(manager.protocolFeesAccrued(currency0), 0); // No protocol fee was accrued on withdraw
@@ -555,7 +555,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(getSwapFee(slot0.hookFees), hookFee);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
-        modifyPositionRouter.modifyPosition(key0, params);
+        modifyPositionRouter.modifyPosition(key0, params, ZERO_BYTES);
         // 1 for 0 swap
         MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
