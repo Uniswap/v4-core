@@ -107,7 +107,10 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false)
+            key,
+            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            PoolSwapTest.TestSettings(false, false),
+            ZERO_BYTES
         );
     }
 
@@ -117,7 +120,10 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false)
+            key,
+            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            PoolSwapTest.TestSettings(false, false),
+            ZERO_BYTES
         );
     }
 

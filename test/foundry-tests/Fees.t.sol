@@ -423,7 +423,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key3,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true)
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
         );
         // key3 pool is 30 bps => 10000 * 0.003 (.3%) = 30
         uint256 expectedSwapFeeAccrued = 30;
@@ -457,7 +458,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true)
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
         );
 
         assertEq(manager.protocolFeesAccrued(currency1), 3); // 10% of 30 is 3
@@ -489,7 +491,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true)
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
         );
 
         assertEq(manager.protocolFeesAccrued(currency1), 3); // 10% of 30 is 3
@@ -523,7 +526,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true)
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
         );
 
         assertEq(manager.protocolFeesAccrued(currency1), 0); // No protocol fee was accrued on swap
@@ -561,7 +565,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true)
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
         );
 
         uint256 expectedProtocolFees = 3; // 10% of 30 is 3
