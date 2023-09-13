@@ -1109,6 +1109,22 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(managerPosition.liquidity, 5 ether);
     }
 
+    function testGetLiquidity() public {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 5 ether));
+
+        Position.Info memory managerPosition = manager.getPosition(key.toId(), address(modifyPositionRouter), -120, 120);
+
+        PoolId id = key.toId();
+
+        uint128 liquidity = manager.getLiquidity(id);
+
+        assertEq(managerPosition.liquidity, liquidity);
+    }
+
     receive() external payable {}
 
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
