@@ -74,8 +74,9 @@ library Pool {
         int24 tick;
         uint24 protocolFees;
         uint24 hookFees;
+        // used for the dynamicFee if there is one enabled
+        uint24 dynamicFee;
     }
-    // 24 bits left!
 
     // info stored for each initialized individual tick
     struct TickInfo {
@@ -107,15 +108,24 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFees, uint24 hookFees)
-        internal
-        returns (int24 tick)
-    {
+    function initialize(
+        State storage self,
+        uint160 sqrtPriceX96,
+        uint24 protocolFees,
+        uint24 hookFees,
+        uint24 dynamicFee
+    ) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFees: protocolFees, hookFees: hookFees});
+        self.slot0 = Slot0({
+            sqrtPriceX96: sqrtPriceX96,
+            tick: tick,
+            protocolFees: protocolFees,
+            hookFees: hookFees,
+            dynamicFee: dynamicFee
+        });
     }
 
     function getSwapFee(uint24 feesStorage) internal pure returns (uint16) {
@@ -136,6 +146,11 @@ library Pool {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
 
         self.slot0.hookFees = hookFees;
+    }
+
+    function setDynamicFee(State storage self, uint24 dynamicFee) internal {
+        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
+        self.slot0.dynamicFee = dynamicFee;
     }
 
     struct ModifyPositionParams {

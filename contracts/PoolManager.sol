@@ -122,7 +122,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         PoolId id = key.toId();
         uint24 protocolFees = _fetchProtocolFees(key);
         uint24 hookFees = _fetchHookFees(key);
-        tick = pools[id].initialize(sqrtPriceX96, protocolFees, hookFees);
+        uint24 dynamicFee = _fetchDynamicFee(key);
+
+        tick = pools[id].initialize(sqrtPriceX96, protocolFees, hookFees, dynamicFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (
@@ -251,11 +253,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
             }
         }
 
+        PoolId id = key.toId();
         // Set the total swap fee, either through the hook or as the static fee set an initialization.
         uint24 totalSwapFee;
         if (key.fee.isDynamicFee()) {
-            totalSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key, params, hookData);
-            if (totalSwapFee >= 1000000) revert FeeTooLarge();
+            totalSwapFee = pools[id].slot0.dynamicFee;
         } else {
             // clear the top 4 bits since they may be flagged for hook fees
             totalSwapFee = key.fee.getStaticFee();
@@ -264,7 +266,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         uint256 feeForProtocol;
         uint256 feeForHook;
         Pool.SwapState memory state;
-        PoolId id = key.toId();
         (delta, feeForProtocol, feeForHook, state) = pools[id].swap(
             Pool.SwapParams({
                 fee: totalSwapFee,
@@ -386,6 +387,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         PoolId id = key.toId();
         pools[id].setHookFees(newHookFees);
         emit HookFeeUpdated(id, newHookFees);
+    }
+
+    function setDynamicFee(PoolKey memory key) external {
+        uint24 newDynamicFee = _fetchDynamicFee(key);
+        PoolId id = key.toId();
+        pools[id].setDynamicFee(newDynamicFee);
+        emit DynamicFeeUpdated(id, newDynamicFee);
     }
 
     function extsload(bytes32 slot) external view returns (bytes32 value) {

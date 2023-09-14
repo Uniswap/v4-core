@@ -9,6 +9,7 @@ import {FeeLibrary} from "./libraries/FeeLibrary.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {Owned} from "./Owned.sol";
+import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
 
 abstract contract Fees is IFees, Owned {
     using FeeLibrary for uint24;
@@ -58,6 +59,13 @@ abstract contract Fees is IFees, Owned {
                 uint24 fullFeeMask = swapFeeMask | withdrawFeeMask;
                 hookFees = hookFeesRaw & fullFeeMask;
             } catch {}
+        }
+    }
+
+    function _fetchDynamicFee(PoolKey memory key) internal view returns (uint24 dynamicFee) {
+        if (key.fee.isDynamicFee()) {
+            dynamicFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key);
+            if (dynamicFee >= 1000000) revert FeeTooLarge();
         }
     }
 

@@ -25,11 +25,7 @@ contract DynamicFees is IDynamicFeeManager {
         fee = _fee;
     }
 
-    function getFee(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
-        public
-        view
-        returns (uint24)
-    {
+    function getFee(address, PoolKey calldata) public view returns (uint24) {
         return fee;
     }
 }
@@ -63,12 +59,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     function testSwapFailsWithTooLargeFee() public {
         dynamicFees.setFee(1000000);
         vm.expectRevert(IFees.FeeTooLarge.selector);
-        swapRouter.swap(
-            key,
-            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
-            PoolSwapTest.TestSettings(false, false),
-            ZERO_BYTES
-        );
+        manager.setDynamicFee(key);
     }
 
     event Swap(
@@ -84,6 +75,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function testSwapWorks() public {
         dynamicFees.setFee(123);
+        manager.setDynamicFee(key);
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 123);
         snapStart("swap with dynamic fee");
