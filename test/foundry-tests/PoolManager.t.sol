@@ -38,6 +38,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     using CurrencyLibrary for Currency;
 
     event LockAcquired();
+    event ProtocolFeeControllerUpdated(address protocolFeeController);
     event Initialize(
         PoolId indexed poolId,
         Currency indexed currency0,
@@ -340,6 +341,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
     function testPoolManagerFeeControllerSet() public {
         assertEq(address(manager.protocolFeeController()), address(0));
+        vm.expectEmit(false, false, false, true, address(manager));
+        emit ProtocolFeeControllerUpdated(address(protocolFeeController));
         manager.setProtocolFeeController(protocolFeeController);
         assertEq(address(manager.protocolFeeController()), address(protocolFeeController));
     }

@@ -107,17 +107,6 @@ describe('PoolManager', () => {
     expect(((await waffle.provider.getCode(manager.address)).length - 2) / 2).to.matchSnapshot()
   })
 
-  describe('#setProtocolFeeController', () => {
-    it('allows the owner to set a fee controller', async () => {
-      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
-      await expect(manager.setProtocolFeeController(feeControllerTest.address)).to.emit(
-        manager,
-        'ProtocolFeeControllerUpdated'
-      )
-      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
-    })
-  })
-
   describe('#take', () => {
     it('fails if no liquidity', async () => {
       await tokens.currency0.connect(wallet).transfer(ADDRESS_ZERO, constants.MaxUint256.div(2))
