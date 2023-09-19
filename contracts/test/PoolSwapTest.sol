@@ -31,14 +31,6 @@ contract PoolSwapTest is ILockCallback {
         bool settleUsingTransfer;
     }
 
-    function swap(PoolKey memory key, IPoolManager.SwapParams memory params, TestSettings memory testSettings)
-        external
-        payable
-        returns (BalanceDelta delta)
-    {
-        return swap(key, params, testSettings, new bytes(0));
-    }
-
     function swap(
         PoolKey memory key,
         IPoolManager.SwapParams memory params,
