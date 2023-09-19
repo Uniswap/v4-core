@@ -90,7 +90,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -104,7 +105,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -118,7 +120,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00',
         )
       }
       const modifyPosition: ModifyPositionFunction = (tickLower, tickUpper, liquidityDelta) => {
@@ -126,7 +129,7 @@ describe('PoolManager gas tests', () => {
           tickLower,
           tickUpper,
           liquidityDelta,
-        })
+        }, '0x00')
       }
       const donate: DonateFunction = (amount0, amount1) => {
         return donateTest.donate(poolKey, amount0, amount1)
@@ -373,6 +376,7 @@ describe('PoolManager gas tests', () => {
             withdrawTokens: true,
             settleUsingTransfer: true,
           },
+          '0x00',
           {
             value: amount,
           }
@@ -389,7 +393,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -404,6 +409,7 @@ describe('PoolManager gas tests', () => {
             withdrawTokens: true,
             settleUsingTransfer: true,
           },
+          '0x00',
           {
             value: MaxUint128,
           }
@@ -417,6 +423,7 @@ describe('PoolManager gas tests', () => {
             tickUpper,
             liquidityDelta,
           },
+          '0x00',
           { value: liquidityDelta }
         )
       }
