@@ -912,7 +912,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
         vm.expectRevert(abi.encodeWithSelector(Pool.NoLiquidityToReceiveFees.selector));
-        donateRouter.donate(key, 100, 100);
+        donateRouter.donate(key, 100, 100, ZERO_BYTES);
     }
 
     function testDonateFailsIfNoLiquidity(uint160 sqrtPriceX96) public {
@@ -923,7 +923,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
         manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
         vm.expectRevert(abi.encodeWithSelector(Pool.NoLiquidityToReceiveFees.selector));
-        donateRouter.donate(key, 100, 100);
+        donateRouter.donate(key, 100, 100, ZERO_BYTES);
     }
 
     // test successful donation if pool has liquidity
@@ -935,7 +935,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
         modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
         snapStart("donate gas with 2 tokens");
-        donateRouter.donate(key, 100, 200);
+        donateRouter.donate(key, 100, 200, ZERO_BYTES);
         snapEnd();
 
         (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(key.toId());
@@ -957,7 +957,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
         modifyPositionRouter.modifyPosition{value: 1}(key, params, ZERO_BYTES);
-        donateRouter.donate{value: 100}(key, 100, 200);
+        donateRouter.donate{value: 100}(key, 100, 200, ZERO_BYTES);
 
         (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(key.toId());
         assertEq(feeGrowthGlobal0X128, 340282366920938463463374607431768211456);
@@ -982,12 +982,12 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         // Fails at beforeDonate hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        donateRouter.donate(key, 100, 200);
+        donateRouter.donate(key, 100, 200, ZERO_BYTES);
 
         // Fail at afterDonate hook.
         mockHooks.setReturnValue(mockHooks.beforeDonate.selector, mockHooks.beforeDonate.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        donateRouter.donate(key, 100, 200);
+        donateRouter.donate(key, 100, 200, ZERO_BYTES);
     }
 
     function testDonateSucceedsWithCorrectSelectors() public {
@@ -1007,7 +1007,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         mockHooks.setReturnValue(mockHooks.beforeDonate.selector, mockHooks.beforeDonate.selector);
         mockHooks.setReturnValue(mockHooks.afterDonate.selector, mockHooks.afterDonate.selector);
 
-        donateRouter.donate(key, 100, 200);
+        donateRouter.donate(key, 100, 200, ZERO_BYTES);
     }
 
     function testGasDonateOneToken() public {
@@ -1019,7 +1019,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
 
         snapStart("donate gas with 1 token");
-        donateRouter.donate(key, 100, 0);
+        donateRouter.donate(key, 100, 0, ZERO_BYTES);
         snapEnd();
     }
 

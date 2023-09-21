@@ -27,16 +27,8 @@ contract PoolDonateTest is ILockCallback {
         bytes hookData;
     }
 
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1)
-        external
-        payable
-        returns (BalanceDelta delta)
-    {
-        return donate(key, amount0, amount1, new bytes(0));
-    }
-
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory hookData)
-        public
+        external
         payable
         returns (BalanceDelta delta)
     {

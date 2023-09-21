@@ -144,7 +144,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        donateRouter.donate(key, 100, 200);
+        donateRouter.donate(key, 100, 200, ZERO_BYTES);
     }
 
     function testAfterDonateInvalidReturn() public {
@@ -154,7 +154,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        donateRouter.donate(key, 100, 200);
+        donateRouter.donate(key, 100, 200, ZERO_BYTES);
     }
 
     // hook validation
