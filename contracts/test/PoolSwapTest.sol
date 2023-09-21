@@ -36,7 +36,7 @@ contract PoolSwapTest is ILockCallback {
         IPoolManager.SwapParams memory params,
         TestSettings memory testSettings,
         bytes memory hookData
-    ) public payable returns (BalanceDelta delta) {
+    ) external payable returns (BalanceDelta delta) {
         delta = abi.decode(
             manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))), (BalanceDelta)
         );

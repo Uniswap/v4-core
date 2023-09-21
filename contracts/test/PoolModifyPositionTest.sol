@@ -26,7 +26,7 @@ contract PoolModifyPositionTest is ILockCallback {
     }
 
     function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
-        public
+        external
         payable
         returns (BalanceDelta delta)
     {
