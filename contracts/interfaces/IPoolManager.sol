@@ -4,14 +4,14 @@ pragma solidity ^0.8.20;
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
-import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {IERC6909} from "@erc-6909/interfaces/IERC6909.sol";
 import {IHooks} from "./IHooks.sol";
 import {IFees} from "./IFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IFees, IERC1155 {
+interface IPoolManager is IFees, IERC6909 {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
@@ -21,9 +21,6 @@ interface IPoolManager is IFees, IERC1155 {
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
     error LockedBy(address locker);
-
-    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
-    error NotPoolManagerToken();
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
@@ -174,8 +171,11 @@ interface IPoolManager is IFees, IERC1155 {
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(Currency currency, address to, uint256 amount) external;
 
-    /// @notice Called by the user to move value into ERC1155 balance
+    /// @notice Called by the user to move value into ERC6909 balance
     function mint(Currency token, address to, uint256 amount) external;
+
+    /// @notice Called by the user to move value from ERC6909 balance
+    function burn(Currency token, address from, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);

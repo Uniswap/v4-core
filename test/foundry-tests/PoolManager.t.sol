@@ -18,7 +18,6 @@ import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
-import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
 import {PoolKey} from "../../contracts/types/PoolKey.sol";
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
@@ -30,7 +29,7 @@ import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControl
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 
-contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
+contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
     using Pool for Pool.State;
     using PoolIdLibrary for PoolKey;
@@ -60,9 +59,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         int24 tick,
         uint24 fee
     );
-    event TransferSingle(
-        address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount
-    );
+    event Transfer(address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount);
 
     Pool.State state;
     PoolManager manager;
@@ -787,7 +784,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function testSwapMintERC1155IfOutputNotTaken() public {
+    function testSwapMintERC6909IfOutputNotTaken() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
@@ -804,14 +801,14 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         );
 
         vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        emit Transfer(address(0), address(this), CurrencyLibrary.toId(currency1), 98);
         swapRouter.swap(key, params, testSettings);
 
-        uint256 erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
-        assertEq(erc1155Balance, 98);
+        uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
+        assertEq(erc6909Balance, 98);
     }
 
-    function testSwapUse1155AsInput() public {
+    function testSwapUse6909AsInput() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
@@ -827,26 +824,26 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000000000000000000})
         );
         vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        emit Transfer(address(0), address(this), CurrencyLibrary.toId(currency1), 98);
         swapRouter.swap(key, params, testSettings);
 
-        uint256 erc1155Balance = manager.balanceOf(address(this), uint256(uint160(Currency.unwrap(currency1))));
-        assertEq(erc1155Balance, 98);
+        uint256 erc6909Balance = manager.balanceOf(address(this), uint256(uint160(Currency.unwrap(currency1))));
+        assertEq(erc6909Balance, 98);
 
-        // give permission for swapRouter to burn the 1155s
-        manager.setApprovalForAll(address(swapRouter), true);
+        // give permission for swapRouter to burn the 6909s
+        manager.setOperator(address(swapRouter), true);
 
-        // swap from currency1 to currency0 again, using 1155s as input tokens
+        // swap from currency1 to currency0 again, using 6909s as input tokens
         params = IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -25, sqrtPriceLimitX96: SQRT_RATIO_4_1});
 
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
 
         vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(manager), address(manager), address(0), CurrencyLibrary.toId(currency1), 27);
+        emit Transfer(address(this), address(0), CurrencyLibrary.toId(currency1), 27);
         swapRouter.swap(key, params, testSettings);
 
-        erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
-        assertEq(erc1155Balance, 71);
+        erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
+        assertEq(erc6909Balance, 71);
     }
 
     function testGasSwapAgainstLiq() public {
@@ -1110,18 +1107,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     receive() external payable {}
-
-    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
-        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
-    }
-
-    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
-        external
-        pure
-        returns (bytes4)
-    {
-        return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
-    }
 
     function supportsInterface(bytes4) external pure returns (bool) {
         return true;
