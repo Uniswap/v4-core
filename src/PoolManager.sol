@@ -16,14 +16,14 @@ import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
-import {Claims} from "./Claims.sol";
+import {ERC6909} from "@erc-6909/ERC6909.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
+contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909 {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -50,6 +50,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     mapping(PoolId id => Pool.State) public pools;
 
     constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) {}
+
+    function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
+        return pools[key.toId()];
+    }
 
     /// @inheritdoc IPoolManager
     function getSlot0(PoolId id)
@@ -279,6 +283,32 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
+    function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(currency, amount.toInt128());
+
+        uint256 id = currency.toId();
+        totalSupply[id] += amount;
+        balanceOf[to][id] += amount;
+        emit Transfer(address(0), to, id, amount);
+    }
+
+    /// @inheritdoc IPoolManager
+    function burn(Currency currency, address from, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(currency, -(amount.toInt128()));
+
+        uint256 id = currency.toId();
+        if (from != msg.sender && !isOperator[from][msg.sender]) {
+            uint256 senderAllowance = allowance[from][msg.sender][id];
+            if (senderAllowance != type(uint256).max) {
+                allowance[from][msg.sender][id] = senderAllowance - amount;
+            }
+        }
+        totalSupply[id] -= amount;
+        balanceOf[from][id] -= amount;
+        emit Transfer(from, address(0), id, amount);
+    }
+
+    /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
@@ -287,35 +317,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _accountDelta(currency, -(paid.toInt128()));
     }
 
-    /// @inheritdoc IPoolManager
-    function mint(Currency currency, address to, uint256 amount) external noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-        _mint(to, currency, amount);
-    }
-
-    /// @inheritdoc IPoolManager
-    function burn(Currency currency, uint256 amount) external noDelegateCall onlyByLocker {
-        _accountDelta(currency, -(amount.toInt128()));
-        _burn(currency, amount);
-    }
-
-    function setProtocolFee(PoolKey memory key) external {
-        (bool success, uint16 newProtocolFee) = _fetchProtocolFee(key);
+    function setProtocolFees(PoolKey memory key) external {
+        (bool success, uint16 protocolFee) = _fetchProtocolFee(key);
         if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
         PoolId id = key.toId();
-        pools[id].setProtocolFee(newProtocolFee);
-        emit ProtocolFeeUpdated(id, newProtocolFee);
-    }
-
-    function updateDynamicSwapFee(PoolKey memory key) external {
-        if (key.fee.isDynamicFee()) {
-            uint24 newDynamicSwapFee = _fetchDynamicSwapFee(key);
-            PoolId id = key.toId();
-            pools[id].setSwapFee(newDynamicSwapFee);
-            emit DynamicSwapFeeUpdated(id, newDynamicSwapFee);
-        } else {
-            revert FeeNotDynamic();
-        }
+        pools[id].setProtocolFee(protocolFee);
+        emit ProtocolFeeUpdated(id, protocolFee);
     }
 
     function extsload(bytes32 slot) external view returns (bytes32 value) {
