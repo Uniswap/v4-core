@@ -59,7 +59,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         int24 tick,
         uint24 fee
     );
-    event Transfer(address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount);
+    event Transfer(address indexed caller, address indexed sender, address indexed receiver, uint256 id, uint256 amount);
 
     Pool.State state;
     PoolManager manager;
@@ -801,7 +801,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         );
 
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
         swapRouter.swap(key, params, testSettings);
 
         uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
@@ -824,7 +824,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000000000000000000})
         );
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
         swapRouter.swap(key, params, testSettings);
 
         uint256 erc6909Balance = manager.balanceOf(address(this), uint256(uint160(Currency.unwrap(currency1))));
@@ -839,7 +839,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
 
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(this), address(0), CurrencyLibrary.toId(currency1), 27);
+        emit Transfer(address(swapRouter), address(this), address(0), CurrencyLibrary.toId(currency1), 27);
         swapRouter.swap(key, params, testSettings);
 
         erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));

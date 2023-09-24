@@ -343,7 +343,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909 {
         uint256 id = currency.toId();
         totalSupply[id] += amount;
         balanceOf[to][id] += amount;
-        emit Transfer(address(0), to, id, amount);
+        emit Transfer(msg.sender, address(0), to, id, amount);
     }
 
     /// @inheritdoc IPoolManager
@@ -359,7 +359,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909 {
         }
         totalSupply[id] -= amount;
         balanceOf[from][id] -= amount;
-        emit Transfer(from, address(0), id, amount);
+        emit Transfer(msg.sender, from, address(0), id, amount);
     }
 
     /// @inheritdoc IPoolManager
