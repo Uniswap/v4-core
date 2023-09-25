@@ -11,6 +11,3 @@
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
 	tag = v4.4.2
-[submodule "lib/erc-6909"]
-	path = lib/erc-6909
-	url = https://github.com/jtriley-eth/erc-6909
