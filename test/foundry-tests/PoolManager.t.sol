@@ -59,7 +59,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         int24 tick,
         uint24 fee
     );
-    event Transfer(address indexed caller, address indexed sender, address indexed receiver, uint256 id, uint256 amount);
+    event Transfer(address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount);
 
     Pool.State state;
     PoolManager manager;
