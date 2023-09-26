@@ -33,6 +33,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     using LockDataLibrary for IPoolManager.LockData;
     using FeeLibrary for uint24;
 
+    int24 public constant ONE_HUNDRED_PERCENT = 1000000;
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
@@ -255,7 +256,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         uint24 totalSwapFee;
         if (key.fee.isDynamicFee()) {
             totalSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key, params, hookData);
-            if (totalSwapFee >= 1000000) revert FeeTooLarge();
+            if (totalSwapFee >= ONE_HUNDRED_PERCENT) revert FeeTooLarge();
         } else {
             // clear the top 4 bits since they may be flagged for hook fees
             totalSwapFee = key.fee.getStaticFee();

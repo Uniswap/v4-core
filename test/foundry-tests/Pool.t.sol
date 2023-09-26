@@ -13,6 +13,7 @@ contract PoolTest is Test {
     using Pool for Pool.State;
 
     Pool.State state;
+    int24 public constant ONE_HUNDRED_PERCENT = 1000000;
 
     function testPoolInitialize(uint160 sqrtPriceX96, uint16 protocolFee, uint16 hookFee) public {
         vm.assume(protocolFee < 2 ** 12 && hookFee < 2 ** 12);
@@ -75,7 +76,7 @@ contract PoolTest is Test {
         // Assumptions tested in PoolManager.t.sol
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
-        vm.assume(params.fee < 1000000);
+        vm.assume(params.fee < ONE_HUNDRED_PERCENT);
 
         testPoolInitialize(sqrtPriceX96, 0, 0);
         Pool.Slot0 memory slot0 = state.slot0;
