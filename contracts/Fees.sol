@@ -44,7 +44,7 @@ abstract contract Fees is IFees, Owned {
 
                 protocolFees = updatedProtocolFees;
             } catch {
-                // note if the ProtocolFeeController reverts we default all fees to 0
+                // note if the ProtocolFeeController reverts we default all protocol fees to 0
                 protocolSwapFee = 0;
                 protocolWithdrawFee = 0;
                 protocolFees = 0;
