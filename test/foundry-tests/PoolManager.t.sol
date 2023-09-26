@@ -27,6 +27,7 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
 import {PoolId, PoolIdLibrary} from "../../contracts/types/PoolId.sol";
 import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
+import {RevertingProtocolFeeControllerTest} from "../../contracts/test/RevertingProtocolFeeControllerTest.sol";
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 
@@ -71,6 +72,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     PoolSwapTest swapRouter;
     PoolLockTest lockTest;
     ProtocolFeeControllerTest protocolFeeController;
+    RevertingProtocolFeeControllerTest revertingProtocolFeeController;
 
     address ADDRESS_ZERO = address(0);
     address EMPTY_HOOKS = address(0xf000000000000000000000000000000000000000);
@@ -86,6 +88,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         lockTest = new PoolLockTest(manager);
         swapRouter = new PoolSwapTest(manager);
         protocolFeeController = new ProtocolFeeControllerTest();
+        revertingProtocolFeeController = new RevertingProtocolFeeControllerTest();
 
         MockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
         MockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ether);
@@ -225,6 +228,65 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
+    }
+
+    function testPoolManagerInitializeSucceedsWithRevertingFeeController(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address hookEmptyAddr = EMPTY_HOOKS;
+        MockHooks impl = new MockHooks();
+        vm.etch(hookEmptyAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
+
+        manager.setProtocolFeeController(revertingProtocolFeeController);
+        // expect initialize to succeed even though the controller reverts
+        vm.expectEmit(true, true, true, true);
+        emit Initialize(key.toId(), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        // protocol fees should default to 0
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees >> 12, 0);
+    }
+
+    function testPoolManagerInitializeSucceedsAndSetsHookFeeIfControllerReverts(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable mockAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
+
+        address hookAddr = address(99); // can't be a zero address, but does not have to have any other hook flags specified
+        MockHooks impl = new MockHooks();
+        vm.etch(hookAddr, address(impl).code);
+        MockHooks hook = MockHooks(hookAddr);
+
+        PoolKey memory key = PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: FeeLibrary.HOOK_SWAP_FEE_FLAG | uint24(3000),
+            hooks: hook,
+            tickSpacing: 60
+        });
+
+        manager.setProtocolFeeController(revertingProtocolFeeController);
+        // expect initialize to succeed even though the controller reverts
+        int24 tick = manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
+        // protocol fees should default to 0
+        assertEq(slot0.protocolFees >> 12, 0);
+        // hook fees can still be set
+        assertEq(uint16(slot0.hookFees >> 12), 0);
+        hook.setSwapFee(key, 3000);
+        manager.setHookFees(key);
+
+        (slot0,,,) = manager.pools(key.toId());
+        assertEq(uint16(slot0.hookFees >> 12), 3000);
     }
 
     function testPoolManagerInitializeRevertsWithSameTokenCombo(uint160 sqrtPriceX96) public {
