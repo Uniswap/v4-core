@@ -90,7 +90,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -104,7 +105,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -118,18 +120,23 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const modifyPosition: ModifyPositionFunction = (tickLower, tickUpper, liquidityDelta) => {
-        return modifyPositionTest.modifyPosition(poolKey, {
-          tickLower,
-          tickUpper,
-          liquidityDelta,
-        })
+        return modifyPositionTest.modifyPosition(
+          poolKey,
+          {
+            tickLower,
+            tickUpper,
+            liquidityDelta,
+          },
+          '0x00'
+        )
       }
       const donate: DonateFunction = (amount0, amount1) => {
-        return donateTest.donate(poolKey, amount0, amount1)
+        return donateTest.donate(poolKey, amount0, amount1, '0x00')
       }
       const getSlot0 = async () => {
         return await manager.getSlot0(getPoolId(poolKey))
@@ -373,6 +380,7 @@ describe('PoolManager gas tests', () => {
             withdrawTokens: true,
             settleUsingTransfer: true,
           },
+          '0x00',
           {
             value: amount,
           }
@@ -389,7 +397,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -404,6 +413,7 @@ describe('PoolManager gas tests', () => {
             withdrawTokens: true,
             settleUsingTransfer: true,
           },
+          '0x00',
           {
             value: MaxUint128,
           }
@@ -417,11 +427,12 @@ describe('PoolManager gas tests', () => {
             tickUpper,
             liquidityDelta,
           },
+          '0x00',
           { value: liquidityDelta }
         )
       }
       const donate: DonateFunction = (amount0, amount1) => {
-        return donateTest.donate(poolKey, amount0, amount1, { value: amount0 })
+        return donateTest.donate(poolKey, amount0, amount1, '0x00', { value: amount0 })
       }
       const getSlot0 = async () => {
         return await manager.getSlot0(getPoolId(poolKey))
