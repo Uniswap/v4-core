@@ -37,7 +37,7 @@ contract Deployers {
     }
 
     function createPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
-        private
+        public
         returns (PoolKey memory key, PoolId id)
     {
         (key, id) = createPool(manager, hooks, fee, sqrtPriceX96, ZERO_BYTES);
