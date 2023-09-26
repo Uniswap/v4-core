@@ -9,126 +9,18 @@ import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {IFees} from "../../contracts/interfaces/IFees.sol";
 import {IHooks} from "../../contracts/interfaces/IHooks.sol";
-import {Currency} from "../../contracts/types/Currency.sol";
 import {PoolKey} from "../../contracts/types/PoolKey.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {IDynamicFeeManager} from "././../../contracts/interfaces/IDynamicFeeManager.sol";
-import {Fees} from "./../../contracts/Fees.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {IHooks} from "../../contracts/interfaces/IHooks.sol";
-import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
-import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
-
-contract DynamicFees is IHooks, IDynamicFeeManager {
-    uint24 internal fee;
-    IPoolManager manager;
-
-    constructor() {}
-
-    function setManager(IPoolManager _manager) external {
-        manager = _manager;
-    }
-
-    function setFee(uint24 _fee) external {
-        fee = _fee;
-    }
-
-    function getFee(address, PoolKey calldata) public view returns (uint24) {
-        return fee;
-    }
-
-    function beforeSwap(
-        address sender,
-        PoolKey calldata key,
-        IPoolManager.SwapParams calldata params,
-        bytes calldata hookData
-    ) external returns (bytes4) {
-        // updates the dynamic fee in the pool if update is true
-        bool _update;
-        uint24 _fee;
-
-        if (hookData.length > 0) {
-            (_update, _fee) = abi.decode(hookData, (bool, uint24));
-        }
-        if (_update == true) {
-            fee = _fee;
-
-            manager.setDynamicFee(key);
-        }
-        return IHooks.beforeSwap.selector;
-    }
-
-    function beforeInitialize(address, PoolKey calldata, uint160, bytes calldata)
-        external
-        view
-        override
-        returns (bytes4)
-    {
-        revert("not implemented");
-    }
-
-    function afterInitialize(address, PoolKey calldata, uint160, int24, bytes calldata)
-        external
-        view
-        override
-        returns (bytes4)
-    {
-        revert("not implemented");
-    }
-
-    function beforeModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata)
-        external
-        view
-        override
-        returns (bytes4)
-    {
-        revert("not implemented");
-    }
-
-    function afterModifyPosition(
-        address,
-        PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
-        BalanceDelta,
-        bytes calldata
-    ) external view override returns (bytes4) {
-        revert("not implemented");
-    }
-
-    function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta, bytes calldata)
-        external
-        view
-        override
-        returns (bytes4)
-    {
-        revert("not implemented");
-    }
-
-    function beforeDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)
-        external
-        view
-        override
-        returns (bytes4)
-    {
-        revert("not implemented");
-    }
-
-    function afterDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)
-        external
-        view
-        override
-        returns (bytes4)
-    {
-        revert("not implemented");
-    }
-}
+import {DynamicFeesTest} from "../../contracts/test/DynamicFeesTest.sol";
 
 contract TestDynamicFees is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
-    DynamicFees dynamicFees = DynamicFees(
+    DynamicFeesTest dynamicFees = DynamicFeesTest(
         address(
             uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
                 & uint160(
@@ -139,7 +31,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         )
     );
 
-    DynamicFees dynamicFeesNoHook = DynamicFees(
+    DynamicFeesTest dynamicFeesNoHook = DynamicFeesTest(
         address(
             uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
                 & uint160(
@@ -156,7 +48,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     PoolSwapTest swapRouter;
 
     function setUp() public {
-        DynamicFees impl = new DynamicFees();
+        DynamicFeesTest impl = new DynamicFeesTest();
         vm.etch(address(dynamicFees), address(impl).code);
         vm.etch(address(dynamicFeesNoHook), address(impl).code);
 
@@ -171,6 +63,13 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesNoHook.setManager(IPoolManager(manager));
 
         swapRouter = new PoolSwapTest(manager);
+    }
+
+    function testPoolInitializeFailsWithTooLargeFee() public {
+        dynamicFees.setFee(1000000);
+        PoolKey memory key0 = Deployers.createKey(IHooks(address(dynamicFees)), FeeLibrary.DYNAMIC_FEE_FLAG);
+        vm.expectRevert(IFees.FeeTooLarge.selector);
+        manager.initialize(key0, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testSwapFailsWithTooLargeFee() public {

@@ -54,6 +54,12 @@ contract Deployers {
         manager.initialize(key, sqrtPriceX96, initData);
     }
 
+    function createKey(IHooks hooks, uint24 fee) internal returns (PoolKey memory key) {
+        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
+        (Currency currency0, Currency currency1) = SortTokens.sort(tokens[0], tokens[1]);
+        key = PoolKey(currency0, currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
+    }
+
     function createFreshPool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
         internal
         returns (PoolManager manager, PoolKey memory key, PoolId id)
