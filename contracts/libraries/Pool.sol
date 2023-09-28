@@ -582,6 +582,14 @@ library Pool {
         state.liquidityAtTick = self.liquidity;
         state.tickCurrent = self.slot0.tick;
 
+        console.log("current tick", uint24(state.tickCurrent));
+        for (uint256 i = 0; i < ticks.length; i++) {
+            console.log("ticks[i]", uint24(ticks[i]));
+            console.log("amount0[i]", amount0[i]);
+            console.log("amount1[i]", amount1[i]);
+        }
+        
+
         if (ticks[0] < TickMath.MIN_TICK) revert TickListMisordered();
 
         (state.tickNext, state.initialized) =
@@ -658,86 +666,92 @@ library Pool {
             }
         }
 
-        uint256 lastBelowTick = i;
+        // now, process the ticks above the current tick
 
-        // // now, process the ticks above the current tick
+        // compute the liquidity that would be in range at (just right of) the rightmost tick by walking up to it
+        state.liquidityAtTick = self.liquidity;
+        state.tickCurrent = self.slot0.tick;
 
-        // // compute the liquidity that would be in range at (just right of) the rightmost tick by walking up to it
-        // state.liquidityAtTick = self.liquidity;
-        // state.tickCurrent = self.slot0.tick;
+        if (ticks[ticks.length - 1] > TickMath.MAX_TICK) revert TickListMisordered();
 
-        // if (ticks[ticks.length - 1] > TickMath.MAX_TICK) revert TickListMisordered();
+        (state.tickNext, state.initialized) =
+            self.tickBitmap.nextInitializedTickWithinOneWord(state.tickCurrent, tickSpacing, false);
 
-        // (state.tickNext, state.initialized) =
-        //     self.tickBitmap.nextInitializedTickWithinOneWord(state.tickCurrent, tickSpacing, false);
+        while (state.tickNext <= ticks[ticks.length - 1]) {
+            console.log("state.tickCurrent", uint24(state.tickCurrent));
+            console.log("state.tickNext", uint24(state.tickNext));
+            // if the tick is initialized, update state.liquidityAtTick
+            if (state.initialized) {
+                int128 liquidityNet = self.ticks[state.tickNext].liquidityNet;
 
-        // while (state.tickNext <= ticks[ticks.length - 1]) {
-        //     // if the tick is initialized, update state.liquidityAtTick
-        //     if (state.initialized) {
-        //         int128 liquidityNet = self.ticks[state.tickNext].liquidityNet;
+                // safe because liquidityNet cannot be type(int128).min
+                console.log("state.liquidityAtTick", state.liquidityAtTick);
+                console.log("liquidityNet:");
+                console.logInt(liquidityNet);
+                state.liquidityAtTick = liquidityNet > 0
+                    ? state.liquidityAtTick + uint128(liquidityNet)
+                    : state.liquidityAtTick - uint128(-liquidityNet);
+            }
 
-        //         // safe because liquidityNet cannot be type(int128).min
-        //         state.liquidityAtTick = liquidityNet > 0
-        //             ? state.liquidityAtTick + uint128(liquidityNet)
-        //             : state.liquidityAtTick - uint128(-liquidityNet);
-        //     }
+            (state.tickNext, state.initialized) =
+                self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext, tickSpacing, false);
+        }
 
-        //     (state.tickNext, state.initialized) =
-        //         self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext, tickSpacing, true);
-        // }
+        // walk back over initialized ticks to the current tick
+        // the index of the ticks array that we're currently on
+        i = ticks.length - 1;
 
-        // // walk back over initialized ticks to the current tick
-        // // the index of the ticks array that we're currently on
-        // i = ticks.length - 1;
+        // tickNext is currently the tick above the highest tick in the list
+        // skip the step that updates the tick on the first run through this loop
+        state.initialized = false;
 
-        // // tickNext is currently the tick above the highest tick in the list
-        // // skip the step that updates the tick on the first run through this loop
-        // state.initialized = false;
+        while (state.tickNext > state.tickCurrent) {
+            if (state.initialized) {
+                TickInfo storage info = self.ticks[state.tickNext];
 
-        // while (state.tickNext > state.tickCurrent) {
-        //     if (state.initialized) {
-        //         TickInfo storage info = self.ticks[state.tickNext];
+                int128 liquidityNet = info.liquidityNet;
 
-        //         int128 liquidityNet = info.liquidityNet;
+                // update state.liquidityAtTick
+                // since we're moving leftward, we interpret liquidityNet as the opposite sign
+                // safe because liquidityNet cannot be type(int128).min
+                state.liquidityAtTick = liquidityNet > 0
+                    ? state.liquidityAtTick - uint128(liquidityNet)
+                    : state.liquidityAtTick + uint128(-liquidityNet);
 
-        //         // update state.liquidityAtTick
-        //         // since we're moving leftward, we interpret liquidityNet as the opposite sign
-        //         // safe because liquidityNet cannot be type(int128).min
-        //         state.liquidityAtTick = liquidityNet > 0
-        //             ? state.liquidityAtTick - uint128(liquidityNet)
-        //             : state.liquidityAtTick + uint128(-liquidityNet);
+                // update the feeGrowthOutside values at the tick
+                if (state.cumulativeFeeGrowthAbove0x128 > 0) {
+                    info.feeGrowthOutside0X128 += state.cumulativeFeeGrowthAbove0x128;
+                }
+                if (state.cumulativeFeeGrowthAbove1x128 > 0) {
+                    info.feeGrowthOutside1X128 += state.cumulativeFeeGrowthAbove1x128;
+                }
+            }
 
-        //         // update the feeGrowthOutside values at the tick
-        //         if (state.cumulativeFeeGrowthAbove0x128 > 0) {
-        //             info.feeGrowthOutside0X128 += state.cumulativeFeeGrowthAbove0x128;
-        //         }
-        //         if (state.cumulativeFeeGrowthAbove1x128 > 0) {
-        //             info.feeGrowthOutside1X128 += state.cumulativeFeeGrowthAbove1x128;
-        //         }
-        //     }
+            // step to the next initialized tick (or the end of the word)
+            (state.tickNext, state.initialized) =
+                self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext - 1, tickSpacing, true);
 
-        //     // step to the next initialized tick (or the end of the word)
-        //     (state.tickNext, state.initialized) =
-        //         self.tickBitmap.nextInitializedTickWithinOneWord(state.tickNext - 1, tickSpacing, true);
+            // ensure that we do not overshoot the min tick, as the tick bitmap is not aware of these bounds
+            if (state.tickNext < TickMath.MIN_TICK) {
+                state.tickNext = TickMath.MIN_TICK;
+            }
 
-        //     // ensure that we do not overshoot the min tick, as the tick bitmap is not aware of these bounds
-        //     if (state.tickNext < TickMath.MIN_TICK) {
-        //         state.tickNext = TickMath.MIN_TICK;
-        //     }
-
-        //     // check if we crossed any of the ticks that we are distributing fees to
-        //     while (i > 0 && ticks[i] >= state.tickNext && ticks[i] > state.tickCurrent) {
-        //         if (i - 1 >= 0 && ticks[i - 1] >= ticks[i]) revert TickListMisordered();
-        //         if (state.liquidityAtTick == 0) revert NoLiquidityToReceiveFees();
-        //         state.cumulativeAmount0 += amount0[i];
-        //         state.cumulativeAmount1 += amount1[i];
-        //         state.cumulativeFeeGrowthAbove0x128 +=
-        //             FullMath.mulDiv(amount0[i], FixedPoint128.Q128, state.liquidityAtTick);
-        //         state.cumulativeFeeGrowthAbove1x128 +=
-        //             FullMath.mulDiv(amount1[i], FixedPoint128.Q128, state.liquidityAtTick);
-        //         i--;
-        //     }
-        // }
+            // check if we crossed any of the ticks that we are distributing fees to
+            while (i > 0 && ticks[i] >= state.tickNext && ticks[i] > state.tickCurrent) {
+                console.log("i", i);
+                console.log("ticks[i - 1]", uint24(ticks[i - 1]));
+                console.log("ticks[i]", uint24(ticks[i]));
+                if (i >= 1 && ticks[i - 1] >= ticks[i]) revert TickListMisordered();
+                if (state.liquidityAtTick == 0) revert NoLiquidityToReceiveFees();
+                state.cumulativeAmount0 += amount0[i];
+                state.cumulativeAmount1 += amount1[i];
+                state.cumulativeFeeGrowthAbove0x128 +=
+                    FullMath.mulDiv(amount0[i], FixedPoint128.Q128, state.liquidityAtTick);
+                state.cumulativeFeeGrowthAbove1x128 +=
+                    FullMath.mulDiv(amount1[i], FixedPoint128.Q128, state.liquidityAtTick);
+                i--;
+            }
+        }
 
         // TODO: fail if array was not contiguous
 
