@@ -1020,9 +1020,199 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function testDonateTickBelowActive() external {}
+    function testDonateTick_BelowActiveDirectBoundary() external {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
-    function testDonateTickAboveActive() external {
+        // Create 2 LP positions, active tick and one tick above active.
+        LpInfo memory lpInfo0 = _createLpPosition(key, -10, 0, 1e18);
+        LpInfo memory lpInfo1 = _createLpPosition(key, -20, -10, 1e18);
+
+        // Donate 2 eth of each asset to the position in range at tick 10 (tickLower = 10).
+        uint256 lDonateAmount = 2 ether;
+        uint256[] memory amounts0 = new uint[](1);
+        amounts0[0] = lDonateAmount;
+        uint256[] memory amounts1 = new uint[](1);
+        amounts1[0] = lDonateAmount;
+        int24[] memory ticks = new int24[](1);
+        ticks[0] = lpInfo1.tickLower;
+
+        // Donate & check that balances were pulled to the pool.
+        uint256 lBefore0 = key.currency0.balanceOf(address(manager));
+        uint256 lBefore1 = key.currency1.balanceOf(address(manager));
+        donateRouter.donateRange(key, amounts0, amounts1, ticks);
+        assertEq(key.currency0.balanceOf(address(manager)), lBefore0 + lDonateAmount, "amount0 donation failed");
+        assertEq(key.currency1.balanceOf(address(manager)), lBefore1 + lDonateAmount, "amount1 donation failed");
+
+        // Close position that received the donate.
+        vm.prank(lpInfo1.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo1.tickLower, lpInfo1.tickUpper, -lpInfo1.liquidity)
+        );
+
+        // Ensure users received their intended donations.
+        assertApproxEqAbs(key.currency0.balanceOf(lpInfo1.lpAddress), lpInfo1.amount0 + lDonateAmount, 1, "amount0 withdraw mismatch");
+        assertApproxEqAbs(key.currency1.balanceOf(lpInfo1.lpAddress), lpInfo1.amount1 + lDonateAmount, 1, "amount1 withdraw mismatch");
+
+        // Redeem the other position and ensure pool is empty (math precision leaves some wei).
+        vm.prank(lpInfo0.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo0.tickLower, lpInfo0.tickUpper, -lpInfo0.liquidity)
+        );
+        assertLt(key.currency0.balanceOf(address(manager)), 10, "Too much amount0 dust");
+        assertLt(key.currency1.balanceOf(address(manager)), 10, "Too much amount1 dust");
+        assertEq(manager.getLiquidity(key.toId()), 0, "Liquidity left over");
+    }
+
+    function testDonateTick_BelowActiveSkipOneBoundary() external {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        // Create 2 LP positions, active tick and one tick above active.
+        LpInfo memory lpInfo0 = _createLpPosition(key, -10, 0, 1e18);
+        LpInfo memory lpInfo1 = _createLpPosition(key, -20, -10, 1e18);
+        LpInfo memory lpInfo2 = _createLpPosition(key, -30, -20, 1e18);
+
+        // Donate 2 eth of each asset to the position in range at tick 10 (tickLower = 10).
+        uint256 lDonateAmount = 2 ether;
+        uint256[] memory amounts0 = new uint[](1);
+        amounts0[0] = lDonateAmount;
+        uint256[] memory amounts1 = new uint[](1);
+        amounts1[0] = lDonateAmount;
+        int24[] memory ticks = new int24[](1);
+        ticks[0] = lpInfo2.tickLower;
+
+        uint256 lBefore0 = key.currency0.balanceOf(address(manager));
+        uint256 lBefore1 = key.currency1.balanceOf(address(manager));
+
+        // Donate & check that balances were pulled to the pool.
+        donateRouter.donateRange(key, amounts0, amounts1, ticks);
+        assertEq(key.currency0.balanceOf(address(manager)), lBefore0 + lDonateAmount, "amount0 donation failed");
+        assertEq(key.currency1.balanceOf(address(manager)), lBefore1 + lDonateAmount, "amount1 donation failed");
+
+        // Close position that received the donate.
+        vm.prank(lpInfo2.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo2.tickLower, lpInfo2.tickUpper, -lpInfo2.liquidity)
+        );
+
+        // Ensure users received their intended donations.
+        assertApproxEqAbs(key.currency0.balanceOf(lpInfo2.lpAddress), lpInfo2.amount0 + lDonateAmount, 1, "amount0 withdraw mismatch");
+        assertApproxEqAbs(key.currency1.balanceOf(lpInfo2.lpAddress), lpInfo2.amount1 + lDonateAmount, 1, "amount1 withdraw mismatch");
+
+        // Redeem the other position and ensure pool is empty (math precision leaves some wei).
+        vm.prank(lpInfo0.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo0.tickLower, lpInfo0.tickUpper, -lpInfo0.liquidity)
+        );
+        vm.prank(lpInfo1.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo1.tickLower, lpInfo1.tickUpper, -lpInfo1.liquidity)
+        );
+        assertLt(key.currency0.balanceOf(address(manager)), 10, "Too much amount0 dust");
+        assertLt(key.currency1.balanceOf(address(manager)), 10, "Too much amount1 dust");
+        assertEq(manager.getLiquidity(key.toId()), 0, "Liquidity left over");
+    }
+
+    function testDonateTick_BelowActiveDirectMiddle() external {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        // Create 2 LP positions, active tick and one tick above active.
+        LpInfo memory lpInfo0 = _createLpPosition(key, -10, 0, 1e18);
+        LpInfo memory lpInfo1 = _createLpPosition(key, -20, -10, 1e18);
+
+        // Donate 2 eth of each asset to the position in range at tick 10 (tickLower = 10).
+        uint256 lDonateAmount = 2 ether;
+        uint256[] memory amounts0 = new uint[](1);
+        amounts0[0] = lDonateAmount;
+        uint256[] memory amounts1 = new uint[](1);
+        amounts1[0] = lDonateAmount;
+        int24[] memory ticks = new int24[](1);
+        ticks[0] = -15;
+
+        // Donate & check that balances were pulled to the pool.
+        uint256 lBefore0 = key.currency0.balanceOf(address(manager));
+        uint256 lBefore1 = key.currency1.balanceOf(address(manager));
+        donateRouter.donateRange(key, amounts0, amounts1, ticks);
+        assertEq(key.currency0.balanceOf(address(manager)), lBefore0 + lDonateAmount, "amount0 donation failed");
+        assertEq(key.currency1.balanceOf(address(manager)), lBefore1 + lDonateAmount, "amount1 donation failed");
+
+        // Close position that received the donate.
+        vm.prank(lpInfo1.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo1.tickLower, lpInfo1.tickUpper, -lpInfo1.liquidity)
+        );
+
+        // Ensure users received their intended donations.
+        assertApproxEqAbs(key.currency0.balanceOf(lpInfo1.lpAddress), lpInfo1.amount0 + lDonateAmount, 1, "amount0 withdraw mismatch");
+        assertApproxEqAbs(key.currency1.balanceOf(lpInfo1.lpAddress), lpInfo1.amount1 + lDonateAmount, 1, "amount1 withdraw mismatch");
+
+        // Redeem the other position and ensure pool is empty (math precision leaves some wei).
+        vm.prank(lpInfo0.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo0.tickLower, lpInfo0.tickUpper, -lpInfo0.liquidity)
+        );
+        assertLt(key.currency0.balanceOf(address(manager)), 10, "Too much amount0 dust");
+        assertLt(key.currency1.balanceOf(address(manager)), 10, "Too much amount1 dust");
+        assertEq(manager.getLiquidity(key.toId()), 0, "Liquidity left over");
+    }
+
+    function testDonateTick_BelowActiveSkipOneMiddle() external {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        // Create 2 LP positions, active tick and one tick above active.
+        LpInfo memory lpInfo0 = _createLpPosition(key, -10, 0, 1e18);
+        LpInfo memory lpInfo1 = _createLpPosition(key, -20, -10, 1e18);
+        LpInfo memory lpInfo2 = _createLpPosition(key, -30, -20, 1e18);
+
+        // Donate 2 eth of each asset to the position in range at tick 10 (tickLower = 10).
+        uint256 lDonateAmount = 2 ether;
+        uint256[] memory amounts0 = new uint[](1);
+        amounts0[0] = lDonateAmount;
+        uint256[] memory amounts1 = new uint[](1);
+        amounts1[0] = lDonateAmount;
+        int24[] memory ticks = new int24[](1);
+        ticks[0] = -25;
+
+        uint256 lBefore0 = key.currency0.balanceOf(address(manager));
+        uint256 lBefore1 = key.currency1.balanceOf(address(manager));
+
+        // Donate & check that balances were pulled to the pool.
+        donateRouter.donateRange(key, amounts0, amounts1, ticks);
+        assertEq(key.currency0.balanceOf(address(manager)), lBefore0 + lDonateAmount, "amount0 donation failed");
+        assertEq(key.currency1.balanceOf(address(manager)), lBefore1 + lDonateAmount, "amount1 donation failed");
+
+        // Close position that received the donate.
+        vm.prank(lpInfo2.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo2.tickLower, lpInfo2.tickUpper, -lpInfo2.liquidity)
+        );
+
+        // Ensure users received their intended donations.
+        assertApproxEqAbs(key.currency0.balanceOf(lpInfo2.lpAddress), lpInfo2.amount0 + lDonateAmount, 1, "amount0 withdraw mismatch");
+        assertApproxEqAbs(key.currency1.balanceOf(lpInfo2.lpAddress), lpInfo2.amount1 + lDonateAmount, 1, "amount1 withdraw mismatch");
+
+        // Redeem the other position and ensure pool is empty (math precision leaves some wei).
+        vm.prank(lpInfo0.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo0.tickLower, lpInfo0.tickUpper, -lpInfo0.liquidity)
+        );
+        vm.prank(lpInfo1.lpAddress);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(lpInfo1.tickLower, lpInfo1.tickUpper, -lpInfo1.liquidity)
+        );
+        assertLt(key.currency0.balanceOf(address(manager)), 10, "Too much amount0 dust");
+        assertLt(key.currency1.balanceOf(address(manager)), 10, "Too much amount1 dust");
+        assertEq(manager.getLiquidity(key.toId()), 0, "Liquidity left over");
+    }
+
+    function testDonateTick_AboveActiveDirect() external {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
@@ -1032,38 +1222,39 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         LpInfo memory lpInfo1 = _createLpPosition(key, 10, 20, 1e18);
 
         // Donate 2 eth of each asset to the position in range at tick 10 (tickLower = 10).
+        uint256 lDonateAmount = 2 ether;
         uint256[] memory amounts0 = new uint[](1);
-        amounts0[0] = 2 ether;
+        amounts0[0] = lDonateAmount;
         uint256[] memory amounts1 = new uint[](1);
-        amounts1[0] = 2 ether;
+        amounts1[0] = lDonateAmount;
         int24[] memory ticks = new int24[](1);
-        ticks[0] = 10;
-
-        uint256 lBefore0 = key.currency0.balanceOf(address(manager));
-        uint256 lBefore1 = key.currency1.balanceOf(address(manager));
+        ticks[0] = 15;
 
         // Donate & check that balances were pulled to the pool.
+        uint256 lBefore0 = key.currency0.balanceOf(address(manager));
+        uint256 lBefore1 = key.currency1.balanceOf(address(manager));
         donateRouter.donateRange(key, amounts0, amounts1, ticks);
-        assertEq(key.currency0.balanceOf(address(manager)), lBefore0 + 2 ether, "amount0 donation failed");
-        assertEq(key.currency1.balanceOf(address(manager)), lBefore1 + 2 ether, "amount1 donation failed");
+        assertEq(key.currency0.balanceOf(address(manager)), lBefore0 + lDonateAmount, "amount0 donation failed");
+        assertEq(key.currency1.balanceOf(address(manager)), lBefore1 + lDonateAmount, "amount1 donation failed");
 
-        // Close position that received the donate.
-        assertEq(key.currency0.balanceOf(lpInfo1.lpAddress), 0, "non-zero starting amount0");
-        assertEq(key.currency1.balanceOf(lpInfo1.lpAddress), 0, "non-zero starting amount1");
+        // Check te target position received donate proceeds.
         vm.prank(lpInfo1.lpAddress);
         modifyPositionRouter.modifyPosition(
             key, IPoolManager.ModifyPositionParams(lpInfo1.tickLower, lpInfo1.tickUpper, -lpInfo1.liquidity)
         );
+        assertApproxEqAbs(key.currency0.balanceOf(lpInfo1.lpAddress), lpInfo1.amount0 + lDonateAmount, 1, "LP1: amount0 withdraw mismatch");
+        assertApproxEqAbs(key.currency1.balanceOf(lpInfo1.lpAddress), lpInfo1.amount1 + lDonateAmount, 1, "LP1: amount1 withdraw mismatch");
 
-        // Ensure users received their intended donations.
-        assertEq(key.currency0.balanceOf(lpInfo1.lpAddress), lpInfo1.amount0 + 2 ether, "amount0 withdraw mismatch");
-        assertEq(key.currency1.balanceOf(lpInfo1.lpAddress), lpInfo1.amount1 + 2 ether, "amount1 withdraw mismatch");
-
-        // Redeem the other position and ensure pool is empty (math precision leaves some wei).
+        // Check the other position did not receive any donate proceeds.
         vm.prank(lpInfo0.lpAddress);
         modifyPositionRouter.modifyPosition(
             key, IPoolManager.ModifyPositionParams(lpInfo0.tickLower, lpInfo0.tickUpper, -lpInfo0.liquidity)
         );
+        assertApproxEqAbs(key.currency0.balanceOf(lpInfo0.lpAddress), lpInfo0.amount0, 1, "LP0: amount0 withdraw mismatch");
+        assertApproxEqAbs(key.currency1.balanceOf(lpInfo0.lpAddress), lpInfo0.amount1, 1, "LP0: amount1 withdraw mismatch");
+
+
+        // Make sure we emptied the pool.
         assertLt(key.currency0.balanceOf(address(manager)), 10, "Too much amount0 dust");
         assertLt(key.currency1.balanceOf(address(manager)), 10, "Too much amount1 dust");
         assertEq(manager.getLiquidity(key.toId()), 0, "Liquidity left over");
