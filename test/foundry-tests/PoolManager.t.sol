@@ -1407,7 +1407,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(manager.getLiquidity(key.toId()), 0, "Liquidity left over");
     }
 
-    /*
     function testDonateManyRangesBelowCurrentTick() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
@@ -1429,27 +1428,27 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         amounts1[2] = donateAmount;
 
         int24[] memory ticks = new int24[](nPositions);
-        ticks[0] = lpInfo[0].ticks;
-        ticks[1] = lpInfo[1].ticks;
-        ticks[2] = lpInfo[2].ticks - 1;
+        ticks[0] = lpInfo[2].tickLower;
+        ticks[1] = lpInfo[1].tickLower;
+        ticks[2] = lpInfo[0].tickLower;
 
         uint256 liquidityBalance0 = key.currency0.balanceOf(address(manager));
         uint256 liquidityBalance1 = key.currency1.balanceOf(address(manager));
 
-        // donate and make sure all balances were pulled
+        // Donate and make sure all balances were pulled.
         donateRouter.donateRange(key, amounts0, amounts1, ticks);
         assertEq(key.currency0.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance0);
         assertEq(key.currency1.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance1);
 
-        // close all positions
-        for (uint256 i = 0; i < lpInfo.lpAddresses.length; i++) {
-          vm.prank(lpInfo.lpAddresses[i]);
-          modifyPositionRouter.modifyPosition(
-              key, IPoolManager.ModifyPositionParams(-lpInfo.ticks[i], lpInfo.ticks[i], -lpInfo.liquidity[i])
-          );
+        // Close all positions.
+        for (uint256 i = 0; i < lpInfo.length; i++) {
+            vm.prank(lpInfo[i].lpAddress);
+            modifyPositionRouter.modifyPosition(
+                key, IPoolManager.ModifyPositionParams(lpInfo[i].tickLower, lpInfo[i].tickUpper, -lpInfo[i].liquidity)
+            );
         }
 
-        // math imprecision leaves wei in pool
+        // Ensure the pool was emptied (some wei rounding imprecision may remain).
         assertLt(key.currency0.balanceOf(address(manager)), 10);
         assertLt(key.currency1.balanceOf(address(manager)), 10);
         assertEq(manager.getLiquidity(key.toId()), 0);
@@ -1462,7 +1461,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         uint256 nPositions = 3;
         uint256 donateAmount = 3 ether;
-        LpInfo memory lpInfo = _createLpPositionsSymmetric(key, nPositions);
+        LpInfo[] memory lpInfo = _createLpPositionsSymmetric(key, nPositions);
 
         uint256[] memory amounts0 = new uint[](nPositions);
         amounts0[0] = donateAmount;
@@ -1475,27 +1474,27 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         amounts1[2] = donateAmount;
 
         int24[] memory ticks = new int24[](nPositions);
-        ticks[0] = lpInfo.ticks[0];
-        ticks[1] = lpInfo.ticks[1];
-        ticks[2] = lpInfo.ticks[2] - 1;
+        ticks[0] = lpInfo[0].tickUpper;
+        ticks[1] = lpInfo[1].tickUpper;
+        ticks[2] = lpInfo[2].tickUpper - 1;
 
         uint256 liquidityBalance0 = key.currency0.balanceOf(address(manager));
         uint256 liquidityBalance1 = key.currency1.balanceOf(address(manager));
 
-        // donate and make sure all balances were pulled
+        // Donate and make sure all balances were pulled.
         donateRouter.donateRange(key, amounts0, amounts1, ticks);
         assertEq(key.currency0.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance0);
         assertEq(key.currency1.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance1);
 
-        // close all positions
-        for (uint256 i = 0; i < lpInfo.lpAddresses.length; i++) {
-          vm.prank(lpInfo.lpAddresses[i]);
-          modifyPositionRouter.modifyPosition(
-              key, IPoolManager.ModifyPositionParams(-lpInfo.ticks[i], lpInfo.ticks[i], -lpInfo.liquidity[i])
-          );
+        // Close all positions.
+        for (uint256 i = 0; i < lpInfo.length; i++) {
+            vm.prank(lpInfo[i].lpAddress);
+            modifyPositionRouter.modifyPosition(
+                key, IPoolManager.ModifyPositionParams(lpInfo[i].tickLower, lpInfo[i].tickUpper, -lpInfo[i].liquidity)
+            );
         }
 
-        // math imprecision leaves wei in pool
+        // Ensure the pool was emptied (some wei rounding imprecision may remain).
         assertLt(key.currency0.balanceOf(address(manager)), 10);
         assertLt(key.currency1.balanceOf(address(manager)), 10);
         assertEq(manager.getLiquidity(key.toId()), 0);
@@ -1508,7 +1507,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         uint256 nPositions = 3;
         uint256 donateAmount = 3 ether;
-        LpInfo memory lpInfo = _createLpPositionsSymmetric(key, nPositions);
+        LpInfo[] memory lpInfo = _createLpPositionsSymmetric(key, nPositions);
 
         uint256[] memory amounts0 = new uint[](nPositions);
         amounts0[0] = donateAmount;
@@ -1521,32 +1520,31 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         amounts1[2] = donateAmount;
 
         int24[] memory ticks = new int24[](nPositions);
-        ticks[0] = lpInfo.ticks[0];
+        ticks[0] = lpInfo[0].tickLower;
         ticks[1] = 0;
-        ticks[2] = -lpInfo.ticks[0];
+        ticks[2] = lpInfo[0].tickUpper;
 
         uint256 liquidityBalance0 = key.currency0.balanceOf(address(manager));
         uint256 liquidityBalance1 = key.currency1.balanceOf(address(manager));
 
-        // donate and make sure all balances were pulled
+        // Donate and make sure all balances were pulled.
         donateRouter.donateRange(key, amounts0, amounts1, ticks);
         assertEq(key.currency0.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance0);
         assertEq(key.currency1.balanceOf(address(manager)), donateAmount * nPositions + liquidityBalance1);
 
-        // close all positions
-        for (uint256 i = 0; i < lpInfo.lpAddresses.length; i++) {
-          vm.prank(lpInfo.lpAddresses[i]);
-          modifyPositionRouter.modifyPosition(
-              key, IPoolManager.ModifyPositionParams(-lpInfo.ticks[i], lpInfo.ticks[i], -lpInfo.liquidity[i])
-          );
+        // Close all positions.
+        for (uint256 i = 0; i < lpInfo.length; i++) {
+            vm.prank(lpInfo[i].lpAddress);
+            modifyPositionRouter.modifyPosition(
+                key, IPoolManager.ModifyPositionParams(lpInfo[i].tickLower, lpInfo[i].tickUpper, -lpInfo[i].liquidity)
+            );
         }
 
-        // math imprecision leaves wei in pool
+        // Ensure the pool was emptied (some wei rounding imprecision may remain).
         assertLt(key.currency0.balanceOf(address(manager)), 10);
         assertLt(key.currency1.balanceOf(address(manager)), 10);
         assertEq(manager.getLiquidity(key.toId()), 0);
     }
-    */
 
     function testNoOpLockIsOk() public {
         snapStart("gas overhead of no-op lock");
@@ -1654,42 +1652,25 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         int24 tickUpper;
     }
 
-    // function _createLpPositionsSymmetric(PoolKey memory key, uint256 nPositions)
-    //     internal
-    //     returns (LpInfo[] memory lpInfo)
-    // {
-    //     lpInfo = new LpInfo[](nPositions);
-    //     for (uint256 i = 0; i < nPositions; i++) {
-    //         int24 tick = key.tickSpacing * int24(uint24(i + 1));
+    function _createLpPositionsSymmetric(PoolKey memory key, uint256 nPositions)
+        internal
+        returns (LpInfo[] memory lpInfo)
+    {
+        lpInfo = new LpInfo[](nPositions);
+        for (uint256 i = 0; i < nPositions; i++) {
+            int24 tick = key.tickSpacing * int24(uint24(i + 1));
 
-    //         lpInfo[i] = _createLpPositionSymmetric(key, tick);
-    //     }
-    // }
+            lpInfo[i] = _createLpPositionSymmetric(key, tick);
+        }
+    }
 
-    // function _createLpPositionSymmetric(PoolKey memory key, int24 tick) private returns (LpInfo memory lpInfo) {
-    //     address lpAddr = address(uint160(uint24(tick + 1)));
-    //     uint256 amount = 1 ether;
-    //     int256 liquidityAmount =
-    //         int256(uint256(getLiquidityForAmount0(SQRT_RATIO_1_1, TickMath.getSqrtRatioAtTick(tick), amount)));
+    function _createLpPositionSymmetric(PoolKey memory key, int24 tick) private returns (LpInfo memory lpInfo) {
+        uint256 amount = 1 ether;
+        int256 liquidityAmount =
+            int256(uint256(getLiquidityForAmount0(SQRT_RATIO_1_1, TickMath.getSqrtRatioAtTick(tick), amount)));
 
-    //     MockERC20(Currency.unwrap(currency0)).mint(lpAddr, amount);
-    //     MockERC20(Currency.unwrap(currency1)).mint(lpAddr, amount);
-
-    //     vm.startPrank(lpAddr);
-    //     MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), amount);
-    //     MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), amount);
-    //     BalanceDelta delta =
-    //         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-tick, tick, liquidityAmount));
-    //     vm.stopPrank();
-
-    //     lpInfo = LpInfo({
-    //         lpAddress: lpAddr,
-    //         liquidity: liquidityAmount,
-    //         lpAmount0: uint256(uint128(delta.amount0())),
-    //         lpAmount1: uint256(uint128(delta.amount1())),
-    //         tick: tick
-    //     });
-    // }
+        lpInfo = _createLpPosition(key, -tick, tick, liquidityAmount);
+    }
 
     function _createLpPosition(PoolKey memory key, int24 tickLower, int24 tickUpper, int256 liquidity)
         private
