@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
-import "forge-std/console.sol";
 import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
 import {Position} from "./Position.sol";
@@ -582,20 +581,12 @@ library Pool {
         state.liquidityAtTick = self.liquidity;
         state.tickCurrent = self.slot0.tick;
 
-        console.log("current tick", uint24(state.tickCurrent));
-        for (uint256 i = 0; i < ticks.length; i++) {
-            console.log("ticks[i]", uint24(ticks[i]));
-            console.log("amount0[i]", amount0[i]);
-            console.log("amount1[i]", amount1[i]);
-        }
-
         if (ticks[0] < TickMath.MIN_TICK) revert TickListMisordered();
 
         (state.tickNext, state.initialized) =
             self.tickBitmap.nextInitializedTickWithinOneWord(state.tickCurrent, tickSpacing, true);
 
         while (state.tickNext > ticks[0]) {
-            console.log("WALKING DOWN");
             // if the tick is initialized, update state.liquidityAtTick
             if (state.initialized) {
                 int128 liquidityNet = self.ticks[state.tickNext].liquidityNet;
@@ -623,7 +614,6 @@ library Pool {
         state.tickNext = ticks[0];
 
         while (state.tickNext <= state.tickCurrent) {
-            console.log("WALKING BACK TO ACTIVE");
             if (state.initialized) {
                 TickInfo storage info = self.ticks[state.tickNext];
 
@@ -655,7 +645,6 @@ library Pool {
 
             // check if we crossed any of the ticks that we are distributing fees to
             while (i < ticks.length && ticks[i] < state.tickNext && ticks[i] <= state.tickCurrent) {
-                console.log("DONATING");
                 if (i + 1 < ticks.length && ticks[i] >= ticks[i + 1]) revert TickListMisordered();
                 if (state.liquidityAtTick == 0) revert NoLiquidityToReceiveFees();
                 state.cumulativeAmount0 += amount0[i];
@@ -680,8 +669,6 @@ library Pool {
             self.tickBitmap.nextInitializedTickWithinOneWord(state.tickCurrent, tickSpacing, false);
 
         while (state.tickNext <= ticks[ticks.length - 1]) {
-            console.log("WALKING UP");
-            console.logInt(state.tickNext);
             // if the tick is initialized, update state.liquidityAtTick
             if (state.initialized) {
                 int128 liquidityNet = self.ticks[state.tickNext].liquidityNet;
@@ -706,8 +693,6 @@ library Pool {
 
         bool exhausted = false;
         while (state.tickNext > state.tickCurrent) {
-            console.log("WALKING BACK TO ACTIVE");
-            console.logInt(state.tickNext);
             if (state.initialized) {
                 TickInfo storage info = self.ticks[state.tickNext];
 
@@ -739,12 +724,7 @@ library Pool {
             }
 
             // check if we crossed any of the ticks that we are distributing fees to
-            console.log("=== CHECK DONATE ===");
-            console.logInt(ticks[i]);
-            console.logInt(state.tickNext);
-            console.logInt(state.tickCurrent);
             while (!exhausted && ticks[i] >= state.tickNext && ticks[i] > state.tickCurrent) {
-                console.log("DONATING");
                 if (i >= 1 && ticks[i - 1] >= ticks[i]) revert TickListMisordered();
                 if (state.liquidityAtTick == 0) revert NoLiquidityToReceiveFees();
                 state.cumulativeAmount0 += amount0[i];
