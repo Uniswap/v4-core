@@ -10,5 +10,7 @@ solc = "./bin/solc"
 
 [profile.ci]
 fuzz_runs = 100000
+solc = "./bin/solc"
+cancun = true
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
