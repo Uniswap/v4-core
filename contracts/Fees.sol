@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
+import {console2} from "forge-std/console2.sol";
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
 import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
@@ -28,7 +29,7 @@ abstract contract Fees is IFees, Owned {
         controllerGasLimit = _controllerGasLimit;
     }
 
-    function _fetchProtocolFees(PoolKey memory key) internal view returns (uint24 protocolFees) {
+    function _fetchProtocolFees(PoolKey memory key) internal returns (uint24 protocolFees) {
         uint16 protocolSwapFee;
         uint16 protocolWithdrawFee;
         if (address(protocolFeeController) != address(0)) {
@@ -36,16 +37,40 @@ abstract contract Fees is IFees, Owned {
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
             // in mind.
             if (gasleft() < controllerGasLimit) revert ProtocolFeeCannotBeFetched();
-            try protocolFeeController.protocolFeesForPool{gas: controllerGasLimit}(key) returns (
-                uint24 updatedProtocolFees
-            ) {
-                protocolSwapFee = uint16(updatedProtocolFees >> 12);
-                protocolWithdrawFee = uint16(updatedProtocolFees & 0xFFF);
 
-                protocolFees = updatedProtocolFees;
-            } catch {}
-            _checkProtocolFee(protocolSwapFee);
-            _checkProtocolFee(protocolWithdrawFee);
+            uint24 updatedProtocolFee;
+            uint256 _controllerGasLimit = controllerGasLimit;
+            address controllerAddress = address(protocolFeeController);
+
+            (bool _success, bytes memory data) = controllerAddress.call{gas: controllerGasLimit}(
+                abi.encodeWithSelector(IProtocolFeeController.protocolFeesForPool.selector, key)
+            );
+
+            console2.logBytes(data);
+            console2.log(data.length);
+
+            if(data.length > 32) return 0;
+
+            bytes32 _data;
+            assembly {
+                // get first word from return data
+                _data := mload(add(data, 0x20))
+            }
+            // mask dirty bits from data, keeping 24 bits
+            uint24 protocolFee = uint24(uint256(_data) & 0xFFFFFF);
+            bool noDirtyBits = uint256(protocolFee) == uint256(_data);
+
+            console2.logBytes32(_data);
+            console2.log(protocolFee);
+            console2.logBool(noDirtyBits);
+
+            protocolSwapFee = uint16(protocolFee >> 12);
+            protocolWithdrawFee = uint16(protocolFee & 0xFFF);
+
+            if(noDirtyBits && _checkProtocolFees(protocolFees)) {
+                return protocolFees;
+            }
+            return 0;
         }
     }
 
@@ -61,19 +86,47 @@ abstract contract Fees is IFees, Owned {
         }
     }
 
-    /// @dev Only the lower 12 bits are used here to encode the fee denominator.
-    function _checkProtocolFee(uint16 fee) internal pure {
-        if (fee != 0) {
-            uint16 fee0 = fee % 64;
-            uint16 fee1 = fee >> 6;
-            // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-            if (
-                (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
-            ) {
-                revert FeeTooLarge();
+    function _checkProtocolFees(uint24 protocolFees) internal pure returns (bool) {
+        if (protocolFees != 0) {
+            uint16 protocolSwapFee = uint16(protocolFees >> 12);
+            uint16 protocolWithdrawFee = uint16(protocolFees & 0xFFF);
+            if (protocolSwapFee != 0) {
+                uint16 fee0 = protocolSwapFee % 64;
+                uint16 fee1 = protocolSwapFee >> 6;
+                // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
+                if (
+                    (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
+                ) {
+                    return false;
+                }
+            }
+            if (protocolWithdrawFee != 0) {
+                uint16 fee0 = protocolWithdrawFee % 64;
+                uint16 fee1 = protocolWithdrawFee >> 6;
+                // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
+                if (
+                    (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
+                ) {
+                    return false;
+                }
             }
         }
+        return true;
     }
+
+    // /// @dev Only the lower 12 bits are used here to encode the fee denominator.
+    // function _checkProtocolFee(uint16 fee) internal pure {
+    //     if (fee != 0) {
+    //         uint16 fee0 = fee % 64;
+    //         uint16 fee1 = fee >> 6;
+    //         // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
+    //         if (
+    //             (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
+    //         ) {
+    //             revert FeeTooLarge();
+    //         }
+    //     }
+    // }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
         protocolFeeController = controller;
