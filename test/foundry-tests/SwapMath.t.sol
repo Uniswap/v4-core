@@ -7,7 +7,7 @@ import {SqrtPriceMath} from "../../contracts/libraries/SqrtPriceMath.sol";
 import {SwapMath} from "../../contracts/libraries/SwapMath.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
-contract swapMathTest is Test, GasSnapshot {
+contract SwapMathTest is Test, GasSnapshot {
     uint160 private constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
     uint160 private constant SQRT_RATIO_99_100 = 78831026366734652303669917531;
     uint160 private constant SQRT_RATIO_99_1000 = 24928559360766947368818086097;
@@ -16,7 +16,7 @@ contract swapMathTest is Test, GasSnapshot {
     uint160 private constant SQRT_RATIO_1010_100 = 251791039410471229173201122529;
     uint160 private constant SQRT_RATIO_10000_100 = 792281625142643375935439503360;
 
-    function testExactAmountInThatGetsCappedAtPriceTargetInOneForZero() public {
+    function test_exactAmountIn_oneForZero_thatGetsCappedAtPriceTargetIn() public {
         uint160 priceTarget = SQRT_RATIO_101_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
@@ -39,7 +39,7 @@ contract swapMathTest is Test, GasSnapshot {
         assert(sqrtQ < priceAfterWholeInputAmount);
     }
 
-    function testExactAmountOutThatGetsCappedAtPriceTargetInOneForZero() public {
+    function test_exactAmountOut_oneForZero_thatGetsCappedAtPriceTargetIn() public {
         uint160 priceTarget = SQRT_RATIO_101_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
@@ -62,7 +62,7 @@ contract swapMathTest is Test, GasSnapshot {
         assert(sqrtQ < priceAfterWholeInputAmount);
     }
 
-    function testExactAmountInThatIsFullySpentInOneForZero() public {
+    function test_exactAmountIn_oneForZero_thatIsFullySpentIn() public {
         uint160 priceTarget = SQRT_RATIO_1000_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
@@ -85,7 +85,7 @@ contract swapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, priceAfterWholeInputAmountLessFee);
     }
 
-    function testExactAmountOutThatIsFullyReceivedInOneForZero() public {
+    function test_exactAmountOut_oneForZero_thatIsFullyReceivedIn() public {
         uint160 priceTarget = SQRT_RATIO_10000_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
@@ -107,7 +107,7 @@ contract swapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, priceAfterWholeOutputAmount);
     }
 
-    function testAmountOutIsCappedAtTheDesiredAmountOut() public {
+    function test_amountOut_isCappedAtTheDesiredAmountOut() public {
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) = SwapMath.computeSwapStep(
             417332158212080721273783715441582, 1452870262520218020823638996, 159344665391607089467575320103, -1, 1
         );
@@ -118,7 +118,7 @@ contract swapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, 417332158212080721273783715441581);
     }
 
-    function testTargetPriceOf1UsesPartialInputAmount() public {
+    function test_targetPriceOf1UsesPartialInputAmount() public {
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
             SwapMath.computeSwapStep(2, 1, 1, 3915081100057732413702495386755767, 1);
         assertEq(amountIn, 39614081257132168796771975168);
@@ -128,7 +128,7 @@ contract swapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, 1);
     }
 
-    function testEntireInputAmountTakenAsFee() public {
+    function test_entireInputAmountTakenAsFee() public {
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
             SwapMath.computeSwapStep(2413, 79887613182836312, 1985041575832132834610021537970, 10, 1872);
 
@@ -138,7 +138,7 @@ contract swapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, 2413);
     }
 
-    function testHandlesIntermediateInsufficientLiquidityInZeroForOneExactOutputCase() public {
+    function test_zeroForOne_handlesIntermediateInsufficientLiquidityInExactOutputCase() public {
         uint160 sqrtP = 20282409603651670423947251286016;
         uint160 sqrtPTarget = (sqrtP * 11) / 10;
         uint128 liquidity = 1024;
@@ -156,7 +156,7 @@ contract swapMathTest is Test, GasSnapshot {
         assertEq(feeAmount, 79);
     }
 
-    function testHandlesIntermediateInsufficientLiquidityInOneForZeroExactOutputCase() public {
+    function test_oneForZero_handlesIntermediateInsufficientLiquidityInExactOutputCase() public {
         uint160 sqrtP = 20282409603651670423947251286016;
         uint160 sqrtPTarget = (sqrtP * 9) / 10;
         uint128 liquidity = 1024;
@@ -174,7 +174,7 @@ contract swapMathTest is Test, GasSnapshot {
         assertEq(feeAmount, 1);
     }
 
-    function testCheckComputeSwapStepInvariants(
+    function test_computeSwapStep_Invariants(
         uint160 sqrtPriceRaw,
         uint160 sqrtPriceTargetRaw,
         uint128 liquidity,
@@ -222,49 +222,49 @@ contract swapMathTest is Test, GasSnapshot {
         }
     }
 
-    function testSwapOneForZeroExactInCapped() public {
+    function test_swapOneForZero_exactInCapped() public {
         snapStart("SwapMath_oneForZero_exactInCapped");
         SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, 1 ether, 600);
         snapEnd();
     }
 
-    function testSwapZeroForOneExactInCapped() public {
+    function test_swapZeroForOne_exactInCapped() public {
         snapStart("SwapMath_zeroForOne_exactInCapped");
         SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, 1 ether, 600);
         snapEnd();
     }
 
-    function testSwapOneForZeroExactOutCapped() public {
+    function test_swapOneForZero_exactOutCapped() public {
         snapStart("SwapMath_oneForZero_exactOutCapped");
         SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, (1 ether) * -1, 600);
         snapEnd();
     }
 
-    function testSwapZeroForOneExactOutCapped() public {
+    function test_swapZeroForOne_exactOutCapped() public {
         snapStart("SwapMath_zeroForOne_exactOutCapped");
         SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, (1 ether) * -1, 600);
         snapEnd();
     }
 
-    function testSwapOneForZeroExactInPartial() public {
+    function test_swapOneForZero_exactInPartial() public {
         snapStart("SwapMath_oneForZero_exactInPartial");
         SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000, 600);
         snapEnd();
     }
 
-    function testSwapZeroForOneExactInPartial() public {
+    function test_swapZeroForOne_exactInPartial() public {
         snapStart("SwapMath_zeroForOne_exactInPartial");
         SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000, 600);
         snapEnd();
     }
 
-    function testSwapOneForZeroExactOutPartial() public {
+    function test_swapOneForZero_exactOutPartial() public {
         snapStart("SwapMath_oneForZero_exactOutPartial");
         SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000, 600);
         snapEnd();
     }
 
-    function testSwapZeroForOneExactOutPartial() public {
+    function test_swapZeroForOne_exactOutPartial() public {
         snapStart("SwapMath_zeroForOne_exactOutPartial");
         SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000, 600);
         snapEnd();
