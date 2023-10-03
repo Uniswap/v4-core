@@ -121,7 +121,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
         PoolId id = key.toId();
         uint24 protocolFees = _fetchProtocolFees(key);
-        _checkProtocolFees(protocolFees);
         uint24 hookFees = _fetchHookFees(key);
         tick = pools[id].initialize(sqrtPriceX96, protocolFees, hookFees);
 
@@ -380,7 +379,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     function setProtocolFees(PoolKey memory key) external {
         uint24 newProtocolFees = _fetchProtocolFees(key);
-        _checkProtocolFees(newProtocolFees);
+        if(!_isValidProtocolFees(newProtocolFees)) revert FeeTooLarge();
         PoolId id = key.toId();
         pools[id].setProtocolFees(newProtocolFees);
         emit ProtocolFeeUpdated(id, newProtocolFees);

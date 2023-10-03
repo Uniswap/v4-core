@@ -28,7 +28,7 @@ abstract contract Fees is IFees, Owned {
         controllerGasLimit = _controllerGasLimit;
     }
 
-    /// @dev You must call _checkProtocolFees after calling this function.
+    /// @dev You must call _isValidProtocolFees after calling this function.
     function _fetchProtocolFees(PoolKey memory key) internal returns (uint24 protocolFees) {
         uint16 protocolSwapFee;
         uint16 protocolWithdrawFee;
@@ -54,7 +54,7 @@ abstract contract Fees is IFees, Owned {
             protocolSwapFee = uint16(protocolFees >> 12);
             protocolWithdrawFee = uint16(protocolFees & 0xFFF);
 
-            if (!noDirtyBits) {
+            if (!noDirtyBits || !_isValidProtocolFees(protocolFees)) {
                 return 0;
             }
         }
@@ -72,7 +72,7 @@ abstract contract Fees is IFees, Owned {
         }
     }
 
-    function _checkProtocolFees(uint24 protocolFees) internal pure {
+    function _isValidProtocolFees(uint24 protocolFees) internal pure returns (bool) {
         if (protocolFees != 0) {
             uint16 protocolSwapFee = uint16(protocolFees >> 12);
             uint16 protocolWithdrawFee = uint16(protocolFees & 0xFFF);
@@ -84,7 +84,7 @@ abstract contract Fees is IFees, Owned {
                     (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR)
                         || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
                 ) {
-                    revert FeeTooLarge();
+                    return false;
                 }
             }
             if (protocolWithdrawFee != 0) {
@@ -95,10 +95,11 @@ abstract contract Fees is IFees, Owned {
                     (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR)
                         || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
                 ) {
-                    revert FeeTooLarge();
+                    return false;
                 }
             }
         }
+        return true;
     }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
