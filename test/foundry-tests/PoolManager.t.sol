@@ -30,7 +30,8 @@ import {
     ProtocolFeeControllerTest,
     RevertingProtocolFeeControllerTest,
     OverflowProtocolFeeControllerTest,
-    InvalidReturnTypeProtocolFeeControllerTest
+    InvalidReturnTypeProtocolFeeControllerTest,
+    InvalidReturnSizeProtocolFeeControllerTest
 } from "../../contracts/test/ProtocolFeeControllerTest.sol";
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
@@ -294,6 +295,29 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
 
         manager.setProtocolFeeController(new InvalidReturnTypeProtocolFeeControllerTest());
+        // expect initialize to succeed
+        vm.expectEmit(true, true, true, true);
+        emit Initialize(key.toId(), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        // protocol fees should default to 0
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees >> 12, 0);
+        assertEq(slot0.protocolFees & 0xFFF, 0);
+    }
+
+    function testPoolManagerInitializeSucceedsWithWrongReturnSizeFeeController(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        address hookEmptyAddr = EMPTY_HOOKS;
+        MockHooks impl = new MockHooks();
+        vm.etch(hookEmptyAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
+
+        manager.setProtocolFeeController(new InvalidReturnSizeProtocolFeeControllerTest());
         // expect initialize to succeed
         vm.expectEmit(true, true, true, true);
         emit Initialize(key.toId(), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);

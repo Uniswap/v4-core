@@ -52,3 +52,15 @@ contract InvalidReturnTypeProtocolFeeControllerTest is IProtocolFeeController {
         }
     }
 }
+
+contract InvalidReturnSizeProtocolFeeControllerTest is IProtocolFeeController {
+    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
+        address a = address(this);
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr, a)
+            mstore(add(ptr, 0x20), a)
+            return(ptr, 0x20)
+        }
+    }
+}
