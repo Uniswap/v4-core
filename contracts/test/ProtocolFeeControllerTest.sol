@@ -25,3 +25,30 @@ contract ProtocolFeeControllerTest is IProtocolFeeController {
         withdrawFeeForPool[id] = fee;
     }
 }
+
+contract RevertingProtocolFeeControllerTest is IProtocolFeeController {
+    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
+        revert();
+    }
+}
+
+contract OverflowProtocolFeeControllerTest is IProtocolFeeController {
+    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr, 0xFFFFAAA001)
+            return(ptr, 0x20)
+        }
+    }
+}
+
+contract InvalidReturnTypeProtocolFeeControllerTest is IProtocolFeeController {
+    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
+        address a = address(this);
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr, a)
+            return(ptr, 0x20)
+        }
+    }
+}

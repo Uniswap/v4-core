@@ -26,22 +26,15 @@ import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
 import {PoolId, PoolIdLibrary} from "../../contracts/types/PoolId.sol";
-import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
-import {RevertingProtocolFeeControllerTest} from "../../contracts/test/RevertingProtocolFeeControllerTest.sol";
+import {
+    ProtocolFeeControllerTest,
+    RevertingProtocolFeeControllerTest,
+    OverflowProtocolFeeControllerTest,
+    InvalidReturnTypeProtocolFeeControllerTest
+} from "../../contracts/test/ProtocolFeeControllerTest.sol";
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 import {IProtocolFeeController} from "../../contracts/interfaces/IProtocolFeeController.sol";
-
-
-contract MaliciousProtocolFeeController is IProtocolFeeController {
-    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
-        assembly {
-            let ptr := mload(0x40)
-            mstore(ptr, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
-            return(ptr, 0x20)
-        }
-    }
-}
 
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
@@ -84,8 +77,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     PoolSwapTest swapRouter;
     PoolLockTest lockTest;
     ProtocolFeeControllerTest protocolFeeController;
-    RevertingProtocolFeeControllerTest revertingProtocolFeeController;
-    MaliciousProtocolFeeController maliciousProtocolFeeController;
 
     address ADDRESS_ZERO = address(0);
     address EMPTY_HOOKS = address(0xf000000000000000000000000000000000000000);
@@ -101,8 +92,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         lockTest = new PoolLockTest(manager);
         swapRouter = new PoolSwapTest(manager);
         protocolFeeController = new ProtocolFeeControllerTest();
-        revertingProtocolFeeController = new RevertingProtocolFeeControllerTest();
-        maliciousProtocolFeeController = new MaliciousProtocolFeeController();
 
         MockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
         MockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ether);
@@ -257,7 +246,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
 
-        manager.setProtocolFeeController(revertingProtocolFeeController);
+        manager.setProtocolFeeController(new RevertingProtocolFeeControllerTest());
         // expect initialize to succeed even though the controller reverts
         vm.expectEmit(true, true, true, true);
         emit Initialize(key.toId(), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
@@ -267,8 +256,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(slot0.protocolFees >> 12, 0);
     }
 
-    // this breaks
-    function testPoolManagerInitializeSucceedsWithMaliciousFeeController(uint160 sqrtPriceX96) public {
+    function testPoolManagerInitializeSucceedsWithOverflowFeeController(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
@@ -281,14 +269,36 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
 
-        manager.setProtocolFeeController(maliciousProtocolFeeController);
-        // expect initialize to succeed even though the controller reverts
+        manager.setProtocolFeeController(new OverflowProtocolFeeControllerTest());
+        // expect initialize to succeed
         vm.expectEmit(true, true, true, true);
         emit Initialize(key.toId(), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
         manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFees, 1);
+        assertEq(slot0.protocolFees >> 12, 0);
+    }
+
+    function testPoolManagerInitializeSucceedsWithWrongReturnTypeFeeController(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        address hookEmptyAddr = EMPTY_HOOKS;
+        MockHooks impl = new MockHooks();
+        vm.etch(hookEmptyAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
+
+        manager.setProtocolFeeController(new InvalidReturnTypeProtocolFeeControllerTest());
+        // expect initialize to succeed
+        vm.expectEmit(true, true, true, true);
+        emit Initialize(key.toId(), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        // protocol fees should default to 0
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees >> 12, 0);
     }
 
     function testPoolManagerInitializeSucceedsAndSetsHookFeeIfControllerReverts(uint160 sqrtPriceX96) public {
@@ -311,7 +321,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             tickSpacing: 60
         });
 
-        manager.setProtocolFeeController(revertingProtocolFeeController);
+        manager.setProtocolFeeController(new RevertingProtocolFeeControllerTest());
         // expect initialize to succeed even though the controller reverts
         int24 tick = manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
