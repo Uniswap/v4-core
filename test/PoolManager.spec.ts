@@ -107,17 +107,6 @@ describe('PoolManager', () => {
     expect(((await waffle.provider.getCode(manager.address)).length - 2) / 2).to.matchSnapshot()
   })
 
-  describe('#setProtocolFeeController', () => {
-    it('allows the owner to set a fee controller', async () => {
-      expect(await manager.protocolFeeController()).to.be.eq(ADDRESS_ZERO)
-      await expect(manager.setProtocolFeeController(feeControllerTest.address)).to.emit(
-        manager,
-        'ProtocolFeeControllerUpdated'
-      )
-      expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
-    })
-  })
-
   describe('#take', () => {
     it('fails if no liquidity', async () => {
       await tokens.currency0.connect(wallet).transfer(ADDRESS_ZERO, constants.MaxUint256.div(2))
@@ -148,12 +137,16 @@ describe('PoolManager', () => {
         tickSpacing: 10,
       }
       await invalidToken.approve(modifyPositionTest.address, constants.MaxUint256)
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
-      await modifyPositionTest.modifyPosition(key, {
-        tickLower: -60,
-        tickUpper: 60,
-        liquidityDelta: 100,
-      })
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1), '0x00')
+      await modifyPositionTest.modifyPosition(
+        key,
+        {
+          tickLower: -60,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        },
+        '0x00'
+      )
 
       await tokens.currency0.connect(wallet).approve(takeTest.address, MaxUint128)
       await invalidToken.connect(wallet).approve(takeTest.address, MaxUint128)
@@ -172,12 +165,16 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
       }
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
-      await modifyPositionTest.modifyPosition(key, {
-        tickLower: -60,
-        tickUpper: 60,
-        liquidityDelta: 100,
-      })
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1), '0x00')
+      await modifyPositionTest.modifyPosition(
+        key,
+        {
+          tickLower: -60,
+          tickUpper: 60,
+          liquidityDelta: 100,
+        },
+        '0x00'
+      )
 
       await tokens.currency0.connect(wallet).approve(takeTest.address, MaxUint128)
 
@@ -193,7 +190,7 @@ describe('PoolManager', () => {
         hooks: ADDRESS_ZERO,
         tickSpacing: 10,
       }
-      await manager.initialize(key, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(key, encodeSqrtPriceX96(1, 1), '0x00')
       await modifyPositionTest.modifyPosition(
         key,
         {
@@ -201,6 +198,7 @@ describe('PoolManager', () => {
           tickUpper: 60,
           liquidityDelta: 100,
         },
+        '0x00',
         { value: 100 }
       )
 
@@ -224,26 +222,26 @@ describe('PoolManager', () => {
       }
       const poolID = getPoolId(poolKey)
 
-      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1))
+      await manager.initialize(poolKey, encodeSqrtPriceX96(10, 1), '0x00')
 
-      var protocolSwapFee: number
+      var protocolFees: number
       ;({
-        slot0: { protocolSwapFee },
+        slot0: { protocolFees },
       } = await manager.pools(getPoolId(poolKey)))
-      expect(protocolSwapFee).to.eq(0)
+      expect(protocolFees).to.eq(0)
 
       await manager.setProtocolFeeController(feeControllerTest.address)
       expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
-      const poolProtocolFee = 4
-      await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
+      const poolProtocolSwapFee = 4
+      await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolSwapFee)
 
       await expect(manager.setProtocolFees(poolKey))
         .to.emit(manager, 'ProtocolFeeUpdated')
-        .withArgs(poolID, poolProtocolFee, 0)
+        .withArgs(poolID, BigNumber.from(poolProtocolSwapFee).shl(12))
       ;({
-        slot0: { protocolSwapFee },
+        slot0: { protocolFees },
       } = await manager.pools(poolID))
-      expect(protocolSwapFee).to.eq(poolProtocolFee)
+      expect(protocolFees).to.eq(BigNumber.from(poolProtocolSwapFee).shl(12))
     })
   })
 
@@ -260,23 +258,27 @@ describe('PoolManager', () => {
         // set the controller, and set the pool's protocol fee
         await manager.setProtocolFeeController(feeControllerTest.address)
         expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
-        const poolProtocolFee = 68 // 0x 0100 0100
+        const poolProtocolFee = 260 // 0x 0001 00 00 0100
         const poolID = getPoolId(poolKey)
         await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
-        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
         const {
-          slot0: { protocolSwapFee },
+          slot0: { protocolFees },
         } = await manager.pools(getPoolId(poolKey))
-        expect(protocolSwapFee).to.eq(poolProtocolFee)
+        expect(protocolFees).to.eq(BigNumber.from(poolProtocolFee).shl(12))
 
         // add liquidity around the initial price
-        await modifyPositionTest.modifyPosition(poolKey, {
-          tickLower: -120,
-          tickUpper: 120,
-          liquidityDelta: expandTo18Decimals(10),
-        })
+        await modifyPositionTest.modifyPosition(
+          poolKey,
+          {
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: expandTo18Decimals(10),
+          },
+          '0x00'
+        )
       })
 
       it('allows the owner to collect accumulated fees', async () => {
@@ -296,7 +298,8 @@ describe('PoolManager', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
 
         const expectedFees = 7
@@ -338,7 +341,8 @@ describe('PoolManager', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
 
         const expectedFees = 7
@@ -376,16 +380,16 @@ describe('PoolManager', () => {
         // set the controller, and set the pool's protocol fee
         await manager.setProtocolFeeController(feeControllerTest.address)
         expect(await manager.protocolFeeController()).to.be.eq(feeControllerTest.address)
-        const poolProtocolFee = 68 // 0x 0100 0100
+        const poolProtocolFee = 260 // 0x 0001 00 00 0100
         const poolID = getPoolId(poolKey)
         await feeControllerTest.setSwapFeeForPool(poolID, poolProtocolFee)
 
         // initialize the pool with the fee
-        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+        await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
         const {
-          slot0: { protocolSwapFee },
+          slot0: { protocolFees },
         } = await manager.pools(getPoolId(poolKey))
-        expect(protocolSwapFee).to.eq(poolProtocolFee)
+        expect(protocolFees).to.eq(BigNumber.from(poolProtocolFee).shl(12))
 
         // add liquidity around the initial price
         await modifyPositionTest.modifyPosition(
@@ -395,6 +399,7 @@ describe('PoolManager', () => {
             tickUpper: 120,
             liquidityDelta: expandTo18Decimals(10),
           },
+          '0x00',
           {
             value: expandTo18Decimals(10),
           }
@@ -419,6 +424,7 @@ describe('PoolManager', () => {
             withdrawTokens: true,
             settleUsingTransfer: true,
           },
+          '0x00',
           {
             value: 10000,
           }
@@ -464,6 +470,7 @@ describe('PoolManager', () => {
             withdrawTokens: true,
             settleUsingTransfer: true,
           },
+          '0x00',
           {
             value: 10000,
           }

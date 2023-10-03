@@ -90,7 +90,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const swapToHigherPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -104,7 +105,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -118,24 +120,29 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const modifyPosition: ModifyPositionFunction = (tickLower, tickUpper, liquidityDelta) => {
-        return modifyPositionTest.modifyPosition(poolKey, {
-          tickLower,
-          tickUpper,
-          liquidityDelta,
-        })
+        return modifyPositionTest.modifyPosition(
+          poolKey,
+          {
+            tickLower,
+            tickUpper,
+            liquidityDelta,
+          },
+          '0x00'
+        )
       }
       const donate: DonateFunction = (amount0, amount1) => {
-        return donateTest.donate(poolKey, amount0, amount1)
+        return donateTest.donate(poolKey, amount0, amount1, '0x00')
       }
       const getSlot0 = async () => {
         return await manager.getSlot0(getPoolId(poolKey))
       }
 
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
 
       await modifyPosition(minTick, maxTick, expandTo18Decimals(2))
 
@@ -166,14 +173,19 @@ describe('PoolManager gas tests', () => {
 
     describe('#initialize', () => {
       it('initialize pool with no hooks and no protocol fee', async () => {
+        let currency0 = wallet.address
+        let currency1 = other.address
+
+        ;[currency0, currency1] = currency0 < currency1 ? [currency0, currency1] : [currency1, currency0]
+
         const altPoolKey = {
-          currency0: wallet.address,
-          currency1: other.address,
+          currency0,
+          currency1,
           fee: FeeAmount.MEDIUM,
           tickSpacing: 60,
           hooks: '0x0000000000000000000000000000000000000000',
         }
-        await snapshotGasCost(manager.initialize(altPoolKey, encodeSqrtPriceX96(1, 1)))
+        await snapshotGasCost(manager.initialize(altPoolKey, encodeSqrtPriceX96(1, 1), '0x00'))
       })
     })
 
@@ -368,6 +380,7 @@ describe('PoolManager gas tests', () => {
             withdrawTokens: true,
             settleUsingTransfer: true,
           },
+          '0x00',
           {
             value: amount,
           }
@@ -384,7 +397,8 @@ describe('PoolManager gas tests', () => {
           {
             withdrawTokens: true,
             settleUsingTransfer: true,
-          }
+          },
+          '0x00'
         )
       }
       const swapToLowerPrice: SwapToPriceFunction = (sqrtPriceX96, to) => {
@@ -399,6 +413,7 @@ describe('PoolManager gas tests', () => {
             withdrawTokens: true,
             settleUsingTransfer: true,
           },
+          '0x00',
           {
             value: MaxUint128,
           }
@@ -412,17 +427,18 @@ describe('PoolManager gas tests', () => {
             tickUpper,
             liquidityDelta,
           },
+          '0x00',
           { value: liquidityDelta }
         )
       }
       const donate: DonateFunction = (amount0, amount1) => {
-        return donateTest.donate(poolKey, amount0, amount1, { value: amount0 })
+        return donateTest.donate(poolKey, amount0, amount1, '0x00', { value: amount0 })
       }
       const getSlot0 = async () => {
         return await manager.getSlot0(getPoolId(poolKey))
       }
 
-      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1))
+      await manager.initialize(poolKey, encodeSqrtPriceX96(1, 1), '0x00')
 
       await modifyPosition(minTick, maxTick, expandTo18Decimals(2))
 

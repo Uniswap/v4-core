@@ -5,6 +5,20 @@ import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
 type Currency is address;
 
+using {greaterThan as >, lessThan as <, equals as ==} for Currency global;
+
+function equals(Currency currency, Currency other) pure returns (bool) {
+    return Currency.unwrap(currency) == Currency.unwrap(other);
+}
+
+function greaterThan(Currency currency, Currency other) pure returns (bool) {
+    return Currency.unwrap(currency) > Currency.unwrap(other);
+}
+
+function lessThan(Currency currency, Currency other) pure returns (bool) {
+    return Currency.unwrap(currency) < Currency.unwrap(other);
+}
+
 /// @title CurrencyLibrary
 /// @dev This library allows for transferring and holding native tokens and ERC20 tokens
 library CurrencyLibrary {
@@ -67,8 +81,12 @@ library CurrencyLibrary {
         }
     }
 
-    function equals(Currency currency, Currency other) internal pure returns (bool) {
-        return Currency.unwrap(currency) == Currency.unwrap(other);
+    function balanceOf(Currency currency, address owner) internal view returns (uint256) {
+        if (currency.isNative()) {
+            return owner.balance;
+        } else {
+            return IERC20Minimal(Currency.unwrap(currency)).balanceOf(owner);
+        }
     }
 
     function isNative(Currency currency) internal pure returns (bool) {
