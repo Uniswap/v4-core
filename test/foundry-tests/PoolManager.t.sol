@@ -254,6 +254,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees >> 12, 0);
+        assertEq(slot0.protocolFees & 0xFFF, 0);
     }
 
     function testPoolManagerInitializeSucceedsWithOverflowFeeController(uint160 sqrtPriceX96) public {
@@ -277,6 +278,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees >> 12, 0);
+        assertEq(slot0.protocolFees & 0xFFF, 0);
     }
 
     function testPoolManagerInitializeSucceedsWithWrongReturnTypeFeeController(uint160 sqrtPriceX96) public {
@@ -299,6 +301,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees >> 12, 0);
+        assertEq(slot0.protocolFees & 0xFFF, 0);
     }
 
     function testPoolManagerInitializeSucceedsAndSetsHookFeeIfControllerReverts(uint160 sqrtPriceX96) public {
