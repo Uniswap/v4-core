@@ -192,11 +192,11 @@ contract swapMathTest is Test, GasSnapshot {
         assertLe(amountIn, type(uint256).max - feeAmount);
 
         unchecked {
-          if (amountRemaining < 0) {
-              assertLe(amountOut, uint256(-amountRemaining));
-          } else {
-              assertLe(amountIn + feeAmount, uint256(amountRemaining));
-          }
+            if (amountRemaining < 0) {
+                assertLe(amountOut, uint256(-amountRemaining));
+            } else {
+                assertLe(amountIn + feeAmount, uint256(amountRemaining));
+            }
         }
 
         if (sqrtPriceRaw == sqrtPriceTargetRaw) {
