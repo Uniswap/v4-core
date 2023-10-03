@@ -28,6 +28,7 @@ abstract contract Fees is IFees, Owned {
         controllerGasLimit = _controllerGasLimit;
     }
 
+    /// @dev You must call _checkProtocolFees after calling this function.
     function _fetchProtocolFees(PoolKey memory key) internal returns (uint24 protocolFees) {
         uint16 protocolSwapFee;
         uint16 protocolWithdrawFee;
@@ -36,15 +37,9 @@ abstract contract Fees is IFees, Owned {
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
             // in mind.
             if (gasleft() < controllerGasLimit) revert ProtocolFeeCannotBeFetched();
-
-            uint24 updatedProtocolFee;
-            uint256 _controllerGasLimit = controllerGasLimit;
-            address controllerAddress = address(protocolFeeController);
-
-            (bool _success, bytes memory data) = controllerAddress.call{gas: controllerGasLimit}(
+            (bool _success, bytes memory data) = address(protocolFeeController).call{gas: controllerGasLimit}(
                 abi.encodeWithSelector(IProtocolFeeController.protocolFeesForPool.selector, key)
             );
-
             if (data.length > 32) return 0;
 
             bytes32 _data;
@@ -59,7 +54,7 @@ abstract contract Fees is IFees, Owned {
             protocolSwapFee = uint16(protocolFees >> 12);
             protocolWithdrawFee = uint16(protocolFees & 0xFFF);
 
-            if (!noDirtyBits || !_checkProtocolFees(protocolFees)) {
+            if (!noDirtyBits) {
                 return 0;
             }
         }
@@ -77,7 +72,7 @@ abstract contract Fees is IFees, Owned {
         }
     }
 
-    function _checkProtocolFees(uint24 protocolFees) internal pure returns (bool) {
+    function _checkProtocolFees(uint24 protocolFees) internal pure {
         if (protocolFees != 0) {
             uint16 protocolSwapFee = uint16(protocolFees >> 12);
             uint16 protocolWithdrawFee = uint16(protocolFees & 0xFFF);
@@ -89,7 +84,7 @@ abstract contract Fees is IFees, Owned {
                     (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR)
                         || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
                 ) {
-                    return false;
+                    revert FeeTooLarge();
                 }
             }
             if (protocolWithdrawFee != 0) {
@@ -100,11 +95,10 @@ abstract contract Fees is IFees, Owned {
                     (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR)
                         || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
                 ) {
-                    return false;
+                    revert FeeTooLarge();
                 }
             }
         }
-        return true;
     }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
