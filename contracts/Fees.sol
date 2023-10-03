@@ -49,7 +49,7 @@ abstract contract Fees is IFees, Owned {
             console2.logBytes(data);
             console2.log(data.length);
 
-            if(data.length > 32) return 0;
+            if (data.length > 32) return 0;
 
             bytes32 _data;
             assembly {
@@ -57,20 +57,22 @@ abstract contract Fees is IFees, Owned {
                 _data := mload(add(data, 0x20))
             }
             // mask dirty bits from data, keeping 24 bits
-            uint24 protocolFee = uint24(uint256(_data) & 0xFFFFFF);
-            bool noDirtyBits = uint256(protocolFee) == uint256(_data);
+            protocolFees = uint24(uint256(_data) & 0xFFFFFF);
+            bool noDirtyBits = uint256(protocolFees) == uint256(_data);
 
             console2.logBytes32(_data);
-            console2.log(protocolFee);
+            console2.log(protocolFees);
             console2.logBool(noDirtyBits);
 
-            protocolSwapFee = uint16(protocolFee >> 12);
-            protocolWithdrawFee = uint16(protocolFee & 0xFFF);
+            protocolSwapFee = uint16(protocolFees >> 12);
+            protocolWithdrawFee = uint16(protocolFees & 0xFFF);
 
-            if(noDirtyBits && _checkProtocolFees(protocolFees)) {
-                return protocolFees;
+            console2.log(protocolSwapFee);
+            console2.log(protocolWithdrawFee);
+
+            if (!noDirtyBits || !_checkProtocolFees(protocolFees)) {
+                return 0;
             }
-            return 0;
         }
     }
 
@@ -95,7 +97,8 @@ abstract contract Fees is IFees, Owned {
                 uint16 fee1 = protocolSwapFee >> 6;
                 // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
                 if (
-                    (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
+                    (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR)
+                        || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
                 ) {
                     return false;
                 }
@@ -105,7 +108,8 @@ abstract contract Fees is IFees, Owned {
                 uint16 fee1 = protocolWithdrawFee >> 6;
                 // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
                 if (
-                    (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
+                    (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR)
+                        || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
                 ) {
                     return false;
                 }
