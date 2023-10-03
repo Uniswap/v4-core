@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
-import {console2} from "forge-std/console2.sol";
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
 import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
@@ -46,9 +45,6 @@ abstract contract Fees is IFees, Owned {
                 abi.encodeWithSelector(IProtocolFeeController.protocolFeesForPool.selector, key)
             );
 
-            console2.logBytes(data);
-            console2.log(data.length);
-
             if (data.length > 32) return 0;
 
             bytes32 _data;
@@ -60,15 +56,8 @@ abstract contract Fees is IFees, Owned {
             protocolFees = uint24(uint256(_data) & 0xFFFFFF);
             bool noDirtyBits = uint256(protocolFees) == uint256(_data);
 
-            console2.logBytes32(_data);
-            console2.log(protocolFees);
-            console2.logBool(noDirtyBits);
-
             protocolSwapFee = uint16(protocolFees >> 12);
             protocolWithdrawFee = uint16(protocolFees & 0xFFF);
-
-            console2.log(protocolSwapFee);
-            console2.log(protocolWithdrawFee);
 
             if (!noDirtyBits || !_checkProtocolFees(protocolFees)) {
                 return 0;
@@ -117,20 +106,6 @@ abstract contract Fees is IFees, Owned {
         }
         return true;
     }
-
-    // /// @dev Only the lower 12 bits are used here to encode the fee denominator.
-    // function _checkProtocolFee(uint16 fee) internal pure {
-    //     if (fee != 0) {
-    //         uint16 fee0 = fee % 64;
-    //         uint16 fee1 = fee >> 6;
-    //         // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-    //         if (
-    //             (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
-    //         ) {
-    //             revert FeeTooLarge();
-    //         }
-    //     }
-    // }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
         protocolFeeController = controller;
