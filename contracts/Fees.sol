@@ -28,8 +28,8 @@ abstract contract Fees is IFees, Owned {
         controllerGasLimit = _controllerGasLimit;
     }
 
-    /// @dev You must call _isValidProtocolFees after calling this function.
-    function _fetchProtocolFees(PoolKey memory key) internal returns (uint24 protocolFees) {
+    /// @dev the success of this function must be checked on setting protocol fees
+    function _fetchProtocolFees(PoolKey memory key) internal returns (bool success, uint24 protocolFees) {
         uint16 protocolSwapFee;
         uint16 protocolWithdrawFee;
         if (address(protocolFeeController) != address(0)) {
@@ -40,7 +40,7 @@ abstract contract Fees is IFees, Owned {
             (bool _success, bytes memory data) = address(protocolFeeController).call{gas: controllerGasLimit}(
                 abi.encodeWithSelector(IProtocolFeeController.protocolFeesForPool.selector, key)
             );
-            if (data.length > 32) return 0;
+            if (data.length > 32) return (false, 0);
 
             bytes32 _data;
             assembly {
@@ -53,10 +53,9 @@ abstract contract Fees is IFees, Owned {
 
             protocolSwapFee = uint16(protocolFees >> 12);
             protocolWithdrawFee = uint16(protocolFees & 0xFFF);
+            success = noDirtyBits && _isValidProtocolFees(protocolFees);
 
-            if (!noDirtyBits || !_isValidProtocolFees(protocolFees)) {
-                return 0;
-            }
+            if (!success) protocolFees = 0;
         }
     }
 
