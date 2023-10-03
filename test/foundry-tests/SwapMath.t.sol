@@ -174,6 +174,54 @@ contract swapMathTest is Test, GasSnapshot {
         assertEq(feeAmount, 1);
     }
 
+    function testCheckComputeSwapStepInvariants(
+        uint160 sqrtPriceRaw,
+        uint160 sqrtPriceTargetRaw,
+        uint128 liquidity,
+        int256 amountRemaining,
+        uint24 feePips
+    ) public {
+        vm.assume(sqrtPriceRaw > 0);
+        vm.assume(sqrtPriceTargetRaw > 0);
+        vm.assume(feePips > 0);
+        vm.assume(feePips < 1e6);
+
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(sqrtPriceRaw, sqrtPriceTargetRaw, liquidity, amountRemaining, feePips);
+
+        assertLe(amountIn, type(uint256).max - feeAmount);
+
+        unchecked {
+          if (amountRemaining < 0) {
+              assertLe(amountOut, uint256(-amountRemaining));
+          } else {
+              assertLe(amountIn + feeAmount, uint256(amountRemaining));
+          }
+        }
+
+        if (sqrtPriceRaw == sqrtPriceTargetRaw) {
+            assertEq(amountIn, 0);
+            assertEq(amountOut, 0);
+            assertEq(feeAmount, 0);
+            assertEq(sqrtQ, sqrtPriceTargetRaw);
+        }
+
+        // didn't reach price target, entire amount must be consumed
+        if (sqrtQ != sqrtPriceTargetRaw) {
+            if (amountRemaining < 0) assertEq(amountOut, uint256(-amountRemaining));
+            else assertEq(amountIn + feeAmount, uint256(amountRemaining));
+        }
+
+        // next price is between price and price target
+        if (sqrtPriceTargetRaw <= sqrtPriceRaw) {
+            assertLe(sqrtQ, sqrtPriceRaw);
+            assertGe(sqrtQ, sqrtPriceTargetRaw);
+        } else {
+            assertGe(sqrtQ, sqrtPriceRaw);
+            assertLe(sqrtQ, sqrtPriceTargetRaw);
+        }
+    }
+
     function testSwapOneForZeroExactInCapped() public {
         snapStart("SwapMath_oneForZero_exactInCapped");
         SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, 1 ether, 600);
