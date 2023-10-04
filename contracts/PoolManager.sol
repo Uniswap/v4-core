@@ -425,7 +425,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     // Also gives functionality to net out deltas.
     function resolve(Currency currency, address locker2) external onlyByLocker returns (uint128 deltasResolved) {
         // Allow the current locker to resolve for a different locker's delta
-
         if (lockData.nonzeroDeltaCount < 2) revert NotEnoughDeltasToResolve();
         address locker = lockData.getActiveLock();
 

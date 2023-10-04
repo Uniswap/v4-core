@@ -124,6 +124,7 @@ contract PoolSwapTest is ILockCallback {
                     );
                 }
             }
+            // TODO add functionality for zeroForOne=false
             if (delta.amount0() < 0) {
                 if (data.testSettings.withdrawTokens) {
                     manager.take(data.key.currency0, data.sender, uint128(-delta.amount0()));

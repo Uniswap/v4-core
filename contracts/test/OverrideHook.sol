@@ -57,9 +57,10 @@ contract OverrideHook is BaseHooks, ILockCallback {
                     address(this),
                     address(manager),
                     lockData.currency1.toId(),
-                    exchangeRate * uint256(lockData.amount),
+                    uint256(lockData.amount) / exchangeRate,
                     ""
                 );
+                manager.settle(lockData.currency1); // this applies a negative delta that the router can resolve
             }
         } else if (lockData.action == LockAction.Deposit) {
             // just deal with currency1, just handle deposits

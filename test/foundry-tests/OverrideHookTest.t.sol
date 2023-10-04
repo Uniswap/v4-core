@@ -84,4 +84,53 @@ contract OverrideHookTest is Test, Deployers {
         // Expect that this address is credited 100 on the hooks lpBalance mapping
         assertEq(OverrideHook(address(key.hooks)).lpBalances(address(this)), 100);
     }
+
+    function testSwapWithOverrideHook() public {
+        // Give the hook liquidity in currency1
+        positionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams({
+                tickLower: TickMath.MIN_TICK,
+                tickUpper: TickMath.MAX_TICK,
+                liquidityDelta: 50
+            }),
+            abi.encode(address(this))
+        );
+
+        // Expect that the hook now has 50 1155s of currency1
+        assertEq(manager.balanceOf(address(key.hooks), key.currency1.toId()), 50);
+        // Assert that this address has deposited 50 in the hook
+        assertEq(OverrideHook(address(key.hooks)).lpBalances(address(this)), 50);
+
+        // Prep the swap.
+        // Should get 50 currency1 for 100 currency0
+        OverrideHook(address(key.hooks)).setExchangeRate(2);
+        // Create swap params
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: 0});
+        // The router will withdraw token1 that the hook sends in, and it will transfer in token0 to negate the delta from the hook's mint
+        PoolSwapTest.TestSettings memory settings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+        // No need to send extra data to the hook
+        uint256 currency1Before = key.currency1.balanceOf(address(this));
+        uint256 currency0Before = key.currency0.balanceOf(address(this));
+        uint256 managerCurrency0Before = key.currency0.balanceOf(address(manager));
+        uint256 managerCurrency1Before = key.currency1.balanceOf(address(manager));
+        swapRouter.swap(key, params, settings, ZERO_BYTES);
+
+        // Expect that the hook has 100 1155 of currency0
+        assertEq(manager.balanceOf(address(key.hooks), key.currency0.toId()), 100);
+        // Expect that the hook has 0 1155 of currency1 (it burned 50 which the router takes)
+        assertEq(manager.balanceOf(address(key.hooks), key.currency1.toId()), 0);
+
+        // Expect that this address gives 100 of currency0
+        assertEq(key.currency0.balanceOf(address(this)), currency0Before - 100);
+        // Expect that this address receives 50 of currency1
+        assertEq(key.currency1.balanceOf(address(this)), currency1Before + 50);
+
+        // Expect that the balance of the pool increases by 100 of currency0
+        assertEq(key.currency0.balanceOf(address(manager)), managerCurrency0Before + 100);
+        // Expect that the balance of the pool decreases by 50 of currency1
+        assertEq(key.currency1.balanceOf(address(manager)), managerCurrency1Before - 50);
+    }
 }
