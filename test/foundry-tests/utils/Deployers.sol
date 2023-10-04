@@ -44,7 +44,7 @@ contract Deployers {
     }
 
     function createPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96, bytes memory initData)
-        private
+        internal
         returns (PoolKey memory key, PoolId id)
     {
         MockERC20[] memory tokens = deployTokens(2, 2 ** 255);

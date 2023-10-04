@@ -22,6 +22,8 @@ import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Re
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
+import "forge-std/console2.sol";
+
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Receiver {
     using PoolIdLibrary for PoolKey;
@@ -151,6 +153,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         }
     }
 
+    // ROUTER calls lock
+    // but hook can change deltas on behalf of router
+
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
@@ -188,10 +193,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            if (
-                key.hooks.beforeModifyPosition(msg.sender, key, params, hookData)
-                    != IHooks.beforeModifyPosition.selector
-            ) {
+            bytes4 hookReturn = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
+            if (hookReturn == Hooks.OVERRIDE_SELECTOR) {
+                return delta;
+            }
+            if (hookReturn != IHooks.beforeModifyPosition.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -246,7 +252,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         returns (BalanceDelta delta)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
-            if (key.hooks.beforeSwap(msg.sender, key, params, hookData) != IHooks.beforeSwap.selector) {
+            bytes4 hookReturn = key.hooks.beforeSwap(msg.sender, key, params, hookData);
+            if (hookReturn == Hooks.OVERRIDE_SELECTOR) {
+                return delta;
+            }
+            if (hookReturn != IHooks.beforeSwap.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -409,6 +419,24 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         }
 
         return value;
+    }
+
+    // Allows the current locker to acquire another delta on behalf of a different locker.
+    // Also gives functionality to net out deltas.
+    function resolve(Currency currency, address locker2) external onlyByLocker returns (uint128 deltasResolved) {
+        // Allow the current locker to resolve for a different locker's delta
+
+        if (lockData.nonzeroDeltaCount < 2) revert NotEnoughDeltasToResolve();
+        address locker = lockData.getActiveLock();
+
+        int256 value1 = currencyDelta[locker][currency];
+        int256 value2 = currencyDelta[locker2][currency];
+        int256 net = value1 + value2;
+        currencyDelta[locker2][currency] = 0;
+        currencyDelta[locker][currency] = net;
+
+        deltasResolved = net == 0 ? 2 : 1;
+        lockData.nonzeroDeltaCount -= deltasResolved;
     }
 
     /// @notice receive native tokens for native pools

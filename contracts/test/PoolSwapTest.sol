@@ -8,9 +8,12 @@ import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {Hooks} from "../libraries/Hooks.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
 
 contract PoolSwapTest is ILockCallback {
     using CurrencyLibrary for Currency;
+    using Hooks for IHooks;
 
     IPoolManager public immutable manager;
 
@@ -52,16 +55,21 @@ contract PoolSwapTest is ILockCallback {
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
+        bool shouldOverrideDeltas = data.key.hooks.shouldAllowOverride();
         if (data.params.zeroForOne) {
-            if (delta.amount0() > 0) {
+            int128 delta0 = delta.amount0();
+            if (shouldOverrideDeltas) {
+                delta0 = int128(manager.currencyDelta(address(data.key.hooks), data.key.currency0));
+            }
+            if (delta0 > 0) {
                 if (data.testSettings.settleUsingTransfer) {
                     if (data.key.currency0.isNative()) {
-                        manager.settle{value: uint128(delta.amount0())}(data.key.currency0);
+                        manager.settle{value: uint128(delta0)}(data.key.currency0);
                     } else {
                         IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
-                            data.sender, address(manager), uint128(delta.amount0())
+                            data.sender, address(manager), uint128(delta0)
                         );
-                        manager.settle(data.key.currency0);
+                        manager.settle(data.key.currency0); // this applies a -10 delta for the ROUTER
                     }
                 } else {
                     // the received hook on this transfer will burn the tokens
@@ -69,19 +77,32 @@ contract PoolSwapTest is ILockCallback {
                         data.sender,
                         address(manager),
                         uint256(uint160(Currency.unwrap(data.key.currency0))),
-                        uint128(delta.amount0()),
+                        uint128(delta0),
                         ""
                     );
                 }
+                if (shouldOverrideDeltas) {
+                    // cancel out the currency0 deltas from the hook
+                    manager.resolve(data.key.currency0, address(data.key.hooks));
+                }
             }
-            if (delta.amount1() < 0) {
+            int128 delta1 = delta.amount1();
+            if (shouldOverrideDeltas) {
+                delta1 = int128(manager.currencyDelta(address(data.key.hooks), data.key.currency1));
+            }
+            if (delta1 < 0) {
                 if (data.testSettings.withdrawTokens) {
-                    manager.take(data.key.currency1, data.sender, uint128(-delta.amount1()));
+                    manager.take(data.key.currency1, data.sender, uint128(-delta1));
                 } else {
-                    manager.mint(data.key.currency1, data.sender, uint128(-delta.amount1()));
+                    manager.mint(data.key.currency1, data.sender, uint128(-delta1));
+                }
+                if (shouldOverrideDeltas) {
+                    // cancel out the currency1 deltas from the hook
+                    manager.resolve(data.key.currency1, address(data.key.hooks));
                 }
             }
         } else {
+            // TODO add override logic
             if (delta.amount1() > 0) {
                 if (data.testSettings.settleUsingTransfer) {
                     if (data.key.currency1.isNative()) {

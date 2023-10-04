@@ -19,6 +19,7 @@ library Hooks {
     uint256 internal constant AFTER_SWAP_FLAG = 1 << 154;
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
+    uint256 internal constant OVERRIDE_FLAG = 1 << 151;
 
     struct Calls {
         bool beforeInitialize;
@@ -29,7 +30,10 @@ library Hooks {
         bool afterSwap;
         bool beforeDonate;
         bool afterDonate;
+        bool overrideSelector;
     }
+
+    bytes4 constant OVERRIDE_SELECTOR = bytes4(keccak256("OVERRIDE_SELECTOR"));
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
     /// @param hooks The address of the hooks contract
@@ -50,6 +54,7 @@ library Hooks {
                 || calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
                 || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
                 || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
+                || calls.overrideSelector != shouldAllowOverride(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -62,7 +67,7 @@ library Hooks {
         return address(hook) == address(0)
             ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
             : (
-                uint160(address(hook)) >= AFTER_DONATE_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
+                uint160(address(hook)) >= OVERRIDE_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
                     || fee.hasHookWithdrawFee()
             );
     }
@@ -97,5 +102,9 @@ library Hooks {
 
     function shouldCallAfterDonate(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
+    }
+
+    function shouldAllowOverride(IHooks self) internal pure returns (bool) {
+        return (uint256(uint160(address(self))) & OVERRIDE_FLAG) != 0;
     }
 }

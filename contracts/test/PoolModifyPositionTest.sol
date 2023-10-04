@@ -8,9 +8,14 @@ import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {Hooks} from "../libraries/Hooks.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
+
+import "forge-std/console2.sol";
 
 contract PoolModifyPositionTest is ILockCallback {
     using CurrencyLibrary for Currency;
+    using Hooks for IHooks;
 
     IPoolManager public immutable manager;
 
@@ -45,6 +50,12 @@ contract PoolModifyPositionTest is ILockCallback {
 
         BalanceDelta delta = manager.modifyPosition(data.key, data.params, data.hookData);
 
+        int128 delta1 = delta.amount1();
+        bool shouldOverride = data.key.hooks.shouldAllowOverride();
+        if (shouldOverride) {
+            // hook only handles currency1 rn
+            delta1 = int128(manager.currencyDelta(address(data.key.hooks), data.key.currency1));
+        }
         if (delta.amount0() > 0) {
             if (data.key.currency0.isNative()) {
                 manager.settle{value: uint128(delta.amount0())}(data.key.currency0);
@@ -55,22 +66,26 @@ contract PoolModifyPositionTest is ILockCallback {
                 manager.settle(data.key.currency0);
             }
         }
-        if (delta.amount1() > 0) {
+        if (delta1 > 0) {
             if (data.key.currency1.isNative()) {
-                manager.settle{value: uint128(delta.amount1())}(data.key.currency1);
+                manager.settle{value: uint128(delta1)}(data.key.currency1);
             } else {
                 IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
-                    data.sender, address(manager), uint128(delta.amount1())
+                    data.sender, address(manager), uint128(delta1)
                 );
-                manager.settle(data.key.currency1);
+                manager.settle(data.key.currency1); // should apply a negative delta to the router
             }
         }
 
         if (delta.amount0() < 0) {
             manager.take(data.key.currency0, data.sender, uint128(-delta.amount0()));
         }
-        if (delta.amount1() < 0) {
-            manager.take(data.key.currency1, data.sender, uint128(-delta.amount1()));
+        if (delta1 < 0) {
+            manager.take(data.key.currency1, data.sender, uint128(-delta1));
+        }
+
+        if (shouldOverride) {
+            manager.resolve(data.key.currency1, address(data.key.hooks)); // resolves the deltas in currency1
         }
 
         return abi.encode(delta);

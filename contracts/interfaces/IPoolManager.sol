@@ -33,6 +33,8 @@ interface IPoolManager is IFees, IERC1155 {
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
     error CurrenciesInitializedOutOfOrder();
 
+    error NotEnoughDeltasToResolve();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
@@ -179,6 +181,8 @@ interface IPoolManager is IFees, IERC1155 {
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
+
+    function resolve(Currency currency, address locker2) external returns (uint128 deltasResolved);
 
     /// @notice Sets the protocol's swap and withdrawal fees for the given pool
     /// Protocol fees are always a portion of a fee that is owed. If that underlying fee is 0, no protocol fees will accrue even if it is set to > 0.
