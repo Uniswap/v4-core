@@ -30,8 +30,6 @@ abstract contract Fees is IFees, Owned {
 
     /// @dev the success of this function must be checked on setting protocol fees
     function _fetchProtocolFees(PoolKey memory key) internal returns (bool success, uint24 protocolFees) {
-        uint16 protocolSwapFee;
-        uint16 protocolWithdrawFee;
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
@@ -40,8 +38,6 @@ abstract contract Fees is IFees, Owned {
             (bool _success, bytes memory data) = address(protocolFeeController).call{gas: controllerGasLimit}(
                 abi.encodeWithSelector(IProtocolFeeController.protocolFeesForPool.selector, key)
             );
-            if (data.length > 32) return (false, 0);
-
             bytes32 _data;
             assembly {
                 // get first word from return data
@@ -51,10 +47,7 @@ abstract contract Fees is IFees, Owned {
             protocolFees = uint24(uint256(_data) & 0xFFFFFF);
             bool noDirtyBits = uint256(protocolFees) == uint256(_data);
 
-            protocolSwapFee = uint16(protocolFees >> 12);
-            protocolWithdrawFee = uint16(protocolFees & 0xFFF);
-            success = _success && noDirtyBits && _isValidProtocolFees(protocolFees);
-
+            success = (data.length <= 32) && _success && noDirtyBits && _isValidProtocolFees(protocolFees);
             if (!success) protocolFees = 0;
         }
     }
