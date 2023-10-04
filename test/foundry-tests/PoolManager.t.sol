@@ -7,8 +7,11 @@ import {IHooks} from "../../contracts/interfaces/IHooks.sol";
 import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {IFees} from "../../contracts/interfaces/IFees.sol";
+import {IProtocolFeeController} from "../../contracts/interfaces/IProtocolFeeController.sol";
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {PoolDonateTest} from "../../contracts/test/PoolDonateTest.sol";
+import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControllerTest.sol";
+import {PoolTakeTest} from "../../contracts/test/PoolTakeTest.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {Pool} from "../../contracts/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
@@ -23,6 +26,7 @@ import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
 import {PoolKey} from "../../contracts/types/PoolKey.sol";
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
+import {TestInvalidERC20} from "../../contracts/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
 import {PoolId, PoolIdLibrary} from "../../contracts/types/PoolId.sol";
@@ -63,10 +67,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     event TransferSingle(
         address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount
     );
+    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
 
     Pool.State state;
     PoolManager manager;
     PoolDonateTest donateRouter;
+    PoolTakeTest takeRouter;
+    ProtocolFeeControllerTest feeController;
     PoolModifyPositionTest modifyPositionRouter;
     PoolSwapTest swapRouter;
     PoolLockTest lockTest;
@@ -81,7 +88,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         initializeTokens();
         manager = Deployers.createFreshManager();
         donateRouter = new PoolDonateTest(manager);
+        takeRouter = new PoolTakeTest(manager);
         modifyPositionRouter = new PoolModifyPositionTest(manager);
+        feeController = new ProtocolFeeControllerTest();
 
         lockTest = new PoolLockTest(manager);
         swapRouter = new PoolSwapTest(manager);
@@ -98,6 +107,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ether);
         MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ether);
+
+        MockERC20(Currency.unwrap(currency0)).approve(address(takeRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(takeRouter), 10 ether);
+    }
+
+    function test_bytecodeSize() public {
+        snapSize("poolManager bytecode size", address(manager));
     }
 
     function test_initialize(PoolKey memory key, uint160 sqrtPriceX96) public {
@@ -1038,6 +1054,208 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapStart("donate gas with 1 token");
         donateRouter.donate(key, 100, 0, ZERO_BYTES);
         snapEnd();
+    }
+
+    function test_take_failsWithNoLiquidity() public {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
+
+        vm.expectRevert();
+        takeRouter.take(key, 100, 0);
+    }
+
+    function test_take_failsWithInvalidTokensThatDoNotReturnTrueOnTransfer() public {
+        TestInvalidERC20 invalidToken = new TestInvalidERC20(2**255);
+        Currency invalidCurrency = Currency.wrap(address(invalidToken));
+        bool currency0Invalid = invalidCurrency < currency0;
+        PoolKey memory key =
+            PoolKey({
+              currency0: currency0Invalid ? invalidCurrency : currency0,
+              currency1: currency0Invalid ? currency0 : invalidCurrency,
+              fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
+
+        invalidToken.approve(address(modifyPositionRouter), type(uint256).max);
+        invalidToken.approve(address(takeRouter), type(uint256).max);
+        MockERC20(Currency.unwrap(currency0)).approve(address(takeRouter), type(uint256).max);
+
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 1000);
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+
+        vm.expectRevert();
+        takeRouter.take(key, currency0Invalid ? 1 : 0, currency0Invalid ? 0 : 1);
+        takeRouter.take(key, currency0Invalid ? 0 : 1, currency0Invalid ? 1 : 0); // assertions inside takeRouter
+    }
+
+    function test_take_succeedsWithPoolWithLiquidity() public {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+        takeRouter.take(key, 1, 1); // assertions inside takeRouter
+    }
+
+    function test_take_succeedsWithPoolWithLiquidityWithNativeToken() public {
+        PoolKey memory key =
+            PoolKey({currency0: Currency.wrap(address(0)), currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
+        modifyPositionRouter.modifyPosition{value: 100}(key, params, ZERO_BYTES);
+        takeRouter.take{value: 1}(key, 1, 1); // assertions inside takeRouter
+    }
+
+    function test_setProtocolFee_updatesProtocolFeeForInitializedPool() public {
+        uint24 protocolFee = 4;
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees, 0);
+        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
+        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+
+        vm.expectEmit(false, false, false, true);
+        emit ProtocolFeeUpdated(key.toId(), protocolFee << 12);
+        manager.setProtocolFees(key);
+    }
+
+    function test_collectProtocolfees_initializesWithProtocolFeeIfCalled() public {
+        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
+        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees, protocolFee << 12);
+    }
+
+    function test_collectProtocolfees_ERC20_allowsOwnerToAccumulateFees() public {
+        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        uint256 expectedFees = 7;
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
+        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees, protocolFee << 12);
+
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
+        );
+
+        assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(currency0.balanceOf(address(1)), 0);
+        manager.collectProtocolFees(address(1), currency0, expectedFees);
+        assertEq(currency0.balanceOf(address(1)), expectedFees);
+        assertEq(manager.protocolFeesAccrued(currency0), 0);
+    }
+
+    function test_collectProtocolfees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
+        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        uint256 expectedFees = 7;
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
+        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees, protocolFee << 12);
+
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
+        );
+
+        assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(currency0.balanceOf(address(1)), 0);
+        manager.collectProtocolFees(address(1), currency0, 0);
+        assertEq(currency0.balanceOf(address(1)), expectedFees);
+        assertEq(manager.protocolFeesAccrued(currency0), 0);
+    }
+
+    function test_collectProtocolfees_nativeToken_allowsOwnerToAccumulateFees() public {
+        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        uint256 expectedFees = 7;
+        Currency nativeCurrency = Currency.wrap(address(0));
+
+        PoolKey memory key =
+            PoolKey({currency0: nativeCurrency, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
+        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees, protocolFee << 12);
+
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
+        modifyPositionRouter.modifyPosition{value: 10 ether}(key, params, ZERO_BYTES);
+        swapRouter.swap{value: 10000}(
+            key,
+            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
+        );
+
+        assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
+        assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
+        assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
+    }
+
+    function test_collectProtocolfees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
+        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        uint256 expectedFees = 7;
+        Currency nativeCurrency = Currency.wrap(address(0));
+
+        PoolKey memory key =
+            PoolKey({currency0: nativeCurrency, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
+        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees, protocolFee << 12);
+
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
+        modifyPositionRouter.modifyPosition{value: 10 ether}(key, params, ZERO_BYTES);
+        swapRouter.swap{value: 10000}(
+            key,
+            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
+        );
+
+        assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        manager.collectProtocolFees(address(1), nativeCurrency, 0);
+        assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
+        assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
 
     function testNoOpLockIsOk() public {
