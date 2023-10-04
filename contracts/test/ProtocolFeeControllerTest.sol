@@ -27,20 +27,20 @@ contract ProtocolFeeControllerTest is IProtocolFeeController {
 }
 
 contract RevertingProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
+    function protocolFeesForPool(PoolKey memory /* key */ ) external view returns (uint24) {
         revert();
     }
 }
 
 contract InvalidProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
+    function protocolFeesForPool(PoolKey memory /* key */ ) external view returns (uint24) {
         // set both swap and withdraw fees to 1, which is less than MIN_PROTOCOL_FEE_DENOMINATOR
         return 0x001001;
     }
 }
 
 contract OverflowProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
+    function protocolFeesForPool(PoolKey memory /* key */ ) external view returns (uint24) {
         assembly {
             let ptr := mload(0x40)
             mstore(ptr, 0xFFFFAAA001)
@@ -50,7 +50,7 @@ contract OverflowProtocolFeeControllerTest is IProtocolFeeController {
 }
 
 contract InvalidReturnTypeProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
+    function protocolFeesForPool(PoolKey memory /* key */ ) external view returns (uint24) {
         address a = address(this);
         assembly {
             let ptr := mload(0x40)
@@ -61,7 +61,7 @@ contract InvalidReturnTypeProtocolFeeControllerTest is IProtocolFeeController {
 }
 
 contract InvalidReturnSizeProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeesForPool(PoolKey memory key) external view returns (uint24) {
+    function protocolFeesForPool(PoolKey memory /* key */ ) external view returns (uint24) {
         address a = address(this);
         assembly {
             let ptr := mload(0x40)
