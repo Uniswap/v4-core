@@ -53,7 +53,7 @@ abstract contract Fees is IFees, Owned {
 
             protocolSwapFee = uint16(protocolFees >> 12);
             protocolWithdrawFee = uint16(protocolFees & 0xFFF);
-            success = noDirtyBits && _isValidProtocolFees(protocolFees);
+            success = _success && noDirtyBits && _isValidProtocolFees(protocolFees);
 
             if (!success) protocolFees = 0;
         }
