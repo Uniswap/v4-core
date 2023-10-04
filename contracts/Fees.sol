@@ -45,10 +45,10 @@ abstract contract Fees is IFees, Owned {
             }
             // mask dirty bits from data, keeping 24 bits
             protocolFees = uint24(uint256(_data) & 0xFFFFFF);
-            bool noDirtyBits = uint256(protocolFees) == uint256(_data);
 
             // successful if the call succeeded with valid return data, the return data is less than max uint24, and the fees are valid
-            success = (data.length <= 32) && _success && noDirtyBits && _isValidProtocolFees(protocolFees);
+            success = (data.length <= 32) && _success && (uint256(protocolFees) == uint256(_data))
+                && _isValidProtocolFees(protocolFees);
             if (!success) protocolFees = 0;
         }
     }
