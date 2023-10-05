@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {SqrtPriceMath} from "../../contracts/libraries/SqrtPriceMath.sol";
 import {SwapMath} from "../../contracts/libraries/SwapMath.sol";
