@@ -35,6 +35,8 @@ interface IPoolManager is IFees, IERC1155 {
 
     error NotEnoughDeltasToResolve();
 
+    error NoDeltasToResolve();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order

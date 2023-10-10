@@ -429,7 +429,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         address locker = lockData.getActiveLock();
 
         int256 value1 = currencyDelta[locker][currency];
-        int256 value2 = currencyDelta[locker2][currency];
+        int256 value2 = currencyDelta[locker2][currency]; 
+
+        if (value1 == 0 || value2 == 0) revert NoDeltasToResolve();
+        
         int256 net = value1 + value2;
         currencyDelta[locker2][currency] = 0;
         currencyDelta[locker][currency] = net;
