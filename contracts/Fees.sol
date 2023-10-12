@@ -17,6 +17,9 @@ abstract contract Fees is IFees, Owned {
 
     uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
 
+    // the swap fee is represented in hundredths of a bip, so the max is 100%
+    uint24 public constant MAX_SWAP_FEE = 1000000;
+
     mapping(Currency currency => uint256) public protocolFeesAccrued;
 
     mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
@@ -65,7 +68,7 @@ abstract contract Fees is IFees, Owned {
     function _fetchDynamicFee(PoolKey memory key) internal view returns (uint24 dynamicFee) {
         if (key.fee.isDynamicFee()) {
             dynamicFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key);
-            if (dynamicFee >= 1000000) revert FeeTooLarge();
+            if (dynamicFee >= MAX_SWAP_FEE) revert FeeTooLarge();
         }
     }
 
