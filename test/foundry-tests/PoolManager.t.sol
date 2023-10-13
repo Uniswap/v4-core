@@ -41,6 +41,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
     event LockAcquired();
     event ProtocolFeeControllerUpdated(address protocolFeeController);
+    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
     event Initialize(
         PoolId indexed poolId,
         Currency indexed currency0,
@@ -65,6 +66,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     event TransferSingle(
         address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount
     );
+    
+    Currency internal invalidCurrency;
 
     Pool.State state;
     PoolManager manager;
@@ -82,6 +85,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
     function setUp() public {
         initializeTokens();
+        MockInvalidERC20 invalidToken = new MockInvalidERC20("TestInvalid", "I", 18, 1000 ether);
+        invalidCurrency = Currency.wrap(address(invalidToken));
         manager = Deployers.createFreshManager();
         donateRouter = new PoolDonateTest(manager);
         modifyPositionRouter = new PoolModifyPositionTest(manager);
@@ -1088,7 +1093,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function testTakeSucceedsForNativeTokensWhenPoolHasLiquidity() public {
-        vm.deal(address(this), 1 ether);
         PoolKey memory key = 
             PoolKey({currency0: Currency.wrap(address(0)), currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
@@ -1098,7 +1102,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         takeRouter.take{value: 1}(key, 1, 0);
         takeRouter.take(key, 0, 1);
     }
-
 
     uint256 constant POOL_SLOT = 10;
     uint256 constant TICKS_OFFSET = 4;
