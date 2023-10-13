@@ -16,6 +16,7 @@ import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
 import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
+import {MockInvalidERC20} from "./utils/MockInvalidERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
@@ -23,6 +24,7 @@ import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
 import {PoolKey} from "../../contracts/types/PoolKey.sol";
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
+import {PoolTakeTest} from "../../contracts/test/PoolTakeTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolLockTest} from "../../contracts/test/PoolLockTest.sol";
 import {PoolId, PoolIdLibrary} from "../../contracts/types/PoolId.sol";
@@ -70,6 +72,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     PoolModifyPositionTest modifyPositionRouter;
     PoolSwapTest swapRouter;
     PoolLockTest lockTest;
+    PoolTakeTest takeRouter;
     ProtocolFeeControllerTest protocolFeeController;
 
     address ADDRESS_ZERO = address(0);
@@ -85,6 +88,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         lockTest = new PoolLockTest(manager);
         swapRouter = new PoolSwapTest(manager);
+        takeRouter = new PoolTakeTest(manager);
         protocolFeeController = new ProtocolFeeControllerTest();
 
         MockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
@@ -98,6 +102,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ether);
         MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ether);
+
+        MockERC20(Currency.unwrap(currency0)).approve(address(takeRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(takeRouter), 10 ether);
+        
+        MockInvalidERC20(Currency.unwrap(invalidCurrency)).mint(address(this), 10 ether);
+        MockInvalidERC20(Currency.unwrap(invalidCurrency)).approve(address(modifyPositionRouter), 10 ether);
+        MockInvalidERC20(Currency.unwrap(invalidCurrency)).approve(address(takeRouter), 10 ether);
     }
 
     function testPoolManagerInitialize(PoolKey memory key, uint160 sqrtPriceX96) public {
@@ -1034,6 +1045,60 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         emit LockAcquired();
         lockTest.lock();
     }
+
+    function testTakeFailsIfNoLiquidity(uint160 sqrtPriceX96) public {
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+
+        vm.expectRevert();
+        takeRouter.take(key, 100, 0);
+    }
+
+    function testTakeFailsForInvalidTokens() public {
+        bool currency0Invalid = Currency.unwrap(invalidCurrency) < Currency.unwrap(currency0);
+        PoolKey memory key = PoolKey({
+            currency0: currency0Invalid ? invalidCurrency : currency0,
+            currency1: currency0Invalid ? currency0 : invalidCurrency,
+            fee: 100,
+            hooks: IHooks(address(0)),
+            tickSpacing: 10
+        });
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+
+        takeRouter.take(key, currency0Invalid ? 0 : 1, currency0Invalid ? 1 : 0);
+        vm.expectRevert();
+        takeRouter.take(key, currency0Invalid ? 1 : 0, currency0Invalid ? 0 : 1);
+    }
+
+    function testTakeSucceedsWhenPoolHasLiquidity() public {
+        PoolKey memory key = 
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+
+        takeRouter.take(key, 1, 0);
+        takeRouter.take(key, 0, 1);
+    }
+
+    function testTakeSucceedsForNativeTokensWhenPoolHasLiquidity() public {
+        vm.deal(address(this), 1 ether);
+        PoolKey memory key = 
+            PoolKey({currency0: Currency.wrap(address(0)), currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
+        modifyPositionRouter.modifyPosition{value: 1 ether}(key, params, ZERO_BYTES);
+
+        takeRouter.take{value: 1}(key, 1, 0);
+        takeRouter.take(key, 0, 1);
+    }
+
 
     uint256 constant POOL_SLOT = 10;
     uint256 constant TICKS_OFFSET = 4;
