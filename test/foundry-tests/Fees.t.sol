@@ -49,6 +49,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
     PoolKey key2;
     // key3 no hook
     PoolKey key3;
+    // key4 with native token
+    PoolKey key4;
 
     bool _zeroForOne = true;
     bool _oneForZero = false;
@@ -60,6 +62,8 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         modifyPositionRouter = new PoolModifyPositionTest(manager);
         swapRouter = new PoolSwapTest(manager);
         protocolFeeController = new ProtocolFeeControllerTest();
+
+        vm.deal(address(this), 10e18);
 
         MockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
         MockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ether);
@@ -104,14 +108,23 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
             tickSpacing: 60
         });
 
+        key4 = PoolKey({
+            currency0: CurrencyLibrary.NATIVE,
+            currency1: currency1,
+            fee: uint24(3000),
+            hooks: IHooks(address(0)),
+            tickSpacing: 60
+        });
+
         manager.initialize(key0, SQRT_RATIO_1_1, ZERO_BYTES);
         manager.initialize(key1, SQRT_RATIO_1_1, ZERO_BYTES);
         manager.initialize(key2, SQRT_RATIO_1_1, ZERO_BYTES);
         manager.initialize(key3, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testInitializeFailsNoHook() public {
-        PoolKey memory key4 = PoolKey({
+        PoolKey memory key5 = PoolKey({
             currency0: currency0,
             currency1: currency1,
             fee: FeeLibrary.HOOK_WITHDRAW_FEE_FLAG | FeeLibrary.HOOK_SWAP_FEE_FLAG | uint24(3000),
@@ -120,9 +133,9 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         });
 
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
-        manager.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key5, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        key4 = PoolKey({
+        key5 = PoolKey({
             currency0: currency0,
             currency1: currency1,
             fee: FeeLibrary.DYNAMIC_FEE_FLAG,
@@ -131,7 +144,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         });
 
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
-        manager.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key5, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testInitializeHookSwapFee(uint16 fee) public {
@@ -580,6 +593,36 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         manager.collectHookFees(address(hook), currency1, 0);
         assertEq(currency1.balanceOf(address(hook)), expectedHookFees);
     }
+
+    function testCollectFeesForNativeTokens() public {
+        uint16 protocolFee = _computeFee(_oneForZero, 10); // 10% on 0 to 1 swaps
+        protocolFeeController.setSwapFeeForPool(key4.toId(), protocolFee);
+        manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
+        manager.setProtocolFees(key4);
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key4.toId());
+        assertEq(getSwapFee(slot0.protocolFees), protocolFee);
+
+        (slot0,,,) = manager.pools(key4.toId());
+
+        IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
+        modifyPositionRouter.modifyPosition{value: 10e18}(key4, params, ZERO_BYTES);
+        // 1 for 0 
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
+        swapRouter.swap(
+            key4,
+            IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
+        );
+
+        uint256 expectedProtocolFees = 3; // 10% of 30 is 3
+        vm.prank(address(protocolFeeController));
+        manager.collectProtocolFees(address(protocolFeeController), currency1, 0);
+        assertEq(currency1.balanceOf(address(protocolFeeController)), expectedProtocolFees);
+    }
+
+    receive() external payable {}
 
     // If zeroForOne is true, then value is set on the lower bits. If zeroForOne is false, then value is set on the higher bits.
     function _computeFee(bool zeroForOne, uint16 value) internal pure returns (uint16 fee) {
