@@ -596,21 +596,26 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
     function testCollectFeesForNativeTokens() public {
         uint16 protocolFee = _computeFee(_oneForZero, 10); // 10% on 0 to 1 swaps
-        protocolFeeController.setSwapFeeForPool(key4.toId(), protocolFee);
+        protocolFeeController.setSwapFeeForPool(key0.toId(), protocolFee);
         manager.setProtocolFeeController(IProtocolFeeController(protocolFeeController));
-        manager.setProtocolFees(key4);
+        manager.setProtocolFees(key0);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key4.toId());
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
         assertEq(getSwapFee(slot0.protocolFees), protocolFee);
 
-        (slot0,,,) = manager.pools(key4.toId());
+        uint16 hookFee = _computeFee(_oneForZero, 5); // 20% on 1 to 0 swaps
+        hook.setSwapFee(key0, hookFee);
+        manager.setHookFees(key0);
+
+        (slot0,,,) = manager.pools(key0.toId());
+        assertEq(getSwapFee(slot0.hookFees), hookFee);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
-        modifyPositionRouter.modifyPosition{value: 10e18}(key4, params, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition{value: 10e18}(key0, params, ZERO_BYTES);
         // 1 for 0 
         MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
-            key4,
+            key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
             PoolSwapTest.TestSettings(true, true),
             ZERO_BYTES
@@ -620,6 +625,12 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         vm.prank(address(protocolFeeController));
         manager.collectProtocolFees(address(protocolFeeController), currency1, 0);
         assertEq(currency1.balanceOf(address(protocolFeeController)), expectedProtocolFees);
+    
+        uint256 expectedHookFees = 5; // 20% of 27 (30-3) is 5.4, round down is 5
+        vm.prank(address(hook));
+        // Addr(0) recipient will be the hook.
+        manager.collectHookFees(address(hook), currency1, 0);
+        assertEq(currency1.balanceOf(address(hook)), expectedHookFees);
     }
 
     receive() external payable {}
