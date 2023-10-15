@@ -1,5 +1,3 @@
-// TODO: once hardhat is gone, js-scripts can go inside test folder
-
 import Decimal from 'decimal.js'
 import { ethers } from 'ethers';
 
