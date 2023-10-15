@@ -461,8 +461,6 @@ contract TickTest is Test, GasSnapshot {
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
         int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
 
-        uint128 maxLiquidityPerTick = Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing);
-
         // symmetry around 0 tick
         assertEq(maxTick, -minTick);
         // positive max tick
@@ -471,7 +469,9 @@ contract TickTest is Test, GasSnapshot {
         assertEq((maxTick - minTick) % tickSpacing, 0);
 
         uint256 numTicks = uint256(int256((maxTick - minTick) / tickSpacing)) + 1;
-        // max liquidity at every tick is less than the cap
-        assertGt(type(uint128).max, uint256(maxLiquidityPerTick) * numTicks);
+        uint128 maxLiquidityPerTick = Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing);
+
+        // sum of max liquidity on each tick is at most the cap
+        assertGe(type(uint128).max, uint256(maxLiquidityPerTick) * numTicks);
     }
 }
