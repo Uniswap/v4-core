@@ -15,4 +15,7 @@ library Constants {
 
     int24 constant MIN_TICK = -887272;
     int24 constant MAX_TICK = 887272;
+
+    int24 constant MIN_TICK_SPACING = 1;
+    int24 constant MAX_TICK_SPACING = type(int16).max;
 }

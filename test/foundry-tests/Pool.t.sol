@@ -8,6 +8,7 @@ import {PoolManager} from "../../contracts/PoolManager.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 import {TickMath} from "../../contracts/libraries/TickMath.sol";
 import {TickBitmap} from "../../contracts/libraries/TickBitmap.sol";
+import {Constants} from "./utils/Constants.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
@@ -40,8 +41,8 @@ contract PoolTest is Test {
 
     function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
-        vm.assume(params.tickSpacing > 0);
-        vm.assume(params.tickSpacing < 32768);
+        vm.assume(params.tickSpacing >= Constants.MIN_TICK_SPACING);
+        vm.assume(params.tickSpacing <= Constants.MAX_TICK_SPACING);
 
         testPoolInitialize(sqrtPriceX96, 0, 0);
 
@@ -73,8 +74,8 @@ contract PoolTest is Test {
 
     function testSwap(uint160 sqrtPriceX96, Pool.SwapParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
-        vm.assume(params.tickSpacing > 0);
-        vm.assume(params.tickSpacing < 32768);
+        vm.assume(params.tickSpacing >= Constants.MIN_TICK_SPACING);
+        vm.assume(params.tickSpacing <= Constants.MAX_TICK_SPACING);
         vm.assume(params.fee < 1000000);
 
         testPoolInitialize(sqrtPriceX96, 0, 0);
