@@ -31,3 +31,6 @@ jobs:
 
       - name: Compile
         run: yarn prettier-check
+
+      - name: Run forge snapshot
+        run: forge snapshot --check --tolerance 1
