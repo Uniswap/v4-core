@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {MockERC20} from "./utils/MockERC20.sol";
+import {UniMockERC20} from "./utils/UniMockERC20.sol";
 import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
 import {LockDataLibrary} from "../../contracts/libraries/LockDataLibrary.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
@@ -137,15 +137,15 @@ contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
 
     function testTokenLocker() public {
         TokenLocker locker = new TokenLocker();
-        MockERC20(Currency.unwrap(currency0)).mint(address(locker), 1);
-        MockERC20(Currency.unwrap(currency0)).approve(address(locker), 1);
+        UniMockERC20(Currency.unwrap(currency0)).mint(address(locker), 1);
+        UniMockERC20(Currency.unwrap(currency0)).approve(address(locker), 1);
         locker.main(manager, currency0, true);
     }
 
     function testTokenRevert() public {
         TokenLocker locker = new TokenLocker();
-        MockERC20(Currency.unwrap(currency0)).mint(address(locker), 1);
-        MockERC20(Currency.unwrap(currency0)).approve(address(locker), 1);
+        UniMockERC20(Currency.unwrap(currency0)).mint(address(locker), 1);
+        UniMockERC20(Currency.unwrap(currency0)).approve(address(locker), 1);
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.CurrencyNotSettled.selector));
         locker.main(manager, currency0, false);
     }

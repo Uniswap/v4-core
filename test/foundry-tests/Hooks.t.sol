@@ -8,7 +8,7 @@ import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
-import {MockERC20} from "./utils/MockERC20.sol";
+import {UniMockERC20} from "./utils/UniMockERC20.sol";
 import {IHooks} from "../../contracts/interfaces/IHooks.sol";
 import {Currency} from "../../contracts/types/Currency.sol";
 import {IERC20Minimal} from "../../contracts/interfaces/external/IERC20Minimal.sol";
@@ -65,7 +65,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testModifyPositionSucceedsWithHook() public {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        UniMockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
         assertEq(mockHooks.beforeModifyPositionData(), new bytes(111));
@@ -74,7 +74,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testBeforeModifyPositionInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        UniMockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), ZERO_BYTES);
@@ -82,14 +82,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testAfterModifyPositionInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        UniMockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), ZERO_BYTES);
     }
 
     function testSwapSucceedsWithHook() public {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        UniMockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
             key,
@@ -103,7 +103,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testBeforeSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        UniMockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
@@ -116,7 +116,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testAfterSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        UniMockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
@@ -633,8 +633,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function addLiquidity(int24 tickLower, int24 tickUpper, int256 amount) internal {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ** 18);
+        UniMockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+        UniMockERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(
