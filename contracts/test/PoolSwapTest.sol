@@ -28,7 +28,7 @@ contract PoolSwapTest is ILockCallback {
 
     struct TestSettings {
         bool withdrawTokens;
-        bool settleUsingTransfer;
+        bool settleUsingBurn;
     }
 
     function swap(
@@ -54,7 +54,7 @@ contract PoolSwapTest is ILockCallback {
 
         if (data.params.zeroForOne) {
             if (delta.amount0() > 0) {
-                if (data.testSettings.settleUsingTransfer) {
+                if (data.testSettings.settleUsingBurn) {
                     if (data.key.currency0.isNative()) {
                         manager.settle{value: uint128(delta.amount0())}(data.key.currency0);
                     } else {
@@ -83,7 +83,7 @@ contract PoolSwapTest is ILockCallback {
             }
         } else {
             if (delta.amount1() > 0) {
-                if (data.testSettings.settleUsingTransfer) {
+                if (data.testSettings.settleUsingBurn) {
                     if (data.key.currency1.isNative()) {
                         manager.settle{value: uint128(delta.amount1())}(data.key.currency1);
                     } else {

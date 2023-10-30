@@ -369,8 +369,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
     }
 
     function _burnAndAccount(Currency currency, uint256 amount) internal {
-        _burn(currency.toId(), amount);
         _accountDelta(currency, -(amount.toInt128()));
+        _burn(currency.toId(), amount);
     }
 
     function setProtocolFees(PoolKey memory key) external {

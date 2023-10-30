@@ -7,12 +7,12 @@ import {IMinimalBalance} from "./interfaces/IMinimalBalance.sol";
 contract MinimalBalance is IMinimalBalance {
     using CurrencyLibrary for Currency;
     // Mapping from Currency id to account balances
-    mapping(uint256 => mapping(address => uint256)) private _balances;
+    mapping(uint256 => mapping(address => uint256)) public balances;
 
      /// @inheritdoc IMinimalBalance
     function balanceOf(address account, Currency currency) external view returns (uint256) {
-        // No check for zero address
-        return _balances[currency.toId()][account];
+        if(account == address(0)) revert InvalidAddress();
+        return balances[currency.toId()][account];
     }
  
     /**
@@ -26,7 +26,7 @@ contract MinimalBalance is IMinimalBalance {
         uint256 id,
         uint256 amount
     ) internal {
-        _balances[id][to] += amount;
+        balances[id][to] += amount;
     }
 
     /**
@@ -38,10 +38,10 @@ contract MinimalBalance is IMinimalBalance {
         uint256 id,
         uint256 amount
     ) internal {
-        uint256 balance = _balances[id][msg.sender];
+        uint256 balance = balances[id][msg.sender];
         if(balance < amount) revert InsufficientBalance();
         unchecked {
-            _balances[id][msg.sender] = balance - amount;
+            balances[id][msg.sender] = balance - amount;
         }
     }
 }
