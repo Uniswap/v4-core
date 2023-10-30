@@ -238,7 +238,10 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         emit Swap(key2.toId(), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 123);
         snapStart("cached dynamic fee, no hooks");
         swapRouter.swap(
-            key2, IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1), PoolSwapTest.TestSettings(false, false)
+            key2,
+            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
+            PoolSwapTest.TestSettings(false, false),
+            ZERO_BYTES
         );
         snapEnd();
     }
