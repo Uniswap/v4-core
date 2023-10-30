@@ -40,7 +40,7 @@ contract DynamicFeesTest is BaseTestHooks, IDynamicFeeManager {
         if (_update == true) {
             fee = _fee;
 
-            manager.setDynamicFee(key);
+            manager.updateDynamicSwapFee(key);
         }
         return IHooks.beforeSwap.selector;
     }

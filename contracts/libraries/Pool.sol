@@ -74,8 +74,8 @@ library Pool {
         int24 tick;
         uint24 protocolFees;
         uint24 hookFees;
-        // used for the dynamicFee if there is one enabled
-        uint24 dynamicFee;
+        // used for the swap fee, either static at initialize or updateable to the dynamic value
+        uint24 swapFee;
     }
 
     // info stored for each initialized individual tick
@@ -108,13 +108,10 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(
-        State storage self,
-        uint160 sqrtPriceX96,
-        uint24 protocolFees,
-        uint24 hookFees,
-        uint24 dynamicFee
-    ) internal returns (int24 tick) {
+    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFees, uint24 hookFees, uint24 swapFee)
+        internal
+        returns (int24 tick)
+    {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
@@ -124,7 +121,7 @@ library Pool {
             tick: tick,
             protocolFees: protocolFees,
             hookFees: hookFees,
-            dynamicFee: dynamicFee
+            swapFee: swapFee
         });
     }
 
@@ -148,9 +145,10 @@ library Pool {
         self.slot0.hookFees = hookFees;
     }
 
-    function setDynamicFee(State storage self, uint24 dynamicFee) internal {
+    /// @notice Only dynamic fee pools may update the swap fee.
+    function _setSwapFee(State storage self, uint24 swapFee) internal {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
-        self.slot0.dynamicFee = dynamicFee;
+        self.slot0.swapFee = swapFee;
     }
 
     struct ModifyPositionParams {
@@ -382,7 +380,6 @@ library Pool {
     }
 
     struct SwapParams {
-        uint24 fee;
         int24 tickSpacing;
         bool zeroForOne;
         int256 amountSpecified;
@@ -392,11 +389,18 @@ library Pool {
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 feeForProtocol, uint256 feeForHook, SwapState memory state)
+        returns (
+            BalanceDelta result,
+            uint256 feeForProtocol,
+            uint256 feeForHook,
+            uint24 swapFee,
+            SwapState memory state
+        )
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
+        swapFee = slot0Start.swapFee;
         if (slot0Start.sqrtPriceX96 == 0) revert PoolNotInitialized();
         if (params.zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
@@ -461,7 +465,7 @@ library Pool {
                 ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                params.fee
+                swapFee
             );
 
             if (exactInput) {

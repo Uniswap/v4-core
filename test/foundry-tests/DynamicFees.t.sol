@@ -75,7 +75,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     function testSwapFailsWithTooLargeFee() public {
         dynamicFees.setFee(1000000);
         vm.expectRevert(IFees.FeeTooLarge.selector);
-        manager.setDynamicFee(key);
+        manager.updateDynamicSwapFee(key);
     }
 
     event Swap(
@@ -91,7 +91,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function testSwapWorks() public {
         dynamicFees.setFee(123);
-        manager.setDynamicFee(key);
+        manager.updateDynamicSwapFee(key);
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 123);
         snapStart("swap with dynamic fee");
@@ -106,7 +106,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function testCacheDynamicFeeAndSwap() public {
         dynamicFees.setFee(123);
-        manager.setDynamicFee(key);
+        manager.updateDynamicSwapFee(key);
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 456);
         snapStart("update dynamic fee in before swap");
@@ -119,7 +119,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function testDynamicFeeAndBeforeSwapHook() public {
         dynamicFees.setFee(123);
-        manager.setDynamicFee(key);
+        manager.updateDynamicSwapFee(key);
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 123);
         snapStart("before swap hook, already cached dynamic fee");
@@ -132,7 +132,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function testDynamicFeesCacheNoOtherHooks() public {
         dynamicFeesNoHook.setFee(123);
-        manager.setDynamicFee(key2);
+        manager.updateDynamicSwapFee(key2);
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key2.toId(), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 123);
         snapStart("cached dynamic fee, no hooks");

@@ -65,10 +65,10 @@ abstract contract Fees is IFees, Owned {
         }
     }
 
-    function _fetchDynamicFee(PoolKey memory key) internal view returns (uint24 dynamicFee) {
+    function _fetchDynamicSwapFee(PoolKey memory key) internal view returns (uint24 dynamicSwapFee) {
         if (key.fee.isDynamicFee()) {
-            dynamicFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key);
-            if (dynamicFee >= MAX_SWAP_FEE) revert FeeTooLarge();
+            dynamicSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key);
+            if (dynamicSwapFee >= MAX_SWAP_FEE) revert FeeTooLarge();
         }
     }
 

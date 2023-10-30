@@ -73,11 +73,11 @@ contract PoolTest is Test {
         state.modifyPosition(params);
     }
 
-    function testSwap(uint160 sqrtPriceX96, Pool.SwapParams memory params) public {
+    function testSwap(uint160 sqrtPriceX96, uint24 swapFee, Pool.SwapParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
-        vm.assume(params.fee < 1000000);
+        vm.assume(swapFee < 1000000);
 
         testPoolInitialize(sqrtPriceX96, 0, 0, 0);
         Pool.Slot0 memory slot0 = state.slot0;
