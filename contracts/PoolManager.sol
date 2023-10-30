@@ -368,11 +368,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         returns (bytes4)
     {
         if (msg.sender != address(this)) revert NotPoolManagerToken();
-        // unchecked to save gas on incrementations of i
-        unchecked {
-            for (uint256 i; i < ids.length; i++) {
-                _burnAndAccount(CurrencyLibrary.fromId(ids[i]), values[i]);
-            }
+        for (uint256 i; i < ids.length; i++) {
+            _burnAndAccount(CurrencyLibrary.fromId(ids[i]), values[i]);
         }
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
