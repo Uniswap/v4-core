@@ -17,13 +17,12 @@ import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
-import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import {MinimalBalance} from "./MinimalBalance.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Receiver {
+contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -51,7 +50,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     mapping(PoolId id => Pool.State) public pools;
 
-    constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) ERC1155("") {}
+    constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) {}
 
     function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
         return pools[key.toId()];
@@ -338,9 +337,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     /// @inheritdoc IPoolManager
-    function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
+    function mint(Currency currency, address to, uint256 amount) external noDelegateCall onlyByLocker {
         _accountDelta(currency, amount.toInt128());
-        _mint(to, currency.toId(), amount, "");
+        _mint(to, currency.toId(), amount);
     }
 
     /// @inheritdoc IPoolManager
@@ -352,26 +351,26 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         _accountDelta(currency, -(paid.toInt128()));
     }
 
-    function _burnAndAccount(Currency currency, uint256 amount) internal {
-        _burn(address(this), currency.toId(), amount);
-        _accountDelta(currency, -(amount.toInt128()));
+    /// @inheritdoc IPoolManager
+    function burn(Currency currency, uint256 amount) external noDelegateCall onlyByLocker {
+        _burnAndAccount(currency, amount);
     }
 
-    function onERC1155Received(address, address, uint256 id, uint256 value, bytes calldata) external returns (bytes4) {
-        if (msg.sender != address(this)) revert NotPoolManagerToken();
-        _burnAndAccount(CurrencyLibrary.fromId(id), value);
-        return IERC1155Receiver.onERC1155Received.selector;
-    }
-
-    function onERC1155BatchReceived(address, address, uint256[] calldata ids, uint256[] calldata values, bytes calldata)
+    /// @inheritdoc IPoolManager
+    function batchBurn(Currency[] calldata currencies, uint256[] calldata amounts)
         external
-        returns (bytes4)
+        noDelegateCall
+        onlyByLocker
     {
-        if (msg.sender != address(this)) revert NotPoolManagerToken();
-        for (uint256 i; i < ids.length; i++) {
-            _burnAndAccount(CurrencyLibrary.fromId(ids[i]), values[i]);
+        uint256 length = currencies.length; 
+        for (uint256 i; i < length; i++) {
+            _burnAndAccount(currencies[i], amounts[i]);
         }
-        return IERC1155Receiver.onERC1155BatchReceived.selector;
+    }
+
+    function _burnAndAccount(Currency currency, uint256 amount) internal {
+        _burn(currency.toId(), amount);
+        _accountDelta(currency, -(amount.toInt128()));
     }
 
     function setProtocolFees(PoolKey memory key) external {
