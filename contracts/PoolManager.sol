@@ -375,10 +375,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     }
 
     function updateDynamicSwapFee(PoolKey memory key) external {
-        uint24 newDynamicSwapFee = _fetchDynamicSwapFee(key);
-        PoolId id = key.toId();
-        pools[id]._setSwapFee(newDynamicSwapFee);
-        emit DynamicSwapFeeUpdated(id, newDynamicSwapFee);
+        if (key.fee.isDynamicFee()) {
+            uint24 newDynamicSwapFee = _fetchDynamicSwapFee(key);
+            PoolId id = key.toId();
+            pools[id].setSwapFee(newDynamicSwapFee);
+            emit DynamicSwapFeeUpdated(id, newDynamicSwapFee);
+        } else {
+            revert FeeNotDynamic();
+        }
     }
 
     function extsload(bytes32 slot) external view returns (bytes32 value) {

@@ -74,7 +74,7 @@ library Pool {
         int24 tick;
         uint24 protocolFees;
         uint24 hookFees;
-        // used for the swap fee, either static at initialize or updateable to the dynamic value
+        // used for the swap fee, either static at initialize or dynamic via hook
         uint24 swapFee;
     }
 
@@ -146,7 +146,7 @@ library Pool {
     }
 
     /// @notice Only dynamic fee pools may update the swap fee.
-    function _setSwapFee(State storage self, uint24 swapFee) internal {
+    function setSwapFee(State storage self, uint24 swapFee) internal {
         if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
         self.slot0.swapFee = swapFee;
     }

@@ -66,10 +66,8 @@ abstract contract Fees is IFees, Owned {
     }
 
     function _fetchDynamicSwapFee(PoolKey memory key) internal view returns (uint24 dynamicSwapFee) {
-        if (key.fee.isDynamicFee()) {
-            dynamicSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key);
-            if (dynamicSwapFee >= MAX_SWAP_FEE) revert FeeTooLarge();
-        }
+        dynamicSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key);
+        if (dynamicSwapFee >= MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
     /// @dev Only the lower 12 bits are used here to encode the fee denominator.

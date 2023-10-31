@@ -130,6 +130,13 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
+    function testUpdateRevertsOnStaticFeePool() public {
+        (PoolKey memory staticPoolKey, PoolId id) =
+            Deployers.createPool(manager, IHooks(address(0)), 3000, SQRT_RATIO_1_1);
+        vm.expectRevert(IFees.FeeNotDynamic.selector);
+        manager.updateDynamicSwapFee(staticPoolKey);
+    }
+
     function testDynamicFeesCacheNoOtherHooks() public {
         dynamicFeesNoHook.setFee(123);
         manager.updateDynamicSwapFee(key2);
