@@ -52,7 +52,15 @@ jobs:
         with:
           version: nightly
 
+      - name: Build
+        run: forge build
+
       - name: Run tests
         run: forge test -vvv
         env:
           FOUNDRY_PROFILE: ci
+
+      - name: Run forge snapshots
+        run: forge snapshot --check
+        env:
+          FOUNDRY_FUZZ_SEED: "0x4444"
