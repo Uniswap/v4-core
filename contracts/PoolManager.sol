@@ -362,7 +362,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
         noDelegateCall
         onlyByLocker
     {
-        uint256 length = currencies.length; 
+        uint256 length = currencies.length;
         for (uint256 i; i < length; i++) {
             _burnAndAccount(currencies[i], amounts[i]);
         }

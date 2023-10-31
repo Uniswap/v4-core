@@ -3,13 +3,13 @@ pragma solidity ^0.8.20;
 
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {MinimalBalance} from "../MinimalBalance.sol";
 
-contract PoolSwapTest is ILockCallback {
+contract PoolSwapTest is ILockCallback, MinimalBalance {
     using CurrencyLibrary for Currency;
 
     IPoolManager public immutable manager;
@@ -28,7 +28,7 @@ contract PoolSwapTest is ILockCallback {
 
     struct TestSettings {
         bool withdrawTokens;
-        bool settleUsingBurn;
+        bool settleUsingTransfer;
     }
 
     function swap(
@@ -45,6 +45,16 @@ contract PoolSwapTest is ILockCallback {
         if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
     }
 
+    function _mintAndAccountSender(address sender, Currency currency, uint256 amount) internal {
+        manager.mint(currency, address(this), amount);
+        _mint(sender, currency.toId(), amount);
+    }
+
+    function _burnAndAccountSender(address sender, Currency currency, uint256 amount) internal {
+        manager.burn(currency, amount);
+        _burnFrom(sender, currency.toId(), amount);
+    }
+
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
@@ -54,7 +64,7 @@ contract PoolSwapTest is ILockCallback {
 
         if (data.params.zeroForOne) {
             if (delta.amount0() > 0) {
-                if (data.testSettings.settleUsingBurn) {
+                if (data.testSettings.settleUsingTransfer) {
                     if (data.key.currency0.isNative()) {
                         manager.settle{value: uint128(delta.amount0())}(data.key.currency0);
                     } else {
@@ -64,26 +74,20 @@ contract PoolSwapTest is ILockCallback {
                         manager.settle(data.key.currency0);
                     }
                 } else {
-                    // the received hook on this transfer will burn the tokens
-                    manager.safeTransferFrom(
-                        data.sender,
-                        address(manager),
-                        uint256(uint160(Currency.unwrap(data.key.currency0))),
-                        uint128(delta.amount0()),
-                        ""
-                    );
+                    // assume router has the tokens
+                    _burnAndAccountSender(data.sender, data.key.currency0, uint128(delta.amount0()));
                 }
             }
             if (delta.amount1() < 0) {
                 if (data.testSettings.withdrawTokens) {
                     manager.take(data.key.currency1, data.sender, uint128(-delta.amount1()));
                 } else {
-                    manager.mint(data.key.currency1, data.sender, uint128(-delta.amount1()));
+                    _mintAndAccountSender(data.sender, data.key.currency1, uint128(-delta.amount1()));
                 }
             }
         } else {
             if (delta.amount1() > 0) {
-                if (data.testSettings.settleUsingBurn) {
+                if (data.testSettings.settleUsingTransfer) {
                     if (data.key.currency1.isNative()) {
                         manager.settle{value: uint128(delta.amount1())}(data.key.currency1);
                     } else {
@@ -93,21 +97,14 @@ contract PoolSwapTest is ILockCallback {
                         manager.settle(data.key.currency1);
                     }
                 } else {
-                    // the received hook on this transfer will burn the tokens
-                    manager.safeTransferFrom(
-                        data.sender,
-                        address(manager),
-                        uint256(uint160(Currency.unwrap(data.key.currency1))),
-                        uint128(delta.amount1()),
-                        ""
-                    );
+                    _burnAndAccountSender(data.sender, data.key.currency1, uint128(delta.amount1()));
                 }
             }
             if (delta.amount0() < 0) {
                 if (data.testSettings.withdrawTokens) {
                     manager.take(data.key.currency0, data.sender, uint128(-delta.amount0()));
                 } else {
-                    manager.mint(data.key.currency0, data.sender, uint128(-delta.amount0()));
+                    _mintAndAccountSender(data.sender, data.key.currency0, uint128(-delta.amount0()));
                 }
             }
         }

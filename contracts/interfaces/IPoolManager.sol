@@ -175,7 +175,7 @@ interface IPoolManager is IFees {
 
     /// @notice Called by the user to move value into ERC1155 balance
     function mint(Currency token, address to, uint256 amount) external;
-    
+
     /// @notice Called by the user to redeem their ERC1155 balance
     function burn(Currency token, uint256 amount) external;
 

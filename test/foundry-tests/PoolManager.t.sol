@@ -60,9 +60,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         int24 tick,
         uint24 fee
     );
-    event TransferSingle(
-        address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount
-    );
+    event Mint(address indexed to, uint256 indexed id, uint256 amount);
+    event Burn(address indexed from, uint256 indexed id, uint256 amount);
 
     Pool.State state;
     PoolManager manager;
@@ -804,12 +803,12 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             ZERO_BYTES
         );
 
-        vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        vm.expectEmit(true, true, true, false);
+        emit Mint(address(this), CurrencyLibrary.toId(currency1), 98);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        uint256 erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
-        assertEq(erc1155Balance, 98);
+        uint256 claimsBalance = swapRouter.balanceOf(address(this), currency1);
+        assertEq(claimsBalance, 98);
     }
 
     function testSwapUse1155AsInput() public {
@@ -828,27 +827,24 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000000000000000000}),
             ZERO_BYTES
         );
-        vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        vm.expectEmit(true, true, true, false);
+        emit Mint(address(this), CurrencyLibrary.toId(currency1), 98);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        uint256 erc1155Balance = manager.balanceOf(address(this), uint256(uint160(Currency.unwrap(currency1))));
-        assertEq(erc1155Balance, 98);
-
-        // give permission for swapRouter to burn the 1155s
-        manager.setApprovalForAll(address(swapRouter), true);
+        uint256 claimsBalance = swapRouter.balanceOf(address(this), currency1);
+        assertEq(claimsBalance, 98);
 
         // swap from currency1 to currency0 again, using 1155s as input tokens
         params = IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -25, sqrtPriceLimitX96: SQRT_RATIO_4_1});
 
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
 
-        vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(manager), address(manager), address(0), CurrencyLibrary.toId(currency1), 27);
+        vm.expectEmit(true, true, true, false);
+        emit Burn(address(swapRouter), CurrencyLibrary.toId(currency1), 27);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
-        assertEq(erc1155Balance, 71);
+        claimsBalance = swapRouter.balanceOf(address(this), currency1);
+        assertEq(claimsBalance, 71);
     }
 
     function testGasSwapAgainstLiq() public {
