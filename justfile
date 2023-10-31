@@ -14,7 +14,7 @@ build-forge: install-forge
 build-hardhat: install-hardhat
     yarn build
 
-snapshots-forge: install-forge
+snapshots-forge: install-forge test-forge
     FOUNDRY_FUZZ_SEED=0x4444 forge snapshot
 
 snapshots-hardhat: install-hardhat

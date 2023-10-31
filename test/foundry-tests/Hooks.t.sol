@@ -41,9 +41,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testInitializeSucceedsWithHook() public {
-        (PoolManager _manager,, PoolId id) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
+        (PoolManager _manager,, PoolId id) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1, new bytes(123));
         (uint160 sqrtPriceX96,,,) = _manager.getSlot0(id);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
+        assertEq(mockHooks.beforeInitializeData(), new bytes(123));
+        assertEq(mockHooks.afterInitializeData(), new bytes(123));
     }
 
     function testBeforeInitializeInvalidReturn() public {
@@ -65,7 +67,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testModifyPositionSucceedsWithHook() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
+        assertEq(mockHooks.beforeModifyPositionData(), new bytes(111));
+        assertEq(mockHooks.afterModifyPositionData(), new bytes(111));
     }
 
     function testBeforeModifyPositionInvalidReturn() public {
@@ -73,7 +77,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), ZERO_BYTES);
     }
 
     function testAfterModifyPositionInvalidReturn() public {
@@ -81,15 +85,20 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100));
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), ZERO_BYTES);
     }
 
     function testSwapSucceedsWithHook() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false)
+            key,
+            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            PoolSwapTest.TestSettings(false, false),
+            new bytes(222)
         );
+        assertEq(mockHooks.beforeSwapData(), new bytes(222));
+        assertEq(mockHooks.afterSwapData(), new bytes(222));
     }
 
     function testBeforeSwapInvalidReturn() public {
@@ -98,7 +107,10 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false)
+            key,
+            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            PoolSwapTest.TestSettings(false, false),
+            ZERO_BYTES
         );
     }
 
@@ -108,7 +120,10 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60), PoolSwapTest.TestSettings(false, false)
+            key,
+            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            PoolSwapTest.TestSettings(false, false),
+            ZERO_BYTES
         );
     }
 
@@ -117,7 +132,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
-        donateRouter.donate(key, 100, 200);
+        donateRouter.donate(key, 100, 200, new bytes(333));
+        assertEq(mockHooks.beforeDonateData(), new bytes(333));
+        assertEq(mockHooks.afterDonateData(), new bytes(333));
     }
 
     function testBeforeDonateInvalidReturn() public {
@@ -127,7 +144,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        donateRouter.donate(key, 100, 200);
+        donateRouter.donate(key, 100, 200, ZERO_BYTES);
     }
 
     function testAfterDonateInvalidReturn() public {
@@ -137,7 +154,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        donateRouter.donate(key, 100, 200);
+        donateRouter.donate(key, 100, 200, ZERO_BYTES);
     }
 
     // hook validation
@@ -620,6 +637,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(tickLower, tickUpper, amount));
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(tickLower, tickUpper, amount), ZERO_BYTES
+        );
     }
 }

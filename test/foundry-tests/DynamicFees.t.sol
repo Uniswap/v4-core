@@ -64,7 +64,10 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFees.setFee(1000000);
         vm.expectRevert(IFees.FeeTooLarge.selector);
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1), PoolSwapTest.TestSettings(false, false)
+            key,
+            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
+            PoolSwapTest.TestSettings(false, false),
+            ZERO_BYTES
         );
     }
 
@@ -85,7 +88,10 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         emit Swap(key.toId(), address(swapRouter), 0, 0, SQRT_RATIO_1_1 + 1, 0, 0, 123);
         snapStart("swap with dynamic fee");
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1), PoolSwapTest.TestSettings(false, false)
+            key,
+            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
+            PoolSwapTest.TestSettings(false, false),
+            ZERO_BYTES
         );
         snapEnd();
     }
