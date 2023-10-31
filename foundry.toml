@@ -6,7 +6,10 @@ optimizer_runs = 800
 via_ir = false
 ffi = true
 fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./foundry-out"}]
-fuzz_seed = 0x4444
+
+[fuzz]
+runs = 100
+seed = 0x4444
 
 [profile.ci]
 fuzz_runs = 10000
