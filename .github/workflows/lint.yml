@@ -32,6 +32,9 @@ jobs:
       - name: Lint
         run: forge fmt --check
 
+      - name: Build
+        run: forge build
+
       - name: Run forge snapshots
         run: forge snapshot --check
         env:
