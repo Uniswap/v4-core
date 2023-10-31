@@ -55,6 +55,19 @@ contract PoolSwapTest is ILockCallback, MinimalBalance {
         _burnFrom(sender, currency.toId(), amount);
     }
 
+    /*
+        @notice this router is automatically permissioned to burn tokens from its own Claims mapping
+                since swappers must approve the router to spend their tokens
+    **/
+    function _burnFrom(address from, uint256 id, uint256 amount) internal {
+        uint256 balance = balances[id][from];
+        if (balance < amount) revert InsufficientBalance();
+        unchecked {
+            balances[id][from] = balance - amount;
+        }
+        emit Burn(from, id, amount);
+    }
+
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 

@@ -16,13 +16,6 @@ contract MinimalBalance is IMinimalBalance {
         return balances[currency.toId()][account];
     }
 
-    // TODO: rework
-    function transfer(address to, Currency currency, uint256 amount) external {
-        if (to == address(0)) revert InvalidAddress();
-        _burn(currency.toId(), amount);
-        _mint(to, currency.toId(), amount);
-    }
-
     /**
      * @notice Mint `amount` of `id` and send it to `to`
      *     @param to The address to send the minted tokens to
@@ -46,14 +39,5 @@ contract MinimalBalance is IMinimalBalance {
             balances[id][msg.sender] = balance - amount;
         }
         emit Burn(msg.sender, id, amount);
-    }
-
-    function _burnFrom(address from, uint256 id, uint256 amount) internal {
-        uint256 balance = balances[id][from];
-        if (balance < amount) revert InsufficientBalance();
-        unchecked {
-            balances[id][from] = balance - amount;
-        }
-        emit Burn(from, id, amount);
     }
 }
