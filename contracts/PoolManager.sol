@@ -8,7 +8,6 @@ import {Position} from "./libraries/Position.sol";
 import {FeeLibrary} from "./libraries/FeeLibrary.sol";
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";
-import {LockDataLibrary} from "./libraries/LockDataLibrary.sol";
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
@@ -21,7 +20,7 @@ import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
-import {LockData} from "./types/LockData.sol";
+import {LockData, LockDataLibrary} from "./types/LockData.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Receiver {
@@ -92,7 +91,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     /// @inheritdoc IPoolManager
     function getLock(uint256 i) external view override returns (address locker) {
-        return LockDataLibrary.getLock(i);
+        return LockDataLibrary._getLock(i);
     }
 
     /// @inheritdoc IPoolManager
@@ -144,7 +143,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         lockData = LockDataLibrary.getLockData();
         if (lockData.length() == 1) {
             if (lockData.nonzeroDeltaCount() != 0) revert CurrencyNotSettled();
-            lockData.update(0, 0);
+            LockDataLibrary.clear();
         } else {
             lockData.pop();
         }
@@ -158,13 +157,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
-        uint128 nonzeroDeltaCount = lockData.nonzeroDeltaCount();
-
         unchecked {
             if (next == 0) {
-                lockData.update(lockData.length(), nonzeroDeltaCount - 1);
+                lockData.decrementNonzeroDeltaCount();
             } else if (current == 0) {
-                lockData.update(lockData.length(), nonzeroDeltaCount + 1);
+                lockData.incrementNonzeroDeltaCount();
             }
         }
 

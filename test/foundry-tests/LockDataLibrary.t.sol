@@ -6,8 +6,7 @@ import {PoolManager} from "../../contracts/PoolManager.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {ILockCallback} from "../../contracts/interfaces/callback/ILockCallback.sol";
-import {LockDataLibrary} from "../../contracts/libraries/LockDataLibrary.sol";
-import {LockData} from "../../contracts/types/LockData.sol";
+import {LockData, LockDataLibrary} from "../../contracts/types/LockData.sol";
 
 contract LockDataLibraryTest is Test, Deployers, ILockCallback {
     PoolManager manager;
