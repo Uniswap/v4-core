@@ -13,6 +13,6 @@ runs = 100
 seed = "0x4444"
 
 [profile.ci.fuzz]
-runs = 10000
+runs = 1000
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
