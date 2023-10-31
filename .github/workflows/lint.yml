@@ -34,3 +34,5 @@ jobs:
 
       - name: Run forge snapshots
         run: forge snapshot --check
+        env:
+          FOUNDRY_FUZZ_SEED: "0x4444"

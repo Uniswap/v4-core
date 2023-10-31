@@ -15,7 +15,7 @@ build-hardhat: install-hardhat
     yarn build
 
 snapshots-forge: install-forge
-    forge snapshot
+    FOUNDRY_FUZZ_SEED=0x4444 forge snapshot
 
 snapshots-hardhat: install-hardhat
     yarn snapshots
