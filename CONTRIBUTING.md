@@ -32,7 +32,7 @@ Finally, before opening a pull request please do the following:
 - Run the tests and snapshots. Commands are outlined in the [tests](#tests) section.
 - Document any new functions, structs, or interfaces following the natspec standard.
 - Add tests! For smaller contributions, they should be tested with unit tests, and fuzz tests where possible. For bigger contributions, they should be tested with integration tests and invariant tests where possible.
-- Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) 
+- Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
 
 ## Standards
 
@@ -62,7 +62,7 @@ This repo currently uses hardhat and forge tests. Please run both test suites be
 
 `yarn prettier` to run the formatter (runs both typescript and solidity formatting)
 
-`forge snapshot`to update the forge gas snapshots
+`forge snapshot`to update the forge gas snapshots. Note these must use a static fuzz seed, so please `source .env`, use `FOUNDRY_FUZZ_SEED=0x4444`, or use `just snapshots` when running forge snapshots.
 
 `forge test` to run forge tests
 
