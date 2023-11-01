@@ -15,7 +15,7 @@ import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
 import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
-import {UniMockERC20} from "./utils/UniMockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
@@ -87,17 +87,17 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         swapRouter = new PoolSwapTest(manager);
         protocolFeeController = new ProtocolFeeControllerTest();
 
-        UniMockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
-        UniMockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ether);
 
-        UniMockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), 10 ether);
-        UniMockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).approve(address(swapRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), 10 ether);
 
-        UniMockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 10 ether);
-        UniMockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 10 ether);
 
-        UniMockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ether);
-        UniMockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).approve(address(donateRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(donateRouter), 10 ether);
     }
 
     function testPoolManagerInitialize(PoolKey memory key, uint160 sqrtPriceX96) public {

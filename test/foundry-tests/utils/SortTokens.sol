@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {UniMockERC20} from "./UniMockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Currency} from "../../../contracts/types/Currency.sol";
 
 library SortTokens {
-    function sort(UniMockERC20 tokenA, UniMockERC20 tokenB)
+    function sort(MockERC20 tokenA, MockERC20 tokenB)
         internal
         pure
         returns (Currency _currency0, Currency _currency1)

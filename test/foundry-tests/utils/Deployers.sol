@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {UniMockERC20} from "./UniMockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Hooks} from "../../../contracts/libraries/Hooks.sol";
 import {Currency} from "../../../contracts/types/Currency.sol";
 import {IHooks} from "../../../contracts/interfaces/IHooks.sol";
@@ -25,14 +25,15 @@ contract Deployers {
     uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
 
     function deployCurrencies(uint256 totalSupply) internal returns (Currency currency0, Currency currency1) {
-        UniMockERC20[] memory tokens = deployTokens(2, totalSupply);
+        MockERC20[] memory tokens = deployTokens(2, totalSupply);
         return SortTokens.sort(tokens[0], tokens[1]);
     }
 
-    function deployTokens(uint8 count, uint256 totalSupply) internal returns (UniMockERC20[] memory tokens) {
-        tokens = new UniMockERC20[](count);
+    function deployTokens(uint8 count, uint256 totalSupply) internal returns (MockERC20[] memory tokens) {
+        tokens = new MockERC20[](count);
         for (uint8 i = 0; i < count; i++) {
-            tokens[i] = new UniMockERC20("TEST", "TEST", 18, totalSupply);
+            tokens[i] = new MockERC20("TEST", "TEST", 18);
+            tokens[i].mint(address(this), totalSupply);
         }
     }
 
@@ -47,7 +48,7 @@ contract Deployers {
         private
         returns (PoolKey memory key, PoolId id)
     {
-        UniMockERC20[] memory tokens = deployTokens(2, 2 ** 255);
+        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
         (Currency currency0, Currency currency1) = SortTokens.sort(tokens[0], tokens[1]);
         key = PoolKey(currency0, currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = key.toId();

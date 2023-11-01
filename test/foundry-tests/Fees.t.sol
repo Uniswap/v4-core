@@ -16,7 +16,7 @@ import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
 import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
-import {UniMockERC20} from "./utils/UniMockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
@@ -61,11 +61,11 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter = new PoolSwapTest(manager);
         protocolFeeController = new ProtocolFeeControllerTest();
 
-        UniMockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
-        UniMockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).mint(address(this), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).mint(address(this), 10 ether);
 
-        UniMockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 10 ether);
-        UniMockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency0)).approve(address(modifyPositionRouter), 10 ether);
+        MockERC20(Currency.unwrap(currency1)).approve(address(modifyPositionRouter), 10 ether);
 
         address hookAddr = address(99); // can't be a zero address, but does not have to have any other hook flags specified
         MockHooks impl = new MockHooks();
@@ -419,7 +419,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         params = IPoolManager.ModifyPositionParams(-60, 60, 10e18);
         modifyPositionRouter.modifyPosition(key3, params, ZERO_BYTES);
 
-        UniMockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
             key3,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
@@ -454,7 +454,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
         modifyPositionRouter.modifyPosition(key0, params, ZERO_BYTES);
         // 1 for 0 swap
-        UniMockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
@@ -487,7 +487,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
         modifyPositionRouter.modifyPosition(key0, params, ZERO_BYTES);
         // 1 for 0 swap
-        UniMockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
@@ -522,7 +522,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
         modifyPositionRouter.modifyPosition(key0, params, ZERO_BYTES);
         // 1 for 0 swap
-        UniMockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
@@ -561,7 +561,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
         modifyPositionRouter.modifyPosition(key0, params, ZERO_BYTES);
         // 1 for 0 swap
-        UniMockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
+        MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
