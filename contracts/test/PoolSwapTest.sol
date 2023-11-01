@@ -47,12 +47,12 @@ contract PoolSwapTest is ILockCallback, MinimalBalance {
 
     function _mintAndAccountSender(address sender, Currency currency, uint256 amount) internal {
         manager.mint(currency, address(this), amount);
-        _mint(sender, currency.toId(), amount);
+        // _mint(sender, currency.toId(), amount);
     }
 
     function _burnAndAccountSender(address sender, Currency currency, uint256 amount) internal {
         manager.burn(currency, amount);
-        _burnFrom(sender, currency.toId(), amount);
+        // _burnFrom(sender, currency.toId(), amount);
     }
 
     /*

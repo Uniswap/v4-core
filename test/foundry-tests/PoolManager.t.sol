@@ -803,12 +803,12 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Mint(address(this), CurrencyLibrary.toId(currency1), 98);
+        emit Mint(address(swapRouter), CurrencyLibrary.toId(currency1), 98);
         snapStart("swap mint output as claim");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        uint256 claimsBalance = swapRouter.balanceOf(address(this), currency1);
+        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
         assertEq(claimsBalance, 98);
     }
 
@@ -829,10 +829,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             ZERO_BYTES
         );
         vm.expectEmit(true, true, true, false);
-        emit Mint(address(this), CurrencyLibrary.toId(currency1), 98);
+        emit Mint(address(swapRouter), CurrencyLibrary.toId(currency1), 98);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        uint256 claimsBalance = swapRouter.balanceOf(address(this), currency1);
+        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
         assertEq(claimsBalance, 98);
 
         // swap from currency1 to currency0 again, using 1155s as input tokens
@@ -846,7 +846,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        claimsBalance = swapRouter.balanceOf(address(this), currency1);
+        claimsBalance = manager.balanceOf(address(swapRouter), currency1);
         assertEq(claimsBalance, 71);
     }
 
