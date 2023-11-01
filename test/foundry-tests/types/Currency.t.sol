@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {MockERC20} from "../utils/MockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Currency, CurrencyLibrary} from "../../../contracts/types/Currency.sol";
 
 contract TestCurrency is Test {
@@ -18,7 +18,9 @@ contract TestCurrency is Test {
 
     function setUp() public {
         nativeCurrency = Currency.wrap(address(0));
-        erc20Currency = Currency.wrap(address(new MockERC20("TestA", "A", 18, initialERC20Balance)));
+        MockERC20 token = new MockERC20("TestA", "A", 18);
+        token.mint(address(this), initialERC20Balance);
+        erc20Currency = Currency.wrap(address(token));
         erc20Currency.transfer(address(1), sentBalance);
         nativeCurrency.transfer(address(1), sentBalance);
     }
