@@ -85,7 +85,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
     function setUp() public {
         initializeTokens();
-        TestInvalidERC20 invalidToken = new TestInvalidERC20("TestInvalid", "I", 18, 1000 ether);
+        TestInvalidERC20 invalidToken = new TestInvalidERC20(1000 ether);
         invalidCurrency = Currency.wrap(address(invalidToken));
         manager = Deployers.createFreshManager();
         donateRouter = new PoolDonateTest(manager);
