@@ -108,7 +108,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909 {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
-        if (key.currency0 > key.currency1) revert CurrenciesInitializedOutOfOrder();
+        if (key.currency0 >= key.currency1) revert CurrenciesInitializedOutOfOrder();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
