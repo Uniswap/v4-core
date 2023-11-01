@@ -16,7 +16,7 @@ import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
 import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
-import {MockInvalidERC20} from "./utils/MockInvalidERC20.sol";
+import {TestInvalidERC20} from "../../contracts/test/TestInvalidERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
@@ -66,7 +66,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     event TransferSingle(
         address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount
     );
-    
+
     Currency internal invalidCurrency;
 
     Pool.State state;
@@ -85,7 +85,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
     function setUp() public {
         initializeTokens();
-        MockInvalidERC20 invalidToken = new MockInvalidERC20("TestInvalid", "I", 18, 1000 ether);
+        TestInvalidERC20 invalidToken = new TestInvalidERC20("TestInvalid", "I", 18, 1000 ether);
         invalidCurrency = Currency.wrap(address(invalidToken));
         manager = Deployers.createFreshManager();
         donateRouter = new PoolDonateTest(manager);
@@ -110,10 +110,10 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         MockERC20(Currency.unwrap(currency0)).approve(address(takeRouter), 10 ether);
         MockERC20(Currency.unwrap(currency1)).approve(address(takeRouter), 10 ether);
-        
-        MockInvalidERC20(Currency.unwrap(invalidCurrency)).mint(address(this), 10 ether);
-        MockInvalidERC20(Currency.unwrap(invalidCurrency)).approve(address(modifyPositionRouter), 10 ether);
-        MockInvalidERC20(Currency.unwrap(invalidCurrency)).approve(address(takeRouter), 10 ether);
+
+        TestInvalidERC20(Currency.unwrap(invalidCurrency)).mint(address(this), 10 ether);
+        TestInvalidERC20(Currency.unwrap(invalidCurrency)).approve(address(modifyPositionRouter), 10 ether);
+        TestInvalidERC20(Currency.unwrap(invalidCurrency)).approve(address(takeRouter), 10 ether);
     }
 
     function testPoolManagerInitialize(PoolKey memory key, uint160 sqrtPriceX96) public {
@@ -1082,7 +1082,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function testTakeSucceedsWhenPoolHasLiquidity() public {
-        PoolKey memory key = 
+        PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
@@ -1093,8 +1093,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function testTakeSucceedsForNativeTokensWhenPoolHasLiquidity() public {
-        PoolKey memory key = 
-            PoolKey({currency0: Currency.wrap(address(0)), currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
+        PoolKey memory key = PoolKey({
+            currency0: Currency.wrap(address(0)),
+            currency1: currency1,
+            fee: 100,
+            hooks: IHooks(address(0)),
+            tickSpacing: 10
+        });
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
         modifyPositionRouter.modifyPosition{value: 1 ether}(key, params, ZERO_BYTES);

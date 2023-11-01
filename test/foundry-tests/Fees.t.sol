@@ -612,7 +612,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10e18);
         modifyPositionRouter.modifyPosition{value: 10e18}(key0, params, ZERO_BYTES);
-        // 1 for 0 
+        // 1 for 0
         MockERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
         swapRouter.swap(
             key0,
@@ -625,7 +625,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         vm.prank(address(protocolFeeController));
         manager.collectProtocolFees(address(protocolFeeController), currency1, 0);
         assertEq(currency1.balanceOf(address(protocolFeeController)), expectedProtocolFees);
-    
+
         uint256 expectedHookFees = 5; // 20% of 27 (30-3) is 5.4, round down is 5
         vm.prank(address(hook));
         // Addr(0) recipient will be the hook.
