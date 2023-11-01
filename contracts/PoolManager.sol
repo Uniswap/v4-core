@@ -91,7 +91,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     /// @inheritdoc IPoolManager
     function getLock(uint256 i) external view override returns (address locker) {
-        return LockDataLibrary._getLock(i);
+        return LockDataLibrary.getLock(i);
     }
 
     /// @inheritdoc IPoolManager
