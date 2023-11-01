@@ -10,7 +10,6 @@ evm_version = 'paris'
 
 [profile.default.fuzz]
 runs = 100
-seed = "0x4444"
 
 [profile.ci.fuzz]
 runs = 1000
