@@ -9,12 +9,16 @@ import {FeeLibrary} from "./libraries/FeeLibrary.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {Owned} from "./Owned.sol";
+import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
 
 abstract contract Fees is IFees, Owned {
     using FeeLibrary for uint24;
     using CurrencyLibrary for Currency;
 
     uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
+
+    // the swap fee is represented in hundredths of a bip, so the max is 100%
+    uint24 public constant MAX_SWAP_FEE = 1000000;
 
     mapping(Currency currency => uint256) public protocolFeesAccrued;
 
@@ -59,6 +63,11 @@ abstract contract Fees is IFees, Owned {
                 hookFees = hookFeesRaw & fullFeeMask;
             } catch {}
         }
+    }
+
+    function _fetchDynamicSwapFee(PoolKey memory key) internal view returns (uint24 dynamicSwapFee) {
+        dynamicSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key);
+        if (dynamicSwapFee >= MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
     /// @dev Only the lower 12 bits are used here to encode the fee denominator.
