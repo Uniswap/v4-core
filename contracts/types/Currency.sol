@@ -6,7 +6,7 @@ import {WETH} from "solmate/tokens/WETH.sol";
 
 type Currency is address;
 
-using {greaterThan as >, lessThan as <, equals as ==} for Currency global;
+using {greaterThan as >, lessThan as <, greaterThanOrEqualTo as >=, equals as ==} for Currency global;
 
 function equals(Currency currency, Currency other) pure returns (bool) {
     return Currency.unwrap(currency) == Currency.unwrap(other);
@@ -18,6 +18,10 @@ function greaterThan(Currency currency, Currency other) pure returns (bool) {
 
 function lessThan(Currency currency, Currency other) pure returns (bool) {
     return Currency.unwrap(currency) < Currency.unwrap(other);
+}
+
+function greaterThanOrEqualTo(Currency currency, Currency other) pure returns (bool) {
+    return Currency.unwrap(currency) >= Currency.unwrap(other);
 }
 
 /// @title CurrencyLibrary
