@@ -14,7 +14,7 @@ contract PoolTest is Test {
 
     Pool.State state;
 
-    function testPoolInitialize(uint160 sqrtPriceX96, uint16 protocolFee, uint16 hookFee) public {
+    function testPoolInitialize(uint160 sqrtPriceX96, uint16 protocolFee, uint16 hookFee, uint24 dynamicFee) public {
         vm.assume(protocolFee < 2 ** 12 && hookFee < 2 ** 12);
 
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
@@ -22,13 +22,15 @@ contract PoolTest is Test {
             state.initialize(
                 sqrtPriceX96,
                 _formatSwapAndWithdrawFee(protocolFee, protocolFee),
-                _formatSwapAndWithdrawFee(hookFee, hookFee)
+                _formatSwapAndWithdrawFee(hookFee, hookFee),
+                dynamicFee
             );
         } else {
             state.initialize(
                 sqrtPriceX96,
                 _formatSwapAndWithdrawFee(protocolFee, protocolFee),
-                _formatSwapAndWithdrawFee(hookFee, hookFee)
+                _formatSwapAndWithdrawFee(hookFee, hookFee),
+                dynamicFee
             );
             assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
             assertEq(state.slot0.protocolFees >> 12, protocolFee);
@@ -43,7 +45,7 @@ contract PoolTest is Test {
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
 
-        testPoolInitialize(sqrtPriceX96, 0, 0);
+        testPoolInitialize(sqrtPriceX96, 0, 0, 0);
 
         if (params.tickLower >= params.tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
@@ -71,13 +73,13 @@ contract PoolTest is Test {
         state.modifyPosition(params);
     }
 
-    function testSwap(uint160 sqrtPriceX96, Pool.SwapParams memory params) public {
+    function testSwap(uint160 sqrtPriceX96, uint24 swapFee, Pool.SwapParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
-        vm.assume(params.fee < 1000000);
+        vm.assume(swapFee < 1000000);
 
-        testPoolInitialize(sqrtPriceX96, 0, 0);
+        testPoolInitialize(sqrtPriceX96, 0, 0, 0);
         Pool.Slot0 memory slot0 = state.slot0;
 
         if (params.amountSpecified == 0) {
