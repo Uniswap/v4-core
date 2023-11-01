@@ -18,7 +18,6 @@ import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
 import {MockERC20} from "./utils/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
-import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EmptyTestHooks} from "../../contracts/test/EmptyTestHooks.sol";
 import {PoolKey} from "../../contracts/types/PoolKey.sol";
 import {BalanceDelta} from "../../contracts/types/BalanceDelta.sol";
@@ -30,7 +29,7 @@ import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControl
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 
-contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
+contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     using Hooks for IHooks;
     using Pool for Pool.State;
     using PoolIdLibrary for PoolKey;
@@ -805,7 +804,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         vm.expectEmit(true, true, true, false);
         emit Mint(address(this), CurrencyLibrary.toId(currency1), 98);
+        snapStart("swap mint output as claim");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
 
         uint256 claimsBalance = swapRouter.balanceOf(address(this), currency1);
         assertEq(claimsBalance, 98);
@@ -841,7 +842,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         vm.expectEmit(true, true, true, false);
         emit Burn(address(swapRouter), CurrencyLibrary.toId(currency1), 27);
+        snapStart("swap burn claim for input");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
 
         claimsBalance = swapRouter.balanceOf(address(this), currency1);
         assertEq(claimsBalance, 71);
@@ -1111,18 +1114,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     receive() external payable {}
-
-    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
-        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
-    }
-
-    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
-        external
-        pure
-        returns (bytes4)
-    {
-        return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
-    }
 
     function supportsInterface(bytes4) external pure returns (bool) {
         return true;
