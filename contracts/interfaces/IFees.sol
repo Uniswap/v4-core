@@ -8,6 +8,8 @@ interface IFees {
     error FeeTooLarge();
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
     error ProtocolFeeCannotBeFetched();
+    /// @notice Thrown when a pool does not have a dynamic fee.
+    error FeeNotDynamic();
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
