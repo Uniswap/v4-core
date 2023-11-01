@@ -21,6 +21,7 @@ contract LockDataLibraryTest is Test, Deployers, ILockCallback {
     }
 
     function lockAcquired(bytes calldata) public view returns (bytes memory) {
+        // todo how should we expose this with the new library
         LockData lockData = manager.getLockData();
         bytes memory data = abi.encode(lockData);
         return data;
