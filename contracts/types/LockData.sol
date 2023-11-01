@@ -56,7 +56,7 @@ library LockDataLibrary {
             /// @solidity memory-safe-assembly
             assembly {
                 // in the next storage slot, write the locker
-                sstore(nextLockerSlot, locker)
+                tstore(nextLockerSlot, locker)
             }
             LockData newLockData = toLockData(_length + 1, lockData.nonzeroDeltaCount());
             newLockData.update();
@@ -100,7 +100,7 @@ library LockDataLibrary {
     function update(LockData lockData) internal {
         uint256 lockDataSlot = LOCK_DATA_SLOT;
         assembly {
-            sstore(lockDataSlot, lockData)
+            tstore(lockDataSlot, lockData)
         }
     }
 
@@ -111,7 +111,7 @@ library LockDataLibrary {
             uint256 position = LOCKERS_SLOT + i; // not in assembly because assembly can't read constants
             /// @solidity memory-safe-assembly
             assembly {
-                locker := sload(position)
+                locker := tload(position)
             }
         }
     }
@@ -130,7 +130,7 @@ library LockDataLibrary {
     function getLockData() internal view returns (LockData lockData) {
         uint256 lockDataSlot = LOCK_DATA_SLOT;
         assembly {
-            lockData := sload(lockDataSlot)
+            lockData := tload(lockDataSlot)
         }
     }
 }
