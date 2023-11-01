@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {MockERC20} from "./MockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Hooks} from "../../../contracts/libraries/Hooks.sol";
 import {Currency} from "../../../contracts/types/Currency.sol";
 import {IHooks} from "../../../contracts/interfaces/IHooks.sol";
@@ -32,7 +32,8 @@ contract Deployers {
     function deployTokens(uint8 count, uint256 totalSupply) internal returns (MockERC20[] memory tokens) {
         tokens = new MockERC20[](count);
         for (uint8 i = 0; i < count; i++) {
-            tokens[i] = new MockERC20("TEST", "TEST", 18, totalSupply);
+            tokens[i] = new MockERC20("TEST", "TEST", 18);
+            tokens[i].mint(address(this), totalSupply);
         }
     }
 
