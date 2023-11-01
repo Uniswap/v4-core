@@ -109,7 +109,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
+
         if (key.currency0 > key.currency1) revert CurrenciesInitializedOutOfOrder();
+        if (key.currency0.isWrappedNative() || key.currency1.isWrappedNative()) revert MustUseNativeNotWrapped();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
@@ -332,8 +334,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-        reservesOf[currency] -= amount;
+        Currency accountCurrency = currency.mapAccountCurrency();
+
+        _accountDelta(accountCurrency, amount.toInt128());
+        reservesOf[accountCurrency] -= amount;
         currency.transfer(to, amount);
     }
 
@@ -345,11 +349,20 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
-        uint256 reservesBefore = reservesOf[currency];
-        reservesOf[currency] = currency.balanceOfSelf();
-        paid = reservesOf[currency] - reservesBefore;
+        Currency accountCurrency = currency.mapAccountCurrency();
+
+        if (currency.isWrappedNative()) {
+            // increment by paid so that its possible to settle ETH and WETH separately
+            paid = Currency.unwrapTotalBalance();
+            reservesOf[accountCurrency] += paid;
+        } else {
+            uint256 reservesBefore = reservesOf[currency];
+            reservesOf[currency] = currency.balanceOfSelf();
+            paid = reservesOf[currency] - reservesBefore;
+        }
+
         // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt128()));
+        _accountDelta(accountCurrency, -(paid.toInt128()));
     }
 
     function _burnAndAccount(Currency currency, uint256 amount) internal {

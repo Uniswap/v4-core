@@ -33,6 +33,9 @@ interface IPoolManager is IFees, IERC1155 {
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
     error CurrenciesInitializedOutOfOrder();
 
+    /// @notice Native and Wrapped Native are treated as fungible. PoolKey must use NATIVE not WRAPPED_NATIVE.
+    error MustUseNativeNotWrapped();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
