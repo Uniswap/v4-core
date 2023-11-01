@@ -137,8 +137,8 @@ interface IPoolManager is IFees, IERC1155 {
     function currencyDelta(address locker, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
-    /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockCallback(data)`
-    /// @return The data returned by the call to `ILockCallback(msg.sender).lockCallback(data)`
+    /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
+    /// @return The data returned by the call to `ILockCallback(msg.sender).lockAcquired(data)`
     function lock(bytes calldata data) external returns (bytes memory);
 
     struct ModifyPositionParams {
