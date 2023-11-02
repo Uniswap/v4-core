@@ -5,13 +5,13 @@ import {Currency} from "../types/Currency.sol";
 
 interface IMinimalBalance {
     error InsufficientBalance();
-    /// @notice Called by the user get their balance
 
+    /// @notice Get the balance of `account` for `currency`
     function balanceOf(address account, Currency currency) external returns (uint256);
 
     /*
         @notice Transfer `amount` of `currency` from sender to `to`
-        @param to The address to send the tokens to
+        @param to The address to transfer to
         @param currency The currency to transfer
         @param amount The amount to transfer
         @dev Will revert if the sender does not have enough balance

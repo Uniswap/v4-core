@@ -17,9 +17,9 @@ contract MinimalBalance is IMinimalBalance {
     }
 
     /**
-     * @notice Mint `amount` of `id` and send it to `to`
-     *     @param to The address to send the minted tokens to
-     *     @param id The id of the token to mint
+     * @notice Mint `amount` of currency `id` to `to`
+     *     @param to The address to mint to
+     *     @param id The id to mint
      *     @param amount The amount to mint
      */
     function _mint(address to, uint256 id, uint256 amount) internal {
@@ -28,8 +28,8 @@ contract MinimalBalance is IMinimalBalance {
     }
 
     /**
-     * @notice Burn `amount` of `id` from `msg.sender`
-     *     @param id The id of the token to burn
+     * @notice Burn `amount` of currency `id` from `msg.sender`
+     *     @param id The id of the currency to burn
      *     @param amount The amount to burn
      *  @dev Will revert if the sender does not have enough balance
      */
