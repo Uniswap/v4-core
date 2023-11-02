@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
+import {console2} from "forge-std/console2.sol";
 import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
 import {Position} from "./Position.sol";
@@ -236,6 +237,8 @@ library Pool {
                     clearTick(self, params.tickUpper);
                 }
             }
+
+            console2.log("debug4");
         }
 
         if (params.liquidityDelta != 0) {
@@ -252,6 +255,18 @@ library Pool {
                         0
                     );
             } else if (self.slot0.tick < params.tickUpper) {
+                console2.log("debug6");
+                console2.logInt(SqrtPriceMath.getAmount0Delta(
+                            self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
+                        ).toInt128());
+                // error below
+                console2.log("error below");
+                console2.logUint(TickMath.getSqrtRatioAtTick(params.tickLower));
+                console2.logUint(self.slot0.sqrtPriceX96);
+                console2.logInt(params.liquidityDelta);
+                console2.log(SqrtPriceMath.getAmount1Delta(
+                            TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
+                        ).toInt128());
                 result = result
                     + toBalanceDelta(
                         SqrtPriceMath.getAmount0Delta(
@@ -261,6 +276,7 @@ library Pool {
                             TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
                         ).toInt128()
                     );
+                console2.log("debug7");
 
                 self.liquidity = params.liquidityDelta < 0
                     ? self.liquidity - uint128(-params.liquidityDelta)
