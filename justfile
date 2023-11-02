@@ -14,7 +14,7 @@ build-forge: install-forge
 build-hardhat: install-hardhat
     yarn build
 
-snapshots-forge: install-forge
+snapshots-forge: install-forge test-forge
     forge snapshot
 
 snapshots-hardhat: install-hardhat

@@ -8,7 +8,7 @@ import {Hooks} from "../../contracts/libraries/Hooks.sol";
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
-import {MockERC20} from "./utils/MockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {IHooks} from "../../contracts/interfaces/IHooks.sol";
 import {Currency} from "../../contracts/types/Currency.sol";
 import {IERC20Minimal} from "../../contracts/interfaces/external/IERC20Minimal.sol";

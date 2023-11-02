@@ -15,7 +15,7 @@ import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
 import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
-import {MockERC20} from "./utils/MockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {MockContract} from "../../contracts/test/MockContract.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
@@ -233,6 +233,18 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
+    }
+
+    function testPoolManagerInitializeRevertsWithIdenticalTokens(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        // Both currencies are currency0
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency0, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
+
+        vm.expectRevert(IPoolManager.CurrenciesInitializedOutOfOrder.selector);
+        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
     }
 
     function testPoolManagerInitializeSucceedsWithInvalidFeeController(uint160 sqrtPriceX96) public {
