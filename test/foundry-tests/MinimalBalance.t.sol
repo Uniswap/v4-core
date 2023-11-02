@@ -73,4 +73,13 @@ contract MinimalBalanceTest is TokenFixture, Test {
         vm.expectRevert(abi.encodeWithSelector(IMinimalBalance.InsufficientBalance.selector));
         minimalBalanceImpl.transfer(address(1), currency0, amount + 1);
     }
+
+    function testCatchesOverflowOnTransfer() public {
+        // mint uint256 max - 1
+        minimalBalanceImpl.mint(address(0xdead), currency0, type(uint256).max);
+        minimalBalanceImpl.mint(address(this), currency0, 1);
+        // transfer will revert since overflow
+        vm.expectRevert();
+        minimalBalanceImpl.transfer(address(0xdead), currency0, 1);
+    }
 }
