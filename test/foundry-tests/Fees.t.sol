@@ -16,7 +16,7 @@ import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
 import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
-import {MockERC20} from "./utils/MockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {MockHooks} from "../../contracts/test/MockHooks.sol";
 import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
