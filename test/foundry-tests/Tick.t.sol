@@ -119,6 +119,13 @@ contract TickTest is Test, GasSnapshot {
         checkCantOverflow(Constants.MAX_TICK_SPACING, maxLiquidityPerTick);
     }
 
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForEntireRange() public {
+        uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(Constants.MAX_TICK);
+
+        assertEq(maxLiquidityPerTick, type(uint128).max / 3);
+        checkCantOverflow(Constants.MAX_TICK, maxLiquidityPerTick);
+    }
+
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor2302() public {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(2302);
 
