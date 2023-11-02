@@ -75,7 +75,6 @@ contract MinimalBalanceTest is TokenFixture, Test {
     }
 
     function testCatchesOverflowOnTransfer() public {
-        // mint uint256 max - 1
         minimalBalanceImpl.mint(address(0xdead), currency0, type(uint256).max);
         minimalBalanceImpl.mint(address(this), currency0, 1);
         // transfer will revert since overflow
