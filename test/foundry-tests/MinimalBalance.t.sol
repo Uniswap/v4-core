@@ -7,7 +7,7 @@ import {MinimalBalance} from "../../contracts/MinimalBalance.sol";
 import {IMinimalBalance} from "../../contracts/interfaces/IMinimalBalance.sol";
 import {CurrencyLibrary, Currency} from "../../contracts/types/Currency.sol";
 
-contract MinimalBalanceImpl is MinimalBalance {
+contract MockMinimalBalanceImpl is MinimalBalance {
     using CurrencyLibrary for Currency;
 
     function mint(address to, Currency currency, uint256 amount) public {
@@ -22,7 +22,7 @@ contract MinimalBalanceImpl is MinimalBalance {
 contract MinimalBalanceTest is TokenFixture, Test {
     using CurrencyLibrary for Currency;
 
-    MinimalBalanceImpl minimalBalanceImpl = new MinimalBalanceImpl();
+    MockMinimalBalanceImpl minimalBalanceImpl = new MockMinimalBalanceImpl();
 
     event Mint(address indexed to, uint256 indexed id, uint256 amount);
     event Burn(address indexed from, uint256 indexed id, uint256 amount);
