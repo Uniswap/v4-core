@@ -45,27 +45,12 @@ contract PoolSwapTest is ILockCallback, MinimalBalance {
         if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
     }
 
-    function _mintAndAccountSender(address sender, Currency currency, uint256 amount) internal {
+    function _mintForSelf(Currency currency, uint256 amount) internal {
         manager.mint(currency, address(this), amount);
-        // _mint(sender, currency.toId(), amount);
     }
 
-    function _burnAndAccountSender(address sender, Currency currency, uint256 amount) internal {
+    function _burnFromSelf(Currency currency, uint256 amount) internal {
         manager.burn(currency, amount);
-        // _burnFrom(sender, currency.toId(), amount);
-    }
-
-    /*
-        @notice this router is automatically permissioned to burn tokens from its own Claims mapping
-                since swappers must approve the router to spend their tokens
-    **/
-    function _burnFrom(address from, uint256 id, uint256 amount) internal {
-        uint256 balance = balances[id][from];
-        if (balance < amount) revert InsufficientBalance();
-        unchecked {
-            balances[id][from] = balance - amount;
-        }
-        emit Burn(from, id, amount);
     }
 
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
@@ -87,15 +72,15 @@ contract PoolSwapTest is ILockCallback, MinimalBalance {
                         manager.settle(data.key.currency0);
                     }
                 } else {
-                    // assume router has the tokens
-                    _burnAndAccountSender(data.sender, data.key.currency0, uint128(delta.amount0()));
+                    // assume this contract custodies the tokens
+                    _burnFromSelf(data.key.currency0, uint128(delta.amount0()));
                 }
             }
             if (delta.amount1() < 0) {
                 if (data.testSettings.withdrawTokens) {
                     manager.take(data.key.currency1, data.sender, uint128(-delta.amount1()));
                 } else {
-                    _mintAndAccountSender(data.sender, data.key.currency1, uint128(-delta.amount1()));
+                    _mintForSelf(data.key.currency1, uint128(-delta.amount1()));
                 }
             }
         } else {
@@ -110,14 +95,14 @@ contract PoolSwapTest is ILockCallback, MinimalBalance {
                         manager.settle(data.key.currency1);
                     }
                 } else {
-                    _burnAndAccountSender(data.sender, data.key.currency1, uint128(delta.amount1()));
+                    _burnFromSelf(data.key.currency1, uint128(delta.amount1()));
                 }
             }
             if (delta.amount0() < 0) {
                 if (data.testSettings.withdrawTokens) {
                     manager.take(data.key.currency0, data.sender, uint128(-delta.amount0()));
                 } else {
-                    _mintAndAccountSender(data.sender, data.key.currency0, uint128(-delta.amount0()));
+                    _mintForSelf(data.key.currency0, uint128(-delta.amount0()));
                 }
             }
         }
