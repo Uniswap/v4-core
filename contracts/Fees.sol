@@ -47,12 +47,12 @@ abstract contract Fees is IFees, Owned {
                 // get first word from return data
                 _data := mload(add(data, 0x20))
             }
-            // mask dirty bits from data, keeping 24 bits
+            // get the lowest 24 bits
             protocolFees = uint24(uint256(_data) & 0xFFFFFF);
-
-            // successful if the call succeeded with valid return data, the return data is less than max uint24, and the fees are valid
-            success = (data.length <= 32) && _success && (uint256(protocolFees) == uint256(_data))
+            // success if the call succeeded with valid return data, the return data is less than max uint24, and the fees are valid
+            success = _success && (data.length <= 32) && (uint256(protocolFees) == uint256(_data))
                 && _isValidProtocolFees(protocolFees);
+
             if (!success) protocolFees = 0;
         }
     }
