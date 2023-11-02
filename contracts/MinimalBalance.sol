@@ -34,15 +34,21 @@ contract MinimalBalance is IMinimalBalance {
      *  @dev Will revert if the sender does not have enough balance
      */
     function _burn(uint256 id, uint256 amount) internal {
-        balances[id][msg.sender] -= amount;
+        if (amount > balances[id][msg.sender]) revert InsufficientBalance();
+        unchecked {
+            balances[id][msg.sender] -= amount;
+        }
         emit Burn(msg.sender, id, amount);
     }
 
     /// @inheritdoc IMinimalBalance
     function transfer(address to, Currency currency, uint256 amount) public {
         uint256 id = currency.toId();
-        balances[id][msg.sender] -= amount;
-        balances[id][to] += amount;
+        if (amount > balances[id][msg.sender]) revert InsufficientBalance();
+        unchecked {
+            balances[id][msg.sender] -= amount;
+            balances[id][to] += amount;
+        }
         emit Transfer(msg.sender, to, id, amount);
     }
 }

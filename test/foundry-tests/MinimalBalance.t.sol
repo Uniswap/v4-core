@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {stdError} from "forge-std/StdError.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
 import {MinimalBalance} from "../../contracts/MinimalBalance.sol";
 import {IMinimalBalance} from "../../contracts/interfaces/IMinimalBalance.sol";
@@ -43,12 +42,13 @@ contract MinimalBalanceTest is TokenFixture, Test {
     }
 
     function testCatchesUnderflowOnBurn(uint256 amount) public {
+        vm.assume(amount < type(uint256).max - 1);
         vm.expectEmit(true, true, false, false);
         emit Mint(address(this), currency0.toId(), amount);
         minimalBalanceImpl.mint(address(this), currency0, amount);
 
         assertEq(minimalBalanceImpl.balanceOf(address(this), currency0), amount);
-        vm.expectRevert(stdError.arithmeticError);
+        vm.expectRevert(abi.encodeWithSelector(IMinimalBalance.InsufficientBalance.selector));
         minimalBalanceImpl.burn(currency0, amount + 1);
     }
 
@@ -64,12 +64,13 @@ contract MinimalBalanceTest is TokenFixture, Test {
     }
 
     function testCatchesUnderflowOnTransfer(uint256 amount) public {
+        vm.assume(amount < type(uint256).max - 1);
         vm.expectEmit(true, true, false, false);
         emit Mint(address(this), currency0.toId(), amount);
         minimalBalanceImpl.mint(address(this), currency0, amount);
 
         assertEq(minimalBalanceImpl.balanceOf(address(this), currency0), amount);
-        vm.expectRevert(stdError.arithmeticError);
+        vm.expectRevert(abi.encodeWithSelector(IMinimalBalance.InsufficientBalance.selector));
         minimalBalanceImpl.transfer(address(1), currency0, amount + 1);
     }
 }
