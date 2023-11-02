@@ -785,7 +785,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         snapEnd();
     }
 
-    function testSwapMintERC1155IfOutputNotTaken() public {
+    function testSwapMintClaimIfOutputNotTaken() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
@@ -812,7 +812,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(claimsBalance, 98);
     }
 
-    function testSwapUse1155AsInput() public {
+    function testSwapUseClaimAsInput() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
@@ -835,7 +835,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
         assertEq(claimsBalance, 98);
 
-        // swap from currency1 to currency0 again, using 1155s as input tokens
+        // swap from currency1 to currency0 again, using Claims as input tokens
         params = IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -25, sqrtPriceLimitX96: SQRT_RATIO_4_1});
 
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
