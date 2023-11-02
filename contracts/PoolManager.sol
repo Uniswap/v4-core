@@ -339,7 +339,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
         if (currency.isWrappedNative()) {
             // increment by paid so that its possible to settle ETH and WETH separately
-            paid = Currency.unwrapTotalBalance();
+            paid = CurrencyLibrary.unwrapTotalBalance();
             reservesOf[accountCurrency] += paid;
         } else {
             uint256 reservesBefore = reservesOf[currency];

@@ -117,7 +117,7 @@ library CurrencyLibrary {
 
     function unwrapTotalBalance() internal pure returns (uint256) {
         uint256 toUnwrap = WRAPPED_NATIVE.balanceOfSelf();
-        WETH.withdraw(toUnwrap);
+        WETH_CONTRACT.withdraw(toUnwrap);
     }
 
     function mapAccountCurrency(Currency currency) internal pure returns (Currency) {
