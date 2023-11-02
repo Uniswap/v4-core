@@ -47,8 +47,8 @@ contract MinimalBalance is IMinimalBalance {
         if (amount > balances[id][msg.sender]) revert InsufficientBalance();
         unchecked {
             balances[id][msg.sender] -= amount;
-            balances[id][to] += amount;
         }
+        balances[id][to] += amount;
         emit Transfer(msg.sender, to, id, amount);
     }
 }
