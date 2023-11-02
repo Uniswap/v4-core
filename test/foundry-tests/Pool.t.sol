@@ -40,7 +40,9 @@ contract PoolTest is Test {
         }
     }
 
-    function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
+    function testModifyPosition() public {
+        uint160 sqrtPriceX96 = 23194225006317997302357078137568304530;
+        Pool.ModifyPositionParams memory params = Pool.ModifyPositionParams(0x0000000000000000000000000000000000000000, 0, 389917, 581178003401670206393000047389, 1);
         // Assumptions tested in PoolManager.t.sol
         vm.assume(params.tickSpacing > 0);
         vm.assume(params.tickSpacing < 32768);
