@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {WETH} from "solmate/tokens/WETH.sol";
 import {Hooks} from "../../../contracts/libraries/Hooks.sol";
 import {Currency} from "../../../contracts/types/Currency.sol";
 import {IHooks} from "../../../contracts/interfaces/IHooks.sol";
@@ -35,6 +36,10 @@ contract Deployers {
             tokens[i] = new MockERC20("TEST", "TEST", 18);
             tokens[i].mint(address(this), totalSupply);
         }
+    }
+
+    function deployWETH() internal returns (WETH weth) {
+        weth = new WETH();
     }
 
     function createPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
@@ -78,6 +83,7 @@ contract Deployers {
     }
 
     function createFreshManager() internal returns (PoolManager manager) {
-        manager = new PoolManager(500000);
+        WETH weth = deployWETH();
+        manager = new PoolManager(500000, weth);
     }
 }

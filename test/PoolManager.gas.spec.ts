@@ -59,7 +59,10 @@ describe('PoolManager gas tests', () => {
       const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
       const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
       const CONTROLLER_GAS_LIMIT = 50000
-      const manager = (await singletonPoolFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
+
+      const wethFactory = await ethers.getContractFactory('WETH')
+      const weth = await wethFactory.deploy()
+      const manager = (await singletonPoolFactory.deploy(CONTROLLER_GAS_LIMIT, weth.address)) as PoolManager
 
       const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
       const donateTest = (await donateTestFactory.deploy(manager.address)) as PoolDonateTest
@@ -350,7 +353,9 @@ describe('PoolManager gas tests', () => {
       const donateTestFactory = await ethers.getContractFactory('PoolDonateTest')
       const mintTestFactory = await ethers.getContractFactory('PoolModifyPositionTest')
       const CONTROLLER_GAS_LIMIT = 50000
-      const manager = (await singletonPoolFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
+      const wethFactory = await ethers.getContractFactory('WETH')
+      const weth = await wethFactory.deploy()
+      const manager = (await singletonPoolFactory.deploy(CONTROLLER_GAS_LIMIT, weth.address)) as PoolManager
 
       const swapTest = (await swapTestFactory.deploy(manager.address)) as PoolSwapTest
       const donateTest = (await donateTestFactory.deploy(manager.address)) as PoolDonateTest

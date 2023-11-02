@@ -21,6 +21,7 @@ import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
+import {WETH} from "solmate/tokens/WETH.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Receiver {
@@ -49,9 +50,17 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
 
+    /// @inheritdoc IPoolManager
+    WETH public immutable WETH_CONTRACT;
+
+    Currency public immutable WRAPPED_NATIVE;
+
     mapping(PoolId id => Pool.State) public pools;
 
-    constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) ERC1155("") {}
+    constructor(uint256 controllerGasLimit, WETH wrappedNative) Fees(controllerGasLimit) ERC1155("") {
+        WETH_CONTRACT = wrappedNative;
+        WRAPPED_NATIVE = Currency.wrap(address(WETH_CONTRACT));
+    }
 
     function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
         return pools[key.toId()];
@@ -111,7 +120,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
 
         if (key.currency0 >= key.currency1) revert CurrenciesInitializedOutOfOrder();
-        if (key.currency0.isWrappedNative() || key.currency1.isWrappedNative()) revert MustUseNativeNotWrapped();
+        if (key.currency0 == WRAPPED_NATIVE || key.currency1 == WRAPPED_NATIVE) revert MustUseNativeNotWrapped();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
@@ -320,10 +329,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        Currency accountCurrency = currency.mapAccountCurrency();
+        Currency accountCurrency = (currency == WRAPPED_NATIVE) ? CurrencyLibrary.NATIVE : currency;
 
         _accountDelta(accountCurrency, amount.toInt128());
         reservesOf[accountCurrency] -= amount;
+
+        if (currency == WRAPPED_NATIVE) WETH_CONTRACT.deposit{value: amount}();
+
         currency.transfer(to, amount);
     }
 
@@ -335,11 +347,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
-        Currency accountCurrency = currency.mapAccountCurrency();
+        Currency accountCurrency = (currency == WRAPPED_NATIVE) ? CurrencyLibrary.NATIVE : currency;
+        uint256 balance = currency.balanceOfSelf();
 
-        if (currency.isWrappedNative()) {
+        if (currency == WRAPPED_NATIVE) {
             // increment by paid so that its possible to settle ETH and WETH separately
-            paid = CurrencyLibrary.unwrapTotalBalance();
+            paid = balance;
+            WETH_CONTRACT.withdraw(paid);
             reservesOf[accountCurrency] += paid;
         } else {
             uint256 reservesBefore = reservesOf[currency];

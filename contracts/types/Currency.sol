@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-import {WETH} from "solmate/tokens/WETH.sol";
 
 type Currency is address;
 
@@ -36,8 +35,6 @@ library CurrencyLibrary {
     error ERC20TransferFailed();
 
     Currency public constant NATIVE = Currency.wrap(address(0));
-    WETH internal constant WETH_CONTRACT;
-    Currency public constant WRAPPED_NATIVE = Currency.wrap(address(WETH_CONTRACT));
 
     function transfer(Currency currency, address to, uint256 amount) internal {
         // implementation from
@@ -51,36 +48,33 @@ library CurrencyLibrary {
             }
 
             if (!success) revert NativeTransferFailed();
-            return;
-        } else if (currency.isWrappedNative()) {
-            // Wrap native, ready to transfer in assembly block below
-            WETH_CONTRACT.deposit{value: amount}();
+        } else {
+            assembly {
+                // We'll write our calldata to this slot below, but restore it later.
+                let memPointer := mload(0x40)
+
+                // Write the abi-encoded calldata into memory, beginning with the function selector.
+                mstore(0, 0xa9059cbb00000000000000000000000000000000000000000000000000000000)
+                mstore(4, to) // Append the "to" argument.
+                mstore(36, amount) // Append the "amount" argument.
+
+                success :=
+                    and(
+                        // Set success to whether the call reverted, if not we check it either
+                        // returned exactly 1 (can't just be non-zero data), or had no return data.
+                        or(and(eq(mload(0), 1), gt(returndatasize(), 31)), iszero(returndatasize())),
+                        // We use 68 because that's the total length of our calldata (4 + 32 * 2)
+                        // Counterintuitively, this call() must be positioned after the or() in the
+                        // surrounding and() because and() evaluates its arguments from right to left.
+                        call(gas(), currency, 0, 0, 68, 0, 32)
+                    )
+
+                mstore(0x60, 0) // Restore the zero slot to zero.
+                mstore(0x40, memPointer) // Restore the memPointer.
+            }
+
+            if (!success) revert ERC20TransferFailed();
         }
-        assembly {
-            // We'll write our calldata to this slot below, but restore it later.
-            let memPointer := mload(0x40)
-
-            // Write the abi-encoded calldata into memory, beginning with the function selector.
-            mstore(0, 0xa9059cbb00000000000000000000000000000000000000000000000000000000)
-            mstore(4, to) // Append the "to" argument.
-            mstore(36, amount) // Append the "amount" argument.
-
-            success :=
-                and(
-                    // Set success to whether the call reverted, if not we check it either
-                    // returned exactly 1 (can't just be non-zero data), or had no return data.
-                    or(and(eq(mload(0), 1), gt(returndatasize(), 31)), iszero(returndatasize())),
-                    // We use 68 because that's the total length of our calldata (4 + 32 * 2)
-                    // Counterintuitively, this call() must be positioned after the or() in the
-                    // surrounding and() because and() evaluates its arguments from right to left.
-                    call(gas(), currency, 0, 0, 68, 0, 32)
-                )
-
-            mstore(0x60, 0) // Restore the zero slot to zero.
-            mstore(0x40, memPointer) // Restore the memPointer.
-        }
-
-        if (!success) revert ERC20TransferFailed();
     }
 
     function balanceOfSelf(Currency currency) internal view returns (uint256) {
@@ -103,25 +97,11 @@ library CurrencyLibrary {
         return Currency.unwrap(currency) == Currency.unwrap(NATIVE);
     }
 
-    function isWrappedNative(Currency currency) internal pure returns (bool) {
-        return Currency.unwrap(currency) == Currency.unwrap(WRAPPED_NATIVE);
-    }
-
     function toId(Currency currency) internal pure returns (uint256) {
         return uint160(Currency.unwrap(currency));
     }
 
     function fromId(uint256 id) internal pure returns (Currency) {
         return Currency.wrap(address(uint160(id)));
-    }
-
-    function unwrapTotalBalance() internal pure returns (uint256) {
-        uint256 toUnwrap = WRAPPED_NATIVE.balanceOfSelf();
-        WETH_CONTRACT.withdraw(toUnwrap);
-    }
-
-    function mapAccountCurrency(Currency currency) internal pure returns (Currency) {
-        if (currency.isWrappedNative()) return NATIVE;
-        return currency;
     }
 }

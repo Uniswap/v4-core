@@ -32,7 +32,7 @@ describe('PoolManager', () => {
   let takeTest: PoolTakeTest
   let hooksMock: MockedContract
   let testHooksEmpty: EmptyTestHooks
-  let tokens: { currency0: TestERC20; currency1: TestERC20; token2: TestERC20 }
+  let tokens: { currency0: TestERC20; currency1: TestERC20; currency2: TestERC20 }
 
   const fixture = async () => {
     const poolManagerFactory = await ethers.getContractFactory('PoolManager')
@@ -44,7 +44,9 @@ describe('PoolManager', () => {
     const hooksTestEmptyFactory = await ethers.getContractFactory('EmptyTestHooks')
     const tokens = await tokensFixture()
     const CONTROLLER_GAS_LIMIT = 50000
-    const manager = (await poolManagerFactory.deploy(CONTROLLER_GAS_LIMIT)) as PoolManager
+    const wethFactory = await ethers.getContractFactory('WETH')
+    const weth = await wethFactory.deploy()
+    const manager = (await poolManagerFactory.deploy(CONTROLLER_GAS_LIMIT, weth.address)) as PoolManager
 
     // Deploy hooks to addresses with leading 1111 to enable all of them.
     const mockHooksAddress = '0xFF00000000000000000000000000000000000000'
@@ -73,7 +75,7 @@ describe('PoolManager', () => {
       testHooksEmpty,
     }
 
-    for (const token of [tokens.currency0, tokens.currency1, tokens.token2]) {
+    for (const token of [tokens.currency0, tokens.currency1, tokens.currency2]) {
       for (const spender of [result.swapTest, result.modifyPositionTest, result.donateTest, result.takeTest]) {
         await token.connect(wallet).approve(spender.address, constants.MaxUint256)
       }

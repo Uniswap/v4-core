@@ -10,6 +10,8 @@ import {IFees} from "./IFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
+import {WETH} from "solmate/tokens/WETH.sol";
+import {Currency} from "../types/Currency.sol";
 
 interface IPoolManager is IFees, IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256
@@ -92,6 +94,12 @@ interface IPoolManager is IFees, IERC1155 {
 
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
+
+    /// @notice The address of the Wrapped Native token on this chain (e.g. WETH9)
+    function WETH_CONTRACT() external view returns (WETH);
+
+    /// @notice The wrapped native token as a Currency type
+    function WRAPPED_NATIVE() external view returns (Currency);
 
     /// @notice Get the current value in slot0 of the given pool
     function getSlot0(PoolId id)
