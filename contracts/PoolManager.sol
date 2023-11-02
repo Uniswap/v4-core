@@ -123,7 +123,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         (, uint24 protocolFees) = _fetchProtocolFees(key);
         uint24 swapFee = key.fee.isDynamicFee() ? _fetchDynamicSwapFee(key) : key.fee.getStaticFee();
 
-        tick = pools[id].initialize(sqrtPriceX96, _fetchProtocolFees(key), _fetchHookFees(key), swapFee);
+        tick = pools[id].initialize(sqrtPriceX96, protocolFees, _fetchHookFees(key), swapFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (
