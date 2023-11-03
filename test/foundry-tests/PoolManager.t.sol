@@ -243,7 +243,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
     }
 
-    function testPoolManagerInitializeRevertsWithIdenticalTokens(uint160 sqrtPriceX96) public {
+    function test_initialize_revertsWithIdenticalTokens(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
@@ -768,7 +768,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function test_swap_gasWithNative() public {
+    function test_swap_withNative_gas() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
@@ -789,7 +789,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function test_swap_gasWithHooks() public {
+    function test_swap_withHooks_gas() public {
         address hookEmptyAddr = EMPTY_HOOKS;
 
         MockHooks impl = new MockHooks();
@@ -1269,7 +1269,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function testLockEmitsCorrectId() public {
+    function test_lock_EmitsCorrectId() public {
         vm.expectEmit(false, false, false, true);
         emit LockAcquired();
         lockTest.lock();
@@ -1342,7 +1342,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     //     assertEq(feeGrowthGlobal1X128Extsload, 204793365386061595215803889394593);
     // }
 
-    function testGetPosition() public {
+    function test_getPosition() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
