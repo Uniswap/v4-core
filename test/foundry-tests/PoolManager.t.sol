@@ -1197,7 +1197,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
-    function test_collectProtocolfees_nativeToken_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees() public {
         uint24 protocolFee = 260; // 0x 0001 00 00 0100
         uint256 expectedFees = 7;
         Currency nativeCurrency = Currency.wrap(address(0));
