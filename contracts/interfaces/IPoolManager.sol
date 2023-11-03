@@ -119,6 +119,9 @@ interface IPoolManager is IFees, IERC1155 {
     // /// @notice Returns the lock data (length and nonzeroDeltaCount) for the lock data structure.
     // function getLockData() external view returns (LockData lockData);
 
+    function getLockLength() external view returns (uint256 _length);
+    function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
+
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external

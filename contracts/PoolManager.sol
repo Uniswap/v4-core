@@ -409,6 +409,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         return value;
     }
 
+    function getLockLength() external view returns (uint256 _length) {
+        return Lockers.length();
+    }
+
+    function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
+        return Lockers.nonzeroDeltaCount();
+    }
+
     // function getLockData() external view returns (LockData lockData) {
     //     return LockDataLibrary.getLockData();
     // }

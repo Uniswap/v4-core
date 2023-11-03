@@ -59,18 +59,18 @@ library Lockers {
         }
     }
 
-    function getLocker(uint256 i) internal returns (address locker) {
+    function getLocker(uint256 i) internal view returns (address locker) {
         uint256 slot = LOCKERS_SLOT + i;
         assembly {
             locker := tload(slot)
         }
     }
 
-    function getCurrentLocker() internal returns (address locker) {
+    function getCurrentLocker() internal view returns (address locker) {
         return getLocker(length());
     }
 
-    function nonzeroDeltaCount() internal returns (uint256 count) {
+    function nonzeroDeltaCount() internal view returns (uint256 count) {
         uint256 slot = NONZERO_DELTA_COUNT;
         assembly {
             count := tload(slot)

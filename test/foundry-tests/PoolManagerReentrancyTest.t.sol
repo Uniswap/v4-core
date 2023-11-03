@@ -22,8 +22,8 @@ contract TokenLocker is ILockCallback {
         (Currency currency, bool reclaim) = abi.decode(data, (Currency, bool));
 
         IPoolManager manager = IPoolManager(msg.sender);
-        LockData lockData = manager.getLockData();
-        assert(lockData.nonzeroDeltaCount() == 0);
+        uint256 count = manager.getLockNonzeroDeltaCount();
+        assert(count == 0);
 
         int256 delta = manager.currencyDelta(address(this), currency);
         assert(delta == 0);
@@ -31,16 +31,16 @@ contract TokenLocker is ILockCallback {
         // deposit some tokens
         currency.transfer(address(manager), 1);
         manager.settle(currency);
-        LockData lockData1 = manager.getLockData();
-        assert(lockData1.nonzeroDeltaCount() == 1);
+        count = manager.getLockNonzeroDeltaCount();
+        assert(count == 1);
         delta = manager.currencyDelta(address(this), currency);
         assert(delta == -1);
 
         // take them back
         if (reclaim) {
             manager.take(currency, address(this), 1);
-            LockData lockData2 = manager.getLockData();
-            assert(lockData2.nonzeroDeltaCount() == 0);
+            count = manager.getLockNonzeroDeltaCount();
+            assert(count == 0);
             delta = manager.currencyDelta(address(this), currency);
             assert(delta == 0);
         }
@@ -69,6 +69,7 @@ contract SimpleLinearLocker is ILockCallback {
 }
 
 contract ParallelLocker is ILockCallback {
+    uint256 constant INDEX_OFFSET = 1;
     IPoolManager manager;
 
     constructor(IPoolManager manager_) {
@@ -80,23 +81,23 @@ contract ParallelLocker is ILockCallback {
     }
 
     function assertionChecker0(uint256) external view {
-        LockData lockData = manager.getLockData();
-        assert(lockData.length() == 2);
-        address locker = manager.getLock(1);
+        uint256 length = manager.getLockLength();
+        assert(length == 2);
+        address locker = manager.getLock(INDEX_OFFSET + 1);
         assert(locker == msg.sender);
     }
 
     function assertionChecker1(uint256 depth) external view {
-        LockData lockData = manager.getLockData();
-        assert(lockData.length() == depth + 2);
-        address locker = manager.getLock(depth + 1);
+        uint256 length = manager.getLockLength();
+        assert(length == depth + 2);
+        address locker = manager.getLock(INDEX_OFFSET + depth + 1);
         assert(locker == msg.sender);
     }
 
     function assertionChecker2(uint256) external view {
-        LockData lockData = manager.getLockData();
-        assert(lockData.length() == 2);
-        address locker = manager.getLock(1);
+        uint256 length = manager.getLockLength();
+        assert(length == 2);
+        address locker = manager.getLock(INDEX_OFFSET + 1);
         assert(locker == msg.sender);
     }
 
@@ -105,28 +106,29 @@ contract ParallelLocker is ILockCallback {
         SimpleLinearLocker locker1 = new SimpleLinearLocker();
         SimpleLinearLocker locker2 = new SimpleLinearLocker();
 
-        LockData lockData = manager.getLockData();
-        assert(lockData.length() == 1);
-        address locker = manager.getLock(0);
+        uint256 length = manager.getLockLength();
+        assert(length == 1);
+        address locker = manager.getLock(INDEX_OFFSET + 0);
         assert(locker == address(this));
 
         locker0.main(manager, 0, this.assertionChecker0);
-        LockData lockData1 = manager.getLockData();
-        assert(lockData1.length() == 1);
+        uint256 length1 = manager.getLockLength();
+        assert(length1 == 1);
 
         locker1.main(manager, 1, this.assertionChecker1);
-        LockData lockData2 = manager.getLockData();
-        assert(lockData2.length() == 1);
+        uint256 length2 = manager.getLockLength();
+        assert(length2 == 1);
 
         locker2.main(manager, 0, this.assertionChecker2);
-        LockData lockData3 = manager.getLockData();
-        assert(lockData3.length() == 1);
+        uint256 length3 = manager.getLockLength();
+        assert(length3 == 1);
 
         return "";
     }
 }
 
 contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
+    uint256 constant INDEX_OFFSET = 1;
     PoolManager manager;
 
     function setUp() public {
@@ -150,9 +152,9 @@ contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
     }
 
     function assertionChecker(uint256 depth) external {
-        LockData lockData = manager.getLockData();
-        assertEq(lockData.length(), depth + 1);
-        address locker = manager.getLock(depth);
+        uint256 length = manager.getLockLength();
+        assertEq(length, depth + 1);
+        address locker = manager.getLock(INDEX_OFFSET + depth);
         assertEq(locker, msg.sender);
     }
 

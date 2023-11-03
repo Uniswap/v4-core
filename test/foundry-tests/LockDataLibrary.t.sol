@@ -16,14 +16,14 @@ contract LockDataLibraryTest is Test, Deployers, ILockCallback {
     }
 
     function testLockerLength() public {
-        LockData dataDuringLockCallback = abi.decode(manager.lock(""), (LockData));
-        assertEq(dataDuringLockCallback.length(), 1);
+        uint256 lengthDuringLockCallback = abi.decode(manager.lock(""), (uint256));
+        assertEq(lengthDuringLockCallback, 1);
     }
 
     function lockAcquired(bytes calldata) public view returns (bytes memory) {
         // todo how should we expose this with the new library
-        LockData lockData = manager.getLockData();
-        bytes memory data = abi.encode(lockData);
+        uint256 len = manager.getLockLength();
+        bytes memory data = abi.encode(len);
         return data;
     }
 }
