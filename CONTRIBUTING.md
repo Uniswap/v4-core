@@ -32,7 +32,7 @@ Finally, before opening a pull request please do the following:
 - Run the tests and snapshots. Commands are outlined in the [tests](#tests) section.
 - Document any new functions, structs, or interfaces following the natspec standard.
 - Add tests! For smaller contributions, they should be tested with unit tests, and fuzz tests where possible. For bigger contributions, they should be tested with integration tests and invariant tests where possible.
-- Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) 
+- Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
 
 ## Standards
 
@@ -46,27 +46,13 @@ All contributions must follow the below standards. Maintainers will close out PR
 
 ## Setup
 
-`yarn install` to install dependencies for hardhat
-
-`yarn compile` to compile contracts for hardhat
-
 `forge build` to get contract artifacts and dependencies for forge
 
 ## Tests
 
-This repo currently uses hardhat and forge tests. Please run both test suites before opening a PR.
-
-`yarn snapshots` to update the hardhat gas snapshots
-
-`yarn test` to run hardhat tests
-
-`yarn prettier` to run the formatter (runs both typescript and solidity formatting)
-
 `forge snapshot`to update the forge gas snapshots
 
 `forge test` to run forge tests
-
-Any new tests that you add should be written with forge, as the repo is undergoing a full migration to the forge test suite.
 
 ## Code of Conduct
 
