@@ -816,7 +816,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        snapStart("swap mint 1155 as output");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
 
         uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
         assertEq(erc6909Balance, 98);
@@ -855,7 +857,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit TransferSingle(address(manager), address(manager), address(0), CurrencyLibrary.toId(currency1), 27);
+        snapStart("swap with 1155 as input");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
 
         erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
         assertEq(erc6909Balance, 71);
