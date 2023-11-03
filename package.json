@@ -31,8 +31,6 @@
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@nomiclabs/hardhat-etherscan": "^2.1.1",
-    "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@typechain/ethers-v5": "^4.0.0",
     "@types/chai": "^4.2.6",
     "@types/mocha": "^5.2.7",
@@ -41,8 +39,6 @@
     "decimal.js": "^10.2.1",
     "ethereum-waffle": "^3.0.2",
     "ethers": "^5.0.8",
-    "hardhat": "^2.9.6",
-    "hardhat-typechain": "^0.3.5",
     "import-toml": "1.0.0",
     "mocha": "^6.2.2",
     "mocha-chai-jest-snapshot": "^1.1.0",
@@ -53,12 +49,9 @@
     "typescript": "^3.7.3"
   },
   "scripts": {
-    "compile": "hardhat compile",
-    "test": "hardhat test",
-    "snapshots": "UPDATE_SNAPSHOT=1 hardhat test",
     "prettier": "forge fmt contracts/ && forge fmt test/ && prettier --write 'test/**/*.ts'",
     "prettier-check": "forge fmt --check && prettier --check 'test/**/*.ts'",
-    "forge-test-getSqrtRatioAtTick": "npx ts-node js-scripts/getSqrtRatioAtTick.ts",
-    "forge-test-getTickAtSqrtRatio": "npx ts-node js-scripts/getTickAtSqrtRatio.ts"
+    "forge-test-getSqrtRatioAtTick": "npx ts-node test/js-scripts/getSqrtRatioAtTick.ts",
+    "forge-test-getTickAtSqrtRatio": "npx ts-node test/js-scripts/getTickAtSqrtRatio.ts"
   }
 }
