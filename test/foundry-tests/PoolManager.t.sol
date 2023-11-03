@@ -34,6 +34,8 @@ import {ProtocolFeeControllerTest} from "../../contracts/test/ProtocolFeeControl
 import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
 import {Position} from "../../contracts/libraries/Position.sol";
 
+import {console2} from "forge-std/console2.sol";
+
 contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155Receiver {
     using Hooks for IHooks;
     using Pool for Pool.State;
@@ -146,7 +148,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
             (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
             assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(slot0.protocolFees >> 12, 0);
+            assertEq(slot0.protocolFees, 0);
         }
     }
 
@@ -1084,9 +1086,14 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 1000);
         modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
 
+        (uint256 amount0, uint256 amount1) = currency0Invalid ? (1, 0) : (0, 1);
         vm.expectRevert();
-        takeRouter.take(key, currency0Invalid ? 1 : 0, currency0Invalid ? 0 : 1);
-        takeRouter.take(key, currency0Invalid ? 0 : 1, currency0Invalid ? 1 : 0); // assertions inside takeRouter
+        takeRouter.take(key, amount0, amount1);
+
+        // should not revert when non zero amount passed in for valid currency
+        // assertions inside takeRouter because it takes then settles
+        (amount0, amount1) = currency0Invalid ? (0, 1) : (1, 0);
+        takeRouter.take(key, amount0, amount1);
     }
 
     function test_take_succeedsWithPoolWithLiquidity() public {
@@ -1096,7 +1103,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
         modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
-        takeRouter.take(key, 1, 1); // assertions inside takeRouter
+        takeRouter.take(key, 1, 1); // assertions inside takeRouter because it takes then settles
     }
 
     function test_take_succeedsWithPoolWithLiquidityWithNativeToken() public {
@@ -1111,7 +1118,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
         modifyPositionRouter.modifyPosition{value: 100}(key, params, ZERO_BYTES);
-        takeRouter.take{value: 1}(key, 1, 1); // assertions inside takeRouter
+        takeRouter.take{value: 1}(key, 1, 1); // assertions inside takeRouter because it takes then settles
     }
 
     function test_setProtocolFee_updatesProtocolFeeForInitializedPool() public {
@@ -1132,10 +1139,11 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
-        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        uint24 protocolFee = 260; // 0001 00 00 0100
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
         manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
+        // sets the upper 12 bits
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
@@ -1144,7 +1152,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees() public {
-        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
 
         PoolKey memory key =
@@ -1171,7 +1179,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
 
         PoolKey memory key =
@@ -1198,7 +1206,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees() public {
-        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
         Currency nativeCurrency = Currency.wrap(address(0));
 
@@ -1231,7 +1239,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint24 protocolFee = 260; // 0x 0001 00 00 0100
+        uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
         Currency nativeCurrency = Currency.wrap(address(0));
 
