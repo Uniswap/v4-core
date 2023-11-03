@@ -1131,7 +1131,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.setProtocolFees(key);
     }
 
-    function test_collectProtocolfees_initializesWithProtocolFeeIfCalled() public {
+    function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
         uint24 protocolFee = 260; // 0x 0001 00 00 0100
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
@@ -1143,7 +1143,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(slot0.protocolFees, protocolFee << 12);
     }
 
-    function test_collectProtocolfees_ERC20_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees() public {
         uint24 protocolFee = 260; // 0x 0001 00 00 0100
         uint256 expectedFees = 7;
 
@@ -1170,7 +1170,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
-    function test_collectProtocolfees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
+    function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
         uint24 protocolFee = 260; // 0x 0001 00 00 0100
         uint256 expectedFees = 7;
 
@@ -1230,7 +1230,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
 
-    function test_collectProtocolfees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
+    function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
         uint24 protocolFee = 260; // 0x 0001 00 00 0100
         uint256 expectedFees = 7;
         Currency nativeCurrency = Currency.wrap(address(0));
