@@ -800,7 +800,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function testSwapMintERC1155IfOutputNotTaken() public {
+    function testGasSwapMintERC1155IfOutputNotTaken() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
@@ -819,13 +819,15 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         vm.expectEmit(true, true, true, true);
         emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        snapStart("swap mint 1155 as output");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
 
         uint256 erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
         assertEq(erc1155Balance, 98);
     }
 
-    function testSwapUse1155AsInput() public {
+    function testGasSwapUse1155AsInput() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
@@ -858,7 +860,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         vm.expectEmit(true, true, true, true);
         emit TransferSingle(address(manager), address(manager), address(0), CurrencyLibrary.toId(currency1), 27);
+        snapStart("swap with 1155 as input");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
 
         erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
         assertEq(erc1155Balance, 71);
