@@ -1263,7 +1263,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
 
-    function testNoOpLockIsOk() public {
+    function test_lock_NoOpIsOk() public {
         snapStart("gas overhead of no-op lock");
         lockTest.lock();
         snapEnd();
