@@ -552,7 +552,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         snapEnd();
     }
 
-    function test_mint_withNativ_gase() public {
+    function test_mint_withNative_gas() public {
         PoolKey memory key = PoolKey({
             currency0: Currency.wrap(address(0)),
             currency1: currency1,
