@@ -9,6 +9,7 @@ import {FeeLibrary} from "./libraries/FeeLibrary.sol";
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {LockDataLibrary} from "./libraries/LockDataLibrary.sol";
+import {TickMath} from "./libraries/TickMath.sol";
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
@@ -34,10 +35,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     using FeeLibrary for uint24;
 
     /// @inheritdoc IPoolManager
-    int24 public constant override MAX_TICK_SPACING = type(int16).max;
+    int24 public constant override MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
     /// @inheritdoc IPoolManager
-    int24 public constant override MIN_TICK_SPACING = 1;
+    int24 public constant override MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
     /// @inheritdoc IPoolManager
     IPoolManager.LockData public override lockData;

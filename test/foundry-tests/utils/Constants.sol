@@ -12,10 +12,4 @@ library Constants {
     uint256 constant MAX_UINT256 = type(uint256).max;
     uint128 constant MAX_UINT128 = type(uint128).max;
     uint160 constant MAX_UINT160 = type(uint160).max;
-
-    int24 constant MIN_TICK = -887272;
-    int24 constant MAX_TICK = 887272;
-
-    int24 constant MIN_TICK_SPACING = 1;
-    int24 constant MAX_TICK_SPACING = type(int16).max;
 }
