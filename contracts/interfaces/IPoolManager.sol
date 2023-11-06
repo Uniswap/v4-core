@@ -81,6 +81,8 @@ interface IPoolManager is IFees {
 
     event HookFeeUpdated(PoolId indexed id, uint24 hookFees);
 
+    event DynamicSwapFeeUpdated(PoolId indexed id, uint24 dynamicSwapFee);
+
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
 
@@ -191,6 +193,9 @@ interface IPoolManager is IFees {
 
     /// @notice Sets the hook's swap and withdrawal fees for the given pool
     function setHookFees(PoolKey memory key) external;
+
+    /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
+    function updateDynamicSwapFee(PoolKey memory key) external;
 
     /// @notice Called by external contracts to access granular pool state
     /// @param slot Key of slot to sload
