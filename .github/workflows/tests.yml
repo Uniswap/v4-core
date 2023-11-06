@@ -16,13 +16,6 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: 'yarn'
-
-      - run: yarn
-
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
