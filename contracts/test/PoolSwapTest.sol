@@ -71,7 +71,6 @@ contract PoolSwapTest is ILockCallback {
                         manager.settle(data.key.currency0);
                     }
                 } else {
-                    // assume this contract custodies the tokens
                     _burnFromSelf(data.key.currency0, uint128(delta.amount0()));
                 }
             }
