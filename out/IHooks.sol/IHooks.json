@@ -1,0 +1,3323 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "currency0",
+              "type": "address"
+            },
+            {
+              "internalType": "Currency",
+              "name": "currency1",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "fee",
+              "type": "uint24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickSpacing",
+              "type": "int24"
+            },
+            {
+              "internalType": "contract IHooks",
+              "name": "hooks",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PoolKey",
+          "name": "key",
+          "type": "tuple"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "hookData",
+          "type": "bytes"
+        }
+      ],
+      "name": "afterDonate",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "currency0",
+              "type": "address"
+            },
+            {
+              "internalType": "Currency",
+              "name": "currency1",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "fee",
+              "type": "uint24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickSpacing",
+              "type": "int24"
+            },
+            {
+              "internalType": "contract IHooks",
+              "name": "hooks",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PoolKey",
+          "name": "key",
+          "type": "tuple"
+        },
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceX96",
+          "type": "uint160"
+        },
+        {
+          "internalType": "int24",
+          "name": "tick",
+          "type": "int24"
+        },
+        {
+          "internalType": "bytes",
+          "name": "hookData",
+          "type": "bytes"
+        }
+      ],
+      "name": "afterInitialize",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "currency0",
+              "type": "address"
+            },
+            {
+              "internalType": "Currency",
+              "name": "currency1",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "fee",
+              "type": "uint24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickSpacing",
+              "type": "int24"
+            },
+            {
+              "internalType": "contract IHooks",
+              "name": "hooks",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PoolKey",
+          "name": "key",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "int24",
+              "name": "tickLower",
+              "type": "int24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickUpper",
+              "type": "int24"
+            },
+            {
+              "internalType": "int256",
+              "name": "liquidityDelta",
+              "type": "int256"
+            }
+          ],
+          "internalType": "struct IPoolManager.ModifyPositionParams",
+          "name": "params",
+          "type": "tuple"
+        },
+        {
+          "internalType": "BalanceDelta",
+          "name": "delta",
+          "type": "int256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "hookData",
+          "type": "bytes"
+        }
+      ],
+      "name": "afterModifyPosition",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "currency0",
+              "type": "address"
+            },
+            {
+              "internalType": "Currency",
+              "name": "currency1",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "fee",
+              "type": "uint24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickSpacing",
+              "type": "int24"
+            },
+            {
+              "internalType": "contract IHooks",
+              "name": "hooks",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PoolKey",
+          "name": "key",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bool",
+              "name": "zeroForOne",
+              "type": "bool"
+            },
+            {
+              "internalType": "int256",
+              "name": "amountSpecified",
+              "type": "int256"
+            },
+            {
+              "internalType": "uint160",
+              "name": "sqrtPriceLimitX96",
+              "type": "uint160"
+            }
+          ],
+          "internalType": "struct IPoolManager.SwapParams",
+          "name": "params",
+          "type": "tuple"
+        },
+        {
+          "internalType": "BalanceDelta",
+          "name": "delta",
+          "type": "int256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "hookData",
+          "type": "bytes"
+        }
+      ],
+      "name": "afterSwap",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "currency0",
+              "type": "address"
+            },
+            {
+              "internalType": "Currency",
+              "name": "currency1",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "fee",
+              "type": "uint24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickSpacing",
+              "type": "int24"
+            },
+            {
+              "internalType": "contract IHooks",
+              "name": "hooks",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PoolKey",
+          "name": "key",
+          "type": "tuple"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount0",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount1",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "hookData",
+          "type": "bytes"
+        }
+      ],
+      "name": "beforeDonate",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "currency0",
+              "type": "address"
+            },
+            {
+              "internalType": "Currency",
+              "name": "currency1",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "fee",
+              "type": "uint24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickSpacing",
+              "type": "int24"
+            },
+            {
+              "internalType": "contract IHooks",
+              "name": "hooks",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PoolKey",
+          "name": "key",
+          "type": "tuple"
+        },
+        {
+          "internalType": "uint160",
+          "name": "sqrtPriceX96",
+          "type": "uint160"
+        },
+        {
+          "internalType": "bytes",
+          "name": "hookData",
+          "type": "bytes"
+        }
+      ],
+      "name": "beforeInitialize",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "currency0",
+              "type": "address"
+            },
+            {
+              "internalType": "Currency",
+              "name": "currency1",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "fee",
+              "type": "uint24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickSpacing",
+              "type": "int24"
+            },
+            {
+              "internalType": "contract IHooks",
+              "name": "hooks",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PoolKey",
+          "name": "key",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "int24",
+              "name": "tickLower",
+              "type": "int24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickUpper",
+              "type": "int24"
+            },
+            {
+              "internalType": "int256",
+              "name": "liquidityDelta",
+              "type": "int256"
+            }
+          ],
+          "internalType": "struct IPoolManager.ModifyPositionParams",
+          "name": "params",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "hookData",
+          "type": "bytes"
+        }
+      ],
+      "name": "beforeModifyPosition",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "Currency",
+              "name": "currency0",
+              "type": "address"
+            },
+            {
+              "internalType": "Currency",
+              "name": "currency1",
+              "type": "address"
+            },
+            {
+              "internalType": "uint24",
+              "name": "fee",
+              "type": "uint24"
+            },
+            {
+              "internalType": "int24",
+              "name": "tickSpacing",
+              "type": "int24"
+            },
+            {
+              "internalType": "contract IHooks",
+              "name": "hooks",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct PoolKey",
+          "name": "key",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bool",
+              "name": "zeroForOne",
+              "type": "bool"
+            },
+            {
+              "internalType": "int256",
+              "name": "amountSpecified",
+              "type": "int256"
+            },
+            {
+              "internalType": "uint160",
+              "name": "sqrtPriceLimitX96",
+              "type": "uint160"
+            }
+          ],
+          "internalType": "struct IPoolManager.SwapParams",
+          "name": "params",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "hookData",
+          "type": "bytes"
+        }
+      ],
+      "name": "beforeSwap",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "afterDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)": "e1b4af69",
+    "afterInitialize(address,(address,address,uint24,int24,address),uint160,int24,bytes)": "a910f80f",
+    "afterModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),int256,bytes)": "30b7cdef",
+    "afterSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),int256,bytes)": "b47b2fb1",
+    "beforeDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)": "b6a8b0fa",
+    "beforeInitialize(address,(address,address,uint24,int24,address),uint160,bytes)": "3440d820",
+    "beforeModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),bytes)": "fe9a6f45",
+    "beforeSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),bytes)": "575e24b4"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.22+commit.4fc1097e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"Currency\",\"name\":\"currency0\",\"type\":\"address\"},{\"internalType\":\"Currency\",\"name\":\"currency1\",\"type\":\"address\"},{\"internalType\":\"uint24\",\"name\":\"fee\",\"type\":\"uint24\"},{\"internalType\":\"int24\",\"name\":\"tickSpacing\",\"type\":\"int24\"},{\"internalType\":\"contract IHooks\",\"name\":\"hooks\",\"type\":\"address\"}],\"internalType\":\"struct PoolKey\",\"name\":\"key\",\"type\":\"tuple\"},{\"internalType\":\"uint256\",\"name\":\"amount0\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount1\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"hookData\",\"type\":\"bytes\"}],\"name\":\"afterDonate\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"Currency\",\"name\":\"currency0\",\"type\":\"address\"},{\"internalType\":\"Currency\",\"name\":\"currency1\",\"type\":\"address\"},{\"internalType\":\"uint24\",\"name\":\"fee\",\"type\":\"uint24\"},{\"internalType\":\"int24\",\"name\":\"tickSpacing\",\"type\":\"int24\"},{\"internalType\":\"contract IHooks\",\"name\":\"hooks\",\"type\":\"address\"}],\"internalType\":\"struct PoolKey\",\"name\":\"key\",\"type\":\"tuple\"},{\"internalType\":\"uint160\",\"name\":\"sqrtPriceX96\",\"type\":\"uint160\"},{\"internalType\":\"int24\",\"name\":\"tick\",\"type\":\"int24\"},{\"internalType\":\"bytes\",\"name\":\"hookData\",\"type\":\"bytes\"}],\"name\":\"afterInitialize\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"Currency\",\"name\":\"currency0\",\"type\":\"address\"},{\"internalType\":\"Currency\",\"name\":\"currency1\",\"type\":\"address\"},{\"internalType\":\"uint24\",\"name\":\"fee\",\"type\":\"uint24\"},{\"internalType\":\"int24\",\"name\":\"tickSpacing\",\"type\":\"int24\"},{\"internalType\":\"contract IHooks\",\"name\":\"hooks\",\"type\":\"address\"}],\"internalType\":\"struct PoolKey\",\"name\":\"key\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"int24\",\"name\":\"tickLower\",\"type\":\"int24\"},{\"internalType\":\"int24\",\"name\":\"tickUpper\",\"type\":\"int24\"},{\"internalType\":\"int256\",\"name\":\"liquidityDelta\",\"type\":\"int256\"}],\"internalType\":\"struct IPoolManager.ModifyPositionParams\",\"name\":\"params\",\"type\":\"tuple\"},{\"internalType\":\"BalanceDelta\",\"name\":\"delta\",\"type\":\"int256\"},{\"internalType\":\"bytes\",\"name\":\"hookData\",\"type\":\"bytes\"}],\"name\":\"afterModifyPosition\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"Currency\",\"name\":\"currency0\",\"type\":\"address\"},{\"internalType\":\"Currency\",\"name\":\"currency1\",\"type\":\"address\"},{\"internalType\":\"uint24\",\"name\":\"fee\",\"type\":\"uint24\"},{\"internalType\":\"int24\",\"name\":\"tickSpacing\",\"type\":\"int24\"},{\"internalType\":\"contract IHooks\",\"name\":\"hooks\",\"type\":\"address\"}],\"internalType\":\"struct PoolKey\",\"name\":\"key\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"zeroForOne\",\"type\":\"bool\"},{\"internalType\":\"int256\",\"name\":\"amountSpecified\",\"type\":\"int256\"},{\"internalType\":\"uint160\",\"name\":\"sqrtPriceLimitX96\",\"type\":\"uint160\"}],\"internalType\":\"struct IPoolManager.SwapParams\",\"name\":\"params\",\"type\":\"tuple\"},{\"internalType\":\"BalanceDelta\",\"name\":\"delta\",\"type\":\"int256\"},{\"internalType\":\"bytes\",\"name\":\"hookData\",\"type\":\"bytes\"}],\"name\":\"afterSwap\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"Currency\",\"name\":\"currency0\",\"type\":\"address\"},{\"internalType\":\"Currency\",\"name\":\"currency1\",\"type\":\"address\"},{\"internalType\":\"uint24\",\"name\":\"fee\",\"type\":\"uint24\"},{\"internalType\":\"int24\",\"name\":\"tickSpacing\",\"type\":\"int24\"},{\"internalType\":\"contract IHooks\",\"name\":\"hooks\",\"type\":\"address\"}],\"internalType\":\"struct PoolKey\",\"name\":\"key\",\"type\":\"tuple\"},{\"internalType\":\"uint256\",\"name\":\"amount0\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount1\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"hookData\",\"type\":\"bytes\"}],\"name\":\"beforeDonate\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"Currency\",\"name\":\"currency0\",\"type\":\"address\"},{\"internalType\":\"Currency\",\"name\":\"currency1\",\"type\":\"address\"},{\"internalType\":\"uint24\",\"name\":\"fee\",\"type\":\"uint24\"},{\"internalType\":\"int24\",\"name\":\"tickSpacing\",\"type\":\"int24\"},{\"internalType\":\"contract IHooks\",\"name\":\"hooks\",\"type\":\"address\"}],\"internalType\":\"struct PoolKey\",\"name\":\"key\",\"type\":\"tuple\"},{\"internalType\":\"uint160\",\"name\":\"sqrtPriceX96\",\"type\":\"uint160\"},{\"internalType\":\"bytes\",\"name\":\"hookData\",\"type\":\"bytes\"}],\"name\":\"beforeInitialize\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"Currency\",\"name\":\"currency0\",\"type\":\"address\"},{\"internalType\":\"Currency\",\"name\":\"currency1\",\"type\":\"address\"},{\"internalType\":\"uint24\",\"name\":\"fee\",\"type\":\"uint24\"},{\"internalType\":\"int24\",\"name\":\"tickSpacing\",\"type\":\"int24\"},{\"internalType\":\"contract IHooks\",\"name\":\"hooks\",\"type\":\"address\"}],\"internalType\":\"struct PoolKey\",\"name\":\"key\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"int24\",\"name\":\"tickLower\",\"type\":\"int24\"},{\"internalType\":\"int24\",\"name\":\"tickUpper\",\"type\":\"int24\"},{\"internalType\":\"int256\",\"name\":\"liquidityDelta\",\"type\":\"int256\"}],\"internalType\":\"struct IPoolManager.ModifyPositionParams\",\"name\":\"params\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"hookData\",\"type\":\"bytes\"}],\"name\":\"beforeModifyPosition\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"Currency\",\"name\":\"currency0\",\"type\":\"address\"},{\"internalType\":\"Currency\",\"name\":\"currency1\",\"type\":\"address\"},{\"internalType\":\"uint24\",\"name\":\"fee\",\"type\":\"uint24\"},{\"internalType\":\"int24\",\"name\":\"tickSpacing\",\"type\":\"int24\"},{\"internalType\":\"contract IHooks\",\"name\":\"hooks\",\"type\":\"address\"}],\"internalType\":\"struct PoolKey\",\"name\":\"key\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bool\",\"name\":\"zeroForOne\",\"type\":\"bool\"},{\"internalType\":\"int256\",\"name\":\"amountSpecified\",\"type\":\"int256\"},{\"internalType\":\"uint160\",\"name\":\"sqrtPriceLimitX96\",\"type\":\"uint160\"}],\"internalType\":\"struct IPoolManager.SwapParams\",\"name\":\"params\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"hookData\",\"type\":\"bytes\"}],\"name\":\"beforeSwap\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"details\":\"Should only be callable by the v4 PoolManager.\",\"kind\":\"dev\",\"methods\":{\"afterDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)\":{\"params\":{\"amount0\":\"The amount of token0 being donated\",\"amount1\":\"The amount of token1 being donated\",\"hookData\":\"Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook\",\"key\":\"The key for the pool\",\"sender\":\"The initial msg.sender for the donate call\"},\"returns\":{\"_0\":\"bytes4 The function selector for the hook\"}},\"afterInitialize(address,(address,address,uint24,int24,address),uint160,int24,bytes)\":{\"params\":{\"hookData\":\"Arbitrary data handed into the PoolManager by the initializer to be be passed on to the hook\",\"key\":\"The key for the pool being initialized\",\"sender\":\"The initial msg.sender for the initialize call\",\"sqrtPriceX96\":\"The sqrt(price) of the pool as a Q64.96\",\"tick\":\"The current tick after the state of a pool is initialized\"},\"returns\":{\"_0\":\"bytes4 The function selector for the hook\"}},\"afterModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),int256,bytes)\":{\"params\":{\"hookData\":\"Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook\",\"key\":\"The key for the pool\",\"params\":\"The parameters for modifying the position\",\"sender\":\"The initial msg.sender for the modify position call\"},\"returns\":{\"_0\":\"bytes4 The function selector for the hook\"}},\"afterSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),int256,bytes)\":{\"params\":{\"delta\":\"The amount owed to the locker (positive) or owed to the pool (negative)\",\"hookData\":\"Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook\",\"key\":\"The key for the pool\",\"params\":\"The parameters for the swap\",\"sender\":\"The initial msg.sender for the swap call\"},\"returns\":{\"_0\":\"bytes4 The function selector for the hook\"}},\"beforeDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)\":{\"params\":{\"amount0\":\"The amount of token0 being donated\",\"amount1\":\"The amount of token1 being donated\",\"hookData\":\"Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook\",\"key\":\"The key for the pool\",\"sender\":\"The initial msg.sender for the donate call\"},\"returns\":{\"_0\":\"bytes4 The function selector for the hook\"}},\"beforeInitialize(address,(address,address,uint24,int24,address),uint160,bytes)\":{\"params\":{\"hookData\":\"Arbitrary data handed into the PoolManager by the initializer to be be passed on to the hook\",\"key\":\"The key for the pool being initialized\",\"sender\":\"The initial msg.sender for the initialize call\",\"sqrtPriceX96\":\"The sqrt(price) of the pool as a Q64.96\"},\"returns\":{\"_0\":\"bytes4 The function selector for the hook\"}},\"beforeModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),bytes)\":{\"params\":{\"hookData\":\"Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook\",\"key\":\"The key for the pool\",\"params\":\"The parameters for modifying the position\",\"sender\":\"The initial msg.sender for the modify position call\"},\"returns\":{\"_0\":\"bytes4 The function selector for the hook\"}},\"beforeSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),bytes)\":{\"params\":{\"hookData\":\"Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook\",\"key\":\"The key for the pool\",\"params\":\"The parameters for the swap\",\"sender\":\"The initial msg.sender for the swap call\"},\"returns\":{\"_0\":\"bytes4 The function selector for the hook\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"afterDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)\":{\"notice\":\"The hook called after donate\"},\"afterInitialize(address,(address,address,uint24,int24,address),uint160,int24,bytes)\":{\"notice\":\"The hook called after the state of a pool is initialized\"},\"afterModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),int256,bytes)\":{\"notice\":\"The hook called after a position is modified\"},\"afterSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),int256,bytes)\":{\"notice\":\"The hook called after a swap\"},\"beforeDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)\":{\"notice\":\"The hook called before donate\"},\"beforeInitialize(address,(address,address,uint24,int24,address),uint160,bytes)\":{\"notice\":\"The hook called before the state of a pool is initialized\"},\"beforeModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),bytes)\":{\"notice\":\"The hook called before a position is modified\"},\"beforeSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),bytes)\":{\"notice\":\"The hook called before a swap\"}},\"notice\":\"The PoolManager contract decides whether to invoke specific hooks by inspecting the leading bits of the hooks contract address. For example, a 1 bit in the first bit of the address will cause the 'before swap' hook to be invoked. See the Hooks library for the full spec.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/interfaces/IHooks.sol\":\"IHooks\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":800},\"remappings\":[\":@ensdomains/=node_modules/@ensdomains/\",\":@openzeppelin/=lib/openzeppelin-contracts/\",\":ds-test/=lib/forge-std/lib/ds-test/src/\",\":forge-gas-snapshot/=lib/forge-gas-snapshot/src/\",\":forge-std/=lib/forge-std/src/\",\":hardhat/=node_modules/hardhat/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/\",\":solmate/=lib/solmate/src/\"]},\"sources\":{\"lib/openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol\":{\"keccak256\":\"0x8e93de94c9062ebc94fb7e2e3929b0781ac6a2b7772e2f7a59045861c93e5be9\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://f920a631bf986c610fe573d3c70a2bb6f224f86f4a8550016470c7ee476c9ab5\",\"dweb:/ipfs/QmYzsyVMfnaREKHcHv5RPS8Xg5r1Q38E2SDsGBTnXeFWzb\"]},\"lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol\":{\"keccak256\":\"0x447a5f3ddc18419d41ff92b3773fb86471b1db25773e07f877f548918a185bf1\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://be161e54f24e5c6fae81a12db1a8ae87bc5ae1b0ddc805d82a1440a68455088f\",\"dweb:/ipfs/QmP7C3CHdY9urF4dEMb9wmsp1wMxHF6nhA2yQE5SKiPAdy\"]},\"src/interfaces/IFees.sol\":{\"keccak256\":\"0x7a2d2b74602f23a8944b45c745e8a512f7d8f00f8ba22742636abaf929379697\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://ab38548046bb65d089fd56b335a3b98d2b4f03e9af4763c2b7da2b04322a6e73\",\"dweb:/ipfs/QmVQfsaSwqV8ynqc9KEGWjQkxnAzju7uQQaFvxqhAd32cW\"]},\"src/interfaces/IHooks.sol\":{\"keccak256\":\"0xc8b2ff0889b0866f84a4a4f06702b92ac08e3a5e2a6048e09dcbba8d58297002\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://4614b2c046f2521dc7f39496cd77af787184189f9e23f65086ac89515826190c\",\"dweb:/ipfs/QmdVEVCfz1wJq5zWnvRsKKCUniwYbDUdWf8NWYukCaXe54\"]},\"src/interfaces/IPoolManager.sol\":{\"keccak256\":\"0x8710691cd4d68bdee1f7053709521f3ad48cf224ada6b4848cabd05b55db9a8f\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a6cb473e388d308f376b17ff9aa27cceea74758cec82d39da344444833d26ce9\",\"dweb:/ipfs/QmU9GJPNrVfjf7Ka1v5XvvEpXj36oXoBazhV2rctjfmiX5\"]},\"src/interfaces/external/IERC20Minimal.sol\":{\"keccak256\":\"0x8dc5ee72426906aeb12f4ae6a2426df059491739bd5cbdb8ea4a3e26970436c6\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://f7e30dbbc972cb78d169c8845d6210d27490c8534e68a20d4f296b11ec727b92\",\"dweb:/ipfs/QmXBvaWaAnPW25YGVm2sMbf5mwrzLapUcqPnrNiiGGXxmA\"]},\"src/libraries/BitMath.sol\":{\"keccak256\":\"0x652cd36970d953b3067c766b3b0c0063d4c403eba7352df09ec10dcc868910d9\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://e357b092171edb755c8514b4b4ae758a8b43458c7a23409ebf5afd325fefa2be\",\"dweb:/ipfs/QmWKRWT2z15cVbVVDkjqdVnpf8Ck1jytcXbA7zCUevp7b6\"]},\"src/libraries/FixedPoint128.sol\":{\"keccak256\":\"0x1f015a7a107f4c471985a958f1bfbc1710948f9bcd3786a02310bc0ad5080c69\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://a1cacac08675284f319d151f6bc5d1c66cf1d54c5dad1c620a2e1e1336cbb93a\",\"dweb:/ipfs/QmPf8vQ3mBqniKHwvS1DDEFrV5dJfZSL6mMi9JVy6omQaz\"]},\"src/libraries/FixedPoint96.sol\":{\"keccak256\":\"0x7731aeeba692b0ca5dac8f27803ec9e5ce98795a554c09ae05c220861bd0314e\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://963a8155e442d31c4541c387d333db0c02941ae3517e9173ad30ebcb4f6a14e9\",\"dweb:/ipfs/QmevAr8oG4WSoi5gBqQ53VzBuFbDKoZHfJwjuTmVhzm8Tc\"]},\"src/libraries/FullMath.sol\":{\"keccak256\":\"0x6d8760794ed38264579c5da7b2afe8ff5543de999180850bc08687b77dce36ea\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://0e72da6f868ba5f5c829f78f649286c6b5922a8cda0317dfbb156b8a4d27fb24\",\"dweb:/ipfs/QmUQDZciNFhy4AFGXfYvoy22ihPc7ehvypeRVQwvVcD3vJ\"]},\"src/libraries/Pool.sol\":{\"keccak256\":\"0x33095bc0ae0c09c96c0aff5a45762584b7897edd3733bbcf30371638ce18cbbb\",\"license\":\"BUSL-1.1\",\"urls\":[\"bzz-raw://6ca8960a3a0f221b6f992a5a2269fe37be5bbdea5e283f4350cf51ea77942a87\",\"dweb:/ipfs/QmdG69msxRxHJmEgiiqmCgb5XhnRYdjS9gWcYP3fe5fgdW\"]},\"src/libraries/Position.sol\":{\"keccak256\":\"0x1319e4c172e31427c3b3521dd3c9c9c3949da22e25c9919ae57c47a8c9328e43\",\"license\":\"BUSL-1.1\",\"urls\":[\"bzz-raw://1e0885e8e035681836fe02213e165d1ab48cf2488cf6ba8f01964b4b026d2b46\",\"dweb:/ipfs/QmR4W3DZYYvctASLFnm7Sf4wk2L77gwNRrTS2mBqtiUaud\"]},\"src/libraries/SafeCast.sol\":{\"keccak256\":\"0xb459cbf9f2cda4c38c11916e888cc2afbe4297c5ae6f50a0976eb83ed0dc9b25\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://5608698d33b18d3f49e3fa1fbdf6e7c6383378f7d53c914dcf14a0411cf7a79b\",\"dweb:/ipfs/QmbF4VWDcTPzH17aczU6eCUcqTp9Be7xiuBGB5TMWmtJAi\"]},\"src/libraries/SqrtPriceMath.sol\":{\"keccak256\":\"0x62cb03c7ce6ce037c82fa74e5aabb2431d6b4ddbca1458efdabf5d6af9ca6f90\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://206e025889f55aa8e5d9db2f846460394b54d6dc6d80a5e4ca1d4b70edd98188\",\"dweb:/ipfs/QmNSzKqtUDXHzgXXDjdNv3ZnHZE3LU4KhwNmkrcWtTRGqk\"]},\"src/libraries/SwapMath.sol\":{\"keccak256\":\"0xac5b75b36ff928e88cbec828bdc9db03e681cc3b337d5d7f6be9fd617b3fef7f\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://6aaea2ecabdb3fec93c7c6be19ea3a034cf396a59ab96f61c57b5214c04b5a6e\",\"dweb:/ipfs/QmYyd4ExT6xbvEHZTQBv9nZuvU6xjB6EN4uY8TmK8Tceqv\"]},\"src/libraries/TickBitmap.sol\":{\"keccak256\":\"0x7cccb8dff4c76da872a827f1549dc44cdff384d123e77a5361a02a31902bf15c\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://88f850cd5bd2bbada4d9514f2516804392c7b23dc2cb541b74e9c88d0a351dcd\",\"dweb:/ipfs/QmZh9LvKUG23oFUZXAAa5gn77MguAbZ41VGjkES5U8N9Em\"]},\"src/libraries/TickMath.sol\":{\"keccak256\":\"0xadffea78a3eed37613b57766d87c0bdb9454d2df39de90d7a450e4a8b3207e56\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://c5043430807061e5ccc82986c59b2e074457ff608111a8bd51b413ceaf661c78\",\"dweb:/ipfs/QmXjqKzCrngzidTRmuLUFvwNPqMKtd8xVFLVCycRfEQcWo\"]},\"src/libraries/UnsafeMath.sol\":{\"keccak256\":\"0x2a8cb75af05f8557b698b089a0ab19e24279fffb7e87cddf5794404c7eaf1c69\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://85f68e6d614205f3f0f55f6ac41805e3a7d523d95bda1c443f2e75444443ffe3\",\"dweb:/ipfs/QmdCheMqxWNx4CbxG5MH9BUQeSMeeXF6DHkf7Aax4duRUe\"]},\"src/types/BalanceDelta.sol\":{\"keccak256\":\"0xe8a5ce042a75fb471a43d4466fddcfbfe23a4bdf4d4b5f84ea842551f577bb6e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://9fc93822da004d24a7811a46ae475c81f367953c0210e4c94cf936469fa33fcf\",\"dweb:/ipfs/QmTpWAmvjKDczv2J1t9fV3tTtLW4LetW8TTGuG866zCSwA\"]},\"src/types/Currency.sol\":{\"keccak256\":\"0xb1395e2817b604745bf6cd41821aafeaaa252caafe45133e54f02d6f6be13d2b\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://49ec58bd7634ccb1b74f59378e54771ae11cba37494b57ae64e3f6640d4afdd9\",\"dweb:/ipfs/QmeYL1TuGXcTYfsQBGu7p9urSqGjiJky8iJAgwTRYqrJ4F\"]},\"src/types/PoolId.sol\":{\"keccak256\":\"0x2928a23cdf4c3dd05fafd3094020723954150901c6935a40fbb8e3cbc1e0ebe3\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://4ddde47e0eda04cf7e1b8e903eafd22ff19866bcb2ce0f61b46a3470b4dc9927\",\"dweb:/ipfs/Qme84u2nmVFZkaBSwVJw3bhZSqt6P9xMHNsp1Y7ddWMDvi\"]},\"src/types/PoolKey.sol\":{\"keccak256\":\"0xef7421713157a514d757863e99c2d094a6fac1dcbae602ac0eb47eda2d651a6d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d2832668ba213b3928fd79e159b4d00b4b8f057844e2897902ec089014470f29\",\"dweb:/ipfs/QmV2MESks8RiTwRJpqynGCGsrmXKimRFpQFZSBXnxEiXKX\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.22+commit.4fc1097e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "struct PoolKey",
+              "name": "key",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint24",
+                  "name": "fee",
+                  "type": "uint24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ]
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount0",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount1",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "hookData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "afterDonate",
+          "outputs": [
+            {
+              "internalType": "bytes4",
+              "name": "",
+              "type": "bytes4"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "struct PoolKey",
+              "name": "key",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint24",
+                  "name": "fee",
+                  "type": "uint24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ]
+            },
+            {
+              "internalType": "uint160",
+              "name": "sqrtPriceX96",
+              "type": "uint160"
+            },
+            {
+              "internalType": "int24",
+              "name": "tick",
+              "type": "int24"
+            },
+            {
+              "internalType": "bytes",
+              "name": "hookData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "afterInitialize",
+          "outputs": [
+            {
+              "internalType": "bytes4",
+              "name": "",
+              "type": "bytes4"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "struct PoolKey",
+              "name": "key",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint24",
+                  "name": "fee",
+                  "type": "uint24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ]
+            },
+            {
+              "internalType": "struct IPoolManager.ModifyPositionParams",
+              "name": "params",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "int24",
+                  "name": "tickLower",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickUpper",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "int256",
+                  "name": "liquidityDelta",
+                  "type": "int256"
+                }
+              ]
+            },
+            {
+              "internalType": "BalanceDelta",
+              "name": "delta",
+              "type": "int256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "hookData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "afterModifyPosition",
+          "outputs": [
+            {
+              "internalType": "bytes4",
+              "name": "",
+              "type": "bytes4"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "struct PoolKey",
+              "name": "key",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint24",
+                  "name": "fee",
+                  "type": "uint24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ]
+            },
+            {
+              "internalType": "struct IPoolManager.SwapParams",
+              "name": "params",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "zeroForOne",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "int256",
+                  "name": "amountSpecified",
+                  "type": "int256"
+                },
+                {
+                  "internalType": "uint160",
+                  "name": "sqrtPriceLimitX96",
+                  "type": "uint160"
+                }
+              ]
+            },
+            {
+              "internalType": "BalanceDelta",
+              "name": "delta",
+              "type": "int256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "hookData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "afterSwap",
+          "outputs": [
+            {
+              "internalType": "bytes4",
+              "name": "",
+              "type": "bytes4"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "struct PoolKey",
+              "name": "key",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint24",
+                  "name": "fee",
+                  "type": "uint24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ]
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount0",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount1",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "hookData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "beforeDonate",
+          "outputs": [
+            {
+              "internalType": "bytes4",
+              "name": "",
+              "type": "bytes4"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "struct PoolKey",
+              "name": "key",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint24",
+                  "name": "fee",
+                  "type": "uint24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ]
+            },
+            {
+              "internalType": "uint160",
+              "name": "sqrtPriceX96",
+              "type": "uint160"
+            },
+            {
+              "internalType": "bytes",
+              "name": "hookData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "beforeInitialize",
+          "outputs": [
+            {
+              "internalType": "bytes4",
+              "name": "",
+              "type": "bytes4"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "struct PoolKey",
+              "name": "key",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint24",
+                  "name": "fee",
+                  "type": "uint24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ]
+            },
+            {
+              "internalType": "struct IPoolManager.ModifyPositionParams",
+              "name": "params",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "int24",
+                  "name": "tickLower",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickUpper",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "int256",
+                  "name": "liquidityDelta",
+                  "type": "int256"
+                }
+              ]
+            },
+            {
+              "internalType": "bytes",
+              "name": "hookData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "beforeModifyPosition",
+          "outputs": [
+            {
+              "internalType": "bytes4",
+              "name": "",
+              "type": "bytes4"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "struct PoolKey",
+              "name": "key",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "Currency",
+                  "name": "currency0",
+                  "type": "address"
+                },
+                {
+                  "internalType": "Currency",
+                  "name": "currency1",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint24",
+                  "name": "fee",
+                  "type": "uint24"
+                },
+                {
+                  "internalType": "int24",
+                  "name": "tickSpacing",
+                  "type": "int24"
+                },
+                {
+                  "internalType": "contract IHooks",
+                  "name": "hooks",
+                  "type": "address"
+                }
+              ]
+            },
+            {
+              "internalType": "struct IPoolManager.SwapParams",
+              "name": "params",
+              "type": "tuple",
+              "components": [
+                {
+                  "internalType": "bool",
+                  "name": "zeroForOne",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "int256",
+                  "name": "amountSpecified",
+                  "type": "int256"
+                },
+                {
+                  "internalType": "uint160",
+                  "name": "sqrtPriceLimitX96",
+                  "type": "uint160"
+                }
+              ]
+            },
+            {
+              "internalType": "bytes",
+              "name": "hookData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "beforeSwap",
+          "outputs": [
+            {
+              "internalType": "bytes4",
+              "name": "",
+              "type": "bytes4"
+            }
+          ]
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {
+          "afterDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)": {
+            "params": {
+              "amount0": "The amount of token0 being donated",
+              "amount1": "The amount of token1 being donated",
+              "hookData": "Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook",
+              "key": "The key for the pool",
+              "sender": "The initial msg.sender for the donate call"
+            },
+            "returns": {
+              "_0": "bytes4 The function selector for the hook"
+            }
+          },
+          "afterInitialize(address,(address,address,uint24,int24,address),uint160,int24,bytes)": {
+            "params": {
+              "hookData": "Arbitrary data handed into the PoolManager by the initializer to be be passed on to the hook",
+              "key": "The key for the pool being initialized",
+              "sender": "The initial msg.sender for the initialize call",
+              "sqrtPriceX96": "The sqrt(price) of the pool as a Q64.96",
+              "tick": "The current tick after the state of a pool is initialized"
+            },
+            "returns": {
+              "_0": "bytes4 The function selector for the hook"
+            }
+          },
+          "afterModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),int256,bytes)": {
+            "params": {
+              "hookData": "Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook",
+              "key": "The key for the pool",
+              "params": "The parameters for modifying the position",
+              "sender": "The initial msg.sender for the modify position call"
+            },
+            "returns": {
+              "_0": "bytes4 The function selector for the hook"
+            }
+          },
+          "afterSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),int256,bytes)": {
+            "params": {
+              "delta": "The amount owed to the locker (positive) or owed to the pool (negative)",
+              "hookData": "Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook",
+              "key": "The key for the pool",
+              "params": "The parameters for the swap",
+              "sender": "The initial msg.sender for the swap call"
+            },
+            "returns": {
+              "_0": "bytes4 The function selector for the hook"
+            }
+          },
+          "beforeDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)": {
+            "params": {
+              "amount0": "The amount of token0 being donated",
+              "amount1": "The amount of token1 being donated",
+              "hookData": "Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook",
+              "key": "The key for the pool",
+              "sender": "The initial msg.sender for the donate call"
+            },
+            "returns": {
+              "_0": "bytes4 The function selector for the hook"
+            }
+          },
+          "beforeInitialize(address,(address,address,uint24,int24,address),uint160,bytes)": {
+            "params": {
+              "hookData": "Arbitrary data handed into the PoolManager by the initializer to be be passed on to the hook",
+              "key": "The key for the pool being initialized",
+              "sender": "The initial msg.sender for the initialize call",
+              "sqrtPriceX96": "The sqrt(price) of the pool as a Q64.96"
+            },
+            "returns": {
+              "_0": "bytes4 The function selector for the hook"
+            }
+          },
+          "beforeModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),bytes)": {
+            "params": {
+              "hookData": "Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook",
+              "key": "The key for the pool",
+              "params": "The parameters for modifying the position",
+              "sender": "The initial msg.sender for the modify position call"
+            },
+            "returns": {
+              "_0": "bytes4 The function selector for the hook"
+            }
+          },
+          "beforeSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),bytes)": {
+            "params": {
+              "hookData": "Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook",
+              "key": "The key for the pool",
+              "params": "The parameters for the swap",
+              "sender": "The initial msg.sender for the swap call"
+            },
+            "returns": {
+              "_0": "bytes4 The function selector for the hook"
+            }
+          }
+        },
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {
+          "afterDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)": {
+            "notice": "The hook called after donate"
+          },
+          "afterInitialize(address,(address,address,uint24,int24,address),uint160,int24,bytes)": {
+            "notice": "The hook called after the state of a pool is initialized"
+          },
+          "afterModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),int256,bytes)": {
+            "notice": "The hook called after a position is modified"
+          },
+          "afterSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),int256,bytes)": {
+            "notice": "The hook called after a swap"
+          },
+          "beforeDonate(address,(address,address,uint24,int24,address),uint256,uint256,bytes)": {
+            "notice": "The hook called before donate"
+          },
+          "beforeInitialize(address,(address,address,uint24,int24,address),uint160,bytes)": {
+            "notice": "The hook called before the state of a pool is initialized"
+          },
+          "beforeModifyPosition(address,(address,address,uint24,int24,address),(int24,int24,int256),bytes)": {
+            "notice": "The hook called before a position is modified"
+          },
+          "beforeSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),bytes)": {
+            "notice": "The hook called before a swap"
+          }
+        },
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        "@ensdomains/=node_modules/@ensdomains/",
+        "@openzeppelin/=lib/openzeppelin-contracts/",
+        "ds-test/=lib/forge-std/lib/ds-test/src/",
+        "forge-gas-snapshot/=lib/forge-gas-snapshot/src/",
+        "forge-std/=lib/forge-std/src/",
+        "hardhat/=node_modules/hardhat/",
+        "openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/",
+        "solmate/=lib/solmate/src/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 800
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "src/interfaces/IHooks.sol": "IHooks"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "lib/openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol": {
+        "keccak256": "0x8e93de94c9062ebc94fb7e2e3929b0781ac6a2b7772e2f7a59045861c93e5be9",
+        "urls": [
+          "bzz-raw://f920a631bf986c610fe573d3c70a2bb6f224f86f4a8550016470c7ee476c9ab5",
+          "dweb:/ipfs/QmYzsyVMfnaREKHcHv5RPS8Xg5r1Q38E2SDsGBTnXeFWzb"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol": {
+        "keccak256": "0x447a5f3ddc18419d41ff92b3773fb86471b1db25773e07f877f548918a185bf1",
+        "urls": [
+          "bzz-raw://be161e54f24e5c6fae81a12db1a8ae87bc5ae1b0ddc805d82a1440a68455088f",
+          "dweb:/ipfs/QmP7C3CHdY9urF4dEMb9wmsp1wMxHF6nhA2yQE5SKiPAdy"
+        ],
+        "license": "MIT"
+      },
+      "src/interfaces/IFees.sol": {
+        "keccak256": "0x7a2d2b74602f23a8944b45c745e8a512f7d8f00f8ba22742636abaf929379697",
+        "urls": [
+          "bzz-raw://ab38548046bb65d089fd56b335a3b98d2b4f03e9af4763c2b7da2b04322a6e73",
+          "dweb:/ipfs/QmVQfsaSwqV8ynqc9KEGWjQkxnAzju7uQQaFvxqhAd32cW"
+        ],
+        "license": "MIT"
+      },
+      "src/interfaces/IHooks.sol": {
+        "keccak256": "0xc8b2ff0889b0866f84a4a4f06702b92ac08e3a5e2a6048e09dcbba8d58297002",
+        "urls": [
+          "bzz-raw://4614b2c046f2521dc7f39496cd77af787184189f9e23f65086ac89515826190c",
+          "dweb:/ipfs/QmdVEVCfz1wJq5zWnvRsKKCUniwYbDUdWf8NWYukCaXe54"
+        ],
+        "license": "MIT"
+      },
+      "src/interfaces/IPoolManager.sol": {
+        "keccak256": "0x8710691cd4d68bdee1f7053709521f3ad48cf224ada6b4848cabd05b55db9a8f",
+        "urls": [
+          "bzz-raw://a6cb473e388d308f376b17ff9aa27cceea74758cec82d39da344444833d26ce9",
+          "dweb:/ipfs/QmU9GJPNrVfjf7Ka1v5XvvEpXj36oXoBazhV2rctjfmiX5"
+        ],
+        "license": "MIT"
+      },
+      "src/interfaces/external/IERC20Minimal.sol": {
+        "keccak256": "0x8dc5ee72426906aeb12f4ae6a2426df059491739bd5cbdb8ea4a3e26970436c6",
+        "urls": [
+          "bzz-raw://f7e30dbbc972cb78d169c8845d6210d27490c8534e68a20d4f296b11ec727b92",
+          "dweb:/ipfs/QmXBvaWaAnPW25YGVm2sMbf5mwrzLapUcqPnrNiiGGXxmA"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/BitMath.sol": {
+        "keccak256": "0x652cd36970d953b3067c766b3b0c0063d4c403eba7352df09ec10dcc868910d9",
+        "urls": [
+          "bzz-raw://e357b092171edb755c8514b4b4ae758a8b43458c7a23409ebf5afd325fefa2be",
+          "dweb:/ipfs/QmWKRWT2z15cVbVVDkjqdVnpf8Ck1jytcXbA7zCUevp7b6"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/FixedPoint128.sol": {
+        "keccak256": "0x1f015a7a107f4c471985a958f1bfbc1710948f9bcd3786a02310bc0ad5080c69",
+        "urls": [
+          "bzz-raw://a1cacac08675284f319d151f6bc5d1c66cf1d54c5dad1c620a2e1e1336cbb93a",
+          "dweb:/ipfs/QmPf8vQ3mBqniKHwvS1DDEFrV5dJfZSL6mMi9JVy6omQaz"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/FixedPoint96.sol": {
+        "keccak256": "0x7731aeeba692b0ca5dac8f27803ec9e5ce98795a554c09ae05c220861bd0314e",
+        "urls": [
+          "bzz-raw://963a8155e442d31c4541c387d333db0c02941ae3517e9173ad30ebcb4f6a14e9",
+          "dweb:/ipfs/QmevAr8oG4WSoi5gBqQ53VzBuFbDKoZHfJwjuTmVhzm8Tc"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/FullMath.sol": {
+        "keccak256": "0x6d8760794ed38264579c5da7b2afe8ff5543de999180850bc08687b77dce36ea",
+        "urls": [
+          "bzz-raw://0e72da6f868ba5f5c829f78f649286c6b5922a8cda0317dfbb156b8a4d27fb24",
+          "dweb:/ipfs/QmUQDZciNFhy4AFGXfYvoy22ihPc7ehvypeRVQwvVcD3vJ"
+        ],
+        "license": "MIT"
+      },
+      "src/libraries/Pool.sol": {
+        "keccak256": "0x33095bc0ae0c09c96c0aff5a45762584b7897edd3733bbcf30371638ce18cbbb",
+        "urls": [
+          "bzz-raw://6ca8960a3a0f221b6f992a5a2269fe37be5bbdea5e283f4350cf51ea77942a87",
+          "dweb:/ipfs/QmdG69msxRxHJmEgiiqmCgb5XhnRYdjS9gWcYP3fe5fgdW"
+        ],
+        "license": "BUSL-1.1"
+      },
+      "src/libraries/Position.sol": {
+        "keccak256": "0x1319e4c172e31427c3b3521dd3c9c9c3949da22e25c9919ae57c47a8c9328e43",
+        "urls": [
+          "bzz-raw://1e0885e8e035681836fe02213e165d1ab48cf2488cf6ba8f01964b4b026d2b46",
+          "dweb:/ipfs/QmR4W3DZYYvctASLFnm7Sf4wk2L77gwNRrTS2mBqtiUaud"
+        ],
+        "license": "BUSL-1.1"
+      },
+      "src/libraries/SafeCast.sol": {
+        "keccak256": "0xb459cbf9f2cda4c38c11916e888cc2afbe4297c5ae6f50a0976eb83ed0dc9b25",
+        "urls": [
+          "bzz-raw://5608698d33b18d3f49e3fa1fbdf6e7c6383378f7d53c914dcf14a0411cf7a79b",
+          "dweb:/ipfs/QmbF4VWDcTPzH17aczU6eCUcqTp9Be7xiuBGB5TMWmtJAi"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/SqrtPriceMath.sol": {
+        "keccak256": "0x62cb03c7ce6ce037c82fa74e5aabb2431d6b4ddbca1458efdabf5d6af9ca6f90",
+        "urls": [
+          "bzz-raw://206e025889f55aa8e5d9db2f846460394b54d6dc6d80a5e4ca1d4b70edd98188",
+          "dweb:/ipfs/QmNSzKqtUDXHzgXXDjdNv3ZnHZE3LU4KhwNmkrcWtTRGqk"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/SwapMath.sol": {
+        "keccak256": "0xac5b75b36ff928e88cbec828bdc9db03e681cc3b337d5d7f6be9fd617b3fef7f",
+        "urls": [
+          "bzz-raw://6aaea2ecabdb3fec93c7c6be19ea3a034cf396a59ab96f61c57b5214c04b5a6e",
+          "dweb:/ipfs/QmYyd4ExT6xbvEHZTQBv9nZuvU6xjB6EN4uY8TmK8Tceqv"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/TickBitmap.sol": {
+        "keccak256": "0x7cccb8dff4c76da872a827f1549dc44cdff384d123e77a5361a02a31902bf15c",
+        "urls": [
+          "bzz-raw://88f850cd5bd2bbada4d9514f2516804392c7b23dc2cb541b74e9c88d0a351dcd",
+          "dweb:/ipfs/QmZh9LvKUG23oFUZXAAa5gn77MguAbZ41VGjkES5U8N9Em"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/TickMath.sol": {
+        "keccak256": "0xadffea78a3eed37613b57766d87c0bdb9454d2df39de90d7a450e4a8b3207e56",
+        "urls": [
+          "bzz-raw://c5043430807061e5ccc82986c59b2e074457ff608111a8bd51b413ceaf661c78",
+          "dweb:/ipfs/QmXjqKzCrngzidTRmuLUFvwNPqMKtd8xVFLVCycRfEQcWo"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/UnsafeMath.sol": {
+        "keccak256": "0x2a8cb75af05f8557b698b089a0ab19e24279fffb7e87cddf5794404c7eaf1c69",
+        "urls": [
+          "bzz-raw://85f68e6d614205f3f0f55f6ac41805e3a7d523d95bda1c443f2e75444443ffe3",
+          "dweb:/ipfs/QmdCheMqxWNx4CbxG5MH9BUQeSMeeXF6DHkf7Aax4duRUe"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/types/BalanceDelta.sol": {
+        "keccak256": "0xe8a5ce042a75fb471a43d4466fddcfbfe23a4bdf4d4b5f84ea842551f577bb6e",
+        "urls": [
+          "bzz-raw://9fc93822da004d24a7811a46ae475c81f367953c0210e4c94cf936469fa33fcf",
+          "dweb:/ipfs/QmTpWAmvjKDczv2J1t9fV3tTtLW4LetW8TTGuG866zCSwA"
+        ],
+        "license": "MIT"
+      },
+      "src/types/Currency.sol": {
+        "keccak256": "0xb1395e2817b604745bf6cd41821aafeaaa252caafe45133e54f02d6f6be13d2b",
+        "urls": [
+          "bzz-raw://49ec58bd7634ccb1b74f59378e54771ae11cba37494b57ae64e3f6640d4afdd9",
+          "dweb:/ipfs/QmeYL1TuGXcTYfsQBGu7p9urSqGjiJky8iJAgwTRYqrJ4F"
+        ],
+        "license": "MIT"
+      },
+      "src/types/PoolId.sol": {
+        "keccak256": "0x2928a23cdf4c3dd05fafd3094020723954150901c6935a40fbb8e3cbc1e0ebe3",
+        "urls": [
+          "bzz-raw://4ddde47e0eda04cf7e1b8e903eafd22ff19866bcb2ce0f61b46a3470b4dc9927",
+          "dweb:/ipfs/Qme84u2nmVFZkaBSwVJw3bhZSqt6P9xMHNsp1Y7ddWMDvi"
+        ],
+        "license": "MIT"
+      },
+      "src/types/PoolKey.sol": {
+        "keccak256": "0xef7421713157a514d757863e99c2d094a6fac1dcbae602ac0eb47eda2d651a6d",
+        "urls": [
+          "bzz-raw://d2832668ba213b3928fd79e159b4d00b4b8f057844e2897902ec089014470f29",
+          "dweb:/ipfs/QmV2MESks8RiTwRJpqynGCGsrmXKimRFpQFZSBXnxEiXKX"
+        ],
+        "license": "MIT"
+      }
+    },
+    "version": 1
+  },
+  "ast": {
+    "absolutePath": "src/interfaces/IHooks.sol",
+    "id": 33255,
+    "exportedSymbols": {
+      "BalanceDelta": [
+        43927
+      ],
+      "IHooks": [
+        33254
+      ],
+      "IPoolManager": [
+        33638
+      ],
+      "PoolKey": [
+        44360
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "32:5676:38",
+    "nodes": [
+      {
+        "id": 33110,
+        "nodeType": "PragmaDirective",
+        "src": "32:24:38",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".20"
+        ]
+      },
+      {
+        "id": 33112,
+        "nodeType": "ImportDirective",
+        "src": "58:45:38",
+        "nodes": [],
+        "absolutePath": "src/types/PoolKey.sol",
+        "file": "../types/PoolKey.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 33255,
+        "sourceUnit": 44361,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 33111,
+              "name": "PoolKey",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 44360,
+              "src": "66:7:38",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 33114,
+        "nodeType": "ImportDirective",
+        "src": "104:55:38",
+        "nodes": [],
+        "absolutePath": "src/types/BalanceDelta.sol",
+        "file": "../types/BalanceDelta.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 33255,
+        "sourceUnit": 44030,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 33113,
+              "name": "BalanceDelta",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 43927,
+              "src": "112:12:38",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 33116,
+        "nodeType": "ImportDirective",
+        "src": "160:48:38",
+        "nodes": [],
+        "absolutePath": "src/interfaces/IPoolManager.sol",
+        "file": "./IPoolManager.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 33255,
+        "sourceUnit": 33639,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 33115,
+              "name": "IPoolManager",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 33638,
+              "src": "168:12:38",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 33254,
+        "nodeType": "ContractDefinition",
+        "src": "557:5150:38",
+        "nodes": [
+          {
+            "id": 33132,
+            "nodeType": "FunctionDefinition",
+            "src": "1024:153:38",
+            "nodes": [],
+            "documentation": {
+              "id": 33118,
+              "nodeType": "StructuredDocumentation",
+              "src": "580:439:38",
+              "text": "@notice The hook called before the state of a pool is initialized\n @param sender The initial msg.sender for the initialize call\n @param key The key for the pool being initialized\n @param sqrtPriceX96 The sqrt(price) of the pool as a Q64.96\n @param hookData Arbitrary data handed into the PoolManager by the initializer to be be passed on to the hook\n @return bytes4 The function selector for the hook"
+            },
+            "functionSelector": "3440d820",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "beforeInitialize",
+            "nameLocation": "1033:16:38",
+            "parameters": {
+              "id": 33128,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33120,
+                  "mutability": "mutable",
+                  "name": "sender",
+                  "nameLocation": "1058:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33132,
+                  "src": "1050:14:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 33119,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1050:7:38",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33123,
+                  "mutability": "mutable",
+                  "name": "key",
+                  "nameLocation": "1083:3:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33132,
+                  "src": "1066:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_PoolKey_$44360_calldata_ptr",
+                    "typeString": "struct PoolKey"
+                  },
+                  "typeName": {
+                    "id": 33122,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33121,
+                      "name": "PoolKey",
+                      "nameLocations": [
+                        "1066:7:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 44360,
+                      "src": "1066:7:38"
+                    },
+                    "referencedDeclaration": 44360,
+                    "src": "1066:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_PoolKey_$44360_storage_ptr",
+                      "typeString": "struct PoolKey"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33125,
+                  "mutability": "mutable",
+                  "name": "sqrtPriceX96",
+                  "nameLocation": "1096:12:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33132,
+                  "src": "1088:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint160",
+                    "typeString": "uint160"
+                  },
+                  "typeName": {
+                    "id": 33124,
+                    "name": "uint160",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1088:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint160",
+                      "typeString": "uint160"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33127,
+                  "mutability": "mutable",
+                  "name": "hookData",
+                  "nameLocation": "1125:8:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33132,
+                  "src": "1110:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 33126,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1110:5:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1049:85:38"
+            },
+            "returnParameters": {
+              "id": 33131,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33130,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33132,
+                  "src": "1169:6:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes4",
+                    "typeString": "bytes4"
+                  },
+                  "typeName": {
+                    "id": 33129,
+                    "name": "bytes4",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1169:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes4",
+                      "typeString": "bytes4"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1168:8:38"
+            },
+            "scope": 33254,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 33149,
+            "nodeType": "FunctionDefinition",
+            "src": "1704:194:38",
+            "nodes": [],
+            "documentation": {
+              "id": 33133,
+              "nodeType": "StructuredDocumentation",
+              "src": "1183:516:38",
+              "text": "@notice The hook called after the state of a pool is initialized\n @param sender The initial msg.sender for the initialize call\n @param key The key for the pool being initialized\n @param sqrtPriceX96 The sqrt(price) of the pool as a Q64.96\n @param tick The current tick after the state of a pool is initialized\n @param hookData Arbitrary data handed into the PoolManager by the initializer to be be passed on to the hook\n @return bytes4 The function selector for the hook"
+            },
+            "functionSelector": "a910f80f",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "afterInitialize",
+            "nameLocation": "1713:15:38",
+            "parameters": {
+              "id": 33145,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33135,
+                  "mutability": "mutable",
+                  "name": "sender",
+                  "nameLocation": "1746:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33149,
+                  "src": "1738:14:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 33134,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1738:7:38",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33138,
+                  "mutability": "mutable",
+                  "name": "key",
+                  "nameLocation": "1779:3:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33149,
+                  "src": "1762:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_PoolKey_$44360_calldata_ptr",
+                    "typeString": "struct PoolKey"
+                  },
+                  "typeName": {
+                    "id": 33137,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33136,
+                      "name": "PoolKey",
+                      "nameLocations": [
+                        "1762:7:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 44360,
+                      "src": "1762:7:38"
+                    },
+                    "referencedDeclaration": 44360,
+                    "src": "1762:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_PoolKey_$44360_storage_ptr",
+                      "typeString": "struct PoolKey"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33140,
+                  "mutability": "mutable",
+                  "name": "sqrtPriceX96",
+                  "nameLocation": "1800:12:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33149,
+                  "src": "1792:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint160",
+                    "typeString": "uint160"
+                  },
+                  "typeName": {
+                    "id": 33139,
+                    "name": "uint160",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1792:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint160",
+                      "typeString": "uint160"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33142,
+                  "mutability": "mutable",
+                  "name": "tick",
+                  "nameLocation": "1828:4:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33149,
+                  "src": "1822:10:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int24",
+                    "typeString": "int24"
+                  },
+                  "typeName": {
+                    "id": 33141,
+                    "name": "int24",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1822:5:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int24",
+                      "typeString": "int24"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33144,
+                  "mutability": "mutable",
+                  "name": "hookData",
+                  "nameLocation": "1857:8:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33149,
+                  "src": "1842:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 33143,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1842:5:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1728:143:38"
+            },
+            "returnParameters": {
+              "id": 33148,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33147,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33149,
+                  "src": "1890:6:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes4",
+                    "typeString": "bytes4"
+                  },
+                  "typeName": {
+                    "id": 33146,
+                    "name": "bytes4",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1890:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes4",
+                      "typeString": "bytes4"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1889:8:38"
+            },
+            "scope": 33254,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 33165,
+            "nodeType": "FunctionDefinition",
+            "src": "2325:208:38",
+            "nodes": [],
+            "documentation": {
+              "id": 33150,
+              "nodeType": "StructuredDocumentation",
+              "src": "1904:416:38",
+              "text": "@notice The hook called before a position is modified\n @param sender The initial msg.sender for the modify position call\n @param key The key for the pool\n @param params The parameters for modifying the position\n @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook\n @return bytes4 The function selector for the hook"
+            },
+            "functionSelector": "fe9a6f45",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "beforeModifyPosition",
+            "nameLocation": "2334:20:38",
+            "parameters": {
+              "id": 33161,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33152,
+                  "mutability": "mutable",
+                  "name": "sender",
+                  "nameLocation": "2372:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33165,
+                  "src": "2364:14:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 33151,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2364:7:38",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33155,
+                  "mutability": "mutable",
+                  "name": "key",
+                  "nameLocation": "2405:3:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33165,
+                  "src": "2388:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_PoolKey_$44360_calldata_ptr",
+                    "typeString": "struct PoolKey"
+                  },
+                  "typeName": {
+                    "id": 33154,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33153,
+                      "name": "PoolKey",
+                      "nameLocations": [
+                        "2388:7:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 44360,
+                      "src": "2388:7:38"
+                    },
+                    "referencedDeclaration": 44360,
+                    "src": "2388:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_PoolKey_$44360_storage_ptr",
+                      "typeString": "struct PoolKey"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33158,
+                  "mutability": "mutable",
+                  "name": "params",
+                  "nameLocation": "2461:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33165,
+                  "src": "2418:49:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_ModifyPositionParams_$33514_calldata_ptr",
+                    "typeString": "struct IPoolManager.ModifyPositionParams"
+                  },
+                  "typeName": {
+                    "id": 33157,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33156,
+                      "name": "IPoolManager.ModifyPositionParams",
+                      "nameLocations": [
+                        "2418:12:38",
+                        "2431:20:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 33514,
+                      "src": "2418:33:38"
+                    },
+                    "referencedDeclaration": 33514,
+                    "src": "2418:33:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_ModifyPositionParams_$33514_storage_ptr",
+                      "typeString": "struct IPoolManager.ModifyPositionParams"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33160,
+                  "mutability": "mutable",
+                  "name": "hookData",
+                  "nameLocation": "2492:8:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33165,
+                  "src": "2477:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 33159,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2477:5:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2354:152:38"
+            },
+            "returnParameters": {
+              "id": 33164,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33163,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33165,
+                  "src": "2525:6:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes4",
+                    "typeString": "bytes4"
+                  },
+                  "typeName": {
+                    "id": 33162,
+                    "name": "bytes4",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2525:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes4",
+                      "typeString": "bytes4"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2524:8:38"
+            },
+            "scope": 33254,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 33184,
+            "nodeType": "FunctionDefinition",
+            "src": "2959:235:38",
+            "nodes": [],
+            "documentation": {
+              "id": 33166,
+              "nodeType": "StructuredDocumentation",
+              "src": "2539:415:38",
+              "text": "@notice The hook called after a position is modified\n @param sender The initial msg.sender for the modify position call\n @param key The key for the pool\n @param params The parameters for modifying the position\n @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook\n @return bytes4 The function selector for the hook"
+            },
+            "functionSelector": "30b7cdef",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "afterModifyPosition",
+            "nameLocation": "2968:19:38",
+            "parameters": {
+              "id": 33180,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33168,
+                  "mutability": "mutable",
+                  "name": "sender",
+                  "nameLocation": "3005:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33184,
+                  "src": "2997:14:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 33167,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2997:7:38",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33171,
+                  "mutability": "mutable",
+                  "name": "key",
+                  "nameLocation": "3038:3:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33184,
+                  "src": "3021:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_PoolKey_$44360_calldata_ptr",
+                    "typeString": "struct PoolKey"
+                  },
+                  "typeName": {
+                    "id": 33170,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33169,
+                      "name": "PoolKey",
+                      "nameLocations": [
+                        "3021:7:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 44360,
+                      "src": "3021:7:38"
+                    },
+                    "referencedDeclaration": 44360,
+                    "src": "3021:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_PoolKey_$44360_storage_ptr",
+                      "typeString": "struct PoolKey"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33174,
+                  "mutability": "mutable",
+                  "name": "params",
+                  "nameLocation": "3094:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33184,
+                  "src": "3051:49:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_ModifyPositionParams_$33514_calldata_ptr",
+                    "typeString": "struct IPoolManager.ModifyPositionParams"
+                  },
+                  "typeName": {
+                    "id": 33173,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33172,
+                      "name": "IPoolManager.ModifyPositionParams",
+                      "nameLocations": [
+                        "3051:12:38",
+                        "3064:20:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 33514,
+                      "src": "3051:33:38"
+                    },
+                    "referencedDeclaration": 33514,
+                    "src": "3051:33:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_ModifyPositionParams_$33514_storage_ptr",
+                      "typeString": "struct IPoolManager.ModifyPositionParams"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33177,
+                  "mutability": "mutable",
+                  "name": "delta",
+                  "nameLocation": "3123:5:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33184,
+                  "src": "3110:18:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_userDefinedValueType$_BalanceDelta_$43927",
+                    "typeString": "BalanceDelta"
+                  },
+                  "typeName": {
+                    "id": 33176,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33175,
+                      "name": "BalanceDelta",
+                      "nameLocations": [
+                        "3110:12:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 43927,
+                      "src": "3110:12:38"
+                    },
+                    "referencedDeclaration": 43927,
+                    "src": "3110:12:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_userDefinedValueType$_BalanceDelta_$43927",
+                      "typeString": "BalanceDelta"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33179,
+                  "mutability": "mutable",
+                  "name": "hookData",
+                  "nameLocation": "3153:8:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33184,
+                  "src": "3138:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 33178,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3138:5:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2987:180:38"
+            },
+            "returnParameters": {
+              "id": 33183,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33182,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33184,
+                  "src": "3186:6:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes4",
+                    "typeString": "bytes4"
+                  },
+                  "typeName": {
+                    "id": 33181,
+                    "name": "bytes4",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3186:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes4",
+                      "typeString": "bytes4"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3185:8:38"
+            },
+            "scope": 33254,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 33200,
+            "nodeType": "FunctionDefinition",
+            "src": "3570:188:38",
+            "nodes": [],
+            "documentation": {
+              "id": 33185,
+              "nodeType": "StructuredDocumentation",
+              "src": "3200:365:38",
+              "text": "@notice The hook called before a swap\n @param sender The initial msg.sender for the swap call\n @param key The key for the pool\n @param params The parameters for the swap\n @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook\n @return bytes4 The function selector for the hook"
+            },
+            "functionSelector": "575e24b4",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "beforeSwap",
+            "nameLocation": "3579:10:38",
+            "parameters": {
+              "id": 33196,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33187,
+                  "mutability": "mutable",
+                  "name": "sender",
+                  "nameLocation": "3607:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33200,
+                  "src": "3599:14:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 33186,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3599:7:38",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33190,
+                  "mutability": "mutable",
+                  "name": "key",
+                  "nameLocation": "3640:3:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33200,
+                  "src": "3623:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_PoolKey_$44360_calldata_ptr",
+                    "typeString": "struct PoolKey"
+                  },
+                  "typeName": {
+                    "id": 33189,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33188,
+                      "name": "PoolKey",
+                      "nameLocations": [
+                        "3623:7:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 44360,
+                      "src": "3623:7:38"
+                    },
+                    "referencedDeclaration": 44360,
+                    "src": "3623:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_PoolKey_$44360_storage_ptr",
+                      "typeString": "struct PoolKey"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33193,
+                  "mutability": "mutable",
+                  "name": "params",
+                  "nameLocation": "3686:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33200,
+                  "src": "3653:39:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_SwapParams_$33536_calldata_ptr",
+                    "typeString": "struct IPoolManager.SwapParams"
+                  },
+                  "typeName": {
+                    "id": 33192,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33191,
+                      "name": "IPoolManager.SwapParams",
+                      "nameLocations": [
+                        "3653:12:38",
+                        "3666:10:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 33536,
+                      "src": "3653:23:38"
+                    },
+                    "referencedDeclaration": 33536,
+                    "src": "3653:23:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_SwapParams_$33536_storage_ptr",
+                      "typeString": "struct IPoolManager.SwapParams"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33195,
+                  "mutability": "mutable",
+                  "name": "hookData",
+                  "nameLocation": "3717:8:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33200,
+                  "src": "3702:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 33194,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3702:5:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3589:142:38"
+            },
+            "returnParameters": {
+              "id": 33199,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33198,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33200,
+                  "src": "3750:6:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes4",
+                    "typeString": "bytes4"
+                  },
+                  "typeName": {
+                    "id": 33197,
+                    "name": "bytes4",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3750:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes4",
+                      "typeString": "bytes4"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3749:8:38"
+            },
+            "scope": 33254,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 33219,
+            "nodeType": "FunctionDefinition",
+            "src": "4226:215:38",
+            "nodes": [],
+            "documentation": {
+              "id": 33201,
+              "nodeType": "StructuredDocumentation",
+              "src": "3764:457:38",
+              "text": "@notice The hook called after a swap\n @param sender The initial msg.sender for the swap call\n @param key The key for the pool\n @param params The parameters for the swap\n @param delta The amount owed to the locker (positive) or owed to the pool (negative)\n @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook\n @return bytes4 The function selector for the hook"
+            },
+            "functionSelector": "b47b2fb1",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "afterSwap",
+            "nameLocation": "4235:9:38",
+            "parameters": {
+              "id": 33215,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33203,
+                  "mutability": "mutable",
+                  "name": "sender",
+                  "nameLocation": "4262:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33219,
+                  "src": "4254:14:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 33202,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4254:7:38",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33206,
+                  "mutability": "mutable",
+                  "name": "key",
+                  "nameLocation": "4295:3:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33219,
+                  "src": "4278:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_PoolKey_$44360_calldata_ptr",
+                    "typeString": "struct PoolKey"
+                  },
+                  "typeName": {
+                    "id": 33205,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33204,
+                      "name": "PoolKey",
+                      "nameLocations": [
+                        "4278:7:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 44360,
+                      "src": "4278:7:38"
+                    },
+                    "referencedDeclaration": 44360,
+                    "src": "4278:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_PoolKey_$44360_storage_ptr",
+                      "typeString": "struct PoolKey"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33209,
+                  "mutability": "mutable",
+                  "name": "params",
+                  "nameLocation": "4341:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33219,
+                  "src": "4308:39:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_SwapParams_$33536_calldata_ptr",
+                    "typeString": "struct IPoolManager.SwapParams"
+                  },
+                  "typeName": {
+                    "id": 33208,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33207,
+                      "name": "IPoolManager.SwapParams",
+                      "nameLocations": [
+                        "4308:12:38",
+                        "4321:10:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 33536,
+                      "src": "4308:23:38"
+                    },
+                    "referencedDeclaration": 33536,
+                    "src": "4308:23:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_SwapParams_$33536_storage_ptr",
+                      "typeString": "struct IPoolManager.SwapParams"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33212,
+                  "mutability": "mutable",
+                  "name": "delta",
+                  "nameLocation": "4370:5:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33219,
+                  "src": "4357:18:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_userDefinedValueType$_BalanceDelta_$43927",
+                    "typeString": "BalanceDelta"
+                  },
+                  "typeName": {
+                    "id": 33211,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33210,
+                      "name": "BalanceDelta",
+                      "nameLocations": [
+                        "4357:12:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 43927,
+                      "src": "4357:12:38"
+                    },
+                    "referencedDeclaration": 43927,
+                    "src": "4357:12:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_userDefinedValueType$_BalanceDelta_$43927",
+                      "typeString": "BalanceDelta"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33214,
+                  "mutability": "mutable",
+                  "name": "hookData",
+                  "nameLocation": "4400:8:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33219,
+                  "src": "4385:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 33213,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4385:5:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4244:170:38"
+            },
+            "returnParameters": {
+              "id": 33218,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33217,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33219,
+                  "src": "4433:6:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes4",
+                    "typeString": "bytes4"
+                  },
+                  "typeName": {
+                    "id": 33216,
+                    "name": "bytes4",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4433:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes4",
+                      "typeString": "bytes4"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4432:8:38"
+            },
+            "scope": 33254,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 33236,
+            "nodeType": "FunctionDefinition",
+            "src": "4883:191:38",
+            "nodes": [],
+            "documentation": {
+              "id": 33220,
+              "nodeType": "StructuredDocumentation",
+              "src": "4447:431:38",
+              "text": "@notice The hook called before donate\n @param sender The initial msg.sender for the donate call\n @param key The key for the pool\n @param amount0 The amount of token0 being donated\n @param amount1 The amount of token1 being donated\n @param hookData Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook\n @return bytes4 The function selector for the hook"
+            },
+            "functionSelector": "b6a8b0fa",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "beforeDonate",
+            "nameLocation": "4892:12:38",
+            "parameters": {
+              "id": 33232,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33222,
+                  "mutability": "mutable",
+                  "name": "sender",
+                  "nameLocation": "4922:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33236,
+                  "src": "4914:14:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 33221,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4914:7:38",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33225,
+                  "mutability": "mutable",
+                  "name": "key",
+                  "nameLocation": "4955:3:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33236,
+                  "src": "4938:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_PoolKey_$44360_calldata_ptr",
+                    "typeString": "struct PoolKey"
+                  },
+                  "typeName": {
+                    "id": 33224,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33223,
+                      "name": "PoolKey",
+                      "nameLocations": [
+                        "4938:7:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 44360,
+                      "src": "4938:7:38"
+                    },
+                    "referencedDeclaration": 44360,
+                    "src": "4938:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_PoolKey_$44360_storage_ptr",
+                      "typeString": "struct PoolKey"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33227,
+                  "mutability": "mutable",
+                  "name": "amount0",
+                  "nameLocation": "4976:7:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33236,
+                  "src": "4968:15:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 33226,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4968:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33229,
+                  "mutability": "mutable",
+                  "name": "amount1",
+                  "nameLocation": "5001:7:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33236,
+                  "src": "4993:15:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 33228,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4993:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33231,
+                  "mutability": "mutable",
+                  "name": "hookData",
+                  "nameLocation": "5033:8:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33236,
+                  "src": "5018:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 33230,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "5018:5:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4904:143:38"
+            },
+            "returnParameters": {
+              "id": 33235,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33234,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33236,
+                  "src": "5066:6:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes4",
+                    "typeString": "bytes4"
+                  },
+                  "typeName": {
+                    "id": 33233,
+                    "name": "bytes4",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "5066:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes4",
+                      "typeString": "bytes4"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "5065:8:38"
+            },
+            "scope": 33254,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 33253,
+            "nodeType": "FunctionDefinition",
+            "src": "5515:190:38",
+            "nodes": [],
+            "documentation": {
+              "id": 33237,
+              "nodeType": "StructuredDocumentation",
+              "src": "5080:430:38",
+              "text": "@notice The hook called after donate\n @param sender The initial msg.sender for the donate call\n @param key The key for the pool\n @param amount0 The amount of token0 being donated\n @param amount1 The amount of token1 being donated\n @param hookData Arbitrary data handed into the PoolManager by the donor to be be passed on to the hook\n @return bytes4 The function selector for the hook"
+            },
+            "functionSelector": "e1b4af69",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "afterDonate",
+            "nameLocation": "5524:11:38",
+            "parameters": {
+              "id": 33249,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33239,
+                  "mutability": "mutable",
+                  "name": "sender",
+                  "nameLocation": "5553:6:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33253,
+                  "src": "5545:14:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 33238,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "5545:7:38",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33242,
+                  "mutability": "mutable",
+                  "name": "key",
+                  "nameLocation": "5586:3:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33253,
+                  "src": "5569:20:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_PoolKey_$44360_calldata_ptr",
+                    "typeString": "struct PoolKey"
+                  },
+                  "typeName": {
+                    "id": 33241,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 33240,
+                      "name": "PoolKey",
+                      "nameLocations": [
+                        "5569:7:38"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 44360,
+                      "src": "5569:7:38"
+                    },
+                    "referencedDeclaration": 44360,
+                    "src": "5569:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_PoolKey_$44360_storage_ptr",
+                      "typeString": "struct PoolKey"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33244,
+                  "mutability": "mutable",
+                  "name": "amount0",
+                  "nameLocation": "5607:7:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33253,
+                  "src": "5599:15:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 33243,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "5599:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33246,
+                  "mutability": "mutable",
+                  "name": "amount1",
+                  "nameLocation": "5632:7:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33253,
+                  "src": "5624:15:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 33245,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "5624:7:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 33248,
+                  "mutability": "mutable",
+                  "name": "hookData",
+                  "nameLocation": "5664:8:38",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33253,
+                  "src": "5649:23:38",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 33247,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "5649:5:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "5535:143:38"
+            },
+            "returnParameters": {
+              "id": 33252,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 33251,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 33253,
+                  "src": "5697:6:38",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes4",
+                    "typeString": "bytes4"
+                  },
+                  "typeName": {
+                    "id": 33250,
+                    "name": "bytes4",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "5697:6:38",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes4",
+                      "typeString": "bytes4"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "5696:8:38"
+            },
+            "scope": 33254,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "canonicalName": "IHooks",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": {
+          "id": 33117,
+          "nodeType": "StructuredDocumentation",
+          "src": "210:347:38",
+          "text": "@notice The PoolManager contract decides whether to invoke specific hooks by inspecting the leading bits\n of the hooks contract address. For example, a 1 bit in the first bit of the address will\n cause the 'before swap' hook to be invoked. See the Hooks library for the full spec.\n @dev Should only be callable by the v4 PoolManager."
+        },
+        "fullyImplemented": false,
+        "linearizedBaseContracts": [
+          33254
+        ],
+        "name": "IHooks",
+        "nameLocation": "567:6:38",
+        "scope": 33255,
+        "usedErrors": [],
+        "usedEvents": []
+      }
+    ],
+    "license": "MIT"
+  },
+  "id": 38
+}

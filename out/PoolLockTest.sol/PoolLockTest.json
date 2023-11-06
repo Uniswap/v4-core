@@ -1,0 +1,916 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "contract IPoolManager",
+          "name": "_manager",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [],
+      "name": "LockAcquired",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "lock",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "name": "lockAcquired",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x608060405234801561001057600080fd5b5060405161038f38038061038f83398101604081905261002f91610054565b600080546001600160a01b0319166001600160a01b0392909216919091179055610084565b60006020828403121561006657600080fd5b81516001600160a01b038116811461007d57600080fd5b9392505050565b6102fc806100936000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c8063ab6291fe1461003b578063f83d08ba14610064575b600080fd5b61004e61004936600461013a565b61006e565b60405161005b91906101d0565b60405180910390f35b61006c6100b0565b005b6040516060907fe260939dee1382094b440bb7427dd01aac938521902a8cb4eb84e9ddb96d920390600090a15060408051602081019091526000815292915050565b60008054604051638154831960e01b815260206004820152602481019290925273ffffffffffffffffffffffffffffffffffffffff16906381548319906044016000604051808303816000875af115801561010f573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f191682016040526101379190810190610219565b50565b6000806020838503121561014d57600080fd5b823567ffffffffffffffff8082111561016557600080fd5b818501915085601f83011261017957600080fd5b81358181111561018857600080fd5b86602082850101111561019a57600080fd5b60209290920196919550909350505050565b60005b838110156101c75781810151838201526020016101af565b50506000910152565b60208152600082518060208401526101ef8160408501602087016101ac565b601f01601f19169190910160400192915050565b634e487b7160e01b600052604160045260246000fd5b60006020828403121561022b57600080fd5b815167ffffffffffffffff8082111561024357600080fd5b818401915084601f83011261025757600080fd5b81518181111561026957610269610203565b604051601f8201601f19908116603f0116810190838211818310171561029157610291610203565b816040528281528760208487010111156102aa57600080fd5b6102bb8360208301602088016101ac565b97965050505050505056fea264697066735822122080bd08f48dc103efe5208c42f413843292274848b923487a47c017738abbe2ea64736f6c63430008160033",
+    "sourceMap": "199:458:67:-:0;;;298:70;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;343:7;:18;;-1:-1:-1;;;;;;343:18:67;-1:-1:-1;;;;;343:18:67;;;;;;;;;;199:458;;14:312:106;106:6;159:2;147:9;138:7;134:23;130:32;127:52;;;175:1;172;165:12;127:52;201:16;;-1:-1:-1;;;;;246:31:106;;236:42;;226:70;;292:1;289;282:12;226:70;315:5;14:312;-1:-1:-1;;;14:312:106:o;:::-;199:458:67;;;;;;",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x608060405234801561001057600080fd5b50600436106100365760003560e01c8063ab6291fe1461003b578063f83d08ba14610064575b600080fd5b61004e61004936600461013a565b61006e565b60405161005b91906101d0565b60405180910390f35b61006c6100b0565b005b6040516060907fe260939dee1382094b440bb7427dd01aac938521902a8cb4eb84e9ddb96d920390600090a15060408051602081019091526000815292915050565b60008054604051638154831960e01b815260206004820152602481019290925273ffffffffffffffffffffffffffffffffffffffff16906381548319906044016000604051808303816000875af115801561010f573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f191682016040526101379190810190610219565b50565b6000806020838503121561014d57600080fd5b823567ffffffffffffffff8082111561016557600080fd5b818501915085601f83011261017957600080fd5b81358181111561018857600080fd5b86602082850101111561019a57600080fd5b60209290920196919550909350505050565b60005b838110156101c75781810151838201526020016101af565b50506000910152565b60208152600082518060208401526101ef8160408501602087016101ac565b601f01601f19169190910160400192915050565b634e487b7160e01b600052604160045260246000fd5b60006020828403121561022b57600080fd5b815167ffffffffffffffff8082111561024357600080fd5b818401915084601f83011261025757600080fd5b81518181111561026957610269610203565b604051601f8201601f19908116603f0116810190838211818310171561029157610291610203565b816040528281528760208487010111156102aa57600080fd5b6102bb8360208301602088016101ac565b97965050505050505056fea264697066735822122080bd08f48dc103efe5208c42f413843292274848b923487a47c017738abbe2ea64736f6c63430008160033",
+    "sourceMap": "199:458:67:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;521:134;;;;;;:::i;:::-;;:::i;:::-;;;;;;;:::i;:::-;;;;;;;;374:58;;;:::i;:::-;;521:134;615:14;;586:12;;615:14;;;;;-1:-1:-1;639:9:67;;;;;;;;;-1:-1:-1;639:9:67;;521:134;;;;:::o;374:58::-;409:7;;;:16;;-1:-1:-1;;;409:16:67;;1465:2:106;409:16:67;;;1447:21:106;1484:18;;;1477:29;;;;409:7:67;;;:12;;1523:18:106;;409:16:67;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;409:16:67;;;;;;;;;;;;:::i;:::-;;374:58::o;14:591:106:-;84:6;92;145:2;133:9;124:7;120:23;116:32;113:52;;;161:1;158;151:12;113:52;201:9;188:23;230:18;271:2;263:6;260:14;257:34;;;287:1;284;277:12;257:34;325:6;314:9;310:22;300:32;;370:7;363:4;359:2;355:13;351:27;341:55;;392:1;389;382:12;341:55;432:2;419:16;458:2;450:6;447:14;444:34;;;474:1;471;464:12;444:34;519:7;514:2;505:6;501:2;497:15;493:24;490:37;487:57;;;540:1;537;530:12;487:57;571:2;563:11;;;;;593:6;;-1:-1:-1;14:591:106;;-1:-1:-1;;;;14:591:106:o;610:250::-;695:1;705:113;719:6;716:1;713:13;705:113;;;795:11;;;789:18;776:11;;;769:39;741:2;734:10;705:113;;;-1:-1:-1;;852:1:106;834:16;;827:27;610:250::o;865:394::-;1012:2;1001:9;994:21;975:4;1044:6;1038:13;1087:6;1082:2;1071:9;1067:18;1060:34;1103:79;1175:6;1170:2;1159:9;1155:18;1150:2;1142:6;1138:15;1103:79;:::i;:::-;1243:2;1222:15;-1:-1:-1;;1218:29:106;1203:45;;;;1250:2;1199:54;;865:394;-1:-1:-1;;865:394:106:o;1552:127::-;1613:10;1608:3;1604:20;1601:1;1594:31;1644:4;1641:1;1634:15;1668:4;1665:1;1658:15;1684:896;1763:6;1816:2;1804:9;1795:7;1791:23;1787:32;1784:52;;;1832:1;1829;1822:12;1784:52;1865:9;1859:16;1894:18;1935:2;1927:6;1924:14;1921:34;;;1951:1;1948;1941:12;1921:34;1989:6;1978:9;1974:22;1964:32;;2034:7;2027:4;2023:2;2019:13;2015:27;2005:55;;2056:1;2053;2046:12;2005:55;2085:2;2079:9;2107:2;2103;2100:10;2097:36;;;2113:18;;:::i;:::-;2188:2;2182:9;2156:2;2242:13;;-1:-1:-1;;2238:22:106;;;2262:2;2234:31;2230:40;2218:53;;;2286:18;;;2306:22;;;2283:46;2280:72;;;2332:18;;:::i;:::-;2372:10;2368:2;2361:22;2407:2;2399:6;2392:18;2447:7;2442:2;2437;2433;2429:11;2425:20;2422:33;2419:53;;;2468:1;2465;2458:12;2419:53;2481:68;2546:2;2541;2533:6;2529:15;2524:2;2520;2516:11;2481:68;:::i;:::-;2568:6;1684:896;-1:-1:-1;;;;;;;1684:896:106:o",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "lock()": "f83d08ba",
+    "lockAcquired(bytes)": "ab6291fe"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.22+commit.4fc1097e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"contract IPoolManager\",\"name\":\"_manager\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"LockAcquired\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"lock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"lockAcquired\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"lockAcquired(bytes)\":{\"notice\":\"Called by the pool manager on `msg.sender` when a lock is acquired\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/test/PoolLockTest.sol\":\"PoolLockTest\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":800},\"remappings\":[\":@ensdomains/=node_modules/@ensdomains/\",\":@openzeppelin/=lib/openzeppelin-contracts/\",\":ds-test/=lib/forge-std/lib/ds-test/src/\",\":forge-gas-snapshot/=lib/forge-gas-snapshot/src/\",\":forge-std/=lib/forge-std/src/\",\":hardhat/=node_modules/hardhat/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/\",\":solmate/=lib/solmate/src/\"]},\"sources\":{\"lib/openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol\":{\"keccak256\":\"0x8e93de94c9062ebc94fb7e2e3929b0781ac6a2b7772e2f7a59045861c93e5be9\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://f920a631bf986c610fe573d3c70a2bb6f224f86f4a8550016470c7ee476c9ab5\",\"dweb:/ipfs/QmYzsyVMfnaREKHcHv5RPS8Xg5r1Q38E2SDsGBTnXeFWzb\"]},\"lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol\":{\"keccak256\":\"0x447a5f3ddc18419d41ff92b3773fb86471b1db25773e07f877f548918a185bf1\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://be161e54f24e5c6fae81a12db1a8ae87bc5ae1b0ddc805d82a1440a68455088f\",\"dweb:/ipfs/QmP7C3CHdY9urF4dEMb9wmsp1wMxHF6nhA2yQE5SKiPAdy\"]},\"src/interfaces/IFees.sol\":{\"keccak256\":\"0x7a2d2b74602f23a8944b45c745e8a512f7d8f00f8ba22742636abaf929379697\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://ab38548046bb65d089fd56b335a3b98d2b4f03e9af4763c2b7da2b04322a6e73\",\"dweb:/ipfs/QmVQfsaSwqV8ynqc9KEGWjQkxnAzju7uQQaFvxqhAd32cW\"]},\"src/interfaces/IHooks.sol\":{\"keccak256\":\"0xc8b2ff0889b0866f84a4a4f06702b92ac08e3a5e2a6048e09dcbba8d58297002\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://4614b2c046f2521dc7f39496cd77af787184189f9e23f65086ac89515826190c\",\"dweb:/ipfs/QmdVEVCfz1wJq5zWnvRsKKCUniwYbDUdWf8NWYukCaXe54\"]},\"src/interfaces/IPoolManager.sol\":{\"keccak256\":\"0x8710691cd4d68bdee1f7053709521f3ad48cf224ada6b4848cabd05b55db9a8f\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a6cb473e388d308f376b17ff9aa27cceea74758cec82d39da344444833d26ce9\",\"dweb:/ipfs/QmU9GJPNrVfjf7Ka1v5XvvEpXj36oXoBazhV2rctjfmiX5\"]},\"src/interfaces/callback/ILockCallback.sol\":{\"keccak256\":\"0x92e6478df92399c7c1fc6b41579e368bcd70ba9e2012f945f66da92eb0f78042\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://5e540fdcde3180708f0c268f6c7b893dc03644be0dc526b5c22035287a310a44\",\"dweb:/ipfs/QmQKJSTn9GvQqps5j7XRoMazRq3i93ZJFJFXAhN4exAjp4\"]},\"src/interfaces/external/IERC20Minimal.sol\":{\"keccak256\":\"0x8dc5ee72426906aeb12f4ae6a2426df059491739bd5cbdb8ea4a3e26970436c6\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://f7e30dbbc972cb78d169c8845d6210d27490c8534e68a20d4f296b11ec727b92\",\"dweb:/ipfs/QmXBvaWaAnPW25YGVm2sMbf5mwrzLapUcqPnrNiiGGXxmA\"]},\"src/libraries/BitMath.sol\":{\"keccak256\":\"0x652cd36970d953b3067c766b3b0c0063d4c403eba7352df09ec10dcc868910d9\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://e357b092171edb755c8514b4b4ae758a8b43458c7a23409ebf5afd325fefa2be\",\"dweb:/ipfs/QmWKRWT2z15cVbVVDkjqdVnpf8Ck1jytcXbA7zCUevp7b6\"]},\"src/libraries/FixedPoint128.sol\":{\"keccak256\":\"0x1f015a7a107f4c471985a958f1bfbc1710948f9bcd3786a02310bc0ad5080c69\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://a1cacac08675284f319d151f6bc5d1c66cf1d54c5dad1c620a2e1e1336cbb93a\",\"dweb:/ipfs/QmPf8vQ3mBqniKHwvS1DDEFrV5dJfZSL6mMi9JVy6omQaz\"]},\"src/libraries/FixedPoint96.sol\":{\"keccak256\":\"0x7731aeeba692b0ca5dac8f27803ec9e5ce98795a554c09ae05c220861bd0314e\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://963a8155e442d31c4541c387d333db0c02941ae3517e9173ad30ebcb4f6a14e9\",\"dweb:/ipfs/QmevAr8oG4WSoi5gBqQ53VzBuFbDKoZHfJwjuTmVhzm8Tc\"]},\"src/libraries/FullMath.sol\":{\"keccak256\":\"0x6d8760794ed38264579c5da7b2afe8ff5543de999180850bc08687b77dce36ea\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://0e72da6f868ba5f5c829f78f649286c6b5922a8cda0317dfbb156b8a4d27fb24\",\"dweb:/ipfs/QmUQDZciNFhy4AFGXfYvoy22ihPc7ehvypeRVQwvVcD3vJ\"]},\"src/libraries/Pool.sol\":{\"keccak256\":\"0x33095bc0ae0c09c96c0aff5a45762584b7897edd3733bbcf30371638ce18cbbb\",\"license\":\"BUSL-1.1\",\"urls\":[\"bzz-raw://6ca8960a3a0f221b6f992a5a2269fe37be5bbdea5e283f4350cf51ea77942a87\",\"dweb:/ipfs/QmdG69msxRxHJmEgiiqmCgb5XhnRYdjS9gWcYP3fe5fgdW\"]},\"src/libraries/Position.sol\":{\"keccak256\":\"0x1319e4c172e31427c3b3521dd3c9c9c3949da22e25c9919ae57c47a8c9328e43\",\"license\":\"BUSL-1.1\",\"urls\":[\"bzz-raw://1e0885e8e035681836fe02213e165d1ab48cf2488cf6ba8f01964b4b026d2b46\",\"dweb:/ipfs/QmR4W3DZYYvctASLFnm7Sf4wk2L77gwNRrTS2mBqtiUaud\"]},\"src/libraries/SafeCast.sol\":{\"keccak256\":\"0xb459cbf9f2cda4c38c11916e888cc2afbe4297c5ae6f50a0976eb83ed0dc9b25\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://5608698d33b18d3f49e3fa1fbdf6e7c6383378f7d53c914dcf14a0411cf7a79b\",\"dweb:/ipfs/QmbF4VWDcTPzH17aczU6eCUcqTp9Be7xiuBGB5TMWmtJAi\"]},\"src/libraries/SqrtPriceMath.sol\":{\"keccak256\":\"0x62cb03c7ce6ce037c82fa74e5aabb2431d6b4ddbca1458efdabf5d6af9ca6f90\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://206e025889f55aa8e5d9db2f846460394b54d6dc6d80a5e4ca1d4b70edd98188\",\"dweb:/ipfs/QmNSzKqtUDXHzgXXDjdNv3ZnHZE3LU4KhwNmkrcWtTRGqk\"]},\"src/libraries/SwapMath.sol\":{\"keccak256\":\"0xac5b75b36ff928e88cbec828bdc9db03e681cc3b337d5d7f6be9fd617b3fef7f\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://6aaea2ecabdb3fec93c7c6be19ea3a034cf396a59ab96f61c57b5214c04b5a6e\",\"dweb:/ipfs/QmYyd4ExT6xbvEHZTQBv9nZuvU6xjB6EN4uY8TmK8Tceqv\"]},\"src/libraries/TickBitmap.sol\":{\"keccak256\":\"0x7cccb8dff4c76da872a827f1549dc44cdff384d123e77a5361a02a31902bf15c\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://88f850cd5bd2bbada4d9514f2516804392c7b23dc2cb541b74e9c88d0a351dcd\",\"dweb:/ipfs/QmZh9LvKUG23oFUZXAAa5gn77MguAbZ41VGjkES5U8N9Em\"]},\"src/libraries/TickMath.sol\":{\"keccak256\":\"0xadffea78a3eed37613b57766d87c0bdb9454d2df39de90d7a450e4a8b3207e56\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://c5043430807061e5ccc82986c59b2e074457ff608111a8bd51b413ceaf661c78\",\"dweb:/ipfs/QmXjqKzCrngzidTRmuLUFvwNPqMKtd8xVFLVCycRfEQcWo\"]},\"src/libraries/UnsafeMath.sol\":{\"keccak256\":\"0x2a8cb75af05f8557b698b089a0ab19e24279fffb7e87cddf5794404c7eaf1c69\",\"license\":\"GPL-2.0-or-later\",\"urls\":[\"bzz-raw://85f68e6d614205f3f0f55f6ac41805e3a7d523d95bda1c443f2e75444443ffe3\",\"dweb:/ipfs/QmdCheMqxWNx4CbxG5MH9BUQeSMeeXF6DHkf7Aax4duRUe\"]},\"src/test/PoolLockTest.sol\":{\"keccak256\":\"0x5d805f023c0d806415d761d2b3b513b83a7bc90b2247fbd6ddf547ded1b8c995\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://e21260c5fa0bbe34b0c6945b142f527319f5da794540c561f2effbed40bf58ad\",\"dweb:/ipfs/QmQobEkfxtsZp53FFcxfXvzJ2H4oDhywz57Kx33gSFqSVW\"]},\"src/types/BalanceDelta.sol\":{\"keccak256\":\"0xe8a5ce042a75fb471a43d4466fddcfbfe23a4bdf4d4b5f84ea842551f577bb6e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://9fc93822da004d24a7811a46ae475c81f367953c0210e4c94cf936469fa33fcf\",\"dweb:/ipfs/QmTpWAmvjKDczv2J1t9fV3tTtLW4LetW8TTGuG866zCSwA\"]},\"src/types/Currency.sol\":{\"keccak256\":\"0xb1395e2817b604745bf6cd41821aafeaaa252caafe45133e54f02d6f6be13d2b\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://49ec58bd7634ccb1b74f59378e54771ae11cba37494b57ae64e3f6640d4afdd9\",\"dweb:/ipfs/QmeYL1TuGXcTYfsQBGu7p9urSqGjiJky8iJAgwTRYqrJ4F\"]},\"src/types/PoolId.sol\":{\"keccak256\":\"0x2928a23cdf4c3dd05fafd3094020723954150901c6935a40fbb8e3cbc1e0ebe3\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://4ddde47e0eda04cf7e1b8e903eafd22ff19866bcb2ce0f61b46a3470b4dc9927\",\"dweb:/ipfs/Qme84u2nmVFZkaBSwVJw3bhZSqt6P9xMHNsp1Y7ddWMDvi\"]},\"src/types/PoolKey.sol\":{\"keccak256\":\"0xef7421713157a514d757863e99c2d094a6fac1dcbae602ac0eb47eda2d651a6d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d2832668ba213b3928fd79e159b4d00b4b8f057844e2897902ec089014470f29\",\"dweb:/ipfs/QmV2MESks8RiTwRJpqynGCGsrmXKimRFpQFZSBXnxEiXKX\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.22+commit.4fc1097e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "contract IPoolManager",
+              "name": "_manager",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "constructor"
+        },
+        {
+          "inputs": [],
+          "type": "event",
+          "name": "LockAcquired",
+          "anonymous": false
+        },
+        {
+          "inputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "lock"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes",
+              "name": "",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "lockAcquired",
+          "outputs": [
+            {
+              "internalType": "bytes",
+              "name": "",
+              "type": "bytes"
+            }
+          ]
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {},
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {
+          "lockAcquired(bytes)": {
+            "notice": "Called by the pool manager on `msg.sender` when a lock is acquired"
+          }
+        },
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        "@ensdomains/=node_modules/@ensdomains/",
+        "@openzeppelin/=lib/openzeppelin-contracts/",
+        "ds-test/=lib/forge-std/lib/ds-test/src/",
+        "forge-gas-snapshot/=lib/forge-gas-snapshot/src/",
+        "forge-std/=lib/forge-std/src/",
+        "hardhat/=node_modules/hardhat/",
+        "openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/",
+        "solmate/=lib/solmate/src/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 800
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "src/test/PoolLockTest.sol": "PoolLockTest"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "lib/openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol": {
+        "keccak256": "0x8e93de94c9062ebc94fb7e2e3929b0781ac6a2b7772e2f7a59045861c93e5be9",
+        "urls": [
+          "bzz-raw://f920a631bf986c610fe573d3c70a2bb6f224f86f4a8550016470c7ee476c9ab5",
+          "dweb:/ipfs/QmYzsyVMfnaREKHcHv5RPS8Xg5r1Q38E2SDsGBTnXeFWzb"
+        ],
+        "license": "MIT"
+      },
+      "lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol": {
+        "keccak256": "0x447a5f3ddc18419d41ff92b3773fb86471b1db25773e07f877f548918a185bf1",
+        "urls": [
+          "bzz-raw://be161e54f24e5c6fae81a12db1a8ae87bc5ae1b0ddc805d82a1440a68455088f",
+          "dweb:/ipfs/QmP7C3CHdY9urF4dEMb9wmsp1wMxHF6nhA2yQE5SKiPAdy"
+        ],
+        "license": "MIT"
+      },
+      "src/interfaces/IFees.sol": {
+        "keccak256": "0x7a2d2b74602f23a8944b45c745e8a512f7d8f00f8ba22742636abaf929379697",
+        "urls": [
+          "bzz-raw://ab38548046bb65d089fd56b335a3b98d2b4f03e9af4763c2b7da2b04322a6e73",
+          "dweb:/ipfs/QmVQfsaSwqV8ynqc9KEGWjQkxnAzju7uQQaFvxqhAd32cW"
+        ],
+        "license": "MIT"
+      },
+      "src/interfaces/IHooks.sol": {
+        "keccak256": "0xc8b2ff0889b0866f84a4a4f06702b92ac08e3a5e2a6048e09dcbba8d58297002",
+        "urls": [
+          "bzz-raw://4614b2c046f2521dc7f39496cd77af787184189f9e23f65086ac89515826190c",
+          "dweb:/ipfs/QmdVEVCfz1wJq5zWnvRsKKCUniwYbDUdWf8NWYukCaXe54"
+        ],
+        "license": "MIT"
+      },
+      "src/interfaces/IPoolManager.sol": {
+        "keccak256": "0x8710691cd4d68bdee1f7053709521f3ad48cf224ada6b4848cabd05b55db9a8f",
+        "urls": [
+          "bzz-raw://a6cb473e388d308f376b17ff9aa27cceea74758cec82d39da344444833d26ce9",
+          "dweb:/ipfs/QmU9GJPNrVfjf7Ka1v5XvvEpXj36oXoBazhV2rctjfmiX5"
+        ],
+        "license": "MIT"
+      },
+      "src/interfaces/callback/ILockCallback.sol": {
+        "keccak256": "0x92e6478df92399c7c1fc6b41579e368bcd70ba9e2012f945f66da92eb0f78042",
+        "urls": [
+          "bzz-raw://5e540fdcde3180708f0c268f6c7b893dc03644be0dc526b5c22035287a310a44",
+          "dweb:/ipfs/QmQKJSTn9GvQqps5j7XRoMazRq3i93ZJFJFXAhN4exAjp4"
+        ],
+        "license": "MIT"
+      },
+      "src/interfaces/external/IERC20Minimal.sol": {
+        "keccak256": "0x8dc5ee72426906aeb12f4ae6a2426df059491739bd5cbdb8ea4a3e26970436c6",
+        "urls": [
+          "bzz-raw://f7e30dbbc972cb78d169c8845d6210d27490c8534e68a20d4f296b11ec727b92",
+          "dweb:/ipfs/QmXBvaWaAnPW25YGVm2sMbf5mwrzLapUcqPnrNiiGGXxmA"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/BitMath.sol": {
+        "keccak256": "0x652cd36970d953b3067c766b3b0c0063d4c403eba7352df09ec10dcc868910d9",
+        "urls": [
+          "bzz-raw://e357b092171edb755c8514b4b4ae758a8b43458c7a23409ebf5afd325fefa2be",
+          "dweb:/ipfs/QmWKRWT2z15cVbVVDkjqdVnpf8Ck1jytcXbA7zCUevp7b6"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/FixedPoint128.sol": {
+        "keccak256": "0x1f015a7a107f4c471985a958f1bfbc1710948f9bcd3786a02310bc0ad5080c69",
+        "urls": [
+          "bzz-raw://a1cacac08675284f319d151f6bc5d1c66cf1d54c5dad1c620a2e1e1336cbb93a",
+          "dweb:/ipfs/QmPf8vQ3mBqniKHwvS1DDEFrV5dJfZSL6mMi9JVy6omQaz"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/FixedPoint96.sol": {
+        "keccak256": "0x7731aeeba692b0ca5dac8f27803ec9e5ce98795a554c09ae05c220861bd0314e",
+        "urls": [
+          "bzz-raw://963a8155e442d31c4541c387d333db0c02941ae3517e9173ad30ebcb4f6a14e9",
+          "dweb:/ipfs/QmevAr8oG4WSoi5gBqQ53VzBuFbDKoZHfJwjuTmVhzm8Tc"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/FullMath.sol": {
+        "keccak256": "0x6d8760794ed38264579c5da7b2afe8ff5543de999180850bc08687b77dce36ea",
+        "urls": [
+          "bzz-raw://0e72da6f868ba5f5c829f78f649286c6b5922a8cda0317dfbb156b8a4d27fb24",
+          "dweb:/ipfs/QmUQDZciNFhy4AFGXfYvoy22ihPc7ehvypeRVQwvVcD3vJ"
+        ],
+        "license": "MIT"
+      },
+      "src/libraries/Pool.sol": {
+        "keccak256": "0x33095bc0ae0c09c96c0aff5a45762584b7897edd3733bbcf30371638ce18cbbb",
+        "urls": [
+          "bzz-raw://6ca8960a3a0f221b6f992a5a2269fe37be5bbdea5e283f4350cf51ea77942a87",
+          "dweb:/ipfs/QmdG69msxRxHJmEgiiqmCgb5XhnRYdjS9gWcYP3fe5fgdW"
+        ],
+        "license": "BUSL-1.1"
+      },
+      "src/libraries/Position.sol": {
+        "keccak256": "0x1319e4c172e31427c3b3521dd3c9c9c3949da22e25c9919ae57c47a8c9328e43",
+        "urls": [
+          "bzz-raw://1e0885e8e035681836fe02213e165d1ab48cf2488cf6ba8f01964b4b026d2b46",
+          "dweb:/ipfs/QmR4W3DZYYvctASLFnm7Sf4wk2L77gwNRrTS2mBqtiUaud"
+        ],
+        "license": "BUSL-1.1"
+      },
+      "src/libraries/SafeCast.sol": {
+        "keccak256": "0xb459cbf9f2cda4c38c11916e888cc2afbe4297c5ae6f50a0976eb83ed0dc9b25",
+        "urls": [
+          "bzz-raw://5608698d33b18d3f49e3fa1fbdf6e7c6383378f7d53c914dcf14a0411cf7a79b",
+          "dweb:/ipfs/QmbF4VWDcTPzH17aczU6eCUcqTp9Be7xiuBGB5TMWmtJAi"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/SqrtPriceMath.sol": {
+        "keccak256": "0x62cb03c7ce6ce037c82fa74e5aabb2431d6b4ddbca1458efdabf5d6af9ca6f90",
+        "urls": [
+          "bzz-raw://206e025889f55aa8e5d9db2f846460394b54d6dc6d80a5e4ca1d4b70edd98188",
+          "dweb:/ipfs/QmNSzKqtUDXHzgXXDjdNv3ZnHZE3LU4KhwNmkrcWtTRGqk"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/SwapMath.sol": {
+        "keccak256": "0xac5b75b36ff928e88cbec828bdc9db03e681cc3b337d5d7f6be9fd617b3fef7f",
+        "urls": [
+          "bzz-raw://6aaea2ecabdb3fec93c7c6be19ea3a034cf396a59ab96f61c57b5214c04b5a6e",
+          "dweb:/ipfs/QmYyd4ExT6xbvEHZTQBv9nZuvU6xjB6EN4uY8TmK8Tceqv"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/TickBitmap.sol": {
+        "keccak256": "0x7cccb8dff4c76da872a827f1549dc44cdff384d123e77a5361a02a31902bf15c",
+        "urls": [
+          "bzz-raw://88f850cd5bd2bbada4d9514f2516804392c7b23dc2cb541b74e9c88d0a351dcd",
+          "dweb:/ipfs/QmZh9LvKUG23oFUZXAAa5gn77MguAbZ41VGjkES5U8N9Em"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/TickMath.sol": {
+        "keccak256": "0xadffea78a3eed37613b57766d87c0bdb9454d2df39de90d7a450e4a8b3207e56",
+        "urls": [
+          "bzz-raw://c5043430807061e5ccc82986c59b2e074457ff608111a8bd51b413ceaf661c78",
+          "dweb:/ipfs/QmXjqKzCrngzidTRmuLUFvwNPqMKtd8xVFLVCycRfEQcWo"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/libraries/UnsafeMath.sol": {
+        "keccak256": "0x2a8cb75af05f8557b698b089a0ab19e24279fffb7e87cddf5794404c7eaf1c69",
+        "urls": [
+          "bzz-raw://85f68e6d614205f3f0f55f6ac41805e3a7d523d95bda1c443f2e75444443ffe3",
+          "dweb:/ipfs/QmdCheMqxWNx4CbxG5MH9BUQeSMeeXF6DHkf7Aax4duRUe"
+        ],
+        "license": "GPL-2.0-or-later"
+      },
+      "src/test/PoolLockTest.sol": {
+        "keccak256": "0x5d805f023c0d806415d761d2b3b513b83a7bc90b2247fbd6ddf547ded1b8c995",
+        "urls": [
+          "bzz-raw://e21260c5fa0bbe34b0c6945b142f527319f5da794540c561f2effbed40bf58ad",
+          "dweb:/ipfs/QmQobEkfxtsZp53FFcxfXvzJ2H4oDhywz57Kx33gSFqSVW"
+        ],
+        "license": "UNLICENSED"
+      },
+      "src/types/BalanceDelta.sol": {
+        "keccak256": "0xe8a5ce042a75fb471a43d4466fddcfbfe23a4bdf4d4b5f84ea842551f577bb6e",
+        "urls": [
+          "bzz-raw://9fc93822da004d24a7811a46ae475c81f367953c0210e4c94cf936469fa33fcf",
+          "dweb:/ipfs/QmTpWAmvjKDczv2J1t9fV3tTtLW4LetW8TTGuG866zCSwA"
+        ],
+        "license": "MIT"
+      },
+      "src/types/Currency.sol": {
+        "keccak256": "0xb1395e2817b604745bf6cd41821aafeaaa252caafe45133e54f02d6f6be13d2b",
+        "urls": [
+          "bzz-raw://49ec58bd7634ccb1b74f59378e54771ae11cba37494b57ae64e3f6640d4afdd9",
+          "dweb:/ipfs/QmeYL1TuGXcTYfsQBGu7p9urSqGjiJky8iJAgwTRYqrJ4F"
+        ],
+        "license": "MIT"
+      },
+      "src/types/PoolId.sol": {
+        "keccak256": "0x2928a23cdf4c3dd05fafd3094020723954150901c6935a40fbb8e3cbc1e0ebe3",
+        "urls": [
+          "bzz-raw://4ddde47e0eda04cf7e1b8e903eafd22ff19866bcb2ce0f61b46a3470b4dc9927",
+          "dweb:/ipfs/Qme84u2nmVFZkaBSwVJw3bhZSqt6P9xMHNsp1Y7ddWMDvi"
+        ],
+        "license": "MIT"
+      },
+      "src/types/PoolKey.sol": {
+        "keccak256": "0xef7421713157a514d757863e99c2d094a6fac1dcbae602ac0eb47eda2d651a6d",
+        "urls": [
+          "bzz-raw://d2832668ba213b3928fd79e159b4d00b4b8f057844e2897902ec089014470f29",
+          "dweb:/ipfs/QmV2MESks8RiTwRJpqynGCGsrmXKimRFpQFZSBXnxEiXKX"
+        ],
+        "license": "MIT"
+      }
+    },
+    "version": 1
+  },
+  "ast": {
+    "absolutePath": "src/test/PoolLockTest.sol",
+    "id": 40594,
+    "exportedSymbols": {
+      "ILockCallback": [
+        33663
+      ],
+      "IPoolManager": [
+        33638
+      ],
+      "PoolLockTest": [
+        40593
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "39:619:67",
+    "nodes": [
+      {
+        "id": 40545,
+        "nodeType": "PragmaDirective",
+        "src": "39:24:67",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".20"
+        ]
+      },
+      {
+        "id": 40547,
+        "nodeType": "ImportDirective",
+        "src": "65:60:67",
+        "nodes": [],
+        "absolutePath": "src/interfaces/IPoolManager.sol",
+        "file": "../interfaces/IPoolManager.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 40594,
+        "sourceUnit": 33639,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 40546,
+              "name": "IPoolManager",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 33638,
+              "src": "73:12:67",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 40549,
+        "nodeType": "ImportDirective",
+        "src": "126:71:67",
+        "nodes": [],
+        "absolutePath": "src/interfaces/callback/ILockCallback.sol",
+        "file": "../interfaces/callback/ILockCallback.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 40594,
+        "sourceUnit": 33664,
+        "symbolAliases": [
+          {
+            "foreign": {
+              "id": 40548,
+              "name": "ILockCallback",
+              "nodeType": "Identifier",
+              "overloadedDeclarations": [],
+              "referencedDeclaration": 33663,
+              "src": "134:13:67",
+              "typeDescriptions": {}
+            },
+            "nameLocation": "-1:-1:-1"
+          }
+        ],
+        "unitAlias": ""
+      },
+      {
+        "id": 40593,
+        "nodeType": "ContractDefinition",
+        "src": "199:458:67",
+        "nodes": [
+          {
+            "id": 40553,
+            "nodeType": "EventDefinition",
+            "src": "244:21:67",
+            "nodes": [],
+            "anonymous": false,
+            "eventSelector": "e260939dee1382094b440bb7427dd01aac938521902a8cb4eb84e9ddb96d9203",
+            "name": "LockAcquired",
+            "nameLocation": "250:12:67",
+            "parameters": {
+              "id": 40552,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "262:2:67"
+            }
+          },
+          {
+            "id": 40556,
+            "nodeType": "VariableDeclaration",
+            "src": "271:20:67",
+            "nodes": [],
+            "constant": false,
+            "mutability": "mutable",
+            "name": "manager",
+            "nameLocation": "284:7:67",
+            "scope": 40593,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_contract$_IPoolManager_$33638",
+              "typeString": "contract IPoolManager"
+            },
+            "typeName": {
+              "id": 40555,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 40554,
+                "name": "IPoolManager",
+                "nameLocations": [
+                  "271:12:67"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 33638,
+                "src": "271:12:67"
+              },
+              "referencedDeclaration": 33638,
+              "src": "271:12:67",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_IPoolManager_$33638",
+                "typeString": "contract IPoolManager"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "id": 40567,
+            "nodeType": "FunctionDefinition",
+            "src": "298:70:67",
+            "nodes": [],
+            "body": {
+              "id": 40566,
+              "nodeType": "Block",
+              "src": "333:35:67",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "id": 40564,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "id": 40562,
+                      "name": "manager",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 40556,
+                      "src": "343:7:67",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_IPoolManager_$33638",
+                        "typeString": "contract IPoolManager"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 40563,
+                      "name": "_manager",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 40559,
+                      "src": "353:8:67",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_IPoolManager_$33638",
+                        "typeString": "contract IPoolManager"
+                      }
+                    },
+                    "src": "343:18:67",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_IPoolManager_$33638",
+                      "typeString": "contract IPoolManager"
+                    }
+                  },
+                  "id": 40565,
+                  "nodeType": "ExpressionStatement",
+                  "src": "343:18:67"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "parameters": {
+              "id": 40560,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 40559,
+                  "mutability": "mutable",
+                  "name": "_manager",
+                  "nameLocation": "323:8:67",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 40567,
+                  "src": "310:21:67",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_IPoolManager_$33638",
+                    "typeString": "contract IPoolManager"
+                  },
+                  "typeName": {
+                    "id": 40558,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 40557,
+                      "name": "IPoolManager",
+                      "nameLocations": [
+                        "310:12:67"
+                      ],
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 33638,
+                      "src": "310:12:67"
+                    },
+                    "referencedDeclaration": 33638,
+                    "src": "310:12:67",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_IPoolManager_$33638",
+                      "typeString": "contract IPoolManager"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "309:23:67"
+            },
+            "returnParameters": {
+              "id": 40561,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "333:0:67"
+            },
+            "scope": 40593,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "public"
+          },
+          {
+            "id": 40577,
+            "nodeType": "FunctionDefinition",
+            "src": "374:58:67",
+            "nodes": [],
+            "body": {
+              "id": 40576,
+              "nodeType": "Block",
+              "src": "399:33:67",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "hexValue": "",
+                        "id": 40573,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "string",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "422:2:67",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_stringliteral_c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+                          "typeString": "literal_string \"\""
+                        },
+                        "value": ""
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_stringliteral_c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+                          "typeString": "literal_string \"\""
+                        }
+                      ],
+                      "expression": {
+                        "id": 40570,
+                        "name": "manager",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 40556,
+                        "src": "409:7:67",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_contract$_IPoolManager_$33638",
+                          "typeString": "contract IPoolManager"
+                        }
+                      },
+                      "id": 40572,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberLocation": "417:4:67",
+                      "memberName": "lock",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 33507,
+                      "src": "409:12:67",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_external_nonpayable$_t_bytes_memory_ptr_$returns$_t_bytes_memory_ptr_$",
+                        "typeString": "function (bytes memory) external returns (bytes memory)"
+                      }
+                    },
+                    "id": 40574,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "nameLocations": [],
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "409:16:67",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_memory_ptr",
+                      "typeString": "bytes memory"
+                    }
+                  },
+                  "id": 40575,
+                  "nodeType": "ExpressionStatement",
+                  "src": "409:16:67"
+                }
+              ]
+            },
+            "functionSelector": "f83d08ba",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "lock",
+            "nameLocation": "383:4:67",
+            "parameters": {
+              "id": 40568,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "387:2:67"
+            },
+            "returnParameters": {
+              "id": 40569,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "399:0:67"
+            },
+            "scope": 40593,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 40592,
+            "nodeType": "FunctionDefinition",
+            "src": "521:134:67",
+            "nodes": [],
+            "body": {
+              "id": 40591,
+              "nodeType": "Block",
+              "src": "600:55:67",
+              "nodes": [],
+              "statements": [
+                {
+                  "eventCall": {
+                    "arguments": [],
+                    "expression": {
+                      "argumentTypes": [],
+                      "id": 40586,
+                      "name": "LockAcquired",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 40553,
+                      "src": "615:12:67",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_event_nonpayable$__$returns$__$",
+                        "typeString": "function ()"
+                      }
+                    },
+                    "id": 40587,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "nameLocations": [],
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "615:14:67",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 40588,
+                  "nodeType": "EmitStatement",
+                  "src": "610:19:67"
+                },
+                {
+                  "expression": {
+                    "hexValue": "",
+                    "id": 40589,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": true,
+                    "kind": "string",
+                    "lValueRequested": false,
+                    "nodeType": "Literal",
+                    "src": "646:2:67",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_stringliteral_c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+                      "typeString": "literal_string \"\""
+                    },
+                    "value": ""
+                  },
+                  "functionReturnParameters": 40585,
+                  "id": 40590,
+                  "nodeType": "Return",
+                  "src": "639:9:67"
+                }
+              ]
+            },
+            "baseFunctions": [
+              33662
+            ],
+            "documentation": {
+              "id": 40578,
+              "nodeType": "StructuredDocumentation",
+              "src": "438:78:67",
+              "text": "@notice Called by the pool manager on `msg.sender` when a lock is acquired"
+            },
+            "functionSelector": "ab6291fe",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "lockAcquired",
+            "nameLocation": "530:12:67",
+            "overrides": {
+              "id": 40582,
+              "nodeType": "OverrideSpecifier",
+              "overrides": [],
+              "src": "568:8:67"
+            },
+            "parameters": {
+              "id": 40581,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 40580,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 40592,
+                  "src": "543:14:67",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 40579,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "543:5:67",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "542:16:67"
+            },
+            "returnParameters": {
+              "id": 40585,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 40584,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 40592,
+                  "src": "586:12:67",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 40583,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "586:5:67",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "585:14:67"
+            },
+            "scope": 40593,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [
+          {
+            "baseName": {
+              "id": 40550,
+              "name": "ILockCallback",
+              "nameLocations": [
+                "224:13:67"
+              ],
+              "nodeType": "IdentifierPath",
+              "referencedDeclaration": 33663,
+              "src": "224:13:67"
+            },
+            "id": 40551,
+            "nodeType": "InheritanceSpecifier",
+            "src": "224:13:67"
+          }
+        ],
+        "canonicalName": "PoolLockTest",
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "fullyImplemented": true,
+        "linearizedBaseContracts": [
+          40593,
+          33663
+        ],
+        "name": "PoolLockTest",
+        "nameLocation": "208:12:67",
+        "scope": 40594,
+        "usedErrors": [],
+        "usedEvents": [
+          40553
+        ]
+      }
+    ],
+    "license": "UNLICENSED"
+  },
+  "id": 67
+}
