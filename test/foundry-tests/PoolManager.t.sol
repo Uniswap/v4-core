@@ -1163,12 +1163,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             key, IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2), PoolSwapTest.TestSettings(true, true), ZERO_BYTES
         );
 
-        assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
-        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(manager.balanceOf(address(feeController), currency0), expectedFees);
+        assertEq(manager.balanceOf(address(feeController), currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
         manager.collectProtocolFees(address(1), currency0, expectedFees);
         assertEq(currency0.balanceOf(address(1)), expectedFees);
-        assertEq(manager.protocolFeesAccrued(currency0), 0);
+        assertEq(manager.balanceOf(address(feeController), currency0), 0);
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
@@ -1190,12 +1191,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             key, IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2), PoolSwapTest.TestSettings(true, true), ZERO_BYTES
         );
 
-        assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
-        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(manager.balanceOf(address(feeController), currency0), expectedFees);
+        assertEq(manager.balanceOf(address(feeController), currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
         manager.collectProtocolFees(address(1), currency0, 0);
         assertEq(currency0.balanceOf(address(1)), expectedFees);
-        assertEq(manager.protocolFeesAccrued(currency0), 0);
+        assertEq(manager.balanceOf(address(feeController), currency0), 0);
     }
 
     function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees() public {
@@ -1223,12 +1225,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             key, IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2), PoolSwapTest.TestSettings(true, true), ZERO_BYTES
         );
 
-        assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
-        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(manager.balanceOf(address(feeController), nativeCurrency), expectedFees);
+        assertEq(manager.balanceOf(address(feeController), currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
         manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
-        assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
+        assertEq(manager.balanceOf(address(feeController), nativeCurrency), 0);
     }
 
     function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
@@ -1256,12 +1259,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             key, IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2), PoolSwapTest.TestSettings(true, true), ZERO_BYTES
         );
 
-        assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
-        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(manager.balanceOf(address(feeController), nativeCurrency), expectedFees);
+        assertEq(manager.balanceOf(address(feeController), currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
         manager.collectProtocolFees(address(1), nativeCurrency, 0);
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
-        assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
+        assertEq(manager.balanceOf(address(feeController), nativeCurrency), 0);
     }
 
     function test_lock_NoOpIsOk() public {

@@ -272,7 +272,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         unchecked {
             if (feeForProtocol > 0) {
-                _mint(address(protocolFeeController), params.zeroForOne ? key.currency0.toId() : key.currency1.toId(), feeForProtocol);
+                _mint(
+                    address(protocolFeeController),
+                    params.zeroForOne ? key.currency0.toId() : key.currency1.toId(),
+                    feeForProtocol
+                );
             }
             if (feeForHook > 0) {
                 hookFeesAccrued[address(key.hooks)][params.zeroForOne ? key.currency0 : key.currency1] += feeForHook;
@@ -348,6 +352,17 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         PoolId id = key.toId();
         pools[id].setProtocolFees(newProtocolFees);
         emit ProtocolFeeUpdated(id, newProtocolFees);
+    }
+
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected)
+    {
+        if (msg.sender != address(protocolFeeController)) revert InvalidCaller();
+
+        amountCollected = (amount == 0) ? balanceOf(msg.sender, currency) : amount;
+        _burn(currency.toId(), amountCollected);
+        currency.transfer(recipient, amountCollected);
     }
 
     function setHookFees(PoolKey memory key) external {

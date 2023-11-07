@@ -88,18 +88,7 @@ abstract contract Fees is IFees, Owned {
         protocolFeeController = controller;
         emit ProtocolFeeControllerUpdated(address(controller));
     }
-
-    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
-        external
-        returns (uint256 amountCollected)
-    {
-        if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
-
-        amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
-        protocolFeesAccrued[currency] -= amountCollected;
-        currency.transfer(recipient, amountCollected);
-    }
-
+    
     function collectHookFees(address recipient, Currency currency, uint256 amount)
         external
         returns (uint256 amountCollected)
