@@ -20,8 +20,6 @@ abstract contract Fees is IFees, Owned {
     // the swap fee is represented in hundredths of a bip, so the max is 100%
     uint24 public constant MAX_SWAP_FEE = 1000000;
 
-    mapping(Currency currency => uint256) public protocolFeesAccrued;
-
     mapping(address hookAddress => mapping(Currency currency => uint256)) public hookFeesAccrued;
 
     IProtocolFeeController public protocolFeeController;
@@ -88,7 +86,7 @@ abstract contract Fees is IFees, Owned {
         protocolFeeController = controller;
         emit ProtocolFeeControllerUpdated(address(controller));
     }
-    
+
     function collectHookFees(address recipient, Currency currency, uint256 amount)
         external
         returns (uint256 amountCollected)

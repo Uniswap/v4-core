@@ -189,6 +189,12 @@ interface IPoolManager is IFees, IClaims {
     /// Protocol fees are always a portion of a fee that is owed. If that underlying fee is 0, no protocol fees will accrue even if it is set to > 0.
     function setProtocolFees(PoolKey memory key) external;
 
+    /// @notice Called by the protocol fee controller to collect accumulated protocol fees
+    /// Protocol fees are stored as Claims and must be burnt for ERC20s
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected);
+
     /// @notice Sets the hook's swap and withdrawal fees for the given pool
     function setHookFees(PoolKey memory key) external;
 
