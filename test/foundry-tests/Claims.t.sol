@@ -6,23 +6,12 @@ import {TokenFixture} from "./utils/TokenFixture.sol";
 import {Claims} from "../../contracts/Claims.sol";
 import {IClaims} from "../../contracts/interfaces/IClaims.sol";
 import {CurrencyLibrary, Currency} from "../../contracts/types/Currency.sol";
-
-contract MockClaimsImpl is Claims {
-    using CurrencyLibrary for Currency;
-
-    function mint(address to, Currency currency, uint256 amount) public {
-        _mint(to, currency.toId(), amount);
-    }
-
-    function burn(Currency currency, uint256 amount) public {
-        _burn(currency.toId(), amount);
-    }
-}
+import {MockClaims} from "../../contracts/test/MockClaims.sol";
 
 contract ClaimsTest is TokenFixture, Test {
     using CurrencyLibrary for Currency;
 
-    MockClaimsImpl claimsImpl = new MockClaimsImpl();
+    MockClaims claimsImpl = new MockClaims();
 
     event Mint(address indexed to, uint256 indexed id, uint256 amount);
     event Burn(address indexed from, uint256 indexed id, uint256 amount);
