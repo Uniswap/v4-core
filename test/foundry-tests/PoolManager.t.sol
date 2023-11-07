@@ -1202,7 +1202,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.balanceOf(address(feeController), currency0), 0);
     }
 
-    function test_collectProtocolFees_nativeToken_allowsFeeControllerToAccumulateFees() public {
+    function test_collectProtocolFees_nativeToken_allowsFeeControllerToAccumulateFees_gas() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
         Currency nativeCurrency = Currency.wrap(address(0));
