@@ -182,9 +182,6 @@ interface IPoolManager is IFees, IClaims {
     /// @notice Called by the user to redeem their Claims balance
     function burn(Currency token, uint256 amount) external;
 
-    /// @notice Called by the user to batch redeem their Claims balances
-    function batchBurn(Currency[] calldata tokens, uint256[] calldata amounts) external;
-
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
 

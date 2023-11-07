@@ -44,10 +44,6 @@ contract PoolSwapTest is ILockCallback {
         if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
     }
 
-    function _mintForSelf(Currency currency, uint256 amount) internal {
-        manager.mint(currency, address(this), amount);
-    }
-
     function _burnFromSelf(Currency currency, uint256 amount) internal {
         manager.burn(currency, amount);
     }
@@ -71,14 +67,14 @@ contract PoolSwapTest is ILockCallback {
                         manager.settle(data.key.currency0);
                     }
                 } else {
-                    _burnFromSelf(data.key.currency0, uint128(delta.amount0()));
+                    manager.burn(data.key.currency0, uint128(delta.amount0()));
                 }
             }
             if (delta.amount1() < 0) {
                 if (data.testSettings.withdrawTokens) {
                     manager.take(data.key.currency1, data.sender, uint128(-delta.amount1()));
                 } else {
-                    _mintForSelf(data.key.currency1, uint128(-delta.amount1()));
+                    manager.mint(data.key.currency1, address(this), uint128(-delta.amount1()));
                 }
             }
         } else {
@@ -93,14 +89,14 @@ contract PoolSwapTest is ILockCallback {
                         manager.settle(data.key.currency1);
                     }
                 } else {
-                    _burnFromSelf(data.key.currency1, uint128(delta.amount1()));
+                    manager.burn(data.key.currency1, uint128(delta.amount1()));
                 }
             }
             if (delta.amount0() < 0) {
                 if (data.testSettings.withdrawTokens) {
                     manager.take(data.key.currency0, data.sender, uint128(-delta.amount0()));
                 } else {
-                    _mintForSelf(data.key.currency0, uint128(-delta.amount0()));
+                    manager.mint(data.key.currency0, address(this), uint128(-delta.amount0()));
                 }
             }
         }
