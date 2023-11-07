@@ -32,7 +32,8 @@ abstract contract Fees is IFees, Owned {
         controllerGasLimit = _controllerGasLimit;
     }
 
-    /// @dev the success of this function must be checked on setting protocol fees
+    /// @notice Fetch the protocol fees for a given pool, returning false if the call fails or the returned fees are invalid.
+    /// @dev the success of this function must be checked when called in setProtocolFees
     function _fetchProtocolFees(PoolKey memory key) internal returns (bool success, uint24 protocolFees) {
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas

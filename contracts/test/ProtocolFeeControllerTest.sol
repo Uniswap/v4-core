@@ -32,7 +32,7 @@ contract RevertingProtocolFeeControllerTest is IProtocolFeeController {
     }
 }
 
-contract InvalidProtocolFeeControllerTest is IProtocolFeeController {
+contract OutOfBoundsProtocolFeeControllerTest is IProtocolFeeController {
     function protocolFeesForPool(PoolKey memory /* key */ ) external view returns (uint24) {
         // set both swap and withdraw fees to 1, which is less than MIN_PROTOCOL_FEE_DENOMINATOR
         return 0x001001;

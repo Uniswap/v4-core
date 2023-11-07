@@ -362,7 +362,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     function setProtocolFees(PoolKey memory key) external {
         (bool success, uint24 newProtocolFees) = _fetchProtocolFees(key);
-        if (!success) revert FeeTooLarge();
+        if (!success) revert InvalidProtocolFeeControllerResult();
         PoolId id = key.toId();
         pools[id].setProtocolFees(newProtocolFees);
         emit ProtocolFeeUpdated(id, newProtocolFees);
