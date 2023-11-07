@@ -213,10 +213,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
 
         unchecked {
             if (feeAmounts.feeForProtocol0 > 0) {
-                protocolFeesAccrued[key.currency0] += feeAmounts.feeForProtocol0;
+                _mint(address(protocolFeeController), key.currency0.toId(), feeAmounts.feeForProtocol0);
             }
             if (feeAmounts.feeForProtocol1 > 0) {
-                protocolFeesAccrued[key.currency1] += feeAmounts.feeForProtocol1;
+                _mint(address(protocolFeeController), key.currency1.toId(), feeAmounts.feeForProtocol1);
             }
             if (feeAmounts.feeForHook0 > 0) {
                 hookFeesAccrued[address(key.hooks)][key.currency0] += feeAmounts.feeForHook0;
@@ -272,7 +272,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
 
         unchecked {
             if (feeForProtocol > 0) {
-                protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
+                _mint(address(protocolFeeController), params.zeroForOne ? key.currency0.toId() : key.currency1.toId(), feeForProtocol);
             }
             if (feeForHook > 0) {
                 hookFeesAccrued[address(key.hooks)][params.zeroForOne ? key.currency0 : key.currency1] += feeForHook;
