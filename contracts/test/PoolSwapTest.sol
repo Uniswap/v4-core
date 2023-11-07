@@ -8,14 +8,19 @@ import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {console2} from "forge-std/console2.sol";
 
 contract PoolSwapTest is ILockCallback {
     using CurrencyLibrary for Currency;
 
+    error NoSwapOccurred();
+
     IPoolManager public immutable manager;
+    Currency public immutable WRAPPED_NATIVE;
 
     constructor(IPoolManager _manager) {
         manager = _manager;
+        WRAPPED_NATIVE = manager.WRAPPED_NATIVE();
     }
 
     struct CallbackData {
@@ -29,6 +34,7 @@ contract PoolSwapTest is ILockCallback {
     struct TestSettings {
         bool withdrawTokens;
         bool settleUsingTransfer;
+        bool settleUsingWrapped;
     }
 
     function swap(
@@ -51,67 +57,64 @@ contract PoolSwapTest is ILockCallback {
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
+        
+        // make sure youve added liquidity to the test pool!
+        if (BalanceDelta.unwrap(delta) == 0) revert NoSwapOccurred();
 
         if (data.params.zeroForOne) {
-            if (delta.amount0() > 0) {
-                if (data.testSettings.settleUsingTransfer) {
-                    if (data.key.currency0.isNative()) {
-                        manager.settle{value: uint128(delta.amount0())}(data.key.currency0);
-                    } else {
-                        IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
-                            data.sender, address(manager), uint128(delta.amount0())
-                        );
-                        manager.settle(data.key.currency0);
-                    }
-                } else {
-                    // the received hook on this transfer will burn the tokens
-                    manager.safeTransferFrom(
-                        data.sender,
-                        address(manager),
-                        uint256(uint160(Currency.unwrap(data.key.currency0))),
-                        uint128(delta.amount0()),
-                        ""
-                    );
-                }
-            }
-            if (delta.amount1() < 0) {
-                if (data.testSettings.withdrawTokens) {
-                    manager.take(data.key.currency1, data.sender, uint128(-delta.amount1()));
-                } else {
-                    manager.mint(data.key.currency1, data.sender, uint128(-delta.amount1()));
-                }
-            }
+            swapAndSettle(
+                data.key.currency0, data.key.currency1, delta.amount0(), delta.amount1(), data.sender, data.testSettings
+            );
         } else {
-            if (delta.amount1() > 0) {
-                if (data.testSettings.settleUsingTransfer) {
-                    if (data.key.currency1.isNative()) {
-                        manager.settle{value: uint128(delta.amount1())}(data.key.currency1);
-                    } else {
-                        IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
-                            data.sender, address(manager), uint128(delta.amount1())
-                        );
-                        manager.settle(data.key.currency1);
-                    }
-                } else {
-                    // the received hook on this transfer will burn the tokens
-                    manager.safeTransferFrom(
-                        data.sender,
-                        address(manager),
-                        uint256(uint160(Currency.unwrap(data.key.currency1))),
-                        uint128(delta.amount1()),
-                        ""
-                    );
-                }
-            }
-            if (delta.amount0() < 0) {
-                if (data.testSettings.withdrawTokens) {
-                    manager.take(data.key.currency0, data.sender, uint128(-delta.amount0()));
-                } else {
-                    manager.mint(data.key.currency0, data.sender, uint128(-delta.amount0()));
-                }
-            }
+            swapAndSettle(
+                data.key.currency1, data.key.currency0, delta.amount1(), delta.amount0(), data.sender, data.testSettings
+            );
         }
 
         return abi.encode(delta);
+    }
+
+    function swapAndSettle(
+        Currency currencyA,
+        Currency currencyB,
+        int128 deltaA,
+        int128 deltaB,
+        address sender,
+        TestSettings memory settings
+    ) internal {
+        console2.log('swapandsettle');
+        if (deltaA > 0) {
+            console2.log('deltaApositive');
+            if (settings.settleUsingTransfer) {
+                console2.log('transfer');
+                if (currencyA.isNative()) {
+                    console2.log('isnative');
+                    if (!settings.settleUsingWrapped) manager.settle{value: uint128(deltaA)}(currencyA);
+                    else {
+                        IERC20Minimal(Currency.unwrap(WRAPPED_NATIVE)).transferFrom(sender, address(manager), uint128(deltaA));
+                        manager.settle(WRAPPED_NATIVE);
+                    }
+                } else {
+                    IERC20Minimal(Currency.unwrap(currencyA)).transferFrom(sender, address(manager), uint128(deltaA));
+                    manager.settle(currencyA);
+                }
+            } else {
+                console2.log('transferFrom');
+                // the received hook on this transfer will burn the tokens
+                manager.safeTransferFrom(
+                    sender, address(manager), uint256(uint160(Currency.unwrap(currencyA))), uint128(deltaA), ""
+                );
+            }
+        }
+        if (deltaB < 0) {
+            console2.log('deltaBnegative');
+            if (settings.withdrawTokens) {
+                console2.log('take');
+                manager.take(currencyB, sender, uint128(-deltaB));
+            } else {
+                console2.log('mint');
+                manager.mint(currencyB, sender, uint128(-deltaB));
+            }
+        }
     }
 }

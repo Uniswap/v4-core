@@ -94,7 +94,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(false, false),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
             new bytes(222)
         );
         assertEq(mockHooks.beforeSwapData(), new bytes(222));
@@ -109,7 +109,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(false, false),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
             ZERO_BYTES
         );
     }
@@ -122,7 +122,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(false, false),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
             ZERO_BYTES
         );
     }

@@ -12,20 +12,23 @@ contract PoolTakeTest is ILockCallback {
     using CurrencyLibrary for Currency;
 
     IPoolManager public immutable manager;
+    Currency public immutable WRAPPED_NATIVE;
 
     constructor(IPoolManager _manager) {
         manager = _manager;
+        WRAPPED_NATIVE = manager.WRAPPED_NATIVE();
     }
 
     struct CallbackData {
         address sender;
-        PoolKey key;
+        Currency currency0;
+        Currency currency1;
         uint256 amount0;
         uint256 amount1;
     }
 
-    function take(PoolKey memory key, uint256 amount0, uint256 amount1) external payable {
-        manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
+    function take(Currency currency0, Currency currency1, uint256 amount0, uint256 amount1) public payable {
+        manager.lock(abi.encode(CallbackData(msg.sender, currency0, currency1, amount0, amount1)));
     }
 
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
@@ -33,38 +36,33 @@ contract PoolTakeTest is ILockCallback {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        if (data.amount0 > 0) {
-            uint256 balBefore = data.key.currency0.balanceOf(data.sender);
-            manager.take(data.key.currency0, data.sender, data.amount0);
-            uint256 balAfter = data.key.currency0.balanceOf(data.sender);
-            require(balAfter - balBefore == data.amount0);
-
-            if (data.key.currency0.isNative()) {
-                manager.settle{value: uint256(data.amount0)}(data.key.currency0);
-            } else {
-                IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
-                    data.sender, address(manager), uint256(data.amount0)
-                );
-                manager.settle(data.key.currency0);
-            }
-        }
-
-        if (data.amount1 > 0) {
-            uint256 balBefore = data.key.currency1.balanceOf(data.sender);
-            manager.take(data.key.currency1, data.sender, data.amount1);
-            uint256 balAfter = data.key.currency1.balanceOf(data.sender);
-            require(balAfter - balBefore == data.amount1);
-
-            if (data.key.currency1.isNative()) {
-                manager.settle{value: uint256(data.amount1)}(data.key.currency1);
-            } else {
-                IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
-                    data.sender, address(manager), uint256(data.amount1)
-                );
-                manager.settle(data.key.currency1);
-            }
-        }
+        if (data.amount0 > 0) takeAndSettle(data.currency0, data.amount0, data.sender);
+        if (data.amount1 > 0) takeAndSettle(data.currency1, data.amount1, data.sender);
 
         return abi.encode(0);
+    }
+
+    function takeAndSettle(Currency currency, uint256 amount, address sender) internal {
+        Currency accountCurrency = (currency == WRAPPED_NATIVE) ? CurrencyLibrary.NATIVE : currency;
+
+        uint256 balBefore = currency.balanceOf(sender);
+        uint256 reservesBefore = manager.reservesOf(accountCurrency);
+        require(WRAPPED_NATIVE.balanceOf(address(manager)) == 0);
+
+        manager.take(currency, sender, amount);
+
+        uint256 balAfter = currency.balanceOf(sender);
+        uint256 reservesAfter = manager.reservesOf(accountCurrency);
+        require(WRAPPED_NATIVE.balanceOf(address(manager)) == 0);
+
+        require(balAfter - balBefore == amount);
+        require(reservesBefore - reservesAfter == amount);
+
+        if (currency.isNative()) {
+            manager.settle{value: uint256(amount)}(currency);
+        } else {
+            IERC20Minimal(Currency.unwrap(currency)).transferFrom(sender, address(manager), uint256(amount));
+            manager.settle(currency);
+        }
     }
 }
