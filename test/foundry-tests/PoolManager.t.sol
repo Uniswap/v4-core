@@ -1144,7 +1144,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(slot0.protocolFees, protocolFee << 12);
     }
 
-    function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_ERC20_allowsFeeControllerToAccumulateFees_gas() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
 
@@ -1167,7 +1167,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.balanceOf(address(feeController), currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
         vm.prank(address(feeController));
+        snapStart("erc20 collect protocol fees");
         manager.collectProtocolFees(address(1), currency0, expectedFees);
+        snapEnd();
         assertEq(currency0.balanceOf(address(1)), expectedFees);
         assertEq(manager.balanceOf(address(feeController), currency0), 0);
     }
@@ -1200,7 +1202,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.balanceOf(address(feeController), currency0), 0);
     }
 
-    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_nativeToken_allowsFeeControllerToAccumulateFees() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
         Currency nativeCurrency = Currency.wrap(address(0));
