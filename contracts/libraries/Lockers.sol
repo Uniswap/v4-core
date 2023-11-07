@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
-// @alice
-// current locker accessed at lockers[length]
-// rather than lockers[length-1]
-// but this is more similar to how arrays encoded bc 0 index is the length?
-
+/// @notice This is a temporary library that allows us to use transient storage (tstore/tload)
+/// for the lockers array and nonzero delta count.
 library Lockers {
     // The starting slot for an array of lockers, stored transiently.
     uint256 constant LOCKERS_SLOT = uint256(keccak256("Lockers"));

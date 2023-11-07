@@ -21,7 +21,6 @@ import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Re
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 import {LockData, LockDataLibrary} from "./types/LockData.sol";
-
 import {Lockers} from "./libraries/Lockers.sol";
 
 /// @notice Holds the state for all pools
@@ -416,10 +415,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
         return Lockers.nonzeroDeltaCount();
     }
-
-    // function getLockData() external view returns (LockData lockData) {
-    //     return LockDataLibrary.getLockData();
-    // }
 
     /// @notice receive native tokens for native pools
     receive() external payable {}

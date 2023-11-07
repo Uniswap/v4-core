@@ -116,10 +116,10 @@ interface IPoolManager is IFees, IERC1155 {
     /// @notice Returns the locker in the ith position of the locker queue.
     function getLock(uint256 i) external view returns (address locker);
 
-    // /// @notice Returns the lock data (length and nonzeroDeltaCount) for the lock data structure.
-    // function getLockData() external view returns (LockData lockData);
-
+    /// @notice Returns the length of the lockers array, which is the number of locks open on the PoolManager.
     function getLockLength() external view returns (uint256 _length);
+
+    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
 
     /// @notice Initialize the state for a given pool ID
