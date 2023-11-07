@@ -17,12 +17,12 @@ import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
-import {MinimalBalance} from "./MinimalBalance.sol";
+import {Claims} from "./Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
+contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -323,12 +323,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
     }
 
     /// @inheritdoc IPoolManager
-    function mint(Currency currency, address to, uint256 amount) external noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-        _mint(to, currency.toId(), amount);
-    }
-
-    /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
@@ -338,23 +332,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
     }
 
     /// @inheritdoc IPoolManager
-    function burn(Currency currency, uint256 amount) external noDelegateCall onlyByLocker {
-        _burnAndAccount(currency, amount);
+    function mint(Currency currency, address to, uint256 amount) external noDelegateCall onlyByLocker {
+        _accountDelta(currency, amount.toInt128());
+        _mint(to, currency.toId(), amount);
     }
 
     /// @inheritdoc IPoolManager
-    function batchBurn(Currency[] calldata currencies, uint256[] calldata amounts)
-        external
-        noDelegateCall
-        onlyByLocker
-    {
-        uint256 length = currencies.length;
-        for (uint256 i; i < length; i++) {
-            _burnAndAccount(currencies[i], amounts[i]);
-        }
-    }
-
-    function _burnAndAccount(Currency currency, uint256 amount) internal {
+    function burn(Currency currency, uint256 amount) external noDelegateCall onlyByLocker {
         _accountDelta(currency, -(amount.toInt128()));
         _burn(currency.toId(), amount);
     }
