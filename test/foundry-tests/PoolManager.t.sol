@@ -1231,7 +1231,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.balanceOf(address(feeController), currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
         vm.prank(address(feeController));
+        snapStart("native collect protocol fees");
         manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
+        snapEnd();
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
         assertEq(manager.balanceOf(address(feeController), nativeCurrency), 0);
     }
