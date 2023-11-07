@@ -197,7 +197,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         if ((protocolSwapFee0 != 0 && protocolSwapFee0 < 4) || (protocolSwapFee1 != 0 && protocolSwapFee1 < 4)) {
             protocolSwapFee = 0;
-            vm.expectRevert(IFees.InvalidProtocolFeeControllerResult.selector);
+            vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         }
         manager.setProtocolFees(key0);
 
@@ -245,7 +245,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         ) {
             protocolSwapFee = 0;
             protocolWithdrawFee = 0;
-            vm.expectRevert(IFees.InvalidProtocolFeeControllerResult.selector);
+            vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         }
         manager.setProtocolFees(key2);
 

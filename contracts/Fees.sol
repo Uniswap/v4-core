@@ -50,7 +50,7 @@ abstract contract Fees is IFees, Owned {
             }
             // get the lowest 24 bits
             protocolFees = uint24(uint256(_data) & 0xFFFFFF);
-            // success if the call succeeded with valid return data, the return data is less than max uint24, and the fees are valid
+            // success if the call succeeded with valid return data, the return data does not overflow a uint24, and the fees are valid within the bounds
             success = _success && (data.length <= 32) && (uint256(protocolFees) == uint256(_data))
                 && _isValidProtocolFees(protocolFees);
 

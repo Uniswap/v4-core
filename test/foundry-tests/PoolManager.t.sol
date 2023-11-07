@@ -288,7 +288,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         assertEq(slot0.protocolFees >> 12, 0);
         assertEq(slot0.protocolFees & 0xFFF, 0);
         // call to setProtocolFees should also revert
-        vm.expectRevert(IFees.InvalidProtocolFeeControllerResult.selector);
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFees(key);
     }
 
