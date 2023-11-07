@@ -1144,7 +1144,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(slot0.protocolFees, protocolFee << 12);
     }
 
-    function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees_gas() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
 
@@ -1166,7 +1166,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
+        snapStart("erc20 collect protocol fees");
         manager.collectProtocolFees(address(1), currency0, expectedFees);
+        snapEnd();
         assertEq(currency0.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
@@ -1198,7 +1200,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
-    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees_gas() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
         Currency nativeCurrency = Currency.wrap(address(0));
@@ -1226,7 +1228,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        snapStart("native collect protocol fees");
         manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
+        snapEnd();
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
