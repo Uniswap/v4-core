@@ -17,12 +17,12 @@ import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
-import {MinimalBalance} from "./MinimalBalance.sol";
+import {Claims} from "./Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
+contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -355,8 +355,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, MinimalBalance {
     }
 
     function _burnAndAccount(Currency currency, uint256 amount) internal {
-        _accountDelta(currency, -(amount.toInt128()));
         _burn(currency.toId(), amount);
+        _accountDelta(currency, -(amount.toInt128()));
     }
 
     function setProtocolFees(PoolKey memory key) external {
