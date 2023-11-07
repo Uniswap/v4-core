@@ -18,6 +18,8 @@ contract Claims is IClaims {
 
     /// @inheritdoc IClaims
     function transfer(address to, Currency currency, uint256 amount) public {
+        if (to == address(0) || to == address(this)) revert InvalidAddress();
+
         uint256 id = currency.toId();
         if (amount > balances[id][msg.sender]) revert InsufficientBalance();
         unchecked {

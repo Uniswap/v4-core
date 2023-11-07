@@ -5,6 +5,7 @@ import {Currency} from "../types/Currency.sol";
 
 interface IClaims {
     error InsufficientBalance();
+    error InvalidAddress();
 
     /// @notice Get the balance of `account` for `currency`
     /// @param account The account to get the balance of
