@@ -8,6 +8,7 @@ import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {console2} from "forge-std/console2.sol";
 
 contract PoolModifyPositionTest is ILockCallback {
     using CurrencyLibrary for Currency;

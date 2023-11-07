@@ -12,8 +12,6 @@ import {PoolKey} from "../types/PoolKey.sol";
 contract PoolSwapTest is ILockCallback {
     using CurrencyLibrary for Currency;
 
-    error NoSwapOccurred();
-
     IPoolManager public immutable manager;
 
     constructor(IPoolManager _manager) {
