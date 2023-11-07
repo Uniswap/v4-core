@@ -34,14 +34,15 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockHooks impl = new MockHooks();
         vm.etch(ALL_HOOKS_ADDRESS, address(impl).code);
         mockHooks = MockHooks(ALL_HOOKS_ADDRESS);
-        (manager, key,) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
+        (manager, key,) = Deployers.createAndInitFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
         modifyPositionRouter = new PoolModifyPositionTest(IPoolManager(address(manager)));
         swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
         donateRouter = new PoolDonateTest(IPoolManager(address(manager)));
     }
 
     function testInitializeSucceedsWithHook() public {
-        (PoolManager _manager,, PoolId id) = Deployers.createFreshPool(mockHooks, 3000, SQRT_RATIO_1_1, new bytes(123));
+        (PoolManager _manager,, PoolId id) =
+            Deployers.createAndInitFreshPool(mockHooks, 3000, SQRT_RATIO_1_1, new bytes(123));
         (uint160 sqrtPriceX96,,,) = _manager.getSlot0(id);
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
         assertEq(mockHooks.beforeInitializeData(), new bytes(123));

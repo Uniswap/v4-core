@@ -15,4 +15,7 @@ library Constants {
 
     int24 constant MIN_TICK = -887272;
     int24 constant MAX_TICK = 887272;
+
+    uint256 constant POOL_SLOT = 10;
+    uint256 constant TICKS_OFFSET = 4;
 }
