@@ -112,7 +112,10 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         snapStart("update dynamic fee in before swap");
         bytes memory data = abi.encode(true, uint24(456));
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1), PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}), data
+            key,
+            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
+            data
         );
         snapEnd();
     }
@@ -125,7 +128,10 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         snapStart("before swap hook, already cached dynamic fee");
         bytes memory data = abi.encode(false, uint24(0));
         swapRouter.swap(
-            key, IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1), PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}), data
+            key,
+            IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
+            data
         );
         snapEnd();
     }
