@@ -31,7 +31,7 @@ contract PoolSwapTest is ILockCallback {
     struct TestSettings {
         bool withdrawTokens;
         bool settleUsingTransfer;
-        bool settleUsingWrapped;
+        bool useWrappedNative;
     }
 
     function swap(
@@ -79,7 +79,7 @@ contract PoolSwapTest is ILockCallback {
         if (deltaA > 0) {
             if (settings.settleUsingTransfer) {
                 if (currencyA.isNative()) {
-                    if (!settings.settleUsingWrapped) {
+                    if (!settings.useWrappedNative) {
                         manager.settle{value: uint128(deltaA)}(currencyA);
                     } else {
                         IERC20Minimal(Currency.unwrap(WRAPPED_NATIVE)).transferFrom(
@@ -100,7 +100,8 @@ contract PoolSwapTest is ILockCallback {
         }
         if (deltaB < 0) {
             if (settings.withdrawTokens) {
-                manager.take(currencyB, sender, uint128(-deltaB));
+                Currency takeCurrency = (currencyB.isNative() && settings.useWrappedNative) ? WRAPPED_NATIVE : currencyB;
+                manager.take(takeCurrency, sender, uint128(-deltaB));
             } else {
                 manager.mint(currencyB, sender, uint128(-deltaB));
             }

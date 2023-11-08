@@ -14,9 +14,11 @@ contract PoolDonateTest is ILockCallback {
     using CurrencyLibrary for Currency;
 
     IPoolManager public immutable manager;
+    Currency public immutable WRAPPED_NATIVE;
 
     constructor(IPoolManager _manager) {
         manager = _manager;
+        WRAPPED_NATIVE = manager.WRAPPED_NATIVE();
     }
 
     struct CallbackData {
@@ -24,16 +26,17 @@ contract PoolDonateTest is ILockCallback {
         PoolKey key;
         uint256 amount0;
         uint256 amount1;
+        bool useWrappedNative;
         bytes hookData;
     }
 
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory hookData)
+    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bool useWrappedNative, bytes memory hookData)
         external
         payable
         returns (BalanceDelta delta)
     {
         delta = abi.decode(
-            manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDelta)
+            manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, useWrappedNative, hookData))), (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
@@ -51,7 +54,14 @@ contract PoolDonateTest is ILockCallback {
 
         if (delta.amount0() > 0) {
             if (data.key.currency0.isNative()) {
-                manager.settle{value: uint128(delta.amount0())}(data.key.currency0);
+                if (!data.useWrappedNative) {
+                    manager.settle{value: uint128(delta.amount0())}(data.key.currency0);
+                } else {
+                    IERC20Minimal(Currency.unwrap(WRAPPED_NATIVE)).transferFrom(
+                        data.sender, address(manager), uint128(delta.amount0())
+                    );
+                    manager.settle(WRAPPED_NATIVE);
+                }
             } else {
                 IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
                     data.sender, address(manager), uint128(delta.amount0())
@@ -60,14 +70,11 @@ contract PoolDonateTest is ILockCallback {
             }
         }
         if (delta.amount1() > 0) {
-            if (data.key.currency1.isNative()) {
-                manager.settle{value: uint128(delta.amount1())}(data.key.currency1);
-            } else {
-                IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
-                    data.sender, address(manager), uint128(delta.amount1())
-                );
-                manager.settle(data.key.currency1);
-            }
+            assert(!data.key.currency1.isNative());
+            IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
+                data.sender, address(manager), uint128(delta.amount1())
+            );
+            manager.settle(data.key.currency1);
         }
 
         return abi.encode(delta);

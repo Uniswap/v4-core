@@ -423,7 +423,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key3,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, useWrappedNative: false}),
             ZERO_BYTES
         );
         // key3 pool is 30 bps => 10000 * 0.003 (.3%) = 30
@@ -458,7 +458,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, useWrappedNative: false}),
             ZERO_BYTES
         );
 
@@ -491,7 +491,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, useWrappedNative: false}),
             ZERO_BYTES
         );
 
@@ -526,7 +526,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, useWrappedNative: false}),
             ZERO_BYTES
         );
 
@@ -565,7 +565,7 @@ contract FeesTest is Test, Deployers, TokenFixture, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, useWrappedNative: false}),
             ZERO_BYTES
         );
 

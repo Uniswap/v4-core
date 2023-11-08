@@ -98,7 +98,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, useWrappedNative: false}),
             ZERO_BYTES
         );
         snapEnd();
@@ -114,7 +114,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, useWrappedNative: false}),
             data
         );
         snapEnd();
@@ -130,7 +130,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, useWrappedNative: false}),
             data
         );
         snapEnd();
@@ -151,7 +151,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key2,
             IPoolManager.SwapParams(false, 1, SQRT_RATIO_1_1 + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, useWrappedNative: false}),
             ZERO_BYTES
         );
         snapEnd();

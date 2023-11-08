@@ -94,7 +94,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, useWrappedNative: false}),
             new bytes(222)
         );
         assertEq(mockHooks.beforeSwapData(), new bytes(222));
@@ -109,7 +109,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, useWrappedNative: false}),
             ZERO_BYTES
         );
     }
@@ -122,7 +122,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, settleUsingWrapped: false}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: false, useWrappedNative: false}),
             ZERO_BYTES
         );
     }
@@ -132,7 +132,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
-        donateRouter.donate(key, 100, 200, new bytes(333));
+        donateRouter.donate(key, 100, 200, false, new bytes(333));
         assertEq(mockHooks.beforeDonateData(), new bytes(333));
         assertEq(mockHooks.afterDonateData(), new bytes(333));
     }
@@ -144,7 +144,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        donateRouter.donate(key, 100, 200, ZERO_BYTES);
+        donateRouter.donate(key, 100, 200, false, ZERO_BYTES);
     }
 
     function testAfterDonateInvalidReturn() public {
@@ -154,7 +154,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         IERC20Minimal(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
         IERC20Minimal(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        donateRouter.donate(key, 100, 200, ZERO_BYTES);
+        donateRouter.donate(key, 100, 200, false, ZERO_BYTES);
     }
 
     // hook validation
