@@ -2,10 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {GasSnapshot} from "../../lib/forge-gas-snapshot/src/GasSnapshot.sol";
+import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
-import {Pool} from "../../contracts/libraries/Pool.sol";
-import {TickMath} from "../../contracts/libraries/TickMath.sol";
+import {Pool} from "../src/libraries/Pool.sol";
+import {TickMath} from "../src/libraries/TickMath.sol";
 
 contract TickTest is Test, GasSnapshot {
     using Pool for Pool.State;

@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
-import {NoDelegateCallTest} from "../../contracts/test/NoDelegateCallTest.sol";
+import {NoDelegateCallTest} from "../src/test/NoDelegateCallTest.sol";
 
 contract TestDelegateCall is Test, GasSnapshot {
     error DelegateCallNotAllowed();
