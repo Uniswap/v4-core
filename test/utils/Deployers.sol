@@ -2,14 +2,14 @@
 pragma solidity ^0.8.20;
 
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-import {Hooks} from "../../../contracts/libraries/Hooks.sol";
-import {Currency} from "../../../contracts/types/Currency.sol";
-import {IHooks} from "../../../contracts/interfaces/IHooks.sol";
-import {IPoolManager} from "../../../contracts/interfaces/IPoolManager.sol";
-import {PoolManager} from "../../../contracts/PoolManager.sol";
-import {PoolId, PoolIdLibrary} from "../../../contracts/types/PoolId.sol";
-import {FeeLibrary} from "../../../contracts/libraries/FeeLibrary.sol";
-import {PoolKey} from "../../../contracts/types/PoolKey.sol";
+import {Hooks} from "../../src/libraries/Hooks.sol";
+import {Currency} from "../../src/types/Currency.sol";
+import {IHooks} from "../../src/interfaces/IHooks.sol";
+import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
+import {PoolManager} from "../../src/PoolManager.sol";
+import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
+import {FeeLibrary} from "../../src/libraries/FeeLibrary.sol";
+import {PoolKey} from "../../src/types/PoolKey.sol";
 import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
 

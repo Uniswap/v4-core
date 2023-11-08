@@ -3,19 +3,19 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {PoolId, PoolIdLibrary} from "../../contracts/types/PoolId.sol";
-import {Hooks} from "../../contracts/libraries/Hooks.sol";
-import {FeeLibrary} from "../../contracts/libraries/FeeLibrary.sol";
-import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
-import {IFees} from "../../contracts/interfaces/IFees.sol";
-import {IHooks} from "../../contracts/interfaces/IHooks.sol";
-import {PoolKey} from "../../contracts/types/PoolKey.sol";
-import {PoolManager} from "../../contracts/PoolManager.sol";
-import {PoolSwapTest} from "../../contracts/test/PoolSwapTest.sol";
+import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
+import {Hooks} from "../src/libraries/Hooks.sol";
+import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
+import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
+import {IFees} from "../src/interfaces/IFees.sol";
+import {IHooks} from "../src/interfaces/IHooks.sol";
+import {PoolKey} from "../src/types/PoolKey.sol";
+import {PoolManager} from "../src/PoolManager.sol";
+import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {IDynamicFeeManager} from "././../../contracts/interfaces/IDynamicFeeManager.sol";
+import {IDynamicFeeManager} from "././../src/interfaces/IDynamicFeeManager.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {DynamicFeesTest} from "../../contracts/test/DynamicFeesTest.sol";
+import {DynamicFeesTest} from "../src/test/DynamicFeesTest.sol";
 
 contract TestDynamicFees is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
