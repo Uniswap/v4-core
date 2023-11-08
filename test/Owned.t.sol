@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {Owned} from "../../contracts/Owned.sol";
+import {Owned} from "../src/Owned.sol";
 
 contract OwnedTest is Test {
     Owned owned;
