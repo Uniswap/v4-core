@@ -1160,7 +1160,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, 100);
         modifyPositionRouter.modifyPosition{value: 1}(key, params, ZERO_BYTES);
-        
+
         Currency wrappedCurrency = Currency.wrap(wrappedNative);
         (key.currency0, key.currency1) =
             (Currency.unwrap(currency1) < wrappedNative) ? (currency1, wrappedCurrency) : (wrappedCurrency, currency1);
