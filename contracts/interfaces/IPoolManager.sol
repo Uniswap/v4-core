@@ -10,7 +10,6 @@ import {IFees} from "./IFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
-import {LockData} from "../types/LockData.sol";
 
 interface IPoolManager is IFees, IERC1155 {
     /// @notice Thrown when currencies touched has exceeded max of 256

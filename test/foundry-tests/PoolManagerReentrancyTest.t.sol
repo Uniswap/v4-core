@@ -9,7 +9,6 @@ import {ILockCallback} from "../../contracts/interfaces/callback/ILockCallback.s
 import {PoolManager} from "../../contracts/PoolManager.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
-import {LockData, LockDataLibrary} from "../../contracts/types/LockData.sol";
 
 contract TokenLocker is ILockCallback {
     using CurrencyLibrary for Currency;

@@ -20,7 +20,6 @@ import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
-import {LockData, LockDataLibrary} from "./types/LockData.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
 /// @notice Holds the state for all pools

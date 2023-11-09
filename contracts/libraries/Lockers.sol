@@ -5,10 +5,10 @@ pragma solidity ^0.8.20;
 /// for the lockers array and nonzero delta count.
 library Lockers {
     // The starting slot for an array of lockers, stored transiently.
-    uint256 constant LOCKERS_SLOT = uint256(keccak256("Lockers"));
+    uint256 constant LOCKERS_SLOT = uint256(keccak256("Lockers")) - 1;
 
     // The slot holding the number of nonzero deltas.
-    uint256 constant NONZERO_DELTA_COUNT = uint256(keccak256("NonzeroDeltaCount"));
+    uint256 constant NONZERO_DELTA_COUNT = uint256(keccak256("NonzeroDeltaCount")) - 1;
 
     function push(address locker) internal {
         uint256 slot = LOCKERS_SLOT;

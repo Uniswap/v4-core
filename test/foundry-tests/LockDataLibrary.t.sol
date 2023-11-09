@@ -6,24 +6,52 @@ import {PoolManager} from "../../contracts/PoolManager.sol";
 import {IPoolManager} from "../../contracts/interfaces/IPoolManager.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {ILockCallback} from "../../contracts/interfaces/callback/ILockCallback.sol";
-import {LockData, LockDataLibrary} from "../../contracts/types/LockData.sol";
+import {Currency, CurrencyLibrary} from "../../contracts/types/Currency.sol";
+import {MockERC20} from "./utils/MockERC20.sol";
+import {PoolModifyPositionTest} from "../../contracts/test/PoolModifyPositionTest.sol";
+import {PoolKey} from "../../contracts/types/PoolKey.sol";
+import {IHooks} from "../../contracts/interfaces/IHooks.sol";
+import "forge-std/console2.sol";
 
 contract LockDataLibraryTest is Test, Deployers, ILockCallback {
+    using CurrencyLibrary for Currency;
+
     PoolManager manager;
+    PoolKey key;
+    Currency currency0;
 
     function setUp() public {
         manager = Deployers.createFreshManager();
+        (key,) = createPool(manager, IHooks(address(0)), 3000, SQRT_RATIO_1_1);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
+        MockERC20(Currency.unwrap(key.currency1)).mint(address(this), 1e18);
+
+        PoolModifyPositionTest modifyRouter = new PoolModifyPositionTest(manager);
+
+        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyRouter), 1e18);
+        MockERC20(Currency.unwrap(key.currency1)).approve(address(modifyRouter), 1e18);
+        modifyRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-60, 60, 1000), "");
     }
 
-    function testLockerLength() public {
-        uint256 lengthDuringLockCallback = abi.decode(manager.lock(""), (uint256));
+    function testLockerLengthAndNonzeroDeltaCount() public {
+        (uint256 lengthDuringLockCallback, uint256 nonzeroDeltaCountDuringCallback) =
+            abi.decode(manager.lock(""), (uint256, uint256));
         assertEq(lengthDuringLockCallback, 1);
+        assertEq(nonzeroDeltaCountDuringCallback, 1);
+        assertEq(manager.getLockLength(), 0);
+        assertEq(manager.getLockNonzeroDeltaCount(), 0);
     }
 
-    function lockAcquired(bytes calldata) public view returns (bytes memory) {
-        // todo how should we expose this with the new library
+    function lockAcquired(bytes calldata) public returns (bytes memory) {
         uint256 len = manager.getLockLength();
-        bytes memory data = abi.encode(len);
+
+        // apply a delta and save count
+        manager.take(key.currency0, address(this), 1);
+        uint256 count = manager.getLockNonzeroDeltaCount();
+        key.currency0.transfer(address(manager), 1);
+        manager.settle(key.currency0);
+
+        bytes memory data = abi.encode(len, count);
         return data;
     }
 }
