@@ -5,11 +5,12 @@ import {Test} from "forge-std/Test.sol";
 import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
-import {TickInfo} from "../src/libraries/TickList.sol";
+import {TickInfo, TickList} from "../src/libraries/TickList.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 
 contract TickTest is Test, GasSnapshot {
     using Pool for Pool.State;
+    using TickList for mapping(int24 => TickInfo);
 
     int24 constant LOW_TICK_SPACING = 10;
     int24 constant MEDIUM_TICK_SPACING = 60;
@@ -57,7 +58,7 @@ contract TickTest is Test, GasSnapshot {
     }
 
     function clear(int24 tick) internal {
-        pool.clearTick(tick);
+        pool.ticks.removeTick(tick, pool.tickHead);
     }
 
     function cross(int24 tick, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128)

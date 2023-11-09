@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {SafeCast} from "./SafeCast.sol";
-import {TickBitmap} from "./TickBitmap.sol";
 import {TickList, TickInfo} from "./TickList.sol";
 import {Position} from "./Position.sol";
 import {FullMath} from "./FullMath.sol";
@@ -14,7 +13,6 @@ import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 
 library Pool {
     using SafeCast for *;
-    using TickBitmap for mapping(int16 => uint256);
     using TickList for mapping(int24 => TickInfo);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
@@ -88,7 +86,6 @@ library Pool {
         uint128 liquidity;
         int24 tickHead;
         mapping(int24 => TickInfo) ticks;
-        mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
     }
 

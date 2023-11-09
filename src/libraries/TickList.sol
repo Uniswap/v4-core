@@ -38,8 +38,11 @@ library TickList {
     {
         nextTick = lte ? self[tick].prev : self[tick].next;
 
-        // If we hit the last initialized tick, set next to the max or min
-        if (nextTick == TickList.NULL_TICK) {
+        // If we hit the last initialized tick,
+        // or if the current tick is uninitialized, i.e. there are no initialized ticks
+        // set next to the max or min
+
+        if (nextTick == TickList.NULL_TICK || (tick == 0 && nextTick == 0)) {
             nextTick = lte ? TickMath.MIN_TICK : TickMath.MAX_TICK;
         }
     }
@@ -108,5 +111,6 @@ library TickList {
             self[tickInfo.next].prev = tickInfo.prev;
         }
         delete self[tick];
+        return head;
     }
 }

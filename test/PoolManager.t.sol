@@ -146,7 +146,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             emit Initialize(key.toId(), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
             manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
 
-            (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+            (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
             assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
             assertEq(slot0.protocolFees, 0);
         }
@@ -168,7 +168,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         emit Initialize(key.toId(), key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
         manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
         assertEq(slot0.protocolFees >> 12, 0);
         assertEq(slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
@@ -192,7 +192,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(mockAddr), tickSpacing: 60});
 
         int24 tick = manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
 
         bytes32 beforeSelector = MockHooks.beforeInitialize.selector;
@@ -241,7 +241,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
 
         manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
     }
 
@@ -402,7 +402,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
         assertEq(slot0.protocolFees >> 12, poolProtocolFee);
     }
@@ -973,7 +973,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         donateRouter.donate(key, 100, 200, ZERO_BYTES);
         snapEnd();
 
-        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(key.toId());
+        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,,) = manager.pools(key.toId());
         assertEq(feeGrowthGlobal0X128, 340282366920938463463374607431768211456);
         assertEq(feeGrowthGlobal1X128, 680564733841876926926749214863536422912);
     }
@@ -994,7 +994,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         modifyPositionRouter.modifyPosition{value: 1}(key, params, ZERO_BYTES);
         donateRouter.donate{value: 100}(key, 100, 200, ZERO_BYTES);
 
-        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(key.toId());
+        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,,) = manager.pools(key.toId());
         assertEq(feeGrowthGlobal0X128, 340282366920938463463374607431768211456);
         assertEq(feeGrowthGlobal1X128, 680564733841876926926749214863536422912);
     }
@@ -1128,7 +1128,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, 0);
         manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
@@ -1147,7 +1147,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
     }
 
@@ -1161,7 +1161,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
@@ -1188,7 +1188,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
@@ -1221,7 +1221,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
@@ -1254,7 +1254,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-120, 120, 10 ether);
