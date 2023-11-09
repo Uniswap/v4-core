@@ -12,6 +12,8 @@ import {PoolKey} from "../types/PoolKey.sol";
 contract PoolSwapTest is ILockCallback {
     using CurrencyLibrary for Currency;
 
+    error NoSwapOccurred();
+
     IPoolManager public immutable manager;
 
     constructor(IPoolManager _manager) {
@@ -53,7 +55,7 @@ contract PoolSwapTest is ILockCallback {
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
         // Make sure youve added liquidity to the test pool!
-        assert(BalanceDelta.unwrap(delta) != 0);
+        if (BalanceDelta.unwrap(delta) == 0) revert NoSwapOccurred();
 
         if (data.params.zeroForOne) {
             if (delta.amount0() > 0) {
