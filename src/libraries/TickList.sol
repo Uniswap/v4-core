@@ -41,7 +41,6 @@ library TickList {
         // If we hit the last initialized tick,
         // or if the current tick is uninitialized, i.e. there are no initialized ticks
         // set next to the max or min
-
         if (nextTick == TickList.NULL_TICK || (tick == 0 && nextTick == 0)) {
             nextTick = lte ? TickMath.MIN_TICK : TickMath.MAX_TICK;
         }
