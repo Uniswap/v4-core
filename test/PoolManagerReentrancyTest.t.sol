@@ -68,6 +68,8 @@ contract SimpleLinearLocker is ILockCallback {
 }
 
 contract ParallelLocker is ILockCallback {
+    // We define an INDEX_OFFSET at 1 since the first locker is placed at index 1.
+    // The 0th index is used for storing the length.
     uint256 constant INDEX_OFFSET = 1;
     IPoolManager manager;
 
