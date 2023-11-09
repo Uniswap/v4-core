@@ -6,6 +6,9 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
+import {Hooks} from "../libraries/Hooks.sol";
+
+import "forge-std/console2.sol";
 
 contract PoolModifyPositionTest is PoolTestBase {
     using CurrencyLibrary for Currency;
@@ -45,13 +48,13 @@ contract PoolModifyPositionTest is PoolTestBase {
         if (data.params.liquidityDelta > 0) {
             assert(delta0 > 0 || delta1 > 0);
             assert(!(delta0 < 0 || delta1 < 0));
-            if (delta0 > 0) _settle(data.key.currency0, data.sender, delta.amount0(), true);
-            if (delta1 > 0) _settle(data.key.currency1, data.sender, delta.amount1(), true);
+            if (delta0 > 0) _settle(data.key.currency0, data.sender, int128(delta0), true);
+            if (delta1 > 0) _settle(data.key.currency1, data.sender, int128(delta1), true);
         } else {
             assert(delta0 < 0 || delta1 < 0);
             assert(!(delta0 > 0 || delta1 > 0));
-            if (delta0 < 0) _take(data.key.currency0, data.sender, delta.amount0(), true);
-            if (delta1 < 0) _take(data.key.currency1, data.sender, delta.amount1(), true);
+            if (delta0 < 0) _take(data.key.currency0, data.sender, int128(delta0), true);
+            if (delta1 < 0) _take(data.key.currency1, data.sender, int128(delta1), true);
         }
 
         return abi.encode(delta);

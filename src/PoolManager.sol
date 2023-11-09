@@ -22,6 +22,8 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
+import "forge-std/console2.sol";
+
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
@@ -48,6 +50,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     mapping(PoolId id => Pool.State) public pools;
 
     constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) {}
+
+    // todo change to transient storage
+    address currentHook;
 
     function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
         return pools[key.toId()];
@@ -174,8 +179,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     modifier onlyByLocker() {
+        // todo fix stack too deep :/
         address locker = Lockers.getCurrentLocker();
-        if (msg.sender != locker) revert LockedBy(locker);
+        if (msg.sender != locker) {
+            if (msg.sender != currentHook && !Hooks.shouldAccessLock(IHooks(currentHook))) {
+                revert LockedBy(locker);
+            }
+        }
         _;
     }
 
@@ -185,11 +195,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
+        _setCurrentHook(address(key.hooks));
+
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            if (
-                key.hooks.beforeModifyPosition(msg.sender, key, params, hookData)
-                    != IHooks.beforeModifyPosition.selector
-            ) {
+            bytes4 hookReturn = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
+
+            if (hookReturn == Hooks.OVERRIDE_SELECTOR) {
+                return delta;
+            }
+            if (hookReturn != IHooks.beforeModifyPosition.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -243,8 +257,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
+        _setCurrentHook(address(key.hooks));
+
         if (key.hooks.shouldCallBeforeSwap()) {
-            if (key.hooks.beforeSwap(msg.sender, key, params, hookData) != IHooks.beforeSwap.selector) {
+            bytes4 hookReturn = key.hooks.beforeSwap(msg.sender, key, params, hookData);
+            if (hookReturn == Hooks.OVERRIDE_SELECTOR) {
+                return delta;
+            }
+            if (hookReturn != IHooks.beforeSwap.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -295,8 +315,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
+        _setCurrentHook(address(key.hooks));
         if (key.hooks.shouldCallBeforeDonate()) {
-            if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
+            bytes4 hookReturn = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
+            if (hookReturn == Hooks.OVERRIDE_SELECTOR) {
+                return delta;
+            }
+            if (hookReturn != IHooks.beforeDonate.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -391,6 +416,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
         return Lockers.nonzeroDeltaCount();
+    }
+
+    // TODO: Use transient storage
+    function _setCurrentHook(address hookAddr) internal {
+        currentHook = hookAddr;
     }
 
     /// @notice receive native tokens for native pools

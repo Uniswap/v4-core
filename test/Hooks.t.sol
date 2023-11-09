@@ -19,7 +19,10 @@ import {Deployers} from "./utils/Deployers.sol";
 import {Fees} from "../src/Fees.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
+import {AccessLockHook} from "../src/test/AccessLockHook.sol";
+import {IERC20Minimal} from "../src/interfaces/external/IERC20Minimal.sol";
 
+// TODO update tests for access lock flag
 contract HooksTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
@@ -140,7 +143,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -167,7 +172,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -194,7 +201,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -220,7 +229,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -246,7 +257,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -272,7 +285,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -299,7 +314,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -326,7 +343,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -352,7 +371,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: true,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -378,7 +399,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: true,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -404,7 +427,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -430,7 +455,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: true,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -456,7 +483,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: true
+                afterDonate: true,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -482,7 +511,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -508,7 +539,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                accessLock: false,
+                overrideSelector: false
             })
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -536,7 +569,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                accessLock: false,
+                overrideSelector: false
             })
         );
     }
@@ -556,7 +591,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                accessLock: false,
+                overrideSelector: false
             })
         );
     }
