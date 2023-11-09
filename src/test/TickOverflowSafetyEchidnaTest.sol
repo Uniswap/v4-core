@@ -2,9 +2,11 @@
 pragma solidity ^0.8.20;
 
 import {Pool} from "../libraries/Pool.sol";
+import {TickInfo, TickList} from "../libraries/TickList.sol";
 
 contract TickOverflowSafetyEchidnaTest {
     using Pool for Pool.State;
+    using TickList for mapping(int24 => TickInfo);
 
     int24 private constant MIN_TICK = -16;
     int24 private constant MAX_TICK = 16;
@@ -44,7 +46,7 @@ contract TickOverflowSafetyEchidnaTest {
         if (flippedLower) {
             if (liquidityDelta < 0) {
                 assert(pool.ticks[tickLower].liquidityGross == 0);
-                pool.clearTick(tickLower);
+                pool.ticks.removeTick(tickLower, pool.tickHead);
             } else {
                 assert(pool.ticks[tickLower].liquidityGross > 0);
             }
@@ -53,7 +55,7 @@ contract TickOverflowSafetyEchidnaTest {
         if (flippedUpper) {
             if (liquidityDelta < 0) {
                 assert(pool.ticks[tickUpper].liquidityGross == 0);
-                pool.clearTick(tickUpper);
+                pool.ticks.removeTick(tickUpper, pool.tickHead);
             } else {
                 assert(pool.ticks[tickUpper].liquidityGross > 0);
             }

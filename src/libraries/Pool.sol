@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
+import {TickList, TickInfo} from "./TickList.sol";
 import {Position} from "./Position.sol";
 import {FullMath} from "./FullMath.sol";
 import {FixedPoint128} from "./FixedPoint128.sol";
@@ -14,6 +15,7 @@ import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 library Pool {
     using SafeCast for *;
     using TickBitmap for mapping(int16 => uint256);
+    using TickList for mapping(int24 => TickInfo);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
 
@@ -78,24 +80,13 @@ library Pool {
         uint24 swapFee;
     }
 
-    // info stored for each initialized individual tick
-    struct TickInfo {
-        // the total position liquidity that references this tick
-        uint128 liquidityGross;
-        // amount of net liquidity added (subtracted) when tick is crossed from left to right (right to left),
-        int128 liquidityNet;
-        // fee growth per unit of liquidity on the _other_ side of this tick (relative to the current tick)
-        // only has relative meaning, not absolute — the value depends on when the tick is initialized
-        uint256 feeGrowthOutside0X128;
-        uint256 feeGrowthOutside1X128;
-    }
-
     /// @dev The state of a pool
     struct State {
         Slot0 slot0;
         uint256 feeGrowthGlobal0X128;
         uint256 feeGrowthGlobal1X128;
         uint128 liquidity;
+        int24 tickHead;
         mapping(int24 => TickInfo) ticks;
         mapping(int16 => uint256) tickBitmap;
         mapping(bytes32 => Position.Info) positions;
@@ -123,6 +114,7 @@ library Pool {
             hookFees: hookFees,
             swapFee: swapFee
         });
+        self.tickHead = TickList.NULL_TICK;
     }
 
     function getSwapFee(uint24 feesStorage) internal pure returns (uint16) {
@@ -211,13 +203,6 @@ library Pool {
                         revert TickLiquidityOverflow(params.tickUpper);
                     }
                 }
-
-                if (state.flippedLower) {
-                    self.tickBitmap.flipTick(params.tickLower, params.tickSpacing);
-                }
-                if (state.flippedUpper) {
-                    self.tickBitmap.flipTick(params.tickUpper, params.tickSpacing);
-                }
             }
 
             (state.feeGrowthInside0X128, state.feeGrowthInside1X128) =
@@ -228,13 +213,15 @@ library Pool {
             );
 
             // clear any tick data that is no longer needed
-            if (params.liquidityDelta < 0) {
-                if (state.flippedLower) {
-                    clearTick(self, params.tickLower);
-                }
-                if (state.flippedUpper) {
-                    clearTick(self, params.tickUpper);
-                }
+            if (state.flippedLower) {
+                self.tickHead = params.liquidityDelta < 0
+                    ? self.ticks.insertTick(params.tickLower, self.tickHead)
+                    : self.ticks.removeTick(params.tickLower, self.tickHead);
+            }
+            if (state.flippedUpper) {
+                self.tickHead = params.liquidityDelta > 0
+                    ? self.ticks.insertTick(params.tickUpper, self.tickHead)
+                    : self.ticks.removeTick(params.tickUpper, self.tickHead);
             }
         }
 
@@ -367,8 +354,6 @@ library Pool {
         uint160 sqrtPriceStartX96;
         // the next tick to swap to from the current tick in the swap direction
         int24 tickNext;
-        // whether tickNext is initialized or not
-        bool initialized;
         // sqrt(price) for the next tick (1/0)
         uint160 sqrtPriceNextX96;
         // how much is being swapped in in this step
@@ -442,15 +427,7 @@ library Pool {
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
-            (step.tickNext, step.initialized) =
-                self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, params.zeroForOne);
-
-            // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
-            if (step.tickNext < TickMath.MIN_TICK) {
-                step.tickNext = TickMath.MIN_TICK;
-            } else if (step.tickNext > TickMath.MAX_TICK) {
-                step.tickNext = TickMath.MAX_TICK;
-            }
+            step.tickNext = self.ticks.next(state.tick, params.zeroForOne);
 
             // get the price for the next tick
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
@@ -510,24 +487,21 @@ library Pool {
 
             // shift tick if we reached the next price
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
-                // if the tick is initialized, run the tick transition
-                if (step.initialized) {
-                    int128 liquidityNet = Pool.crossTick(
-                        self,
-                        step.tickNext,
-                        (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
-                        (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
-                    );
-                    // if we're moving leftward, we interpret liquidityNet as the opposite sign
-                    // safe because liquidityNet cannot be type(int128).min
-                    unchecked {
-                        if (params.zeroForOne) liquidityNet = -liquidityNet;
-                    }
-
-                    state.liquidity = liquidityNet < 0
-                        ? state.liquidity - uint128(-liquidityNet)
-                        : state.liquidity + uint128(liquidityNet);
+                int128 liquidityNet = Pool.crossTick(
+                    self,
+                    step.tickNext,
+                    (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
+                    (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
+                );
+                // if we're moving leftward, we interpret liquidityNet as the opposite sign
+                // safe because liquidityNet cannot be type(int128).min
+                unchecked {
+                    if (params.zeroForOne) liquidityNet = -liquidityNet;
                 }
+
+                state.liquidity = liquidityNet < 0
+                    ? state.liquidity - uint128(-liquidityNet)
+                    : state.liquidity + uint128(liquidityNet);
 
                 unchecked {
                     state.tick = params.zeroForOne ? step.tickNext - 1 : step.tickNext;
@@ -679,13 +653,6 @@ library Pool {
                     / uint256(int256(TickMath.MAX_TICK * 2 + tickSpacing))
             );
         }
-    }
-
-    /// @notice Clears tick data
-    /// @param self The mapping containing all initialized tick information for initialized ticks
-    /// @param tick The tick that will be cleared
-    function clearTick(State storage self, int24 tick) internal {
-        delete self.ticks[tick];
     }
 
     /// @notice Transitions to next tick as needed by price movement
