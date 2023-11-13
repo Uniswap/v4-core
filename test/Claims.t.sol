@@ -3,10 +3,10 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {TokenFixture} from "./utils/TokenFixture.sol";
-import {Claims} from "../../contracts/Claims.sol";
-import {IClaims} from "../../contracts/interfaces/IClaims.sol";
-import {CurrencyLibrary, Currency} from "../../contracts/types/Currency.sol";
-import {MockClaims} from "../../contracts/test/MockClaims.sol";
+import {Claims} from "../src/Claims.sol";
+import {IClaims} from "../src/interfaces/IClaims.sol";
+import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
+import {MockClaims} from "../src/test/MockClaims.sol";
 
 contract ClaimsTest is TokenFixture, Test {
     using CurrencyLibrary for Currency;
