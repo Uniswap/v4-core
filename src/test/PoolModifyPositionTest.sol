@@ -44,10 +44,12 @@ contract PoolModifyPositionTest is TestBase {
 
         if (data.params.liquidityDelta > 0) {
             assert(delta0 > 0 || delta1 > 0);
+            assert(!(delta0 < 0 || delta1 < 0));
             if (delta0 > 0) _settle(data.key.currency0, data.sender, delta.amount0(), true);
             if (delta1 > 0) _settle(data.key.currency1, data.sender, delta.amount1(), true);
         } else {
             assert(delta0 < 0 || delta1 < 0);
+            assert(!(delta0 > 0 || delta1 > 0));
             if (delta0 < 0) _take(data.key.currency0, data.sender, delta.amount0(), true);
             if (delta1 < 0) _take(data.key.currency1, data.sender, delta.amount1(), true);
         }
