@@ -189,14 +189,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        if (key.hooks.shouldCallBeforeModifyPosition()) {
-            if (
-                key.hooks.beforeModifyPosition(msg.sender, key, params, hookData)
-                    != IHooks.beforeModifyPosition.selector
-            ) {
+        // TODO: what about liquidityDelta == 0?
+        if (key.hooks.shouldCallBeforeMint() && params.liquidityDelta.toInt128() > 0) {
+            if (key.hooks.beforeMint(msg.sender, key, params, hookData) != IHooks.beforeMint.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
+        // TODO: handle burn
 
         PoolId id = key.toId();
         Pool.FeeAmounts memory feeAmounts;
@@ -227,11 +226,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
             }
         }
 
-        if (key.hooks.shouldCallAfterModifyPosition()) {
-            if (
-                key.hooks.afterModifyPosition(msg.sender, key, params, delta, hookData)
-                    != IHooks.afterModifyPosition.selector
-            ) {
+        // TODO: what about liquidityDelta == 0?
+        if (key.hooks.shouldCallAfterMint() && params.liquidityDelta.toInt128() > 0) {
+            if (key.hooks.afterMint(msg.sender, key, params, delta, hookData) != IHooks.afterMint.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }

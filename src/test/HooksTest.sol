@@ -31,12 +31,12 @@ contract HooksTest {
         return IHooks(hookAddress).shouldCallAfterSwap();
     }
 
-    function shouldCallBeforeModifyPosition(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeModifyPosition();
+    function shouldCallBeforeMint(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallBeforeMint();
     }
 
-    function shouldCallAfterModifyPosition(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterModifyPosition();
+    function shouldCallAfterMint(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallAfterMint();
     }
 
     function shouldCallBeforeDonate(address hookAddress) external pure returns (bool) {

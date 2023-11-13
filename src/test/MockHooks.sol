@@ -15,8 +15,9 @@ contract MockHooks is IHooks, IHookFeeManager {
 
     bytes public beforeInitializeData;
     bytes public afterInitializeData;
-    bytes public beforeModifyPositionData;
-    bytes public afterModifyPositionData;
+    bytes public beforeMintData;
+    bytes public afterMintData;
+    // TODO: add before/after burn data
     bytes public beforeSwapData;
     bytes public afterSwapData;
     bytes public beforeDonateData;
@@ -48,28 +49,27 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function beforeModifyPosition(
-        address,
-        PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
-        bytes calldata hookData
-    ) external override returns (bytes4) {
-        beforeModifyPositionData = hookData;
-        bytes4 selector = MockHooks.beforeModifyPosition.selector;
+    function beforeMint(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata hookData)
+        external
+        override
+        returns (bytes4)
+    {
+        beforeMintData = hookData;
+        bytes4 selector = MockHooks.beforeMint.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterModifyPosition(
-        address,
-        PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
-        BalanceDelta,
-        bytes calldata hookData
-    ) external override returns (bytes4) {
-        afterModifyPositionData = hookData;
-        bytes4 selector = MockHooks.afterModifyPosition.selector;
+    function afterMint(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, BalanceDelta, bytes calldata hookData)
+        external
+        override
+        returns (bytes4)
+    {
+        afterMintData = hookData;
+        bytes4 selector = MockHooks.afterMint.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
+
+    // TODO: Add before/after burn here
 
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata hookData)
         external

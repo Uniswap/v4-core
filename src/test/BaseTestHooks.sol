@@ -28,7 +28,7 @@ contract BaseTestHooks is IHooks {
         revert HookNotImplemented();
     }
 
-    function beforeModifyPosition(
+    function beforeMint(
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.ModifyPositionParams calldata, /* params **/
@@ -37,7 +37,7 @@ contract BaseTestHooks is IHooks {
         revert HookNotImplemented();
     }
 
-    function afterModifyPosition(
+    function afterMint(
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.ModifyPositionParams calldata, /* params **/

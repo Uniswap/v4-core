@@ -459,7 +459,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
         address payable mockAddr =
-            payable(address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
+            payable(address(uint160(Hooks.BEFORE_MINT_FLAG | Hooks.AFTER_MINT_FLAG)));
         address payable hookAddr = payable(MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
@@ -478,9 +478,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         BalanceDelta balanceDelta = modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
 
-        bytes32 beforeSelector = MockHooks.beforeModifyPosition.selector;
+        bytes32 beforeSelector = MockHooks.beforeMint.selector;
         bytes memory beforeParams = abi.encode(address(modifyPositionRouter), key, params, ZERO_BYTES);
-        bytes32 afterSelector = MockHooks.afterModifyPosition.selector;
+        bytes32 afterSelector = MockHooks.afterMint.selector;
         bytes memory afterParams = abi.encode(address(modifyPositionRouter), key, params, balanceDelta, ZERO_BYTES);
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
@@ -490,7 +490,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     }
 
     function test_mint_failsWithIncorrectSelectors() public {
-        address hookAddr = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_MINT_FLAG | Hooks.AFTER_MINT_FLAG));
 
         MockHooks impl = new MockHooks();
         vm.etch(hookAddr, address(impl).code);
@@ -504,21 +504,21 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, bytes4(0xdeadbeef));
-        mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, bytes4(0xdeadbeef));
+        mockHooks.setReturnValue(mockHooks.beforeMint.selector, bytes4(0xdeadbeef));
+        mockHooks.setReturnValue(mockHooks.afterMint.selector, bytes4(0xdeadbeef));
 
         // Fails at beforeModifyPosition hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
 
         // Fail at afterModifyPosition hook.
-        mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, mockHooks.beforeModifyPosition.selector);
+        mockHooks.setReturnValue(mockHooks.beforeMint.selector, mockHooks.beforeMint.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
     }
 
     function test_mint_succeedsWithCorrectSelectors() public {
-        address hookAddr = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_MINT_FLAG | Hooks.AFTER_MINT_FLAG));
 
         MockHooks impl = new MockHooks();
         vm.etch(hookAddr, address(impl).code);
@@ -532,8 +532,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, mockHooks.beforeModifyPosition.selector);
-        mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, mockHooks.afterModifyPosition.selector);
+        mockHooks.setReturnValue(mockHooks.beforeMint.selector, mockHooks.beforeMint.selector);
+        mockHooks.setReturnValue(mockHooks.afterMint.selector, mockHooks.afterMint.selector);
 
         vm.expectEmit(true, true, true, true);
         emit ModifyPosition(key.toId(), address(modifyPositionRouter), 0, 60, 100);
