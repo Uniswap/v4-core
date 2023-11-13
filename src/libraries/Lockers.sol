@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 /// @notice This is a temporary library that allows us to use transient storage (tstore/tload)
 /// for the lockers array and nonzero delta count.
+/// TODO: This library can be deleted when we have the transient keyword support in solidity.
 library Lockers {
     // The starting slot for an array of lockers, stored transiently.
     uint256 constant LOCKERS_SLOT = uint256(keccak256("Lockers")) - 1;
