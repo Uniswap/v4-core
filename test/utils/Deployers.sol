@@ -37,17 +37,20 @@ contract Deployers {
         }
     }
 
-    function createPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
+    function createAndInitPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
         public
         returns (PoolKey memory key, PoolId id)
     {
-        (key, id) = createPool(manager, hooks, fee, sqrtPriceX96, ZERO_BYTES);
+        (key, id) = createAndInitPool(manager, hooks, fee, sqrtPriceX96, ZERO_BYTES);
     }
 
-    function createPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96, bytes memory initData)
-        private
-        returns (PoolKey memory key, PoolId id)
-    {
+    function createAndInitPool(
+        PoolManager manager,
+        IHooks hooks,
+        uint24 fee,
+        uint160 sqrtPriceX96,
+        bytes memory initData
+    ) private returns (PoolKey memory key, PoolId id) {
         MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
         (Currency currency0, Currency currency1) = SortTokens.sort(tokens[0], tokens[1]);
         key = PoolKey(currency0, currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
@@ -61,19 +64,19 @@ contract Deployers {
         key = PoolKey(currency0, currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
     }
 
-    function createFreshPool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
+    function createAndInitFreshPool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
         internal
         returns (PoolManager manager, PoolKey memory key, PoolId id)
     {
-        (manager, key, id) = createFreshPool(hooks, fee, sqrtPriceX96, ZERO_BYTES);
+        (manager, key, id) = createAndInitFreshPool(hooks, fee, sqrtPriceX96, ZERO_BYTES);
     }
 
-    function createFreshPool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96, bytes memory initData)
+    function createAndInitFreshPool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96, bytes memory initData)
         internal
         returns (PoolManager manager, PoolKey memory key, PoolId id)
     {
         manager = createFreshManager();
-        (key, id) = createPool(manager, hooks, fee, sqrtPriceX96, initData);
+        (key, id) = createAndInitPool(manager, hooks, fee, sqrtPriceX96, initData);
         return (manager, key, id);
     }
 
