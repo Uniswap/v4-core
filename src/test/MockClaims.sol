@@ -10,10 +10,10 @@ contract MockClaims is Claims {
     using CurrencyLibrary for Currency;
 
     function mint(address to, Currency currency, uint256 amount) public {
-        _mint(to, currency.toId(), amount);
+        _mint(to, currency, amount);
     }
 
     function burn(Currency currency, uint256 amount) public {
-        _burn(currency.toId(), amount);
+        _burn(currency, amount);
     }
 }

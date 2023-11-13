@@ -8,45 +8,44 @@ import {IClaims} from "./interfaces/IClaims.sol";
 contract Claims is IClaims {
     using CurrencyLibrary for Currency;
 
-    // Mapping from Currency id to account balances
-    mapping(uint256 => mapping(address => uint256)) private balances;
+    // Mapping from Currency to account balances
+    mapping(Currency currency => mapping(address account => uint256)) private balances;
 
     /// @inheritdoc IClaims
     function balanceOf(address account, Currency currency) public view returns (uint256) {
-        return balances[currency.toId()][account];
+        return balances[currency][account];
     }
 
     /// @inheritdoc IClaims
     function transfer(address to, Currency currency, uint256 amount) public {
         if (to == address(this)) revert InvalidAddress();
 
-        uint256 id = currency.toId();
-        if (amount > balances[id][msg.sender]) revert InsufficientBalance();
+        if (amount > balances[currency][msg.sender]) revert InsufficientBalance();
         unchecked {
-            balances[id][msg.sender] -= amount;
+            balances[currency][msg.sender] -= amount;
         }
-        balances[id][to] += amount;
-        emit Transfer(msg.sender, to, id, amount);
+        balances[currency][to] += amount;
+        emit Transfer(msg.sender, to, currency, amount);
     }
 
-    /// @notice Mint `amount` of currency `id` to `to`
+    /// @notice Mint `amount` of currency to address
     /// @param to The address to mint to
-    /// @param id The id to mint
+    /// @param currency The currency to mint
     /// @param amount The amount to mint
-    function _mint(address to, uint256 id, uint256 amount) internal {
-        balances[id][to] += amount;
-        emit Mint(to, id, amount);
+    function _mint(address to, Currency currency, uint256 amount) internal {
+        balances[currency][to] += amount;
+        emit Mint(to, currency, amount);
     }
 
-    /// @notice Burn `amount` of currency `id` from `msg.sender`
-    /// @param id The id of the currency to burn
+    /// @notice Burn `amount` of currency from msg.sender
+    /// @param currency The currency to mint
     /// @param amount The amount to burn
     /// @dev Will revert if the sender does not have enough balance
-    function _burn(uint256 id, uint256 amount) internal {
-        if (amount > balances[id][msg.sender]) revert InsufficientBalance();
+    function _burn(Currency currency, uint256 amount) internal {
+        if (amount > balances[currency][msg.sender]) revert InsufficientBalance();
         unchecked {
-            balances[id][msg.sender] -= amount;
+            balances[currency][msg.sender] -= amount;
         }
-        emit Burn(msg.sender, id, amount);
+        emit Burn(msg.sender, currency, amount);
     }
 }

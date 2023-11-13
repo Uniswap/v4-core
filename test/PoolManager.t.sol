@@ -63,8 +63,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         int24 tick,
         uint24 fee
     );
-    event Mint(address indexed to, uint256 indexed id, uint256 amount);
-    event Burn(address indexed from, uint256 indexed id, uint256 amount);
+    event Mint(address indexed to, Currency indexed currency, uint256 amount);
+    event Burn(address indexed from, Currency indexed currency, uint256 amount);
     event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
 
     Pool.State state;
@@ -856,7 +856,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         );
 
         vm.expectEmit(true, true, true, false);
-        emit Mint(address(swapRouter), CurrencyLibrary.toId(currency1), 98);
+        emit Mint(address(swapRouter), currency1, 98);
         snapStart("swap mint output as claim");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
@@ -880,7 +880,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             key, IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18}), ZERO_BYTES
         );
         vm.expectEmit(true, true, true, false);
-        emit Mint(address(swapRouter), CurrencyLibrary.toId(currency1), 98);
+        emit Mint(address(swapRouter), currency1, 98);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
         uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
@@ -892,7 +892,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
 
         vm.expectEmit(true, true, true, false);
-        emit Burn(address(swapRouter), CurrencyLibrary.toId(currency1), 27);
+        emit Burn(address(swapRouter), currency1, 27);
         snapStart("swap burn claim for input");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();

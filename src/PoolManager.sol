@@ -334,13 +334,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     /// @inheritdoc IPoolManager
     function mint(Currency currency, address to, uint256 amount) external noDelegateCall onlyByLocker {
         _accountDelta(currency, amount.toInt128());
-        _mint(to, currency.toId(), amount);
+        _mint(to, currency, amount);
     }
 
     /// @inheritdoc IPoolManager
     function burn(Currency currency, uint256 amount) external noDelegateCall onlyByLocker {
         _accountDelta(currency, -(amount.toInt128()));
-        _burn(currency.toId(), amount);
+        _burn(currency, amount);
     }
 
     function setProtocolFees(PoolKey memory key) external {

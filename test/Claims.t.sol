@@ -13,21 +13,21 @@ contract ClaimsTest is TokenFixture, Test {
 
     MockClaims claimsImpl = new MockClaims();
 
-    event Mint(address indexed to, uint256 indexed id, uint256 amount);
-    event Burn(address indexed from, uint256 indexed id, uint256 amount);
-    event Transfer(address indexed from, address indexed to, uint256 indexed id, uint256 amount);
+    event Mint(address indexed to, Currency indexed currency, uint256 amount);
+    event Burn(address indexed from, Currency indexed currency, uint256 amount);
+    event Transfer(address indexed from, address indexed to, Currency indexed currency, uint256 amount);
 
     function setUp() public {}
 
     function testCanBurn(uint256 amount) public {
         assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
         vm.expectEmit(true, true, false, false);
-        emit Mint(address(this), currency0.toId(), amount);
+        emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
         assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
 
         vm.expectEmit(true, true, false, false);
-        emit Burn(address(this), currency0.toId(), amount);
+        emit Burn(address(this), currency0, amount);
         claimsImpl.burn(currency0, amount);
         assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
     }
@@ -35,7 +35,7 @@ contract ClaimsTest is TokenFixture, Test {
     function testCatchesUnderflowOnBurn(uint256 amount) public {
         vm.assume(amount < type(uint256).max - 1);
         vm.expectEmit(true, true, false, false);
-        emit Mint(address(this), currency0.toId(), amount);
+        emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
 
         assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
@@ -45,12 +45,12 @@ contract ClaimsTest is TokenFixture, Test {
 
     function testCanTransfer(uint256 amount) public {
         vm.expectEmit(true, true, false, false);
-        emit Mint(address(this), currency0.toId(), amount);
+        emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
 
         assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
         vm.expectEmit(true, true, true, false);
-        emit Transfer(address(this), address(1), currency0.toId(), amount);
+        emit Transfer(address(this), address(1), currency0, amount);
         claimsImpl.transfer(address(1), currency0, amount);
         assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
         assertEq(claimsImpl.balanceOf(address(1), currency0), amount);
@@ -59,7 +59,7 @@ contract ClaimsTest is TokenFixture, Test {
     function testCatchesUnderflowOnTransfer(uint256 amount) public {
         vm.assume(amount < type(uint256).max - 1);
         vm.expectEmit(true, true, false, false);
-        emit Mint(address(this), currency0.toId(), amount);
+        emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
 
         assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
@@ -78,7 +78,7 @@ contract ClaimsTest is TokenFixture, Test {
     function testCanTransferToZeroAddress() public {
         claimsImpl.mint(address(this), currency0, 1);
         vm.expectEmit(true, true, true, false);
-        emit Transfer(address(this), address(0), currency0.toId(), 1);
+        emit Transfer(address(this), address(0), currency0, 1);
         claimsImpl.transfer(address(0), currency0, 1);
         assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
     }
