@@ -9,7 +9,7 @@ contract Claims is IClaims {
     using CurrencyLibrary for Currency;
 
     // Mapping from Currency id to account balances
-    mapping(uint256 => mapping(address => uint256)) public balances;
+    mapping(uint256 => mapping(address => uint256)) private balances;
 
     /// @inheritdoc IClaims
     function balanceOf(address account, Currency currency) public view returns (uint256) {

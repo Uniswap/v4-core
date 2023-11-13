@@ -20,14 +20,16 @@ contract ClaimsTest is TokenFixture, Test {
     function setUp() public {}
 
     function testCanBurn(uint256 amount) public {
+        assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
         vm.expectEmit(true, true, false, false);
         emit Mint(address(this), currency0.toId(), amount);
         claimsImpl.mint(address(this), currency0, amount);
-
         assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
+
         vm.expectEmit(true, true, false, false);
         emit Burn(address(this), currency0.toId(), amount);
         claimsImpl.burn(currency0, amount);
+        assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
     }
 
     function testCatchesUnderflowOnBurn(uint256 amount) public {
@@ -50,6 +52,8 @@ contract ClaimsTest is TokenFixture, Test {
         vm.expectEmit(true, true, true, false);
         emit Transfer(address(this), address(1), currency0.toId(), amount);
         claimsImpl.transfer(address(1), currency0, amount);
+        assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
+        assertEq(claimsImpl.balanceOf(address(1), currency0), amount);
     }
 
     function testCatchesUnderflowOnTransfer(uint256 amount) public {
@@ -69,5 +73,19 @@ contract ClaimsTest is TokenFixture, Test {
         // transfer will revert since overflow
         vm.expectRevert();
         claimsImpl.transfer(address(0xdead), currency0, 1);
+    }
+
+    function testCanTransferToZeroAddress() public {
+        claimsImpl.mint(address(this), currency0, 1);
+        vm.expectEmit(true, true, true, false);
+        emit Transfer(address(this), address(0), currency0.toId(), 1);
+        claimsImpl.transfer(address(0), currency0, 1);
+        assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
+    }
+
+    function testTransferToClaimsContractFails() public {
+        claimsImpl.mint(address(this), currency0, 1);
+        vm.expectRevert(abi.encodeWithSelector(IClaims.InvalidAddress.selector));
+        claimsImpl.transfer(address(claimsImpl), currency0, 1);
     }
 }
