@@ -10,10 +10,10 @@ interface IClaims {
     /// @notice Thrown when transferring Claims to this address
     error InvalidAddress();
 
-    /// @notice Get the balance of `account` for `currency`
-    /// @param account The account to get the balance of
-    /// @param currency The currency to get the balance of
-    function balanceOf(address account, Currency currency) external returns (uint256);
+    // /// @notice Get the balance of `account` for `currency`
+    // /// @param account The account to get the balance of
+    // /// @param currency The currency to get the balance of
+    // function balanceOf(address account, Currency currency) external returns (uint256);
 
     /// @notice Transfer `amount` of `currency` from sender to `to`
     /// @param to The address to transfer to

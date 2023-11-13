@@ -20,16 +20,16 @@ contract ClaimsTest is TokenFixture, Test {
     function setUp() public {}
 
     function testCanBurn(uint256 amount) public {
-        assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
+        assertEq(claimsImpl.balances(currency0, address(this)), 0);
         vm.expectEmit(true, true, false, false);
         emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
-        assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
+        assertEq(claimsImpl.balances(currency0, address(this)), amount);
 
         vm.expectEmit(true, true, false, false);
         emit Burn(address(this), currency0, amount);
         claimsImpl.burn(currency0, amount);
-        assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
+        assertEq(claimsImpl.balances(currency0, address(this)), 0);
     }
 
     function testCatchesUnderflowOnBurn(uint256 amount) public {
@@ -38,7 +38,7 @@ contract ClaimsTest is TokenFixture, Test {
         emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
 
-        assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
+        assertEq(claimsImpl.balances(currency0, address(this)), amount);
         vm.expectRevert(abi.encodeWithSelector(IClaims.InsufficientBalance.selector));
         claimsImpl.burn(currency0, amount + 1);
     }
@@ -48,12 +48,12 @@ contract ClaimsTest is TokenFixture, Test {
         emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
 
-        assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
+        assertEq(claimsImpl.balances(currency0, address(this)), amount);
         vm.expectEmit(true, true, true, false);
         emit Transfer(address(this), address(1), currency0, amount);
         claimsImpl.transfer(address(1), currency0, amount);
-        assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
-        assertEq(claimsImpl.balanceOf(address(1), currency0), amount);
+        assertEq(claimsImpl.balances(currency0, address(this)), 0);
+        assertEq(claimsImpl.balances(currency0, address(1)), amount);
     }
 
     function testCatchesUnderflowOnTransfer(uint256 amount) public {
@@ -62,7 +62,7 @@ contract ClaimsTest is TokenFixture, Test {
         emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
 
-        assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
+        assertEq(claimsImpl.balances(currency0, address(this)), amount);
         vm.expectRevert(abi.encodeWithSelector(IClaims.InsufficientBalance.selector));
         claimsImpl.transfer(address(1), currency0, amount + 1);
     }
@@ -80,7 +80,7 @@ contract ClaimsTest is TokenFixture, Test {
         vm.expectEmit(true, true, true, false);
         emit Transfer(address(this), address(0), currency0, 1);
         claimsImpl.transfer(address(0), currency0, 1);
-        assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
+        assertEq(claimsImpl.balances(currency0, address(this)), 0);
     }
 
     function testTransferToClaimsContractFails() public {
