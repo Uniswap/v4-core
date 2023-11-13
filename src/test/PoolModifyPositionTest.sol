@@ -5,12 +5,12 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {TakeAndSettler} from "./TakeAndSettler.sol";
+import {TestBase} from "./TestBase.sol";
 
-contract PoolModifyPositionTest is TakeAndSettler {
+contract PoolModifyPositionTest is TestBase {
     using CurrencyLibrary for Currency;
 
-    constructor(IPoolManager _manager) TakeAndSettler(_manager) {}
+    constructor(IPoolManager _manager) TestBase(_manager) {}
 
     struct CallbackData {
         address sender;

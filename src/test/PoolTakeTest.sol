@@ -4,14 +4,14 @@ pragma solidity ^0.8.20;
 import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {TakeAndSettler} from "./TakeAndSettler.sol";
+import {TestBase} from "./TestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 
-contract PoolTakeTest is TakeAndSettler {
+contract PoolTakeTest is TestBase {
     using CurrencyLibrary for Currency;
     using SafeCast for uint256;
 
-    constructor(IPoolManager _manager) TakeAndSettler(_manager) {}
+    constructor(IPoolManager _manager) TestBase(_manager) {}
 
     struct CallbackData {
         address sender;
@@ -29,24 +29,28 @@ contract PoolTakeTest is TakeAndSettler {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        if (data.amount0 > 0) {
-            uint256 balBefore = data.key.currency0.balanceOf(data.sender);
-            _take(data.key.currency0, data.sender, -data.amount0.toInt128(), true);
-            uint256 balAfter = data.key.currency0.balanceOf(data.sender);
-            require(balAfter - balBefore == data.amount0);
-
-            _settle(data.key.currency0, data.sender, data.amount0.toInt128(), true);
-        }
-
-        if (data.amount1 > 0) {
-            uint256 balBefore = data.key.currency1.balanceOf(data.sender);
-            _take(data.key.currency1, data.sender, -data.amount1.toInt128(), true);
-            uint256 balAfter = data.key.currency1.balanceOf(data.sender);
-            require(balAfter - balBefore == data.amount1);
-
-            _settle(data.key.currency1, data.sender, data.amount1.toInt128(), true);
-        }
+        if (data.amount0 > 0) _testTake(data.key.currency0, data.sender, data.amount0);
+        if (data.amount1 > 0) _testTake(data.key.currency1, data.sender, data.amount1);
 
         return abi.encode(0);
+    }
+
+    function _testTake(Currency currency, address sender, uint256 amount) internal {
+        (uint256 userBalBefore, uint256 pmBalBefore, uint256 reserveBefore, int256 deltaBefore) =
+            _fetchBalances(currency, sender);
+        assert(deltaBefore == 0);
+
+        _take(currency, sender, -(amount.toInt128()), true);
+
+        (uint256 userBalAfter, uint256 pmBalAfter, uint256 reserveAfter, int256 deltaAfter) =
+            _fetchBalances(currency, sender);
+        assert(deltaAfter == amount.toInt128());
+
+        assert(userBalAfter - userBalBefore == amount);
+        assert(pmBalBefore - pmBalAfter == amount);
+        assert(reserveBefore - reserveAfter == amount);
+        assert(reserveBefore - reserveAfter == amount);
+
+        _settle(currency, sender, amount.toInt128(), true);
     }
 }

@@ -6,7 +6,7 @@ import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
-abstract contract TakeAndSettler is ILockCallback {
+abstract contract TestBase is ILockCallback {
     using CurrencyLibrary for Currency;
 
     IPoolManager public immutable manager;
@@ -39,5 +39,16 @@ abstract contract TakeAndSettler is ILockCallback {
                 payer, address(manager), uint256(uint160(Currency.unwrap(currency))), uint128(amount), ""
             );
         }
+    }
+
+    function _fetchBalances(Currency currency, address user)
+        internal
+        view
+        returns (uint256 userBalance, uint256 poolBalance, uint256 reserves, int256 delta)
+    {
+        userBalance = currency.balanceOf(user);
+        poolBalance = currency.balanceOf(address(manager));
+        reserves = manager.reservesOf(currency);
+        delta = manager.currencyDelta(address(this), currency);
     }
 }
