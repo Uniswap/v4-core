@@ -58,7 +58,7 @@ contract TickTest is Test, GasSnapshot {
     }
 
     function clear(int24 tick) internal {
-        pool.ticks.removeTick(tick, pool.tickHead);
+        pool.ticks.removeTick(tick, pool.nearbyTick);
     }
 
     function cross(int24 tick, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128)

@@ -31,31 +31,32 @@ library TickList {
     /// @param tick The starting tick
     /// @param lte Whether to search for the next initialized tick to the left (less than or equal to the starting tick)
     /// @return nextTick The next initialized or uninitialized tick up to 256 ticks away from the current tick
-    function next(mapping(int24 => TickInfo) storage self, int24 tick, bool lte)
+    function next(mapping(int24 => TickInfo) storage self, int24 tick, bool lte, int24 nearbyTick)
         internal
         view
         returns (int24 nextTick)
     {
+        // no initialized ticks, so return min or max
+        if (nearbyTick == NULL_TICK) return lte ? TickMath.MIN_TICK : TickMath.MAX_TICK;
+
         nextTick = lte ? self[tick].prev : self[tick].next;
+
+        // current tick is uninitialized, so find the next initialized tick
+        if (tick == 0 && nextTick == 0) {
+            if (lte) {
+                nextTick = nearbyTick < tick ? nearbyTick : self[nearbyTick].prev;
+            } else {
+                nextTick = nearbyTick > tick ? nearbyTick : self[nearbyTick].next;
+            }
+        }
 
         // If we hit the last initialized tick,
         // or if the current tick is uninitialized, i.e. there are no initialized ticks
         // set next to the max or min
-        if (nextTick == TickList.NULL_TICK || (tick == 0 && nextTick == 0)) {
+        if (nextTick == NULL_TICK) {
             nextTick = lte ? TickMath.MIN_TICK : TickMath.MAX_TICK;
         }
     }
-    //
-    // function initialize(mapping(int24 => TickInfo) storage self, int24 tick) internal {
-    //     self[tick] = TickInfo({
-    //         liquidityGross: 0,
-    //         liquidityNet: 0,
-    //         feeGrowthOutside0X128: 0,
-    //         feeGrowthOutside1X128: 0,
-    //         next: TickMath.MAX_TICK,
-    //         prev: TickMath.MIN_TICK
-    //     });
-    // }
 
     /// @notice Adds the given tick to the list
     function insertTick(mapping(int24 => TickInfo) storage self, int24 tick, int24 nearbyTick)
@@ -63,10 +64,13 @@ library TickList {
         returns (int24 newNearbyTick)
     {
         // TODO: add indicative nearby tick
-
         if (nearbyTick == NULL_TICK) {
             self[tick].next = NULL_TICK;
             self[tick].prev = NULL_TICK;
+            // set head and tail pointers as null next and prev
+            // this helps when later adding new ticks on the edges
+            self[NULL_TICK].next = tick;
+            self[NULL_TICK].prev = tick;
             return tick;
         }
 
@@ -74,7 +78,7 @@ library TickList {
         if (tick < nearbyTick) {
             int24 curr = nearbyTick;
             // TODO: use indicative tick from params to improve this
-            while (tick < curr) {
+            while (tick < curr && curr != NULL_TICK) {
                 curr = self[curr].prev;
             }
             // assume tick != curr since this is only called on a new tick
@@ -90,7 +94,7 @@ library TickList {
             // assume tick != nearbyTick since this is only called on a new tick
             int24 curr = nearbyTick;
             // TODO: use indicative tick from params to improve this
-            while (tick > curr) {
+            while (tick > curr && curr != NULL_TICK) {
                 curr = self[curr].next;
             }
             // assume tick != curr since this is only called on a new tick

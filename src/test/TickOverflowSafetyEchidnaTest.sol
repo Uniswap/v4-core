@@ -46,7 +46,7 @@ contract TickOverflowSafetyEchidnaTest {
         if (flippedLower) {
             if (liquidityDelta < 0) {
                 assert(pool.ticks[tickLower].liquidityGross == 0);
-                pool.ticks.removeTick(tickLower, pool.tickHead);
+                pool.ticks.removeTick(tickLower, pool.nearbyTick);
             } else {
                 assert(pool.ticks[tickLower].liquidityGross > 0);
             }
@@ -55,7 +55,7 @@ contract TickOverflowSafetyEchidnaTest {
         if (flippedUpper) {
             if (liquidityDelta < 0) {
                 assert(pool.ticks[tickUpper].liquidityGross == 0);
-                pool.ticks.removeTick(tickUpper, pool.tickHead);
+                pool.ticks.removeTick(tickUpper, pool.nearbyTick);
             } else {
                 assert(pool.ticks[tickUpper].liquidityGross > 0);
             }

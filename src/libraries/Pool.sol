@@ -211,14 +211,14 @@ library Pool {
 
             // clear any tick data that is no longer needed
             if (state.flippedLower) {
-                self.nearbyTick = params.liquidityDelta < 0
-                    ? self.ticks.insertTick(params.tickLower, self.tickHead)
-                    : self.ticks.removeTick(params.tickLower, self.tickHead);
+                self.nearbyTick = params.liquidityDelta > 0
+                    ? self.ticks.insertTick(params.tickLower, self.nearbyTick)
+                    : self.ticks.removeTick(params.tickLower, self.nearbyTick);
             }
             if (state.flippedUpper) {
                 self.nearbyTick = params.liquidityDelta > 0
-                    ? self.ticks.insertTick(params.tickUpper, self.tickHead)
-                    : self.ticks.removeTick(params.tickUpper, self.tickHead);
+                    ? self.ticks.insertTick(params.tickUpper, self.nearbyTick)
+                    : self.ticks.removeTick(params.tickUpper, self.nearbyTick);
             }
         }
 
@@ -424,7 +424,7 @@ library Pool {
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
-            step.tickNext = self.ticks.next(state.tick, params.zeroForOne);
+            step.tickNext = self.ticks.next(state.tick, params.zeroForOne, self.nearbyTick);
 
             // get the price for the next tick
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
