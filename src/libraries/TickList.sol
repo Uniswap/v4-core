@@ -58,58 +58,76 @@ library TickList {
     // }
 
     /// @notice Adds the given tick to the list
-    function insertTick(mapping(int24 => TickInfo) storage self, int24 tick, int24 head)
+    function insertTick(mapping(int24 => TickInfo) storage self, int24 tick, int24 nearbyTick)
         internal
-        returns (int24 newHead)
+        returns (int24 newNearbyTick)
     {
-        if (head == NULL_TICK) {
+        // TODO: add indicative nearby tick
+
+        if (nearbyTick == NULL_TICK) {
             self[tick].next = NULL_TICK;
             self[tick].prev = NULL_TICK;
             return tick;
         }
 
-        if (tick < head) {
-            self[tick].next = head;
-            self[tick].prev = NULL_TICK;
-            self[head].prev = tick;
-            return tick;
+        // tick to add is below nearbyTick so we iterate backwards
+        if (tick < nearbyTick) {
+            int24 curr = nearbyTick;
+            // TODO: use indicative tick from params to improve this
+            while (tick < curr) {
+                curr = self[curr].prev;
+            }
+            // assume tick != curr since this is only called on a new tick
+            self[tick].prev = curr;
+            int24 nextTick = self[curr].next;
+            self[tick].next = nextTick;
+            self[curr].next = tick;
+            self[nextTick].prev = tick;
+
+            // TODO: compare to currentTick and return if tick is now more nearby
+            return nearbyTick;
+        } else {
+            // assume tick != nearbyTick since this is only called on a new tick
+            int24 curr = nearbyTick;
+            // TODO: use indicative tick from params to improve this
+            while (tick > curr) {
+                curr = self[curr].next;
+            }
+            // assume tick != curr since this is only called on a new tick
+            self[tick].next = curr;
+            int24 prev = self[curr].prev;
+            self[tick].prev = prev;
+            self[curr].prev = tick;
+            self[prev].next = tick;
+
+            // TODO: compare to currentTick and return if tick is now more nearby
+            return nearbyTick;
         }
 
-        int24 curr = head;
-        // TODO: use indicative tick from params to improve this
-        while (tick > curr) {
-            curr = self[curr].next;
-        }
-        // assume tick != curr since this is only called on a new tick
-
-        self[tick].next = curr;
-        int24 prev = self[curr].prev;
-        self[tick].prev = prev;
-        self[curr].prev = tick;
-        self[prev].next = tick;
-        return head;
     }
 
     /// @notice Removes tick data from the list
     /// @param self The mapping containing all initialized tick information for initialized ticks
     /// @param tick The tick that will be cleared
-    function removeTick(mapping(int24 => TickInfo) storage self, int24 tick, int24 head)
+    function removeTick(mapping(int24 => TickInfo) storage self, int24 tick, int24 nearbyTick)
         internal
-        returns (int24 newHead)
+        returns (int24 newNearbyTick)
     {
         TickInfo memory tickInfo = self[tick];
 
+        newNearbyTick = tick;
+        // nearbyTick is being removed, so we set it to the new nearby tick
+        if (tick == nearbyTick) {
+            newNearbyTick = tickInfo.next != NULL_TICK ? tickInfo.next : tickInfo.prev;
+        }
+
         if (tickInfo.prev != NULL_TICK) {
             self[tickInfo.prev].next = tickInfo.next;
-        } else {
-            // we are deleting the head, so new head should be next
-            newHead = tickInfo.next;
         }
 
         if (tickInfo.next != NULL_TICK) {
             self[tickInfo.next].prev = tickInfo.prev;
         }
         delete self[tick];
-        return head;
     }
 }

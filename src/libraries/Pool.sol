@@ -84,7 +84,7 @@ library Pool {
         uint256 feeGrowthGlobal0X128;
         uint256 feeGrowthGlobal1X128;
         uint128 liquidity;
-        int24 tickHead;
+        int24 nearbyTick;
         mapping(int24 => TickInfo) ticks;
         mapping(bytes32 => Position.Info) positions;
     }
@@ -111,7 +111,7 @@ library Pool {
             hookFees: hookFees,
             swapFee: swapFee
         });
-        self.tickHead = TickList.NULL_TICK;
+        self.nearbyTick = TickList.NULL_TICK;
     }
 
     function getSwapFee(uint24 feesStorage) internal pure returns (uint16) {
@@ -211,12 +211,12 @@ library Pool {
 
             // clear any tick data that is no longer needed
             if (state.flippedLower) {
-                self.tickHead = params.liquidityDelta < 0
+                self.nearbyTick = params.liquidityDelta < 0
                     ? self.ticks.insertTick(params.tickLower, self.tickHead)
                     : self.ticks.removeTick(params.tickLower, self.tickHead);
             }
             if (state.flippedUpper) {
-                self.tickHead = params.liquidityDelta > 0
+                self.nearbyTick = params.liquidityDelta > 0
                     ? self.ticks.insertTick(params.tickUpper, self.tickHead)
                     : self.ticks.removeTick(params.tickUpper, self.tickHead);
             }
