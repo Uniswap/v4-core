@@ -2,20 +2,16 @@
 pragma solidity ^0.8.20;
 
 import {Currency, CurrencyLibrary} from "../types/Currency.sol";
-import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-
-import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {TakeAndSettler} from "./TakeAndSettler.sol";
+import {SafeCast} from "../libraries/SafeCast.sol";
 
-contract PoolTakeTest is ILockCallback {
+contract PoolTakeTest is TakeAndSettler {
     using CurrencyLibrary for Currency;
+    using SafeCast for uint256;
 
-    IPoolManager public immutable manager;
-
-    constructor(IPoolManager _manager) {
-        manager = _manager;
-    }
+    constructor(IPoolManager _manager) TakeAndSettler(_manager) {}
 
     struct CallbackData {
         address sender;
@@ -35,34 +31,20 @@ contract PoolTakeTest is ILockCallback {
 
         if (data.amount0 > 0) {
             uint256 balBefore = data.key.currency0.balanceOf(data.sender);
-            manager.take(data.key.currency0, data.sender, data.amount0);
+            _take(data.key.currency0, data.sender, -data.amount0.toInt128(), true);
             uint256 balAfter = data.key.currency0.balanceOf(data.sender);
             require(balAfter - balBefore == data.amount0);
 
-            if (data.key.currency0.isNative()) {
-                manager.settle{value: uint256(data.amount0)}(data.key.currency0);
-            } else {
-                IERC20Minimal(Currency.unwrap(data.key.currency0)).transferFrom(
-                    data.sender, address(manager), uint256(data.amount0)
-                );
-                manager.settle(data.key.currency0);
-            }
+            _settle(data.key.currency0, data.sender, data.amount0.toInt128(), true);
         }
 
         if (data.amount1 > 0) {
             uint256 balBefore = data.key.currency1.balanceOf(data.sender);
-            manager.take(data.key.currency1, data.sender, data.amount1);
+            _take(data.key.currency1, data.sender, -data.amount1.toInt128(), true);
             uint256 balAfter = data.key.currency1.balanceOf(data.sender);
             require(balAfter - balBefore == data.amount1);
 
-            if (data.key.currency1.isNative()) {
-                manager.settle{value: uint256(data.amount1)}(data.key.currency1);
-            } else {
-                IERC20Minimal(Currency.unwrap(data.key.currency1)).transferFrom(
-                    data.sender, address(manager), uint256(data.amount1)
-                );
-                manager.settle(data.key.currency1);
-            }
+            _settle(data.key.currency1, data.sender, data.amount1.toInt128(), true);
         }
 
         return abi.encode(0);

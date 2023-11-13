@@ -94,9 +94,9 @@ library SqrtPriceMath {
                     : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity)
             );
 
-            if(sqrtPX96 <= quotient) revert NotEnoughLiquidity();
+            if (sqrtPX96 <= quotient) revert NotEnoughLiquidity();
             // always fits 160 bits
-            unchecked { 
+            unchecked {
                 return uint160(sqrtPX96 - quotient);
             }
         }
@@ -161,7 +161,7 @@ library SqrtPriceMath {
             uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
             uint256 numerator2 = sqrtRatioBX96 - sqrtRatioAX96;
 
-            if(sqrtRatioAX96 == 0) revert InvalidPrice();
+            if (sqrtRatioAX96 == 0) revert InvalidPrice();
 
             return roundUp
                 ? UnsafeMath.divRoundingUp(FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtRatioBX96), sqrtRatioAX96)
