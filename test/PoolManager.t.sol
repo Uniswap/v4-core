@@ -410,7 +410,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
     function test_mint_failsIfNotInitialized() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
-        vm.expectRevert();
+        vm.expectRevert(Pool.PoolNotInitialized.selector);
         modifyPositionRouter.modifyPosition(
             key, IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}), ZERO_BYTES
         );
@@ -603,7 +603,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
-        vm.expectRevert();
+        vm.expectRevert(Pool.PoolNotInitialized.selector);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
     }
 
@@ -807,7 +807,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
         modifyPositionRouter.modifyPosition{value: 1 ether}(key, liqParams, ZERO_BYTES);
 
-        snapStart("simple swap");
+        snapStart("simple swap with native");
         swapRouter.swap{value: 100}(key, swapParams, testSettings, ZERO_BYTES);
         snapEnd();
     }
@@ -1107,7 +1107,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
 
         (uint256 amount0, uint256 amount1) = currency0Invalid ? (1, 0) : (0, 1);
-        vm.expectRevert();
+        vm.expectRevert(CurrencyLibrary.ERC20TransferFailed.selector);
         takeRouter.take(key, amount0, amount1);
 
         // should not revert when non zero amount passed in for valid currency
