@@ -36,6 +36,7 @@ interface IHooks {
     ) external returns (bytes4);
 
     /// @notice The hook called before a position is minted
+    /// @notice only called when liquidity delta is positive
     /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
     /// @param params The parameters for modifying the position
@@ -49,6 +50,7 @@ interface IHooks {
     ) external returns (bytes4);
 
     /// @notice The hook called after a position is minted
+    /// @notice only called when liquidity delta is positive
     /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
     /// @param params The parameters for modifying the position

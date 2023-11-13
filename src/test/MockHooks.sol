@@ -59,11 +59,13 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterMint(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, BalanceDelta, bytes calldata hookData)
-        external
-        override
-        returns (bytes4)
-    {
+    function afterMint(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        BalanceDelta,
+        bytes calldata hookData
+    ) external override returns (bytes4) {
         afterMintData = hookData;
         bytes4 selector = MockHooks.afterMint.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];

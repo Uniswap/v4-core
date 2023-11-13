@@ -52,12 +52,13 @@ contract EmptyTestHooks is IHooks {
         return IHooks.beforeMint.selector;
     }
 
-    function afterMint(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, BalanceDelta, bytes calldata)
-        external
-        pure
-        override
-        returns (bytes4)
-    {
+    function afterMint(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        BalanceDelta,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         return IHooks.afterMint.selector;
     }
 

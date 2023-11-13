@@ -458,8 +458,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot, IERC1155
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address payable mockAddr =
-            payable(address(uint160(Hooks.BEFORE_MINT_FLAG | Hooks.AFTER_MINT_FLAG)));
+        address payable mockAddr = payable(address(uint160(Hooks.BEFORE_MINT_FLAG | Hooks.AFTER_MINT_FLAG)));
         address payable hookAddr = payable(MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
