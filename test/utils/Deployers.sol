@@ -38,7 +38,7 @@ contract Deployers {
     }
 
     function createAndInitPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
-        public
+        internal
         returns (PoolKey memory key, PoolId id)
     {
         (key, id) = createAndInitPool(manager, hooks, fee, sqrtPriceX96, ZERO_BYTES);
