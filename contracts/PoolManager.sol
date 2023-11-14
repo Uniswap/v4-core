@@ -35,10 +35,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
     using FeeLibrary for uint24;
 
     /// @inheritdoc IPoolManager
-    int24 public constant override MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
+    int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
     /// @inheritdoc IPoolManager
-    int24 public constant override MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
+    int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
     /// @inheritdoc IPoolManager
     IPoolManager.LockData public override lockData;
