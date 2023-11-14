@@ -46,6 +46,8 @@ All contributions must follow the below standards. Maintainers will close out PR
 
 ## Setup
 
+Run `source .env` to set FOUNDRY_SOLC to the correct solc binary.
+
 `forge build` to get contract artifacts and dependencies for forge
 
 ## Tests

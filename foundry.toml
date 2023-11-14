@@ -5,7 +5,6 @@ via_ir = false
 ffi = true
 fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./out"}]
 cancun = true
-solc = "./bin/solc"
 
 [profile.default.fuzz]
 runs = 100
