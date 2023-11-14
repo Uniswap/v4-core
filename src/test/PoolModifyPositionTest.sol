@@ -30,7 +30,9 @@ contract PoolModifyPositionTest is ILockCallback {
         payable
         returns (BalanceDelta delta)
     {
-        delta = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, params, hookData))), (BalanceDelta));
+        delta = abi.decode(
+            manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, params, hookData))), (BalanceDelta)
+        );
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {

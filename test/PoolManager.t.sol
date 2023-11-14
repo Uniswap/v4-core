@@ -586,6 +586,57 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         snapEnd();
     }
 
+    function test_mint_withHooks_EOAInitiated() public {
+        address hookEmptyAddr = EMPTY_HOOKS;
+        MockHooks impl = new MockHooks();
+        vm.etch(hookEmptyAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: mockHooks, tickSpacing: 60});
+
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        snapStart("mintWithEmptyHookEOAInitiated");
+        manager.lock(
+            address(modifyPositionRouter),
+            abi.encode(
+                PoolModifyPositionTest.CallbackData(
+                    address(this),
+                    key,
+                    IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}),
+                    ZERO_BYTES
+                )
+            )
+        );
+
+        snapEnd();
+    }
+
+    function test_swap_EOAInitiated() public {
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
+
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        IPoolManager.ModifyPositionParams memory liqParams =
+            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true});
+
+        snapStart("simpleSwapEOAInitiated");
+        manager.lock(
+            address(swapRouter),
+            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, key, params, ZERO_BYTES))
+        );
+        snapEnd();
+    }
+
     function test_swap_failsIfNotInitialized(uint160 sqrtPriceX96) public {
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);

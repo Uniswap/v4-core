@@ -14,7 +14,7 @@ contract PoolLockTest is ILockCallback {
     }
 
     function lock() external {
-        manager.lock("");
+        manager.lock(address(this), "");
     }
 
     /// @notice Called by the pool manager on `msg.sender` when a lock is acquired

@@ -138,11 +138,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function lock(bytes calldata data) external override returns (bytes memory result) {
-        lockData.push(msg.sender);
+    function lock(address lockTarget, bytes calldata data) external override returns (bytes memory result) {
+        lockData.push(lockTarget);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(msg.sender).lockAcquired(data);
+        result = ILockCallback(lockTarget).lockAcquired(data);
 
         if (lockData.length == 1) {
             if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();

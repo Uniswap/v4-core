@@ -15,7 +15,7 @@ contract TokenLocker is ILockCallback {
     using CurrencyLibrary for Currency;
 
     function main(IPoolManager manager, Currency currency, bool reclaim) external {
-        manager.lock(abi.encode(currency, reclaim));
+        manager.lock(address(this), abi.encode(currency, reclaim));
     }
 
     function lockAcquired(bytes calldata data) external returns (bytes memory) {
@@ -55,7 +55,7 @@ contract SimpleLinearLocker is ILockCallback {
 
     function main(IPoolManager manager, uint256 timesToReenter, function(uint256) external checker_) external {
         checker = checker_;
-        manager.lock(abi.encode(timesToReenter, 0));
+        manager.lock(address(this), abi.encode(timesToReenter, 0));
     }
 
     function lockAcquired(bytes calldata data) external returns (bytes memory) {
@@ -63,7 +63,7 @@ contract SimpleLinearLocker is ILockCallback {
         checker(depth);
         if (depth < timesToReenter) {
             IPoolManager manager = IPoolManager(msg.sender);
-            manager.lock(abi.encode(timesToReenter, depth + 1));
+            manager.lock(address(this), abi.encode(timesToReenter, depth + 1));
         }
         return "";
     }
@@ -77,7 +77,7 @@ contract ParallelLocker is ILockCallback {
     }
 
     function main() external {
-        manager.lock("");
+        manager.lock(address(this), "");
     }
 
     function assertionChecker0(uint256) external view {
