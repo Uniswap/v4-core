@@ -20,5 +20,5 @@ jobs:
         with:
           version: nightly
 
-      - name: Compile
+      - name: Lint
         run: forge fmt --check
