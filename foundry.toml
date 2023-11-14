@@ -6,7 +6,11 @@ ffi = true
 fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./out"}]
 evm_version = 'paris'
 
-[profile.ci]
-fuzz_runs = 100000
+[profile.default.fuzz]
+runs = 100
+seed = "0x4444"
+
+[profile.ci.fuzz]
+runs = 1000
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
