@@ -4,14 +4,14 @@ pragma solidity ^0.8.20;
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
-import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IHooks} from "./IHooks.sol";
 import {IFees} from "./IFees.sol";
+import {IClaims} from "./IClaims.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IFees, IERC1155 {
+interface IPoolManager is IFees, IClaims {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
@@ -176,8 +176,11 @@ interface IPoolManager is IFees, IERC1155 {
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(Currency currency, address to, uint256 amount) external;
 
-    /// @notice Called by the user to move value into ERC1155 balance
+    /// @notice Called by the user to move value into Claims balance
     function mint(Currency token, address to, uint256 amount) external;
+
+    /// @notice Called by the user to redeem their Claims balance
+    function burn(Currency token, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
