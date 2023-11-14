@@ -22,8 +22,6 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
-import "forge-std/console2.sol";
-
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
@@ -105,6 +103,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         override
         returns (int24 tick)
     {
+        _setCurrentHook(address(key.hooks));
+
         if (key.fee.isStaticFeeTooLarge()) revert FeeTooLarge();
 
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
@@ -182,7 +182,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         // todo fix stack too deep :/
         address locker = Lockers.getCurrentLocker();
         if (msg.sender != locker) {
-            if (msg.sender != currentHook && !Hooks.shouldAccessLock(IHooks(currentHook))) {
+            if (msg.sender != currentHook || !Hooks.shouldAccessLock(IHooks(currentHook))) {
                 revert LockedBy(locker);
             }
         }
@@ -198,12 +198,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _setCurrentHook(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            bytes4 hookReturn = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
-
-            if (hookReturn == Hooks.OVERRIDE_SELECTOR) {
-                return delta;
-            }
-            if (hookReturn != IHooks.beforeModifyPosition.selector) {
+            if (
+                key.hooks.beforeModifyPosition(msg.sender, key, params, hookData)
+                    != IHooks.beforeModifyPosition.selector
+            ) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -260,11 +258,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _setCurrentHook(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeSwap()) {
-            bytes4 hookReturn = key.hooks.beforeSwap(msg.sender, key, params, hookData);
-            if (hookReturn == Hooks.OVERRIDE_SELECTOR) {
-                return delta;
-            }
-            if (hookReturn != IHooks.beforeSwap.selector) {
+            if (key.hooks.beforeSwap(msg.sender, key, params, hookData) != IHooks.beforeSwap.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -316,12 +310,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         returns (BalanceDelta delta)
     {
         _setCurrentHook(address(key.hooks));
+
         if (key.hooks.shouldCallBeforeDonate()) {
-            bytes4 hookReturn = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
-            if (hookReturn == Hooks.OVERRIDE_SELECTOR) {
-                return delta;
-            }
-            if (hookReturn != IHooks.beforeDonate.selector) {
+            if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
@@ -420,7 +411,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     // TODO: Use transient storage
     function _setCurrentHook(address hookAddr) internal {
-        currentHook = hookAddr;
+        if (currentHook != hookAddr) currentHook = hookAddr;
     }
 
     /// @notice receive native tokens for native pools

@@ -4,8 +4,6 @@ pragma solidity ^0.8.20;
 import {IHooks} from "../interfaces/IHooks.sol";
 import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 
-import "forge-std/console2.sol";
-
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
@@ -22,12 +20,8 @@ library Hooks {
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
     uint256 internal constant ACCESS_LOCK_FLAG = 1 << 151;
-    uint256 internal constant OVERRIDE_FLAG = 1 << 150;
 
-    bytes4 constant OVERRIDE_SELECTOR = bytes4(keccak256("OVERRIDE_SELECTOR"));
-
-    // todo not necessarily all calls now?
-    struct Calls {
+    struct Permissions {
         bool beforeInitialize;
         bool afterInitialize;
         bool beforeModifyPosition;
@@ -37,7 +31,6 @@ library Hooks {
         bool beforeDonate;
         bool afterDonate;
         bool accessLock;
-        bool overrideSelector;
     }
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
@@ -49,17 +42,19 @@ library Hooks {
 
     /// @notice Utility function intended to be used in hook constructors to ensure
     /// the deployed hooks address causes the intended hooks to be called
-    /// @param calls The hooks that are intended to be called
-    /// @dev calls param is memory as the function will be called from constructors
-    function validateHookAddress(IHooks self, Calls memory calls) internal pure {
+    /// @param permissions The hooks that are intended to be called
+    /// @dev permissions param is memory as the function will be called from constructors
+    function validateHookAddress(IHooks self, Permissions memory permissions) internal pure {
         if (
-            calls.beforeInitialize != shouldCallBeforeInitialize(self)
-                || calls.afterInitialize != shouldCallAfterInitialize(self)
-                || calls.beforeModifyPosition != shouldCallBeforeModifyPosition(self)
-                || calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
-                || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
-                || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
-                || calls.accessLock != shouldAccessLock(self) || calls.overrideSelector != shouldAllowOverride(self)
+            permissions.beforeInitialize != shouldCallBeforeInitialize(self)
+                || permissions.afterInitialize != shouldCallAfterInitialize(self)
+                || permissions.beforeModifyPosition != shouldCallBeforeModifyPosition(self)
+                || permissions.afterModifyPosition != shouldCallAfterModifyPosition(self)
+                || permissions.beforeSwap != shouldCallBeforeSwap(self)
+                || permissions.afterSwap != shouldCallAfterSwap(self)
+                || permissions.beforeDonate != shouldCallBeforeDonate(self)
+                || permissions.afterDonate != shouldCallAfterDonate(self)
+                || permissions.accessLock != shouldAccessLock(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -111,9 +106,5 @@ library Hooks {
 
     function shouldAccessLock(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & ACCESS_LOCK_FLAG != 0;
-    }
-
-    function shouldAllowOverride(IHooks self) internal pure returns (bool) {
-        return (uint256(uint160(address(self))) & OVERRIDE_FLAG) != 0;
     }
 }
