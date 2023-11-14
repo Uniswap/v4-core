@@ -9,7 +9,7 @@ build-forge: install-forge
     forge build
 
 snapshots-forge: install-forge test-forge
-    forge snapshot
+    FOUNDRY_FUZZ_SEED=0x4444 forge snapshot
 
 install-forge:
     forge install
