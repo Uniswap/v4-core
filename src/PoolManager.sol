@@ -17,12 +17,12 @@ import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
-import {ERC6909} from "@erc-6909/ERC6909.sol";
+import {Claims} from "./Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909 {
+contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -323,38 +323,24 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909 {
     }
 
     /// @inheritdoc IPoolManager
-    function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-
-        uint256 id = currency.toId();
-        totalSupply[id] += amount;
-        balanceOf[to][id] += amount;
-        emit Transfer(msg.sender, address(0), to, id, amount);
-    }
-
-    /// @inheritdoc IPoolManager
-    function burn(Currency currency, address from, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, -(amount.toInt128()));
-
-        uint256 id = currency.toId();
-        if (from != msg.sender && !isOperator[from][msg.sender]) {
-            uint256 senderAllowance = allowance[from][msg.sender][id];
-            if (senderAllowance != type(uint256).max) {
-                allowance[from][msg.sender][id] = senderAllowance - amount;
-            }
-        }
-        totalSupply[id] -= amount;
-        balanceOf[from][id] -= amount;
-        emit Transfer(msg.sender, from, address(0), id, amount);
-    }
-
-    /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
         _accountDelta(currency, -(paid.toInt128()));
+    }
+
+    /// @inheritdoc IPoolManager
+    function mint(Currency currency, address to, uint256 amount) external noDelegateCall onlyByLocker {
+        _accountDelta(currency, amount.toInt128());
+        _mint(to, currency, amount);
+    }
+
+    /// @inheritdoc IPoolManager
+    function burn(Currency currency, uint256 amount) external noDelegateCall onlyByLocker {
+        _accountDelta(currency, -(amount.toInt128()));
+        _burn(currency, amount);
     }
 
     function setProtocolFees(PoolKey memory key) external {

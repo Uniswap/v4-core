@@ -63,7 +63,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         int24 tick,
         uint24 fee
     );
-    event Transfer(address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount);
+    event Mint(address indexed to, Currency indexed currency, uint256 amount);
+    event Burn(address indexed from, Currency indexed currency, uint256 amount);
+    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
 
     Pool.State state;
     PoolManager manager;
@@ -838,7 +840,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         snapEnd();
     }
 
-    function testSwapMintERC6909IfOutputNotTaken() public {
+    function test_swap_GasMintClaimIfOutputNotTaken() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
@@ -853,17 +855,17 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             key, IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18}), ZERO_BYTES
         );
 
-        vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
-        snapStart("swap mint 1155 as output");
+        vm.expectEmit(true, true, true, false);
+        emit Mint(address(swapRouter), currency1, 98);
+        snapStart("swap mint output as claim");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
-        assertEq(erc6909Balance, 98);
+        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        assertEq(claimsBalance, 98);
     }
 
-    function testSwapUse6909AsInput() public {
+    function test_swap_GasUseClaimAsInput() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
 
@@ -877,29 +879,26 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         modifyPositionRouter.modifyPosition(
             key, IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18}), ZERO_BYTES
         );
-        vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        vm.expectEmit(true, true, true, false);
+        emit Mint(address(swapRouter), currency1, 98);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        uint256 erc6909Balance = manager.balanceOf(address(this), uint256(uint160(Currency.unwrap(currency1))));
-        assertEq(erc6909Balance, 98);
+        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        assertEq(claimsBalance, 98);
 
-        // give permission for swapRouter to burn the 6909s
-        manager.setOperator(address(swapRouter), true);
-
-        // swap from currency1 to currency0 again, using 6909s as input tokens
+        // swap from currency1 to currency0 again, using Claims as input tokens
         params = IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -25, sqrtPriceLimitX96: SQRT_RATIO_4_1});
 
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
 
-        vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(manager), address(manager), address(0), CurrencyLibrary.toId(currency1), 27);
-        snapStart("swap with 1155 as input");
+        vm.expectEmit(true, true, true, false);
+        emit Burn(address(swapRouter), currency1, 27);
+        snapStart("swap burn claim for input");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
-        assertEq(erc6909Balance, 71);
+        claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        assertEq(claimsBalance, 71);
     }
 
     function test_swap_againstLiq_gas() public {
@@ -1165,7 +1164,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(slot0.protocolFees, protocolFee << 12);
     }
 
-    function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees_gas() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
 
@@ -1187,7 +1186,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
+        snapStart("erc20 collect protocol fees");
         manager.collectProtocolFees(address(1), currency0, expectedFees);
+        snapEnd();
         assertEq(currency0.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
@@ -1219,7 +1220,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
-    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees_gas() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
@@ -1247,7 +1248,9 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        snapStart("native collect protocol fees");
         manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
+        snapEnd();
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
