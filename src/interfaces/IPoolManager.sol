@@ -151,8 +151,8 @@ interface IPoolManager is IFees, IERC1155 {
         int256 liquidityDelta;
     }
 
-    /// @notice Modify the position for the given pool
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
+    /// @notice Mint a new position in a pool
+    function mintPosition(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta);
 

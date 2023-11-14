@@ -183,20 +183,33 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         _;
     }
 
-    /// @inheritdoc IPoolManager
-    function modifyPosition(
+    function mintPosition(
         PoolKey memory key,
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        // TODO: what about liquidityDelta == 0?
-        if (key.hooks.shouldCallBeforeMint() && params.liquidityDelta.toInt128() > 0) {
+        require(params.liquidityDelta.toInt128() >= 0);
+
+        if (key.hooks.shouldCallBeforeMint()) {
             if (key.hooks.beforeMint(msg.sender, key, params, hookData) != IHooks.beforeMint.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
-        // TODO: handle burn
 
+        delta = _modifyPosition(key, params, hookData);
+
+        if (key.hooks.shouldCallAfterMint()) {
+            if (key.hooks.afterMint(msg.sender, key, params, delta, hookData) != IHooks.afterMint.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
+        }
+    }
+
+    function _modifyPosition(
+        PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params,
+        bytes calldata hookData
+    ) internal returns (BalanceDelta delta) {
         PoolId id = key.toId();
         Pool.FeeAmounts memory feeAmounts;
         (delta, feeAmounts) = pools[id].modifyPosition(
@@ -223,13 +236,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
             }
             if (feeAmounts.feeForHook1 > 0) {
                 hookFeesAccrued[address(key.hooks)][key.currency1] += feeAmounts.feeForHook1;
-            }
-        }
-
-        // TODO: what about liquidityDelta == 0?
-        if (key.hooks.shouldCallAfterMint() && params.liquidityDelta.toInt128() > 0) {
-            if (key.hooks.afterMint(msg.sender, key, params, delta, hookData) != IHooks.afterMint.selector) {
-                revert Hooks.InvalidHookResponse();
             }
         }
 
