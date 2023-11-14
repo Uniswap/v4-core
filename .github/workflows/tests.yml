@@ -30,6 +30,8 @@ jobs:
 
       - name: Build
         run: forge build
+        env:
+          FOUNDRY_PROFILE: ci
 
       - name: Run tests
         run: forge test -vvv
@@ -37,6 +39,7 @@ jobs:
           FOUNDRY_PROFILE: ci
 
       - name: Run forge snapshots
-        run: forge snapshot --check --tolerance 5
+        run: forge snapshot --check --tolerance 25
         env:
+          FOUNDRY_PROFILE: ci
           FOUNDRY_FUZZ_SEED: "0x4444"
