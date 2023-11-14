@@ -40,7 +40,20 @@ contract PoolDonateTest is TestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
+        (,, uint256 reserveBefore0, int256 deltaBefore0) = _fetchBalances(data.key.currency0, data.sender);
+        (,, uint256 reserveBefore1, int256 deltaBefore1) = _fetchBalances(data.key.currency1, data.sender);
+
+        assert(deltaBefore0 == 0 && deltaBefore1 == 0);
+
         BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, data.hookData);
+
+        (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
+        (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
+
+        assert(reserveBefore0 == reserveAfter0);
+        assert(reserveBefore1 == reserveAfter1);
+        assert(deltaAfter0 == int256(data.amount0));
+        assert(deltaAfter1 == int256(data.amount1));
 
         if (data.amount0 > 0) _settle(data.key.currency0, data.sender, delta.amount0(), true);
         if (data.amount1 > 0) _settle(data.key.currency1, data.sender, delta.amount1(), true);

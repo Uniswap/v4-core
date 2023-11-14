@@ -49,6 +49,8 @@ contract PoolSwapTest is TestBase {
         (,, uint256 reserveBefore0, int256 deltaBefore0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveBefore1, int256 deltaBefore1) = _fetchBalances(data.key.currency1, data.sender);
 
+        assert(deltaBefore0 == 0 && deltaBefore1 == 0);
+
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
@@ -59,7 +61,6 @@ contract PoolSwapTest is TestBase {
 
         assert(reserveBefore0 == reserveAfter0);
         assert(reserveBefore1 == reserveAfter1);
-        assert(deltaBefore0 == 0 && deltaBefore1 == 0);
 
         if (data.params.zeroForOne) {
             if (data.params.amountSpecified > 0) {
