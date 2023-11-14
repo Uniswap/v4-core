@@ -37,8 +37,8 @@ contract ClaimsTest is TokenFixture, Test {
         vm.expectEmit(true, true, false, false);
         emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
-
         assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
+
         vm.expectRevert(abi.encodeWithSelector(IClaims.InsufficientBalance.selector));
         claimsImpl.burn(currency0, amount + 1);
     }
@@ -47,8 +47,8 @@ contract ClaimsTest is TokenFixture, Test {
         vm.expectEmit(true, true, false, false);
         emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
-
         assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
+
         vm.expectEmit(true, true, true, false);
         emit Transfer(address(this), address(1), currency0, amount);
         claimsImpl.transfer(address(1), currency0, amount);
@@ -58,11 +58,12 @@ contract ClaimsTest is TokenFixture, Test {
 
     function testCatchesUnderflowOnTransfer(uint256 amount) public {
         vm.assume(amount < type(uint256).max - 1);
+
         vm.expectEmit(true, true, false, false);
         emit Mint(address(this), currency0, amount);
         claimsImpl.mint(address(this), currency0, amount);
-
         assertEq(claimsImpl.balanceOf(address(this), currency0), amount);
+
         vm.expectRevert(abi.encodeWithSelector(IClaims.InsufficientBalance.selector));
         claimsImpl.transfer(address(1), currency0, amount + 1);
     }
@@ -77,10 +78,15 @@ contract ClaimsTest is TokenFixture, Test {
 
     function testCanTransferToZeroAddress() public {
         claimsImpl.mint(address(this), currency0, 1);
+        assertEq(claimsImpl.balanceOf(address(this), currency0), 1);
+        assertEq(claimsImpl.balanceOf(address(0), currency0), 0);
+
         vm.expectEmit(true, true, true, false);
         emit Transfer(address(this), address(0), currency0, 1);
         claimsImpl.transfer(address(0), currency0, 1);
+
         assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
+        assertEq(claimsImpl.balanceOf(address(0), currency0), 1);
     }
 
     function testTransferToClaimsContractFails() public {
