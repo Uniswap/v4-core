@@ -803,7 +803,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
         modifyPositionRouter.modifyPosition{value: 1 ether}(key, liqParams, ZERO_BYTES);
 
-        snapStart("simple swap");
+        snapStart("simple swap native");
         swapRouter.swap{value: 100}(key, swapParams, testSettings, ZERO_BYTES);
         snapEnd();
     }
