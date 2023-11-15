@@ -959,7 +959,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
     function test_donate_failsIfNotInitialized() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
-        vm.expectRevert(abi.encodeWithSelector(Pool.NoLiquidityToReceiveFees.selector));
+        vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
         donateRouter.donate(key, 100, 100, ZERO_BYTES);
     }
 

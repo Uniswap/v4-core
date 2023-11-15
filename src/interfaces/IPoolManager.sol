@@ -18,6 +18,9 @@ interface IPoolManager is IFees, IClaims {
     /// @notice Thrown when a currency is not netted out after a lock
     error CurrencyNotSettled();
 
+    /// @notice Thrown when trying to interact with a non-initialized pool
+    error PoolNotInitialized();
+
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
     error LockedBy(address locker);

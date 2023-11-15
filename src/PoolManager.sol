@@ -184,6 +184,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
+        PoolId id = key.toId();
+        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
+
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
             if (selector != IHooks.beforeModifyPosition.selector) {
@@ -195,7 +198,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        PoolId id = key.toId();
         Pool.FeeAmounts memory feeAmounts;
         (delta, feeAmounts) = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
@@ -244,6 +246,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
+        PoolId id = key.toId();
+        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
+
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
             if (selector != IHooks.beforeSwap.selector) {
@@ -254,8 +259,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
                 }
             }
         }
-
-        PoolId id = key.toId();
 
         uint256 feeForProtocol;
         uint256 feeForHook;
@@ -301,6 +304,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
+        PoolId id = key.toId();
+        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
+
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
             if (selector != IHooks.beforeDonate.selector) {
@@ -312,7 +318,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        delta = _getPool(key).donate(amount0, amount1);
+        delta = pools[id].donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta);
 

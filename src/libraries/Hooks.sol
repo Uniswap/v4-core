@@ -21,7 +21,7 @@ library Hooks {
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
     uint256 internal constant NO_OP_FLAG = 1 << 151;
 
-    bytes4 public constant NO_OP_SELECTOR = 0xc71dfe5e; // bytes4(keccak256(abi.encodePacked("NoOp")))
+    bytes4 public constant NO_OP_SELECTOR = bytes4(keccak256(abi.encodePacked("NoOp")));
 
     struct Calls {
         bool beforeInitialize;
@@ -63,13 +63,11 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
-        if (shouldAllowNoOp(hook)) {
-            if (
-                !shouldCallBeforeInitialize(hook) && !shouldCallBeforeModifyPosition(hook)
-                    && !shouldCallBeforeSwap(hook) && !shouldCallBeforeDonate(hook)
-            ) {
-                return false;
-            }
+        if (
+            shouldAllowNoOp(hook) && !shouldCallBeforeModifyPosition(hook) && !shouldCallBeforeSwap(hook)
+                && !shouldCallBeforeDonate(hook)
+        ) {
+            return false;
         }
         return address(hook) == address(0)
             ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
