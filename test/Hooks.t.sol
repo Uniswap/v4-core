@@ -56,47 +56,30 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testModifyPositionSucceedsWithHook() public {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, new bytes(111));
         assertEq(mockHooks.beforeModifyPositionData(), new bytes(111));
         assertEq(mockHooks.afterModifyPositionData(), new bytes(111));
     }
 
     function testBeforeModifyPositionInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function testAfterModifyPositionInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function testSwapSucceedsWithHook() public {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency1)).approve(address(swapRouter), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10 ** 18);
-
-        IPoolManager.ModifyPositionParams memory liqParams =
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
-        modifyPositionRouter.modifyPosition(key, liqParams, new bytes(111));
         swapRouter.swap(key, swapParams, testSettings, new bytes(222));
         assertEq(mockHooks.beforeSwapData(), new bytes(222));
         assertEq(mockHooks.afterSwapData(), new bytes(222));
@@ -104,8 +87,6 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testBeforeSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
             key,
@@ -117,8 +98,6 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testAfterSwapInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
             key,
@@ -129,10 +108,6 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testDonateSucceedsWithHook() public {
-        addLiquidity(0, 60, 100);
-
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
-        MockERC20(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         donateRouter.donate(key, 100, 200, new bytes(333));
         assertEq(mockHooks.beforeDonateData(), new bytes(333));
         assertEq(mockHooks.afterDonateData(), new bytes(333));
@@ -140,20 +115,12 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testBeforeDonateInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeDonate.selector, bytes4(0xdeadbeef));
-        addLiquidity(0, 60, 100);
-
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
-        MockERC20(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         donateRouter.donate(key, 100, 200, ZERO_BYTES);
     }
 
     function testAfterDonateInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeDonate.selector, bytes4(0xdeadbeef));
-        addLiquidity(0, 60, 100);
-
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(donateRouter), 100);
-        MockERC20(Currency.unwrap(key.currency1)).approve(address(donateRouter), 200);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         donateRouter.donate(key, 100, 200, ZERO_BYTES);
     }
@@ -631,15 +598,5 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), 3000));
         assertFalse(Hooks.isValidHookAddress(IHooks(0x0040000000000000000000000000000000000001), 3000));
         assertFalse(Hooks.isValidHookAddress(IHooks(0x007840A85d5aF5BF1D1762f925bdADDC4201F984), 3000));
-    }
-
-    function addLiquidity(int24 tickLower, int24 tickUpper, int256 amount) internal {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(tickLower, tickUpper, amount), ZERO_BYTES
-        );
     }
 }

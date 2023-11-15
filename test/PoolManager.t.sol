@@ -81,11 +81,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
     }
 
     function test_mint_failsIfNotInitialized() public {
-        key.fee = 100;
         vm.expectRevert(Pool.PoolNotInitialized.selector);
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}), ZERO_BYTES
-        );
+        modifyPositionRouter.modifyPosition(uninitializedKey, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_mint_succeedsIfInitialized(uint160 sqrtPriceX96) public {
@@ -197,19 +194,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
 
     function test_mint_gas() public {
         snapStart("mint");
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}), ZERO_BYTES
-        );
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
     function test_mint_withNative_gas() public {
-        (key,) = initPool(currency0, currency1, IHooks(address(0)), 100, SQRT_RATIO_1_1, ZERO_BYTES);
-
         snapStart("mint with native token");
-        modifyPositionRouter.modifyPosition{value: 100}(
-            key, IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}), ZERO_BYTES
-        );
+        modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
