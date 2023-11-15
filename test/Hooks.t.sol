@@ -31,31 +31,28 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         vm.etch(ALL_HOOKS_ADDRESS, address(impl).code);
         mockHooks = MockHooks(ALL_HOOKS_ADDRESS);
 
-        initializeManagerRoutersAndOnePool(mockHooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeManagerRoutersAndPoolsWithLiq(mockHooks);
     }
 
     function testInitializeSucceedsWithHook() public {
-        key.fee = 100;
-        manager.initialize(key, SQRT_RATIO_1_1, new bytes(123));
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, new bytes(123));
 
-        (uint160 sqrtPriceX96,,,) = manager.getSlot0(key.toId());
+        (uint160 sqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
         assertEq(mockHooks.beforeInitializeData(), new bytes(123));
         assertEq(mockHooks.afterInitializeData(), new bytes(123));
     }
 
     function testBeforeInitializeInvalidReturn() public {
-        key.fee = 100;
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testAfterInitializeInvalidReturn() public {
-        key.fee = 100;
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testModifyPositionSucceedsWithHook() public {

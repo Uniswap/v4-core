@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
-import {Currency} from "../../src/types/Currency.sol";
+import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
@@ -41,7 +41,11 @@ contract Deployers {
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
     ProtocolFeeControllerTest feeController;
+
     PoolKey key;
+    PoolKey nativeKey;
+    PoolKey uninitializedKey;
+    PoolKey uninitializedNativeKey;
 
     function deployFreshManager() internal {
         manager = new PoolManager(500000);
@@ -54,6 +58,7 @@ contract Deployers {
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
         feeController = new ProtocolFeeControllerTest();
+        manager.setProtocolFeeController(feeController);
     }
 
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
@@ -116,12 +121,21 @@ contract Deployers {
         modifyPositionRouter.modifyPosition{value: msgValue}(_key, LIQ_PARAMS, ZERO_BYTES);
     }
 
-    function initializeManagerRoutersAndOnePool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96, bytes memory initData)
-        internal
-    {
+    // Deploys the manager, all test routers, and sets up 2 pools: with and without native
+    function initializeManagerRoutersAndPoolsWithLiq(IHooks hooks) internal {
         deployFreshManagerAndRouters();
         // sets the global currencyies and key
         (currency0, currency1) = deployMintAndApprove2Currencies();
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, fee, sqrtPriceX96, initData);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        (nativeKey,) = initPoolAndAddLiquidityETH(
+            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
+        );
+        uninitializedKey = key;
+        uninitializedNativeKey = nativeKey;
+        uninitializedKey.fee = 100;
+        uninitializedNativeKey.fee = 100;
     }
+
+    // to receive refunds of spare eth from test helpers
+    receive() external payable {}
 }

@@ -129,7 +129,7 @@ contract ParallelLocker is ILockCallback {
 
 contract PoolManagerReentrancyTest is Test, Deployers {
     function setUp() public {
-        initializeManagerRoutersAndOnePool(IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
     }
 
     function testTokenLocker() public {

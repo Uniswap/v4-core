@@ -62,7 +62,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
     address MOCK_HOOKS = address(0xfF00000000000000000000000000000000000000);
 
     function setUp() public {
-        initializeManagerRoutersAndOnePool(IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
 
         lockTest = new PoolLockTest(manager);
     }
@@ -72,6 +72,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
     }
 
     function test_feeControllerSet() public {
+        deployFreshManager();
         assertEq(address(manager.protocolFeeController()), address(0));
         vm.expectEmit(false, false, false, true, address(manager));
         emit ProtocolFeeControllerUpdated(address(feeController));
@@ -107,18 +108,16 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        (key,) = initPool(CurrencyLibrary.NATIVE, currency1, IHooks(address(0)), 3000, sqrtPriceX96, ZERO_BYTES);
-
         vm.expectEmit(true, true, true, true);
         emit ModifyPosition(
-            key.toId(),
+            nativeKey.toId(),
             address(modifyPositionRouter),
             LIQ_PARAMS.tickLower,
             LIQ_PARAMS.tickUpper,
             LIQ_PARAMS.liquidityDelta
         );
 
-        modifyPositionRouter.modifyPosition{value: 1 ether}(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_mint_succeedsWithHooksIfInitialized(uint160 sqrtPriceX96) public {
@@ -263,10 +262,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
     }
 
     function test_swap_succeedsWithNativeTokensIfInitialized() public {
-        (key,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
-        );
-
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
@@ -275,10 +270,17 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
 
         vm.expectEmit(true, true, true, true);
         emit Swap(
-            key.toId(), address(swapRouter), int128(100), int128(-98), 79228162514264329749955861424, 1e18, -1, 3000
+            nativeKey.toId(),
+            address(swapRouter),
+            int128(100),
+            int128(-98),
+            79228162514264329749955861424,
+            1e18,
+            -1,
+            3000
         );
 
-        swapRouter.swap{value: 100}(key, swapParams, testSettings, ZERO_BYTES);
+        swapRouter.swap{value: 100}(nativeKey, swapParams, testSettings, ZERO_BYTES);
     }
 
     function test_swap_succeedsWithHooksIfInitialized() public {
@@ -378,10 +380,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
     }
 
     function test_swap_withNative_gas() public {
-        (key,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
-        );
-
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
@@ -389,7 +387,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
         snapStart("simple swap with native");
-        swapRouter.swap{value: 100}(key, swapParams, testSettings, ZERO_BYTES);
+        swapRouter.swap{value: 100}(nativeKey, swapParams, testSettings, ZERO_BYTES);
         snapEnd();
     }
 
@@ -485,22 +483,18 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
     }
 
     function test_swap_againstLiqWithNative_gas() public {
-        (key,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
-        );
-
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
-        swapRouter.swap{value: 1 ether}(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap{value: 1 ether}(nativeKey, params, testSettings, ZERO_BYTES);
 
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
 
         snapStart("swap against liquidity with native token");
-        swapRouter.swap{value: 1 ether}(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap{value: 1 ether}(nativeKey, params, testSettings, ZERO_BYTES);
         snapEnd();
     }
 
@@ -537,17 +531,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
     }
 
     function test_donate_succeedsForNativeTokensWhenPoolHasLiquidity() public {
-        (key,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, IHooks(address(0)), 100, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
-        );
-
-        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(key.toId());
+        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(nativeKey.toId());
         assertEq(feeGrowthGlobal0X128, 0);
         assertEq(feeGrowthGlobal1X128, 0);
 
-        donateRouter.donate{value: 100}(key, 100, 200, ZERO_BYTES);
+        donateRouter.donate{value: 100}(nativeKey, 100, 200, ZERO_BYTES);
 
-        (, feeGrowthGlobal0X128, feeGrowthGlobal1X128,) = manager.pools(key.toId());
+        (, feeGrowthGlobal0X128, feeGrowthGlobal1X128,) = manager.pools(nativeKey.toId());
         assertEq(feeGrowthGlobal0X128, 34028236692093846346337);
         assertEq(feeGrowthGlobal1X128, 68056473384187692692674);
     }
@@ -636,10 +626,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
     }
 
     function test_take_succeedsWithPoolWithLiquidityWithNativeToken() public {
-        (key,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, IHooks(address(0)), 100, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
-        );
-        takeRouter.take{value: 1}(key, 1, 1); // assertions inside takeRouter because it takes then settles
+        takeRouter.take{value: 1}(nativeKey, 1, 1); // assertions inside takeRouter because it takes then settles
     }
 
     function test_setProtocolFee_updatesProtocolFeeForInitializedPool() public {
@@ -651,7 +638,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, 0);
-        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
 
         vm.expectEmit(false, false, false, true);
@@ -663,7 +649,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         uint24 protocolFee = 260; // 0001 00 00 0100
         key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(address(0)), tickSpacing: 10});
-        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
         // sets the upper 12 bits
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
 
@@ -676,7 +661,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
 
-        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
         manager.setProtocolFees(key);
 
@@ -699,7 +683,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
 
-        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
         manager.setProtocolFees(key);
 
@@ -723,27 +706,18 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
-        key = PoolKey({
-            currency0: nativeCurrency,
-            currency1: currency1,
-            fee: 3000,
-            hooks: IHooks(address(0)),
-            tickSpacing: 60
-        });
-
         // set protocol fee before initializing the pool as it is fetched on initialization
-        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
-        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+        feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
+        manager.setProtocolFees(nativeKey);
 
-        initPoolAndAddLiquidityETH(
-            key.currency0, key.currency1, key.hooks, key.fee, SQRT_RATIO_1_1, ZERO_BYTES, 10 ether
-        );
-
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
 
         swapRouter.swap{value: 10000}(
-            key, IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2), PoolSwapTest.TestSettings(true, true), ZERO_BYTES
+            nativeKey,
+            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
         );
 
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
@@ -759,26 +733,17 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
-        key = PoolKey({
-            currency0: nativeCurrency,
-            currency1: currency1,
-            fee: 3000,
-            hooks: IHooks(address(0)),
-            tickSpacing: 60
-        });
+        feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
+        manager.setProtocolFees(nativeKey);
 
-        manager.setProtocolFeeController(IProtocolFeeController(address(feeController)));
-        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
-
-        initPoolAndAddLiquidityETH(
-            key.currency0, key.currency1, key.hooks, key.fee, SQRT_RATIO_1_1, ZERO_BYTES, 10 ether
-        );
-
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
 
         swapRouter.swap{value: 10000}(
-            key, IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2), PoolSwapTest.TestSettings(true, true), ZERO_BYTES
+            nativeKey,
+            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
+            PoolSwapTest.TestSettings(true, true),
+            ZERO_BYTES
         );
 
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
@@ -870,8 +835,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         assert(LIQ_PARAMS.liquidityDelta > 0);
         assertEq(managerPosition.liquidity, uint128(uint256(LIQ_PARAMS.liquidityDelta)));
     }
-
-    receive() external payable {}
 
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
         return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
