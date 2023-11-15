@@ -44,10 +44,6 @@ contract PoolModifyPositionTest is PoolTestBase {
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender);
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
 
-        console2.log(data.params.liquidityDelta);
-        console2.log(delta0);
-        console2.log(delta1);
-
         if (data.params.liquidityDelta > 0) {
             assert(delta0 > 0 || delta1 > 0);
             assert(!(delta0 < 0 || delta1 < 0));
