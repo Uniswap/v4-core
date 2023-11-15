@@ -152,6 +152,11 @@ interface IPoolManager is IFees, IERC1155 {
     }
 
     /// @notice Mint a new position in a pool
+    /// @dev Poke by calling with a zero liquidityDelta
+    /// @param key The pool to mint a position in
+    /// @param params The parameters of pass into modifyPosition
+    /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
+    /// @return delta The balance delta of the position minted
     function mintPosition(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta);
