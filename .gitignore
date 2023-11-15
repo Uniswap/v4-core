@@ -5,3 +5,4 @@ node_modules/
 typechain/
 foundry-out/
 .vscode/
+out/
