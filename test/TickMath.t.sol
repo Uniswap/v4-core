@@ -5,8 +5,9 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {TickMathTest} from "../src/test/TickMathTest.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
+import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
 
-contract TickMathTestTest is Test {
+contract TickMathTestTest is Test, JavascriptFfi {
     int24 constant MIN_TICK = -887272;
     int24 constant MAX_TICK = -MIN_TICK;
 
@@ -113,14 +114,6 @@ contract TickMathTestTest is Test {
 
     function test_getSqrtRatioAtTick_matchesJavaScriptImplByOneHundrethOfABip() public {
         string memory jsParameters = "";
-        string[] memory runJsInputs = new string[](6);
-
-        // build ffi command string
-        runJsInputs[0] = "npm";
-        runJsInputs[1] = "--silent";
-        runJsInputs[2] = "run";
-        runJsInputs[3] = "forge-test-getSqrtRatioAtTick";
-        runJsInputs[4] = "--";
 
         int24 tick = 50;
 
@@ -138,8 +131,7 @@ contract TickMathTestTest is Test {
             tick = tick * 2;
         }
 
-        runJsInputs[5] = jsParameters;
-        bytes memory jsResult = vm.ffi(runJsInputs);
+        bytes memory jsResult = runScript("forge-test-getSqrtRatioAtTick", jsParameters);
         uint160[] memory jsSqrtRatios = abi.decode(jsResult, (uint160[]));
 
         for (uint256 i = 0; i < jsSqrtRatios.length; i++) {
@@ -156,13 +148,6 @@ contract TickMathTestTest is Test {
 
     function test_getTickAtSqrtRatio_matchesJavascriptImplWithin1() public {
         string memory jsParameters = "";
-        string[] memory runJsInputs = new string[](5);
-
-        // build ffi command string
-        runJsInputs[0] = "npm";
-        runJsInputs[1] = "--silent";
-        runJsInputs[2] = "run";
-        runJsInputs[3] = "forge-test-getTickAtSqrtRatio";
 
         uint160 sqrtRatio = MIN_SQRT_RATIO;
         unchecked {
@@ -176,8 +161,7 @@ contract TickMathTestTest is Test {
             }
         }
 
-        runJsInputs[4] = jsParameters;
-        bytes memory jsResult = vm.ffi(runJsInputs);
+        bytes memory jsResult = runScript("forge-test-getTickAtSqrtRatio", jsParameters);
         int24[] memory jsTicks = abi.decode(jsResult, (int24[]));
 
         for (uint256 i = 0; i < jsTicks.length; i++) {
