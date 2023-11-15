@@ -45,7 +45,7 @@ contract PoolModifyPositionTest is ILockCallback {
 
         require(data.params.liquidityDelta >= 0, "TODO: burnPosition not implemented");
 
-        BalanceDelta delta = manager.mintPosition(data.key, data.params, data.hookData); 
+        BalanceDelta delta = manager.mintPosition(data.key, data.params, data.hookData);
 
         if (delta.amount0() > 0) {
             if (data.key.currency0.isNative()) {

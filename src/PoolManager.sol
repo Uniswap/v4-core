@@ -183,11 +183,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         _;
     }
 
-    function mintPosition(
-        PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params,
-        bytes calldata hookData
-    ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
+    function mintPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes calldata hookData)
+        external
+        override
+        noDelegateCall
+        onlyByLocker
+        returns (BalanceDelta delta)
+    {
         require(params.liquidityDelta.toInt128() >= 0);
 
         if (key.hooks.shouldCallBeforeMint()) {
@@ -205,10 +207,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
         }
     }
 
-    function _modifyPosition(
-        PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params
-    ) internal returns (BalanceDelta delta) {
+    function _modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
+        internal
+        returns (BalanceDelta delta)
+    {
         PoolId id = key.toId();
         Pool.FeeAmounts memory feeAmounts;
         (delta, feeAmounts) = pools[id].modifyPosition(
