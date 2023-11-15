@@ -32,7 +32,6 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     // Update this value when you add a new hook flag. And then update all appropriate asserts.
     uint256 hookPermissionCount = 9;
     uint256 clearAllHookPermisssionsMask;
-    AccessLockHook accessLockHook;
 
     function setUp() public {
         clearAllHookPermisssionsMask = uint256(~uint160(0) >> (hookPermissionCount));

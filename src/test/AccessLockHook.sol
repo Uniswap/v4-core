@@ -22,12 +22,12 @@ contract AccessLockHook is BaseTestHooks {
         PoolKey calldata, /* key **/
         uint160, /* sqrtPriceX96 **/
         bytes calldata /* hookData **/
-    ) external override returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return IHooks.beforeInitialize.selector;
     }
 
     function beforeModifyPosition(
-        address sender,
+        address, /* sender **/
         PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata, /* params **/
         bytes calldata hookData
@@ -37,7 +37,26 @@ contract AccessLockHook is BaseTestHooks {
         return IHooks.beforeModifyPosition.selector;
     }
 
-    function onERC1155Received(address, address, uint256, uint256, bytes memory) public returns (bytes4) {
+    function onERC1155Received(address, address, uint256, uint256, bytes memory) public pure returns (bytes4) {
         return this.onERC1155Received.selector;
+    }
+}
+
+contract NoAccessLockHook is BaseTestHooks {
+    IPoolManager manager;
+
+    constructor(IPoolManager _manager) {
+        manager = _manager;
+    }
+
+    function beforeModifyPosition(
+        address, /* sender **/
+        PoolKey calldata key,
+        IPoolManager.ModifyPositionParams calldata, /* params **/
+        bytes calldata /* hookData **/
+    ) external override returns (bytes4) {
+        // This should revert.
+        manager.mint(key.currency0, address(this), 100 * 10e18);
+        return IHooks.beforeModifyPosition.selector;
     }
 }

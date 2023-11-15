@@ -22,6 +22,8 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
+import {console2} from "forge-std/console2.sol";
+
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
@@ -103,8 +105,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         override
         returns (int24 tick)
     {
-        _setCurrentHook(address(key.hooks));
-
         if (key.fee.isStaticFeeTooLarge()) revert FeeTooLarge();
 
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
