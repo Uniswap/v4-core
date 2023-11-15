@@ -13,9 +13,6 @@ library Constants {
     uint128 constant MAX_UINT128 = type(uint128).max;
     uint160 constant MAX_UINT160 = type(uint160).max;
 
-    int24 constant MIN_TICK = -887272;
-    int24 constant MAX_TICK = 887272;
-
     uint256 constant POOL_SLOT = 10;
     uint256 constant TICKS_OFFSET = 4;
 }
