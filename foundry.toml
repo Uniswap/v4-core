@@ -1,5 +1,5 @@
 [profile.default]
-solc_version = '0.8.22'
+solc = "./bin/solc-mac"
 optimizer_runs = 800
 via_ir = false
 ffi = true
