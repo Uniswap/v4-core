@@ -42,8 +42,8 @@ contract PoolTest is Test {
 
     function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
-        vm.assume(params.tickSpacing > 0);
-        vm.assume(params.tickSpacing < 32768);
+        vm.assume(params.tickSpacing >= TickMath.MIN_TICK_SPACING);
+        vm.assume(params.tickSpacing <= TickMath.MAX_TICK_SPACING);
 
         testPoolInitialize(sqrtPriceX96, 0, 0, 0);
 
@@ -75,8 +75,8 @@ contract PoolTest is Test {
 
     function testSwap(uint160 sqrtPriceX96, uint24 swapFee, Pool.SwapParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
-        vm.assume(params.tickSpacing > 0);
-        vm.assume(params.tickSpacing < 32768);
+        vm.assume(params.tickSpacing >= TickMath.MIN_TICK_SPACING);
+        vm.assume(params.tickSpacing <= TickMath.MAX_TICK_SPACING);
         vm.assume(swapFee < 1000000);
 
         testPoolInitialize(sqrtPriceX96, 0, 0, 0);
