@@ -15,7 +15,6 @@ import {Deployers} from "./utils/Deployers.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockHooks} from "../src/test/MockHooks.sol";
 import {MockContract} from "../src/test/MockContract.sol";
-import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
@@ -27,9 +26,7 @@ import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
 import {Position} from "../src/libraries/Position.sol";
 
-import {console2} from "forge-std/console2.sol";
-
-contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
+contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
     using FeeLibrary for uint24;
@@ -50,9 +47,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         int24 tick,
         uint24 fee
     );
-    event TransferSingle(
-        address indexed operator, address indexed from, address indexed to, uint256 id, uint256 amount
-    );
+    event Mint(address indexed to, Currency indexed currency, uint256 amount);
+    event Burn(address indexed from, Currency indexed currency, uint256 amount);
     event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
 
     PoolLockTest lockTest;
@@ -403,53 +399,50 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         snapEnd();
     }
 
-    function test_swap_GasMintERC1155IfOutputNotTaken() public {
+    function test_swap_GasMintClaimIfOutputNotTaken() public {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true});
 
-        vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
-        snapStart("swap mint 1155 as output");
+        vm.expectEmit(true, true, true, false);
+        emit Mint(address(swapRouter), currency1, 98);
+        snapStart("swap mint output as claim");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        uint256 erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
-        assertEq(erc1155Balance, 98);
+        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        assertEq(claimsBalance, 98);
     }
 
-    function test_swap_GasUse1155AsInput() public {
+    function test_swap_GasUseClaimAsInput() public {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true});
 
-        vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
+        vm.expectEmit(true, true, true, false);
+        emit Mint(address(swapRouter), currency1, 98);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        uint256 erc1155Balance = manager.balanceOf(address(this), uint256(uint160(Currency.unwrap(currency1))));
-        assertEq(erc1155Balance, 98);
+        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        assertEq(claimsBalance, 98);
 
-        // give permission for swapRouter to burn the 1155s
-        manager.setApprovalForAll(address(swapRouter), true);
-
-        // swap from currency1 to currency0 again, using 1155s as input tokens
+        // swap from currency1 to currency0 again, using Claims as input tokens
         params = IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -25, sqrtPriceLimitX96: SQRT_RATIO_4_1});
 
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
 
-        vm.expectEmit(true, true, true, true);
-        emit TransferSingle(address(manager), address(manager), address(0), CurrencyLibrary.toId(currency1), 27);
-        snapStart("swap with 1155 as input");
+        vm.expectEmit(true, true, true, false);
+        emit Burn(address(swapRouter), currency1, 27);
+        snapStart("swap burn claim for input");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        erc1155Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
-        assertEq(erc1155Balance, 71);
+        claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        assertEq(claimsBalance, 71);
     }
 
     function test_swap_againstLiq_gas() public {
@@ -634,7 +627,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         assertEq(slot0.protocolFees, protocolFee << 12);
     }
 
-    function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees_gas() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
 
@@ -651,7 +644,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
+        snapStart("erc20 collect protocol fees");
         manager.collectProtocolFees(address(1), currency0, expectedFees);
+        snapEnd();
         assertEq(currency0.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
@@ -678,7 +673,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
-    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees() public {
+    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees_gas() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
@@ -700,7 +695,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        snapStart("native collect protocol fees");
         manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
+        snapEnd();
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
@@ -811,18 +808,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot, IERC1155Receiver {
         Position.Info memory managerPosition = manager.getPosition(key.toId(), address(modifyPositionRouter), -120, 120);
         assert(LIQ_PARAMS.liquidityDelta > 0);
         assertEq(managerPosition.liquidity, uint128(uint256(LIQ_PARAMS.liquidityDelta)));
-    }
-
-    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
-        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
-    }
-
-    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
-        external
-        pure
-        returns (bytes4)
-    {
-        return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
     }
 
     function supportsInterface(bytes4) external pure returns (bool) {

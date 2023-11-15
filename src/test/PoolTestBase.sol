@@ -34,10 +34,7 @@ abstract contract PoolTestBase is ILockCallback {
                 manager.settle(currency);
             }
         } else {
-            // the received hook on this transfer will burn the tokens
-            manager.safeTransferFrom(
-                payer, address(manager), uint256(uint160(Currency.unwrap(currency))), uint128(amount), ""
-            );
+            manager.burn(currency, uint128(amount));
         }
     }
 
