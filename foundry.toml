@@ -1,5 +1,4 @@
 [profile.default]
-solc_version = '0.8.22'
 optimizer_runs = 800
 via_ir = false
 ffi = true
