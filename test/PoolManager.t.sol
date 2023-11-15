@@ -366,6 +366,23 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
     }
 
+    function test_initialize_revertsIfOnlyNoOpFlag(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable hookAddr = payable(address(uint160(Hooks.NO_OP_FLAG)));
+
+        vm.etch(hookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
+
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(hookAddr), tickSpacing: 10});
+
+        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key.hooks)));
+
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+    }
+
     function test_initialize_gas() public {
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 3000, hooks: IHooks(address(0)), tickSpacing: 60});
@@ -1193,24 +1210,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
-    function testPoolManagerNoOpRevertsIfSoloInitialize(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-
-        address payable hookAddr = payable(address(uint160(Hooks.NO_OP_FLAG)));
-
-        vm.etch(hookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
-
-        PoolKey memory key =
-            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(hookAddr), tickSpacing: 10});
-
-        vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key.hooks)));
-
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
-    }
-
-    function testPoolManagerNoOpSelector(uint160 sqrtPriceX96) public {
+    function test_noop_gas(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
@@ -1228,7 +1228,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(hookAddr), tickSpacing: 10});
-
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
         // Test add liquidity
@@ -1236,9 +1235,6 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         BalanceDelta delta =
             modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
         snapEnd();
-
-        assertEq(delta.amount0(), 0);
-        assertEq(delta.amount1(), 0);
 
         // Swap
         IPoolManager.SwapParams memory swapParams =
@@ -1251,19 +1247,13 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         delta = swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
         snapEnd();
 
-        assertEq(delta.amount0(), 0);
-        assertEq(delta.amount1(), 0);
-
         // Donate
         snapStart("donate with noop");
         delta = donateRouter.donate(key, 0, 0, ZERO_BYTES);
         snapStart("donate with noop");
-
-        assertEq(delta.amount0(), 0);
-        assertEq(delta.amount1(), 0);
     }
 
-    function testPoolManagerNoOpReturnNormalSelector(uint160 sqrtPriceX96) public {
+    function test_noop_succeedsOnAllActions(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
@@ -1277,7 +1267,7 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
             )
         );
 
-        vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
+        vm.etch(hookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
 
         PoolKey memory key =
             PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(hookAddr), tickSpacing: 10});
@@ -1285,11 +1275,15 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
         // Test add liquidity
+        assertEq(manager.reservesOf(currency0), 0);
+        assertEq(manager.reservesOf(currency1), 0);
         BalanceDelta delta =
             modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
 
-        assertFalse(delta.amount0() == 0);
-        assertFalse(delta.amount1() == 0);
+        assertEq(delta.amount0(), 0);
+        assertEq(delta.amount0(), 0);
+        assertEq(manager.reservesOf(currency0), 0);
+        assertEq(manager.reservesOf(currency1), 0);
 
         // Swap
         IPoolManager.SwapParams memory swapParams =
@@ -1300,14 +1294,57 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
 
         delta = swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
 
-        assertFalse(delta.amount0() == 0);
-        assertFalse(delta.amount1() == 0);
+        assertEq(delta.amount0(), 0);
+        assertEq(delta.amount0(), 0);
+        assertEq(manager.reservesOf(currency0), 0);
+        assertEq(manager.reservesOf(currency1), 0);
 
         // Donate
         delta = donateRouter.donate(key, 1 ether, 1 ether, ZERO_BYTES);
 
-        assertEq(delta.amount0(), 1 ether);
-        assertEq(delta.amount1(), 1 ether);
+        assertEq(delta.amount0(), 0);
+        assertEq(delta.amount0(), 0);
+        assertEq(manager.reservesOf(currency0), 0);
+        assertEq(manager.reservesOf(currency1), 0);
+    }
+
+    function test_noop_failsOnUninitializedPools(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable hookAddr = payable(
+            address(
+                uint160(
+                    Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG
+                        | Hooks.NO_OP_FLAG
+                )
+            )
+        );
+
+        vm.etch(hookAddr, vm.getDeployedCode("NoOpTestHooks.sol:NoOpTestHooks"));
+
+        // Modify Position
+        PoolKey memory key =
+            PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: IHooks(hookAddr), tickSpacing: 10});
+
+        vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
+        BalanceDelta delta =
+            modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
+
+        // Swap
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
+        delta = swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
+
+        // Donate
+        vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
+        delta = donateRouter.donate(key, 1 ether, 1 ether, ZERO_BYTES);
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
