@@ -196,7 +196,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
             }
         }
 
-        delta = _modifyPosition(key, params, hookData);
+        delta = _modifyPosition(key, params);
 
         if (key.hooks.shouldCallAfterMint()) {
             if (key.hooks.afterMint(msg.sender, key, params, delta, hookData) != IHooks.afterMint.selector) {
@@ -207,8 +207,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC1155, IERC1155Rec
 
     function _modifyPosition(
         PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params,
-        bytes calldata hookData
+        IPoolManager.ModifyPositionParams memory params
     ) internal returns (BalanceDelta delta) {
         PoolId id = key.toId();
         Pool.FeeAmounts memory feeAmounts;

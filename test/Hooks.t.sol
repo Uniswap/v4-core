@@ -93,7 +93,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertEq(mockHooks.afterMintData(), new bytes(111));
     }
 
-    function testBeforeAfterMintNotCalledWithZeroLiquidityDelta() public {
+    function testBeforeAfterMintCalledWithZeroLiquidityDelta() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
@@ -101,8 +101,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertEq(mockHooks.afterMintData(), new bytes(111));
 
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 0), new bytes(222));
-        assertEq(mockHooks.beforeMintData(), new bytes(111));
-        assertEq(mockHooks.afterMintData(), new bytes(111));
+        assertEq(mockHooks.beforeMintData(), new bytes(222));
+        assertEq(mockHooks.afterMintData(), new bytes(222));
     }
 
     function testBeforeMintInvalidReturn() public {
