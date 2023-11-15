@@ -12,20 +12,61 @@ import {FeeLibrary} from "../../src/libraries/FeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
+import {PoolModifyPositionTest} from "../../src/test/PoolModifyPositionTest.sol";
+import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
+import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
+import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
+import {ProtocolFeeControllerTest} from "../../src/test/ProtocolFeeControllerTest.sol";
 
 contract Deployers {
     using FeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
 
+    // Helpful test constants
     bytes constant ZERO_BYTES = new bytes(0);
-
     uint160 constant SQRT_RATIO_1_1 = Constants.SQRT_RATIO_1_1;
     uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
     uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
 
-    function deployCurrencies(uint256 totalSupply) internal returns (Currency currency0, Currency currency1) {
-        MockERC20[] memory tokens = deployTokens(2, totalSupply);
+    IPoolManager.ModifyPositionParams internal LIQ_PARAMS =
+        IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+
+    // Global variables
+    Currency internal currency0;
+    Currency internal currency1;
+    PoolManager manager;
+    PoolModifyPositionTest modifyPositionRouter;
+    PoolSwapTest swapRouter;
+    PoolDonateTest donateRouter;
+    PoolTakeTest takeRouter;
+    ProtocolFeeControllerTest feeController;
+    PoolKey key;
+
+    function deployFreshManager() internal {
+        manager = new PoolManager(500000);
+    }
+
+    function deployFreshManagerAndRouters() internal {
+        deployFreshManager();
+        swapRouter = new PoolSwapTest(manager);
+        modifyPositionRouter = new PoolModifyPositionTest(manager);
+        donateRouter = new PoolDonateTest(manager);
+        takeRouter = new PoolTakeTest(manager);
+        feeController = new ProtocolFeeControllerTest();
+    }
+
+    function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
+        MockERC20[] memory tokens = deployTokens(2, 1000 ether);
+
+        address[4] memory toApprove =
+            [address(swapRouter), address(modifyPositionRouter), address(donateRouter), address(takeRouter)];
+
+        for (uint256 i = 0; i < toApprove.length; i++) {
+            tokens[0].approve(toApprove[i], 1000 ether);
+            tokens[1].approve(toApprove[i], 1000 ether);
+        }
+
         return SortTokens.sort(tokens[0], tokens[1]);
     }
 
@@ -37,50 +78,50 @@ contract Deployers {
         }
     }
 
-    function createAndInitPool(PoolManager manager, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
-        public
-        returns (PoolKey memory key, PoolId id)
-    {
-        (key, id) = createAndInitPool(manager, hooks, fee, sqrtPriceX96, ZERO_BYTES);
-    }
-
-    function createAndInitPool(
-        PoolManager manager,
+    function initPool(
+        Currency _currency0,
+        Currency _currency1,
         IHooks hooks,
         uint24 fee,
         uint160 sqrtPriceX96,
         bytes memory initData
-    ) private returns (PoolKey memory key, PoolId id) {
-        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
-        (Currency currency0, Currency currency1) = SortTokens.sort(tokens[0], tokens[1]);
-        key = PoolKey(currency0, currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
-        id = key.toId();
-        manager.initialize(key, sqrtPriceX96, initData);
+    ) internal returns (PoolKey memory _key, PoolId id) {
+        _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
+        id = _key.toId();
+        manager.initialize(_key, sqrtPriceX96, initData);
     }
 
-    function createKey(IHooks hooks, uint24 fee) internal returns (PoolKey memory key) {
-        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
-        (Currency currency0, Currency currency1) = SortTokens.sort(tokens[0], tokens[1]);
-        key = PoolKey(currency0, currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
+    function initPoolAndAddLiquidity(
+        Currency _currency0,
+        Currency _currency1,
+        IHooks hooks,
+        uint24 fee,
+        uint160 sqrtPriceX96,
+        bytes memory initData
+    ) internal returns (PoolKey memory _key, PoolId id) {
+        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
+        modifyPositionRouter.modifyPosition{value: msg.value}(_key, LIQ_PARAMS, ZERO_BYTES);
     }
 
-    function createAndInitFreshPool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
+    function initPoolAndAddLiquidityETH(
+        Currency _currency0,
+        Currency _currency1,
+        IHooks hooks,
+        uint24 fee,
+        uint160 sqrtPriceX96,
+        bytes memory initData,
+        uint256 msgValue
+    ) internal returns (PoolKey memory _key, PoolId id) {
+        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
+        modifyPositionRouter.modifyPosition{value: msgValue}(_key, LIQ_PARAMS, ZERO_BYTES);
+    }
+
+    function initializeManagerRoutersAndOnePool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96, bytes memory initData)
         internal
-        returns (PoolManager manager, PoolKey memory key, PoolId id)
     {
-        (manager, key, id) = createAndInitFreshPool(hooks, fee, sqrtPriceX96, ZERO_BYTES);
-    }
-
-    function createAndInitFreshPool(IHooks hooks, uint24 fee, uint160 sqrtPriceX96, bytes memory initData)
-        internal
-        returns (PoolManager manager, PoolKey memory key, PoolId id)
-    {
-        manager = createFreshManager();
-        (key, id) = createAndInitPool(manager, hooks, fee, sqrtPriceX96, initData);
-        return (manager, key, id);
-    }
-
-    function createFreshManager() internal returns (PoolManager manager) {
-        manager = new PoolManager(500000);
+        deployFreshManagerAndRouters();
+        // sets the global currencyies and key
+        (currency0, currency1) = deployMintAndApprove2Currencies();
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, fee, sqrtPriceX96, initData);
     }
 }

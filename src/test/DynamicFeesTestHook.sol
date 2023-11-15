@@ -7,7 +7,7 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 
-contract DynamicFeesTest is BaseTestHooks, IDynamicFeeManager {
+contract DynamicFeesTestHook is BaseTestHooks, IDynamicFeeManager {
     uint24 internal fee;
     IPoolManager manager;
 

@@ -5,12 +5,12 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {TestBase} from "./TestBase.sol";
+import {PoolTestBase} from "./PoolTestBase.sol";
 
-contract PoolSwapTest is TestBase {
+contract PoolSwapTest is PoolTestBase {
     using CurrencyLibrary for Currency;
 
-    constructor(IPoolManager _manager) TestBase(_manager) {}
+    constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
     error NoSwapOccurred();
 

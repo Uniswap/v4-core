@@ -17,51 +17,45 @@ import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../src/test/PoolDonateTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {Fees} from "../src/Fees.sol";
-import {PoolId} from "../src/types/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
+    using PoolIdLibrary for PoolKey;
+
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
     MockHooks mockHooks;
-    PoolManager manager;
-    PoolKey key;
-    PoolModifyPositionTest modifyPositionRouter;
-    PoolSwapTest swapRouter;
-    PoolDonateTest donateRouter;
 
     function setUp() public {
         MockHooks impl = new MockHooks();
         vm.etch(ALL_HOOKS_ADDRESS, address(impl).code);
         mockHooks = MockHooks(ALL_HOOKS_ADDRESS);
-        (manager, key,) = Deployers.createAndInitFreshPool(mockHooks, 3000, SQRT_RATIO_1_1);
-        modifyPositionRouter = new PoolModifyPositionTest(IPoolManager(address(manager)));
-        swapRouter = new PoolSwapTest(IPoolManager(address(manager)));
-        donateRouter = new PoolDonateTest(IPoolManager(address(manager)));
+
+        initializeManagerRoutersAndOnePool(mockHooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testInitializeSucceedsWithHook() public {
-        (PoolManager _manager,, PoolId id) =
-            Deployers.createAndInitFreshPool(mockHooks, 3000, SQRT_RATIO_1_1, new bytes(123));
-        (uint160 sqrtPriceX96,,,) = _manager.getSlot0(id);
+        key.fee = 100;
+        manager.initialize(key, SQRT_RATIO_1_1, new bytes(123));
+
+        (uint160 sqrtPriceX96,,,) = manager.getSlot0(key.toId());
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
         assertEq(mockHooks.beforeInitializeData(), new bytes(123));
         assertEq(mockHooks.afterInitializeData(), new bytes(123));
     }
 
     function testBeforeInitializeInvalidReturn() public {
+        key.fee = 100;
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
-        (Currency currency0, Currency currency1) = Deployers.deployCurrencies(2 ** 255);
-        PoolKey memory _key = PoolKey(currency0, currency1, 3000, int24(3000 / 100 * 2), mockHooks);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(_key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testAfterInitializeInvalidReturn() public {
+        key.fee = 100;
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
-        (Currency currency0, Currency currency1) = Deployers.deployCurrencies(2 ** 255);
-        PoolKey memory _key = PoolKey(currency0, currency1, 3000, int24(3000 / 100 * 2), mockHooks);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(_key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testModifyPositionSucceedsWithHook() public {

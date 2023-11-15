@@ -5,12 +5,14 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {TestBase} from "./TestBase.sol";
+import {PoolTestBase} from "./PoolTestBase.sol";
 
-contract PoolModifyPositionTest is TestBase {
+import {console2} from "forge-std/console2.sol";
+
+contract PoolModifyPositionTest is PoolTestBase {
     using CurrencyLibrary for Currency;
 
-    constructor(IPoolManager _manager) TestBase(_manager) {}
+    constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
     struct CallbackData {
         address sender;
@@ -41,6 +43,10 @@ contract PoolModifyPositionTest is TestBase {
 
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender);
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
+
+        console2.log(data.params.liquidityDelta);
+        console2.log(delta0);
+        console2.log(delta1);
 
         if (data.params.liquidityDelta > 0) {
             assert(delta0 > 0 || delta1 > 0);

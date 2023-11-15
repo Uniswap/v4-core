@@ -4,14 +4,14 @@ pragma solidity ^0.8.20;
 import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {TestBase} from "./TestBase.sol";
+import {PoolTestBase} from "./PoolTestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 
-contract PoolTakeTest is TestBase {
+contract PoolTakeTest is PoolTestBase {
     using CurrencyLibrary for Currency;
     using SafeCast for uint256;
 
-    constructor(IPoolManager _manager) TestBase(_manager) {}
+    constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
     struct CallbackData {
         address sender;

@@ -6,10 +6,10 @@ import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {LockDataLibrary} from "../src/libraries/LockDataLibrary.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
+import {IHooks} from "../src/interfaces/IHooks.sol";
 import {ILockCallback} from "../src/interfaces/callback/ILockCallback.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {TokenFixture} from "./utils/TokenFixture.sol";
 
 contract TokenLocker is ILockCallback {
     using CurrencyLibrary for Currency;
@@ -127,12 +127,9 @@ contract ParallelLocker is ILockCallback {
     }
 }
 
-contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
-    PoolManager manager;
-
+contract PoolManagerReentrancyTest is Test, Deployers {
     function setUp() public {
-        initializeTokens();
-        manager = Deployers.createFreshManager();
+        initializeManagerRoutersAndOnePool(IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testTokenLocker() public {

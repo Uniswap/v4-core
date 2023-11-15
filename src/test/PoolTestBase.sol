@@ -6,7 +6,7 @@ import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
-abstract contract TestBase is ILockCallback {
+abstract contract PoolTestBase is ILockCallback {
     using CurrencyLibrary for Currency;
 
     IPoolManager public immutable manager;
