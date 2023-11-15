@@ -114,4 +114,8 @@ library Hooks {
     function shouldAllowNoOp(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & NO_OP_FLAG != 0;
     }
+
+    function isValidNoOpCall(IHooks self, bytes4 selector) internal pure returns (bool) {
+        return shouldAllowNoOp(self) && selector == NO_OP_SELECTOR;
+    }
 }

@@ -187,8 +187,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
             if (selector != IHooks.beforeModifyPosition.selector) {
-                if (key.hooks.shouldAllowNoOp() && selector == Hooks.NO_OP_SELECTOR) {
-                    return delta;
+                if (key.hooks.isValidNoOpCall(selector)) {
+                    return BalanceDelta.wrap(0);
                 } else {
                     revert Hooks.InvalidHookResponse();
                 }
@@ -247,8 +247,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
             if (selector != IHooks.beforeSwap.selector) {
-                if (key.hooks.shouldAllowNoOp() && selector == Hooks.NO_OP_SELECTOR) {
-                    return delta;
+                if (key.hooks.isValidNoOpCall(selector)) {
+                    return BalanceDelta.wrap(0);
                 } else {
                     revert Hooks.InvalidHookResponse();
                 }
@@ -304,8 +304,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
             if (selector != IHooks.beforeDonate.selector) {
-                if (key.hooks.shouldAllowNoOp() && selector == Hooks.NO_OP_SELECTOR) {
-                    return delta;
+                if (key.hooks.isValidNoOpCall(selector)) {
+                    return BalanceDelta.wrap(0);
                 } else {
                     revert Hooks.InvalidHookResponse();
                 }
