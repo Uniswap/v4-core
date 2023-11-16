@@ -46,11 +46,21 @@ All contributions must follow the below standards. Maintainers will close out PR
 
 ## Setup
 
+Run `source .env` to set FOUNDRY_SOLC to the correct solc binary.
+
 `forge build` to get contract artifacts and dependencies for forge
+
+If after running `source .env`, you continue to get the error `Function "tload" not found.` try running
+
+On MacOS:
+`forge build --use ./bin/solc-mac`
+
+On Linux:
+`forge build --use ./bin/solc-static-linux`
 
 ## Tests
 
-`forge snapshot`to update the forge gas snapshots
+`forge snapshot` to update the forge gas snapshots. Note these must use a static fuzz seed, so please run `source .env`, use `FOUNDRY_FUZZ_SEED=0x4444`, or use `just snapshots` when running forge snapshots.
 
 `forge test` to run forge tests
 
