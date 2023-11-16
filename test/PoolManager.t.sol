@@ -954,7 +954,8 @@ contract PoolManagerTest is Test, Deployers, TokenFixture, GasSnapshot {
         modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
 
-        swapParams = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
+        swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
         testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, useWrappedNative: false});
 
