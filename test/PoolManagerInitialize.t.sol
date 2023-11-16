@@ -19,8 +19,6 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;

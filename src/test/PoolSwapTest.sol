@@ -6,8 +6,9 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
+import {Test} from "forge-std/Test.sol";
 
-contract PoolSwapTest is PoolTestBase {
+contract PoolSwapTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
@@ -49,7 +50,8 @@ contract PoolSwapTest is PoolTestBase {
         (,, uint256 reserveBefore0, int256 deltaBefore0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveBefore1, int256 deltaBefore1) = _fetchBalances(data.key.currency1, data.sender);
 
-        assert(deltaBefore0 == 0 && deltaBefore1 == 0);
+        assertEq(deltaBefore0, 0);
+        assertEq(deltaBefore1, 0);
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
@@ -59,30 +61,30 @@ contract PoolSwapTest is PoolTestBase {
         // Make sure youve added liquidity to the test pool!
         if (BalanceDelta.unwrap(delta) == 0) revert NoSwapOccurred();
 
-        assert(reserveBefore0 == reserveAfter0);
-        assert(reserveBefore1 == reserveAfter1);
+        assertEq(reserveBefore0, reserveAfter0);
+        assertEq(reserveBefore1, reserveAfter1);
 
         if (data.params.zeroForOne) {
             if (data.params.amountSpecified > 0) {
                 // exact input, 0 for 1
-                assert(deltaAfter0 == data.params.amountSpecified);
+                assertEq(deltaAfter0, data.params.amountSpecified);
                 assert(deltaAfter1 < 0);
             } else {
                 // exact output, 0 for 1
                 assert(deltaAfter0 > 0);
-                assert(deltaAfter1 == data.params.amountSpecified);
+                assertEq(deltaAfter1, data.params.amountSpecified);
             }
             _settle(data.key.currency0, data.sender, delta.amount0(), data.testSettings.settleUsingTransfer);
             _take(data.key.currency1, data.sender, delta.amount1(), data.testSettings.withdrawTokens);
         } else {
             if (data.params.amountSpecified > 0) {
                 // exact input, 1 for 0
-                assert(deltaAfter1 == data.params.amountSpecified);
+                assertEq(deltaAfter1, data.params.amountSpecified);
                 assert(deltaAfter0 < 0);
             } else {
                 // exact output, 1 for 0
                 assert(deltaAfter1 > 0);
-                assert(deltaAfter0 == data.params.amountSpecified);
+                assertEq(deltaAfter0, data.params.amountSpecified);
             }
             _settle(data.key.currency1, data.sender, delta.amount1(), data.testSettings.settleUsingTransfer);
             _take(data.key.currency0, data.sender, delta.amount0(), data.testSettings.withdrawTokens);

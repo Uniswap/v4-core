@@ -7,8 +7,6 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 contract PoolModifyPositionTest is PoolTestBase {
     using CurrencyLibrary for Currency;
 
