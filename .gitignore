@@ -5,5 +5,4 @@ node_modules/
 typechain/
 foundry-out/
 .vscode/
-solmate
 out/
