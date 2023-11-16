@@ -8,7 +8,6 @@ import {Deployers} from "./utils/Deployers.sol";
 import {ILockCallback} from "../src/interfaces/callback/ILockCallback.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-import {PoolModifyPositionTest} from "../src/test/PoolModifyPositionTest.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Lockers} from "../src/libraries/Lockers.sol";
@@ -16,23 +15,10 @@ import {Lockers} from "../src/libraries/Lockers.sol";
 contract LockersLibrary is Test, Deployers, ILockCallback {
     using CurrencyLibrary for Currency;
 
-    PoolManager manager;
-    PoolKey key;
-    Currency currency0;
-
     uint256 constant LOCKERS_OFFSET = uint256(1);
 
     function setUp() public {
-        manager = Deployers.createFreshManager();
-        (key,) = createAndInitPool(manager, IHooks(address(0)), 3000, SQRT_RATIO_1_1);
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
-        MockERC20(Currency.unwrap(key.currency1)).mint(address(this), 1e18);
-
-        PoolModifyPositionTest modifyRouter = new PoolModifyPositionTest(manager);
-
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyRouter), 1e18);
-        MockERC20(Currency.unwrap(key.currency1)).approve(address(modifyRouter), 1e18);
-        modifyRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-60, 60, 1000), "");
+        initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
     }
 
     function testLockerLengthAndNonzeroDeltaCount() public {

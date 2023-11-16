@@ -12,6 +12,11 @@ import {FixedPoint96} from "./FixedPoint96.sol";
 library SqrtPriceMath {
     using SafeCast for uint256;
 
+    error InvalidPriceOrLiquidity();
+    error InvalidPrice();
+    error NotEnoughLiquidity();
+    error PriceOverflow();
+
     /// @notice Gets the next sqrt price given a delta of currency0
     /// @dev Always rounds up, because in the exact output case (increasing price) we need to move the price at least
     /// far enough to get the desired output amount, and in the exact input case (decreasing price) we need to move the
@@ -34,8 +39,8 @@ library SqrtPriceMath {
 
         if (add) {
             unchecked {
-                uint256 product;
-                if ((product = amount * sqrtPX96) / amount == sqrtPX96) {
+                uint256 product = amount * sqrtPX96;
+                if (product / amount == sqrtPX96) {
                     uint256 denominator = numerator1 + product;
                     if (denominator >= numerator1) {
                         // always fits in 160 bits
@@ -47,10 +52,10 @@ library SqrtPriceMath {
             return uint160(UnsafeMath.divRoundingUp(numerator1, (numerator1 / sqrtPX96) + amount));
         } else {
             unchecked {
-                uint256 product;
+                uint256 product = amount * sqrtPX96;
                 // if the product overflows, we know the denominator underflows
                 // in addition, we must check that the denominator does not underflow
-                require((product = amount * sqrtPX96) / amount == sqrtPX96 && numerator1 > product);
+                if (product / amount != sqrtPX96 || numerator1 <= product) revert PriceOverflow();
                 uint256 denominator = numerator1 - product;
                 return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
             }
@@ -89,9 +94,11 @@ library SqrtPriceMath {
                     : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity)
             );
 
-            require(sqrtPX96 > quotient);
+            if (sqrtPX96 <= quotient) revert NotEnoughLiquidity();
             // always fits 160 bits
-            return uint160(sqrtPX96 - quotient);
+            unchecked {
+                return uint160(sqrtPX96 - quotient);
+            }
         }
     }
 
@@ -107,8 +114,7 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
-        require(sqrtPX96 > 0);
-        require(liquidity > 0);
+        if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
 
         // round to make sure that we don't pass the target price
         return zeroForOne
@@ -128,8 +134,7 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
-        require(sqrtPX96 > 0);
-        require(liquidity > 0);
+        if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
 
         // round to make sure that we pass the target price
         return zeroForOne
@@ -156,7 +161,7 @@ library SqrtPriceMath {
             uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
             uint256 numerator2 = sqrtRatioBX96 - sqrtRatioAX96;
 
-            require(sqrtRatioAX96 > 0);
+            if (sqrtRatioAX96 == 0) revert InvalidPrice();
 
             return roundUp
                 ? UnsafeMath.divRoundingUp(FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtRatioBX96), sqrtRatioAX96)
