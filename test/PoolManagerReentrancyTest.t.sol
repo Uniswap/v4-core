@@ -5,10 +5,10 @@ import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
+import {IHooks} from "../src/interfaces/IHooks.sol";
 import {ILockCallback} from "../src/interfaces/callback/ILockCallback.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {TokenFixture} from "./utils/TokenFixture.sol";
 
 contract TokenLocker is ILockCallback {
     using CurrencyLibrary for Currency;
@@ -128,13 +128,11 @@ contract ParallelLocker is ILockCallback {
     }
 }
 
-contract PoolManagerReentrancyTest is Test, Deployers, TokenFixture {
+contract PoolManagerReentrancyTest is Test, Deployers {
     uint256 constant INDEX_OFFSET = 1;
-    PoolManager manager;
 
     function setUp() public {
-        initializeTokens();
-        manager = Deployers.createFreshManager();
+        initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
     }
 
     function testTokenLocker() public {
