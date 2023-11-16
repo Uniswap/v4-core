@@ -15,15 +15,14 @@ import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {IDynamicFeeManager} from "././../src/interfaces/IDynamicFeeManager.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {DynamicFeesTest} from "../src/test/DynamicFeesTest.sol";
-import {PoolModifyPositionTest} from "../src/test/PoolModifyPositionTest.sol";
+import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 contract TestDynamicFees is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
-    DynamicFeesTest dynamicFees = DynamicFeesTest(
+    DynamicFeesTestHook dynamicFeesHook = DynamicFeesTestHook(
         address(
             uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
                 & uint160(
@@ -34,7 +33,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         )
     );
 
-    DynamicFeesTest dynamicFeesNoHook = DynamicFeesTest(
+    DynamicFeesTestHook dynamicFeesNoHook = DynamicFeesTestHook(
         address(
             uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
                 & uint160(
@@ -45,60 +44,43 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         )
     );
 
-    PoolManager manager;
-    PoolKey key;
-    PoolKey key2;
-    PoolSwapTest swapRouter;
-    PoolModifyPositionTest modifyPositionRouter;
-
     function setUp() public {
-        DynamicFeesTest impl = new DynamicFeesTest();
-        vm.etch(address(dynamicFees), address(impl).code);
+        DynamicFeesTestHook impl = new DynamicFeesTestHook();
+        vm.etch(address(dynamicFeesHook), address(impl).code);
         vm.etch(address(dynamicFeesNoHook), address(impl).code);
 
-        (manager, key,) =
-            Deployers.createAndInitFreshPool(IHooks(address(dynamicFees)), FeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1);
-        dynamicFees.setManager(IPoolManager(manager));
-
-        (key2,) = Deployers.createAndInitPool(
-            manager, IHooks(address(dynamicFeesNoHook)), FeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1
-        );
+        deployFreshManagerAndRouters();
+        dynamicFeesHook.setManager(IPoolManager(manager));
         dynamicFeesNoHook.setManager(IPoolManager(manager));
 
-        swapRouter = new PoolSwapTest(manager);
-        modifyPositionRouter = new PoolModifyPositionTest(manager);
-
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ether);
-        MockERC20(Currency.unwrap(key.currency1)).mint(address(this), 10 ether);
-        MockERC20(Currency.unwrap(key2.currency0)).mint(address(this), 10 ether);
-        MockERC20(Currency.unwrap(key2.currency1)).mint(address(this), 10 ether);
-
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(swapRouter), 10 ether);
-        MockERC20(Currency.unwrap(key.currency1)).approve(address(swapRouter), 10 ether);
-        MockERC20(Currency.unwrap(key2.currency0)).approve(address(swapRouter), 10 ether);
-        MockERC20(Currency.unwrap(key2.currency1)).approve(address(swapRouter), 10 ether);
-
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ether);
-        MockERC20(Currency.unwrap(key.currency1)).approve(address(modifyPositionRouter), 10 ether);
-        MockERC20(Currency.unwrap(key2.currency0)).approve(address(modifyPositionRouter), 10 ether);
-        MockERC20(Currency.unwrap(key2.currency1)).approve(address(modifyPositionRouter), 10 ether);
-
-        // add liquidity for the 2 new pools
-        IPoolManager.ModifyPositionParams memory liqParams =
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
-        modifyPositionRouter.modifyPosition(key2, liqParams, ZERO_BYTES);
+        (currency0, currency1) = deployMintAndApprove2Currencies();
+        (key,) = initPoolAndAddLiquidity(
+            currency0,
+            currency1,
+            IHooks(address(dynamicFeesHook)),
+            FeeLibrary.DYNAMIC_FEE_FLAG,
+            SQRT_RATIO_1_1,
+            ZERO_BYTES
+        );
     }
 
     function testPoolInitializeFailsWithTooLargeFee() public {
-        dynamicFees.setFee(1000000);
-        PoolKey memory key0 = Deployers.createKey(IHooks(address(dynamicFees)), FeeLibrary.DYNAMIC_FEE_FLAG);
+        (Currency currency2, Currency currency3) = deployMintAndApprove2Currencies();
+        key = PoolKey({
+            currency0: currency2,
+            currency1: currency3,
+            fee: FeeLibrary.DYNAMIC_FEE_FLAG,
+            hooks: dynamicFeesHook,
+            tickSpacing: 60
+        });
+        dynamicFeesHook.setFee(1000000);
+
         vm.expectRevert(IFees.FeeTooLarge.selector);
-        manager.initialize(key0, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testUpdateFailsWithTooLargeFee() public {
-        dynamicFees.setFee(1000000);
+        dynamicFeesHook.setFee(1000000);
         vm.expectRevert(IFees.FeeTooLarge.selector);
         manager.updateDynamicSwapFee(key);
     }
@@ -115,7 +97,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     );
 
     function testSwapWorks() public {
-        dynamicFees.setFee(123);
+        dynamicFeesHook.setFee(123);
         manager.updateDynamicSwapFee(key);
 
         IPoolManager.SwapParams memory params =
@@ -132,7 +114,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     }
 
     function testCacheDynamicFeeAndSwap() public {
-        dynamicFees.setFee(123);
+        dynamicFeesHook.setFee(123);
         manager.updateDynamicSwapFee(key);
 
         IPoolManager.SwapParams memory params =
@@ -150,7 +132,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     }
 
     function testDynamicFeeAndBeforeSwapHook() public {
-        dynamicFees.setFee(123);
+        dynamicFeesHook.setFee(123);
         manager.updateDynamicSwapFee(key);
 
         IPoolManager.SwapParams memory params =
@@ -168,14 +150,18 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     }
 
     function testUpdateRevertsOnStaticFeePool() public {
-        (PoolKey memory staticPoolKey,) = Deployers.createAndInitPool(manager, IHooks(address(0)), 3000, SQRT_RATIO_1_1);
+        (key,) = initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES);
         vm.expectRevert(IFees.FeeNotDynamic.selector);
-        manager.updateDynamicSwapFee(staticPoolKey);
+        manager.updateDynamicSwapFee(key);
     }
 
     function testDynamicFeesCacheNoOtherHooks() public {
+        (key,) = initPoolAndAddLiquidity(
+            currency0, currency1, dynamicFeesNoHook, FeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1, ZERO_BYTES
+        );
+
         dynamicFeesNoHook.setFee(123);
-        manager.updateDynamicSwapFee(key2);
+        manager.updateDynamicSwapFee(key);
 
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
@@ -183,7 +169,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), 100, -99, 79228162514264329670727698910, 1e18, -1, 0);
+        emit Swap(key.toId(), address(swapRouter), 100, -98, 79228162514264329749955861424, 1e18, -1, 123);
 
         snapStart("cached dynamic fee, no hooks");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
