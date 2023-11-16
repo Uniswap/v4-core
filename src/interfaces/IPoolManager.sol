@@ -185,7 +185,10 @@ interface IPoolManager is IFees, IClaims {
     function setProtocolFees(PoolKey memory key) external;
 
     /// @notice Called by the protocol fee controller to collect accumulated protocol fees
-    /// Protocol fees are stored as Claims and must be burnt for ERC20s
+    /// @param recipient The address to receive the ERC20 protocol fees
+    /// @param currency The currency to collect protocol fees for
+    /// @param amount The amount of protocol fees to collect. Use 0 to collect all.
+    /// @dev Protocol fees are stored as Claims and will be burnt for ERC20s
     function collectProtocolFees(address recipient, Currency currency, uint256 amount)
         external
         returns (uint256 amountCollected);

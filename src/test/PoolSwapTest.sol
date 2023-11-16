@@ -46,10 +46,6 @@ contract PoolSwapTest is ILockCallback {
         if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
     }
 
-    function _burnFromSelf(Currency currency, uint256 amount) internal {
-        manager.burn(currency, amount);
-    }
-
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
