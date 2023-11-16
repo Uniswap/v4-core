@@ -10,12 +10,12 @@ import {Constants} from "./utils/Constants.sol";
 
 contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromInput_revertsIfPriceIsZero() public {
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.InvalidPriceOrLiquidity.selector);
         SqrtPriceMath.getNextSqrtPriceFromInput(0, 0, 0.1 ether, false);
     }
 
     function test_getNextSqrtPriceFromInput_revertsIfLiquidityIsZero() public {
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.InvalidPriceOrLiquidity.selector);
         SqrtPriceMath.getNextSqrtPriceFromInput(1, 0, 0.1 ether, true);
     }
 
@@ -109,12 +109,12 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfPriceIsZero() public {
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.InvalidPriceOrLiquidity.selector);
         SqrtPriceMath.getNextSqrtPriceFromOutput(0, 0, 0.1 ether, false);
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfLiquidityIsZero() public {
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.InvalidPriceOrLiquidity.selector);
         SqrtPriceMath.getNextSqrtPriceFromOutput(1, 0, 0.1 ether, true);
     }
 
@@ -123,7 +123,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint128 liquidity = 1024;
         uint256 amountOut = 4;
 
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.PriceOverflow.selector);
         SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
     }
 
@@ -132,7 +132,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint128 liquidity = 1024;
         uint256 amountOut = 5;
 
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.PriceOverflow.selector);
         SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
     }
 
@@ -141,7 +141,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint128 liquidity = 1024;
         uint256 amountOut = 262145;
 
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.NotEnoughLiquidity.selector);
         SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
     }
 
@@ -150,7 +150,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint128 liquidity = 1024;
         uint256 amountOut = 262144;
 
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.NotEnoughLiquidity.selector);
         SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, true);
     }
 
@@ -171,7 +171,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         uint128 liquidity = 1024;
         uint256 amountOut = 4;
 
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.PriceOverflow.selector);
         SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, amountOut, false);
     }
 
@@ -217,7 +217,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromOutput_revertsIfAmountOutIsImpossibleInOneForZeroDirection() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
-        vm.expectRevert();
+        vm.expectRevert(SqrtPriceMath.PriceOverflow.selector);
         SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, 1, Constants.MAX_UINT256, false);
     }
 

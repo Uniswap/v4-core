@@ -2,13 +2,13 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {TokenFixture} from "./utils/TokenFixture.sol";
 import {Claims} from "../src/Claims.sol";
 import {IClaims} from "../src/interfaces/IClaims.sol";
 import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
 import {MockClaims} from "../src/test/MockClaims.sol";
+import {Deployers} from "./utils/Deployers.sol";
 
-contract ClaimsTest is TokenFixture, Test {
+contract ClaimsTest is Test, Deployers {
     using CurrencyLibrary for Currency;
 
     MockClaims claimsImpl = new MockClaims();
@@ -17,7 +17,9 @@ contract ClaimsTest is TokenFixture, Test {
     event Burn(address indexed from, Currency indexed currency, uint256 amount);
     event Transfer(address indexed from, address indexed to, Currency indexed currency, uint256 amount);
 
-    function setUp() public {}
+    function setUp() public {
+        (currency0, currency1) = deployMintAndApprove2Currencies();
+    }
 
     function testCanBurn(uint256 amount) public {
         assertEq(claimsImpl.balanceOf(address(this), currency0), 0);
