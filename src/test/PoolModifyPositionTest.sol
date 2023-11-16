@@ -8,8 +8,6 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 
-import "forge-std/console2.sol";
-
 contract PoolModifyPositionTest is PoolTestBase {
     using CurrencyLibrary for Currency;
 

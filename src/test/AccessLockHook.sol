@@ -7,6 +7,7 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {Hooks} from "../libraries/Hooks.sol";
+import {TickMath} from "../libraries/TickMath.sol";
 
 contract AccessLockHook is BaseTestHooks {
     using CurrencyLibrary for Currency;
@@ -17,13 +18,31 @@ contract AccessLockHook is BaseTestHooks {
         manager = _manager;
     }
 
-    function beforeInitialize(
+    enum LockAction {
+        Mint,
+        Take,
+        Donate,
+        Swap,
+        ModifyPosition
+    }
+
+    function beforeSwap(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        uint160, /* sqrtPriceX96 **/
+        IPoolManager.SwapParams calldata, /* params **/
         bytes calldata /* hookData **/
-    ) external pure override returns (bytes4) {
-        return IHooks.beforeInitialize.selector;
+    ) external override returns (bytes4) {
+        return IHooks.beforeSwap.selector;
+    }
+
+    function beforeDonate(
+        address, /* sender **/
+        PoolKey calldata, /* key **/
+        uint256, /* amount0 **/
+        uint256, /* amount1 **/
+        bytes calldata /* hookData **/
+    ) external override returns (bytes4) {
+        return IHooks.beforeDonate.selector;
     }
 
     function beforeModifyPosition(
@@ -32,8 +51,39 @@ contract AccessLockHook is BaseTestHooks {
         IPoolManager.ModifyPositionParams calldata, /* params **/
         bytes calldata hookData
     ) external override returns (bytes4) {
-        (uint256 amount1) = abi.decode(hookData, (uint256));
-        manager.mint(key.currency1, address(this), amount1);
+        if (hookData.length == 0) {
+            // We have re-entered the hook or we are initializing liquidity in the pool before testing the lock actions.
+            return IHooks.beforeModifyPosition.selector;
+        }
+        (uint256 amount, LockAction action) = abi.decode(hookData, (uint256, LockAction));
+
+        // These actions just use some hardcoded parameters.
+        if (action == LockAction.Mint) {
+            manager.mint(key.currency1, address(this), amount);
+        } else if (action == LockAction.Take) {
+            manager.take(key.currency1, address(this), amount);
+        } else if (action == LockAction.Donate) {
+            manager.donate(key, amount, amount, new bytes(0));
+        } else if (action == LockAction.Swap) {
+            manager.swap(
+                key,
+                IPoolManager.SwapParams({
+                    zeroForOne: true,
+                    amountSpecified: int256(amount),
+                    sqrtPriceLimitX96: TickMath.MIN_SQRT_RATIO + 1
+                }),
+                new bytes(0)
+            );
+        } else if (action == LockAction.ModifyPosition) {
+            manager.modifyPosition(
+                key,
+                IPoolManager.ModifyPositionParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),
+                new bytes(0)
+            );
+        } else {
+            revert("Invalid action");
+        }
+
         return IHooks.beforeModifyPosition.selector;
     }
 
