@@ -52,18 +52,6 @@ contract OverflowProtocolFeeControllerTest is IProtocolFeeController {
     }
 }
 
-/// @notice Returns a value of an invalid type
-contract InvalidReturnTypeProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeesForPool(PoolKey memory /* key */ ) external view returns (uint24) {
-        address a = address(this);
-        assembly {
-            let ptr := mload(0x40)
-            mstore(ptr, a)
-            return(ptr, 0x20)
-        }
-    }
-}
-
 /// @notice Returns data that is larger than a word
 contract InvalidReturnSizeProtocolFeeControllerTest is IProtocolFeeController {
     function protocolFeesForPool(PoolKey memory /* key */ ) external view returns (uint24) {

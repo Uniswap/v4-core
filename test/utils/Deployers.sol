@@ -16,7 +16,13 @@ import {PoolModifyPositionTest} from "../../src/test/PoolModifyPositionTest.sol"
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
-import {ProtocolFeeControllerTest} from "../../src/test/ProtocolFeeControllerTest.sol";
+import {
+    ProtocolFeeControllerTest,
+    OutOfBoundsProtocolFeeControllerTest,
+    RevertingProtocolFeeControllerTest,
+    OverflowProtocolFeeControllerTest,
+    InvalidReturnSizeProtocolFeeControllerTest
+} from "../../src/test/ProtocolFeeControllerTest.sol";
 
 contract Deployers {
     using FeeLibrary for uint24;
@@ -41,6 +47,10 @@ contract Deployers {
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
     ProtocolFeeControllerTest feeController;
+    RevertingProtocolFeeControllerTest revertingFeeController;
+    OutOfBoundsProtocolFeeControllerTest outOfBoundsFeeController;
+    OverflowProtocolFeeControllerTest overflowFeeController;
+    InvalidReturnSizeProtocolFeeControllerTest invalidReturnSizeFeeController;
 
     PoolKey key;
     PoolKey nativeKey;
@@ -58,6 +68,11 @@ contract Deployers {
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
         feeController = new ProtocolFeeControllerTest();
+        revertingFeeController = new RevertingProtocolFeeControllerTest();
+        outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
+        overflowFeeController = new OverflowProtocolFeeControllerTest();
+        invalidReturnSizeFeeController = new InvalidReturnSizeProtocolFeeControllerTest();
+
         manager.setProtocolFeeController(feeController);
     }
 
