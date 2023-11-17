@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
+import {console2} from "forge-std/console2.sol";
+
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
@@ -9,6 +11,8 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IFees} from "../src/interfaces/IFees.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {PoolManager} from "../src/PoolManager.sol";
+import {SafeCast} from "../src/libraries/SafeCast.sol";
+import {FullMath} from "../src/libraries/FullMath.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
@@ -625,6 +629,49 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
+    }
+
+    function test_collectProtocolFees_ERC20_returnsCorrectFeesWithParameters(uint256 swapAmount, uint256 balanceToClaim) public {
+        uint24 protocolFee = 260; // 0001 00 00 0100
+        address protocolFeeRecipient = address(1);
+        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+        manager.setProtocolFees(key);
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees, protocolFee << 12);
+        console2.log(slot0.swapFee);
+        uint256 feeAmount = FullMath.mulDivRoundingUp(swapAmount, slot0.swapFee, 1e6 - slot0.swapFee);
+        console2.log(feeAmount);
+        uint256 expectedFees = feeAmount / (getSwapFee(slot0Start.protocolFees) % 64);
+        console2.log(expectedFees);
+
+        swapRouter.swap(
+            // zeroForOne for now
+            key, IPoolManager.SwapParams(true, SafeCast.toInt256(swapAmount), SQRT_RATIO_1_2), PoolSwapTest.TestSettings(true, true), ZERO_BYTES
+        );
+
+        assertEq(manager.balanceOf(address(feeController), currency0), expectedFees);
+        assertEq(manager.balanceOf(address(feeController), currency1), 0);
+        assertEq(currency0.balanceOf(protocolFeeRecipient), 0);
+
+        vm.prank(address(feeController));
+        if(balanceToClaim == 0 || balanceToClaim == expectedFees) {
+            // Expect that they claimed their entire balance
+            manager.collectProtocolFees(protocolFeeRecipient, currency0, balanceToClaim);
+            assertEq(currency0.balanceOf(protocolFeeRecipient), expectedFees);
+            assertEq(manager.balanceOf(address(feeController), currency0), 0);
+        }
+        else if (balanceToClaim < expectedFees) {
+            // Expect that they claimed some of their balance
+            manager.collectProtocolFees(protocolFeeRecipient, currency0, balanceToClaim);
+            assertEq(currency0.balanceOf(protocolFeeRecipient), balanceToClaim);
+            assertEq(manager.balanceOf(address(feeController), currency0), expectedFees - balanceToClaim);
+        }
+        else {
+            // Must revert
+            vm.expectRevert();
+            manager.collectProtocolFees(protocolFeeRecipient, currency0, balanceToClaim);
+        }
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter_gas() public {
