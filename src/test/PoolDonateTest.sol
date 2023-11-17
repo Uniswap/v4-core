@@ -7,9 +7,12 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Test} from "forge-std/Test.sol";
+import {Hooks} from "../libraries/Hooks.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
 
 contract PoolDonateTest is PoolTestBase, Test {
     using CurrencyLibrary for Currency;
+    using Hooks for IHooks;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
@@ -52,13 +55,17 @@ contract PoolDonateTest is PoolTestBase, Test {
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
 
-        assertEq(reserveBefore0, reserveAfter0);
-        assertEq(reserveBefore1, reserveAfter1);
-        assertEq(deltaAfter0, int256(data.amount0));
-        assertEq(deltaAfter1, int256(data.amount1));
+        if (!data.key.hooks.shouldAccessLock()) {
+            assertEq(reserveBefore0, reserveAfter0);
+            assertEq(reserveBefore1, reserveAfter1);
+            assertEq(deltaAfter0, int256(data.amount0));
+            assertEq(deltaAfter1, int256(data.amount1));
+        }
 
-        if (data.amount0 > 0) _settle(data.key.currency0, data.sender, delta.amount0(), true);
-        if (data.amount1 > 0) _settle(data.key.currency1, data.sender, delta.amount1(), true);
+        if (deltaAfter0 > 0) _settle(data.key.currency0, data.sender, int128(deltaAfter0), true);
+        if (deltaAfter1 > 0) _settle(data.key.currency1, data.sender, int128(deltaAfter1), true);
+        if (deltaAfter0 < 0) _take(data.key.currency0, data.sender, int128(deltaAfter0), true);
+        if (deltaAfter1 < 0) _take(data.key.currency1, data.sender, int128(deltaAfter1), true);
 
         return abi.encode(delta);
     }

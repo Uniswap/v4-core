@@ -37,12 +37,12 @@ contract AccessLockHook is BaseTestHooks {
 
     function beforeDonate(
         address, /* sender **/
-        PoolKey calldata, /* key **/
+        PoolKey calldata key,
         uint256, /* amount0 **/
         uint256, /* amount1 **/
-        bytes calldata /* hookData **/
+        bytes calldata hookData
     ) external override returns (bytes4) {
-        return IHooks.beforeDonate.selector;
+        return _executeAction(key, hookData, IHooks.beforeDonate.selector);
     }
 
     function beforeModifyPosition(
