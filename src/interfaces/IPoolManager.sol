@@ -4,14 +4,14 @@ pragma solidity ^0.8.20;
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
-import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IHooks} from "./IHooks.sol";
 import {IFees} from "./IFees.sol";
+import {IClaims} from "./IClaims.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IFees, IERC1155 {
+interface IPoolManager is IFees, IClaims {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
@@ -114,19 +114,14 @@ interface IPoolManager is IFees, IERC1155 {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
-    /// @notice Contains data about pool lockers.
-    struct LockData {
-        /// @notice The current number of active lockers
-        uint128 length;
-        /// @notice The total number of nonzero deltas over all active + completed lockers
-        uint128 nonzeroDeltaCount;
-    }
-
     /// @notice Returns the locker in the ith position of the locker queue.
     function getLock(uint256 i) external view returns (address locker);
 
-    /// @notice Returns lock data
-    function lockData() external view returns (uint128 length, uint128 nonzeroDeltaCount);
+    /// @notice Returns the length of the lockers array, which is the number of locks open on the PoolManager.
+    function getLockLength() external view returns (uint256 _length);
+
+    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
+    function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
@@ -176,8 +171,11 @@ interface IPoolManager is IFees, IERC1155 {
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(Currency currency, address to, uint256 amount) external;
 
-    /// @notice Called by the user to move value into ERC1155 balance
+    /// @notice Called by the user to move value into Claims balance
     function mint(Currency token, address to, uint256 amount) external;
+
+    /// @notice Called by the user to redeem their Claims balance
+    function burn(Currency token, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
