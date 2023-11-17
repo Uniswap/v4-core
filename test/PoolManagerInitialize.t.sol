@@ -338,14 +338,14 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.tickSpacing,
             uninitializedKey.hooks
         );
-        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees >> 12, 0);
         assertEq(slot0.protocolFees & 0xFFF, 0);
         // call to setProtocolFees should also revert
         vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFees(key);
+        manager.setProtocolFees(uninitializedKey);
     }
 
     function test_initialize_succeedsWithRevertingFeeController(uint160 sqrtPriceX96) public {
@@ -369,7 +369,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.tickSpacing,
             uninitializedKey.hooks
         );
-        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees >> 12, 0);
@@ -397,7 +397,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.tickSpacing,
             uninitializedKey.hooks
         );
-        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees >> 12, 0);
@@ -424,7 +424,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.tickSpacing,
             uninitializedKey.hooks
         );
-        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees >> 12, 0);
@@ -451,7 +451,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.tickSpacing,
             uninitializedKey.hooks
         );
-        manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees >> 12, 0);
@@ -470,7 +470,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, address(impl).code);
         MockHooks hook = MockHooks(hookAddr);
 
-        PoolKey memory key = PoolKey({
+        uninitializedKey = PoolKey({
             currency0: currency0,
             currency1: currency1,
             fee: FeeLibrary.HOOK_SWAP_FEE_FLAG | uint24(3000),
@@ -480,15 +480,15 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         manager.setProtocolFeeController(new RevertingProtocolFeeControllerTest());
         // expect initialize to succeed even though the controller reverts
-        int24 tick = manager.initialize(key, sqrtPriceX96, ZERO_BYTES);
+        int24 tick = manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
         // protocol fees should default to 0
         assertEq(slot0.protocolFees >> 12, 0);
         // hook fees can still be set
         assertEq(uint16(slot0.hookFees >> 12), 0);
-        hook.setSwapFee(key, 3000);
-        manager.setHookFees(key);
+        hook.setSwapFee(uninitializedKey, 3000);
+        manager.setHookFees(uninitializedKey);
 
         (slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(uint16(slot0.hookFees >> 12), 3000);
