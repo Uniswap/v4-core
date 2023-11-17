@@ -8,6 +8,7 @@ import {Position} from "./libraries/Position.sol";
 import {FeeLibrary} from "./libraries/FeeLibrary.sol";
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";
+import {TickMath} from "./libraries/TickMath.sol";
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
@@ -32,10 +33,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using FeeLibrary for uint24;
 
     /// @inheritdoc IPoolManager
-    int24 public constant override MAX_TICK_SPACING = type(int16).max;
+    int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
     /// @inheritdoc IPoolManager
-    int24 public constant override MIN_TICK_SPACING = 1;
+    int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.

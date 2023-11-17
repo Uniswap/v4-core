@@ -15,6 +15,11 @@ library TickMath {
     /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
     int24 internal constant MAX_TICK = -MIN_TICK;
 
+    /// @dev The minimum tick spacing value drawn from the range of type int16 that is greater than 0, i.e. min from the range [1, 32767]
+    int24 internal constant MIN_TICK_SPACING = 1;
+    /// @dev The maximum tick spacing value drawn from the range of type int16, i.e. max from the range [1, 32767]
+    int24 internal constant MAX_TICK_SPACING = type(int16).max;
+
     /// @dev The minimum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MIN_TICK)
     uint160 internal constant MIN_SQRT_RATIO = 4295128739;
     /// @dev The maximum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MAX_TICK)

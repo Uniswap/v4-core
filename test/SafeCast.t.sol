@@ -10,7 +10,7 @@ contract SafeCastTest is Test {
         if (x <= type(uint160).max) {
             assertEq(uint256(SafeCast.toUint160(x)), x);
         } else {
-            vm.expectRevert();
+            vm.expectRevert(SafeCast.SafeCastOverflow.selector);
             SafeCast.toUint160(x);
         }
     }
@@ -19,7 +19,7 @@ contract SafeCastTest is Test {
         if (x <= type(int128).max && x >= type(int128).min) {
             assertEq(int256(SafeCast.toInt128(x)), x);
         } else {
-            vm.expectRevert();
+            vm.expectRevert(SafeCast.SafeCastOverflow.selector);
             SafeCast.toInt128(x);
         }
     }
@@ -28,7 +28,7 @@ contract SafeCastTest is Test {
         if (x <= uint256(type(int256).max)) {
             assertEq(uint256(SafeCast.toInt256(x)), x);
         } else {
-            vm.expectRevert();
+            vm.expectRevert(SafeCast.SafeCastOverflow.selector);
             SafeCast.toInt256(x);
         }
     }
@@ -37,7 +37,7 @@ contract SafeCastTest is Test {
         if (x <= uint128(type(int128).max)) {
             assertEq(uint128(SafeCast.toInt128(x)), x);
         } else {
-            vm.expectRevert();
+            vm.expectRevert(SafeCast.SafeCastOverflow.selector);
             SafeCast.toInt128(x);
         }
     }
