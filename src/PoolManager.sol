@@ -28,6 +28,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
+    using Hooks for PoolKey;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
     using FeeLibrary for uint24;
@@ -108,12 +109,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.currency0 >= key.currency1) revert CurrenciesInitializedOutOfOrder();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
-        if (key.hooks.shouldCallBeforeInitialize()) {
-            if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96, hookData) != IHooks.beforeInitialize.selector)
-            {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
+        key.beforeInitialize(sqrtPriceX96, hookData);
 
         PoolId id = key.toId();
 
@@ -121,14 +117,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         tick = pools[id].initialize(sqrtPriceX96, _fetchProtocolFees(key), _fetchHookFees(key), swapFee);
 
-        if (key.hooks.shouldCallAfterInitialize()) {
-            if (
-                key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick, hookData)
-                    != IHooks.afterInitialize.selector
-            ) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
+        key.afterInitialize(sqrtPriceX96, tick, hookData);
 
         // On intitalize we emit the key's fee, which tells us all fee settings a pool can have: either a static swap fee or dynamic swap fee and if the hook has enabled swap or withdraw fees.
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
@@ -185,14 +174,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        if (key.hooks.shouldCallBeforeModifyPosition()) {
-            if (
-                key.hooks.beforeModifyPosition(msg.sender, key, params, hookData)
-                    != IHooks.beforeModifyPosition.selector
-            ) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
+        key.beforeModifyPosition(params, hookData);
 
         PoolId id = key.toId();
         Pool.FeeAmounts memory feeAmounts;
@@ -223,14 +205,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        if (key.hooks.shouldCallAfterModifyPosition()) {
-            if (
-                key.hooks.afterModifyPosition(msg.sender, key, params, delta, hookData)
-                    != IHooks.afterModifyPosition.selector
-            ) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
+        key.afterModifyPosition(params, delta, hookData);
 
         emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
@@ -243,11 +218,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        if (key.hooks.shouldCallBeforeSwap()) {
-            if (key.hooks.beforeSwap(msg.sender, key, params, hookData) != IHooks.beforeSwap.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
+        key.beforeSwap(params, hookData);
 
         PoolId id = key.toId();
 
@@ -276,11 +247,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        if (key.hooks.shouldCallAfterSwap()) {
-            if (key.hooks.afterSwap(msg.sender, key, params, delta, hookData) != IHooks.afterSwap.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
+        key.afterSwap(params, delta, hookData);
 
         emit Swap(
             id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
@@ -295,21 +262,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        if (key.hooks.shouldCallBeforeDonate()) {
-            if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
+        key.beforeDonate(amount0, amount1, hookData);
 
         delta = _getPool(key).donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta);
 
-        if (key.hooks.shouldCallAfterDonate()) {
-            if (key.hooks.afterDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.afterDonate.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
+        key.afterDonate(amount0, amount1, hookData);
     }
 
     /// @inheritdoc IPoolManager

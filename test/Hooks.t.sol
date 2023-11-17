@@ -143,14 +143,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressBeforeInitialize(uint152 addr) public {
@@ -170,14 +170,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressAfterInitialize(uint152 addr) public {
@@ -197,14 +197,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterInitialize(uint152 addr) public {
@@ -223,14 +223,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressBeforeModify(uint152 addr) public {
@@ -249,14 +249,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressAfterModify(uint152 addr) public {
@@ -275,14 +275,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterModify(uint152 addr) public {
@@ -302,14 +302,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressBeforeInitializeAfterModify(uint152 addr) public {
@@ -329,14 +329,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressBeforeSwap(uint152 addr) public {
@@ -355,14 +355,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressAfterSwap(uint152 addr) public {
@@ -381,14 +381,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterSwap(uint152 addr) public {
@@ -407,14 +407,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressBeforeDonate(uint152 addr) public {
@@ -433,14 +433,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressAfterDonate(uint152 addr) public {
@@ -459,14 +459,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: true
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterDonate(uint152 addr) public {
@@ -485,14 +485,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: true
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressAllHooks(uint152 addr) public {
@@ -511,14 +511,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: true
             })
         );
-        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_INITIALIZE_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_INITIALIZE_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_SWAP_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_SWAP_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.BEFORE_DONATE_FLAG));
+        assertTrue(Hooks.shouldCall(hookAddr, Hooks.AFTER_DONATE_FLAG));
     }
 
     function testValidateHookAddressFailsAllHooks(uint152 addr, uint8 mask) public {
@@ -563,7 +563,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testGas() public {
         snapStart("HooksShouldCallBeforeSwap");
-        Hooks.shouldCallBeforeSwap(IHooks(address(0)));
+        Hooks.shouldCall(IHooks(address(0)), Hooks.BEFORE_SWAP_FLAG);
         snapEnd();
     }
 

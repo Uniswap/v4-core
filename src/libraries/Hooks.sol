@@ -2,7 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {IHooks} from "../interfaces/IHooks.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {FeeLibrary} from "../libraries/FeeLibrary.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -10,6 +13,7 @@ import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 /// has leading bits '1001' which would cause the 'before initialize' and 'after modify position' hooks to be used.
 library Hooks {
     using FeeLibrary for uint24;
+    using Hooks for IHooks;
 
     uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
     uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
@@ -44,12 +48,14 @@ library Hooks {
     /// @dev calls param is memory as the function will be called from constructors
     function validateHookAddress(IHooks self, Calls memory calls) internal pure {
         if (
-            calls.beforeInitialize != shouldCallBeforeInitialize(self)
-                || calls.afterInitialize != shouldCallAfterInitialize(self)
-                || calls.beforeModifyPosition != shouldCallBeforeModifyPosition(self)
-                || calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
-                || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
-                || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
+            calls.beforeInitialize != self.shouldCall(BEFORE_INITIALIZE_FLAG)
+                || calls.afterInitialize != self.shouldCall(AFTER_INITIALIZE_FLAG)
+                || calls.beforeModifyPosition != self.shouldCall(BEFORE_MODIFY_POSITION_FLAG)
+                || calls.afterModifyPosition != self.shouldCall(AFTER_MODIFY_POSITION_FLAG)
+                || calls.beforeSwap != self.shouldCall(BEFORE_SWAP_FLAG)
+                || calls.afterSwap != self.shouldCall(AFTER_SWAP_FLAG)
+                || calls.beforeDonate != self.shouldCall(BEFORE_DONATE_FLAG)
+                || calls.afterDonate != self.shouldCall(AFTER_DONATE_FLAG)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -67,35 +73,79 @@ library Hooks {
             );
     }
 
-    function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & BEFORE_INITIALIZE_FLAG != 0;
+    function validateHooksResponse(bytes4 selector, bytes4 expectedSelector) internal pure {
+        if (selector != expectedSelector) {
+            revert InvalidHookResponse();
+        }
     }
 
-    function shouldCallAfterInitialize(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & AFTER_INITIALIZE_FLAG != 0;
+    function shouldCall(IHooks self, uint256 call) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & call != 0;
     }
 
-    function shouldCallBeforeModifyPosition(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & BEFORE_MODIFY_POSITION_FLAG != 0;
+    function beforeInitialize(PoolKey memory key, uint160 sqrtPriceX96, bytes memory hookData) internal {
+        if (!shouldCall(key.hooks, BEFORE_INITIALIZE_FLAG)) return;
+        validateHooksResponse(
+            key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96, hookData), IHooks.beforeInitialize.selector
+        );
     }
 
-    function shouldCallAfterModifyPosition(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & AFTER_MODIFY_POSITION_FLAG != 0;
+    function afterInitialize(PoolKey memory key, uint160 sqrtPriceX96, int24 tick, bytes memory hookData) internal {
+        if (!shouldCall(key.hooks, AFTER_INITIALIZE_FLAG)) return;
+        validateHooksResponse(
+            key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick, hookData), IHooks.afterInitialize.selector
+        );
     }
 
-    function shouldCallBeforeSwap(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & BEFORE_SWAP_FLAG != 0;
+    function beforeModifyPosition(
+        PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params,
+        bytes memory hookData
+    ) internal {
+        if (!key.hooks.shouldCall(BEFORE_MODIFY_POSITION_FLAG)) return;
+        validateHooksResponse(
+            key.hooks.beforeModifyPosition(msg.sender, key, params, hookData), IHooks.beforeModifyPosition.selector
+        );
     }
 
-    function shouldCallAfterSwap(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & AFTER_SWAP_FLAG != 0;
+    function afterModifyPosition(
+        PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params,
+        BalanceDelta delta,
+        bytes memory hookData
+    ) internal {
+        if (!key.hooks.shouldCall(AFTER_MODIFY_POSITION_FLAG)) return;
+        validateHooksResponse(
+            key.hooks.afterModifyPosition(msg.sender, key, params, delta, hookData), IHooks.afterModifyPosition.selector
+        );
     }
 
-    function shouldCallBeforeDonate(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & BEFORE_DONATE_FLAG != 0;
+    function beforeSwap(PoolKey memory key, IPoolManager.SwapParams memory params, bytes memory hookData) internal {
+        if (!key.hooks.shouldCall(BEFORE_SWAP_FLAG)) return;
+        validateHooksResponse(key.hooks.beforeSwap(msg.sender, key, params, hookData), IHooks.beforeSwap.selector);
     }
 
-    function shouldCallAfterDonate(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
+    function afterSwap(
+        PoolKey memory key,
+        IPoolManager.SwapParams memory params,
+        BalanceDelta delta,
+        bytes memory hookData
+    ) internal {
+        if (!key.hooks.shouldCall(AFTER_SWAP_FLAG)) return;
+        validateHooksResponse(key.hooks.afterSwap(msg.sender, key, params, delta, hookData), IHooks.afterSwap.selector);
+    }
+
+    function beforeDonate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory hookData) internal {
+        if (!key.hooks.shouldCall(BEFORE_DONATE_FLAG)) return;
+        validateHooksResponse(
+            key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData), IHooks.beforeDonate.selector
+        );
+    }
+
+    function afterDonate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory hookData) internal {
+        if (!key.hooks.shouldCall(AFTER_DONATE_FLAG)) return;
+        validateHooksResponse(
+            key.hooks.afterDonate(msg.sender, key, amount0, amount1, hookData), IHooks.afterDonate.selector
+        );
     }
 }
