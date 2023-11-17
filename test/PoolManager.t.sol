@@ -789,7 +789,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         address payable hookAddr = payable(
             address(
                 uint160(
-                    Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG | Hooks.AFTER_DONATE_FLAG | Hooks.NO_OP_FLAG
+                    Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG
+                        | Hooks.AFTER_DONATE_FLAG | Hooks.NO_OP_FLAG
                 )
             )
         );
