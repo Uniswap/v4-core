@@ -115,7 +115,7 @@ interface IPoolManager is IFees, IClaims {
     function reservesOf(Currency currency) external view returns (uint256);
 
     /// @notice Returns the locker in the ith position of the locker queue.
-    function getLock(uint256 i) external view returns (address locker);
+    function getLock(uint256 i) external view returns (address locker, address lockOriginator);
 
     /// @notice Returns the length of the lockers array, which is the number of locks open on the PoolManager.
     function getLockLength() external view returns (uint256 _length);

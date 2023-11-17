@@ -90,8 +90,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function getLock(uint256 i) external view override returns (address locker) {
-        return Lockers.getLocker(i);
+    function getLock(uint256 i) external view override returns (address locker, address lockOriginator) {
+        return (Lockers.getLocker(i), Lockers.getLockOriginator(i));
     }
 
     /// @inheritdoc IPoolManager
@@ -136,10 +136,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     /// @inheritdoc IPoolManager
     function lock(address lockTarget, bytes calldata data) external override returns (bytes memory result) {
-        Lockers.push(lockTarget);
+        Lockers.push(lockTarget, msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(lockTarget).lockAcquired(data);
+        result = ILockCallback(lockTarget).lockAcquired(msg.sender, data);
 
         if (Lockers.length() == 1) {
             if (Lockers.nonzeroDeltaCount() != 0) revert CurrencyNotSettled();

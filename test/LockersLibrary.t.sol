@@ -12,7 +12,7 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Lockers} from "../src/libraries/Lockers.sol";
 
-contract LockersLibrary is Test, Deployers, ILockCallback {
+contract LockersLibraryTest is Test, Deployers, ILockCallback {
     using CurrencyLibrary for Currency;
 
     uint256 constant LOCKERS_OFFSET = uint256(1);
@@ -30,7 +30,7 @@ contract LockersLibrary is Test, Deployers, ILockCallback {
         assertEq(manager.getLockNonzeroDeltaCount(), 0);
     }
 
-    function lockAcquired(bytes calldata) public returns (bytes memory) {
+    function lockAcquired(address _lockOriginator, bytes calldata) public returns (bytes memory) {
         uint256 len = manager.getLockLength();
 
         // apply a delta and save count
@@ -44,42 +44,51 @@ contract LockersLibrary is Test, Deployers, ILockCallback {
     }
 
     function test_push() public {
-        Lockers.push(address(this));
+        Lockers.push(address(this), address(1));
         assertEq(Lockers.length(), 1);
         assertEq(Lockers.getLocker(LOCKERS_OFFSET), address(this));
+        assertEq(Lockers.getLockOriginator(LOCKERS_OFFSET), address(1));
     }
 
-    function test_push_multipleAddressesFuzz(address[] memory addrs) public {
+    function test_push_multipleAddressesFuzz(address[2][] memory addrs) public {
         for (uint256 i = 0; i < addrs.length; i++) {
-            address addr = addrs[i];
+            address[2] memory loopAddrs = addrs[i];
+            address locker = loopAddrs[0];
+            address originator = loopAddrs[1];
             assertEq(Lockers.length(), i);
-            Lockers.push(addr);
+            Lockers.push(locker, originator);
             assertEq(Lockers.length(), LOCKERS_OFFSET + i);
-            assertEq(Lockers.getLocker(LOCKERS_OFFSET + i), addr);
+            assertEq(Lockers.getLocker(LOCKERS_OFFSET + i), locker);
+            assertEq(Lockers.getLockOriginator(LOCKERS_OFFSET + i), originator);
         }
     }
 
-    function test_getCurrentLocker_multipleAddressesFuzz(address[] memory addrs) public {
+    function test_getCurrentLocker_multipleAddressesFuzz(address[2][] memory addrs) public {
         for (uint256 i = 0; i < addrs.length; i++) {
-            address addr = addrs[i];
+            address[2] memory loopAddrs = addrs[i];
+            address locker = loopAddrs[0];
+            address originator = loopAddrs[1];
             assertEq(Lockers.length(), i);
-            Lockers.push(addr);
+            Lockers.push(locker, originator);
             assertEq(Lockers.length(), LOCKERS_OFFSET + i);
-            assertEq(Lockers.getCurrentLocker(), addr);
+            assertEq(Lockers.getCurrentLocker(), locker);
+            assertEq(Lockers.getCurrentLockOriginator(), originator);
         }
     }
 
     function test_pop() public {
-        Lockers.push(address(this));
+        Lockers.push(address(this), address(1));
         assertEq(Lockers.length(), 1);
         Lockers.pop();
         assertEq(Lockers.length(), 0);
     }
 
-    function test_pop_multipleAddressesFuzz(address[] memory addrs) public {
+    function test_pop_multipleAddressesFuzz(address[2][] memory addrs) public {
         for (uint256 i = 0; i < addrs.length; i++) {
-            address addr = addrs[i];
-            Lockers.push(addr);
+            address[2] memory loopAddrs = addrs[i];
+            address locker = loopAddrs[0];
+            address originator = loopAddrs[1];
+            Lockers.push(locker, originator);
         }
 
         assertEq(Lockers.length(), addrs.length);
@@ -92,10 +101,12 @@ contract LockersLibrary is Test, Deployers, ILockCallback {
         assertEq(Lockers.length(), 0);
     }
 
-    function test_clear(address[] memory addrs) public {
+    function test_clear(address[2][] memory addrs) public {
         for (uint256 i = 0; i < addrs.length; i++) {
-            address addr = addrs[i];
-            Lockers.push(addr);
+            address[2] memory loopAddrs = addrs[i];
+            address locker = loopAddrs[0];
+            address originator = loopAddrs[1];
+            Lockers.push(locker, originator);
         }
 
         assertEq(Lockers.length(), addrs.length);

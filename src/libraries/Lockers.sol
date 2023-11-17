@@ -8,10 +8,15 @@ library Lockers {
     // The starting slot for an array of lockers, stored transiently.
     uint256 constant LOCKERS_SLOT = uint256(keccak256("Lockers")) - 1;
 
+    // The number of slots per item in the lockers array
+    uint256 constant LOCKER_STRUCT_SIZE = 2;
+
     // The slot holding the number of nonzero deltas.
     uint256 constant NONZERO_DELTA_COUNT = uint256(keccak256("NonzeroDeltaCount")) - 1;
 
-    function push(address locker) internal {
+    // pushes an address tuple (address locker, address lockOriginator)
+    // to the locker array, so each length of the array represents 2 slots of tstorage
+    function push(address locker, address lockOriginator) internal {
         uint256 slot = LOCKERS_SLOT;
 
         uint256 newLength;
@@ -19,12 +24,15 @@ library Lockers {
 
         unchecked {
             newLength = length() + 1;
-            thisLockerSlot = LOCKERS_SLOT + newLength;
+            thisLockerSlot = LOCKERS_SLOT + (newLength * LOCKER_STRUCT_SIZE);
         }
 
         assembly {
             // add the locker
             tstore(thisLockerSlot, locker)
+
+            // add the lock originator
+            tstore(add(thisLockerSlot, 1), lockOriginator)
 
             // increase the length
             tstore(slot, newLength)
@@ -58,7 +66,16 @@ library Lockers {
     }
 
     function getLocker(uint256 i) internal view returns (address locker) {
-        uint256 slot = LOCKERS_SLOT + i;
+        // first slot of the ith array item
+        uint256 slot = LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE);
+        assembly {
+            locker := tload(slot)
+        }
+    }
+
+    function getLockOriginator(uint256 i) internal view returns (address locker) {
+        // second slot of the ith array item
+        uint256 slot = LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE + 1);
         assembly {
             locker := tload(slot)
         }
@@ -66,6 +83,10 @@ library Lockers {
 
     function getCurrentLocker() internal view returns (address locker) {
         return getLocker(length());
+    }
+
+    function getCurrentLockOriginator() internal view returns (address locker) {
+        return getLockOriginator(length());
     }
 
     function nonzeroDeltaCount() internal view returns (uint256 count) {

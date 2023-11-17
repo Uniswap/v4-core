@@ -17,7 +17,7 @@ contract TokenLocker is ILockCallback {
         manager.lock(address(this), abi.encode(currency, reclaim));
     }
 
-    function lockAcquired(bytes calldata data) external returns (bytes memory) {
+    function lockAcquired(address lockOriginator, bytes calldata data) external returns (bytes memory) {
         (Currency currency, bool reclaim) = abi.decode(data, (Currency, bool));
 
         IPoolManager manager = IPoolManager(msg.sender);
@@ -56,7 +56,7 @@ contract SimpleLinearLocker is ILockCallback {
         manager.lock(address(this), abi.encode(timesToReenter, 0));
     }
 
-    function lockAcquired(bytes calldata data) external returns (bytes memory) {
+    function lockAcquired(address _lockOriginator, bytes calldata data) external returns (bytes memory) {
         (uint256 timesToReenter, uint256 depth) = abi.decode(data, (uint256, uint256));
         checker(depth);
         if (depth < timesToReenter) {
@@ -84,32 +84,32 @@ contract ParallelLocker is ILockCallback {
     function assertionChecker0(uint256) external view {
         uint256 length = manager.getLockLength();
         assert(length == 2);
-        address locker = manager.getLock(INDEX_OFFSET + 1);
+        (address locker,) = manager.getLock(INDEX_OFFSET + 1);
         assert(locker == msg.sender);
     }
 
     function assertionChecker1(uint256 depth) external view {
         uint256 length = manager.getLockLength();
         assert(length == depth + 2);
-        address locker = manager.getLock(INDEX_OFFSET + depth + 1);
+        (address locker,) = manager.getLock(INDEX_OFFSET + depth + 1);
         assert(locker == msg.sender);
     }
 
     function assertionChecker2(uint256) external view {
         uint256 length = manager.getLockLength();
         assert(length == 2);
-        address locker = manager.getLock(INDEX_OFFSET + 1);
+        (address locker,) = manager.getLock(INDEX_OFFSET + 1);
         assert(locker == msg.sender);
     }
 
-    function lockAcquired(bytes calldata) external returns (bytes memory) {
+    function lockAcquired(address _lockOriginator, bytes calldata) external returns (bytes memory) {
         SimpleLinearLocker locker0 = new SimpleLinearLocker();
         SimpleLinearLocker locker1 = new SimpleLinearLocker();
         SimpleLinearLocker locker2 = new SimpleLinearLocker();
 
         uint256 length = manager.getLockLength();
         assert(length == 1);
-        address locker = manager.getLock(INDEX_OFFSET + 0);
+        (address locker,) = manager.getLock(INDEX_OFFSET + 0);
         assert(locker == address(this));
 
         locker0.main(manager, 0, this.assertionChecker0);
@@ -153,7 +153,7 @@ contract PoolManagerReentrancyTest is Test, Deployers {
     function assertionChecker(uint256 depth) external {
         uint256 length = manager.getLockLength();
         assertEq(length, depth + 1);
-        address locker = manager.getLock(INDEX_OFFSET + depth);
+        (address locker,) = manager.getLock(INDEX_OFFSET + depth);
         assertEq(locker, msg.sender);
     }
 
