@@ -114,19 +114,14 @@ interface IPoolManager is IFees, IClaims {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
-    /// @notice Contains data about pool lockers.
-    struct LockData {
-        /// @notice The current number of active lockers
-        uint128 length;
-        /// @notice The total number of nonzero deltas over all active + completed lockers
-        uint128 nonzeroDeltaCount;
-    }
-
     /// @notice Returns the locker in the ith position of the locker queue.
     function getLock(uint256 i) external view returns (address locker);
 
-    /// @notice Returns lock data
-    function lockData() external view returns (uint128 length, uint128 nonzeroDeltaCount);
+    /// @notice Returns the length of the lockers array, which is the number of locks open on the PoolManager.
+    function getLockLength() external view returns (uint256 _length);
+
+    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
+    function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
