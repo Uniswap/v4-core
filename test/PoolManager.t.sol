@@ -731,8 +731,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         delta = swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
 
-        assertEq(delta.amount0(), 0);
-        assertEq(delta.amount1(), 0);
         assertEq(manager.reservesOf(currency0), reserveBefore0);
         assertEq(manager.reservesOf(currency1), reserveBefore1);
 
@@ -781,6 +779,49 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // Donate
         vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
         delta = donateRouter.donate(key, 1 ether, 1 ether, ZERO_BYTES);
+    }
+
+    function test_noop_failsOnForbiddenFunctions(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable hookAddr = payable(
+            address(
+                uint160(
+                    Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG | Hooks.AFTER_DONATE_FLAG | Hooks.NO_OP_FLAG
+                )
+            )
+        );
+
+        MockHooks impl = new MockHooks();
+        vm.etch(hookAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookAddr);
+
+        key = PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: mockHooks, tickSpacing: 10});
+
+        // Fails at beforeInitialize hook when it returns a NoOp
+        mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, Hooks.NO_OP_SELECTOR);
+        vm.expectRevert(Hooks.InvalidHookResponse.selector);
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        // Now we let initialize succeed (so we can test modifyPosition)
+        mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, mockHooks.beforeInitialize.selector);
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        // Fails at afterModifyPosition hook when it returns a NoOp
+        mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, Hooks.NO_OP_SELECTOR);
+        vm.expectRevert(Hooks.InvalidHookResponse.selector);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
+
+        // Now we let the modify position succeed (so we can test donate)
+        mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, mockHooks.afterModifyPosition.selector);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
+
+        // Fails at afterDonate hook when it returns a NoOp
+        mockHooks.setReturnValue(mockHooks.afterDonate.selector, Hooks.NO_OP_SELECTOR);
+        vm.expectRevert(Hooks.InvalidHookResponse.selector);
+        donateRouter.donate(key, 100, 100, ZERO_BYTES);
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {

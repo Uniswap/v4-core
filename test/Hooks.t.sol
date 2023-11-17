@@ -152,6 +152,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressBeforeInitialize(uint160 addr) public {
@@ -180,6 +181,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressAfterInitialize(uint160 addr) public {
@@ -208,6 +210,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressBeforeAndAfterInitialize(uint160 addr) public {
@@ -235,6 +238,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressBeforeModify(uint160 addr) public {
@@ -262,6 +266,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressAfterModify(uint160 addr) public {
@@ -289,6 +294,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressBeforeAndAfterModify(uint160 addr) public {
@@ -317,6 +323,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressBeforeInitializeAfterModify(uint160 addr) public {
@@ -345,6 +352,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressBeforeSwap(uint160 addr) public {
@@ -372,6 +380,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressAfterSwap(uint160 addr) public {
@@ -399,6 +408,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressBeforeAndAfterSwap(uint160 addr) public {
@@ -426,6 +436,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressBeforeDonate(uint160 addr) public {
@@ -453,6 +464,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressAfterDonate(uint160 addr) public {
@@ -480,6 +492,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressBeforeAndAfterDonate(uint160 addr) public {
@@ -507,11 +520,12 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressAllHooks(uint160 addr) public {
         uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
-        IHooks hookAddr = IHooks(address(preAddr | (0xfF << 152)));
+        IHooks hookAddr = IHooks(address(preAddr | (0xfF8 << 148)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -523,7 +537,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: true,
                 beforeDonate: true,
                 afterDonate: true,
-                noOp: false
+                noOp: true
             })
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -534,6 +548,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+        assertTrue(Hooks.shouldAllowNoOp(hookAddr));
     }
 
     function testValidateHookAddressNoOp(uint160 addr) public {
