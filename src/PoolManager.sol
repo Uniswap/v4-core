@@ -21,6 +21,7 @@ import {Claims} from "./Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
+import {CurrentHookAddress} from "./libraries/CurrentHookAddress.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
@@ -179,7 +180,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         // todo fix stack too deep :/
         address locker = Lockers.getCurrentLocker();
         if (msg.sender != locker) {
-            if (msg.sender != currentHook || !Hooks.shouldAccessLock(IHooks(currentHook))) {
+            if (msg.sender != CurrentHookAddress.get() || !Hooks.shouldAccessLock(IHooks(CurrentHookAddress.get()))) {
                 revert LockedBy(locker);
             }
         }
@@ -192,7 +193,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        _setCurrentHook(address(key.hooks));
+        CurrentHookAddress.set(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             if (
@@ -252,7 +253,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        _setCurrentHook(address(key.hooks));
+        CurrentHookAddress.set(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeSwap()) {
             if (key.hooks.beforeSwap(msg.sender, key, params, hookData) != IHooks.beforeSwap.selector) {
@@ -306,7 +307,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        _setCurrentHook(address(key.hooks));
+        CurrentHookAddress.set(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeDonate()) {
             if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
@@ -404,11 +405,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
         return Lockers.nonzeroDeltaCount();
-    }
-
-    // TODO: Use transient storage
-    function _setCurrentHook(address hookAddr) internal {
-        if (currentHook != hookAddr) currentHook = hookAddr;
     }
 
     /// @notice receive native tokens for native pools
