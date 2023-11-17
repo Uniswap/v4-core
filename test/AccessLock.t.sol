@@ -106,14 +106,14 @@ contract AccessLockTest is Test, Deployers {
     }
 
     function test_beforeModifyPosition_take_succeedsWithAccessLock(uint128 amount) public {
-        vm.assume(amount < 10 * 10 ** 18); // We only have 100 * 10e18 liq in the pool so we must limit how much we can take.
-
         // Add liquidity so there is something to take.
         modifyPositionRouter.modifyPosition(
             key,
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 100 * 10e18}),
             ZERO_BYTES
         );
+        // Can't take more than the manager has.
+        vm.assume(amount < key.currency1.balanceOf(address(manager)));
 
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
@@ -241,14 +241,15 @@ contract AccessLockTest is Test, Deployers {
     }
 
     function test_beforeSwap_take_succeedsWithAccessLock(uint128 amount) public {
-        vm.assume(amount < 10 * 10 ** 18); // We only have 100 * 10e18 liq in the pool so we must limit how much we can take.
-
         // Add liquidity so there is something to take.
         modifyPositionRouter.modifyPosition(
             key,
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 100 * 10e18}),
             ZERO_BYTES
         );
+
+        // Can't take more than the manager has.
+        vm.assume(amount < key.currency1.balanceOf(address(manager)));
 
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
@@ -389,8 +390,6 @@ contract AccessLockTest is Test, Deployers {
     }
 
     function test_beforeDonate_take_succeedsWithAccessLock(uint128 amount) public {
-        vm.assume(amount < 10 * 10 ** 18); // We only have 100 * 10e18 liq in the pool so we must limit how much we can take.
-
         // Add liquidity so there is something to take.
         modifyPositionRouter.modifyPosition(
             key,
@@ -398,13 +397,17 @@ contract AccessLockTest is Test, Deployers {
             ZERO_BYTES
         );
 
+        // Can't take more than the manager has.
+        vm.assume(amount < key.currency1.balanceOf(address(manager)));
+
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
         // Hook only takes currency 1 rn.
         BalanceDelta delta =
             donateRouter.donate(key, 1 * 10 ** 18, 1 * 10 ** 18, abi.encode(amount, AccessLockHook.LockAction.Take));
-
+        // Take applies a positive delta in currency1.
+        // Donate applies a positive delta in currency0 and currency1.
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
 
@@ -415,14 +418,15 @@ contract AccessLockTest is Test, Deployers {
     }
 
     function test_beforeDonate_swap_succeedsWithAccessLock(uint128 amount) public {
-        vm.assume(amount != 0 && amount > 10 && amount < 10 * 10 ** 18); // precision, and limit swap size. need liquidity still in the pool.
-
         // Add liquidity so there is something to swap over.
         modifyPositionRouter.modifyPosition(
             key,
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 100 * 10e18}),
             ZERO_BYTES
         );
+
+        // greater than 10 for precision, less than currency1 balance so that we still have liquidity we can donate to
+        vm.assume(amount != 0 && amount > 10 && amount < currency1.balanceOf(address(manager)));
 
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
