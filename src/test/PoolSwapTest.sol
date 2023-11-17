@@ -26,6 +26,7 @@ contract PoolSwapTest is Test, PoolTestBase {
     struct TestSettings {
         bool withdrawTokens;
         bool settleUsingTransfer;
+        bool currencyAlreadySent;
     }
 
     function swap(
@@ -75,7 +76,11 @@ contract PoolSwapTest is Test, PoolTestBase {
                 assert(deltaAfter0 > 0);
                 assertEq(deltaAfter1, data.params.amountSpecified);
             }
-            _settle(data.key.currency0, data.sender, delta.amount0(), data.testSettings.settleUsingTransfer);
+            if (data.testSettings.currencyAlreadySent) {
+                manager.settle(data.key.currency0);
+            } else {
+                _settle(data.key.currency0, data.sender, delta.amount0(), data.testSettings.settleUsingTransfer);
+            }
             _take(data.key.currency1, data.sender, delta.amount1(), data.testSettings.withdrawTokens);
         } else {
             if (data.params.amountSpecified > 0) {
@@ -87,7 +92,11 @@ contract PoolSwapTest is Test, PoolTestBase {
                 assert(deltaAfter1 > 0);
                 assertEq(deltaAfter0, data.params.amountSpecified);
             }
-            _settle(data.key.currency1, data.sender, delta.amount1(), data.testSettings.settleUsingTransfer);
+            if (data.testSettings.currencyAlreadySent) {
+                manager.settle(data.key.currency1);
+            } else {
+                _settle(data.key.currency1, data.sender, delta.amount1(), data.testSettings.settleUsingTransfer);
+            }
             _take(data.key.currency0, data.sender, delta.amount0(), data.testSettings.withdrawTokens);
         }
 

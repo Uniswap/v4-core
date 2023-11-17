@@ -400,7 +400,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key3,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
         // key3 pool is 30 bps => 10000 * 0.003 (.3%) = 30
@@ -434,7 +434,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
 
@@ -466,7 +466,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
 
@@ -500,7 +500,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
 
@@ -538,7 +538,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
 

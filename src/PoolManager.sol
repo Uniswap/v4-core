@@ -135,7 +135,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function lock(address lockTarget, bytes calldata data) external override returns (bytes memory result) {
+    function lock(address lockTarget, bytes calldata data) external payable override returns (bytes memory result) {
         Lockers.push(lockTarget, msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
