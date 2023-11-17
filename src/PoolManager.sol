@@ -22,8 +22,6 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
-import {console2} from "forge-std/console2.sol";
-
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
@@ -70,7 +68,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFees, slot0.hookFees);
     }
 
-    /// @inheritdoc IPoolManager
     function getLiquidity(PoolId id) external view override returns (uint128 liquidity) {
         return pools[id].liquidity;
     }

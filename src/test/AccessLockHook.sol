@@ -28,11 +28,11 @@ contract AccessLockHook is BaseTestHooks {
 
     function beforeSwap(
         address, /* sender **/
-        PoolKey calldata, /* key **/
+        PoolKey calldata key,
         IPoolManager.SwapParams calldata, /* params **/
-        bytes calldata /* hookData **/
+        bytes calldata hookData
     ) external override returns (bytes4) {
-        return IHooks.beforeSwap.selector;
+        return _executeAction(key, hookData, IHooks.beforeSwap.selector);
     }
 
     function beforeDonate(
@@ -51,9 +51,13 @@ contract AccessLockHook is BaseTestHooks {
         IPoolManager.ModifyPositionParams calldata, /* params **/
         bytes calldata hookData
     ) external override returns (bytes4) {
+        return _executeAction(key, hookData, IHooks.beforeModifyPosition.selector);
+    }
+
+    function _executeAction(PoolKey memory key, bytes calldata hookData, bytes4 selector) internal returns (bytes4) {
         if (hookData.length == 0) {
             // We have re-entered the hook or we are initializing liquidity in the pool before testing the lock actions.
-            return IHooks.beforeModifyPosition.selector;
+            return selector;
         }
         (uint256 amount, LockAction action) = abi.decode(hookData, (uint256, LockAction));
 
@@ -84,7 +88,7 @@ contract AccessLockHook is BaseTestHooks {
             revert("Invalid action");
         }
 
-        return IHooks.beforeModifyPosition.selector;
+        return selector;
     }
 
     function onERC1155Received(address, address, uint256, uint256, bytes memory) public pure returns (bytes4) {
