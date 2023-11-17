@@ -21,4 +21,14 @@ interface IFees {
 
     /// @notice Given a hook and a currency address, returns the fees accrued
     function hookFeesAccrued(address, Currency) external view returns (uint256);
+
+    /// @notice Collect the protocol accrued fees, sent to a recipient
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected);
+
+    /// @notice Collect a hook's accrued fees, sent to a recipient
+    function collectHookFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected);
 }
