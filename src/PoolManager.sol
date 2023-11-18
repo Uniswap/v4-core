@@ -364,6 +364,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     function updateDynamicSwapFee(PoolKey memory key) external {
         if (key.fee.isDynamicFee()) {
+            if (key.fee.noCacheDynamicFee()) return;
             uint24 newDynamicSwapFee = _fetchDynamicSwapFee(key);
             PoolId id = key.toId();
             pools[id].setSwapFee(newDynamicSwapFee);
