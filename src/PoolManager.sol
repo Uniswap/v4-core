@@ -107,6 +107,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
         if (key.currency0 >= key.currency1) revert CurrenciesInitializedOutOfOrder();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
+        if (key.fee.noCacheDynamicFee() && !key.fee.isDynamicFee()) revert NoCacheDynamicFeeWithStaticFee();
 
         if (key.hooks.shouldCallBeforeInitialize()) {
             if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96, hookData) != IHooks.beforeInitialize.selector)
@@ -255,12 +256,19 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         uint256 feeForHook;
         uint24 swapFee;
         Pool.SwapState memory state;
+
+        if (key.fee.noCacheDynamicFee()) {
+            // add 1 to the swapFee to flag that it has been set
+            swapFee = _fetchDynamicSwapFee(key) + 1;
+        }
+
         (delta, feeForProtocol, feeForHook, swapFee, state) = pools[id].swap(
             Pool.SwapParams({
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
-                sqrtPriceLimitX96: params.sqrtPriceLimitX96
+                sqrtPriceLimitX96: params.sqrtPriceLimitX96,
+                swapFee: swapFee
             })
         );
 

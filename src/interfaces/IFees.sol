@@ -10,6 +10,8 @@ interface IFees {
     error ProtocolFeeCannotBeFetched();
     /// @notice Thrown when a pool does not have a dynamic fee.
     error FeeNotDynamic();
+    /// @notice Thrown when a pool is initialized with fee.noCacheDynamicFee() == true and a static fee
+    error NoCacheDynamicFeeWithStaticFee();
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 

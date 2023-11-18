@@ -79,6 +79,21 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
+    function testPoolInitializeFailsWithNoCacheAndStaticFee() public {
+        (Currency currency2, Currency currency3) = deployMintAndApprove2Currencies();
+        key = PoolKey({
+            currency0: currency2,
+            currency1: currency3,
+            fee: FeeLibrary.DYNAMIC_FEE_NO_CACHE_FLAG,
+            hooks: dynamicFeesHook,
+            tickSpacing: 60
+        });
+        dynamicFeesHook.setFee(123);
+
+        vm.expectRevert(IFees.NoCacheDynamicFeeWithStaticFee.selector);
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+    }
+
     function testUpdateFailsWithTooLargeFee() public {
         dynamicFeesHook.setFee(1000000);
         vm.expectRevert(IFees.FeeTooLarge.selector);
@@ -113,6 +128,30 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
+    function testSwapWorksNoCache() public {
+        (key,) = initPoolAndAddLiquidity(
+            currency0,
+            currency1,
+            IHooks(address(dynamicFeesHook)),
+            FeeLibrary.DYNAMIC_FEE_FLAG + FeeLibrary.DYNAMIC_FEE_NO_CACHE_FLAG,
+            SQRT_RATIO_1_1,
+            ZERO_BYTES
+        );
+        dynamicFeesHook.setFee(123);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), 100, -98, 79228162514264329749955861424, 1e18, -1, 123);
+
+        snapStart("swap with non-cached dynamic fee");
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
+    }
+
     function testCacheDynamicFeeAndSwap() public {
         dynamicFeesHook.setFee(123);
         manager.updateDynamicSwapFee(key);
@@ -131,6 +170,32 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
+    function testNoCacheDynamicFeeAndSwap() public {
+        (key,) = initPoolAndAddLiquidity(
+            currency0,
+            currency1,
+            IHooks(address(dynamicFeesHook)),
+            FeeLibrary.DYNAMIC_FEE_FLAG + FeeLibrary.DYNAMIC_FEE_NO_CACHE_FLAG,
+            SQRT_RATIO_1_1,
+            ZERO_BYTES
+        );
+
+        dynamicFeesHook.setFee(123);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), 100, -98, 79228162514264329749955861424, 1e18, -1, 456);
+        bytes memory data = abi.encode(true, uint24(456));
+
+        snapStart("update dynamic fee in before swap, no cache flag");
+        swapRouter.swap(key, params, testSettings, data);
+        snapEnd();
+    }
+
     function testDynamicFeeAndBeforeSwapHook() public {
         dynamicFeesHook.setFee(123);
         manager.updateDynamicSwapFee(key);
@@ -145,6 +210,31 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         bytes memory data = abi.encode(false, uint24(0));
 
         snapStart("before swap hook, already cached dynamic fee");
+        swapRouter.swap(key, params, testSettings, data);
+        snapEnd();
+    }
+
+    function testNoCacheDynamicFeeAndBeforeSwapHook() public {
+        (key,) = initPoolAndAddLiquidity(
+            currency0,
+            currency1,
+            IHooks(address(dynamicFeesHook)),
+            FeeLibrary.DYNAMIC_FEE_FLAG + FeeLibrary.DYNAMIC_FEE_NO_CACHE_FLAG,
+            SQRT_RATIO_1_1,
+            ZERO_BYTES
+        );
+        dynamicFeesHook.setFee(123);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), 100, -98, 79228162514264329749955861424, 1e18, -1, 123);
+        bytes memory data = abi.encode(false, uint24(0));
+
+        snapStart("before swap hook, non-cached dynamic fee");
         swapRouter.swap(key, params, testSettings, data);
         snapEnd();
     }
@@ -172,6 +262,31 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         emit Swap(key.toId(), address(swapRouter), 100, -98, 79228162514264329749955861424, 1e18, -1, 123);
 
         snapStart("cached dynamic fee, no hooks");
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
+    }
+
+    function testDynamicFeesNoCacheNoOtherHooks() public {
+        (key,) = initPoolAndAddLiquidity(
+            currency0,
+            currency1,
+            dynamicFeesNoHook,
+            FeeLibrary.DYNAMIC_FEE_FLAG + FeeLibrary.DYNAMIC_FEE_NO_CACHE_FLAG,
+            SQRT_RATIO_1_1,
+            ZERO_BYTES
+        );
+
+        dynamicFeesNoHook.setFee(123);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), 100, -98, 79228162514264329749955861424, 1e18, -1, 123);
+
+        snapStart("non-cached dynamic fee, no hooks");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
     }

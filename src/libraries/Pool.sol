@@ -384,6 +384,7 @@ library Pool {
         bool zeroForOne;
         int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
+        uint24 swapFee;
     }
 
     /// @dev Executes a swap against the state, and returns the amount deltas of the pool
@@ -400,7 +401,9 @@ library Pool {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
-        swapFee = slot0Start.swapFee;
+        // use params.swapFee if it has been set, otherwise use the cached swap fee
+        // deduct 1 from params.swapFee since we add 1 in PoolManager.swap()
+        swapFee = params.swapFee != 0 ? params.swapFee - 1 : slot0Start.swapFee;
         if (slot0Start.sqrtPriceX96 == 0) revert PoolNotInitialized();
         if (params.zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {

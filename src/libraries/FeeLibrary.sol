@@ -6,6 +6,7 @@ library FeeLibrary {
     uint24 public constant DYNAMIC_FEE_FLAG = 0x800000; // 1000
     uint24 public constant HOOK_SWAP_FEE_FLAG = 0x400000; // 0100
     uint24 public constant HOOK_WITHDRAW_FEE_FLAG = 0x200000; // 0010
+    uint24 public constant DYNAMIC_FEE_NO_CACHE_FLAG = 0x100000; // 0001
 
     function isDynamicFee(uint24 self) internal pure returns (bool) {
         return self & DYNAMIC_FEE_FLAG != 0;
@@ -17,6 +18,10 @@ library FeeLibrary {
 
     function hasHookWithdrawFee(uint24 self) internal pure returns (bool) {
         return self & HOOK_WITHDRAW_FEE_FLAG != 0;
+    }
+
+    function noCacheDynamicFee(uint24 self) internal pure returns (bool) {
+        return self & DYNAMIC_FEE_NO_CACHE_FLAG != 0;
     }
 
     function isStaticFeeTooLarge(uint24 self) internal pure returns (bool) {
