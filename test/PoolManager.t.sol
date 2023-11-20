@@ -789,8 +789,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         address payable hookAddr = payable(
             address(
                 uint160(
-                    Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG
-                        | Hooks.AFTER_DONATE_FLAG | Hooks.NO_OP_FLAG
+                    Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG
+                        | Hooks.AFTER_MODIFY_POSITION_FLAG | Hooks.AFTER_DONATE_FLAG | Hooks.NO_OP_FLAG
                 )
             )
         );
@@ -806,7 +806,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        // Now we let initialize succeed (so we can test modifyPosition)
+        // Now we let initialize succeed (so we can test other functions)
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, mockHooks.beforeInitialize.selector);
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
@@ -815,12 +815,59 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
-        // Now we let the modify position succeed (so we can test donate)
+        // Now we let the modify position succeed (so we can test other functions)
         mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, mockHooks.afterModifyPosition.selector);
         modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
+        // Fails at afterSwap hook when it returns a NoOp
+        mockHooks.setReturnValue(mockHooks.afterSwap.selector, Hooks.NO_OP_SELECTOR);
+        vm.expectRevert(Hooks.InvalidHookResponse.selector);
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true}),
+            ZERO_BYTES
+        );
+
         // Fails at afterDonate hook when it returns a NoOp
         mockHooks.setReturnValue(mockHooks.afterDonate.selector, Hooks.NO_OP_SELECTOR);
+        vm.expectRevert(Hooks.InvalidHookResponse.selector);
+        donateRouter.donate(key, 100, 100, ZERO_BYTES);
+    }
+
+    function test_noop_failsWithoutNoOpFlag(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable hookAddr = payable(
+            address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG))
+        );
+
+        MockHooks impl = new MockHooks();
+        vm.etch(hookAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookAddr);
+
+        key = PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: mockHooks, tickSpacing: 10});
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        // Fails at beforeModifyPosition hook when it returns a NoOp but doesnt have permission
+        mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, Hooks.NO_OP_SELECTOR);
+        vm.expectRevert(Hooks.InvalidHookResponse.selector);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
+
+        // Fails at beforeSwap hook when it returns a NoOp but doesnt have permission
+        mockHooks.setReturnValue(mockHooks.beforeSwap.selector, Hooks.NO_OP_SELECTOR);
+        vm.expectRevert(Hooks.InvalidHookResponse.selector);
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true}),
+            ZERO_BYTES
+        );
+
+        // Fails at beforeDonate hook when it returns a NoOp but doesnt have permission
+        mockHooks.setReturnValue(mockHooks.beforeDonate.selector, Hooks.NO_OP_SELECTOR);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         donateRouter.donate(key, 100, 100, ZERO_BYTES);
     }
