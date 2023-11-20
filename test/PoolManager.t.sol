@@ -17,7 +17,7 @@ import {MockHooks} from "../src/test/MockHooks.sol";
 import {MockContract} from "../src/test/MockContract.sol";
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
-import {BalanceDelta} from "../src/types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
@@ -717,8 +717,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         BalanceDelta delta =
             modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
 
-        assertEq(delta.amount0(), 0);
-        assertEq(delta.amount1(), 0);
+        assertTrue(delta == BalanceDeltaLibrary.MAXIMUM_DELTA, "Max delta not returned");
         assertEq(manager.reservesOf(currency0), reserveBefore0);
         assertEq(manager.reservesOf(currency1), reserveBefore1);
 
@@ -731,14 +730,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         delta = swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
 
+        assertTrue(delta == BalanceDeltaLibrary.MAXIMUM_DELTA, "Max delta not returned");
         assertEq(manager.reservesOf(currency0), reserveBefore0);
         assertEq(manager.reservesOf(currency1), reserveBefore1);
 
         // Donate
         delta = donateRouter.donate(key, 1 ether, 1 ether, ZERO_BYTES);
 
-        assertEq(delta.amount0(), 0);
-        assertEq(delta.amount1(), 0);
+        assertTrue(delta == BalanceDeltaLibrary.MAXIMUM_DELTA, "Max delta not returned");
         assertEq(manager.reservesOf(currency0), reserveBefore0);
         assertEq(manager.reservesOf(currency1), reserveBefore1);
     }

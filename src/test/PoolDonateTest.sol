@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Test} from "forge-std/Test.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
@@ -58,10 +58,9 @@ contract PoolDonateTest is PoolTestBase, Test {
         assertEq(reserveBefore0, reserveAfter0);
         assertEq(reserveBefore1, reserveAfter1);
 
-        if (BalanceDelta.unwrap(delta) == 0 && (data.amount0 > 0 || data.amount1 > 0)) {
-            // The donate did not work - so check that this hook is allowed to NoOp
-            // Then we can return, as we dont need to settle
-            assert(data.key.hooks.hasPermissionToNoOp());
+        if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
+            // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
+            assertTrue(data.key.hooks.hasPermissionToNoOp(), "Invalid NoOp returned");
             return abi.encode(delta);
         }
 

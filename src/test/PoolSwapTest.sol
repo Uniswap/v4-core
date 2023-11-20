@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
@@ -61,14 +61,16 @@ contract PoolSwapTest is Test, PoolTestBase {
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
 
+        // Make sure youve added liquidity to the test pool!
+        if (BalanceDelta.unwrap(delta) == 0) revert NoSwapOccurred();
+
         assertEq(reserveBefore0, reserveAfter0);
         assertEq(reserveBefore1, reserveAfter1);
 
-        if (BalanceDelta.unwrap(delta) == 0) {
-            // Make sure youve added liquidity to the test pool!
-            if (!(data.key.hooks.hasPermissionToNoOp())) revert NoSwapOccurred();
-            // The hook NoOp-ed so we dont need to take/settle
-            else return abi.encode(delta);
+        if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
+            // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
+            assertTrue(data.key.hooks.hasPermissionToNoOp(), "Invalid NoOp returned");
+            return abi.encode(delta);
         }
 
         if (data.params.zeroForOne) {

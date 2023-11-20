@@ -19,7 +19,7 @@ import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
 import {Claims} from "./Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
-import {BalanceDelta} from "./types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
 /// @notice Holds the state for all pools
@@ -190,7 +190,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
-            if (key.hooks.isValidNoOpCall(selector)) return BalanceDelta.wrap(0);
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
             else if (selector != IHooks.beforeModifyPosition.selector) revert Hooks.InvalidHookResponse();
         }
 
@@ -247,7 +247,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
-            if (key.hooks.isValidNoOpCall(selector)) return BalanceDelta.wrap(0);
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
             else if (selector != IHooks.beforeSwap.selector) revert Hooks.InvalidHookResponse();
         }
 
@@ -300,7 +300,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
-            if (key.hooks.isValidNoOpCall(selector)) return BalanceDelta.wrap(0);
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
             else if (selector != IHooks.beforeDonate.selector) revert Hooks.InvalidHookResponse();
         }
 
