@@ -61,10 +61,7 @@ contract PoolSwapTest is Test, PoolTestBase {
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
 
-        // Make sure youve added liquidity to the test pool!
-        if (BalanceDelta.unwrap(delta) == 0) revert NoSwapOccurred(); // Note: Delta actually can end up being 0 even if there was liquidity originally intialized. This happens when liquidity gets pushed entirely into 1 token.
-
-        if (!data.key.hooks.shouldAccessLock()) {
+        if (!data.key.hooks.hasPermissionToAccessLock()) {
             // Hanndle assertions when the hook cannot access the lock.
             // IE if the hook can access the lock, the reserves before and after are not necessarily the same. Hook can "take".
             assertEq(reserveBefore0, reserveAfter0);

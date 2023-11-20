@@ -11,7 +11,7 @@ contract EmptyTestHooks is IHooks {
     using Hooks for IHooks;
 
     constructor() {
-        IHooks(this).validateHookAddress(
+        IHooks(this).validateHookPermissions(
             Hooks.Permissions({
                 beforeInitialize: true,
                 afterInitialize: true,

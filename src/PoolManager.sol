@@ -50,9 +50,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) {}
 
-    // todo change to transient storage
-    address currentHook;
-
     function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
         return pools[key.toId()];
     }
@@ -180,7 +177,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         // todo fix stack too deep :/
         address locker = Lockers.getCurrentLocker();
         if (msg.sender != locker) {
-            if (msg.sender != CurrentHookAddress.get() || !Hooks.shouldAccessLock(IHooks(CurrentHookAddress.get()))) {
+            if (
+                msg.sender != CurrentHookAddress.get()
+                    || !Hooks.hasPermissionToAccessLock(IHooks(CurrentHookAddress.get()))
+            ) {
                 revert LockedBy(locker);
             }
         }

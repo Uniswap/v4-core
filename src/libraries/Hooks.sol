@@ -44,7 +44,7 @@ library Hooks {
     /// the deployed hooks address causes the intended hooks to be called
     /// @param permissions The hooks that are intended to be called
     /// @dev permissions param is memory as the function will be called from constructors
-    function validateHookAddress(IHooks self, Permissions memory permissions) internal pure {
+    function validateHookPermissions(IHooks self, Permissions memory permissions) internal pure {
         if (
             permissions.beforeInitialize != shouldCallBeforeInitialize(self)
                 || permissions.afterInitialize != shouldCallAfterInitialize(self)
@@ -54,7 +54,7 @@ library Hooks {
                 || permissions.afterSwap != shouldCallAfterSwap(self)
                 || permissions.beforeDonate != shouldCallBeforeDonate(self)
                 || permissions.afterDonate != shouldCallAfterDonate(self)
-                || permissions.accessLock != shouldAccessLock(self)
+                || permissions.accessLock != hasPermissionToAccessLock(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -104,7 +104,7 @@ library Hooks {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
     }
 
-    function shouldAccessLock(IHooks self) internal pure returns (bool) {
+    function hasPermissionToAccessLock(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & ACCESS_LOCK_FLAG != 0;
     }
 }

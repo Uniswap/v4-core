@@ -2,7 +2,8 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {AccessLockHook, NoAccessLockHook} from "../src/test/AccessLockHook.sol";
+import {AccessLockHook} from "../src/test/AccessLockHook.sol";
+import {NoAccessLockHook} from "../src/test/NoAccessLockHook.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolModifyPositionTest} from "../src/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
@@ -42,7 +43,7 @@ contract AccessLockTest is Test, Deployers {
 
         // Create NoAccessLockHook.
         address noAccessLockHookAddress = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG));
-        deployCodeTo("AccessLockHook.sol:NoAccessLockHook", abi.encode(manager), noAccessLockHookAddress);
+        deployCodeTo("NoAccessLockHook.sol:NoAccessLockHook", abi.encode(manager), noAccessLockHookAddress);
         noAccessLockHook = NoAccessLockHook(noAccessLockHookAddress);
 
         (key,) = initPool(

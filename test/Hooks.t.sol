@@ -139,7 +139,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
 
         IHooks hookAddr = IHooks(address(preAddr));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -161,14 +161,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressBeforeInitialize(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
 
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: true,
@@ -190,14 +190,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressAfterInitialize(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
 
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_INITIALIZE_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -219,13 +219,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressBeforeAndAfterInitialize(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: true,
@@ -247,13 +247,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressBeforeModify(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -275,13 +275,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressAfterModify(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_MODIFY_POSITION_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -303,14 +303,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressBeforeAndAfterModify(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr =
             IHooks(address(uint160(preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -332,14 +332,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressBeforeInitializeAfterModify(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr =
             IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: true,
@@ -361,13 +361,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressBeforeSwap(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -389,13 +389,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressAfterSwap(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_SWAP_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -417,13 +417,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressBeforeAndAfterSwap(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -445,13 +445,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressBeforeDonate(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -473,13 +473,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressAfterDonate(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_DONATE_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -501,13 +501,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressBeforeAndAfterDonate(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_DONATE_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -529,13 +529,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.shouldAccessLock(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function test_validateHookAddress_accessLock(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.ACCESS_LOCK_FLAG)));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
@@ -557,14 +557,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertTrue(Hooks.shouldAccessLock(hookAddr));
+        assertTrue(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressAllHooks(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
         uint160 allHookBitsFlipped = (~uint160(0)) << uint160((160 - hookPermissionCount));
         IHooks hookAddr = IHooks(address(uint160(preAddr) | allHookBitsFlipped));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: true,
@@ -586,15 +586,15 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
-        assertTrue(Hooks.shouldAccessLock(hookAddr));
+        assertTrue(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
     function testValidateHookAddressFailsAllHooks(uint152 addr, uint8 mask) public {
         uint160 preAddr = uint160(uint256(addr));
-        vm.assume(mask != 0xff);
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 152)));
+        vm.assume(mask != 0xff8);
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 151)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: true,
@@ -605,7 +605,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: true,
                 beforeDonate: true,
                 afterDonate: true,
-                accessLock: false
+                accessLock: true
             })
         );
     }
@@ -615,7 +615,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         vm.assume(mask != 0);
         IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 152)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
                 beforeInitialize: false,
