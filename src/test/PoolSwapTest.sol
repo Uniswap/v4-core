@@ -66,7 +66,7 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         if (BalanceDelta.unwrap(delta) == 0) {
             // Make sure youve added liquidity to the test pool!
-            if (!(data.key.hooks.shouldAllowNoOp())) revert NoSwapOccurred();
+            if (!(data.key.hooks.hasPermissionToNoOp())) revert NoSwapOccurred();
             // The hook NoOp-ed so we dont need to take/settle
             else return abi.encode(delta);
         }

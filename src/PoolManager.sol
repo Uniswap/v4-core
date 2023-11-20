@@ -49,10 +49,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) {}
 
-    function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
-        return pools[key.toId()];
-    }
-
     /// @inheritdoc IPoolManager
     function getSlot0(PoolId id)
         external
@@ -173,7 +169,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _accountDelta(key.currency1, delta.amount1());
     }
 
-    function _checkPoolInitialized(PoolId id) internal {
+    function _checkPoolInitialized(PoolId id) internal view {
         if (pools[id].isNotInitialized()) revert PoolNotInitialized();
     }
 
@@ -194,13 +190,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
-            if (selector != IHooks.beforeModifyPosition.selector) {
-                if (key.hooks.isValidNoOpCall(selector)) {
-                    return BalanceDelta.wrap(0);
-                } else {
-                    revert Hooks.InvalidHookResponse();
-                }
-            }
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDelta.wrap(0);
+            else if (selector != IHooks.beforeModifyPosition.selector) revert Hooks.InvalidHookResponse();
         }
 
         Pool.FeeAmounts memory feeAmounts;
@@ -256,13 +247,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
-            if (selector != IHooks.beforeSwap.selector) {
-                if (key.hooks.isValidNoOpCall(selector)) {
-                    return BalanceDelta.wrap(0);
-                } else {
-                    revert Hooks.InvalidHookResponse();
-                }
-            }
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDelta.wrap(0);
+            else if (selector != IHooks.beforeSwap.selector) revert Hooks.InvalidHookResponse();
         }
 
         uint256 feeForProtocol;
@@ -314,13 +300,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
-            if (selector != IHooks.beforeDonate.selector) {
-                if (key.hooks.isValidNoOpCall(selector)) {
-                    return BalanceDelta.wrap(0);
-                } else {
-                    revert Hooks.InvalidHookResponse();
-                }
-            }
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDelta.wrap(0);
+            else if (selector != IHooks.beforeDonate.selector) revert Hooks.InvalidHookResponse();
         }
 
         delta = pools[id].donate(amount0, amount1);

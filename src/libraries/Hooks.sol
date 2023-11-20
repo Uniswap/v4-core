@@ -54,7 +54,7 @@ library Hooks {
                 || calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
                 || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
                 || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
-                || calls.noOp != shouldAllowNoOp(self)
+                || calls.noOp != hasPermissionToNoOp(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -63,12 +63,14 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
+        // if NoOp is allowed, at least one of beforeModifyPosition, beforeSwap and beforeDonate should be allowed
         if (
-            shouldAllowNoOp(hook) && !shouldCallBeforeModifyPosition(hook) && !shouldCallBeforeSwap(hook)
+            hasPermissionToNoOp(hook) && !shouldCallBeforeModifyPosition(hook) && !shouldCallBeforeSwap(hook)
                 && !shouldCallBeforeDonate(hook)
         ) {
             return false;
         }
+        // If there is no hook contract set, then fee cannot be dynamic and there cannot be a hook fee on swap or withdrawal.
         return address(hook) == address(0)
             ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
             : (
@@ -109,11 +111,11 @@ library Hooks {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
     }
 
-    function shouldAllowNoOp(IHooks self) internal pure returns (bool) {
+    function hasPermissionToNoOp(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & NO_OP_FLAG != 0;
     }
 
     function isValidNoOpCall(IHooks self, bytes4 selector) internal pure returns (bool) {
-        return shouldAllowNoOp(self) && selector == NO_OP_SELECTOR;
+        return hasPermissionToNoOp(self) && selector == NO_OP_SELECTOR;
     }
 }

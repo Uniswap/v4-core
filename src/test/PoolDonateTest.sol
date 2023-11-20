@@ -61,7 +61,7 @@ contract PoolDonateTest is PoolTestBase, Test {
         if (BalanceDelta.unwrap(delta) == 0 && (data.amount0 > 0 || data.amount1 > 0)) {
             // The donate did not work - so check that this hook is allowed to NoOp
             // Then we can return, as we dont need to settle
-            assert(data.key.hooks.shouldAllowNoOp());
+            assert(data.key.hooks.hasPermissionToNoOp());
             return abi.encode(delta);
         }
 
