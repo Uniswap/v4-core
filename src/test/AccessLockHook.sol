@@ -10,8 +10,6 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {Test} from "forge-std/Test.sol";
 
-import "forge-std/console2.sol";
-
 contract AccessLockHook is BaseTestHooks {
     using CurrencyLibrary for Currency;
 
@@ -116,11 +114,10 @@ contract AccessLockHook2 is Test, BaseTestHooks {
         IPoolManager.ModifyPositionParams calldata params,
         bytes calldata hookData
     ) external override returns (bytes4) {
-
         if (manager.getCurrentHook() != address(this)) {
             revert IncorrectHookSet();
         }
-        
+
         (bool shouldCallHook, PoolKey memory key2) = abi.decode(hookData, (bool, PoolKey));
 
         if (shouldCallHook) {

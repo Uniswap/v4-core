@@ -23,8 +23,6 @@ import {BalanceDelta} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 import {CurrentHookAddress} from "./libraries/CurrentHookAddress.sol";
 
-import "forge-std/console2.sol";
-
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
@@ -180,7 +178,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         address locker = Lockers.getCurrentLocker();
         if (msg.sender != locker) {
             if (
-                msg.sender != CurrentHookAddress.get()
+                locker == address(0) || msg.sender != CurrentHookAddress.get()
                     || !Hooks.hasPermissionToAccessLock(IHooks(CurrentHookAddress.get()))
             ) {
                 revert LockedBy(locker);

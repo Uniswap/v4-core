@@ -19,8 +19,6 @@ import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 
-import "forge-std/console2.sol";
-
 contract AccessLockTest is Test, Deployers {
     using Pool for Pool.State;
     using CurrencyLibrary for Currency;
@@ -554,12 +552,9 @@ contract AccessLockTest is Test, Deployers {
     }
 
     function test_onlyByLocker_revertsWhenThereIsNoOutsideLock() public {
-        // vm.expectRevert(abi.encode(IPoolManager.LockedBy.selector, address(0)));
-        // No lock acquired but the hook has permission to lock.
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);
         assertEq(manager.getCurrentHook(), address(key.hooks));
-
-        // THIS WILL SUCCEED BUT SHOULD NOT BE ALLOWED.
+        
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(0)));
         vm.prank(address(key.hooks));
         manager.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);
