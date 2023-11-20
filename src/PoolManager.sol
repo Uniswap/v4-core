@@ -23,6 +23,8 @@ import {BalanceDelta} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 import {CurrentHookAddress} from "./libraries/CurrentHookAddress.sol";
 
+import "forge-std/console2.sol";
+
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
@@ -405,6 +407,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
         return Lockers.nonzeroDeltaCount();
+    }
+
+    function getCurrentHook() external view returns (address _currentHook) {
+        return CurrentHookAddress.get();
     }
 
     /// @notice receive native tokens for native pools

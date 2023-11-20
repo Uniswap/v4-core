@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {AccessLockHook} from "../src/test/AccessLockHook.sol";
+import {AccessLockHook, AccessLockDelegatesToOtherHook} from "../src/test/AccessLockHook.sol";
 import {NoAccessLockHook} from "../src/test/NoAccessLockHook.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolModifyPositionTest} from "../src/test/PoolModifyPositionTest.sol";
@@ -19,12 +19,16 @@ import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 
+import "forge-std/console2.sol";
+
 contract AccessLockTest is Test, Deployers {
     using Pool for Pool.State;
     using CurrencyLibrary for Currency;
 
     AccessLockHook accessLockHook;
+    address accessLockAddress;
     NoAccessLockHook noAccessLockHook;
+    AccessLockDelegatesToOtherHook accessLockHook2;
 
     function setUp() public {
         // Initialize managers and routers.
@@ -32,7 +36,7 @@ contract AccessLockTest is Test, Deployers {
         (currency0, currency1) = deployMintAndApprove2Currencies();
 
         // Create AccessLockHook.
-        address accessLockAddress = address(
+        accessLockAddress = address(
             uint160(
                 Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG
                     | Hooks.BEFORE_DONATE_FLAG
@@ -40,6 +44,11 @@ contract AccessLockTest is Test, Deployers {
         );
         deployCodeTo("AccessLockHook.sol:AccessLockHook", abi.encode(manager), accessLockAddress);
         accessLockHook = AccessLockHook(accessLockAddress);
+
+        // Create AccessLockHook2.
+        address accessLockAddress2 = address(uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        deployCodeTo("AccessLockHook.sol:AccessLockDelegatesToOtherHook", abi.encode(manager), accessLockAddress2);
+        accessLockHook2 = AccessLockDelegatesToOtherHook(accessLockAddress2);
 
         // Create NoAccessLockHook.
         address noAccessLockHookAddress = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG));
@@ -491,5 +500,45 @@ contract AccessLockTest is Test, Deployers {
         // Should have less balance in both currencies.
         assertLt(balanceOfAfter0, balanceOfBefore0);
         assertLt(balanceOfAfter1, balanceOfBefore1);
+    }
+
+    /**
+     *
+     * EDGE CASE TESTS
+     *
+     */
+
+    function test_onlyByLocker_revertsWhenHookIsNotCurrentHook() public {
+        // Call first access lock hook. Should succeed.
+        uint256 amount = 100;
+        uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
+        uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
+
+        BalanceDelta delta = modifyPositionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18),
+            abi.encode(amount, AccessLockHook.LockAction.Mint)
+        );
+
+        uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
+        uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
+
+        assertEq(balanceOfBefore0 - balanceOfAfter0, uint256(uint128(delta.amount0())));
+        // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
+        assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
+
+        assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
+
+        assertEq(manager.getCurrentHook(), address(accessLockHook));
+
+        (PoolKey memory keyAccessLockHook2,) =
+            initPool(currency0, currency1, IHooks(accessLockHook2), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(modifyPositionRouter)));
+        delta = modifyPositionRouter.modifyPosition(
+            keyAccessLockHook2,
+            IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18),
+            abi.encode(address(accessLockAddress))
+        );
     }
 }

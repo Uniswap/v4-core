@@ -8,6 +8,9 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {TickMath} from "../libraries/TickMath.sol";
+import {Test} from "forge-std/Test.sol";
+
+import "forge-std/console2.sol";
 
 contract AccessLockHook is BaseTestHooks {
     using CurrencyLibrary for Currency;
@@ -89,6 +92,34 @@ contract AccessLockHook is BaseTestHooks {
         }
 
         return selector;
+    }
+
+    function onERC1155Received(address, address, uint256, uint256, bytes memory) public pure returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+}
+
+// Hook that can access the lock.
+// Also has the ability to call out to another hook that can access a lock, but SHOULDN'T be able to.
+contract AccessLockDelegatesToOtherHook is Test, BaseTestHooks {
+    IPoolManager manager;
+
+    constructor(IPoolManager _manager) {
+        manager = _manager;
+    }
+
+    function beforeModifyPosition(
+        address sender,
+        PoolKey calldata key,
+        IPoolManager.ModifyPositionParams calldata params,
+        bytes calldata hookData
+    ) external override returns (bytes4) {
+        (address otherHook) = abi.decode(hookData, (address));
+
+        // This should revert.
+        bytes memory hookData2 = abi.encode(100, AccessLockHook.LockAction.Mint);
+        IHooks(otherHook).beforeModifyPosition(sender, key, params, hookData2);
+        return IHooks.beforeModifyPosition.selector;
     }
 
     function onERC1155Received(address, address, uint256, uint256, bytes memory) public pure returns (bytes4) {
