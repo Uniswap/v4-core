@@ -17,6 +17,8 @@ contract EmptyTestHooks is IHooks {
                 afterInitialize: true,
                 beforeMint: true,
                 afterMint: true,
+                beforeBurn: true,
+                afterBurn: true,
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
@@ -60,6 +62,25 @@ contract EmptyTestHooks is IHooks {
         bytes calldata
     ) external pure override returns (bytes4) {
         return IHooks.afterMint.selector;
+    }
+
+    function beforeBurn(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata)
+        external
+        pure
+        override
+        returns (bytes4)
+    {
+        return IHooks.beforeBurn.selector;
+    }
+
+    function afterBurn(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        BalanceDelta,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return IHooks.afterBurn.selector;
     }
 
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)

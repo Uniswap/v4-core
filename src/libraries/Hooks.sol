@@ -15,17 +15,20 @@ library Hooks {
     uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
     uint256 internal constant BEFORE_MINT_FLAG = 1 << 157;
     uint256 internal constant AFTER_MINT_FLAG = 1 << 156;
-    // TODO add before/after burn flags
     uint256 internal constant BEFORE_SWAP_FLAG = 1 << 155;
     uint256 internal constant AFTER_SWAP_FLAG = 1 << 154;
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
+    uint256 internal constant BEFORE_BURN_FLAG = 1 << 151;
+    uint256 internal constant AFTER_BURN_FLAG = 1 << 150;
 
     struct Calls {
         bool beforeInitialize;
         bool afterInitialize;
         bool beforeMint;
         bool afterMint;
+        bool beforeBurn;
+        bool afterBurn;
         bool beforeSwap;
         bool afterSwap;
         bool beforeDonate;
@@ -48,6 +51,7 @@ library Hooks {
             calls.beforeInitialize != shouldCallBeforeInitialize(self)
                 || calls.afterInitialize != shouldCallAfterInitialize(self)
                 || calls.beforeMint != shouldCallBeforeMint(self) || calls.afterMint != shouldCallAfterMint(self)
+                || calls.beforeBurn != shouldCallBeforeBurn(self) || calls.afterBurn != shouldCallAfterBurn(self)
                 || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
                 || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
         ) {
@@ -81,6 +85,14 @@ library Hooks {
 
     function shouldCallAfterMint(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & AFTER_MINT_FLAG != 0;
+    }
+
+    function shouldCallBeforeBurn(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & BEFORE_BURN_FLAG != 0;
+    }
+
+    function shouldCallAfterBurn(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & AFTER_BURN_FLAG != 0;
     }
 
     function shouldCallBeforeSwap(IHooks self) internal pure returns (bool) {

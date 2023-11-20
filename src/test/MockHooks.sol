@@ -17,7 +17,8 @@ contract MockHooks is IHooks, IHookFeeManager {
     bytes public afterInitializeData;
     bytes public beforeMintData;
     bytes public afterMintData;
-    // TODO: add before/after burn data
+    bytes public beforeBurnData;
+    bytes public afterBurnData;
     bytes public beforeSwapData;
     bytes public afterSwapData;
     bytes public beforeDonateData;
@@ -71,7 +72,27 @@ contract MockHooks is IHooks, IHookFeeManager {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    // TODO: Add before/after burn here
+    function beforeBurn(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata hookData)
+        external
+        override
+        returns (bytes4)
+    {
+        beforeBurnData = hookData;
+        bytes4 selector = MockHooks.beforeBurn.selector;
+        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+    }
+
+    function afterBurn(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        BalanceDelta,
+        bytes calldata hookData
+    ) external override returns (bytes4) {
+        afterBurnData = hookData;
+        bytes4 selector = MockHooks.afterBurn.selector;
+        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+    }
 
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata hookData)
         external

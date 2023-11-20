@@ -203,6 +203,30 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         }
     }
 
+    function burnPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes calldata hookData)
+        external
+        override
+        noDelegateCall
+        onlyByLocker
+        returns (BalanceDelta delta)
+    {
+        require(params.liquidityDelta.toInt128() <= 0);
+
+        if (key.hooks.shouldCallBeforeBurn()) {
+            if (key.hooks.beforeBurn(msg.sender, key, params, hookData) != IHooks.beforeBurn.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
+        }
+
+        delta = _modifyPosition(key, params);
+
+        if (key.hooks.shouldCallAfterBurn()) {
+            if (key.hooks.afterBurn(msg.sender, key, params, delta, hookData) != IHooks.afterBurn.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
+        }
+    }
+
     function _modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
         internal
         returns (BalanceDelta delta)

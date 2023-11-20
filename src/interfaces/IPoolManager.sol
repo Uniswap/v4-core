@@ -156,6 +156,16 @@ interface IPoolManager is IFees, IClaims {
         external
         returns (BalanceDelta);
 
+    /// @notice Burn a new position in a pool
+    /// @dev Poke by calling with a zero liquidityDelta
+    /// @param key The pool to burn a position in
+    /// @param params The parameters of pass into modifyPosition
+    /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
+    /// @return delta The balance delta of the position burned
+    function burnPosition(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
+        external
+        returns (BalanceDelta);
+
     struct SwapParams {
         bool zeroForOne;
         int256 amountSpecified;
