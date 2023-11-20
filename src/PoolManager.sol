@@ -175,16 +175,18 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     modifier onlyByLocker() {
-        address locker = Lockers.getCurrentLocker();
-        if (msg.sender != locker) {
-            if (
-                locker == address(0) || msg.sender != CurrentHookAddress.get()
-                    || !Hooks.hasPermissionToAccessLock(IHooks(CurrentHookAddress.get()))
-            ) {
+        _checkLocker(msg.sender, Lockers.getCurrentLocker());
+        _;
+    }
+
+    function _checkLocker(address sender, address locker) internal view {
+        if (sender != locker) {
+            address hookAddress = CurrentHookAddress.get();
+            if (locker == address(0) || sender != hookAddress || !Hooks.hasPermissionToAccessLock(IHooks(hookAddress)))
+            {
                 revert LockedBy(locker);
             }
         }
-        _;
     }
 
     /// @inheritdoc IPoolManager
