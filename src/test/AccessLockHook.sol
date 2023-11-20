@@ -100,9 +100,11 @@ contract AccessLockHook is BaseTestHooks {
 }
 
 // Hook that can access the lock.
-// Also has the ability to call out to another hook that can access a lock, but SHOULDN'T be able to.
-contract AccessLockDelegatesToOtherHook is Test, BaseTestHooks {
+// Also has the ability to call out to another hook or pool.
+contract AccessLockHook2 is Test, BaseTestHooks {
     IPoolManager manager;
+
+    error IncorrectHookSet();
 
     constructor(IPoolManager _manager) {
         manager = _manager;
@@ -114,11 +116,26 @@ contract AccessLockDelegatesToOtherHook is Test, BaseTestHooks {
         IPoolManager.ModifyPositionParams calldata params,
         bytes calldata hookData
     ) external override returns (bytes4) {
-        (address otherHook) = abi.decode(hookData, (address));
 
-        // This should revert.
-        bytes memory hookData2 = abi.encode(100, AccessLockHook.LockAction.Mint);
-        IHooks(otherHook).beforeModifyPosition(sender, key, params, hookData2);
+        if (manager.getCurrentHook() != address(this)) {
+            revert IncorrectHookSet();
+        }
+        
+        (bool shouldCallHook, PoolKey memory key2) = abi.decode(hookData, (bool, PoolKey));
+
+        if (shouldCallHook) {
+            // Should revert.
+            bytes memory hookData2 = abi.encode(100, AccessLockHook.LockAction.Mint);
+            IHooks(key2.hooks).beforeModifyPosition(sender, key, params, hookData2); // params dont really matter, just want to tell the other hook to do a mint action, but will revert
+        } else {
+            // Should succeed and set current hook to key2.hooks
+            manager.modifyPosition(key2, params, new bytes(0));
+            if (manager.getCurrentHook() != address(key2.hooks)) {
+                revert IncorrectHookSet();
+            }
+            // Should revert since currentHook is the other pools hook
+            manager.mint(key.currency1, address(this), 10);
+        }
         return IHooks.beforeModifyPosition.selector;
     }
 

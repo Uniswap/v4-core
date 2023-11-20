@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {AccessLockHook, AccessLockDelegatesToOtherHook} from "../src/test/AccessLockHook.sol";
+import {AccessLockHook, AccessLockHook2} from "../src/test/AccessLockHook.sol";
 import {NoAccessLockHook} from "../src/test/NoAccessLockHook.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolModifyPositionTest} from "../src/test/PoolModifyPositionTest.sol";
@@ -26,9 +26,8 @@ contract AccessLockTest is Test, Deployers {
     using CurrencyLibrary for Currency;
 
     AccessLockHook accessLockHook;
-    address accessLockAddress;
     NoAccessLockHook noAccessLockHook;
-    AccessLockDelegatesToOtherHook accessLockHook2;
+    AccessLockHook2 accessLockHook2;
 
     function setUp() public {
         // Initialize managers and routers.
@@ -36,7 +35,7 @@ contract AccessLockTest is Test, Deployers {
         (currency0, currency1) = deployMintAndApprove2Currencies();
 
         // Create AccessLockHook.
-        accessLockAddress = address(
+        address accessLockAddress = address(
             uint160(
                 Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG
                     | Hooks.BEFORE_DONATE_FLAG
@@ -47,8 +46,8 @@ contract AccessLockTest is Test, Deployers {
 
         // Create AccessLockHook2.
         address accessLockAddress2 = address(uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG));
-        deployCodeTo("AccessLockHook.sol:AccessLockDelegatesToOtherHook", abi.encode(manager), accessLockAddress2);
-        accessLockHook2 = AccessLockDelegatesToOtherHook(accessLockAddress2);
+        deployCodeTo("AccessLockHook.sol:AccessLockHook2", abi.encode(manager), accessLockAddress2);
+        accessLockHook2 = AccessLockHook2(accessLockAddress2);
 
         // Create NoAccessLockHook.
         address noAccessLockHookAddress = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG));
@@ -534,11 +533,23 @@ contract AccessLockTest is Test, Deployers {
         (PoolKey memory keyAccessLockHook2,) =
             initPool(currency0, currency1, IHooks(accessLockHook2), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
 
+        // Delegates the beforeModifyPosition call to the hook in `key` but reverts because the current hook is keyAccessLockHook2.
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(modifyPositionRouter)));
         delta = modifyPositionRouter.modifyPosition(
-            keyAccessLockHook2,
-            IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18),
-            abi.encode(address(accessLockAddress))
+            keyAccessLockHook2, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), abi.encode(true, key)
+        );
+    }
+
+    function test_onlyByLocker_revertsWhenHookCallsToPoolWithNoHook() public {
+        (PoolKey memory keyWithNoHook,) =
+            initPool(currency0, currency1, IHooks(address(0)), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        (PoolKey memory keyAccessLockHook2,) =
+            initPool(currency0, currency1, IHooks(accessLockHook2), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(modifyPositionRouter)));
+        modifyPositionRouter.modifyPosition(
+            keyAccessLockHook2, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), abi.encode(false, keyWithNoHook)
         );
     }
 }
