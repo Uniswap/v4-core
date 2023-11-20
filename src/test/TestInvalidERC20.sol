@@ -28,13 +28,13 @@ contract TestInvalidERC20 is IERC20Minimal {
         balanceOf[recipient] = balanceRecipient + amount;
 
         emit Transfer(msg.sender, recipient, amount);
-        return false;
+        return false; // returns false even though it succeeded
     }
 
     function approve(address spender, uint256 amount) external override returns (bool) {
         allowance[msg.sender][spender] = amount;
         emit Approval(msg.sender, spender, amount);
-        return true;
+        return false;
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
@@ -51,6 +51,6 @@ contract TestInvalidERC20 is IERC20Minimal {
         balanceOf[sender] = balanceSender - amount;
 
         emit Transfer(sender, recipient, amount);
-        return false;
+        return false; // returns false even though it succeeded
     }
 }
