@@ -37,9 +37,12 @@ contract PoolModifyPositionTest is PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        require(data.params.liquidityDelta >= 0, "TODO: burnPosition not implemented");
-
-        BalanceDelta delta = manager.mintPosition(data.key, data.params, data.hookData);
+        BalanceDelta delta;
+        if (data.params.liquidityDelta >= 0) {
+            delta = manager.mintPosition(data.key, data.params, data.hookData);
+        } else {
+            delta = manager.burnPosition(data.key, data.params, data.hookData);
+        }
 
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender);
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
