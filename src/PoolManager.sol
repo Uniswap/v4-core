@@ -173,6 +173,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _accountDelta(key.currency1, delta.amount1());
     }
 
+    function _checkPoolInitialized(PoolId id) internal {
+        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
+    }
+
     modifier onlyByLocker() {
         address locker = Lockers.getCurrentLocker();
         if (msg.sender != locker) revert LockedBy(locker);
@@ -186,7 +190,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
         PoolId id = key.toId();
-        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
+        _checkPoolInitialized(id);
 
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
@@ -248,7 +252,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         returns (BalanceDelta delta)
     {
         PoolId id = key.toId();
-        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
+        _checkPoolInitialized(id);
 
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
@@ -306,7 +310,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         returns (BalanceDelta delta)
     {
         PoolId id = key.toId();
-        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
+        _checkPoolInitialized(id);
 
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
