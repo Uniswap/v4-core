@@ -39,6 +39,14 @@ contract HooksTest {
         return IHooks(hookAddress).shouldCallAfterMint();
     }
 
+    function shouldCallBeforeBurn(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallBeforeBurn();
+    }
+
+    function shouldCallAfterBurn(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).shouldCallAfterBurn();
+    }
+
     function shouldCallBeforeDonate(address hookAddress) external pure returns (bool) {
         return IHooks(hookAddress).shouldCallBeforeDonate();
     }
