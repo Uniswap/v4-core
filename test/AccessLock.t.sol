@@ -554,7 +554,7 @@ contract AccessLockTest is Test, Deployers {
     function test_onlyByLocker_revertsWhenThereIsNoOutsideLock() public {
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);
         assertEq(manager.getCurrentHook(), address(key.hooks));
-        
+
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(0)));
         vm.prank(address(key.hooks));
         manager.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);

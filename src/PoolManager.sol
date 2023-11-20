@@ -66,6 +66,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFees, slot0.hookFees);
     }
 
+    /// @inheritdoc IPoolManager
     function getLiquidity(PoolId id) external view override returns (uint128 liquidity) {
         return pools[id].liquidity;
     }
@@ -174,7 +175,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     modifier onlyByLocker() {
-        // todo fix stack too deep :/
         address locker = Lockers.getCurrentLocker();
         if (msg.sender != locker) {
             if (

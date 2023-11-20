@@ -10,7 +10,7 @@ runs = 100
 seed = "0x4444"
 
 [profile.ci.fuzz]
-runs = 100
+runs = 1000
 
 [profile.ci]
 fuzz_runs = 100000
