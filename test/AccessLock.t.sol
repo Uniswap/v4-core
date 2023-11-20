@@ -552,4 +552,16 @@ contract AccessLockTest is Test, Deployers {
             keyAccessLockHook2, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), abi.encode(false, keyWithNoHook)
         );
     }
+
+    function test_onlyByLocker_revertsWhenThereIsNoOutsideLock() public {
+        // vm.expectRevert(abi.encode(IPoolManager.LockedBy.selector, address(0)));
+        // No lock acquired but the hook has permission to lock.
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);
+        assertEq(manager.getCurrentHook(), address(key.hooks));
+
+        // THIS WILL SUCCEED BUT SHOULD NOT BE ALLOWED.
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(0)));
+        vm.prank(address(key.hooks));
+        manager.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);
+    }
 }
