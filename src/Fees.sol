@@ -33,6 +33,8 @@ abstract contract Fees is IFees, Owned {
     }
 
     /// @notice Fetch the protocol fees for a given pool, returning false if the call fails or the returned fees are invalid.
+    /// @dev to prevent an invalid protocol fee controller from blocking pools from being initialized
+    ///      the success of this function is NOT checked on initialize and if the call fails, the protocol fees are set to 0.
     /// @dev the success of this function must be checked when called in setProtocolFees
     function _fetchProtocolFees(PoolKey memory key) internal returns (bool success, uint24 protocolFees) {
         if (address(protocolFeeController) != address(0)) {
@@ -40,21 +42,20 @@ abstract contract Fees is IFees, Owned {
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
             // in mind.
             if (gasleft() < controllerGasLimit) revert ProtocolFeeCannotBeFetched();
-            (bool _success, bytes memory data) = address(protocolFeeController).call{gas: controllerGasLimit}(
+            (bool _success, bytes memory _data) = address(protocolFeeController).call{gas: controllerGasLimit}(
                 abi.encodeWithSelector(IProtocolFeeController.protocolFeesForPool.selector, key)
             );
-            bytes32 _data;
-            assembly {
-                // get first word from return data
-                _data := mload(add(data, 0x20))
-            }
-            // get the lowest 24 bits
-            protocolFees = uint24(uint256(_data) & 0xFFFFFF);
-            // success if the call succeeded with valid return data, the return data does not overflow a uint24, and the fees are valid within the bounds
-            success = _success && (data.length <= 32) && (uint256(protocolFees) == uint256(_data))
-                && _isValidProtocolFees(protocolFees);
+            if (!_success || _data.length > 32) return (false, 0);
 
-            if (!success) protocolFees = 0;
+            // Check returnData validity
+            uint256 returnData;
+            assembly {
+                returnData := mload(add(_data, 0x20))
+            }
+            // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
+            (success, protocolFees) = returnData == uint24(returnData) && _isValidProtocolFees(uint24(returnData))
+                ? (true, uint24(returnData))
+                : (false, 0);
         }
     }
 
@@ -75,31 +76,30 @@ abstract contract Fees is IFees, Owned {
         if (dynamicSwapFee >= MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
+    /// @dev Only the lower 12 bits are used here to encode the fee denominator.
+    function _isFeeWithinBounds(uint16 fee) internal pure returns (bool) {
+        if (fee != 0) {
+            uint16 fee0 = fee % 64;
+            uint16 fee1 = fee >> 6;
+            // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
+            if (
+                (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
+            ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     function _isValidProtocolFees(uint24 protocolFees) internal pure returns (bool) {
         if (protocolFees != 0) {
             uint16 protocolSwapFee = uint16(protocolFees >> 12);
             uint16 protocolWithdrawFee = uint16(protocolFees & 0xFFF);
-            if (protocolSwapFee != 0) {
-                uint16 fee0 = protocolSwapFee % 64;
-                uint16 fee1 = protocolSwapFee >> 6;
-                // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-                if (
-                    (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR)
-                        || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
-                ) {
-                    return false;
-                }
+            if (protocolSwapFee != 0 && !_isFeeWithinBounds(protocolSwapFee)) {
+                return false;
             }
-            if (protocolWithdrawFee != 0) {
-                uint16 fee0 = protocolWithdrawFee % 64;
-                uint16 fee1 = protocolWithdrawFee >> 6;
-                // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-                if (
-                    (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR)
-                        || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
-                ) {
-                    return false;
-                }
+            if (protocolWithdrawFee != 0 && !_isFeeWithinBounds(protocolWithdrawFee)) {
+                return false;
             }
         }
         return true;
