@@ -4,15 +4,13 @@ pragma solidity ^0.8.20;
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
-import {IERC6909} from "solmate/src/interfaces/IERC6909.sol";
 import {IHooks} from "./IHooks.sol";
 import {IFees} from "./IFees.sol";
-import {IClaims} from "./IClaims.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IFees, IClaims {
+interface IPoolManager is IFees {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
