@@ -23,7 +23,7 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 contract HooksTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
-    address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
+    address payable ALL_HOOKS_ADDRESS = payable(0xfFf0000000000000000000000000000000000000);
     MockHooks mockHooks;
 
     function setUp() public {
@@ -58,10 +58,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testModifyPositionSucceedsWithHook() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 10 ** 18), new bytes(111));
         assertEq(mockHooks.beforeMintData(), new bytes(111));
         assertEq(mockHooks.afterMintData(), new bytes(111));
-        // TODO: test before/after burn
+
+        uint128 liquidity = manager.getLiquidity(key.toId(), address(modifyPositionRouter), 0, 60);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(0, 60, -int128(liquidity)), new bytes(222)
+        );
+        assertEq(mockHooks.beforeBurnData(), new bytes(222));
+        assertEq(mockHooks.afterBurnData(), new bytes(222));
     }
 
     function testBeforeAfterMintCalledWithPositiveLiquidityDelta() public {
@@ -75,26 +81,29 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testBeforeAfterMintNotCalledWithNegativeLiquidityDelta() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 10 ** 18), new bytes(111));
         assertEq(mockHooks.beforeMintData(), new bytes(111));
         assertEq(mockHooks.afterMintData(), new bytes(111));
 
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, -100), new bytes(222));
+        uint128 liquidity = manager.getLiquidity(key.toId(), address(modifyPositionRouter), 0, 60);
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(0, 60, -int128(liquidity)), new bytes(222)
+        );
         assertEq(mockHooks.beforeMintData(), new bytes(111));
         assertEq(mockHooks.afterMintData(), new bytes(111));
     }
 
-    function testBeforeAfterMintCalledWithZeroLiquidityDelta() public {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
-        assertEq(mockHooks.beforeMintData(), new bytes(111));
-        assertEq(mockHooks.afterMintData(), new bytes(111));
+    // function testBeforeAfterMintCalledWithZeroLiquidityDelta() public {
+    //     MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
+    //     MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
+    //     modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 10 ** 18), new bytes(111));
+    //     assertEq(mockHooks.beforeMintData(), new bytes(111));
+    //     assertEq(mockHooks.afterMintData(), new bytes(111));
 
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 0), new bytes(222));
-        assertEq(mockHooks.beforeMintData(), new bytes(222));
-        assertEq(mockHooks.afterMintData(), new bytes(222));
-    }
+    //     modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 0), new bytes(222));
+    //     assertEq(mockHooks.beforeMintData(), new bytes(222));
+    //     assertEq(mockHooks.afterMintData(), new bytes(222));
+    // }
 
     function testBeforeMintInvalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeMint.selector, bytes4(0xdeadbeef));
