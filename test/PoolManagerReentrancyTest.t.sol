@@ -17,7 +17,7 @@ contract TokenLocker is ILockCallback {
         manager.lock(address(this), abi.encode(currency, reclaim));
     }
 
-    function lockAcquired(address lockOriginator, bytes calldata data) external returns (bytes memory) {
+    function lockAcquired(address lockCaller, bytes calldata data) external returns (bytes memory) {
         (Currency currency, bool reclaim) = abi.decode(data, (Currency, bool));
 
         IPoolManager manager = IPoolManager(msg.sender);
@@ -56,7 +56,7 @@ contract SimpleLinearLocker is ILockCallback {
         manager.lock(address(this), abi.encode(timesToReenter, 0));
     }
 
-    function lockAcquired(address _lockOriginator, bytes calldata data) external returns (bytes memory) {
+    function lockAcquired(address _lockCaller, bytes calldata data) external returns (bytes memory) {
         (uint256 timesToReenter, uint256 depth) = abi.decode(data, (uint256, uint256));
         checker(depth);
         if (depth < timesToReenter) {
@@ -102,7 +102,7 @@ contract ParallelLocker is ILockCallback {
         assert(locker == msg.sender);
     }
 
-    function lockAcquired(address _lockOriginator, bytes calldata) external returns (bytes memory) {
+    function lockAcquired(address _lockCaller, bytes calldata) external returns (bytes memory) {
         SimpleLinearLocker locker0 = new SimpleLinearLocker();
         SimpleLinearLocker locker1 = new SimpleLinearLocker();
         SimpleLinearLocker locker2 = new SimpleLinearLocker();

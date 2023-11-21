@@ -14,9 +14,9 @@ library Lockers {
     // The slot holding the number of nonzero deltas.
     uint256 constant NONZERO_DELTA_COUNT = uint256(keccak256("NonzeroDeltaCount")) - 1;
 
-    // pushes an address tuple (address locker, address lockOriginator)
+    // pushes an address tuple (address locker, address lockCaller)
     // to the locker array, so each length of the array represents 2 slots of tstorage
-    function push(address locker, address lockOriginator) internal {
+    function push(address locker, address lockCaller) internal {
         uint256 slot = LOCKERS_SLOT;
 
         uint256 newLength;
@@ -31,8 +31,8 @@ library Lockers {
             // add the locker
             tstore(thisLockerSlot, locker)
 
-            // add the lock originator
-            tstore(add(thisLockerSlot, 1), lockOriginator)
+            // add the lock caller
+            tstore(add(thisLockerSlot, 1), lockCaller)
 
             // increase the length
             tstore(slot, newLength)
@@ -73,7 +73,7 @@ library Lockers {
         }
     }
 
-    function getLockOriginator(uint256 i) internal view returns (address locker) {
+    function getLockCaller(uint256 i) internal view returns (address locker) {
         // second slot of the ith array item
         uint256 slot = LOCKERS_SLOT + (i * LOCKER_STRUCT_SIZE + 1);
         assembly {
@@ -85,8 +85,8 @@ library Lockers {
         return getLocker(length());
     }
 
-    function getCurrentLockOriginator() internal view returns (address locker) {
-        return getLockOriginator(length());
+    function getCurrentLockCaller() internal view returns (address locker) {
+        return getLockCaller(length());
     }
 
     function nonzeroDeltaCount() internal view returns (uint256 count) {

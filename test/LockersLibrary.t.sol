@@ -30,7 +30,7 @@ contract LockersLibraryTest is Test, Deployers, ILockCallback {
         assertEq(manager.getLockNonzeroDeltaCount(), 0);
     }
 
-    function lockAcquired(address _lockOriginator, bytes calldata) public returns (bytes memory) {
+    function lockAcquired(address _lockCaller, bytes calldata) public returns (bytes memory) {
         uint256 len = manager.getLockLength();
 
         // apply a delta and save count
@@ -47,19 +47,19 @@ contract LockersLibraryTest is Test, Deployers, ILockCallback {
         Lockers.push(address(this), address(1));
         assertEq(Lockers.length(), 1);
         assertEq(Lockers.getLocker(LOCKERS_OFFSET), address(this));
-        assertEq(Lockers.getLockOriginator(LOCKERS_OFFSET), address(1));
+        assertEq(Lockers.getLockCaller(LOCKERS_OFFSET), address(1));
     }
 
     function test_push_multipleAddressesFuzz(address[2][] memory addrs) public {
         for (uint256 i = 0; i < addrs.length; i++) {
             address[2] memory loopAddrs = addrs[i];
             address locker = loopAddrs[0];
-            address originator = loopAddrs[1];
+            address lockCaller = loopAddrs[1];
             assertEq(Lockers.length(), i);
-            Lockers.push(locker, originator);
+            Lockers.push(locker, lockCaller);
             assertEq(Lockers.length(), LOCKERS_OFFSET + i);
             assertEq(Lockers.getLocker(LOCKERS_OFFSET + i), locker);
-            assertEq(Lockers.getLockOriginator(LOCKERS_OFFSET + i), originator);
+            assertEq(Lockers.getLockCaller(LOCKERS_OFFSET + i), lockCaller);
         }
     }
 
@@ -67,12 +67,12 @@ contract LockersLibraryTest is Test, Deployers, ILockCallback {
         for (uint256 i = 0; i < addrs.length; i++) {
             address[2] memory loopAddrs = addrs[i];
             address locker = loopAddrs[0];
-            address originator = loopAddrs[1];
+            address lockCaller = loopAddrs[1];
             assertEq(Lockers.length(), i);
-            Lockers.push(locker, originator);
+            Lockers.push(locker, lockCaller);
             assertEq(Lockers.length(), LOCKERS_OFFSET + i);
             assertEq(Lockers.getCurrentLocker(), locker);
-            assertEq(Lockers.getCurrentLockOriginator(), originator);
+            assertEq(Lockers.getCurrentLockCaller(), lockCaller);
         }
     }
 
@@ -87,8 +87,8 @@ contract LockersLibraryTest is Test, Deployers, ILockCallback {
         for (uint256 i = 0; i < addrs.length; i++) {
             address[2] memory loopAddrs = addrs[i];
             address locker = loopAddrs[0];
-            address originator = loopAddrs[1];
-            Lockers.push(locker, originator);
+            address lockCaller = loopAddrs[1];
+            Lockers.push(locker, lockCaller);
         }
 
         assertEq(Lockers.length(), addrs.length);
@@ -105,8 +105,8 @@ contract LockersLibraryTest is Test, Deployers, ILockCallback {
         for (uint256 i = 0; i < addrs.length; i++) {
             address[2] memory loopAddrs = addrs[i];
             address locker = loopAddrs[0];
-            address originator = loopAddrs[1];
-            Lockers.push(locker, originator);
+            address lockCaller = loopAddrs[1];
+            Lockers.push(locker, lockCaller);
         }
 
         assertEq(Lockers.length(), addrs.length);

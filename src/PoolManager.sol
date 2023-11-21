@@ -90,8 +90,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function getLock(uint256 i) external view override returns (address locker, address lockOriginator) {
-        return (Lockers.getLocker(i), Lockers.getLockOriginator(i));
+    function getLock(uint256 i) external view override returns (address locker, address lockCaller) {
+        return (Lockers.getLocker(i), Lockers.getLockCaller(i));
     }
 
     /// @inheritdoc IPoolManager
