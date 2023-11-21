@@ -8,6 +8,9 @@ library Lockers {
     // The starting slot for an array of lockers, stored transiently.
     uint256 constant LOCKERS_SLOT = uint256(keccak256("Lockers")) - 1;
 
+    // The starting slot for an array of hook addresses per locker, stored transiently.
+    uint256 constant HOOK_ADDRESS_SLOT = uint256(keccak256("HookAddress")) - 1;
+
     // The slot holding the number of nonzero deltas.
     uint256 constant NONZERO_DELTA_COUNT = uint256(keccak256("NonzeroDeltaCount")) - 1;
 
@@ -92,6 +95,37 @@ library Lockers {
             let count := tload(slot)
             count := sub(count, 1)
             tstore(slot, count)
+        }
+    }
+
+    function getCurrentHook() internal view returns (address currentHook) {
+        return getHook(length());
+    }
+
+    function getHook(uint256 i) internal view returns (address hook) {
+        uint256 slot = HOOK_ADDRESS_SLOT + i;
+        assembly {
+            hook := tload(slot)
+        }
+    }
+
+    function setCurrentHook(address currentHook) internal returns (bool set) {
+        // Set the hook address for the current locker if the address is 0.
+        // If the address is nonzero, a hook has already been set for this lock, and is not allowed to be updated or cleared at the end of the call.
+        if (getCurrentHook() == address(0)) {
+            uint256 slot = HOOK_ADDRESS_SLOT + length();
+            assembly {
+                tstore(slot, currentHook)
+            }
+            return true;
+        }
+    }
+
+    // We only want to clear the current hook if the msg.sender is the original locker.
+    function clearCurrentHook() internal {
+        uint256 slot = HOOK_ADDRESS_SLOT + length();
+        assembly {
+            tstore(slot, 0)
         }
     }
 }

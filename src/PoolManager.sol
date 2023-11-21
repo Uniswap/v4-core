@@ -21,7 +21,6 @@ import {Claims} from "./Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
-import {CurrentHookAddress} from "./libraries/CurrentHookAddress.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
@@ -175,16 +174,16 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     modifier onlyByLocker() {
-        address locker = Lockers.getCurrentLocker();
-        if (msg.sender != locker) {
-            if (
-                locker == address(0) || msg.sender != CurrentHookAddress.get()
-                    || !Hooks.hasPermissionToAccessLock(IHooks(CurrentHookAddress.get()))
-            ) {
-                revert LockedBy(locker);
+        _checkLocker(msg.sender, Lockers.getCurrentLocker(), Lockers.getCurrentHook());
+        _;
+    }
+
+    function _checkLocker(address sender, address locker, address hook) internal {
+        if (sender != locker) {
+            if (locker == address(0) || sender != hook || !Hooks.hasPermissionToAccessLock(IHooks(hook))) {
+                revert LockedBy(locker, hook);
             }
         }
-        _;
     }
 
     /// @inheritdoc IPoolManager
@@ -193,7 +192,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        CurrentHookAddress.set(address(key.hooks));
+        (bool set) = Lockers.setCurrentHook(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             if (
@@ -242,6 +241,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
+        // We only want to clear the current hook if it is the first time setting the hook address.
+        // TODO: Ensure that we also unset the current hook during early returns. (NoOp)
+        if (set) Lockers.clearCurrentHook();
+
         emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
 
@@ -253,7 +256,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        CurrentHookAddress.set(address(key.hooks));
+        (bool set) = Lockers.setCurrentHook(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeSwap()) {
             if (key.hooks.beforeSwap(msg.sender, key, params, hookData) != IHooks.beforeSwap.selector) {
@@ -294,6 +297,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
+        // We only want to clear the current hook if it is the first time setting the hook address.
+        // TODO: Ensure that we also unset the current hook during early returns. (NoOp)
+        if (set) Lockers.clearCurrentHook();
+
         emit Swap(
             id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
         );
@@ -307,7 +314,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        CurrentHookAddress.set(address(key.hooks));
+        (bool set) = Lockers.setCurrentHook(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeDonate()) {
             if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
@@ -324,6 +331,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        // We only want to clear the current hook if it is the first time setting the hook address.
+        // TODO: Ensure that we also unset the current hook during early returns. (NoOp)
+        if (set) Lockers.clearCurrentHook();
     }
 
     /// @inheritdoc IPoolManager
@@ -407,8 +418,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         return Lockers.nonzeroDeltaCount();
     }
 
-    function getCurrentHook() external view returns (address _currentHook) {
-        return CurrentHookAddress.get();
+    function getCurrentHook() external view returns (address) {
+        return Lockers.getCurrentHook();
     }
 
     /// @notice receive native tokens for native pools

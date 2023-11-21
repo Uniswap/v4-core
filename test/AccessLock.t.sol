@@ -61,7 +61,11 @@ contract AccessLockTest is Test, Deployers {
         (PoolKey memory keyWithoutAccessLockFlag,) =
             initPool(currency0, currency1, IHooks(noAccessLockHook), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(modifyPositionRouter)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPoolManager.LockedBy.selector, address(modifyPositionRouter), address(noAccessLockHook)
+            )
+        );
         modifyPositionRouter.modifyPosition(
             keyWithoutAccessLockFlag,
             IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 0}),
@@ -526,36 +530,41 @@ contract AccessLockTest is Test, Deployers {
 
         assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
 
-        assertEq(manager.getCurrentHook(), address(accessLockHook));
+        assertEq(manager.getCurrentHook(), address(0));
 
         (PoolKey memory keyAccessLockHook2,) =
             initPool(currency0, currency1, IHooks(accessLockHook2), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        // Delegates the beforeModifyPosition call to the hook in `key` but reverts because the current hook is keyAccessLockHook2.
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(modifyPositionRouter)));
+        // Delegates the beforeModifyPosition call to the hook in `key` which tries to mint on manager
+        //  but reverts because hook in `key` is not the current hook.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPoolManager.LockedBy.selector, address(modifyPositionRouter), address(accessLockHook2)
+            )
+        );
         delta = modifyPositionRouter.modifyPosition(
             keyAccessLockHook2, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), abi.encode(true, key)
         );
     }
 
-    function test_onlyByLocker_revertsWhenHookCallsToPoolWithNoHook() public {
+    function test_onlyByLocker_succeedsAfterHookMakesNestedCall() public {
         (PoolKey memory keyWithNoHook,) =
             initPool(currency0, currency1, IHooks(address(0)), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
 
         (PoolKey memory keyAccessLockHook2,) =
             initPool(currency0, currency1, IHooks(accessLockHook2), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(modifyPositionRouter)));
         modifyPositionRouter.modifyPosition(
             keyAccessLockHook2, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), abi.encode(false, keyWithNoHook)
         );
+        assertEq(manager.balanceOf(address(accessLockHook2), currency1), 10);
     }
 
     function test_onlyByLocker_revertsWhenThereIsNoOutsideLock() public {
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);
-        assertEq(manager.getCurrentHook(), address(key.hooks));
+        assertEq(manager.getCurrentHook(), address(0));
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(0)));
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(0), address(0)));
         vm.prank(address(key.hooks));
         manager.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);
     }

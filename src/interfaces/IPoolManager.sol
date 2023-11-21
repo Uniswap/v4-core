@@ -20,7 +20,8 @@ interface IPoolManager is IFees, IClaims {
 
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
-    error LockedBy(address locker);
+    /// @param currentHook The most recently called hook
+    error LockedBy(address locker, address currentHook);
 
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();

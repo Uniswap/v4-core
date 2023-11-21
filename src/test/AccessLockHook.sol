@@ -125,12 +125,14 @@ contract AccessLockHook2 is Test, BaseTestHooks {
             bytes memory hookData2 = abi.encode(100, AccessLockHook.LockAction.Mint);
             IHooks(key2.hooks).beforeModifyPosition(sender, key, params, hookData2); // params dont really matter, just want to tell the other hook to do a mint action, but will revert
         } else {
-            // Should succeed and set current hook to key2.hooks
+            // Should succeed and should NOT set the current hook to key2.hooks.
+            // The permissions should remain to THIS hook during this lock.
             manager.modifyPosition(key2, params, new bytes(0));
-            if (manager.getCurrentHook() != address(key2.hooks)) {
+
+            if (manager.getCurrentHook() != address(this)) {
                 revert IncorrectHookSet();
             }
-            // Should revert since currentHook is the other pools hook
+            // Should succeed.
             manager.mint(key.currency1, address(this), 10);
         }
         return IHooks.beforeModifyPosition.selector;
