@@ -8,7 +8,7 @@ import {Position} from "./libraries/Position.sol";
 import {FeeLibrary} from "./libraries/FeeLibrary.sol";
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";
-import {TickMath} from "./libraries/TickMath.sol";
+import {LockDataLibrary} from "./libraries/LockDataLibrary.sol";
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
@@ -20,7 +20,6 @@ import {Fees} from "./Fees.sol";
 import {Claims} from "./Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
-import {Lockers} from "./libraries/Lockers.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
@@ -30,13 +29,17 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
+    using LockDataLibrary for IPoolManager.LockData;
     using FeeLibrary for uint24;
 
     /// @inheritdoc IPoolManager
-    int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
+    int24 public constant override MAX_TICK_SPACING = type(int16).max;
 
     /// @inheritdoc IPoolManager
-    int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
+    int24 public constant override MIN_TICK_SPACING = 1;
+
+    /// @inheritdoc IPoolManager
+    IPoolManager.LockData public override lockData;
 
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
@@ -91,7 +94,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     /// @inheritdoc IPoolManager
     function getLock(uint256 i) external view override returns (address locker) {
-        return Lockers.getLocker(i);
+        return LockDataLibrary.getLock(i);
     }
 
     /// @inheritdoc IPoolManager
@@ -136,31 +139,31 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external override returns (bytes memory result) {
-        Lockers.push(msg.sender);
+        lockData.push(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
-        if (Lockers.length() == 1) {
-            if (Lockers.nonzeroDeltaCount() != 0) revert CurrencyNotSettled();
-            Lockers.clear();
+        if (lockData.length == 1) {
+            if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            delete lockData;
         } else {
-            Lockers.pop();
+            lockData.pop();
         }
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        address locker = Lockers.getCurrentLocker();
+        address locker = lockData.getActiveLock();
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
         unchecked {
             if (next == 0) {
-                Lockers.decrementNonzeroDeltaCount();
+                lockData.nonzeroDeltaCount--;
             } else if (current == 0) {
-                Lockers.incrementNonzeroDeltaCount();
+                lockData.nonzeroDeltaCount++;
             }
         }
 
@@ -174,7 +177,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     modifier onlyByLocker() {
-        address locker = Lockers.getCurrentLocker();
+        address locker = lockData.getActiveLock();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
@@ -383,14 +386,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         }
 
         return value;
-    }
-
-    function getLockLength() external view returns (uint256 _length) {
-        return Lockers.length();
-    }
-
-    function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
-        return Lockers.nonzeroDeltaCount();
     }
 
     /// @notice receive native tokens for native pools
