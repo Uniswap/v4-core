@@ -2,7 +2,7 @@ solc_file := if os() == "macos" { "./bin/solc-mac" } else { "./bin/solc-static-l
 
 test: test-forge
 build: build-forge
-prep: fix
+prep: fix test
 
 test-forge: install-forge build-forge
     forge test --use {{ solc_file }}
