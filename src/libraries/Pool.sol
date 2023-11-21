@@ -37,7 +37,7 @@ library Pool {
     /// @param tick The uninitialized tick
     error TickNotInitialized(int24 tick);
 
-    /// @notice Thrown when trying to initalize an already initialized pool
+    /// @notice Thrown when trying to initialize an already initialized pool
     error PoolAlreadyInitialized();
 
     /// @notice Thrown when trying to interact with a non-initialized pool
