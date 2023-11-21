@@ -98,6 +98,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         override
+        onlyByLocker
         returns (int24 tick)
     {
         if (key.fee.isStaticFeeTooLarge()) revert FeeTooLarge();

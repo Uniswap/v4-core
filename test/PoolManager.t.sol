@@ -622,7 +622,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // sets the upper 12 bits
         feeController.setSwapFeeForPool(uninitializedKey.toId(), uint16(protocolFee));
 
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
     }
