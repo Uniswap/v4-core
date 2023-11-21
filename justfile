@@ -1,15 +1,14 @@
+solc_file := if os() == "macos" { "./bin/solc-mac" } else { "./bin/solc-static-linux" }
+
 test: test-forge
-prep: fix snapshots
-snapshots: snapshots-forge
+build: build-forge
+prep: fix test
 
 test-forge: install-forge build-forge
-    forge test
+    forge test --use {{ solc_file }}
 
 build-forge: install-forge
-    forge build
-
-snapshots-forge: install-forge test-forge
-    FOUNDRY_FUZZ_SEED=0x4444 forge snapshot
+    forge build --use {{ solc_file }}
 
 install-forge:
     forge install
