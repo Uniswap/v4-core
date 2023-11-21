@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
-import {IERC6909} from "@erc-6909/interfaces/IERC6909.sol";
+import {IERC6909} from "solmate/src/interfaces/IERC6909.sol";
 import {IHooks} from "./IHooks.sol";
 import {IFees} from "./IFees.sol";
 import {IClaims} from "./IClaims.sol";
