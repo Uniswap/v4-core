@@ -31,7 +31,7 @@ interface IPoolManager is IFees, IClaims {
     error TickSpacingTooSmall();
 
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
-    error CurrenciesInitializedOutOfOrder();
+    error CurrenciesOutOfOrderOrEqual();
 
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
