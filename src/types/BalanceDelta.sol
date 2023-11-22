@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 type BalanceDelta is int256;
 
-using {add as +, sub as -} for BalanceDelta global;
+using {add as +, sub as -, eq as ==} for BalanceDelta global;
 using BalanceDeltaLibrary for BalanceDelta global;
 
 function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceDelta balanceDelta) {
@@ -22,7 +22,14 @@ function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
     return toBalanceDelta(a.amount0() - b.amount0(), a.amount1() - b.amount1());
 }
 
+function eq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
+    return a.amount0() == b.amount0() && a.amount1() == b.amount1();
+}
+
 library BalanceDeltaLibrary {
+    // Sentinel return value used to signify that a NoOp occurred.
+    BalanceDelta public constant MAXIMUM_DELTA = BalanceDelta.wrap(int256(type(uint256).max));
+
     function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {
         /// @solidity memory-safe-assembly
         assembly {
