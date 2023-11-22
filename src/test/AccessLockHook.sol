@@ -9,6 +9,8 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {Test} from "forge-std/Test.sol";
+import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 contract AccessLockHook is BaseTestHooks {
     using CurrencyLibrary for Currency;
@@ -132,5 +134,50 @@ contract AccessLockHook2 is Test, BaseTestHooks {
             manager.mint(key.currency1, address(this), 10);
         }
         return IHooks.beforeModifyPosition.selector;
+    }
+}
+
+// Reenters the PoolManager to donate and asserts currentHook is set and unset correctly throughout the popping and pushing of locks.
+contract AccessLockHook3 is Test, ILockCallback, BaseTestHooks {
+    IPoolManager manager;
+    // The pool to donate to in the nested lock.
+    // Ensure this has balance of currency0.abi
+    PoolKey key;
+
+    constructor(IPoolManager _manager) {
+        manager = _manager;
+    }
+
+    // Instead of passing through key all the way to the nested lock, just save it.
+    function setKey(PoolKey memory _key) external {
+        key = _key;
+    }
+
+    function beforeModifyPosition(
+        address, /* sender **/
+        PoolKey calldata, /* key **/
+        IPoolManager.ModifyPositionParams calldata, /* params **/
+        bytes calldata /* hookData **/
+    ) external override returns (bytes4) {
+        assertEq(address(manager.getCurrentHook()), address(this));
+        manager.lock(abi.encode(true));
+        assertEq(address(manager.getCurrentHook()), address(this));
+        manager.lock(abi.encode(false));
+        assertEq(address(manager.getCurrentHook()), address(this));
+        return IHooks.beforeModifyPosition.selector;
+    }
+
+    function lockAcquired(bytes memory data) external returns (bytes memory) {
+        assertEq(manager.getLockLength(), 2);
+        assertEq(address(manager.getCurrentHook()), address(0));
+
+        (bool isFirstLock) = abi.decode(data, (bool));
+        if (isFirstLock) {
+            manager.donate(key, 10, 0, new bytes(0));
+            assertEq(address(manager.getCurrentHook()), address(key.hooks));
+            MockERC20(Currency.unwrap(key.currency0)).transfer(address(manager), 10);
+            manager.settle(key.currency0);
+        }
+        return data;
     }
 }

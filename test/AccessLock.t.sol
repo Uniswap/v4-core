@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {AccessLockHook, AccessLockHook2} from "../src/test/AccessLockHook.sol";
+import {AccessLockHook, AccessLockHook2, AccessLockHook3} from "../src/test/AccessLockHook.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolModifyPositionTest} from "../src/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
@@ -18,6 +18,8 @@ import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 
+import "forge-std/console2.sol";
+
 contract AccessLockTest is Test, Deployers {
     using Pool for Pool.State;
     using CurrencyLibrary for Currency;
@@ -25,6 +27,7 @@ contract AccessLockTest is Test, Deployers {
     AccessLockHook accessLockHook;
     AccessLockHook noAccessLockHook;
     AccessLockHook2 accessLockHook2;
+    AccessLockHook3 accessLockHook3;
 
     function setUp() public {
         // Initialize managers and routers.
@@ -45,6 +48,14 @@ contract AccessLockTest is Test, Deployers {
         address accessLockAddress2 = address(uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG));
         deployCodeTo("AccessLockHook.sol:AccessLockHook2", abi.encode(manager), accessLockAddress2);
         accessLockHook2 = AccessLockHook2(accessLockAddress2);
+
+        // Create AccessLockHook3.
+        address accessLockAddress3 = address(
+            (uint160(makeAddr("hook3")) << 10) >> 10
+                | (uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG))
+        );
+        deployCodeTo("AccessLockHook.sol:AccessLockHook3", abi.encode(manager), accessLockAddress3);
+        accessLockHook3 = AccessLockHook3(accessLockAddress3);
 
         // Create NoAccessLockHook.
         address noAccessLockHookAddress = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG));
@@ -479,7 +490,7 @@ contract AccessLockTest is Test, Deployers {
     }
 
     function test_beforeDonate_donate_succeedsWithAccessLock(uint128 amount) public {
-        vm.assume(amount != 0 && amount > 10 && amount < uint128(type(int128).max)); // precision
+        vm.assume(amount != 0 && amount > 10 && amount < uint128(type(int128).max - 1)); // precision
 
         // Add liquidity so there is a position to receive fees.
         modifyPositionRouter.modifyPosition(
@@ -503,7 +514,7 @@ contract AccessLockTest is Test, Deployers {
     }
 
     /**
-     * 
+     *
      * EDGE CASE TESTS
      *
      */
@@ -566,5 +577,28 @@ contract AccessLockTest is Test, Deployers {
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(0), address(0)));
         vm.prank(address(key.hooks));
         manager.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);
+    }
+
+    function test_getCurrentHook_isClearedAfterNestedLock() public {
+        console2.log(address(accessLockHook3));
+        // Create pool for AccessLockHook3.
+        (PoolKey memory keyAccessLockHook3,) =
+            initPool(currency0, currency1, IHooks(accessLockHook3), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
+        // Fund AccessLockHook3 with currency0.
+        MockERC20(Currency.unwrap(currency0)).transfer(address(accessLockHook3), 10);
+        assertEq(MockERC20(Currency.unwrap(currency0)).balanceOf(address(accessLockHook3)), 10);
+
+        // Create pool to donate 10 of currency0 to inside of AccessLockHook3. This means AccessLockHook3 must acquire a new lock and settle.
+        // The currentHook addresses are checked inside this nested lock.
+        (PoolKey memory _key,) =
+            initPool(currency0, currency1, IHooks(address(0)), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
+        // Add liquidity so that the AccessLockHook3 can donate to something.
+        modifyPositionRouter.modifyPosition(_key, IPoolManager.ModifyPositionParams(-60, 60, 10 * 10 ** 18), ZERO_BYTES);
+        accessLockHook3.setKey(_key);
+
+        // Asserts are in the AccessLockHook3.
+        modifyPositionRouter.modifyPosition(
+            keyAccessLockHook3, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES
+        );
     }
 }
