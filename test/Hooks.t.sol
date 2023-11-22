@@ -586,10 +586,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressFailsAllHooks(uint160 addr, uint8 mask) public {
-        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
-        vm.assume(mask != 0xff);
-        IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 152)));
+    function testValidateHookAddressFailsAllHooks(uint160 addr, uint16 mask) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff); // clear the first 9 bits
+        vm.assume(mask % 128 == 0); // the last 7 bits are all 0, we just want a 9 bit mask
+        vm.assume(mask != 0xff8); // we want any combination except all hooks
+        IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 144)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
         Hooks.validateHookAddress(
             hookAddr,
@@ -607,10 +608,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
     }
 
-    function testValidateHookAddressFailsNoHooks(uint160 addr, uint8 mask) public {
+    function testValidateHookAddressFailsNoHooks(uint160 addr, uint16 mask) public {
         uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
-        vm.assume(mask != 0);
-        IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 151)));
+        vm.assume(mask % 128 == 0); // the last 7 bits are all 0, we just want a 9 bit mask
+        vm.assume(mask != 0); // we want any combination except no hooks
+        IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 144)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
         Hooks.validateHookAddress(
             hookAddr,
