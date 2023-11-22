@@ -19,7 +19,7 @@ import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
 import {Claims} from "./Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
-import {BalanceDelta} from "./types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
 /// @notice Holds the state for all pools
@@ -48,10 +48,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     mapping(PoolId id => Pool.State) public pools;
 
     constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) {}
-
-    function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
-        return pools[key.toId()];
-    }
 
     /// @inheritdoc IPoolManager
     function getSlot0(PoolId id)
@@ -98,6 +94,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         override
+        onlyByLocker
         returns (int24 tick)
     {
         if (key.fee.isStaticFeeTooLarge()) revert FeeTooLarge();
@@ -105,7 +102,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
-        if (key.currency0 >= key.currency1) revert CurrenciesInitializedOutOfOrder();
+        if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
         if (key.hooks.shouldCallBeforeInitialize()) {
@@ -173,6 +170,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _accountDelta(key.currency1, delta.amount1());
     }
 
+    function _checkPoolInitialized(PoolId id) internal view {
+        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
+    }
+
     modifier onlyByLocker() {
         _checkLocker(msg.sender, Lockers.getCurrentLocker(), Lockers.getCurrentHook());
         _;
@@ -194,16 +195,16 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
         (bool set) = Lockers.setCurrentHook(address(key.hooks));
 
+        PoolId id = key.toId();
+        _checkPoolInitialized(id);
+
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            if (
-                key.hooks.beforeModifyPosition(msg.sender, key, params, hookData)
-                    != IHooks.beforeModifyPosition.selector
-            ) {
-                revert Hooks.InvalidHookResponse();
-            }
+            bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            else if (selector != IHooks.beforeModifyPosition.selector) revert Hooks.InvalidHookResponse();
         }
 
-        PoolId id = key.toId();
         Pool.FeeAmounts memory feeAmounts;
         (delta, feeAmounts) = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
@@ -258,13 +259,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     {
         (bool set) = Lockers.setCurrentHook(address(key.hooks));
 
-        if (key.hooks.shouldCallBeforeSwap()) {
-            if (key.hooks.beforeSwap(msg.sender, key, params, hookData) != IHooks.beforeSwap.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
-
         PoolId id = key.toId();
+        _checkPoolInitialized(id);
+
+        if (key.hooks.shouldCallBeforeSwap()) {
+            bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            else if (selector != IHooks.beforeSwap.selector) revert Hooks.InvalidHookResponse();
+        }
 
         uint256 feeForProtocol;
         uint256 feeForHook;
@@ -315,14 +318,18 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         returns (BalanceDelta delta)
     {
         (bool set) = Lockers.setCurrentHook(address(key.hooks));
+        
+        PoolId id = key.toId();
+        _checkPoolInitialized(id);
 
         if (key.hooks.shouldCallBeforeDonate()) {
-            if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
+            bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            else if (selector != IHooks.beforeDonate.selector) revert Hooks.InvalidHookResponse();
         }
 
-        delta = _getPool(key).donate(amount0, amount1);
+        delta = pools[id].donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta);
 

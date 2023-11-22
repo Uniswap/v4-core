@@ -6,12 +6,17 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
-import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
+import {Hooks} from "../libraries/Hooks.sol";
+import {Test} from "forge-std/Test.sol";
+import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 
-contract PoolModifyPositionTest is PoolTestBase {
+import "forge-std/console2.sol";
+
+contract PoolModifyPositionTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
+    using FeeLibrary for uint24;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
@@ -48,10 +53,10 @@ contract PoolModifyPositionTest is PoolTestBase {
         // These assertions only apply in non lock-accessing pools.
         if (!data.key.hooks.hasPermissionToAccessLock()) {
             if (data.params.liquidityDelta > 0) {
-                assert(delta0 > 0 || delta1 > 0);
+                assert(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermissionToNoOp());
                 assert(!(delta0 < 0 || delta1 < 0));
             } else {
-                assert(delta0 < 0 || delta1 < 0);
+                assert(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermissionToNoOp());
                 assert(!(delta0 > 0 || delta1 > 0));
             }
         }

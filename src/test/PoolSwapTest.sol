@@ -3,8 +3,10 @@ pragma solidity ^0.8.20;
 
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
+import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Test} from "forge-std/Test.sol";
 import {Hooks} from "../libraries/Hooks.sol";
@@ -66,27 +68,36 @@ contract PoolSwapTest is Test, PoolTestBase {
             // IE if the hook can access the lock, the reserves before and after are not necessarily the same. Hook can "take".
             assertEq(reserveBefore0, reserveAfter0);
             assertEq(reserveBefore1, reserveAfter1);
-            if (data.params.zeroForOne) {
-                if (data.params.amountSpecified > 0) {
-                    // exact input, 0 for 1
-                    assertEq(deltaAfter0, data.params.amountSpecified);
-                    assert(deltaAfter1 < 0);
+
+            if (!data.key.hooks.hasPermissionToNoOp()) {
+                if (data.params.zeroForOne) {
+                    if (data.params.amountSpecified > 0) {
+                        // exact input, 0 for 1
+                        assertEq(deltaAfter0, data.params.amountSpecified);
+                        assert(deltaAfter1 < 0);
+                    } else {
+                        // exact output, 0 for 1
+                        assert(deltaAfter0 > 0);
+                        assertEq(deltaAfter1, data.params.amountSpecified);
+                    }
                 } else {
-                    // exact output, 0 for 1
-                    assert(deltaAfter0 > 0);
-                    assertEq(deltaAfter1, data.params.amountSpecified);
-                }
-            } else {
-                if (data.params.amountSpecified > 0) {
-                    // exact input, 1 for 0
-                    assertEq(deltaAfter1, data.params.amountSpecified);
-                    assert(deltaAfter0 < 0);
-                } else {
-                    // exact output, 1 for 0
-                    assert(deltaAfter1 > 0);
-                    assertEq(deltaAfter0, data.params.amountSpecified);
+                    if (data.params.amountSpecified > 0) {
+                        // exact input, 1 for 0
+                        assertEq(deltaAfter1, data.params.amountSpecified);
+                        assert(deltaAfter0 < 0);
+                    } else {
+                        // exact output, 1 for 0
+                        assert(deltaAfter1 > 0);
+                        assertEq(deltaAfter0, data.params.amountSpecified);
+                    }
                 }
             }
+        }
+
+        if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
+            // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
+            assertTrue(data.key.hooks.hasPermissionToNoOp(), "Invalid NoOp returned");
+            return abi.encode(delta);
         }
 
         if (deltaAfter0 > 0) {

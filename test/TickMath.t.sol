@@ -123,7 +123,7 @@ contract TickMathTestTest is Test, JavascriptFfi {
             for (uint256 i = 0; i < 2; i++) {
                 tick = tick * -1;
                 if (tick != -50) jsParameters = string(abi.encodePacked(jsParameters, ",")); // do not leave comma in front of first number
-                // add tick to javascript parameters to be calulated inside script
+                // add tick to javascript parameters to be calculated inside script
                 jsParameters = string(abi.encodePacked(jsParameters, vm.toString(int256(tick))));
                 // track solidity result for tick
                 getSqrtRatioAtTickFuzzResults.push(tickMath.getSqrtRatioAtTick(tick));
@@ -153,7 +153,7 @@ contract TickMathTestTest is Test, JavascriptFfi {
         unchecked {
             while (sqrtRatio < sqrtRatio * 16) {
                 if (sqrtRatio != MIN_SQRT_RATIO) jsParameters = string(abi.encodePacked(jsParameters, ",")); // do not leave comma in front of first number
-                // add tick to javascript parameters to be calulated inside script
+                // add tick to javascript parameters to be calculated inside script
                 jsParameters = string(abi.encodePacked(jsParameters, vm.toString(sqrtRatio)));
                 // track solidity result for sqrtRatio
                 getTickAtSqrtRatioFuzzResults.push(tickMath.getTickAtSqrtRatio(sqrtRatio));

@@ -19,7 +19,10 @@ library Hooks {
     uint256 internal constant AFTER_SWAP_FLAG = 1 << 154;
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
-    uint256 internal constant ACCESS_LOCK_FLAG = 1 << 151;
+    uint256 internal constant NO_OP_FLAG = 1 << 151;
+    uint256 internal constant ACCESS_LOCK_FLAG = 1 << 150;
+
+    bytes4 public constant NO_OP_SELECTOR = bytes4(keccak256(abi.encodePacked("NoOp")));
 
     struct Permissions {
         bool beforeInitialize;
@@ -30,6 +33,7 @@ library Hooks {
         bool afterSwap;
         bool beforeDonate;
         bool afterDonate;
+        bool noOp;
         bool accessLock;
     }
 
@@ -53,7 +57,7 @@ library Hooks {
                 || permissions.beforeSwap != shouldCallBeforeSwap(self)
                 || permissions.afterSwap != shouldCallAfterSwap(self)
                 || permissions.beforeDonate != shouldCallBeforeDonate(self)
-                || permissions.afterDonate != shouldCallAfterDonate(self)
+                || permissions.afterDonate != shouldCallAfterDonate(self) || permissions.noOp != hasPermissionToNoOp(self)
                 || permissions.accessLock != hasPermissionToAccessLock(self)
         ) {
             revert HookAddressNotValid(address(self));
@@ -63,6 +67,13 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
+        // if NoOp is allowed, at least one of beforeModifyPosition, beforeSwap and beforeDonate should be allowed
+        if (
+            hasPermissionToNoOp(hook) && !shouldCallBeforeModifyPosition(hook) && !shouldCallBeforeSwap(hook)
+                && !shouldCallBeforeDonate(hook)
+        ) {
+            return false;
+        }
         // If there is no hook contract set, then fee cannot be dynamic and there cannot be a hook fee on swap or withdrawal.
         return address(hook) == address(0)
             ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
@@ -106,5 +117,13 @@ library Hooks {
 
     function hasPermissionToAccessLock(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & ACCESS_LOCK_FLAG != 0;
+    }
+
+    function hasPermissionToNoOp(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & NO_OP_FLAG != 0;
+    }
+
+    function isValidNoOpCall(IHooks self, bytes4 selector) internal pure returns (bool) {
+        return hasPermissionToNoOp(self) && selector == NO_OP_SELECTOR;
     }
 }
