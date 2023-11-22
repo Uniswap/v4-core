@@ -321,6 +321,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
+    
+    /// @inheritdoc IPoolManager
+    function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
+        uint256 reservesBefore = reservesOf[currency];
+        reservesOf[currency] = currency.balanceOfSelf();
+        paid = reservesOf[currency] - reservesBefore;
+        // subtraction must be safe
+        _accountDelta(currency, -(paid.toInt128()));
+    }
 
     /// @inheritdoc IPoolManager
     function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
@@ -345,27 +354,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         }
         balanceOf[from][id] -= amount;
         emit Transfer(msg.sender, from, address(0), id, amount);
-    }
-
-    /// @inheritdoc IPoolManager
-    function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
-        uint256 reservesBefore = reservesOf[currency];
-        reservesOf[currency] = currency.balanceOfSelf();
-        paid = reservesOf[currency] - reservesBefore;
-        // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt128()));
-    }
-
-    /// @inheritdoc IPoolManager
-    function mint(Currency currency, address to, uint256 amount) external noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-        _mint(to, currency, amount);
-    }
-
-    /// @inheritdoc IPoolManager
-    function burn(Currency currency, uint256 amount) external noDelegateCall onlyByLocker {
-        _accountDelta(currency, -(amount.toInt128()));
-        _burn(currency, amount);
     }
 
     function setProtocolFees(PoolKey memory key) external {
