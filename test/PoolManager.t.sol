@@ -622,7 +622,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // sets the upper 12 bits
         feeController.setSwapFeeForPool(uninitializedKey.toId(), uint16(protocolFee));
 
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
     }
@@ -803,11 +803,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // Fails at beforeInitialize hook when it returns a NoOp
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, Hooks.NO_OP_SELECTOR);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
         // Now we let initialize succeed (so we can test other functions)
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, mockHooks.beforeInitialize.selector);
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
         // Fails at afterModifyPosition hook when it returns a NoOp
         mockHooks.setReturnValue(mockHooks.afterModifyPosition.selector, Hooks.NO_OP_SELECTOR);
@@ -848,7 +848,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         MockHooks mockHooks = MockHooks(hookAddr);
 
         key = PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: mockHooks, tickSpacing: 10});
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
         // Fails at beforeModifyPosition hook when it returns a NoOp but doesnt have permission
         mockHooks.setReturnValue(mockHooks.beforeModifyPosition.selector, Hooks.NO_OP_SELECTOR);

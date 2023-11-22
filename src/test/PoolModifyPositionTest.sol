@@ -8,10 +8,13 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
+import {Test} from "forge-std/Test.sol";
+import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 
-contract PoolModifyPositionTest is PoolTestBase {
+contract PoolModifyPositionTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
+    using FeeLibrary for uint24;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
