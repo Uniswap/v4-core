@@ -190,6 +190,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
             if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
             else if (selector != IHooks.beforeModifyPosition.selector) revert Hooks.InvalidHookResponse();
         }
@@ -247,6 +248,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
             if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
             else if (selector != IHooks.beforeSwap.selector) revert Hooks.InvalidHookResponse();
         }
@@ -300,6 +302,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
             if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
             else if (selector != IHooks.beforeDonate.selector) revert Hooks.InvalidHookResponse();
         }
