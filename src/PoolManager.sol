@@ -17,7 +17,7 @@ import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
-import {ERC6909} from "solmate/tokens/ERC6909.sol";
+import {ERC6909} from "./ERC6909.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta} from "./types/BalanceDelta.sol";
 
@@ -334,17 +334,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     /// @inheritdoc IPoolManager
     function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
         _accountDelta(currency, amount.toInt128());
-
-        /// Not using internal _mint to avoid totalSupply update
-        uint256 id = currency.toId();
-        balanceOf[to][id] += amount;
-        emit Transfer(msg.sender, address(0), to, id, amount);
+        _mint(to, currency.toId(), amount);
     }
 
     /// @inheritdoc IPoolManager
     function burn(Currency currency, address from, uint256 amount) external override noDelegateCall onlyByLocker {
         _accountDelta(currency, -(amount.toInt128()));
-
         uint256 id = currency.toId();
         if (from != msg.sender && !isOperator[from][msg.sender]) {
             uint256 senderAllowance = allowance[from][msg.sender][id];
@@ -352,8 +347,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
                 allowance[from][msg.sender][id] = senderAllowance - amount;
             }
         }
-        balanceOf[from][id] -= amount;
-        emit Transfer(msg.sender, from, address(0), id, amount);
+        _burn(from, id, amount);
     }
 
     function setProtocolFees(PoolKey memory key) external {
