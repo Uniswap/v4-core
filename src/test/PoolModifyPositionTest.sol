@@ -39,7 +39,7 @@ contract PoolModifyPositionTest is PoolTestBase {
 
         require(data.params.liquidityDelta >= 0, "TODO: burnPosition not implemented");
 
-        BalanceDelta delta = manager.mintPosition(data.key, data.params, data.hookData);
+        BalanceDelta delta = manager.addLiquidity(data.key, data.params, data.hookData);
 
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender);
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);

@@ -35,28 +35,28 @@ interface IHooks {
         bytes calldata hookData
     ) external returns (bytes4);
 
-    /// @notice The hook called before a position is minted
+    /// @notice The hook called before liquidity is added
     /// @notice only called when liquidity delta is positive
     /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
     /// @param params The parameters for modifying the position
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    function beforeMint(
+    function beforeAddLiquidity(
         address sender,
         PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4);
 
-    /// @notice The hook called after a position is minted
+    /// @notice The hook called after liquidity is added
     /// @notice only called when liquidity delta is positive
     /// @param sender The initial msg.sender for the modify position call
     /// @param key The key for the pool
     /// @param params The parameters for modifying the position
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    function afterMint(
+    function afterAddLiquidity(
         address sender,
         PoolKey calldata key,
         IPoolManager.ModifyPositionParams calldata params,

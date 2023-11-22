@@ -59,53 +59,53 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
-        assertEq(mockHooks.beforeMintData(), new bytes(111));
-        assertEq(mockHooks.afterMintData(), new bytes(111));
+        assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
+        assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
         // TODO: test before/after burn
     }
 
-    function testBeforeAfterMintCalledWithPositiveLiquidityDelta() public {
+    function testBeforeAfterAddLiquidityCalledWithPositiveLiquidityDelta() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
-        assertEq(mockHooks.beforeMintData(), new bytes(111));
-        assertEq(mockHooks.afterMintData(), new bytes(111));
+        assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
+        assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
     }
 
-    function testBeforeAfterMintNotCalledWithNegativeLiquidityDelta() public {
+    function testBeforeAfterAddLiquidityNotCalledWithNegativeLiquidityDelta() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
-        assertEq(mockHooks.beforeMintData(), new bytes(111));
-        assertEq(mockHooks.afterMintData(), new bytes(111));
+        assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
+        assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
 
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, -100), new bytes(222));
-        assertEq(mockHooks.beforeMintData(), new bytes(111));
-        assertEq(mockHooks.afterMintData(), new bytes(111));
+        assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
+        assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
     }
 
-    function testBeforeAfterMintCalledWithZeroLiquidityDelta() public {
+    function testBeforeAfterAddLiquidityCalledWithZeroLiquidityDelta() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
-        assertEq(mockHooks.beforeMintData(), new bytes(111));
-        assertEq(mockHooks.afterMintData(), new bytes(111));
+        assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
+        assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
 
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 0), new bytes(222));
-        assertEq(mockHooks.beforeMintData(), new bytes(222));
-        assertEq(mockHooks.afterMintData(), new bytes(222));
+        assertEq(mockHooks.beforeAddLiquidityData(), new bytes(222));
+        assertEq(mockHooks.afterAddLiquidityData(), new bytes(222));
     }
 
-    function testBeforeMintInvalidReturn() public {
-        mockHooks.setReturnValue(mockHooks.beforeMint.selector, bytes4(0xdeadbeef));
+    function testBeforeAddLiquidityInvalidReturn() public {
+        mockHooks.setReturnValue(mockHooks.beforeAddLiquidity.selector, bytes4(0xdeadbeef));
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
-    function testAfterMintInvalidReturn() public {
-        mockHooks.setReturnValue(mockHooks.afterMint.selector, bytes4(0xdeadbeef));
+    function testAfterAddLiquidityInvalidReturn() public {
+        mockHooks.setReturnValue(mockHooks.afterAddLiquidity.selector, bytes4(0xdeadbeef));
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
@@ -174,8 +174,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
@@ -184,8 +184,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -201,8 +201,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: true,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
@@ -211,8 +211,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -228,8 +228,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: true,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
@@ -238,8 +238,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -254,8 +254,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: true,
                 afterInitialize: true,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
@@ -264,24 +264,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
     }
 
-    function testValidateHookAddressBeforeMint(uint152 addr) public {
+    function testValidateHookAddressbeforeAddLiquidity(uint152 addr) public {
         uint160 preAddr = uint160(uint256(addr));
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_MINT_FLAG)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: true,
-                afterMint: false,
+                beforeAddLiquidity: true,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
@@ -290,8 +290,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -300,14 +300,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testValidateHookAddressAfterMint(uint152 addr) public {
         uint160 preAddr = uint160(uint256(addr));
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_MINT_FLAG)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: true,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: true,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
@@ -316,8 +316,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertTrue(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertTrue(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -326,14 +326,15 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testValidateHookAddressBeforeAndAfterMint(uint152 addr) public {
         uint160 preAddr = uint160(uint256(addr));
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_MINT_FLAG | Hooks.AFTER_MINT_FLAG)));
+        IHooks hookAddr =
+            IHooks(address(uint160(preAddr | Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: true,
-                afterMint: true,
+                beforeAddLiquidity: true,
+                afterAddLiquidity: true,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
@@ -342,8 +343,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeMint(hookAddr));
-        assertTrue(Hooks.shouldCallAfterMint(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertTrue(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -352,14 +353,15 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testValidateHookAddressBeforeInitializeAfterMint(uint152 addr) public {
         uint160 preAddr = uint160(uint256(addr));
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_MINT_FLAG)));
+        IHooks hookAddr =
+            IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
                 beforeInitialize: true,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: true,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: true,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
@@ -368,8 +370,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertTrue(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertTrue(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -384,8 +386,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: true,
                 afterSwap: false,
                 beforeDonate: false,
@@ -394,8 +396,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -410,8 +412,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: true,
                 beforeDonate: false,
@@ -420,8 +422,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -436,8 +438,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: false,
@@ -446,8 +448,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -462,8 +464,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: true,
@@ -472,8 +474,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -488,8 +490,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
@@ -498,8 +500,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -514,8 +516,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: true,
@@ -524,8 +526,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeMint(hookAddr));
-        assertFalse(Hooks.shouldCallAfterMint(hookAddr));
+        assertFalse(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertFalse(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -540,8 +542,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: true,
                 afterInitialize: true,
-                beforeMint: true,
-                afterMint: true,
+                beforeAddLiquidity: true,
+                afterAddLiquidity: true,
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
@@ -550,8 +552,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
         assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeMint(hookAddr));
-        assertTrue(Hooks.shouldCallAfterMint(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeAddLiquidity(hookAddr));
+        assertTrue(Hooks.shouldCallAfterAddLiquidity(hookAddr));
         assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
@@ -568,8 +570,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: true,
                 afterInitialize: true,
-                beforeMint: true,
-                afterMint: true,
+                beforeAddLiquidity: true,
+                afterAddLiquidity: true,
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
@@ -588,8 +590,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             Hooks.Calls({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeMint: false,
-                afterMint: false,
+                beforeAddLiquidity: false,
+                afterAddLiquidity: false,
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,

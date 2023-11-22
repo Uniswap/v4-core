@@ -179,7 +179,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _;
     }
 
-    function mintPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes calldata hookData)
+    function addLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes calldata hookData)
         external
         override
         noDelegateCall
@@ -188,16 +188,19 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     {
         require(params.liquidityDelta.toInt128() >= 0);
 
-        if (key.hooks.shouldCallBeforeMint()) {
-            if (key.hooks.beforeMint(msg.sender, key, params, hookData) != IHooks.beforeMint.selector) {
+        if (key.hooks.shouldCallBeforeAddLiquidity()) {
+            if (key.hooks.beforeAddLiquidity(msg.sender, key, params, hookData) != IHooks.beforeAddLiquidity.selector) {
                 revert Hooks.InvalidHookResponse();
             }
         }
 
         delta = _modifyPosition(key, params);
 
-        if (key.hooks.shouldCallAfterMint()) {
-            if (key.hooks.afterMint(msg.sender, key, params, delta, hookData) != IHooks.afterMint.selector) {
+        if (key.hooks.shouldCallAfterAddLiquidity()) {
+            if (
+                key.hooks.afterAddLiquidity(msg.sender, key, params, delta, hookData)
+                    != IHooks.afterAddLiquidity.selector
+            ) {
                 revert Hooks.InvalidHookResponse();
             }
         }
