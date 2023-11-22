@@ -16,6 +16,7 @@ library Pool {
     using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
+    using Pool for State;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -134,20 +135,20 @@ library Pool {
     }
 
     function setProtocolFees(State storage self, uint24 protocolFees) internal {
-        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
+        if (self.isNotInitialized()) revert PoolNotInitialized();
 
         self.slot0.protocolFees = protocolFees;
     }
 
     function setHookFees(State storage self, uint24 hookFees) internal {
-        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
+        if (self.isNotInitialized()) revert PoolNotInitialized();
 
         self.slot0.hookFees = hookFees;
     }
 
     /// @notice Only dynamic fee pools may update the swap fee.
     function setSwapFee(State storage self, uint24 swapFee) internal {
-        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
+        if (self.isNotInitialized()) revert PoolNotInitialized();
         self.slot0.swapFee = swapFee;
     }
 
@@ -179,23 +180,22 @@ library Pool {
         uint256 feeForHook1;
     }
 
-    /// @dev Effect changes to a position in a pool
+    /// @notice Effect changes to a position in a pool
+    /// @dev PoolManager checks that the pool is initialized before calling
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
     function modifyPosition(State storage self, ModifyPositionParams memory params)
         internal
         returns (BalanceDelta result, FeeAmounts memory fees)
     {
-        if (self.slot0.sqrtPriceX96 == 0) revert PoolNotInitialized();
-
         checkTicks(params.tickLower, params.tickUpper);
 
         uint256 feesOwed0;
         uint256 feesOwed1;
         {
             ModifyPositionState memory state;
-            // if we need to update the ticks, do it
 
+            // if we need to update the ticks, do it
             if (params.liquidityDelta != 0) {
                 (state.flippedLower, state.liquidityGrossAfterLower) =
                     updateTick(self, params.tickLower, params.liquidityDelta, false);
@@ -386,7 +386,8 @@ library Pool {
         uint160 sqrtPriceLimitX96;
     }
 
-    /// @dev Executes a swap against the state, and returns the amount deltas of the pool
+    /// @notice Executes a swap against the state, and returns the amount deltas of the pool
+    /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
         internal
         returns (
@@ -401,7 +402,6 @@ library Pool {
 
         Slot0 memory slot0Start = self.slot0;
         swapFee = slot0Start.swapFee;
-        if (slot0Start.sqrtPriceX96 == 0) revert PoolNotInitialized();
         if (params.zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
@@ -679,6 +679,10 @@ library Pool {
                     / uint256(int256(TickMath.MAX_TICK * 2 + tickSpacing))
             );
         }
+    }
+
+    function isNotInitialized(State storage self) internal view returns (bool) {
+        return self.slot0.sqrtPriceX96 == 0;
     }
 
     /// @notice Clears tick data

@@ -19,7 +19,7 @@ import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
 import {Claims} from "./Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
-import {BalanceDelta} from "./types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
 /// @notice Holds the state for all pools
@@ -48,10 +48,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     mapping(PoolId id => Pool.State) public pools;
 
     constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) {}
-
-    function _getPool(PoolKey memory key) private view returns (Pool.State storage) {
-        return pools[key.toId()];
-    }
 
     /// @inheritdoc IPoolManager
     function getSlot0(PoolId id)
@@ -174,6 +170,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _accountDelta(key.currency1, delta.amount1());
     }
 
+    function _checkPoolInitialized(PoolId id) internal view {
+        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
+    }
+
     modifier onlyByLocker() {
         address locker = Lockers.getCurrentLocker();
         if (msg.sender != locker) revert LockedBy(locker);
@@ -186,16 +186,16 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
+        PoolId id = key.toId();
+        _checkPoolInitialized(id);
+
         if (key.hooks.shouldCallBeforeModifyPosition()) {
-            if (
-                key.hooks.beforeModifyPosition(msg.sender, key, params, hookData)
-                    != IHooks.beforeModifyPosition.selector
-            ) {
-                revert Hooks.InvalidHookResponse();
-            }
+            bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            else if (selector != IHooks.beforeModifyPosition.selector) revert Hooks.InvalidHookResponse();
         }
 
-        PoolId id = key.toId();
         Pool.FeeAmounts memory feeAmounts;
         (delta, feeAmounts) = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
@@ -244,13 +244,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        if (key.hooks.shouldCallBeforeSwap()) {
-            if (key.hooks.beforeSwap(msg.sender, key, params, hookData) != IHooks.beforeSwap.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
-
         PoolId id = key.toId();
+        _checkPoolInitialized(id);
+
+        if (key.hooks.shouldCallBeforeSwap()) {
+            bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            else if (selector != IHooks.beforeSwap.selector) revert Hooks.InvalidHookResponse();
+        }
 
         uint256 feeForProtocol;
         uint256 feeForHook;
@@ -296,13 +298,17 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
+        PoolId id = key.toId();
+        _checkPoolInitialized(id);
+
         if (key.hooks.shouldCallBeforeDonate()) {
-            if (key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.beforeDonate.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
+            bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
+            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            else if (selector != IHooks.beforeDonate.selector) revert Hooks.InvalidHookResponse();
         }
 
-        delta = _getPool(key).donate(amount0, amount1);
+        delta = pools[id].donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta);
 

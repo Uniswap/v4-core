@@ -126,8 +126,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     // hook validation
-    function testValidateHookAddressNoHooks(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressNoHooks(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
 
         IHooks hookAddr = IHooks(address(preAddr));
         Hooks.validateHookAddress(
@@ -140,7 +140,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -151,10 +152,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressBeforeInitialize(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressBeforeInitialize(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
 
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG)));
         Hooks.validateHookAddress(
@@ -167,7 +169,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -178,10 +181,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressAfterInitialize(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressAfterInitialize(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
 
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_INITIALIZE_FLAG)));
         Hooks.validateHookAddress(
@@ -194,7 +198,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -205,10 +210,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressBeforeAndAfterInitialize(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressBeforeAndAfterInitialize(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -220,7 +226,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -231,10 +238,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressBeforeModify(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressBeforeModify(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -246,7 +254,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -257,10 +266,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressAfterModify(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressAfterModify(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -272,7 +282,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -283,10 +294,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressBeforeAndAfterModify(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressBeforeAndAfterModify(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr =
             IHooks(address(uint160(preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
@@ -299,7 +311,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -310,10 +323,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressBeforeInitializeAfterModify(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressBeforeInitializeAfterModify(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr =
             IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
         Hooks.validateHookAddress(
@@ -326,7 +340,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -337,10 +352,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressBeforeSwap(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressBeforeSwap(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -352,7 +368,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: true,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -363,10 +380,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressAfterSwap(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressAfterSwap(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_SWAP_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -378,7 +396,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: true,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -389,10 +408,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressBeforeAndAfterSwap(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressBeforeAndAfterSwap(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -404,7 +424,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -415,10 +436,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressBeforeDonate(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressBeforeDonate(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -430,7 +452,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: true,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -441,10 +464,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
         assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressAfterDonate(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressAfterDonate(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_DONATE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -456,7 +480,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: true
+                afterDonate: true,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -467,10 +492,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressBeforeAndAfterDonate(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
+    function testValidateHookAddressBeforeAndAfterDonate(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_DONATE_FLAG)));
         Hooks.validateHookAddress(
             hookAddr,
@@ -482,7 +508,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                noOp: false
             })
         );
         assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -493,11 +520,12 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressAllHooks(uint152 addr) public {
-        uint160 preAddr = uint160(uint256(addr));
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (0xfF << 152)));
+    function testValidateHookAddressAllHooks(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
+        IHooks hookAddr = IHooks(address(preAddr | (0xfF8 << 148)));
         Hooks.validateHookAddress(
             hookAddr,
             Hooks.Calls({
@@ -508,7 +536,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                noOp: true
             })
         );
         assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
@@ -519,12 +548,49 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
         assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
         assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
+        assertTrue(Hooks.hasPermissionToNoOp(hookAddr));
     }
 
-    function testValidateHookAddressFailsAllHooks(uint152 addr, uint8 mask) public {
-        uint160 preAddr = uint160(uint256(addr));
-        vm.assume(mask != 0xff);
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 152)));
+    function testValidateHookAddressNoOp(uint160 addr) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
+        IHooks hookAddr = IHooks(
+            address(
+                uint160(
+                    preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG
+                        | Hooks.NO_OP_FLAG
+                )
+            )
+        );
+        Hooks.validateHookAddress(
+            hookAddr,
+            Hooks.Calls({
+                beforeInitialize: false,
+                afterInitialize: false,
+                beforeModifyPosition: true,
+                afterModifyPosition: false,
+                beforeSwap: true,
+                afterSwap: false,
+                beforeDonate: true,
+                afterDonate: false,
+                noOp: true
+            })
+        );
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertTrue(Hooks.hasPermissionToNoOp(hookAddr));
+    }
+
+    function testValidateHookAddressFailsAllHooks(uint160 addr, uint16 mask) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff); // clear the first 9 bits
+        mask = mask & 0xff80; // the last 7 bits are all 0, we just want a 9 bit mask
+        vm.assume(mask != 0xff80); // we want any combination except all hooks
+        IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 144)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
         Hooks.validateHookAddress(
             hookAddr,
@@ -536,15 +602,17 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                noOp: true
             })
         );
     }
 
-    function testValidateHookAddressFailsNoHooks(uint152 addr, uint8 mask) public {
-        uint160 preAddr = uint160(uint256(addr));
-        vm.assume(mask != 0);
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 152)));
+    function testValidateHookAddressFailsNoHooks(uint160 addr, uint16 mask) public {
+        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
+        mask = mask & 0xff80; // the last 7 bits are all 0, we just want a 9 bit mask
+        vm.assume(mask != 0); // we want any combination except no hooks
+        IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 144)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
         Hooks.validateHookAddress(
             hookAddr,
@@ -556,7 +624,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 beforeSwap: false,
                 afterSwap: false,
                 beforeDonate: false,
-                afterDonate: false
+                afterDonate: false,
+                noOp: false
             })
         );
     }
