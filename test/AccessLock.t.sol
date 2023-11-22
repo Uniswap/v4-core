@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {AccessLockHook, AccessLockHook2} from "../src/test/AccessLockHook.sol";
-import {NoAccessLockHook} from "../src/test/NoAccessLockHook.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolModifyPositionTest} from "../src/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
@@ -24,7 +23,7 @@ contract AccessLockTest is Test, Deployers {
     using CurrencyLibrary for Currency;
 
     AccessLockHook accessLockHook;
-    NoAccessLockHook noAccessLockHook;
+    AccessLockHook noAccessLockHook;
     AccessLockHook2 accessLockHook2;
 
     function setUp() public {
@@ -49,8 +48,8 @@ contract AccessLockTest is Test, Deployers {
 
         // Create NoAccessLockHook.
         address noAccessLockHookAddress = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG));
-        deployCodeTo("NoAccessLockHook.sol:NoAccessLockHook", abi.encode(manager), noAccessLockHookAddress);
-        noAccessLockHook = NoAccessLockHook(noAccessLockHookAddress);
+        deployCodeTo("AccessLockHook.sol:AccessLockHook", abi.encode(manager), noAccessLockHookAddress);
+        noAccessLockHook = AccessLockHook(noAccessLockHookAddress);
 
         (key,) = initPool(
             currency0, currency1, IHooks(address(accessLockHook)), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES
@@ -69,7 +68,7 @@ contract AccessLockTest is Test, Deployers {
         modifyPositionRouter.modifyPosition(
             keyWithoutAccessLockFlag,
             IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 0}),
-            ZERO_BYTES
+            abi.encode(10, AccessLockHook.LockAction.Mint) // attempts a mint action that should revert
         );
     }
     /**
@@ -504,7 +503,7 @@ contract AccessLockTest is Test, Deployers {
     }
 
     /**
-     *
+     * 
      * EDGE CASE TESTS
      *
      */
