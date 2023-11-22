@@ -76,7 +76,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHook.setFee(1000000);
 
         vm.expectRevert(IFees.FeeTooLarge.selector);
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testUpdateFailsWithTooLargeFee() public {
