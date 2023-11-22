@@ -91,10 +91,6 @@ contract AccessLockHook is BaseTestHooks {
 
         return selector;
     }
-
-    function onERC1155Received(address, address, uint256, uint256, bytes memory) public pure returns (bytes4) {
-        return this.onERC1155Received.selector;
-    }
 }
 
 // Hook that can access the lock.
@@ -114,7 +110,7 @@ contract AccessLockHook2 is Test, BaseTestHooks {
         IPoolManager.ModifyPositionParams calldata params,
         bytes calldata hookData
     ) external override returns (bytes4) {
-        if (manager.getCurrentHook() != address(this)) {
+        if (address(manager.getCurrentHook()) != address(this)) {
             revert IncorrectHookSet();
         }
 
@@ -129,16 +125,12 @@ contract AccessLockHook2 is Test, BaseTestHooks {
             // The permissions should remain to THIS hook during this lock.
             manager.modifyPosition(key2, params, new bytes(0));
 
-            if (manager.getCurrentHook() != address(this)) {
+            if (address(manager.getCurrentHook()) != address(this)) {
                 revert IncorrectHookSet();
             }
             // Should succeed.
             manager.mint(key.currency1, address(this), 10);
         }
         return IHooks.beforeModifyPosition.selector;
-    }
-
-    function onERC1155Received(address, address, uint256, uint256, bytes memory) public pure returns (bytes4) {
-        return this.onERC1155Received.selector;
     }
 }

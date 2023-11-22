@@ -179,10 +179,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _;
     }
 
-    function _checkLocker(address sender, address locker, address hook) internal {
-        if (sender != locker) {
-            if (locker == address(0) || sender != hook || !Hooks.hasPermissionToAccessLock(IHooks(hook))) {
-                revert LockedBy(locker, hook);
+    function _checkLocker(address caller, address locker, IHooks hook) internal {
+        if (caller != locker) {
+            if (locker == address(0) || caller != address(hook) || !hook.hasPermissionToAccessLock()) {
+                revert LockedBy(locker, address(hook));
             }
         }
     }
@@ -193,7 +193,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        (bool set) = Lockers.setCurrentHook(address(key.hooks));
+        (bool set) = Lockers.setCurrentHook(key.hooks);
 
         PoolId id = key.toId();
         _checkPoolInitialized(id);
@@ -257,7 +257,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        (bool set) = Lockers.setCurrentHook(address(key.hooks));
+        (bool set) = Lockers.setCurrentHook(key.hooks);
 
         PoolId id = key.toId();
         _checkPoolInitialized(id);
@@ -317,8 +317,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        (bool set) = Lockers.setCurrentHook(address(key.hooks));
-        
+        (bool set) = Lockers.setCurrentHook(key.hooks);
+
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
@@ -425,7 +425,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         return Lockers.nonzeroDeltaCount();
     }
 
-    function getCurrentHook() external view returns (address) {
+    function getCurrentHook() external view returns (IHooks) {
         return Lockers.getCurrentHook();
     }
 

@@ -125,7 +125,7 @@ interface IPoolManager is IFees, IClaims {
     function getLockLength() external view returns (uint256 _length);
 
     /// @notice Returns the most recently called hook.
-    function getCurrentHook() external view returns (address _currentHook);
+    function getCurrentHook() external view returns (IHooks _currentHook);
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);

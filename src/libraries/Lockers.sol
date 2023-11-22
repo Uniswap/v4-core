@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
+import {IHooks} from "../interfaces/IHooks.sol";
+
 /// @notice This is a temporary library that allows us to use transient storage (tstore/tload)
 /// for the lockers array and nonzero delta count.
 /// TODO: This library can be deleted when we have the transient keyword support in solidity.
@@ -98,8 +100,8 @@ library Lockers {
         }
     }
 
-    function getCurrentHook() internal view returns (address currentHook) {
-        return getHook(length());
+    function getCurrentHook() internal view returns (IHooks currentHook) {
+        return IHooks(getHook(length()));
     }
 
     function getHook(uint256 i) internal view returns (address hook) {
@@ -109,10 +111,10 @@ library Lockers {
         }
     }
 
-    function setCurrentHook(address currentHook) internal returns (bool set) {
+    function setCurrentHook(IHooks currentHook) internal returns (bool set) {
         // Set the hook address for the current locker if the address is 0.
         // If the address is nonzero, a hook has already been set for this lock, and is not allowed to be updated or cleared at the end of the call.
-        if (getCurrentHook() == address(0)) {
+        if (address(getCurrentHook()) == address(0)) {
             uint256 slot = HOOK_ADDRESS_SLOT + length();
             assembly {
                 tstore(slot, currentHook)

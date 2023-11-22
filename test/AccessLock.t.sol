@@ -530,7 +530,7 @@ contract AccessLockTest is Test, Deployers {
 
         assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
 
-        assertEq(manager.getCurrentHook(), address(0));
+        assertEq(address(manager.getCurrentHook()), address(0));
 
         (PoolKey memory keyAccessLockHook2,) =
             initPool(currency0, currency1, IHooks(accessLockHook2), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
@@ -562,7 +562,7 @@ contract AccessLockTest is Test, Deployers {
 
     function test_onlyByLocker_revertsWhenThereIsNoOutsideLock() public {
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES);
-        assertEq(manager.getCurrentHook(), address(0));
+        assertEq(address(manager.getCurrentHook()), address(0));
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(0), address(0)));
         vm.prank(address(key.hooks));
