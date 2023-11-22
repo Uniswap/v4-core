@@ -318,7 +318,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
-    
+
     /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall onlyByLocker returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
