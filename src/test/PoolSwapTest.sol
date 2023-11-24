@@ -3,13 +3,16 @@ pragma solidity ^0.8.20;
 
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
+import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract PoolSwapTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
+    using Hooks for IHooks;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
@@ -63,6 +66,12 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         assertEq(reserveBefore0, reserveAfter0);
         assertEq(reserveBefore1, reserveAfter1);
+
+        if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
+            // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
+            assertTrue(data.key.hooks.hasPermissionToNoOp(), "Invalid NoOp returned");
+            return abi.encode(delta);
+        }
 
         if (data.params.zeroForOne) {
             if (data.params.amountSpecified > 0) {
