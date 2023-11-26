@@ -60,6 +60,9 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
+        // Checks that the current hook is cleared if there is an access lock. Note that if this router is ever used in a nested lock this will fail.
+        assertEq(address(manager.getCurrentHook()), address(0));
+
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
 

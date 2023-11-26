@@ -18,8 +18,6 @@ import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 
-import "forge-std/console2.sol";
-
 contract AccessLockTest is Test, Deployers {
     using Pool for Pool.State;
     using CurrencyLibrary for Currency;
@@ -28,6 +26,7 @@ contract AccessLockTest is Test, Deployers {
     AccessLockHook noAccessLockHook;
     AccessLockHook2 accessLockHook2;
     AccessLockHook3 accessLockHook3;
+    AccessLockHook accessLockHook4;
 
     function setUp() public {
         // Initialize managers and routers.
@@ -43,6 +42,10 @@ contract AccessLockTest is Test, Deployers {
         );
         deployCodeTo("AccessLockHook.sol:AccessLockHook", abi.encode(manager), accessLockAddress);
         accessLockHook = AccessLockHook(accessLockAddress);
+
+        (key,) = initPool(
+            currency0, currency1, IHooks(address(accessLockHook)), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES
+        );
 
         // Create AccessLockHook2.
         address accessLockAddress2 = address(uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG));
@@ -62,9 +65,15 @@ contract AccessLockTest is Test, Deployers {
         deployCodeTo("AccessLockHook.sol:AccessLockHook", abi.encode(manager), noAccessLockHookAddress);
         noAccessLockHook = AccessLockHook(noAccessLockHookAddress);
 
-        (key,) = initPool(
-            currency0, currency1, IHooks(address(accessLockHook)), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES
+        // Create AccessLockHook with NoOp.
+        address accessLockHook4Address = address(
+            uint160(
+                Hooks.NO_OP_FLAG | Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG
+                    | Hooks.BEFORE_DONATE_FLAG
+            )
         );
+        deployCodeTo("AccessLockHook.sol:AccessLockHook", abi.encode(manager), accessLockHook4Address);
+        accessLockHook4 = AccessLockHook(accessLockHook4Address);
     }
 
     function test_onlyByLocker_revertsForNoAccessLockPool() public {
@@ -580,7 +589,6 @@ contract AccessLockTest is Test, Deployers {
     }
 
     function test_getCurrentHook_isClearedAfterNestedLock() public {
-        console2.log(address(accessLockHook3));
         // Create pool for AccessLockHook3.
         (PoolKey memory keyAccessLockHook3,) =
             initPool(currency0, currency1, IHooks(accessLockHook3), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
@@ -599,6 +607,30 @@ contract AccessLockTest is Test, Deployers {
         // Asserts are in the AccessLockHook3.
         modifyPositionRouter.modifyPosition(
             keyAccessLockHook3, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), ZERO_BYTES
+        );
+    }
+
+    function test_getCurrentHook_isClearedAfterNoOpOnAllHooks() public {
+        (PoolKey memory noOpKey,) =
+            initPool(currency0, currency1, IHooks(accessLockHook4), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        // Assertions for current hook address in AccessLockHook and respective routers.
+        // beforeModifyPosition noOp
+        modifyPositionRouter.modifyPosition(
+            noOpKey,
+            IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 0}),
+            abi.encode(0, AccessLockHook.LockAction.NoOp)
+        );
+
+        // beforeDonate noOp
+        donateRouter.donate(noOpKey, 1 * 10 ** 18, 1 * 10 ** 18, abi.encode(0, AccessLockHook.LockAction.NoOp));
+
+        // beforeSwap noOp
+        swapRouter.swap(
+            noOpKey,
+            IPoolManager.SwapParams(true, 1, TickMath.MIN_SQRT_RATIO + 1),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true}),
+            abi.encode(0, AccessLockHook.LockAction.NoOp)
         );
     }
 }

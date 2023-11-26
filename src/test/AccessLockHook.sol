@@ -12,7 +12,7 @@ import {Test} from "forge-std/Test.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
-contract AccessLockHook is BaseTestHooks {
+contract AccessLockHook is Test, BaseTestHooks {
     using CurrencyLibrary for Currency;
 
     IPoolManager manager;
@@ -26,7 +26,8 @@ contract AccessLockHook is BaseTestHooks {
         Take,
         Donate,
         Swap,
-        ModifyPosition
+        ModifyPosition,
+        NoOp
     }
 
     function beforeSwap(
@@ -87,6 +88,9 @@ contract AccessLockHook is BaseTestHooks {
                 IPoolManager.ModifyPositionParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),
                 new bytes(0)
             );
+        } else if (action == LockAction.NoOp) {
+            assertEq(address(manager.getCurrentHook()), address(this));
+            return Hooks.NO_OP_SELECTOR;
         } else {
             revert("Invalid action");
         }

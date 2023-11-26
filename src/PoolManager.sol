@@ -201,8 +201,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.hooks.shouldCallBeforeModifyPosition()) {
             bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
             // Sentinel return value used to signify that a NoOp occurred.
-            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
-            else if (selector != IHooks.beforeModifyPosition.selector) revert Hooks.InvalidHookResponse();
+            if (key.hooks.isValidNoOpCall(selector)) {
+                if (set) Lockers.clearCurrentHook();
+                return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            } else if (selector != IHooks.beforeModifyPosition.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         Pool.FeeAmounts memory feeAmounts;
@@ -243,7 +247,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         }
 
         // We only want to clear the current hook if it is the first time setting the hook address.
-        // TODO: Ensure that we also unset the current hook during early returns. (NoOp)
         if (set) Lockers.clearCurrentHook();
 
         emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
@@ -265,8 +268,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
             // Sentinel return value used to signify that a NoOp occurred.
-            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
-            else if (selector != IHooks.beforeSwap.selector) revert Hooks.InvalidHookResponse();
+            if (key.hooks.isValidNoOpCall(selector)) {
+                if (set) Lockers.clearCurrentHook();
+                return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            } else if (selector != IHooks.beforeSwap.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         uint256 feeForProtocol;
@@ -301,7 +308,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         }
 
         // We only want to clear the current hook if it is the first time setting the hook address.
-        // TODO: Ensure that we also unset the current hook during early returns. (NoOp)
         if (set) Lockers.clearCurrentHook();
 
         emit Swap(
@@ -325,8 +331,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
             // Sentinel return value used to signify that a NoOp occurred.
-            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
-            else if (selector != IHooks.beforeDonate.selector) revert Hooks.InvalidHookResponse();
+            if (key.hooks.isValidNoOpCall(selector)) {
+                if (set) Lockers.clearCurrentHook();
+                return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            } else if (selector != IHooks.beforeDonate.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         delta = pools[id].donate(amount0, amount1);
@@ -340,7 +350,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         }
 
         // We only want to clear the current hook if it is the first time setting the hook address.
-        // TODO: Ensure that we also unset the current hook during early returns. (NoOp)
         if (set) Lockers.clearCurrentHook();
     }
 

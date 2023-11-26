@@ -46,6 +46,8 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
         BalanceDelta delta = manager.modifyPosition(data.key, data.params, data.hookData);
+        // Checks that the current hook is cleared if there is an access lock. Note that if this router is ever used in a nested lock this will fail.
+        assertEq(address(manager.getCurrentHook()), address(0));
 
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender);
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
