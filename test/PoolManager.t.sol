@@ -276,6 +276,43 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
+    function test_invalidLockTarget() public {
+        IPoolManager.ModifyPositionParams memory liqParams =
+            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, liqParams, ZERO_BYTES);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: true});
+
+        // ensure reverts wen locking to variety of contracts which don't properly implement ILockCallback
+        vm.expectRevert();
+        manager.lock{value: 100}(
+            address(0),
+            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, nativeKey, params, ZERO_BYTES))
+        );
+
+        vm.expectRevert();
+        manager.lock{value: 100}(
+            address(this),
+            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, nativeKey, params, ZERO_BYTES))
+        );
+
+        vm.expectRevert();
+        manager.lock{value: 100}(
+            address(manager),
+            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, nativeKey, params, ZERO_BYTES))
+        );
+
+        vm.expectRevert();
+        manager.lock{value: 100}(
+            address(Currency.unwrap(currency0)),
+            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, nativeKey, params, ZERO_BYTES))
+        );
+    }
+
     function test_swap_failsIfNotInitialized(uint160 sqrtPriceX96) public {
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
