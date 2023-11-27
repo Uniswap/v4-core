@@ -199,6 +199,17 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
             else if (selector != IHooks.beforeAddLiquidity.selector) revert Hooks.InvalidHookResponse();
         }
+
+        delta = _modifyPosition(key, params);
+
+        if (key.hooks.shouldCallAfterAddLiquidity()) {
+            if (
+                key.hooks.afterAddLiquidity(msg.sender, key, params, delta, hookData)
+                    != IHooks.afterAddLiquidity.selector
+            ) {
+                revert Hooks.InvalidHookResponse();
+            }
+        }
     }
 
     function _modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
