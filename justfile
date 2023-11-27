@@ -1,15 +1,14 @@
-test: test-forge
-prep: fix snapshots
-snapshots: snapshots-forge
+solc_file := if os() == "macos" { "./bin/solc-mac" } else { "./bin/solc-static-linux" }
 
-test-forge: install-forge build-forge
-    forge test
+test *args: (test-forge args)
+build *args: (build-forge args)
+prep *args: fix (test args)
 
-build-forge: install-forge
-    forge build
+test-forge *args: install-forge build-forge
+    forge test --use {{ solc_file }} {{ args }}
 
-snapshots-forge: install-forge test-forge
-    FOUNDRY_FUZZ_SEED=0x4444 forge snapshot
+build-forge *args: install-forge
+    forge build --use {{ solc_file }} {{ args }}
 
 install-forge:
     forge install
