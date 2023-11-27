@@ -9,6 +9,7 @@ import {Position} from "../src/libraries/Position.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {TickBitmap} from "../src/libraries/TickBitmap.sol";
 import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
+import {Constants} from "./utils/Constants.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 
 contract PoolTest is Test {
@@ -71,7 +72,7 @@ contract PoolTest is Test {
             );
         } else {
             // We need the assumptions above to calculate this
-            uint256 maxInt128 = uint256(uint128(type(int128).max));
+            uint256 maxInt128InTypeU256 = uint256(uint128(Constants.MAX_UINT128));
             (uint256 amount0, uint256 amount1) = LiquidityAmounts.getAmountsForLiquidity(
                 sqrtPriceX96,
                 TickMath.getSqrtRatioAtTick(params.tickLower),
@@ -79,7 +80,7 @@ contract PoolTest is Test {
                 uint128(params.liquidityDelta)
             );
 
-            if ((amount0 > maxInt128) || (amount1 > maxInt128)) {
+            if ((amount0 > maxInt128InTypeU256) || (amount1 > maxInt128InTypeU256)) {
                 vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflow.selector));
             }
         }
