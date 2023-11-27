@@ -570,7 +570,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_take_failsWithInvalidTokensThatDoNotReturnTrueOnTransfer() public {
-        TestInvalidERC20 invalidToken = new TestInvalidERC20(2**255);
+        TestInvalidERC20 invalidToken = new TestInvalidERC20(2 ** 255);
         Currency invalidCurrency = Currency.wrap(address(invalidToken));
         invalidToken.approve(address(modifyPositionRouter), type(uint256).max);
         invalidToken.approve(address(takeRouter), type(uint256).max);
