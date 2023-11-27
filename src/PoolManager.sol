@@ -178,17 +178,16 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (pools[id].isNotInitialized()) revert PoolNotInitialized();
     }
 
+    /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
     modifier onlyByLocker() {
         _checkLocker(msg.sender, Lockers.getCurrentLocker(), Lockers.getCurrentHook());
         _;
     }
 
     function _checkLocker(address caller, address locker, IHooks hook) internal pure {
-        if (caller != locker) {
-            if (locker == address(0) || caller != address(hook) || !hook.hasPermissionToAccessLock()) {
-                revert LockedBy(locker, address(hook));
-            }
-        }
+        if (caller == locker) return;
+        if (caller == address(hook) && hook.hasPermissionToAccessLock()) return;
+        else revert LockedBy(locker, address(hook));
     }
 
     /// @inheritdoc IPoolManager
