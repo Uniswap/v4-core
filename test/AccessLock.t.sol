@@ -68,8 +68,8 @@ contract AccessLockTest is Test, Deployers {
         // Create AccessLockHook with NoOp.
         address accessLockHook4Address = address(
             uint160(
-                Hooks.NO_OP_FLAG | Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG
-                    | Hooks.BEFORE_DONATE_FLAG
+                Hooks.NO_OP_FLAG | Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG
+                    | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_DONATE_FLAG
             )
         );
         deployCodeTo("AccessLockHook.sol:AccessLockHook", abi.encode(manager), accessLockHook4Address);
@@ -520,6 +520,96 @@ contract AccessLockTest is Test, Deployers {
         // Should have less balance in both currencies.
         assertLt(balanceOfAfter0, balanceOfBefore0);
         assertLt(balanceOfAfter1, balanceOfBefore1);
+    }
+    /**
+     *
+     * BEFORE INITIALIZE TESTS
+     *
+     */
+
+    function test_beforeInitialize_mint_succeedsWithAccessLock(uint128 amount) public {
+        vm.assume(amount != 0 && amount < uint128(type(int128).max));
+
+        PoolKey memory key1 = PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: Constants.FEE_MEDIUM,
+            tickSpacing: 60,
+            hooks: IHooks(address(accessLockHook4))
+        });
+
+        initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.Mint));
+
+        assertEq(manager.balanceOf(address(accessLockHook4), currency1), amount);
+    }
+
+    function test_beforeInitialize_take_succeedsWithAccessLock(uint128 amount) public {
+        PoolKey memory key1 = PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: Constants.FEE_MEDIUM,
+            tickSpacing: 60,
+            hooks: IHooks(address(accessLockHook4))
+        });
+
+        // Add liquidity to a different pool there is something to take.
+        modifyPositionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 100 * 10e18}),
+            ZERO_BYTES
+        );
+
+        // Can't take more than the manager has.
+        vm.assume(amount < key.currency1.balanceOf(address(manager)));
+
+        initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.Take));
+
+        assertEq(MockERC20(Currency.unwrap(currency1)).balanceOf(address(accessLockHook4)), amount);
+    }
+
+    function test_beforeInitialize_swap_revertsOnPoolNotInitialized(uint128 amount) public {
+        vm.assume(amount != 0 && amount > 10); // precision
+
+        PoolKey memory key1 = PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: Constants.FEE_MEDIUM,
+            tickSpacing: 60,
+            hooks: IHooks(address(accessLockHook4))
+        });
+
+        vm.expectRevert(IPoolManager.PoolNotInitialized.selector);
+        initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.Swap));
+    }
+
+    function test_beforeInitialize_modifyPosition_revertsOnPoolNotInitialized(uint128 amount) public {
+        vm.assume(amount != 0 && amount > 10); // precision
+
+        PoolKey memory key1 = PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: Constants.FEE_MEDIUM,
+            tickSpacing: 60,
+            hooks: IHooks(address(accessLockHook4))
+        });
+
+        vm.expectRevert(IPoolManager.PoolNotInitialized.selector);
+        initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.ModifyPosition));
+    }
+
+    function test_beforeInitialize_donate_revertsOnPoolNotInitialized(uint128 amount) public {
+        vm.assume(amount != 0 && amount > 10); // precision
+
+        PoolKey memory key1 = PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: Constants.FEE_MEDIUM,
+            tickSpacing: 60,
+            hooks: IHooks(address(accessLockHook4))
+        });
+
+        vm.expectRevert(IPoolManager.PoolNotInitialized.selector);
+        initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.Donate));
     }
 
     /**

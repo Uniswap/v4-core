@@ -30,6 +30,15 @@ contract AccessLockHook is Test, BaseTestHooks {
         NoOp
     }
 
+    function beforeInitialize(
+        address, /* sender **/
+        PoolKey calldata key,
+        uint160, /* sqrtPriceX96 **/
+        bytes calldata hookData
+    ) external override returns (bytes4) {
+        return _executeAction(key, hookData, IHooks.beforeInitialize.selector);
+    }
+
     function beforeSwap(
         address, /* sender **/
         PoolKey calldata key,
