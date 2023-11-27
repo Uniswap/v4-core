@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
+import {ERC6909} from "solmate/tokens/ERC6909.sol";
 import {Hooks} from "./libraries/Hooks.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
@@ -17,7 +18,6 @@ import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
-import {ERC6909} from "./ERC6909.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
