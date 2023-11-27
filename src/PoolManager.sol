@@ -105,6 +105,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
+        (bool set) = Lockers.setCurrentHook(key.hooks);
+
         if (key.hooks.shouldCallBeforeInitialize()) {
             if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96, hookData) != IHooks.beforeInitialize.selector)
             {
@@ -126,6 +128,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        if (set) Lockers.clearCurrentHook();
 
         // On intitalize we emit the key's fee, which tells us all fee settings a pool can have: either a static swap fee or dynamic swap fee and if the hook has enabled swap or withdraw fees.
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
