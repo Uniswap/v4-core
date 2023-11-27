@@ -14,6 +14,7 @@ import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
 import {PoolModifyPositionTest} from "../../src/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
+import {PoolInitializeTest} from "../../src/test/PoolInitializeTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
 import {
@@ -46,6 +47,7 @@ contract Deployers {
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
+    PoolInitializeTest initializeRouter;
     ProtocolFeeControllerTest feeController;
     RevertingProtocolFeeControllerTest revertingFeeController;
     OutOfBoundsProtocolFeeControllerTest outOfBoundsFeeController;
@@ -67,6 +69,7 @@ contract Deployers {
         modifyPositionRouter = new PoolModifyPositionTest(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
+        initializeRouter = new PoolInitializeTest(manager);
         feeController = new ProtocolFeeControllerTest();
         revertingFeeController = new RevertingProtocolFeeControllerTest();
         outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
@@ -108,7 +111,7 @@ contract Deployers {
     ) internal returns (PoolKey memory _key, PoolId id) {
         _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = _key.toId();
-        manager.initialize(_key, sqrtPriceX96, initData);
+        initializeRouter.initialize(_key, sqrtPriceX96, initData);
     }
 
     function initPoolAndAddLiquidity(

@@ -18,6 +18,9 @@ interface IPoolManager is IFees, IClaims {
     /// @notice Thrown when a currency is not netted out after a lock
     error CurrencyNotSettled();
 
+    /// @notice Thrown when trying to interact with a non-initialized pool
+    error PoolNotInitialized();
+
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
     error LockedBy(address locker);
@@ -31,7 +34,7 @@ interface IPoolManager is IFees, IClaims {
     error TickSpacingTooSmall();
 
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
-    error CurrenciesInitializedOutOfOrder();
+    error CurrenciesOutOfOrderOrEqual();
 
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
