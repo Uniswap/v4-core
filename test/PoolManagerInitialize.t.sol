@@ -332,7 +332,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.tickSpacing,
             uninitializedKey.hooks
         );
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees >> 12, 0);
@@ -363,7 +363,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.tickSpacing,
             uninitializedKey.hooks
         );
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees >> 12, 0);
@@ -391,7 +391,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.tickSpacing,
             uninitializedKey.hooks
         );
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees >> 12, 0);
@@ -418,7 +418,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.tickSpacing,
             uninitializedKey.hooks
         );
-        manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFees >> 12, 0);
@@ -447,7 +447,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         manager.setProtocolFeeController(revertingFeeController);
         // expect initialize to succeed even though the controller reverts
-        int24 tick = manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
         // protocol fees should default to 0
