@@ -345,10 +345,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909 {
     function burn(Currency currency, address from, uint256 amount) external override noDelegateCall onlyByLocker {
         _accountDelta(currency, -(amount.toInt128()));
         uint256 id = currency.toId();
-        if (from != msg.sender && !isOperator[from][msg.sender]) {
-            uint256 senderAllowance = allowance[from][msg.sender][id];
+        address sender = msg.sender;
+        if (from != sender && !isOperator[from][sender]) {
+            uint256 senderAllowance = allowance[from][sender][id];
             if (senderAllowance != type(uint256).max) {
-                allowance[from][msg.sender][id] = senderAllowance - amount;
+                allowance[from][sender][id] = senderAllowance - amount;
             }
         }
         _burn(from, id, amount);
