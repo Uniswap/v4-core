@@ -9,7 +9,7 @@ The contracts in this repo are in early stages - we are releasing the draft code
 
 ## Contributing
 
-If you’re interested in contributing please see our [contribution guidelines](./CONTRIBUTING.md)!
+If you’re interested in contributing please see our [contribution guidelines](./CONTRIBUTING.md)! This includes instructions on how to compile using `TSTORE` and `TLOAD` opcodes in the `Setup` section.
 
 ## Whitepaper
 
