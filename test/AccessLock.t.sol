@@ -176,7 +176,7 @@ contract AccessLockTest is Test, Deployers {
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
-        // Just no-op.
+        // Essentially "no-op"s the modifyPosition call and executes a swap before hand, applying the deltas from the swap to the locker.
         modifyPositionRouter.modifyPosition(
             key, IPoolManager.ModifyPositionParams(-120, 120, 0), abi.encode(amount, AccessLockHook.LockAction.Swap)
         );

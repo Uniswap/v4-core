@@ -251,7 +251,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        // We only want to clear the current hook if it is the first time setting the hook address.
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
         if (set) Lockers.clearCurrentHook();
 
         emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);

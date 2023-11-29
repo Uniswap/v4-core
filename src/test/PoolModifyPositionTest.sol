@@ -11,8 +11,6 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {Test} from "forge-std/Test.sol";
 import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 
-import "forge-std/console2.sol";
-
 contract PoolModifyPositionTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;

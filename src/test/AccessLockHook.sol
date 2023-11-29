@@ -21,6 +21,8 @@ contract AccessLockHook is Test, BaseTestHooks {
         manager = _manager;
     }
 
+    error InvalidAction();
+
     enum LockAction {
         Mint,
         Take,
@@ -101,7 +103,7 @@ contract AccessLockHook is Test, BaseTestHooks {
             assertEq(address(manager.getCurrentHook()), address(this));
             return Hooks.NO_OP_SELECTOR;
         } else {
-            revert("Invalid action");
+            revert InvalidAction();
         }
 
         return selector;

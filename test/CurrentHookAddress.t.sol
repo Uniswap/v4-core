@@ -16,9 +16,10 @@ contract CurrentHookAddressTest is Test {
     }
 
     function test_setCurrentHook_TwiceDoesNotSucceed() public {
-        Lockers.setCurrentHook(IHooks(address(1)));
-        Lockers.setCurrentHook(IHooks(address(2)));
-
+        (bool set) = Lockers.setCurrentHook(IHooks(address(1)));
+        assertTrue(set);
+        set = Lockers.setCurrentHook(IHooks(address(2)));
+        assertFalse(set);
         assertEq(address(Lockers.getCurrentHook()), address(1));
     }
 
