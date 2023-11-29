@@ -123,7 +123,6 @@ library Lockers {
         }
     }
 
-    // We only want to clear the current hook if the msg.sender is the original locker.
     function clearCurrentHook() internal {
         uint256 slot = HOOK_ADDRESS_SLOT + length();
         assembly {

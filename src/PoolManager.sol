@@ -90,6 +90,18 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         return Lockers.getLocker(i);
     }
 
+    /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
+    modifier onlyByLocker() {
+        _checkLocker(msg.sender, Lockers.getCurrentLocker(), Lockers.getCurrentHook());
+        _;
+    }
+
+    function _checkLocker(address caller, address locker, IHooks hook) internal pure {
+        if (caller == locker) return;
+        if (caller == address(hook) && hook.hasPermissionToAccessLock()) return;
+        else revert LockedBy(locker, address(hook));
+    }
+
     /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
@@ -129,6 +141,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
         if (set) Lockers.clearCurrentHook();
 
         // On intitalize we emit the key's fee, which tells us all fee settings a pool can have: either a static swap fee or dynamic swap fee and if the hook has enabled swap or withdraw fees.
@@ -178,18 +191,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (pools[id].isNotInitialized()) revert PoolNotInitialized();
     }
 
-    /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
-    modifier onlyByLocker() {
-        _checkLocker(msg.sender, Lockers.getCurrentLocker(), Lockers.getCurrentHook());
-        _;
-    }
-
-    function _checkLocker(address caller, address locker, IHooks hook) internal pure {
-        if (caller == locker) return;
-        if (caller == address(hook) && hook.hasPermissionToAccessLock()) return;
-        else revert LockedBy(locker, address(hook));
-    }
-
     /// @inheritdoc IPoolManager
     function modifyPosition(
         PoolKey memory key,
@@ -205,6 +206,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
             // Sentinel return value used to signify that a NoOp occurred.
             if (key.hooks.isValidNoOpCall(selector)) {
+                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
                 if (set) Lockers.clearCurrentHook();
                 return BalanceDeltaLibrary.MAXIMUM_DELTA;
             } else if (selector != IHooks.beforeModifyPosition.selector) {
@@ -272,6 +274,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
             // Sentinel return value used to signify that a NoOp occurred.
             if (key.hooks.isValidNoOpCall(selector)) {
+                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
                 if (set) Lockers.clearCurrentHook();
                 return BalanceDeltaLibrary.MAXIMUM_DELTA;
             } else if (selector != IHooks.beforeSwap.selector) {
@@ -310,7 +313,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        // We only want to clear the current hook if it is the first time setting the hook address.
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
         if (set) Lockers.clearCurrentHook();
 
         emit Swap(
@@ -335,6 +338,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
             // Sentinel return value used to signify that a NoOp occurred.
             if (key.hooks.isValidNoOpCall(selector)) {
+                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
                 if (set) Lockers.clearCurrentHook();
                 return BalanceDeltaLibrary.MAXIMUM_DELTA;
             } else if (selector != IHooks.beforeDonate.selector) {
@@ -352,7 +356,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        // We only want to clear the current hook if it is the first time setting the hook address.
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
         if (set) Lockers.clearCurrentHook();
     }
 
