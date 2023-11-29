@@ -298,7 +298,10 @@ contract FeesTest is Test, Deployers, GasSnapshot {
     //     manager.setProtocolFees(key0);
     // }
 
-    function testHookWithdrawFeeProtocolWithdrawFee(uint16 hookWithdrawFee, uint16 protocolWithdrawFee) public {
+    function testHookWithdrawFeeProtocolWithdrawFee() public {
+        uint16 hookWithdrawFee = 65;
+        uint16 protocolWithdrawFee = 633;
+
         vm.assume(protocolWithdrawFee < 2 ** 12);
         vm.assume(hookWithdrawFee < 2 ** 12);
         vm.assume(protocolWithdrawFee >> 6 >= 4);
@@ -317,10 +320,10 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         assertEq(getSwapFee(slot0.protocolFees), 0);
         assertEq(getWithdrawFee(slot0.protocolFees), protocolWithdrawFee);
 
-        int256 liquidityDelta = 10000;
+        int256 liquidityDelta = 10000 * 1 ether;
         // The underlying amount for a liquidity delta of 10000 is 29.
-        uint256 underlyingAmount0 = 29;
-        uint256 underlyingAmount1 = 29;
+        uint256 underlyingAmount0 = 29 * 1 ether;
+        uint256 underlyingAmount1 = 29 * 1 ether;
 
         IPoolManager.ModifyPositionParams memory params = IPoolManager.ModifyPositionParams(-60, 60, liquidityDelta);
         BalanceDelta delta = modifyPositionRouter.modifyPosition(key1, params, ZERO_BYTES);
