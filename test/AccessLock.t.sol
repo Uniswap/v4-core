@@ -267,6 +267,27 @@ contract AccessLockTest is Test, Deployers {
         assertEq(balanceOfAfter1, balanceOfBefore1 + amount1);
     }
 
+    function test_beforeModifyPosition_settle_succeedsWithAccessLock(uint128 amount) public {
+        vm.assume(amount != 0 && amount > 10 && amount < uint128(type(int128).max)); // precision
+
+        // Add liquidity so there is something to take.
+        modifyPositionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 100 * 10e18}),
+            ZERO_BYTES
+        );
+
+        // Can't take more than the manager has.
+        vm.assume(amount < key.currency1.balanceOf(address(manager)));
+
+        // Assertions in the hook. Takes and then settles within the hook.
+        modifyPositionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams(-120, 120, 1 * 10 ** 18),
+            abi.encode(amount, AccessLockHook.LockAction.Settle)
+        );
+    }
+
     /**
      *
      * BEFORE SWAP TESTS

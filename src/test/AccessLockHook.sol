@@ -109,7 +109,12 @@ contract AccessLockHook is Test, BaseTestHooks {
         } else if (action == LockAction.Burn) {
             manager.burn(key.currency1, amount);
         } else if (action == LockAction.Settle) {
+            manager.take(key.currency1, address(this), amount);
+            assertEq(MockERC20(Currency.unwrap(key.currency1)).balanceOf(address(this)), amount);
+            assertEq(manager.getLockNonzeroDeltaCount(), 1);
+            MockERC20(Currency.unwrap(key.currency1)).transfer(address(manager), amount);
             manager.settle(key.currency1);
+            assertEq(manager.getLockNonzeroDeltaCount(), 0);
         } else if (action == LockAction.Initialize) {
             PoolKey memory newKey = PoolKey({
                 currency0: key.currency0,
