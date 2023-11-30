@@ -18,8 +18,6 @@ import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 
-import "forge-std/console2.sol";
-
 contract AccessLockTest is Test, Deployers {
     using Pool for Pool.State;
     using CurrencyLibrary for Currency;

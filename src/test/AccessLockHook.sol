@@ -13,8 +13,6 @@ import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 
-import "forge-std/console2.sol";
-
 contract AccessLockHook is Test, BaseTestHooks {
     using CurrencyLibrary for Currency;
 
@@ -53,7 +51,6 @@ contract AccessLockHook is Test, BaseTestHooks {
         IPoolManager.SwapParams calldata, /* params **/
         bytes calldata hookData
     ) external override returns (bytes4) {
-        console2.log("hello");
         return _executeAction(key, hookData, IHooks.beforeSwap.selector);
     }
 
