@@ -621,6 +621,43 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.hasPermissionToAccessLock(hookAddr));
     }
 
+    function testValidateHookAddressNoOp(uint160 addr) public {
+        uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
+        IHooks hookAddr = IHooks(
+            address(
+                uint160(
+                    preAddr | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG
+                        | Hooks.NO_OP_FLAG
+                )
+            )
+        );
+        Hooks.validateHookPermissions(
+            hookAddr,
+            Hooks.Permissions({
+                beforeInitialize: false,
+                afterInitialize: false,
+                beforeModifyPosition: true,
+                afterModifyPosition: false,
+                beforeSwap: true,
+                afterSwap: false,
+                beforeDonate: true,
+                afterDonate: false,
+                noOp: true,
+                accessLock: false
+            })
+        );
+        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
+        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
+        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
+        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
+        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
+        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
+        assertTrue(Hooks.hasPermissionToNoOp(hookAddr));
+        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+    }
+
     function testValidateHookAddressFailsAllHooks(uint152 addr, uint8 mask) public {
         uint160 preAddr = uint160(uint256(addr));
         vm.assume(mask != 0xff8);
