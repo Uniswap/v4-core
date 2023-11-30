@@ -12,8 +12,10 @@ import {Test} from "forge-std/Test.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Constants} from "../../test/utils/Constants.sol";
+import {PoolIdLibrary} from "../types/PoolId.sol";
 
 contract AccessLockHook is Test, BaseTestHooks {
+    using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
     IPoolManager manager;
@@ -119,11 +121,11 @@ contract AccessLockHook is Test, BaseTestHooks {
             PoolKey memory newKey = PoolKey({
                 currency0: key.currency0,
                 currency1: key.currency1,
-                fee: Constants.FEE_MEDIUM,
+                fee: Constants.FEE_LOW,
                 tickSpacing: 60,
                 hooks: IHooks(address(0))
             });
-            manager.initialize(newKey, Constants.SQRT_RATIO_1_1, new bytes(0));
+            manager.initialize(newKey, Constants.SQRT_RATIO_1_2, new bytes(0));
         } else {
             revert InvalidAction();
         }

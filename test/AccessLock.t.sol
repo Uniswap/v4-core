@@ -17,10 +17,12 @@ import {IHooks} from "../src/interfaces/IHooks.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
+import {PoolIdLibrary} from "../src/types/PoolId.sol";
 
 contract AccessLockTest is Test, Deployers {
     using Pool for Pool.State;
     using CurrencyLibrary for Currency;
+    using PoolIdLibrary for PoolKey;
 
     AccessLockHook accessLockHook;
     AccessLockHook noAccessLockHook;
@@ -286,6 +288,26 @@ contract AccessLockTest is Test, Deployers {
             IPoolManager.ModifyPositionParams(-120, 120, 1 * 10 ** 18),
             abi.encode(amount, AccessLockHook.LockAction.Settle)
         );
+    }
+
+    function test_beforeModifyPosition_initialize_succeedsWithAccessLock() public {
+        // The hook intitializes a new pool with the new key at Constants.SQRT_RATIO_1_2;
+        modifyPositionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams(-120, 120, 1 * 10 ** 18),
+            abi.encode(0, AccessLockHook.LockAction.Initialize)
+        );
+
+        PoolKey memory newKey = PoolKey({
+            currency0: key.currency0,
+            currency1: key.currency1,
+            fee: Constants.FEE_LOW,
+            tickSpacing: 60,
+            hooks: IHooks(address(0))
+        });
+        (Pool.Slot0 memory slot0,,,) = manager.pools(newKey.toId());
+
+        assertEq(slot0.sqrtPriceX96, Constants.SQRT_RATIO_1_2);
     }
 
     /**
