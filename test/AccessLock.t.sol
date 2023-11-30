@@ -18,6 +18,8 @@ import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 
+import "forge-std/console2.sol";
+
 contract AccessLockTest is Test, Deployers {
     using Pool for Pool.State;
     using CurrencyLibrary for Currency;
@@ -103,7 +105,9 @@ contract AccessLockTest is Test, Deployers {
      *  - Swap
      *  - ModifyPosition
      *  - Donate
-     *
+     *  - Burn
+     *  - Settle
+     *  - Initialize
      * Each of these calls is then tested from every callback after the
      * currentHook gets set (beforeModifyPosition, beforeSwap, and beforeDonate).
      *
@@ -231,6 +235,38 @@ contract AccessLockTest is Test, Deployers {
         // Should have less balance in both currencies.
         assertLt(balanceOfAfter0, balanceOfBefore0);
         assertLt(balanceOfAfter1, balanceOfBefore1);
+    }
+
+    function test_beforeModifyPosition_burn_succeedsWithAccessLock(uint128 amount) public {
+        vm.assume(amount != 0 && amount > 10 && amount < uint128(type(int128).max)); // precision
+        // Add liquidity so there is a position to swap over.
+        modifyPositionRouter.modifyPosition(
+            key,
+            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 100 * 10e18}),
+            ZERO_BYTES
+        );
+
+        BalanceDelta delta = swapRouter.swap(
+            key,
+            IPoolManager.SwapParams(true, 10000, TickMath.MIN_SQRT_RATIO + 1),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true}),
+            ZERO_BYTES
+        );
+
+        uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
+        uint256 amount1 = uint256(uint128(-delta.amount1()));
+        // We have some balance in the manager.
+        assertEq(manager.balanceOf(address(this), currency1), amount1);
+        manager.transfer(address(key.hooks), currency1, amount1);
+        assertEq(manager.balanceOf(address(key.hooks), currency1), amount1);
+
+        modifyPositionRouter.modifyPosition(
+            key, IPoolManager.ModifyPositionParams(-120, 120, 0), abi.encode(amount1, AccessLockHook.LockAction.Burn)
+        );
+
+        uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
+
+        assertEq(balanceOfAfter1, balanceOfBefore1 + amount1);
     }
 
     /**

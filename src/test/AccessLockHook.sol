@@ -11,6 +11,9 @@ import {TickMath} from "../libraries/TickMath.sol";
 import {Test} from "forge-std/Test.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {Constants} from "../../test/utils/Constants.sol";
+
+import "forge-std/console2.sol";
 
 contract AccessLockHook is Test, BaseTestHooks {
     using CurrencyLibrary for Currency;
@@ -29,6 +32,9 @@ contract AccessLockHook is Test, BaseTestHooks {
         Donate,
         Swap,
         ModifyPosition,
+        Burn,
+        Settle,
+        Initialize,
         NoOp
     }
 
@@ -47,6 +53,7 @@ contract AccessLockHook is Test, BaseTestHooks {
         IPoolManager.SwapParams calldata, /* params **/
         bytes calldata hookData
     ) external override returns (bytes4) {
+        console2.log("hello");
         return _executeAction(key, hookData, IHooks.beforeSwap.selector);
     }
 
@@ -102,6 +109,19 @@ contract AccessLockHook is Test, BaseTestHooks {
         } else if (action == LockAction.NoOp) {
             assertEq(address(manager.getCurrentHook()), address(this));
             return Hooks.NO_OP_SELECTOR;
+        } else if (action == LockAction.Burn) {
+            manager.burn(key.currency1, amount);
+        } else if (action == LockAction.Settle) {
+            manager.settle(key.currency1);
+        } else if (action == LockAction.Initialize) {
+            PoolKey memory newKey = PoolKey({
+                currency0: key.currency0,
+                currency1: key.currency1,
+                fee: Constants.FEE_MEDIUM,
+                tickSpacing: 60,
+                hooks: IHooks(address(0))
+            });
+            manager.initialize(newKey, Constants.SQRT_RATIO_1_1, new bytes(0));
         } else {
             revert InvalidAction();
         }
