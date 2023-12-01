@@ -407,12 +407,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true});
 
         vm.expectEmit(true, true, true, false);
-        emit Mint(address(swapRouter), currency1, 98);
+        emit Mint(address(this), currency1, 98);
         snapStart("swap mint output as claim");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        uint256 claimsBalance = manager.balanceOf(address(this), currency1);
         assertEq(claimsBalance, 98);
     }
 
@@ -424,16 +424,17 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true});
 
         vm.expectEmit(true, true, true, false);
-        emit Mint(address(swapRouter), currency1, 98);
+        emit Mint(address(this), currency1, 98);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        uint256 claimsBalance = manager.balanceOf(address(this), currency1);
         assertEq(claimsBalance, 98);
 
         // swap from currency1 to currency0 again, using Claims as input tokens
         params = IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -25, sqrtPriceLimitX96: SQRT_RATIO_4_1});
 
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
+        manager.transfer(address(swapRouter), currency1, claimsBalance);
 
         vm.expectEmit(true, true, true, false);
         emit Burn(address(swapRouter), currency1, 27);
