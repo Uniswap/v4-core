@@ -15,4 +15,8 @@ library Constants {
 
     uint256 constant POOL_SLOT = 10;
     uint256 constant TICKS_OFFSET = 4;
+
+    uint24 constant FEE_LOW = 500;
+    uint24 constant FEE_MEDIUM = 3000;
+    uint24 constant FEE_HIGH = 10000;
 }

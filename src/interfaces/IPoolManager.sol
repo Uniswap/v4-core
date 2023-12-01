@@ -22,7 +22,8 @@ interface IPoolManager is IFees {
 
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
-    error LockedBy(address locker);
+    /// @param currentHook The most recently called hook
+    error LockedBy(address locker, address currentHook);
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
@@ -118,6 +119,9 @@ interface IPoolManager is IFees {
 
     /// @notice Returns the length of the lockers array, which is the number of locks open on the PoolManager.
     function getLockLength() external view returns (uint256 _length);
+
+    /// @notice Returns the most recently called hook.
+    function getCurrentHook() external view returns (IHooks _currentHook);
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
