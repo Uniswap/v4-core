@@ -436,9 +436,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         // swap from currency1 to currency0 again, using 6909s as input tokens
         params = IPoolManager.SwapParams({zeroForOne: false, amountSpecified: -25, sqrtPriceLimitX96: SQRT_RATIO_4_1});
-
         testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
-        manager.transfer(address(swapRouter), currency1, claimsBalance);
 
         vm.expectEmit(true, true, true, false);
         emit Transfer(address(swapRouter), address(this), address(0), CurrencyLibrary.toId(currency1), 27);
