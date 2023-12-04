@@ -100,7 +100,6 @@ contract PoolSwapTest is Test, PoolTestBase {
         if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
             // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
             assertTrue(data.key.hooks.hasPermissionToNoOp(), "Invalid NoOp returned");
-            return abi.encode(delta);
         }
 
         if (deltaAfter0 > 0) {
