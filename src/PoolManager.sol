@@ -385,7 +385,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, V46909 {
     /// @inheritdoc IPoolManager
     function burn(address from, Currency currency, uint256 amount) external override noDelegateCall onlyByLocker {
         _accountDelta(currency, -(amount.toInt128()));
-        _burnFrom(from, currency.toId(), amount);
+        burnFrom(from, currency.toId(), amount);
     }
 
     function setProtocolFees(PoolKey memory key) external {
