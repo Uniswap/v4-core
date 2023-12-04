@@ -136,7 +136,7 @@ contract AccessLockTest is Test, Deployers {
         // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
 
-        assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
+        assertEq(manager.balanceOf(address(accessLockHook), currency1.toId()), amount);
     }
 
     function test_beforeModifyPosition_take_succeedsWithAccessLock(uint128 amount) public {
@@ -256,9 +256,9 @@ contract AccessLockTest is Test, Deployers {
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 amount1 = uint256(uint128(-delta.amount1()));
         // We have some balance in the manager.
-        assertEq(manager.balanceOf(address(this), currency1), amount1);
-        manager.transfer(address(key.hooks), currency1, amount1);
-        assertEq(manager.balanceOf(address(key.hooks), currency1), amount1);
+        assertEq(manager.balanceOf(address(this), currency1.toId()), amount1);
+        manager.transfer(address(key.hooks), currency1.toId(), amount1);
+        assertEq(manager.balanceOf(address(key.hooks), currency1.toId()), amount1);
 
         modifyPositionRouter.modifyPosition(
             key, IPoolManager.ModifyPositionParams(-120, 120, 0), abi.encode(amount1, AccessLockHook.LockAction.Burn)
@@ -344,7 +344,7 @@ contract AccessLockTest is Test, Deployers {
         // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
 
-        assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
+        assertEq(manager.balanceOf(address(accessLockHook), currency1.toId()), amount);
     }
 
     function test_beforeSwap_take_succeedsWithAccessLock(uint128 amount) public {
@@ -493,7 +493,7 @@ contract AccessLockTest is Test, Deployers {
         // The balance of our contract should be from the donateRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
 
-        assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
+        assertEq(manager.balanceOf(address(accessLockHook), currency1.toId()), amount);
     }
 
     function test_beforeDonate_take_succeedsWithAccessLock(uint128 amount) public {
@@ -617,7 +617,7 @@ contract AccessLockTest is Test, Deployers {
 
         initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.Mint));
 
-        assertEq(manager.balanceOf(address(accessLockHook4), currency1), amount);
+        assertEq(manager.balanceOf(address(accessLockHook4), currency1.toId()), amount);
     }
 
     function test_beforeInitialize_take_succeedsWithAccessLock(uint128 amount) public {
@@ -714,7 +714,7 @@ contract AccessLockTest is Test, Deployers {
         // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
 
-        assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
+        assertEq(manager.balanceOf(address(accessLockHook), currency1.toId()), amount);
 
         assertEq(address(manager.getCurrentHook()), address(0));
 
@@ -743,7 +743,7 @@ contract AccessLockTest is Test, Deployers {
         modifyPositionRouter.modifyPosition(
             keyAccessLockHook2, IPoolManager.ModifyPositionParams(0, 60, 1 * 10 ** 18), abi.encode(false, keyWithNoHook)
         );
-        assertEq(manager.balanceOf(address(accessLockHook2), currency1), 10);
+        assertEq(manager.balanceOf(address(accessLockHook2), currency1.toId()), 10);
     }
 
     function test_onlyByLocker_revertsWhenThereIsNoOutsideLock() public {
