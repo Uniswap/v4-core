@@ -109,7 +109,7 @@ contract AccessLockHook is Test, BaseTestHooks {
             assertEq(address(manager.getCurrentHook()), address(this));
             return Hooks.NO_OP_SELECTOR;
         } else if (action == LockAction.Burn) {
-            manager.burn(key.currency1, amount);
+            manager.burn(key.currency1, address(this), amount);
         } else if (action == LockAction.Settle) {
             manager.take(key.currency1, address(this), amount);
             assertEq(MockERC20(Currency.unwrap(key.currency1)).balanceOf(address(this)), amount);
