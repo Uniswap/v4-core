@@ -199,14 +199,15 @@ contract AccessLockHook3 is Test, ILockCallback, BaseTestHooks {
         bytes calldata /* hookData **/
     ) external override returns (bytes4) {
         assertEq(address(manager.getCurrentHook()), address(this));
-        manager.lock(abi.encode(true));
+        manager.lock(address(this), abi.encode(true));
         assertEq(address(manager.getCurrentHook()), address(this));
-        manager.lock(abi.encode(false));
+        manager.lock(address(this), abi.encode(false));
         assertEq(address(manager.getCurrentHook()), address(this));
         return IHooks.beforeModifyPosition.selector;
     }
 
-    function lockAcquired(bytes memory data) external returns (bytes memory) {
+    function lockAcquired(address caller, bytes memory data) external returns (bytes memory) {
+        require(caller == address(this));
         assertEq(manager.getLockLength(), 2);
         assertEq(address(manager.getCurrentHook()), address(0));
 

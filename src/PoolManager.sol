@@ -86,8 +86,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function getLock(uint256 i) external view override returns (address locker) {
-        return Lockers.getLocker(i);
+    function getLock(uint256 i) external view override returns (address locker, address lockCaller) {
+        return (Lockers.getLocker(i), Lockers.getLockCaller(i));
     }
 
     /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
@@ -149,11 +149,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function lock(bytes calldata data) external override returns (bytes memory result) {
-        Lockers.push(msg.sender);
+    function lock(address lockTarget, bytes calldata data) external payable override returns (bytes memory result) {
+        Lockers.push(lockTarget, msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(msg.sender).lockAcquired(data);
+        result = ILockCallback(lockTarget).lockAcquired(msg.sender, data);
 
         if (Lockers.length() == 1) {
             if (Lockers.nonzeroDeltaCount() != 0) revert CurrencyNotSettled();
