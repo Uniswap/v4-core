@@ -40,7 +40,7 @@ contract PoolDonateTest is PoolTestBase, Test {
         }
     }
 
-    function lockAcquired(address lockCaller, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));

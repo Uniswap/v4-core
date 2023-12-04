@@ -33,7 +33,7 @@ contract PoolInitializeTest is Test, PoolTestBase {
         );
     }
 
-    function lockAcquired(address _lockCaller, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));

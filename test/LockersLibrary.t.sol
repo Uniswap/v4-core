@@ -30,7 +30,7 @@ contract LockersLibraryTest is Test, Deployers, ILockCallback {
         assertEq(manager.getLockNonzeroDeltaCount(), 0);
     }
 
-    function lockAcquired(address _lockCaller, bytes calldata) public returns (bytes memory) {
+    function lockAcquired(address, bytes calldata) public returns (bytes memory) {
         uint256 len = manager.getLockLength();
 
         // apply a delta and save count
