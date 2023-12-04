@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
-import {ERC6909} from "solmate/tokens/ERC6909.sol";
 import {Hooks} from "./libraries/Hooks.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
@@ -18,12 +17,13 @@ import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
+import {V46909} from "./V46909.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
+contract PoolManager is IPoolManager, Fees, NoDelegateCall, V46909 {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -381,23 +381,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function mint(Currency currency, address to, uint256 amount) external override noDelegateCall onlyByLocker {
+    function mint(address to, Currency currency, uint256 amount) external override noDelegateCall onlyByLocker {
         _accountDelta(currency, amount.toInt128());
         _mint(to, currency.toId(), amount);
     }
 
     /// @inheritdoc IPoolManager
-    function burn(Currency currency, address from, uint256 amount) external override noDelegateCall onlyByLocker {
+    function burn(address from, Currency currency, uint256 amount) external override noDelegateCall onlyByLocker {
         _accountDelta(currency, -(amount.toInt128()));
-        uint256 id = currency.toId();
-        address sender = msg.sender;
-        if (from != sender && !isOperator[from][sender]) {
-            uint256 senderAllowance = allowance[from][sender][id];
-            if (senderAllowance != type(uint256).max) {
-                allowance[from][sender][id] = senderAllowance - amount;
-            }
-        }
-        _burn(from, id, amount);
+        _burnFrom(from, currency.toId(), amount);
     }
 
     function setProtocolFees(PoolKey memory key) external {

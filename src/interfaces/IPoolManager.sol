@@ -174,11 +174,11 @@ interface IPoolManager is IFees {
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(Currency currency, address to, uint256 amount) external;
 
-    /// @notice Called by the user to move value into Claims balance
-    function mint(Currency token, address to, uint256 amount) external;
+    /// @notice Called by the user to move value into ERC6909 balance
+    function mint(address to, Currency token, uint256 amount) external;
 
-    /// @notice Called by the user to redeem their Claims balance
-    function burn(Currency token, uint256 amount) external;
+    /// @notice Called by the user to move value from ERC6909 balance
+    function burn(address from, Currency token, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
