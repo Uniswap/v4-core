@@ -45,9 +45,9 @@ abstract contract Fees is IFees, Owned {
             (bool _success, bytes memory _data) = address(protocolFeeController).call{gas: controllerGasLimit}(
                 abi.encodeWithSelector(IProtocolFeeController.protocolFeesForPool.selector, key)
             );
+            // Ensure that the return data fits within a word
             if (!_success || _data.length > 32) return (false, 0);
 
-            // Check returnData validity
             uint256 returnData;
             assembly {
                 returnData := mload(add(_data, 0x20))
