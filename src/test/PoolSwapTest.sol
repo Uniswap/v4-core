@@ -31,6 +31,7 @@ contract PoolSwapTest is Test, PoolTestBase {
     struct TestSettings {
         bool withdrawTokens;
         bool settleUsingTransfer;
+        bool currencyAlreadySent;
     }
 
     function swap(
@@ -40,14 +41,15 @@ contract PoolSwapTest is Test, PoolTestBase {
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {
         delta = abi.decode(
-            manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))), (BalanceDelta)
+            manager.lock(address(this), abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))),
+            (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
     }
 
-    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
@@ -104,10 +106,18 @@ contract PoolSwapTest is Test, PoolTestBase {
         }
 
         if (deltaAfter0 > 0) {
-            _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
+            if (data.testSettings.currencyAlreadySent) {
+                manager.settle(data.key.currency0);
+            } else {
+                _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
+            }
         }
         if (deltaAfter1 > 0) {
-            _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
+            if (data.testSettings.currencyAlreadySent) {
+                manager.settle(data.key.currency1);
+            } else {
+                _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
+            }
         }
         if (deltaAfter0 < 0) {
             _take(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.withdrawTokens);
