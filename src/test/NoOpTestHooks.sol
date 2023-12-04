@@ -9,9 +9,9 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 
 contract NoOpTestHooks is BaseTestHooks {
     constructor() {
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             this,
-            Hooks.Calls({
+            Hooks.Permissions({
                 beforeInitialize: false,
                 afterInitialize: false,
                 beforeModifyPosition: true,
@@ -20,7 +20,8 @@ contract NoOpTestHooks is BaseTestHooks {
                 afterSwap: false,
                 beforeDonate: true,
                 afterDonate: false,
-                noOp: true
+                noOp: true,
+                accessLock: false
             })
         );
     }

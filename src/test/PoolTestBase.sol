@@ -20,7 +20,7 @@ abstract contract PoolTestBase is ILockCallback {
         if (withdrawTokens) {
             manager.take(currency, recipient, uint128(-amount));
         } else {
-            manager.mint(currency, address(this), uint128(-amount));
+            manager.mint(currency, recipient, uint128(-amount));
         }
     }
 
