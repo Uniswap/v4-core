@@ -14,11 +14,11 @@ contract PoolLockTest is ILockCallback {
     }
 
     function lock() external {
-        manager.lock("");
+        manager.lock(address(this), "");
     }
 
     /// @notice Called by the pool manager on `msg.sender` when a lock is acquired
-    function lockAcquired(bytes calldata) external override returns (bytes memory) {
+    function lockAcquired(address, bytes calldata) external override returns (bytes memory) {
         emit LockAcquired();
         return "";
     }
