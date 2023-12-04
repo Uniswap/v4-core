@@ -31,16 +31,16 @@ contract CurrentHookAddressTest is Test {
     }
 
     function test_setCurrentHook_afterLock() public {
-        Lockers.push(address(this));
+        Lockers.push(address(this), address(this));
         Lockers.setCurrentHook(IHooks(address(1)));
         assertEq(address(Lockers.getCurrentHook()), address(1));
     }
 
     function test_setCurrentHook_beforeAndAfterLock() public {
-        Lockers.push(address(this));
+        Lockers.push(address(this), address(this));
         Lockers.setCurrentHook(IHooks(address(2)));
         assertEq(address(Lockers.getCurrentHook()), address(2));
-        Lockers.push(address(1));
+        Lockers.push(address(1), address(1));
         assertEq(address(Lockers.getCurrentHook()), address(0));
     }
 }
