@@ -8,7 +8,7 @@ contract V46909 is ERC6909 {
     /// @param from The address to burn tokens from.
     /// @param id The currency to burn.
     /// @param amount The amount to burn.
-    function _burnFrom(address from, uint256 id, uint256 amount) internal {
+    function burnFrom(address from, uint256 id, uint256 amount) public {
         address sender = msg.sender;
         if (from != sender && !isOperator[from][sender]) {
             uint256 senderAllowance = allowance[from][sender][id];
