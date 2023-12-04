@@ -508,12 +508,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
 
         vm.expectEmit(true, true, true, false);
-        emit Mint(address(swapRouter), currency1, 98);
+        emit Mint(address(this), currency1, 98);
         snapStart("swap mint output as claim");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        uint256 claimsBalance = manager.balanceOf(address(this), currency1);
         assertEq(claimsBalance, 98);
     }
 
@@ -525,10 +525,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
 
         vm.expectEmit(true, true, true, false);
-        emit Mint(address(swapRouter), currency1, 98);
+        emit Mint(address(this), currency1, 98);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        uint256 claimsBalance = manager.balanceOf(address(swapRouter), currency1);
+        uint256 claimsBalance = manager.balanceOf(address(this), currency1);
         assertEq(claimsBalance, 98);
 
         // swap from currency1 to currency0 again, using Claims as input tokens
@@ -536,6 +536,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false, currencyAlreadySent: false});
+        manager.transfer(address(swapRouter), currency1, claimsBalance);
 
         vm.expectEmit(true, true, true, false);
         emit Burn(address(swapRouter), currency1, 27);
@@ -672,7 +673,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_take_failsWithInvalidTokensThatDoNotReturnTrueOnTransfer() public {
-        TestInvalidERC20 invalidToken = new TestInvalidERC20(2**255);
+        TestInvalidERC20 invalidToken = new TestInvalidERC20(2 ** 255);
         Currency invalidCurrency = Currency.wrap(address(invalidToken));
         invalidToken.approve(address(modifyPositionRouter), type(uint256).max);
         invalidToken.approve(address(takeRouter), type(uint256).max);
