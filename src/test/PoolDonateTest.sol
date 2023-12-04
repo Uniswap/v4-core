@@ -52,11 +52,20 @@ contract PoolDonateTest is PoolTestBase, Test {
 
         BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, data.hookData);
 
+        // Checks that the current hook is cleared if there is an access lock. Note that if this router is ever used in a nested lock this will fail.
+        assertEq(address(manager.getCurrentHook()), address(0));
+
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
 
-        assertEq(reserveBefore0, reserveAfter0);
-        assertEq(reserveBefore1, reserveAfter1);
+        if (!data.key.hooks.hasPermissionToAccessLock()) {
+            assertEq(reserveBefore0, reserveAfter0);
+            assertEq(reserveBefore1, reserveAfter1);
+            if (!data.key.hooks.hasPermissionToNoOp()) {
+                assertEq(deltaAfter0, int256(data.amount0));
+                assertEq(deltaAfter1, int256(data.amount1));
+            }
+        }
 
         if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
             // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
@@ -64,11 +73,10 @@ contract PoolDonateTest is PoolTestBase, Test {
             return abi.encode(delta);
         }
 
-        assertEq(deltaAfter0, int256(data.amount0));
-        assertEq(deltaAfter1, int256(data.amount1));
-
-        if (data.amount0 > 0) _settle(data.key.currency0, data.sender, delta.amount0(), true);
-        if (data.amount1 > 0) _settle(data.key.currency1, data.sender, delta.amount1(), true);
+        if (deltaAfter0 > 0) _settle(data.key.currency0, data.sender, int128(deltaAfter0), true);
+        if (deltaAfter1 > 0) _settle(data.key.currency1, data.sender, int128(deltaAfter1), true);
+        if (deltaAfter0 < 0) _take(data.key.currency0, data.sender, int128(deltaAfter0), true);
+        if (deltaAfter1 < 0) _take(data.key.currency1, data.sender, int128(deltaAfter1), true);
 
         return abi.encode(delta);
     }

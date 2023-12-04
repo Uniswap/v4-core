@@ -7,10 +7,13 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 import {Test} from "forge-std/Test.sol";
+import {IHooks} from "../interfaces/IHooks.sol";
+import {Hooks} from "../libraries/Hooks.sol";
 
 contract PoolInitializeTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
     using SafeCast for uint256;
+    using Hooks for IHooks;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
@@ -18,13 +21,14 @@ contract PoolInitializeTest is Test, PoolTestBase {
         PoolKey key;
         uint160 sqrtPriceX96;
         bytes hookData;
+        address sender;
     }
 
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes memory hookData)
         external
         returns (int24 tick)
     {
-        tick = abi.decode(manager.lock(abi.encode(CallbackData(key, sqrtPriceX96, hookData))), (int24));
+        tick = abi.decode(manager.lock(abi.encode(CallbackData(key, sqrtPriceX96, hookData, msg.sender))), (int24));
     }
 
     function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
@@ -38,9 +42,17 @@ contract PoolInitializeTest is Test, PoolTestBase {
         int256 delta1 = manager.currencyDelta(address(this), data.key.currency1);
         uint256 nonZeroDC = manager.getLockNonzeroDeltaCount();
 
-        assertEq(delta0, 0, "delta0");
-        assertEq(delta1, 0, "delta1");
-        assertEq(nonZeroDC, 0, "NonzeroDeltaCount");
+        if (!data.key.hooks.hasPermissionToAccessLock()) {
+            assertEq(delta0, 0, "delta0");
+            assertEq(delta1, 0, "delta1");
+            assertEq(nonZeroDC, 0, "NonzeroDeltaCount");
+        } else {
+            // settle deltas
+            if (delta0 > 0) _settle(data.key.currency0, data.sender, int128(delta0), true);
+            if (delta1 > 0) _settle(data.key.currency1, data.sender, int128(delta1), true);
+            if (delta0 < 0) _take(data.key.currency0, data.sender, int128(delta0), true);
+            if (delta1 < 0) _take(data.key.currency1, data.sender, int128(delta1), true);
+        }
 
         return abi.encode(tick);
     }
