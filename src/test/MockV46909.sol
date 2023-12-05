@@ -9,11 +9,13 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 contract MockV46909 is V46909 {
     using CurrencyLibrary for Currency;
 
+    /// @notice mocked mint logic without delta accounting
     function mint(address to, Currency currency, uint256 amount) public {
         _mint(to, currency.toId(), amount);
     }
 
-    function burn(Currency currency, uint256 amount) public {
-        _burn(msg.sender, currency.toId(), amount);
+    /// @notice mocked burn logic without delta accounting and without checking allowance
+    function burnFrom(address from, Currency currency, uint256 amount) public {
+        _burnFrom(from, currency.toId(), amount);
     }
 }
