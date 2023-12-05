@@ -81,7 +81,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
             (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
             assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(slot0.protocolFees, 0);
+            assertEq(slot0.protocolFee, 0);
         }
     }
 
@@ -104,7 +104,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-        assertEq(slot0.protocolFees >> 12, 0);
+        assertEq(slot0.protocolFee, 0);
         assertEq(slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
     }
 
@@ -203,20 +203,23 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
     }
 
-    function test_initialize_fetchFeeWhenController(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-
+    function test_initialize_fetchFeeWhenController(uint16 protocolFee) public {
         manager.setProtocolFeeController(feeController);
-        uint16 poolProtocolFee = 4;
-        feeController.setSwapFeeForPool(uninitializedKey.toId(), poolProtocolFee);
+        feeController.setSwapFeeForPool(uninitializedKey.toId(), protocolFee);
 
-        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        uint8 fee0 = uint8(protocolFee >> 8);
+        uint8 fee1 = uint8(protocolFee % 256);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-        assertEq(slot0.protocolFees >> 12, poolProtocolFee);
+        if ((0 < fee0 && fee0 < 4) || (0 < fee1 && fee1 < 4)) {
+            vm.expectRevert(IFees.FeeTooLarge.selector);
+            initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        } else {
+            initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+
+            (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
+            assertEq(slot0.sqrtPriceX96, SQRT_RATIO_1_1);
+            assertEq(slot0.protocolFee, protocolFee);
+        }
     }
 
     function test_initialize_revertsWhenPoolAlreadyInitialized(uint160 sqrtPriceX96) public {
