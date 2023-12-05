@@ -417,6 +417,23 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(erc6909Balance, 98);
     }
 
+    function test_swap_GasMint6909IfNativeOutputNotTaken() public {
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: false, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_2_1});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true});
+
+        vm.expectEmit(true, true, true, false);
+        emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 98);
+        snapStart("swap mint native output as 6909");
+        swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
+        snapEnd();
+
+        uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE));
+        assertEq(erc6909Balance, 98);
+    }
+
     function test_swap_GasUse6909Input() public {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
@@ -445,6 +462,38 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
 
         erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
+        assertEq(erc6909Balance, 71);
+    }
+
+    function test_swap_GasUseNative6909Input() public {
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: false, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_2_1});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true});
+
+        vm.expectEmit(true, true, true, false);
+        emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 98);
+        swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
+
+        uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE));
+        assertEq(erc6909Balance, 98);
+
+        // give permission for swapRouter to burn the 6909s
+        manager.setOperator(address(swapRouter), true);
+
+        // swap from currency0 to currency1, using 6909s as input tokens
+        params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -25, sqrtPriceLimitX96: SQRT_RATIO_1_4});
+        testSettings = PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false});
+
+        vm.expectEmit(true, true, true, false);
+        emit Transfer(address(swapRouter), address(this), address(0), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 27);
+        snapStart("swap burn native 6909 for input");
+        // don't have to send in native currency since burning 6909 for input
+        swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
+        snapEnd();
+
+        erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE));
         assertEq(erc6909Balance, 71);
     }
 
