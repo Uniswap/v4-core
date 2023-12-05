@@ -76,6 +76,15 @@ abstract contract Fees is IFees, Owned {
         if (dynamicSwapFee >= MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
+    function _isValidProtocolFees(uint24 protocolFees) internal pure returns (bool) {
+        if (protocolFees != 0) {
+            uint16 protocolSwapFee = uint16(protocolFees >> 12);
+            uint16 protocolWithdrawFee = uint16(protocolFees & 0xFFF);
+            return _isFeeWithinBounds(protocolSwapFee) && _isFeeWithinBounds(protocolWithdrawFee);
+        }
+        return true;
+    }
+
     /// @dev Only the lower 12 bits are used here to encode the fee denominator.
     function _isFeeWithinBounds(uint16 fee) internal pure returns (bool) {
         if (fee != 0) {
@@ -85,20 +94,6 @@ abstract contract Fees is IFees, Owned {
             if (
                 (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
             ) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function _isValidProtocolFees(uint24 protocolFees) internal pure returns (bool) {
-        if (protocolFees != 0) {
-            uint16 protocolSwapFee = uint16(protocolFees >> 12);
-            uint16 protocolWithdrawFee = uint16(protocolFees & 0xFFF);
-            if (protocolSwapFee != 0 && !_isFeeWithinBounds(protocolSwapFee)) {
-                return false;
-            }
-            if (protocolWithdrawFee != 0 && !_isFeeWithinBounds(protocolWithdrawFee)) {
                 return false;
             }
         }
