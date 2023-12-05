@@ -28,7 +28,7 @@ contract V46909Test is Test, Deployers {
         if (transferAmount > mintAmount) {
             vm.expectRevert();
         }
-        v46909.burnFrom(sender, id, transferAmount);
+        v46909.burnFrom(sender, currency, transferAmount);
 
         if (transferAmount <= mintAmount) {
             if (mintAmount == type(uint256).max) {
