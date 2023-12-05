@@ -18,20 +18,22 @@ contract PoolInitializeTest is Test, PoolTestBase {
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
     struct CallbackData {
+        address sender;
         PoolKey key;
         uint160 sqrtPriceX96;
         bytes hookData;
-        address sender;
     }
 
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes memory hookData)
         external
         returns (int24 tick)
     {
-        tick = abi.decode(manager.lock(abi.encode(CallbackData(key, sqrtPriceX96, hookData, msg.sender))), (int24));
+        tick = abi.decode(
+            manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, sqrtPriceX96, hookData))), (int24)
+        );
     }
 
-    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
