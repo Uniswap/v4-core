@@ -508,7 +508,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
 
-        vm.expectEmit(true, true, true, false);
+        vm.expectEmit();
         emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
         snapStart("swap mint output as 6909");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
@@ -525,7 +525,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
 
-        vm.expectEmit(true, true, true, false);
+        vm.expectEmit();
         emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 98);
         snapStart("swap mint native output as 6909");
         swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
@@ -542,7 +542,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
 
-        vm.expectEmit(true, true, true, false);
+        vm.expectEmit();
         emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
@@ -557,7 +557,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false, currencyAlreadySent: false});
 
-        vm.expectEmit(true, true, true, false);
+        vm.expectEmit();
         emit Transfer(address(swapRouter), address(this), address(0), CurrencyLibrary.toId(currency1), 27);
         snapStart("swap burn 6909 for input");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
@@ -574,7 +574,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
 
-        vm.expectEmit(true, true, true, false);
+        vm.expectEmit();
         emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 98);
         swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
 
@@ -589,7 +589,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: false, currencyAlreadySent: false});
 
-        vm.expectEmit(true, true, true, false);
+        vm.expectEmit();
         emit Transfer(address(swapRouter), address(this), address(0), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 27);
         snapStart("swap burn native 6909 for input");
         // don't have to send in native currency since burning 6909 for input
