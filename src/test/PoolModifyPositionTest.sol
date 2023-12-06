@@ -11,8 +11,6 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {Test} from "forge-std/Test.sol";
 import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 
-import "forge-std/console.sol";
-
 contract PoolModifyPositionTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
@@ -63,11 +61,11 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         // These assertions only apply in non lock-accessing pools.
         if (!data.key.hooks.hasPermissionToAccessLock()) {
             if (data.params.liquidityDelta > 0) {
-                require(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermissionToNoOp(), "asser 1 failed");
-                require(!(delta0 < 0 || delta1 < 0), "asser 2 failed");
+                require(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermissionToNoOp(), "assert 1 failed");
+                require(!(delta0 < 0 || delta1 < 0), "assert 2 failed");
             } else {
-                require(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermissionToNoOp(), "asser 3 failed");
-                require(!(delta0 > 0 || delta1 > 0), "asser 4 failed");
+                require(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermissionToNoOp(), "assert 3 failed");
+                require(!(delta0 > 0 || delta1 > 0), "assert 4 failed");
             }
         }
 

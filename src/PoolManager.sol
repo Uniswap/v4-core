@@ -22,8 +22,6 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
-import "forge-std/console.sol";
-
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
@@ -201,8 +199,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        console.log("Add liq delta");
-        console.logInt(params.liquidityDelta.toInt128());
         require(params.liquidityDelta.toInt128() >= 0, "Liquidity delta must be non-negative.");
         (bool set) = Lockers.setCurrentHook(key.hooks);
 
@@ -242,8 +238,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        console.log("Remove liq delta");
-        console.logInt(params.liquidityDelta.toInt128());
         require(params.liquidityDelta.toInt128() <= 0, "Liquidity delta must be non-positive.");
         (bool set) = Lockers.setCurrentHook(key.hooks);
 
