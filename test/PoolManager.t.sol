@@ -719,6 +719,29 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.setProtocolFees(key);
     }
 
+    function test_setProtocolFee_failsWithInvalidProtocolFeeControllers() public {
+        uint24 protocolFee = 4;
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFees, 0);
+
+        manager.setProtocolFeeController(revertingFeeController);
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        manager.setProtocolFees(key);
+
+        manager.setProtocolFeeController(outOfBoundsFeeController);
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        manager.setProtocolFees(key);
+
+        manager.setProtocolFeeController(overflowFeeController);
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        manager.setProtocolFees(key);
+
+        manager.setProtocolFeeController(invalidReturnSizeFeeController);
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        manager.setProtocolFees(key);
+    }
+
     function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
         uint24 protocolFee = 260; // 0001 00 00 0100
 

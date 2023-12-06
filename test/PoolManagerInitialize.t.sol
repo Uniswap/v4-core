@@ -18,6 +18,8 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
+import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
+import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 
 contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -307,6 +309,156 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
         initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+    }
+
+    function test_initialize_succeedsWithOutOfBoundsFeeController(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address hookEmptyAddr = EMPTY_HOOKS;
+        MockHooks impl = new MockHooks();
+        vm.etch(hookEmptyAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+
+        manager.setProtocolFeeController(outOfBoundsFeeController);
+        // expect initialize to succeed even though the controller reverts
+        vm.expectEmit(true, true, true, true);
+        emit Initialize(
+            uninitializedKey.toId(),
+            uninitializedKey.currency0,
+            uninitializedKey.currency1,
+            uninitializedKey.fee,
+            uninitializedKey.tickSpacing,
+            uninitializedKey.hooks
+        );
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        // protocol fees should default to 0
+        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
+        assertEq(slot0.protocolFees >> 12, 0);
+        assertEq(slot0.protocolFees & 0xFFF, 0);
+        // call to setProtocolFees should also revert
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        manager.setProtocolFees(uninitializedKey);
+    }
+
+    function test_initialize_succeedsWithRevertingFeeController(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address hookEmptyAddr = EMPTY_HOOKS;
+        MockHooks impl = new MockHooks();
+        vm.etch(hookEmptyAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+
+        manager.setProtocolFeeController(revertingFeeController);
+        // expect initialize to succeed even though the controller reverts
+        vm.expectEmit(true, true, true, true);
+        emit Initialize(
+            uninitializedKey.toId(),
+            uninitializedKey.currency0,
+            uninitializedKey.currency1,
+            uninitializedKey.fee,
+            uninitializedKey.tickSpacing,
+            uninitializedKey.hooks
+        );
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        // protocol fees should default to 0
+        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
+        assertEq(slot0.protocolFees >> 12, 0);
+        assertEq(slot0.protocolFees & 0xFFF, 0);
+    }
+
+    function test_initialize_succeedsWithOverflowFeeController(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address hookEmptyAddr = EMPTY_HOOKS;
+        MockHooks impl = new MockHooks();
+        vm.etch(hookEmptyAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+
+        manager.setProtocolFeeController(overflowFeeController);
+        // expect initialize to succeed
+        vm.expectEmit(true, true, true, true);
+        emit Initialize(
+            uninitializedKey.toId(),
+            uninitializedKey.currency0,
+            uninitializedKey.currency1,
+            uninitializedKey.fee,
+            uninitializedKey.tickSpacing,
+            uninitializedKey.hooks
+        );
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        // protocol fees should default to 0
+        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
+        assertEq(slot0.protocolFees >> 12, 0);
+        assertEq(slot0.protocolFees & 0xFFF, 0);
+    }
+
+    function test_initialize_succeedsWithWrongReturnSizeFeeController(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        address hookEmptyAddr = EMPTY_HOOKS;
+        MockHooks impl = new MockHooks();
+        vm.etch(hookEmptyAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+
+        manager.setProtocolFeeController(invalidReturnSizeFeeController);
+        // expect initialize to succeed
+        vm.expectEmit(true, true, true, true);
+        emit Initialize(
+            uninitializedKey.toId(),
+            uninitializedKey.currency0,
+            uninitializedKey.currency1,
+            uninitializedKey.fee,
+            uninitializedKey.tickSpacing,
+            uninitializedKey.hooks
+        );
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        // protocol fees should default to 0
+        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
+        assertEq(slot0.protocolFees >> 12, 0);
+        assertEq(slot0.protocolFees & 0xFFF, 0);
+    }
+
+    function test_initialize_succeedsAndSetsHookFeeIfControllerReverts(uint160 sqrtPriceX96) public {
+        // Assumptions tested in Pool.t.sol
+        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
+        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+
+        address payable mockAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
+
+        address hookAddr = address(99); // can't be a zero address, but does not have to have any other hook flags specified
+        MockHooks impl = new MockHooks();
+        vm.etch(hookAddr, address(impl).code);
+        MockHooks hook = MockHooks(hookAddr);
+
+        uninitializedKey = PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: FeeLibrary.HOOK_SWAP_FEE_FLAG | uint24(3000),
+            hooks: hook,
+            tickSpacing: 60
+        });
+
+        manager.setProtocolFeeController(revertingFeeController);
+        // expect initialize to succeed even though the controller reverts
+        initializeRouter.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
+        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
+        assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
+        // protocol fees should default to 0
+        assertEq(slot0.protocolFees >> 12, 0);
+        // hook fees can still be set
+        assertEq(uint16(slot0.hookFees >> 12), 0);
+        hook.setSwapFee(uninitializedKey, 3000);
+        manager.setHookFees(uninitializedKey);
+
+        (slot0,,,) = manager.pools(uninitializedKey.toId());
+        assertEq(uint16(slot0.hookFees >> 12), 3000);
     }
 
     function test_initialize_gas() public {
