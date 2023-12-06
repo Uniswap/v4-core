@@ -119,7 +119,7 @@ interface IPoolManager is IFees, IClaims {
     function reservesOf(Currency currency) external view returns (uint256);
 
     /// @notice Returns the locker in the ith position of the locker queue.
-    function getLock(uint256 i) external view returns (address locker);
+    function getLock(uint256 i) external view returns (address locker, address lockCaller);
 
     /// @notice Returns the length of the lockers array, which is the number of locks open on the PoolManager.
     function getLockLength() external view returns (uint256 _length);
@@ -141,9 +141,10 @@ interface IPoolManager is IFees, IClaims {
     function currencyDelta(address locker, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
+    /// @param lockTarget The address to call the callback on
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
     /// @return The data returned by the call to `ILockCallback(msg.sender).lockAcquired(data)`
-    function lock(bytes calldata data) external returns (bytes memory);
+    function lock(address lockTarget, bytes calldata data) external payable returns (bytes memory);
 
     struct ModifyPositionParams {
         // the lower and upper tick of the position

@@ -251,7 +251,7 @@ contract AccessLockTest is Test, Deployers {
         BalanceDelta delta = swapRouter.swap(
             key,
             IPoolManager.SwapParams(true, 10000, TickMath.MIN_SQRT_RATIO + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true}),
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false}),
             ZERO_BYTES
         );
 
@@ -335,7 +335,7 @@ contract AccessLockTest is Test, Deployers {
         BalanceDelta delta = swapRouter.swap(
             key,
             IPoolManager.SwapParams(true, 1, TickMath.MIN_SQRT_RATIO + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
             abi.encode(amount, AccessLockHook.LockAction.Mint)
         );
 
@@ -368,7 +368,7 @@ contract AccessLockTest is Test, Deployers {
         BalanceDelta delta = swapRouter.swap(
             key,
             IPoolManager.SwapParams(true, 1, TickMath.MIN_SQRT_RATIO + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
             abi.encode(amount, AccessLockHook.LockAction.Take)
         );
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
@@ -397,7 +397,7 @@ contract AccessLockTest is Test, Deployers {
             key,
             // Use small amounts so that the zeroForOne swap is larger
             IPoolManager.SwapParams(false, 1, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
             abi.encode(amount, AccessLockHook.LockAction.Swap)
         );
 
@@ -428,7 +428,7 @@ contract AccessLockTest is Test, Deployers {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(true, 1, TickMath.MIN_SQRT_RATIO + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
             abi.encode(amount, AccessLockHook.LockAction.AddLiquidity)
         );
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
@@ -455,7 +455,7 @@ contract AccessLockTest is Test, Deployers {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(true, 1, TickMath.MIN_SQRT_RATIO + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
             abi.encode(amount, AccessLockHook.LockAction.Donate)
         );
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
@@ -797,7 +797,7 @@ contract AccessLockTest is Test, Deployers {
         swapRouter.swap(
             noOpKey,
             IPoolManager.SwapParams(true, 1, TickMath.MIN_SQRT_RATIO + 1),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true}),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
             abi.encode(0, AccessLockHook.LockAction.NoOp)
         );
     }
