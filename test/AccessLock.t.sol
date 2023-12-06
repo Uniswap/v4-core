@@ -660,8 +660,7 @@ contract AccessLockTest is Test, Deployers {
     }
 
     function test_beforeInitialize_addLiquidity_revertsOnPoolNotInitialized(uint128 amount) public {
-        console.log("amount: ", amount);
-        vm.assume(amount != 0 && amount > 10); // precision
+        vm.assume(amount != 0 && amount > 10 && amount < uint128(type(int128).max)); // precision
 
         PoolKey memory key1 = PoolKey({
             currency0: currency0,
