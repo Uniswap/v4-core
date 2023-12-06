@@ -11,17 +11,20 @@ contract EmptyTestHooks is IHooks {
     using Hooks for IHooks;
 
     constructor() {
-        IHooks(this).validateHookAddress(
-            Hooks.Calls({
+        IHooks(this).validateHookPermissions(
+            Hooks.Permissions({
                 beforeInitialize: true,
                 afterInitialize: true,
                 beforeAddLiquidity: true,
                 afterAddLiquidity: true,
+                beforeRemoveLiquidity: true,
+                afterRemoveLiquidity: true,
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
                 afterDonate: true,
-                noOp: true
+                noOp: true,
+                accessLock: true
             })
         );
     }
@@ -61,6 +64,25 @@ contract EmptyTestHooks is IHooks {
         bytes calldata
     ) external pure override returns (bytes4) {
         return IHooks.afterAddLiquidity.selector;
+    }
+
+    function beforeRemoveLiquidity(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return IHooks.beforeRemoveLiquidity.selector;
+    }
+
+    function afterRemoveLiquidity(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        BalanceDelta,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return IHooks.afterRemoveLiquidity.selector;
     }
 
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)

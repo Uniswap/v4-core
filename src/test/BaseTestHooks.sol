@@ -47,6 +47,25 @@ contract BaseTestHooks is IHooks {
         revert HookNotImplemented();
     }
 
+    function beforeRemoveLiquidity(
+        address, /* sender **/
+        PoolKey calldata, /* key **/
+        IPoolManager.ModifyPositionParams calldata, /* params **/
+        bytes calldata /* hookData **/
+    ) external virtual returns (bytes4) {
+        revert HookNotImplemented();
+    }
+
+    function afterRemoveLiquidity(
+        address, /* sender **/
+        PoolKey calldata, /* key **/
+        IPoolManager.ModifyPositionParams calldata, /* params **/
+        BalanceDelta, /* delta **/
+        bytes calldata /* hookData **/
+    ) external virtual returns (bytes4) {
+        revert HookNotImplemented();
+    }
+
     function beforeSwap(
         address, /* sender **/
         PoolKey calldata, /* key **/

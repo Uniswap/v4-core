@@ -65,14 +65,19 @@ contract Deployers {
     }
 
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
-        MockERC20[] memory tokens = deployTokens(2, 1000 ether);
+        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
 
-        address[4] memory toApprove =
-            [address(swapRouter), address(modifyPositionRouter), address(donateRouter), address(takeRouter)];
+        address[5] memory toApprove = [
+            address(swapRouter),
+            address(modifyPositionRouter),
+            address(donateRouter),
+            address(takeRouter),
+            address(initializeRouter)
+        ];
 
         for (uint256 i = 0; i < toApprove.length; i++) {
-            tokens[0].approve(toApprove[i], 1000 ether);
-            tokens[1].approve(toApprove[i], 1000 ether);
+            tokens[0].approve(toApprove[i], Constants.MAX_UINT256);
+            tokens[1].approve(toApprove[i], Constants.MAX_UINT256);
         }
 
         return SortTokens.sort(tokens[0], tokens[1]);

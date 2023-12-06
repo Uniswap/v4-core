@@ -22,6 +22,8 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 
+import "forge-std/console.sol";
+
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     using PoolIdLibrary for PoolKey;
@@ -90,6 +92,18 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         return Lockers.getLocker(i);
     }
 
+    /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
+    modifier onlyByLocker() {
+        _checkLocker(msg.sender, Lockers.getCurrentLocker(), Lockers.getCurrentHook());
+        _;
+    }
+
+    function _checkLocker(address caller, address locker, IHooks hook) internal pure {
+        if (caller == locker) return;
+        if (caller == address(hook) && hook.hasPermissionToAccessLock()) return;
+        revert LockedBy(locker, address(hook));
+    }
+
     /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
@@ -104,6 +118,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
         if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
+
+        (bool set) = Lockers.setCurrentHook(key.hooks);
 
         if (key.hooks.shouldCallBeforeInitialize()) {
             if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96, hookData) != IHooks.beforeInitialize.selector)
@@ -126,6 +142,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+        if (set) Lockers.clearCurrentHook();
 
         // On intitalize we emit the key's fee, which tells us all fee settings a pool can have: either a static swap fee or dynamic swap fee and if the hook has enabled swap or withdraw fees.
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
@@ -174,12 +193,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (pools[id].isNotInitialized()) revert PoolNotInitialized();
     }
 
-    modifier onlyByLocker() {
-        address locker = Lockers.getCurrentLocker();
-        if (msg.sender != locker) revert LockedBy(locker);
-        _;
-    }
-
     /// @inheritdoc IPoolManager
     function addLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes calldata hookData)
         external
@@ -188,7 +201,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        require(params.liquidityDelta.toInt128() >= 0);
+        console.log("Add liq delta");
+        console.logInt(params.liquidityDelta.toInt128());
+        require(params.liquidityDelta.toInt128() >= 0, "Liquidity delta must be non-negative.");
+        (bool set) = Lockers.setCurrentHook(key.hooks);
 
         PoolId id = key.toId();
         _checkPoolInitialized(id);
@@ -196,8 +212,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.hooks.shouldCallBeforeAddLiquidity()) {
             bytes4 selector = key.hooks.beforeAddLiquidity(msg.sender, key, params, hookData);
             // Sentinel return value used to signify that a NoOp occurred.
-            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
-            else if (selector != IHooks.beforeAddLiquidity.selector) revert Hooks.InvalidHookResponse();
+            if (key.hooks.isValidNoOpCall(selector)) {
+                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+                if (set) Lockers.clearCurrentHook();
+                return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            } else if (selector != IHooks.beforeAddLiquidity.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         delta = _modifyPosition(key, params);
@@ -210,6 +231,50 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+        if (set) Lockers.clearCurrentHook();
+    }
+
+    /// @inheritdoc IPoolManager
+    function removeLiquidity(
+        PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params,
+        bytes calldata hookData
+    ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
+        console.log("Remove liq delta");
+        console.logInt(params.liquidityDelta.toInt128());
+        require(params.liquidityDelta.toInt128() <= 0, "Liquidity delta must be non-positive.");
+        (bool set) = Lockers.setCurrentHook(key.hooks);
+
+        PoolId id = key.toId();
+        _checkPoolInitialized(id);
+
+        if (key.hooks.shouldCallBeforeRemoveLiquidity()) {
+            bytes4 selector = key.hooks.beforeRemoveLiquidity(msg.sender, key, params, hookData);
+            // Sentinel return value used to signify that a NoOp occurred.
+            if (key.hooks.isValidNoOpCall(selector)) {
+                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+                if (set) Lockers.clearCurrentHook();
+                return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            } else if (selector != IHooks.beforeRemoveLiquidity.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
+        }
+
+        delta = _modifyPosition(key, params);
+
+        if (key.hooks.shouldCallAfterRemoveLiquidity()) {
+            if (
+                key.hooks.afterRemoveLiquidity(msg.sender, key, params, delta, hookData)
+                    != IHooks.afterRemoveLiquidity.selector
+            ) {
+                revert Hooks.InvalidHookResponse();
+            }
+        }
+
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+        if (set) Lockers.clearCurrentHook();
     }
 
     function _modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
@@ -256,14 +321,21 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
+        (bool set) = Lockers.setCurrentHook(key.hooks);
+
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
         if (key.hooks.shouldCallBeforeSwap()) {
             bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
             // Sentinel return value used to signify that a NoOp occurred.
-            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
-            else if (selector != IHooks.beforeSwap.selector) revert Hooks.InvalidHookResponse();
+            if (key.hooks.isValidNoOpCall(selector)) {
+                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+                if (set) Lockers.clearCurrentHook();
+                return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            } else if (selector != IHooks.beforeSwap.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         uint256 feeForProtocol;
@@ -297,6 +369,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+        if (set) Lockers.clearCurrentHook();
+
         emit Swap(
             id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
         );
@@ -310,14 +385,21 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
+        (bool set) = Lockers.setCurrentHook(key.hooks);
+
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
         if (key.hooks.shouldCallBeforeDonate()) {
             bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
             // Sentinel return value used to signify that a NoOp occurred.
-            if (key.hooks.isValidNoOpCall(selector)) return BalanceDeltaLibrary.MAXIMUM_DELTA;
-            else if (selector != IHooks.beforeDonate.selector) revert Hooks.InvalidHookResponse();
+            if (key.hooks.isValidNoOpCall(selector)) {
+                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+                if (set) Lockers.clearCurrentHook();
+                return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            } else if (selector != IHooks.beforeDonate.selector) {
+                revert Hooks.InvalidHookResponse();
+            }
         }
 
         delta = pools[id].donate(amount0, amount1);
@@ -329,6 +411,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
                 revert Hooks.InvalidHookResponse();
             }
         }
+
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+        if (set) Lockers.clearCurrentHook();
     }
 
     /// @inheritdoc IPoolManager
@@ -410,6 +495,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
         return Lockers.nonzeroDeltaCount();
+    }
+
+    function getCurrentHook() external view returns (IHooks) {
+        return Lockers.getCurrentHook();
     }
 
     /// @notice receive native tokens for native pools

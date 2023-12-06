@@ -9,18 +9,21 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 
 contract NoOpTestHooks is BaseTestHooks {
     constructor() {
-        Hooks.validateHookAddress(
+        Hooks.validateHookPermissions(
             this,
-            Hooks.Calls({
+            Hooks.Permissions({
                 beforeInitialize: false,
                 afterInitialize: false,
                 beforeAddLiquidity: true,
                 afterAddLiquidity: false,
+                beforeRemoveLiquidity: false,
+                afterRemoveLiquidity: false,
                 beforeSwap: true,
                 afterSwap: false,
                 beforeDonate: true,
                 afterDonate: false,
-                noOp: true
+                noOp: true,
+                accessLock: false
             })
         );
     }
@@ -31,6 +34,15 @@ contract NoOpTestHooks is BaseTestHooks {
         override
         returns (bytes4)
     {
+        return Hooks.NO_OP_SELECTOR;
+    }
+
+    function beforeRemoveLiquidity(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyPositionParams calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         return Hooks.NO_OP_SELECTOR;
     }
 

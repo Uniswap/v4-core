@@ -23,7 +23,8 @@ interface IPoolManager is IFees, IClaims {
 
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
-    error LockedBy(address locker);
+    /// @param currentHook The most recently called hook
+    error LockedBy(address locker, address currentHook);
 
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
@@ -123,6 +124,9 @@ interface IPoolManager is IFees, IClaims {
     /// @notice Returns the length of the lockers array, which is the number of locks open on the PoolManager.
     function getLockLength() external view returns (uint256 _length);
 
+    /// @notice Returns the most recently called hook.
+    function getCurrentHook() external view returns (IHooks _currentHook);
+
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
 
@@ -151,11 +155,21 @@ interface IPoolManager is IFees, IClaims {
 
     /// @notice Add a new liquidity position in a pool
     /// @dev Poke by calling with a zero liquidityDelta
-    /// @param key The pool to mint a position in
+    /// @param key The pool to add a position in
     /// @param params The parameters of pass into modifyPosition
     /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
-    /// @return delta The balance delta of the position minted
+    /// @return delta The balance delta of the position added
     function addLiquidity(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
+        external
+        returns (BalanceDelta);
+
+    /// @notice Remove a liquidity position in a pool
+    /// @dev Poke by calling with a zero liquidityDelta
+    /// @param key The pool to remove a position in
+    /// @param params The parameters of pass into modifyPosition
+    /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
+    /// @return delta The balance delta of the position removed
+    function removeLiquidity(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta);
 
