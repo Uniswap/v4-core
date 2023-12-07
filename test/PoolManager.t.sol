@@ -501,7 +501,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
-    function test_swap_GasMint6909IfOutputNotTaken() public {
+    function test_swap_Mint6909IfOutputNotTaken_gas() public {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
@@ -535,7 +535,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(erc6909Balance, 98);
     }
 
-    function test_swap_GasUse6909Input() public {
+    function test_swap_Use6909Input_gas() public {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
@@ -567,7 +567,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(erc6909Balance, 71);
     }
 
-    function test_swap_GasUseNative6909Input() public {
+    function test_swap_UseNative6909Input_gas() public {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: false, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_2_1});
 
