@@ -8,6 +8,9 @@ import {PoolManager} from "../src/PoolManager.sol";
 import {Position} from "../src/libraries/Position.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {TickBitmap} from "../src/libraries/TickBitmap.sol";
+import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
+import {Constants} from "./utils/Constants.sol";
+import {SafeCast} from "../src/libraries/SafeCast.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
@@ -67,6 +70,19 @@ contract PoolTest is Test {
             vm.expectRevert(
                 abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickUpper, params.tickSpacing)
             );
+        } else {
+            // We need the assumptions above to calculate this
+            uint256 maxInt128InTypeU256 = uint256(uint128(Constants.MAX_UINT128));
+            (uint256 amount0, uint256 amount1) = LiquidityAmounts.getAmountsForLiquidity(
+                sqrtPriceX96,
+                TickMath.getSqrtRatioAtTick(params.tickLower),
+                TickMath.getSqrtRatioAtTick(params.tickUpper),
+                uint128(params.liquidityDelta)
+            );
+
+            if ((amount0 > maxInt128InTypeU256) || (amount1 > maxInt128InTypeU256)) {
+                vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflow.selector));
+            }
         }
 
         params.owner = address(this);
