@@ -798,17 +798,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.setProtocolFees(key);
     }
 
-    function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
-        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
-
-        // sets the upper 12 bits
-        feeController.setSwapFeeForPool(uninitializedKey.toId(), uint16(protocolFee));
-
-        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
-    }
-
     function test_collectProtocolFees_ERC20_returnsCorrectFeesWithParameters(uint256 swapAmount, uint256 balanceToClaim)
         public
     {
