@@ -5,13 +5,12 @@ import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {IHooks} from "./IHooks.sol";
-import {IERC6909Minimal} from "../interfaces/external/IERC6909Minimal.sol";
 import {IFees} from "./IFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IFees, IERC6909Minimal {
+interface IPoolManager is IFees {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
