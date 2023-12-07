@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
-import {FeeLibrary} from "../libraries/FeeLibrary.sol";
+import {FeeLibrary} from "./FeeLibrary.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {Lockers} from "./Lockers.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -10,6 +14,7 @@ import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 /// has leading bits '1001' which would cause the 'before initialize' and 'after modify position' hooks to be used.
 library Hooks {
     using FeeLibrary for uint24;
+    using Hooks for IHooks;
 
     uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
     uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
@@ -43,6 +48,9 @@ library Hooks {
 
     /// @notice Hook did not return its selector
     error InvalidHookResponse();
+
+    /// @notice thrown when a hook call fails
+    error FailedHookCall();
 
     /// @notice Utility function intended to be used in hook constructors to ensure
     /// the deployed hooks address causes the intended hooks to be called
@@ -82,6 +90,88 @@ library Hooks {
                     || fee.hasHookWithdrawFee()
             );
     }
+
+    /// @notice performs a hook call using the given calldat aon the given hook
+    function call(IHooks self, bytes memory data)
+        internal
+        returns (bool noop)
+    {
+        bool set = Lockers.setCurrentHook(self);
+
+        bytes4 expectedSelector;
+        assembly {
+            expectedSelector := mload(add(data, 0x20))
+        }
+
+        (bool success,  bytes memory result) = address(self).call(data);
+        if (!success) _revert(result);
+
+        bytes4 selector = abi.decode(result, (bytes4));
+
+        if (selector == expectedSelector) {
+            noop = false;
+        } else if (selector == NO_OP_SELECTOR && self.hasPermissionToNoOp()) {
+            noop = true;
+        } else {
+            revert InvalidHookResponse();
+        }
+
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+        if (set) Lockers.clearCurrentHook();
+    }
+
+    function beforeModifyPosition(
+        IHooks self,
+        PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params,
+        bytes calldata hookData
+    ) internal returns (bool noop) {
+        if (self.shouldCallBeforeModifyPosition()) {
+            noop = self.call(
+                abi.encodeWithSelector(IHooks.beforeModifyPosition.selector, msg.sender, key, params, hookData)
+            );
+        }
+    }
+
+    function afterModifyPosition(
+        IHooks self,
+        PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params,
+        BalanceDelta delta,
+        bytes calldata hookData
+    ) internal {
+        if (key.hooks.shouldCallAfterModifyPosition()) {
+            self.call(
+                abi.encodeWithSelector(IHooks.afterModifyPosition.selector, msg.sender, key, params, delta, hookData)
+            );
+        }
+    }
+
+    function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
+        internal
+        returns (bool noop)
+    {
+        if (key.hooks.shouldCallBeforeSwap()) {
+            noop = self.call(
+                abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData)
+            );
+        }
+    }
+
+    function afterSwap(
+        IHooks self,
+        PoolKey memory key,
+        IPoolManager.SwapParams memory params,
+        BalanceDelta delta,
+        bytes calldata hookData
+    ) internal {
+        if (key.hooks.shouldCallAfterSwap()) {
+            self.call(
+                abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData)
+            );
+        }
+    }
+
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & BEFORE_INITIALIZE_FLAG != 0;
@@ -125,5 +215,16 @@ library Hooks {
 
     function isValidNoOpCall(IHooks self, bytes4 selector) internal pure returns (bool) {
         return hasPermissionToNoOp(self) && selector == NO_OP_SELECTOR;
+    }
+
+    /// @notice bubble up revert if present. Else throw FailedHookCall
+    function _revert(bytes memory result) private pure {
+        if (result.length > 0) {
+            assembly {
+                revert(add(0x20, result), mload(result))
+            }
+        } else {
+            revert FailedHookCall();
+        }
     }
 }

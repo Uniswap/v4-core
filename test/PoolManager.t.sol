@@ -905,6 +905,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         MockHooks mockHooks = MockHooks(hookAddr);
 
         key = PoolKey({currency0: currency0, currency1: currency1, fee: 100, hooks: mockHooks, tickSpacing: 10});
+        assertFalse(Hooks.isValidHookAddress(IHooks(hookAddr), 3000));
 
         // Fails at beforeInitialize hook when it returns a NoOp
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, Hooks.NO_OP_SELECTOR);
