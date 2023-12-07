@@ -21,6 +21,7 @@ import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
+import {PoolGetters} from "./libraries/PoolGetters.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
@@ -32,6 +33,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     using CurrencyLibrary for Currency;
     using LockDataLibrary for IPoolManager.LockData;
     using FeeLibrary for uint24;
+    using PoolGetters for Pool.State;
 
     /// @inheritdoc IPoolManager
     int24 public constant override MAX_TICK_SPACING = type(int16).max;
@@ -448,6 +450,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
     function getCurrentHook() external view returns (IHooks) {
         return Lockers.getCurrentHook();
+    }
+
+    function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory) {
+        return pools[id].getPoolTickInfo(tick);
+    }
+
+    function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
+        return pools[id].getPoolBitmapInfo(word);
     }
 
     /// @notice receive native tokens for native pools
