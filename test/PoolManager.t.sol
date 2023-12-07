@@ -753,9 +753,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         uint8 fee0 = uint8(protocolFee >> 8);
         uint8 fee1 = uint8(protocolFee % 256);
-
         if ((0 < fee0 && fee0 < 4) || (0 < fee1 && fee1 < 4)) {
-            vm.expectRevert(IFees.FeeTooLarge.selector);
+            vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
             manager.setProtocolFee(key);
         } else {
             vm.expectEmit(false, false, false, true);
@@ -765,6 +764,40 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             (slot0,,,) = manager.pools(key.toId());
             assertEq(slot0.protocolFee, protocolFee);
         }
+    }
+
+    function test_setProtocolFee_failsWithInvalidProtocolFeeControllers() public {
+        uint24 protocolFee = 4;
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFee, 0);
+
+        manager.setProtocolFeeController(revertingFeeController);
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        manager.setProtocolFee(key);
+
+        manager.setProtocolFeeController(outOfBoundsFeeController);
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        manager.setProtocolFee(key);
+
+        manager.setProtocolFeeController(overflowFeeController);
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        manager.setProtocolFee(key);
+
+        manager.setProtocolFeeController(invalidReturnSizeFeeController);
+        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        manager.setProtocolFee(key);
+    }
+
+    function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
+        uint16 protocolFee = 1028; // 00000100 00000100
+
+        // sets the upper 12 bits
+        feeController.setSwapFeeForPool(uninitializedKey.toId(), uint16(protocolFee));
+
+        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
+        assertEq(slot0.protocolFee, protocolFee);
     }
 
     function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees_gas() public {

@@ -18,7 +18,6 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {PoolIdLibrary} from "../src/types/PoolId.sol";
-import {console2} from "lib/forge-std/src/console2.sol";
 
 contract AccessLockTest is Test, Deployers {
     using Pool for Pool.State;

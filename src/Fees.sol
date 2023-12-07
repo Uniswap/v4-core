@@ -29,18 +29,31 @@ abstract contract Fees is IFees, Owned {
         controllerGasLimit = _controllerGasLimit;
     }
 
-    function _fetchProtocolFees(PoolKey memory key) internal view returns (uint16 protocolFees) {
+    /// @notice Fetch the protocol fees for a given pool, returning false if the call fails or the returned fees are invalid.
+    /// @dev to prevent an invalid protocol fee controller from blocking pools from being initialized
+    ///      the success of this function is NOT checked on initialize and if the call fails, the protocol fees are set to 0.
+    /// @dev the success of this function must be checked when called in setProtocolFee
+    function _fetchProtocolFee(PoolKey memory key) internal returns (bool success, uint16 protocolFees) {
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
             // in mind.
             if (gasleft() < controllerGasLimit) revert ProtocolFeeCannotBeFetched();
-            try protocolFeeController.protocolFeesForPool{gas: controllerGasLimit}(key) returns (
-                uint16 updatedProtocolFees
-            ) {
-                protocolFees = updatedProtocolFees;
-            } catch {}
-            _checkProtocolFee(protocolFees);
+
+            (bool _success, bytes memory _data) = address(protocolFeeController).call{gas: controllerGasLimit}(
+                abi.encodeWithSelector(IProtocolFeeController.protocolFeeForPool.selector, key)
+            );
+            // Ensure that the return data fits within a word
+            if (!_success || _data.length > 32) return (false, 0);
+
+            uint256 returnData;
+            assembly {
+                returnData := mload(add(_data, 0x20))
+            }
+            // Ensure return data does not overflow a uint16 and that the underlying fees are within bounds.
+            (success, protocolFees) = returnData == uint16(returnData) && _isFeeWithinBounds(uint16(returnData))
+                ? (true, uint16(returnData))
+                : (false, 0);
         }
     }
 
@@ -49,8 +62,7 @@ abstract contract Fees is IFees, Owned {
         if (dynamicSwapFee >= MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
-    /// @dev Only the lower 12 bits are used here to encode the fee denominator.
-    function _checkProtocolFee(uint16 fee) internal pure {
+    function _isFeeWithinBounds(uint16 fee) internal pure returns (bool) {
         if (fee != 0) {
             uint16 fee0 = fee % 256;
             uint16 fee1 = fee >> 8;
@@ -58,9 +70,10 @@ abstract contract Fees is IFees, Owned {
             if (
                 (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
             ) {
-                revert FeeTooLarge();
+                return false;
             }
         }
+        return true;
     }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {

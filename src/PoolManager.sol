@@ -126,10 +126,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         }
 
         PoolId id = key.toId();
-
+        (, uint16 protocolFee) = _fetchProtocolFee(key);
         uint24 swapFee = key.fee.isDynamicFee() ? _fetchDynamicSwapFee(key) : key.fee.getStaticFee();
 
-        tick = pools[id].initialize(sqrtPriceX96, _fetchProtocolFees(key), swapFee);
+        tick = pools[id].initialize(sqrtPriceX96, protocolFee, swapFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (
@@ -368,10 +368,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     function setProtocolFee(PoolKey memory key) external {
-        uint16 newProtocolFees = _fetchProtocolFees(key);
+        (bool success, uint16 newProtocolFee) = _fetchProtocolFee(key);
+        if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
         PoolId id = key.toId();
-        pools[id].setProtocolFee(newProtocolFees);
-        emit ProtocolFeeUpdated(id, newProtocolFees);
+        pools[id].setProtocolFee(newProtocolFee);
+        emit ProtocolFeeUpdated(id, newProtocolFee);
     }
 
     function updateDynamicSwapFee(PoolKey memory key) external {
