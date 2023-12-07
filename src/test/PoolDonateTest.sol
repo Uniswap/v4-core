@@ -67,11 +67,13 @@ contract PoolDonateTest is PoolTestBase, Test {
                 assertEq(deltaAfter1, int256(data.amount1));
             }
         }
+
         if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
             // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
             assertTrue(data.key.hooks.hasPermissionToNoOp(), "Invalid NoOp returned");
             return abi.encode(delta);
         }
+
         if (deltaAfter0 > 0) _settle(data.key.currency0, data.sender, int128(deltaAfter0), true);
         if (deltaAfter1 > 0) _settle(data.key.currency1, data.sender, int128(deltaAfter1), true);
         if (deltaAfter0 < 0) _take(data.key.currency0, data.sender, int128(deltaAfter0), true);
