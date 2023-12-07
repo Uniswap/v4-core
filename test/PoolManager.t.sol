@@ -799,7 +799,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
-        uint24 protocolFee = 16644; // 0100000100000100
+        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
 
         // sets the upper 12 bits
         feeController.setSwapFeeForPool(uninitializedKey.toId(), uint16(protocolFee));
@@ -809,9 +809,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(slot0.protocolFees, protocolFee << 12);
     }
 
-    function test_collectProtocolFees_ERC20_returnsCorrectFeesWithParameters(uint256 swapAmount, uint256 balanceToClaim) public {
+    function test_collectProtocolFees_ERC20_returnsCorrectFeesWithParameters(uint256 swapAmount, uint256 balanceToClaim)
+        public
+    {
         vm.assume(swapAmount > 0);
-        uint24 protocolFee = 16644; // 0100000100000100
+        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
         address protocolFeeRecipient = address(1);
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
         manager.setProtocolFees(key);
@@ -825,7 +827,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         swapRouter.swap(
             // zeroForOne for now
-            key, IPoolManager.SwapParams(true, SafeCast.toInt256(swapAmount), SQRT_RATIO_1_2), PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES
+            key,
+            IPoolManager.SwapParams(true, SafeCast.toInt256(swapAmount), SQRT_RATIO_1_2),
+            PoolSwapTest.TestSettings(true, true, false),
+            ZERO_BYTES
         );
 
         assertEq(manager.balanceOf(address(feeController), currency0.toId()), expectedFees);
@@ -833,19 +838,17 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(currency0.balanceOf(protocolFeeRecipient), 0);
 
         vm.prank(address(feeController));
-        if(balanceToClaim == 0 || balanceToClaim == expectedFees) {
+        if (balanceToClaim == 0 || balanceToClaim == expectedFees) {
             // Expect that they claimed their entire balance
             manager.collectProtocolFees(protocolFeeRecipient, currency0, balanceToClaim);
             assertEq(currency0.balanceOf(protocolFeeRecipient), expectedFees);
             assertEq(manager.balanceOf(address(feeController), currency0.toId()), 0);
-        }
-        else if (balanceToClaim < expectedFees) {
+        } else if (balanceToClaim < expectedFees) {
             // Expect that they claimed some of their balance
             manager.collectProtocolFees(protocolFeeRecipient, currency0, balanceToClaim);
             assertEq(currency0.balanceOf(protocolFeeRecipient), balanceToClaim);
             assertEq(manager.balanceOf(address(feeController), currency0.toId()), expectedFees - balanceToClaim);
-        }
-        else {
+        } else {
             // Must revert
             vm.expectRevert();
             manager.collectProtocolFees(protocolFeeRecipient, currency0, balanceToClaim);
@@ -853,7 +856,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter_gas() public {
-        uint24 protocolFee = 16644; // 0100000100000100
+        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
         uint256 expectedFees = 7;
 
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
@@ -1101,7 +1104,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees_gas() public {
-        uint24 protocolFee = 16644; // 0100000100000100
+        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
@@ -1131,7 +1134,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint24 protocolFee = 16644; // 0100000100000100
+        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 

@@ -300,7 +300,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
         unchecked {
             if (feeForProtocol > 0) {
-                _mint(address(protocolFeeController), params.zeroForOne ? key.currency0.toId() : key.currency1.toId(), feeForProtocol);
+                _mint(
+                    address(protocolFeeController),
+                    params.zeroForOne ? key.currency0.toId() : key.currency1.toId(),
+                    feeForProtocol
+                );
             }
             if (feeForHook > 0) {
                 hookFeesAccrued[address(key.hooks)][params.zeroForOne ? key.currency0 : key.currency1] += feeForHook;
