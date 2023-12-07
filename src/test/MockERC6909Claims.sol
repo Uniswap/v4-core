@@ -2,11 +2,11 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {V46909} from "../V46909.sol";
+import {ERC6909Claims} from "../ERC6909Claims.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 
-/// @notice Mock contract for testing V46909
-contract MockV46909 is V46909 {
+/// @notice Mock contract for testing ERC6909Claims
+contract MockERC6909Claims is ERC6909Claims {
     using CurrencyLibrary for Currency;
 
     /// @notice mocked mint logic without delta accounting

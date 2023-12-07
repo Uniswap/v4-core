@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {ERC6909} from "solmate/tokens/ERC6909.sol";
 
-contract V46909 is ERC6909 {
+abstract contract ERC6909Claims is ERC6909 {
     /// @notice Burn `amount` tokens of token type `id` from `from`.
     /// @param from The address to burn tokens from.
     /// @param id The currency to burn.
