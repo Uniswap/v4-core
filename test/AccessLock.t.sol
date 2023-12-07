@@ -642,7 +642,6 @@ contract AccessLockTest is Test, Deployers {
 
     function test_onlyByLocker_revertsWhenHookIsNotCurrentHook() public {
         // Call first access lock hook. Should succeed.
-        uint256 amount = 100;
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
