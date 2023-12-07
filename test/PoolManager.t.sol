@@ -221,7 +221,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.beforeAddLiquidity.selector, bytes4(0xdeadbeef));
         mockHooks.setReturnValue(mockHooks.afterAddLiquidity.selector, bytes4(0xdeadbeef));
 
-        // Fails at beforeModifyPosition hook.
+        // Fails at beforeAddLiquidity hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
 
@@ -244,11 +244,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, bytes4(0xdeadbeef));
         mockHooks.setReturnValue(mockHooks.afterRemoveLiquidity.selector, bytes4(0xdeadbeef));
 
-        // Fails at beforeModifyPosition hook.
+        // Fails at beforeRemoveLiquidity hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.removeLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
 
-        // Fail at afterAddLiquidity hook.
+        // Fail at afterRemoveLiquidity hook.
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, mockHooks.beforeRemoveLiquidity.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.removeLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
@@ -556,11 +556,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, bytes4(0xdeadbeef));
 
-        // Fails at beforeModifyPosition hook.
+        // Fails at beforeSwap hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
 
-        // Fail at afterAddLiquidity hook.
+        // Fail at afterSwap hook.
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, mockHooks.beforeSwap.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
