@@ -7,6 +7,7 @@ import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
+import {ERC6909Claims} from "../../src/ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {FeeLibrary} from "../../src/libraries/FeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
@@ -14,9 +15,16 @@ import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
 import {PoolModifyPositionTest} from "../../src/test/PoolModifyPositionTest.sol";
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
+import {PoolInitializeTest} from "../../src/test/PoolInitializeTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
-import {ProtocolFeeControllerTest} from "../../src/test/ProtocolFeeControllerTest.sol";
+import {
+    ProtocolFeeControllerTest,
+    OutOfBoundsProtocolFeeControllerTest,
+    RevertingProtocolFeeControllerTest,
+    OverflowProtocolFeeControllerTest,
+    InvalidReturnSizeProtocolFeeControllerTest
+} from "../../src/test/ProtocolFeeControllerTest.sol";
 
 contract Deployers {
     using FeeLibrary for uint24;
@@ -26,6 +34,7 @@ contract Deployers {
     bytes constant ZERO_BYTES = new bytes(0);
     uint160 constant SQRT_RATIO_1_1 = Constants.SQRT_RATIO_1_1;
     uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
+    uint160 constant SQRT_RATIO_2_1 = Constants.SQRT_RATIO_2_1;
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
     uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
 
@@ -40,7 +49,12 @@ contract Deployers {
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
+    PoolInitializeTest initializeRouter;
     ProtocolFeeControllerTest feeController;
+    RevertingProtocolFeeControllerTest revertingFeeController;
+    OutOfBoundsProtocolFeeControllerTest outOfBoundsFeeController;
+    OverflowProtocolFeeControllerTest overflowFeeController;
+    InvalidReturnSizeProtocolFeeControllerTest invalidReturnSizeFeeController;
 
     PoolKey key;
     PoolKey nativeKey;
@@ -57,19 +71,30 @@ contract Deployers {
         modifyPositionRouter = new PoolModifyPositionTest(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
+        initializeRouter = new PoolInitializeTest(manager);
         feeController = new ProtocolFeeControllerTest();
+        revertingFeeController = new RevertingProtocolFeeControllerTest();
+        outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
+        overflowFeeController = new OverflowProtocolFeeControllerTest();
+        invalidReturnSizeFeeController = new InvalidReturnSizeProtocolFeeControllerTest();
+
         manager.setProtocolFeeController(feeController);
     }
 
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
-        MockERC20[] memory tokens = deployTokens(2, 1000 ether);
+        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
 
-        address[4] memory toApprove =
-            [address(swapRouter), address(modifyPositionRouter), address(donateRouter), address(takeRouter)];
+        address[5] memory toApprove = [
+            address(swapRouter),
+            address(modifyPositionRouter),
+            address(donateRouter),
+            address(takeRouter),
+            address(initializeRouter)
+        ];
 
         for (uint256 i = 0; i < toApprove.length; i++) {
-            tokens[0].approve(toApprove[i], 1000 ether);
-            tokens[1].approve(toApprove[i], 1000 ether);
+            tokens[0].approve(toApprove[i], Constants.MAX_UINT256);
+            tokens[1].approve(toApprove[i], Constants.MAX_UINT256);
         }
 
         return SortTokens.sort(tokens[0], tokens[1]);
@@ -93,7 +118,7 @@ contract Deployers {
     ) internal returns (PoolKey memory _key, PoolId id) {
         _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = _key.toId();
-        manager.initialize(_key, sqrtPriceX96, initData);
+        initializeRouter.initialize(_key, sqrtPriceX96, initData);
     }
 
     function initPoolAndAddLiquidity(

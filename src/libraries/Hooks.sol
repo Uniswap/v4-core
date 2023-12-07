@@ -19,8 +19,12 @@ library Hooks {
     uint256 internal constant AFTER_SWAP_FLAG = 1 << 154;
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
+    uint256 internal constant NO_OP_FLAG = 1 << 151;
+    uint256 internal constant ACCESS_LOCK_FLAG = 1 << 150;
 
-    struct Calls {
+    bytes4 public constant NO_OP_SELECTOR = bytes4(keccak256(abi.encodePacked("NoOp")));
+
+    struct Permissions {
         bool beforeInitialize;
         bool afterInitialize;
         bool beforeModifyPosition;
@@ -29,6 +33,8 @@ library Hooks {
         bool afterSwap;
         bool beforeDonate;
         bool afterDonate;
+        bool noOp;
+        bool accessLock;
     }
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
@@ -40,16 +46,19 @@ library Hooks {
 
     /// @notice Utility function intended to be used in hook constructors to ensure
     /// the deployed hooks address causes the intended hooks to be called
-    /// @param calls The hooks that are intended to be called
-    /// @dev calls param is memory as the function will be called from constructors
-    function validateHookAddress(IHooks self, Calls memory calls) internal pure {
+    /// @param permissions The hooks that are intended to be called
+    /// @dev permissions param is memory as the function will be called from constructors
+    function validateHookPermissions(IHooks self, Permissions memory permissions) internal pure {
         if (
-            calls.beforeInitialize != shouldCallBeforeInitialize(self)
-                || calls.afterInitialize != shouldCallAfterInitialize(self)
-                || calls.beforeModifyPosition != shouldCallBeforeModifyPosition(self)
-                || calls.afterModifyPosition != shouldCallAfterModifyPosition(self)
-                || calls.beforeSwap != shouldCallBeforeSwap(self) || calls.afterSwap != shouldCallAfterSwap(self)
-                || calls.beforeDonate != shouldCallBeforeDonate(self) || calls.afterDonate != shouldCallAfterDonate(self)
+            permissions.beforeInitialize != shouldCallBeforeInitialize(self)
+                || permissions.afterInitialize != shouldCallAfterInitialize(self)
+                || permissions.beforeModifyPosition != shouldCallBeforeModifyPosition(self)
+                || permissions.afterModifyPosition != shouldCallAfterModifyPosition(self)
+                || permissions.beforeSwap != shouldCallBeforeSwap(self)
+                || permissions.afterSwap != shouldCallAfterSwap(self)
+                || permissions.beforeDonate != shouldCallBeforeDonate(self)
+                || permissions.afterDonate != shouldCallAfterDonate(self) || permissions.noOp != hasPermissionToNoOp(self)
+                || permissions.accessLock != hasPermissionToAccessLock(self)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -58,11 +67,18 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
+        // if NoOp is allowed, at least one of beforeModifyPosition, beforeSwap and beforeDonate should be allowed
+        if (
+            hasPermissionToNoOp(hook) && !shouldCallBeforeModifyPosition(hook) && !shouldCallBeforeSwap(hook)
+                && !shouldCallBeforeDonate(hook)
+        ) {
+            return false;
+        }
         // If there is no hook contract set, then fee cannot be dynamic and there cannot be a hook fee on swap or withdrawal.
         return address(hook) == address(0)
             ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
             : (
-                uint160(address(hook)) >= AFTER_DONATE_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
+                uint160(address(hook)) >= ACCESS_LOCK_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
                     || fee.hasHookWithdrawFee()
             );
     }
@@ -97,5 +113,17 @@ library Hooks {
 
     function shouldCallAfterDonate(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
+    }
+
+    function hasPermissionToAccessLock(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & ACCESS_LOCK_FLAG != 0;
+    }
+
+    function hasPermissionToNoOp(IHooks self) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & NO_OP_FLAG != 0;
+    }
+
+    function isValidNoOpCall(IHooks self, bytes4 selector) internal pure returns (bool) {
+        return hasPermissionToNoOp(self) && selector == NO_OP_SELECTOR;
     }
 }

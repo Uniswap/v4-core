@@ -86,10 +86,10 @@ contract FeesTest is Test, Deployers, GasSnapshot {
             tickSpacing: 60
         });
 
-        manager.initialize(key0, SQRT_RATIO_1_1, ZERO_BYTES);
-        manager.initialize(key1, SQRT_RATIO_1_1, ZERO_BYTES);
-        manager.initialize(key2, SQRT_RATIO_1_1, ZERO_BYTES);
-        manager.initialize(key3, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key0, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key1, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key2, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key3, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testInitializeFailsNoHook() public {
@@ -102,7 +102,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         });
 
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
-        manager.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
 
         key4 = PoolKey({
             currency0: currency0,
@@ -113,7 +113,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         });
 
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(0)));
-        manager.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
+        initializeRouter.initialize(key4, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testInitializeHookSwapFee(uint16 fee) public {
@@ -178,7 +178,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
 
         if ((protocolSwapFee0 != 0 && protocolSwapFee0 < 4) || (protocolSwapFee1 != 0 && protocolSwapFee1 < 4)) {
             protocolSwapFee = 0;
-            vm.expectRevert(IFees.FeeTooLarge.selector);
+            vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         }
         manager.setProtocolFees(key0);
 
@@ -225,7 +225,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         ) {
             protocolSwapFee = 0;
             protocolWithdrawFee = 0;
-            vm.expectRevert(IFees.FeeTooLarge.selector);
+            vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         }
         manager.setProtocolFees(key2);
 
@@ -400,7 +400,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key3,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
         // key3 pool is 30 bps => 10000 * 0.003 (.3%) = 30
@@ -434,7 +434,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
 
@@ -466,7 +466,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
 
@@ -500,7 +500,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
 
@@ -538,7 +538,7 @@ contract FeesTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key0,
             IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1),
-            PoolSwapTest.TestSettings(true, true),
+            PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
 

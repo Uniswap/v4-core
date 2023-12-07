@@ -6,24 +6,24 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {IHooks} from "./IHooks.sol";
 import {IFees} from "./IFees.sol";
-import {IClaims} from "./IClaims.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IFees, IClaims {
+interface IPoolManager is IFees {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
     /// @notice Thrown when a currency is not netted out after a lock
     error CurrencyNotSettled();
 
+    /// @notice Thrown when trying to interact with a non-initialized pool
+    error PoolNotInitialized();
+
     /// @notice Thrown when a function is called by an address that is not the current locker
     /// @param locker The current locker
-    error LockedBy(address locker);
-
-    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
-    error NotPoolManagerToken();
+    /// @param currentHook The most recently called hook
+    error LockedBy(address locker, address currentHook);
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
@@ -31,7 +31,7 @@ interface IPoolManager is IFees, IClaims {
     error TickSpacingTooSmall();
 
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
-    error CurrenciesInitializedOutOfOrder();
+    error CurrenciesOutOfOrderOrEqual();
 
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
@@ -115,10 +115,13 @@ interface IPoolManager is IFees, IClaims {
     function reservesOf(Currency currency) external view returns (uint256);
 
     /// @notice Returns the locker in the ith position of the locker queue.
-    function getLock(uint256 i) external view returns (address locker);
+    function getLock(uint256 i) external view returns (address locker, address lockCaller);
 
     /// @notice Returns the length of the lockers array, which is the number of locks open on the PoolManager.
     function getLockLength() external view returns (uint256 _length);
+
+    /// @notice Returns the most recently called hook.
+    function getCurrentHook() external view returns (IHooks _currentHook);
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
@@ -134,9 +137,10 @@ interface IPoolManager is IFees, IClaims {
     function currencyDelta(address locker, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
+    /// @param lockTarget The address to call the callback on
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
     /// @return The data returned by the call to `ILockCallback(msg.sender).lockAcquired(data)`
-    function lock(bytes calldata data) external returns (bytes memory);
+    function lock(address lockTarget, bytes calldata data) external payable returns (bytes memory);
 
     struct ModifyPositionParams {
         // the lower and upper tick of the position
@@ -171,11 +175,11 @@ interface IPoolManager is IFees, IClaims {
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(Currency currency, address to, uint256 amount) external;
 
-    /// @notice Called by the user to move value into Claims balance
-    function mint(Currency token, address to, uint256 amount) external;
+    /// @notice Called by the user to move value into ERC6909 balance
+    function mint(address to, Currency token, uint256 amount) external;
 
-    /// @notice Called by the user to redeem their Claims balance
-    function burn(Currency token, uint256 amount) external;
+    /// @notice Called by the user to move value from ERC6909 balance
+    function burn(address from, Currency token, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);

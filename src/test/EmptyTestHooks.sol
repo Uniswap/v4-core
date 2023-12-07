@@ -11,8 +11,8 @@ contract EmptyTestHooks is IHooks {
     using Hooks for IHooks;
 
     constructor() {
-        IHooks(this).validateHookAddress(
-            Hooks.Calls({
+        IHooks(this).validateHookPermissions(
+            Hooks.Permissions({
                 beforeInitialize: true,
                 afterInitialize: true,
                 beforeModifyPosition: true,
@@ -20,7 +20,9 @@ contract EmptyTestHooks is IHooks {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                noOp: true,
+                accessLock: true
             })
         );
     }
