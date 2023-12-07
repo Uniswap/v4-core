@@ -36,10 +36,9 @@ interface IHooks {
     ) external returns (bytes4);
 
     /// @notice The hook called before liquidity is added
-    /// @notice only called when liquidity delta is positive
-    /// @param sender The initial msg.sender for the modify position call
+    /// @param sender The initial msg.sender for the add liquidity call
     /// @param key The key for the pool
-    /// @param params The parameters for modifying the position
+    /// @param params The parameters for adding liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function beforeAddLiquidity(
@@ -50,10 +49,9 @@ interface IHooks {
     ) external returns (bytes4);
 
     /// @notice The hook called after liquidity is added
-    /// @notice only called when liquidity delta is positive
-    /// @param sender The initial msg.sender for the modify position call
+    /// @param sender The initial msg.sender for the add liquidity call
     /// @param key The key for the pool
-    /// @param params The parameters for modifying the position
+    /// @param params The parameters for adding liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function afterAddLiquidity(
@@ -65,10 +63,9 @@ interface IHooks {
     ) external returns (bytes4);
 
     /// @notice The hook called before liquidity is removed
-    /// @notice only called when liquidity delta is negative
-    /// @param sender The initial msg.sender for the modify position call
+    /// @param sender The initial msg.sender for the remove liquidity call
     /// @param key The key for the pool
-    /// @param params The parameters for modifying the position
+    /// @param params The parameters for removing liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function beforeRemoveLiquidity(
@@ -79,10 +76,9 @@ interface IHooks {
     ) external returns (bytes4);
 
     /// @notice The hook called after liquidity is removed
-    /// @notice only called when liquidity delta is negative
-    /// @param sender The initial msg.sender for the modify position call
+    /// @param sender The initial msg.sender for the remove liquidity call
     /// @param key The key for the pool
-    /// @param params The parameters for modifying the position
+    /// @param params The parameters for removing liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function afterRemoveLiquidity(

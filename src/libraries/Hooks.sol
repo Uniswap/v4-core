@@ -7,7 +7,7 @@ import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
-/// has leading bits '1001' which would cause the 'before initialize' and 'after modify position' hooks to be used.
+/// has leading bits '1001' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
 library Hooks {
     using FeeLibrary for uint24;
 

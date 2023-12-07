@@ -76,6 +76,15 @@ contract AccessLockHook is Test, BaseTestHooks {
         return _executeAction(key, hookData, IHooks.beforeAddLiquidity.selector);
     }
 
+    function beforeRemoveLiquidity(
+        address, /* sender **/
+        PoolKey calldata key,
+        IPoolManager.ModifyPositionParams calldata, /* params **/
+        bytes calldata hookData
+    ) external override returns (bytes4) {
+        return _executeAction(key, hookData, IHooks.beforeRemoveLiquidity.selector);
+    }
+
     function _executeAction(PoolKey memory key, bytes calldata hookData, bytes4 selector) internal returns (bytes4) {
         if (hookData.length == 0) {
             // We have re-entered the hook or we are initializing liquidity in the pool before testing the lock actions.

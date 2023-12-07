@@ -16,6 +16,11 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
     using Hooks for IHooks;
     using FeeLibrary for uint24;
 
+    enum LockAction {
+        AddLiquidity,
+        RemoveLiquidity
+    }
+
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
     struct CallbackData {
@@ -23,6 +28,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         PoolKey key;
         IPoolManager.ModifyPositionParams params;
         bytes hookData;
+        LockAction action;
     }
 
     function removeLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
@@ -30,7 +36,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         payable
         returns (BalanceDelta delta)
     {
-        delta = _modifyPosition(key, params, hookData);
+        delta = _modifyPosition(key, params, hookData, LockAction.RemoveLiquidity);
     }
 
     function addLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
@@ -38,15 +44,18 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         payable
         returns (BalanceDelta delta)
     {
-        delta = _modifyPosition(key, params, hookData);
+        delta = _modifyPosition(key, params, hookData, LockAction.AddLiquidity);
     }
 
-    function _modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
-        internal
-        returns (BalanceDelta delta)
-    {
+    function _modifyPosition(
+        PoolKey memory key,
+        IPoolManager.ModifyPositionParams memory params,
+        bytes memory hookData,
+        LockAction action
+    ) internal returns (BalanceDelta delta) {
         delta = abi.decode(
-            manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, params, hookData))), (BalanceDelta)
+            manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, params, hookData, action))),
+            (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
@@ -61,7 +70,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
         BalanceDelta delta;
-        if (data.params.liquidityDelta >= 0) {
+        if (data.action == LockAction.AddLiquidity) {
             delta = manager.addLiquidity(data.key, data.params, data.hookData);
         } else {
             delta = manager.removeLiquidity(data.key, data.params, data.hookData);
@@ -75,7 +84,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
 
         // These assertions only apply in non lock-accessing pools.
         if (!data.key.hooks.hasPermissionToAccessLock()) {
-            if (data.params.liquidityDelta > 0) {
+            if (data.action == LockAction.AddLiquidity) {
                 require(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermissionToNoOp(), "assert 1 failed");
                 require(!(delta0 < 0 || delta1 < 0), "assert 2 failed");
             } else {
