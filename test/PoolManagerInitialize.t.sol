@@ -316,11 +316,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address hookEmptyAddr = EMPTY_HOOKS;
-        MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
-
         manager.setProtocolFeeController(outOfBoundsFeeController);
         // expect initialize to succeed even though the controller reverts
         vm.expectEmit(true, true, true, true);
@@ -347,11 +342,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address hookEmptyAddr = EMPTY_HOOKS;
-        MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
-
         manager.setProtocolFeeController(revertingFeeController);
         // expect initialize to succeed even though the controller reverts
         vm.expectEmit(true, true, true, true);
@@ -375,11 +365,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
 
-        address hookEmptyAddr = EMPTY_HOOKS;
-        MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
-
         manager.setProtocolFeeController(overflowFeeController);
         // expect initialize to succeed
         vm.expectEmit(true, true, true, true);
@@ -402,10 +387,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-        address hookEmptyAddr = EMPTY_HOOKS;
-        MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
 
         manager.setProtocolFeeController(invalidReturnSizeFeeController);
         // expect initialize to succeed
@@ -429,8 +410,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
         vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
-
-        address payable mockAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
 
         address hookAddr = address(99); // can't be a zero address, but does not have to have any other hook flags specified
         MockHooks impl = new MockHooks();

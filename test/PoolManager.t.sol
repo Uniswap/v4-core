@@ -720,8 +720,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_setProtocolFee_failsWithInvalidProtocolFeeControllers() public {
-        uint24 protocolFee = 4;
-
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, 0);
 
