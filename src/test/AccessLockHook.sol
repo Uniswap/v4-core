@@ -103,13 +103,13 @@ contract AccessLockHook is Test, BaseTestHooks {
         } else if (action == LockAction.AddLiquidity) {
             manager.addLiquidity(
                 key,
-                IPoolManager.ModifyPositionParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),
+                IPoolManager.ModifyPositionParams({tickLower: -60, tickUpper: 60, liquidityDelta: uint256(amount)}),
                 new bytes(0)
             );
         } else if (action == LockAction.RemoveLiquidity) {
             manager.removeLiquidity(
                 key,
-                IPoolManager.ModifyPositionParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),
+                IPoolManager.ModifyPositionParams({tickLower: -60, tickUpper: 60, liquidityDelta: uint256(amount)}),
                 new bytes(0)
             );
         } else if (action == LockAction.NoOp) {

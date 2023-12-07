@@ -146,7 +146,7 @@ interface IPoolManager is IFees, IClaims {
     /// @return The data returned by the call to `ILockCallback(msg.sender).lockAcquired(data)`
     function lock(address lockTarget, bytes calldata data) external payable returns (bytes memory);
 
-    struct ModifyPositionParams {
+    struct PoolModifyPositionParams {
         // the lower and upper tick of the position
         int24 tickLower;
         int24 tickUpper;
@@ -154,10 +154,18 @@ interface IPoolManager is IFees, IClaims {
         int256 liquidityDelta;
     }
 
+    struct ModifyPositionParams {
+        // the lower and upper tick of the position
+        int24 tickLower;
+        int24 tickUpper;
+        // how to modify the liquidity
+        uint256 liquidityDelta;
+    }
+
     /// @notice Add a new liquidity position in a pool
     /// @dev Poke by calling with a zero liquidityDelta
     /// @param key The pool to add a position in
-    /// @param params The parameters of pass into modifyPosition
+    /// @param params The parameters to pass into _modifyPosition
     /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
     /// @return delta The balance delta of the position added
     function addLiquidity(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
@@ -167,7 +175,7 @@ interface IPoolManager is IFees, IClaims {
     /// @notice Remove a liquidity position in a pool
     /// @dev Poke by calling with a zero liquidityDelta
     /// @param key The pool to remove a position in
-    /// @param params The parameters of pass into modifyPosition
+    /// @param params The parameters to pass into _modifyPosition
     /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
     /// @return delta The balance delta of the position removed
     function removeLiquidity(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)

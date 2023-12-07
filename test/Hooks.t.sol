@@ -67,7 +67,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testModifyPositionSucceedsWithHook() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
+        modifyPositionRouter.addLiquidity(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
         // TODO: test before/after burn
@@ -76,19 +76,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testBeforeAfterAddLiquidityCalledWithPositiveLiquidityDelta() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
-        assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
-        assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
-    }
-
-    function testBeforeAfterAddLiquidityNotCalledWithNegativeLiquidityDelta() public {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 10 ** 18), new bytes(111));
-        assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
-        assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
-
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, -(10 ** 18)), new bytes(222));
+        modifyPositionRouter.addLiquidity(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
     }
@@ -96,11 +84,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function testBeforeAfterAddLiquidityCalledWithZeroLiquidityDelta() public {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 10 ** 18), new bytes(111));
+        modifyPositionRouter.addLiquidity(key, IPoolManager.ModifyPositionParams(0, 60, 10 ** 18), new bytes(111));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
 
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 0), new bytes(222));
+        modifyPositionRouter.addLiquidity(key, IPoolManager.ModifyPositionParams(0, 60, 0), new bytes(222));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(222));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(222));
     }
@@ -110,7 +98,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function testAfterAddLiquidityInvalidReturn() public {
@@ -118,7 +106,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_swap_succeedsWithHook() public {

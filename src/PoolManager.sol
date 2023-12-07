@@ -199,7 +199,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        require(params.liquidityDelta.toInt128() >= 0, "Liquidity delta must be non-negative.");
         (bool set) = Lockers.setCurrentHook(key.hooks);
 
         PoolId id = key.toId();
@@ -217,7 +216,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        delta = _modifyPosition(key, params);
+        delta = _modifyPosition(
+            key,
+            IPoolManager.PoolModifyPositionParams({
+                tickLower: params.tickLower,
+                tickUpper: params.tickUpper,
+                liquidityDelta: params.liquidityDelta.toInt128()
+            })
+        );
 
         if (key.hooks.shouldCallAfterAddLiquidity()) {
             if (
@@ -238,7 +244,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        require(params.liquidityDelta.toInt128() <= 0, "Liquidity delta must be non-positive.");
         (bool set) = Lockers.setCurrentHook(key.hooks);
 
         PoolId id = key.toId();
@@ -256,7 +261,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        delta = _modifyPosition(key, params);
+        delta = _modifyPosition(
+            key,
+            IPoolManager.PoolModifyPositionParams({
+                tickLower: params.tickLower,
+                tickUpper: params.tickUpper,
+                liquidityDelta: -params.liquidityDelta.toInt128()
+            })
+        );
 
         if (key.hooks.shouldCallAfterRemoveLiquidity()) {
             if (
@@ -271,7 +283,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (set) Lockers.clearCurrentHook();
     }
 
-    function _modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params)
+    function _modifyPosition(PoolKey memory key, IPoolManager.PoolModifyPositionParams memory params)
         internal
         returns (BalanceDelta delta)
     {

@@ -25,9 +25,24 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         bytes hookData;
     }
 
-    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
+    function removeLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
         external
         payable
+        returns (BalanceDelta delta)
+    {
+        delta = _modifyPosition(key, params, hookData);
+    }
+
+    function addLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
+        external
+        payable
+        returns (BalanceDelta delta)
+    {
+        delta = _modifyPosition(key, params, hookData);
+    }
+
+    function _modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
+        internal
         returns (BalanceDelta delta)
     {
         delta = abi.decode(

@@ -113,7 +113,7 @@ contract Deployers {
         bytes memory initData
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyPositionRouter.modifyPosition{value: msg.value}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.addLiquidity{value: msg.value}(_key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function initPoolAndAddLiquidityETH(
@@ -126,7 +126,7 @@ contract Deployers {
         uint256 msgValue
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyPositionRouter.modifyPosition{value: msgValue}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.addLiquidity{value: msgValue}(_key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     // Deploys the manager, all test routers, and sets up 2 pools: with and without native
