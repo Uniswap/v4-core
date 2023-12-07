@@ -40,6 +40,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
+    /// TODO this needs to be transient
     mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
 
     /// @inheritdoc IPoolManager
