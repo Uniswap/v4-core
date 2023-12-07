@@ -465,7 +465,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.feeGrowthOutside1X128, 2);
     }
 
-    function test_getTickInfo(int24 tick, Pool.TickInfo memory info) public {
+    function test_getPoolTickInfo(int24 tick, Pool.TickInfo memory info) public {
         setTick(tick, info);
         Pool.TickInfo memory actualInfo = pool.getPoolTickInfo(tick);
         assertEq(actualInfo.liquidityGross, info.liquidityGross);
@@ -478,8 +478,6 @@ contract TickTest is Test, GasSnapshot {
         setTickBitmap(word, bitmap);
         assertEq(pool.getPoolBitmapInfo(word), bitmap);
     }
-
-    function test_getPoolTickBitmap() public {}
 
     function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public {
         vm.assume(tickSpacing <= TickMath.MAX_TICK_SPACING);
