@@ -14,7 +14,6 @@ import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {PoolIdLibrary} from "../types/PoolId.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
-import {console2} from "lib/forge-std/src/console2.sol";
 
 contract AccessLockHook is Test, BaseTestHooks {
     using PoolIdLibrary for PoolKey;
