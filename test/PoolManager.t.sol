@@ -802,6 +802,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         public
     {
         vm.assume(swapAmount > 0);
+
         uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
         address protocolFeeRecipient = address(1);
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
@@ -870,6 +871,33 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
         assertEq(currency0.balanceOf(address(1)), expectedFees);
         assertEq(manager.balanceOf(address(feeController), currency0.toId()), 0);
+    }
+
+    function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
+        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
+        uint256 expectedFees = 7;
+        Currency nativeCurrency = CurrencyLibrary.NATIVE;
+
+        feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
+        manager.setProtocolFees(nativeKey);
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
+        assertEq(slot0.protocolFees, protocolFee << 12);
+
+        swapRouter.swap{value: 10000}(
+            nativeKey,
+            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
+            PoolSwapTest.TestSettings(true, true, false),
+            ZERO_BYTES
+        );
+
+        assertEq(manager.balanceOf(address(feeController), nativeCurrency.toId()), expectedFees);
+        assertEq(manager.balanceOf(address(feeController), currency1.toId()), 0);
+        assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
+        manager.collectProtocolFees(address(1), nativeCurrency, 0);
+        assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
+        assertEq(manager.balanceOf(address(feeController), nativeCurrency.toId()), 0);
     }
 
     function test_noop_gas(uint160 sqrtPriceX96) public {
@@ -1090,63 +1118,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.beforeDonate.selector, Hooks.NO_OP_SELECTOR);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         donateRouter.donate(key, 100, 100, ZERO_BYTES);
-    }
-
-    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees_gas() public {
-        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
-        uint256 expectedFees = 7;
-        Currency nativeCurrency = CurrencyLibrary.NATIVE;
-
-        // set protocol fee before initializing the pool as it is fetched on initialization
-        feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
-        manager.setProtocolFees(nativeKey);
-
-        (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
-
-        swapRouter.swap{value: 10000}(
-            nativeKey,
-            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
-            PoolSwapTest.TestSettings(true, true, false),
-            ZERO_BYTES
-        );
-
-        assertEq(manager.balanceOf(address(feeController), nativeCurrency.toId()), expectedFees);
-        assertEq(manager.balanceOf(address(feeController), currency1.toId()), 0);
-        assertEq(nativeCurrency.balanceOf(address(1)), 0);
-        vm.prank(address(feeController));
-        snapStart("native collect protocol fees");
-        manager.collectProtocolFees(address(1), nativeCurrency, 0);
-        snapEnd();
-        assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
-        assertEq(manager.balanceOf(address(feeController), nativeCurrency.toId()), 0);
-    }
-
-    function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
-        uint256 expectedFees = 7;
-        Currency nativeCurrency = CurrencyLibrary.NATIVE;
-
-        feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
-        manager.setProtocolFees(nativeKey);
-
-        (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
-
-        swapRouter.swap{value: 10000}(
-            nativeKey,
-            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
-            PoolSwapTest.TestSettings(true, true, false),
-            ZERO_BYTES
-        );
-
-        assertEq(manager.balanceOf(address(feeController), nativeCurrency.toId()), expectedFees);
-        assertEq(manager.balanceOf(address(feeController), currency1.toId()), 0);
-        assertEq(nativeCurrency.balanceOf(address(1)), 0);
-        vm.prank(address(feeController));
-        manager.collectProtocolFees(address(1), nativeCurrency, 0);
-        assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
-        assertEq(manager.balanceOf(address(feeController), nativeCurrency.toId()), 0);
     }
 
     function test_lock_NoOpIsOk() public {
