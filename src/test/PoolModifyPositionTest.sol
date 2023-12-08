@@ -53,7 +53,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
 
         // These assertions only apply in non lock-accessing pools.
-        if (!data.key.hooks.hasPermissionToAccessLock() && !data.key.fee.hasHookWithdrawFee()) {
+        if (!data.key.hooks.hasPermissionToAccessLock()) {
             if (data.params.liquidityDelta > 0) {
                 assert(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermissionToNoOp());
                 assert(!(delta0 < 0 || delta1 < 0));
