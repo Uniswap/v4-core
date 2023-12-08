@@ -577,8 +577,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_accruesProtocolFees(uint8 protocolFee1, uint8 protocolFee0) public {
-        vm.assume(protocolFee1 >= 4);
-        vm.assume(protocolFee0 >= 4);
+        protocolFee0 = uint8(bound(protocolFee0, 4, type(uint8).max));
+        protocolFee1 = uint8(bound(protocolFee1, 4, type(uint8).max));
 
         uint16 protocolFee = (uint16(protocolFee1) << 8) | (uint16(protocolFee0) & uint16(0xFF));
 
