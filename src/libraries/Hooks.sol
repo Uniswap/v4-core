@@ -92,21 +92,37 @@ library Hooks {
     }
 
     /// @notice performs a hook call using the given calldat aon the given hook
-    function call(IHooks self, bytes memory data)
-        internal
-        returns (bool noop)
-    {
+    /// @return expectedSelector The selector that the hook is expected to return
+    /// @return selector The selector that the hook actually returned
+    function _callHook(IHooks self, bytes memory data) private returns (bytes4 expectedSelector, bytes4 selector) {
         bool set = Lockers.setCurrentHook(self);
 
-        bytes4 expectedSelector;
         assembly {
             expectedSelector := mload(add(data, 0x20))
         }
 
-        (bool success,  bytes memory result) = address(self).call(data);
+        (bool success, bytes memory result) = address(self).call(data);
         if (!success) _revert(result);
 
-        bytes4 selector = abi.decode(result, (bytes4));
+        selector = abi.decode(result, (bytes4));
+
+        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
+        if (set) Lockers.clearCurrentHook();
+    }
+
+    /// @notice performs a hook call using the given calldata on the given hook
+    function callHook(IHooks self, bytes memory data) internal {
+        (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
+
+        if (selector != expectedSelector) {
+            revert InvalidHookResponse();
+        }
+    }
+
+    /// @notice performs a hook call using the given calldata on the given hook
+    /// @return noop Whether the hook call nooped
+    function callHookNoopable(IHooks self, bytes memory data) internal returns (bool noop) {
+        (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
 
         if (selector == expectedSelector) {
             noop = false;
@@ -115,11 +131,31 @@ library Hooks {
         } else {
             revert InvalidHookResponse();
         }
-
-        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-        if (set) Lockers.clearCurrentHook();
     }
 
+    /// @notice calls beforeInitialize hook if permissioned and validates return value
+    function beforeInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
+        internal
+    {
+        if (self.shouldCallBeforeInitialize()) {
+            self.callHook(
+                abi.encodeWithSelector(IHooks.beforeInitialize.selector, msg.sender, key, sqrtPriceX96, hookData)
+            );
+        }
+    }
+
+    /// @notice calls afterInitialize hook if permissioned and validates return value
+    function afterInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, int24 tick, bytes calldata hookData)
+        internal
+    {
+        if (self.shouldCallAfterInitialize()) {
+            self.callHook(
+                abi.encodeWithSelector(IHooks.afterInitialize.selector, msg.sender, key, sqrtPriceX96, tick, hookData)
+            );
+        }
+    }
+
+    /// @notice calls beforeModifyPosition hook if permissioned and validates return value
     function beforeModifyPosition(
         IHooks self,
         PoolKey memory key,
@@ -127,12 +163,13 @@ library Hooks {
         bytes calldata hookData
     ) internal returns (bool noop) {
         if (self.shouldCallBeforeModifyPosition()) {
-            noop = self.call(
+            noop = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeModifyPosition.selector, msg.sender, key, params, hookData)
             );
         }
     }
 
+    /// @notice calls afterModifyPosition hook if permissioned and validates return value
     function afterModifyPosition(
         IHooks self,
         PoolKey memory key,
@@ -141,23 +178,25 @@ library Hooks {
         bytes calldata hookData
     ) internal {
         if (key.hooks.shouldCallAfterModifyPosition()) {
-            self.call(
+            self.callHook(
                 abi.encodeWithSelector(IHooks.afterModifyPosition.selector, msg.sender, key, params, delta, hookData)
             );
         }
     }
 
+    /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
         returns (bool noop)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
-            noop = self.call(
+            noop = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData)
             );
         }
     }
 
+    /// @notice calls afterSwap hook if permissioned and validates return value
     function afterSwap(
         IHooks self,
         PoolKey memory key,
@@ -166,12 +205,32 @@ library Hooks {
         bytes calldata hookData
     ) internal {
         if (key.hooks.shouldCallAfterSwap()) {
-            self.call(
-                abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData)
+            self.callHook(abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData));
+        }
+    }
+
+    /// @notice calls beforeDonate hook if permissioned and validates return value
+    function beforeDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
+        internal
+        returns (bool noop)
+    {
+        if (key.hooks.shouldCallBeforeDonate()) {
+            noop = self.callHookNoopable(
+                abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
             );
         }
     }
 
+    /// @notice calls afterDonate hook if permissioned and validates return value
+    function afterDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
+        internal
+    {
+        if (key.hooks.shouldCallAfterDonate()) {
+            self.callHook(
+                abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, amount0, amount1, hookData)
+            );
+        }
+    }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
         return uint256(uint160(address(self))) & BEFORE_INITIALIZE_FLAG != 0;
