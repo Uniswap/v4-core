@@ -8,6 +8,9 @@ import {PoolManager} from "../src/PoolManager.sol";
 import {Position} from "../src/libraries/Position.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {TickBitmap} from "../src/libraries/TickBitmap.sol";
+import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
+import {Constants} from "./utils/Constants.sol";
+import {SafeCast} from "../src/libraries/SafeCast.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
@@ -30,8 +33,7 @@ contract PoolTest is Test {
 
     function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
-        vm.assume(params.tickSpacing >= TickMath.MIN_TICK_SPACING);
-        vm.assume(params.tickSpacing <= TickMath.MAX_TICK_SPACING);
+        params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
         testPoolInitialize(sqrtPriceX96, 0, 0);
 
@@ -55,6 +57,19 @@ contract PoolTest is Test {
             vm.expectRevert(
                 abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickUpper, params.tickSpacing)
             );
+        } else {
+            // We need the assumptions above to calculate this
+            uint256 maxInt128InTypeU256 = uint256(uint128(Constants.MAX_UINT128));
+            (uint256 amount0, uint256 amount1) = LiquidityAmounts.getAmountsForLiquidity(
+                sqrtPriceX96,
+                TickMath.getSqrtRatioAtTick(params.tickLower),
+                TickMath.getSqrtRatioAtTick(params.tickUpper),
+                uint128(params.liquidityDelta)
+            );
+
+            if ((amount0 > maxInt128InTypeU256) || (amount1 > maxInt128InTypeU256)) {
+                vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflow.selector));
+            }
         }
 
         params.owner = address(this);
@@ -63,9 +78,8 @@ contract PoolTest is Test {
 
     function testSwap(uint160 sqrtPriceX96, uint24 swapFee, Pool.SwapParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
-        vm.assume(params.tickSpacing >= TickMath.MIN_TICK_SPACING);
-        vm.assume(params.tickSpacing <= TickMath.MAX_TICK_SPACING);
-        vm.assume(swapFee < 1000000);
+        params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        swapFee = uint24(bound(swapFee, 0, 999999));
 
         testPoolInitialize(sqrtPriceX96, 0, 0);
         Pool.Slot0 memory slot0 = state.slot0;

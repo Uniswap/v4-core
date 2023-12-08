@@ -23,14 +23,14 @@ contract ProtocolFeeControllerTest is IProtocolFeeController {
 
 /// @notice Reverts on call
 contract RevertingProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeeForPool(PoolKey memory /* key */ ) external view returns (uint16) {
+    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint16) {
         revert();
     }
 }
 
 /// @notice Returns an out of bounds protocol fee
 contract OutOfBoundsProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeeForPool(PoolKey memory /* key */ ) external view returns (uint16) {
+    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint16) {
         // set both swap and withdraw fees to 1, which is less than MIN_PROTOCOL_FEE_DENOMINATOR
         return 0x001001;
     }
@@ -38,7 +38,7 @@ contract OutOfBoundsProtocolFeeControllerTest is IProtocolFeeController {
 
 /// @notice Return a value that overflows a uint24
 contract OverflowProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeeForPool(PoolKey memory /* key */ ) external view returns (uint16) {
+    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint16) {
         assembly {
             let ptr := mload(0x40)
             mstore(ptr, 0xFFFFAAA001)
