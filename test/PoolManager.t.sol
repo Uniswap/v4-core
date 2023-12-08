@@ -88,8 +88,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_succeedsIfInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         vm.expectEmit(true, true, true, true);
         emit ModifyPosition(
@@ -136,8 +135,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_removeLiquidity_succeedsForNativeTokensIfInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         vm.expectEmit(true, true, true, true);
         emit ModifyPosition(
@@ -152,8 +150,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_succeedsWithHooksIfInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable mockAddr =
             payable(address(uint160(Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
@@ -455,8 +452,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_failsIfNotInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         key.fee = 100;
         IPoolManager.SwapParams memory params =
@@ -727,8 +723,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_donate_failsIfNoLiquidity(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         (key,) = initPool(currency0, currency1, IHooks(address(0)), 100, sqrtPriceX96, ZERO_BYTES);
 
@@ -861,8 +856,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_setProtocolFee_failsWithInvalidProtocolFeeControllers() public {
-        uint24 protocolFee = 4;
-
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, 0);
 
@@ -923,8 +916,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_gas(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(
@@ -964,8 +956,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_succeedsOnAllActions(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(
@@ -1014,8 +1005,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_failsOnUninitializedPools(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(
@@ -1052,8 +1042,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_failsOnForbiddenFunctions(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(
@@ -1106,8 +1095,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_failsWithoutNoOpFlag(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(uint160(Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG))

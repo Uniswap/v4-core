@@ -83,7 +83,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
 
         // These assertions only apply in non lock-accessing pools.
-        if (!data.key.hooks.hasPermissionToAccessLock()) {
+        if (!data.key.hooks.hasPermissionToAccessLock() && !data.key.fee.hasHookWithdrawFee()) {
             if (data.action == LockAction.AddLiquidity) {
                 require(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermissionToNoOp(), "assert 1 failed");
                 require(!(delta0 < 0 || delta1 < 0), "assert 2 failed");

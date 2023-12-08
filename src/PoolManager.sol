@@ -42,6 +42,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
+    /// TODO this needs to be transient
     mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
 
     /// @inheritdoc IPoolManager
@@ -78,13 +79,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         return pools[id].positions.get(_owner, tickLower, tickUpper).liquidity;
     }
 
-    function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
+    function getPosition(PoolId id, address _owner, int24 tickLower, int24 tickUpper)
         external
         view
         override
         returns (Position.Info memory position)
     {
-        return pools[id].positions.get(owner, tickLower, tickUpper);
+        return pools[id].positions.get(_owner, tickLower, tickUpper);
     }
 
     /// @inheritdoc IPoolManager
