@@ -706,7 +706,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testGas() public {
         snapStart("HooksShouldCallBeforeSwap");
-        Hooks.hasPermission(IHooks(address(0)), Hooks.BEFORE_SWAP_FLAG);
+        IHooks(address(0)).hasPermission(Hooks.BEFORE_SWAP_FLAG);
         snapEnd();
     }
 
