@@ -66,6 +66,8 @@ library Pool {
         int24 tick;
         // protocol swap fee represented as integer denominator (1/x), taken as a % of the LP swap fee
         // upper 8 bits are for 1->0, and the lower 8 are for 0->1
+        // the minimum permitted denominator is 4 - meaning the maximum protocol fee is 25%
+        // granularity is increments of 0.38% (100/type(uint8).max)
         uint16 protocolFee;
         // used for the swap fee, either static at initialize or dynamic via hook
         uint24 swapFee;
