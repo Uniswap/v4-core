@@ -18,7 +18,8 @@ contract PoolTest is Test {
     Pool.State state;
 
     function testPoolInitialize(uint160 sqrtPriceX96, uint16 protocolFee, uint16 hookFee, uint24 dynamicFee) public {
-        vm.assume(protocolFee < 2 ** 12 && hookFee < 2 ** 12);
+        protocolFee = uint16(bound(protocolFee, 0, (2 ** 12) - 1));
+        hookFee = uint16(bound(hookFee, 0, (2 ** 12) - 1));
 
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
             vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
@@ -45,8 +46,7 @@ contract PoolTest is Test {
 
     function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
-        vm.assume(params.tickSpacing >= TickMath.MIN_TICK_SPACING);
-        vm.assume(params.tickSpacing <= TickMath.MAX_TICK_SPACING);
+        params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
         testPoolInitialize(sqrtPriceX96, 0, 0, 0);
 
@@ -91,9 +91,8 @@ contract PoolTest is Test {
 
     function testSwap(uint160 sqrtPriceX96, uint24 swapFee, Pool.SwapParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
-        vm.assume(params.tickSpacing >= TickMath.MIN_TICK_SPACING);
-        vm.assume(params.tickSpacing <= TickMath.MAX_TICK_SPACING);
-        vm.assume(swapFee < 1000000);
+        params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        swapFee = uint24(bound(swapFee, 0, 999999));
 
         testPoolInitialize(sqrtPriceX96, 0, 0, 0);
         Pool.Slot0 memory slot0 = state.slot0;
