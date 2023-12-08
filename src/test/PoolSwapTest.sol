@@ -68,13 +68,13 @@ contract PoolSwapTest is Test, PoolTestBase {
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
 
-        if (!data.key.hooks.hasPermissionToAccessLock()) {
+        if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
             // Hanndle assertions when the hook cannot access the lock.
             // IE if the hook can access the lock, the reserves before and after are not necessarily the same. Hook can "take".
             assertEq(reserveBefore0, reserveAfter0);
             assertEq(reserveBefore1, reserveAfter1);
 
-            if (!data.key.hooks.hasPermissionToNoOp()) {
+            if (!data.key.hooks.hasPermission(Hooks.NO_OP_FLAG)) {
                 if (data.params.zeroForOne) {
                     if (data.params.amountSpecified > 0) {
                         // exact input, 0 for 1
@@ -101,7 +101,7 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
             // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
-            assertTrue(data.key.hooks.hasPermissionToNoOp(), "Invalid NoOp returned");
+            assertTrue(data.key.hooks.hasPermission(Hooks.NO_OP_FLAG), "Invalid NoOp returned");
             return abi.encode(delta);
         }
 
