@@ -38,8 +38,9 @@ contract TestBalanceDelta is Test {
         int256 bd = int256(b) + d;
 
         // make sure the addition doesn't overflow
-        vm.assume(ac == int128(ac));
-        vm.assume(bd == int128(bd));
+        if (ac != int128(ac) || bd != int128(bd)) {
+            vm.expectRevert();
+        }
 
         BalanceDelta balanceDelta = toBalanceDelta(a, b) + toBalanceDelta(c, d);
         assertEq(balanceDelta.amount0(), ac);
