@@ -103,8 +103,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_removeLiquidity_succeedsIfInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         vm.expectEmit(true, true, true, true);
         emit ModifyPosition(
@@ -119,8 +118,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_succeedsForNativeTokensIfInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         vm.expectEmit(true, true, true, true);
         emit ModifyPosition(
@@ -178,8 +176,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_removeLiquidity_succeedsWithHooksIfInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable mockAddr =
             payable(address(uint160(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)));
