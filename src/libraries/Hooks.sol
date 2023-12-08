@@ -58,15 +58,16 @@ library Hooks {
     /// @dev permissions param is memory as the function will be called from constructors
     function validateHookPermissions(IHooks self, Permissions memory permissions) internal pure {
         if (
-            permissions.beforeInitialize != shouldCallBeforeInitialize(self)
-                || permissions.afterInitialize != shouldCallAfterInitialize(self)
-                || permissions.beforeModifyPosition != shouldCallBeforeModifyPosition(self)
-                || permissions.afterModifyPosition != shouldCallAfterModifyPosition(self)
-                || permissions.beforeSwap != shouldCallBeforeSwap(self)
-                || permissions.afterSwap != shouldCallAfterSwap(self)
-                || permissions.beforeDonate != shouldCallBeforeDonate(self)
-                || permissions.afterDonate != shouldCallAfterDonate(self) || permissions.noOp != hasPermissionToNoOp(self)
-                || permissions.accessLock != hasPermissionToAccessLock(self)
+            permissions.beforeInitialize != self.hasPermission(BEFORE_INITIALIZE_FLAG)
+                || permissions.afterInitialize != self.hasPermission(AFTER_INITIALIZE_FLAG)
+                || permissions.beforeModifyPosition != self.hasPermission(BEFORE_MODIFY_POSITION_FLAG)
+                || permissions.afterModifyPosition != self.hasPermission(AFTER_MODIFY_POSITION_FLAG)
+                || permissions.beforeSwap != self.hasPermission(BEFORE_SWAP_FLAG)
+                || permissions.afterSwap != self.hasPermission(AFTER_SWAP_FLAG)
+                || permissions.beforeDonate != self.hasPermission(BEFORE_DONATE_FLAG)
+                || permissions.afterDonate != self.hasPermission(AFTER_DONATE_FLAG)
+                || permissions.noOp != self.hasPermission(NO_OP_FLAG)
+                || permissions.accessLock != self.hasPermission(ACCESS_LOCK_FLAG)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -77,8 +78,8 @@ library Hooks {
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
         // if NoOp is allowed, at least one of beforeModifyPosition, beforeSwap and beforeDonate should be allowed
         if (
-            hasPermissionToNoOp(hook) && !shouldCallBeforeModifyPosition(hook) && !shouldCallBeforeSwap(hook)
-                && !shouldCallBeforeDonate(hook)
+            hook.hasPermission(NO_OP_FLAG) && !hook.hasPermission(BEFORE_MODIFY_POSITION_FLAG)
+                && !hook.hasPermission(BEFORE_SWAP_FLAG) && !hook.hasPermission(BEFORE_DONATE_FLAG)
         ) {
             return false;
         }
@@ -126,7 +127,7 @@ library Hooks {
 
         if (selector == expectedSelector) {
             shouldExecute = true;
-        } else if (selector == NO_OP_SELECTOR && self.hasPermissionToNoOp()) {
+        } else if (selector == NO_OP_SELECTOR && self.hasPermission(NO_OP_FLAG)) {
             shouldExecute = false;
         } else {
             revert InvalidHookResponse();
@@ -137,7 +138,7 @@ library Hooks {
     function beforeInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         internal
     {
-        if (self.shouldCallBeforeInitialize()) {
+        if (self.hasPermission(BEFORE_INITIALIZE_FLAG)) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.beforeInitialize.selector, msg.sender, key, sqrtPriceX96, hookData)
             );
@@ -148,7 +149,7 @@ library Hooks {
     function afterInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, int24 tick, bytes calldata hookData)
         internal
     {
-        if (self.shouldCallAfterInitialize()) {
+        if (self.hasPermission(AFTER_INITIALIZE_FLAG)) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterInitialize.selector, msg.sender, key, sqrtPriceX96, tick, hookData)
             );
@@ -162,7 +163,7 @@ library Hooks {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) internal returns (bool shouldExecute) {
-        if (self.shouldCallBeforeModifyPosition()) {
+        if (self.hasPermission(BEFORE_MODIFY_POSITION_FLAG)) {
             shouldExecute = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeModifyPosition.selector, msg.sender, key, params, hookData)
             );
@@ -179,7 +180,7 @@ library Hooks {
         BalanceDelta delta,
         bytes calldata hookData
     ) internal {
-        if (key.hooks.shouldCallAfterModifyPosition()) {
+        if (key.hooks.hasPermission(AFTER_MODIFY_POSITION_FLAG)) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterModifyPosition.selector, msg.sender, key, params, delta, hookData)
             );
@@ -191,7 +192,7 @@ library Hooks {
         internal
         returns (bool shouldExecute)
     {
-        if (key.hooks.shouldCallBeforeSwap()) {
+        if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
             shouldExecute = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData)
             );
@@ -208,7 +209,7 @@ library Hooks {
         BalanceDelta delta,
         bytes calldata hookData
     ) internal {
-        if (key.hooks.shouldCallAfterSwap()) {
+        if (key.hooks.hasPermission(AFTER_SWAP_FLAG)) {
             self.callHook(abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData));
         }
     }
@@ -218,7 +219,7 @@ library Hooks {
         internal
         returns (bool shouldExecute)
     {
-        if (key.hooks.shouldCallBeforeDonate()) {
+        if (key.hooks.hasPermission(BEFORE_DONATE_FLAG)) {
             shouldExecute = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
             );
@@ -231,55 +232,15 @@ library Hooks {
     function afterDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         internal
     {
-        if (key.hooks.shouldCallAfterDonate()) {
+        if (key.hooks.hasPermission(AFTER_DONATE_FLAG)) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, amount0, amount1, hookData)
             );
         }
     }
 
-    function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & BEFORE_INITIALIZE_FLAG != 0;
-    }
-
-    function shouldCallAfterInitialize(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & AFTER_INITIALIZE_FLAG != 0;
-    }
-
-    function shouldCallBeforeModifyPosition(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & BEFORE_MODIFY_POSITION_FLAG != 0;
-    }
-
-    function shouldCallAfterModifyPosition(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & AFTER_MODIFY_POSITION_FLAG != 0;
-    }
-
-    function shouldCallBeforeSwap(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & BEFORE_SWAP_FLAG != 0;
-    }
-
-    function shouldCallAfterSwap(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & AFTER_SWAP_FLAG != 0;
-    }
-
-    function shouldCallBeforeDonate(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & BEFORE_DONATE_FLAG != 0;
-    }
-
-    function shouldCallAfterDonate(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & AFTER_DONATE_FLAG != 0;
-    }
-
-    function hasPermissionToAccessLock(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & ACCESS_LOCK_FLAG != 0;
-    }
-
-    function hasPermissionToNoOp(IHooks self) internal pure returns (bool) {
-        return uint256(uint160(address(self))) & NO_OP_FLAG != 0;
-    }
-
-    function isValidNoOpCall(IHooks self, bytes4 selector) internal pure returns (bool) {
-        return hasPermissionToNoOp(self) && selector == NO_OP_SELECTOR;
+    function hasPermission(IHooks self, uint256 flag) internal pure returns (bool) {
+        return uint256(uint160(address(self))) & flag != 0;
     }
 
     /// @notice bubble up revert if present. Else throw FailedHookCall
