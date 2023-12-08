@@ -120,14 +120,14 @@ library Hooks {
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
-    /// @return noop Whether the hook call nooped
-    function callHookNoopable(IHooks self, bytes memory data) internal returns (bool noop) {
+    /// @return shouldExecute Whether the operation should be executed or nooped
+    function callHookNoopable(IHooks self, bytes memory data) internal returns (bool shouldExecute) {
         (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
 
         if (selector == expectedSelector) {
-            noop = false;
+            shouldExecute = true;
         } else if (selector == NO_OP_SELECTOR && self.hasPermissionToNoOp()) {
-            noop = true;
+            shouldExecute = false;
         } else {
             revert InvalidHookResponse();
         }
@@ -161,11 +161,13 @@ library Hooks {
         PoolKey memory key,
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
-    ) internal returns (bool noop) {
+    ) internal returns (bool shouldExecute) {
         if (self.shouldCallBeforeModifyPosition()) {
-            noop = self.callHookNoopable(
+            shouldExecute = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeModifyPosition.selector, msg.sender, key, params, hookData)
             );
+        } else {
+            return true;
         }
     }
 
@@ -187,12 +189,14 @@ library Hooks {
     /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
-        returns (bool noop)
+        returns (bool shouldExecute)
     {
         if (key.hooks.shouldCallBeforeSwap()) {
-            noop = self.callHookNoopable(
+            shouldExecute = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData)
             );
+        } else {
+            return true;
         }
     }
 
@@ -212,12 +216,14 @@ library Hooks {
     /// @notice calls beforeDonate hook if permissioned and validates return value
     function beforeDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         internal
-        returns (bool noop)
+        returns (bool shouldExecute)
     {
         if (key.hooks.shouldCallBeforeDonate()) {
-            noop = self.callHookNoopable(
+            shouldExecute = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
             );
+        } else {
+            return true;
         }
     }
 

@@ -185,7 +185,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (key.hooks.beforeModifyPosition(key, params, hookData)) {
+        if (!key.hooks.beforeModifyPosition(key, params, hookData)) {
             return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
@@ -233,7 +233,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (key.hooks.beforeSwap(key, params, hookData)) {
+        if (!key.hooks.beforeSwap(key, params, hookData)) {
             return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
@@ -280,7 +280,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (key.hooks.beforeDonate(key, amount0, amount1, hookData)) {
+        if (!key.hooks.beforeDonate(key, amount0, amount1, hookData)) {
             return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
