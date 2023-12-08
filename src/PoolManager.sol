@@ -100,7 +100,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     function _checkLocker(address caller, address locker, IHooks hook) internal pure {
         if (caller == locker) return;
-        if (caller == address(hook) && hook.hasPermissionToAccessLock()) return;
+        if (caller == address(hook) && hook.hasPermission(Hooks.ACCESS_LOCK_FLAG)) return;
         revert LockedBy(locker, address(hook));
     }
 
@@ -119,14 +119,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
-        (bool set) = Lockers.setCurrentHook(key.hooks);
-
-        if (key.hooks.shouldCallBeforeInitialize()) {
-            if (key.hooks.beforeInitialize(msg.sender, key, sqrtPriceX96, hookData) != IHooks.beforeInitialize.selector)
-            {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
+        key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
         PoolId id = key.toId();
         (, uint16 protocolFee) = _fetchProtocolFee(key);
@@ -134,17 +127,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         tick = pools[id].initialize(sqrtPriceX96, protocolFee, swapFee);
 
-        if (key.hooks.shouldCallAfterInitialize()) {
-            if (
-                key.hooks.afterInitialize(msg.sender, key, sqrtPriceX96, tick, hookData)
-                    != IHooks.afterInitialize.selector
-            ) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
-
-        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-        if (set) Lockers.clearCurrentHook();
+        key.hooks.afterInitialize(key, sqrtPriceX96, tick, hookData);
 
         // On intitalize we emit the key's fee, which tells us all fee settings a pool can have: either a static swap fee or dynamic swap fee and if the hook has enabled swap or withdraw fees.
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
@@ -199,21 +182,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        (bool set) = Lockers.setCurrentHook(key.hooks);
-
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (key.hooks.shouldCallBeforeModifyPosition()) {
-            bytes4 selector = key.hooks.beforeModifyPosition(msg.sender, key, params, hookData);
-            // Sentinel return value used to signify that a NoOp occurred.
-            if (key.hooks.isValidNoOpCall(selector)) {
-                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-                if (set) Lockers.clearCurrentHook();
-                return BalanceDeltaLibrary.MAXIMUM_DELTA;
-            } else if (selector != IHooks.beforeModifyPosition.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
+        if (!key.hooks.beforeModifyPosition(key, params, hookData)) {
+            return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
         delta = pools[id].modifyPosition(
@@ -228,17 +201,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         _accountPoolBalanceDelta(key, delta);
 
-        if (key.hooks.shouldCallAfterModifyPosition()) {
-            if (
-                key.hooks.afterModifyPosition(msg.sender, key, params, delta, hookData)
-                    != IHooks.afterModifyPosition.selector
-            ) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
-
-        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-        if (set) Lockers.clearCurrentHook();
+        key.hooks.afterModifyPosition(key, params, delta, hookData);
 
         emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
@@ -251,21 +214,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        (bool set) = Lockers.setCurrentHook(key.hooks);
-
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (key.hooks.shouldCallBeforeSwap()) {
-            bytes4 selector = key.hooks.beforeSwap(msg.sender, key, params, hookData);
-            // Sentinel return value used to signify that a NoOp occurred.
-            if (key.hooks.isValidNoOpCall(selector)) {
-                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-                if (set) Lockers.clearCurrentHook();
-                return BalanceDeltaLibrary.MAXIMUM_DELTA;
-            } else if (selector != IHooks.beforeSwap.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
+        if (!key.hooks.beforeSwap(key, params, hookData)) {
+            return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
         uint256 feeForProtocol;
@@ -289,14 +242,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        if (key.hooks.shouldCallAfterSwap()) {
-            if (key.hooks.afterSwap(msg.sender, key, params, delta, hookData) != IHooks.afterSwap.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
-
-        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-        if (set) Lockers.clearCurrentHook();
+        key.hooks.afterSwap(key, params, delta, hookData);
 
         emit Swap(
             id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
@@ -311,35 +257,18 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         onlyByLocker
         returns (BalanceDelta delta)
     {
-        (bool set) = Lockers.setCurrentHook(key.hooks);
-
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (key.hooks.shouldCallBeforeDonate()) {
-            bytes4 selector = key.hooks.beforeDonate(msg.sender, key, amount0, amount1, hookData);
-            // Sentinel return value used to signify that a NoOp occurred.
-            if (key.hooks.isValidNoOpCall(selector)) {
-                // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-                if (set) Lockers.clearCurrentHook();
-                return BalanceDeltaLibrary.MAXIMUM_DELTA;
-            } else if (selector != IHooks.beforeDonate.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
+        if (!key.hooks.beforeDonate(key, amount0, amount1, hookData)) {
+            return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
         delta = pools[id].donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta);
 
-        if (key.hooks.shouldCallAfterDonate()) {
-            if (key.hooks.afterDonate(msg.sender, key, amount0, amount1, hookData) != IHooks.afterDonate.selector) {
-                revert Hooks.InvalidHookResponse();
-            }
-        }
-
-        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-        if (set) Lockers.clearCurrentHook();
+        key.hooks.afterDonate(key, amount0, amount1, hookData);
     }
 
     /// @inheritdoc IPoolManager

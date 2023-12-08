@@ -25,6 +25,7 @@ import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
+    using Hooks for IHooks;
 
     address payable ALL_HOOKS_ADDRESS = payable(0xfF00000000000000000000000000000000000000);
     MockHooks mockHooks;
@@ -154,16 +155,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeInitialize(uint160 addr) public {
@@ -185,16 +186,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAfterInitialize(uint160 addr) public {
@@ -216,16 +217,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterInitialize(uint160 addr) public {
@@ -246,16 +247,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeModify(uint160 addr) public {
@@ -276,16 +277,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAfterModify(uint160 addr) public {
@@ -306,16 +307,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterModify(uint160 addr) public {
@@ -337,16 +338,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeInitializeAfterModify(uint160 addr) public {
@@ -368,16 +369,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeSwap(uint160 addr) public {
@@ -398,16 +399,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAfterSwap(uint160 addr) public {
@@ -428,16 +429,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterSwap(uint160 addr) public {
@@ -458,16 +459,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeDonate(uint160 addr) public {
@@ -488,16 +489,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAfterDonate(uint160 addr) public {
@@ -518,16 +519,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressBeforeAndAfterDonate(uint160 addr) public {
@@ -548,16 +549,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function test_validateHookAddress_accessLock(uint160 addr) public {
@@ -578,16 +579,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: true
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertFalse(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertFalse(Hooks.hasPermissionToNoOp(hookAddr));
-        assertTrue(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressAllHooks(uint160 addr) public {
@@ -609,16 +610,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: true
             })
         );
-        assertTrue(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertTrue(Hooks.shouldCallAfterSwap(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertTrue(Hooks.shouldCallAfterDonate(hookAddr));
-        assertTrue(Hooks.hasPermissionToNoOp(hookAddr));
-        assertTrue(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressNoOp(uint160 addr) public {
@@ -646,16 +647,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 accessLock: false
             })
         );
-        assertFalse(Hooks.shouldCallBeforeInitialize(hookAddr));
-        assertFalse(Hooks.shouldCallAfterInitialize(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeModifyPosition(hookAddr));
-        assertFalse(Hooks.shouldCallAfterModifyPosition(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeSwap(hookAddr));
-        assertFalse(Hooks.shouldCallAfterSwap(hookAddr));
-        assertTrue(Hooks.shouldCallBeforeDonate(hookAddr));
-        assertFalse(Hooks.shouldCallAfterDonate(hookAddr));
-        assertTrue(Hooks.hasPermissionToNoOp(hookAddr));
-        assertFalse(Hooks.hasPermissionToAccessLock(hookAddr));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
 
     function testValidateHookAddressFailsAllHooks(uint152 addr, uint8 mask) public {
@@ -705,7 +706,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function testGas() public {
         snapStart("HooksShouldCallBeforeSwap");
-        Hooks.shouldCallBeforeSwap(IHooks(address(0)));
+        IHooks(address(0)).hasPermission(Hooks.BEFORE_SWAP_FLAG);
         snapEnd();
     }
 
