@@ -32,7 +32,7 @@ Finally, before opening a pull request please do the following:
 - Run the tests and snapshots. Commands are outlined in the [tests](#tests) section.
 - Document any new functions, structs, or interfaces following the natspec standard.
 - Add tests! For smaller contributions, they should be tested with unit tests, and fuzz tests where possible. For bigger contributions, they should be tested with integration tests and invariant tests where possible.
-- Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) 
+- Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
 
 ## Standards
 
@@ -44,21 +44,23 @@ All contributions must follow the below standards. Maintainers will close out PR
 4. Picking up stale issues by other authors is fine! Please just communicate with them ahead of time and it is best practice to include co-authors in any commits.
 5. Squash commits where possible to make reviews clean and efficient. PRs that are merged to main will be squashed into 1 commit.
 
-## Tests
+## Setup
 
-This repo currently uses hardhat and forge tests. Please run both test suites before opening a PR.
+For V4, an unreleased solc binary is used to add support for TLOAD and TSTORE. There are options for using this binary with forge:
 
-`yarn snapshots` to update the hardhat gas snapshots
+### Using `just`
 
-`yarn test` to run hardhat tests
+`just build` to get contract artifacts and dependencies for forge
 
-`yarn prettier` to run the formatter (runs both typescript and solidity formatting)
+`just test` to run forge tests and update snapshots
 
-`forge snapshot`to update the forge gas snapshots
+### Using environment variables
 
-`forge test` to run forge tests
+Run `source .env` to set `FOUNDRY_FUZZ_SEED` and `FOUNDRY_SOLC` environment variables. You can then use forge directly
 
-Any new tests that you add should be written with forge, as the repo is undergoing a full migration to the forge test suite.
+`forge build` to get contract artifacts and dependencies for forge
+
+`forge test` to run forge tests and update snapshots
 
 ## Code of Conduct
 

@@ -1,30 +1,17 @@
-test: test-forge test-hardhat
-prep: fix snapshots
-snapshots: snapshots-forge snapshots-hardhat
+solc_file := if os() == "macos" { "./bin/solc-mac" } else { "./bin/solc-static-linux" }
 
-test-forge: install-forge build-forge
-    forge test
+test *args: (test-forge args)
+build *args: (build-forge args)
+prep *args: fix (test args)
 
-test-hardhat: install-hardhat
-    yarn test
+test-forge *args: install-forge build-forge
+    forge test --use {{ solc_file }} {{ args }}
 
-build-forge: install-forge
-    forge build
-
-build-hardhat: install-hardhat
-    yarn build
-
-snapshots-forge: install-forge
-    forge snapshot
-
-snapshots-hardhat: install-hardhat
-    yarn snapshots
+build-forge *args: install-forge
+    forge build --use {{ solc_file }} {{ args }}
 
 install-forge:
     forge install
-
-install-hardhat:
-    yarn install
 
 fix:
     forge fmt
