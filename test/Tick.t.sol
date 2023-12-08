@@ -480,8 +480,7 @@ contract TickTest is Test, GasSnapshot {
     }
 
     function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public {
-        vm.assume(tickSpacing <= TickMath.MAX_TICK_SPACING);
-        vm.assume(tickSpacing >= TickMath.MIN_TICK_SPACING);
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
         int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
