@@ -83,16 +83,14 @@ library Hooks {
         ) {
             return false;
         }
-        // If there is no hook contract set, then fee cannot be dynamic and there cannot be a hook fee on swap or withdrawal.
+        // If there is no hook contract set, then fee cannot be dynamic
+        // If a hook contract is set, it must have at least 1 flag set, or have a dynamic fee
         return address(hook) == address(0)
-            ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
-            : (
-                uint160(address(hook)) >= ACCESS_LOCK_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
-                    || fee.hasHookWithdrawFee()
-            );
+            ? !fee.isDynamicFee()
+            : (uint160(address(hook)) >= ACCESS_LOCK_FLAG || fee.isDynamicFee());
     }
 
-    /// @notice performs a hook call using the given calldat aon the given hook
+    /// @notice performs a hook call using the given calldata on the given hook
     /// @return expectedSelector The selector that the hook is expected to return
     /// @return selector The selector that the hook actually returned
     function _callHook(IHooks self, bytes memory data) private returns (bytes4 expectedSelector, bytes4 selector) {
