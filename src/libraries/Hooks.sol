@@ -74,13 +74,11 @@ library Hooks {
         ) {
             return false;
         }
-        // If there is no hook contract set, then fee cannot be dynamic and there cannot be a hook fee on swap or withdrawal.
+        // If there is no hook contract set, then fee cannot be dynamic
+        // If a hook contract is set, it must have at least 1 flag set, or have a dynamic fee
         return address(hook) == address(0)
-            ? !fee.isDynamicFee() && !fee.hasHookSwapFee() && !fee.hasHookWithdrawFee()
-            : (
-                uint160(address(hook)) >= ACCESS_LOCK_FLAG || fee.isDynamicFee() || fee.hasHookSwapFee()
-                    || fee.hasHookWithdrawFee()
-            );
+            ? !fee.isDynamicFee()
+            : (uint160(address(hook)) >= ACCESS_LOCK_FLAG || fee.isDynamicFee());
     }
 
     function shouldCallBeforeInitialize(IHooks self) internal pure returns (bool) {

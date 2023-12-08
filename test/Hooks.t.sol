@@ -46,7 +46,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function test_initialize_succeedsWithHook() public {
         initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, new bytes(123));
 
-        (uint160 sqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
+        (uint160 sqrtPriceX96,,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
         assertEq(mockHooks.beforeInitializeData(), new bytes(123));
         assertEq(mockHooks.afterInitializeData(), new bytes(123));

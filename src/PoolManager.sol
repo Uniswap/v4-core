@@ -13,7 +13,6 @@ import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
 import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
-import {IHookFeeManager} from "./interfaces/IHookFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
@@ -57,11 +56,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         external
         view
         override
-        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFees, uint24 hookFees)
+        returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee)
     {
         Pool.Slot0 memory slot0 = pools[id].slot0;
 
-        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFees, slot0.hookFees);
+        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee);
     }
 
     /// @inheritdoc IPoolManager
@@ -130,10 +129,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         }
 
         PoolId id = key.toId();
-        (, uint24 protocolFees) = _fetchProtocolFees(key);
+        (, uint16 protocolFee) = _fetchProtocolFee(key);
         uint24 swapFee = key.fee.isDynamicFee() ? _fetchDynamicSwapFee(key) : key.fee.getStaticFee();
 
-        tick = pools[id].initialize(sqrtPriceX96, protocolFees, _fetchHookFees(key), swapFee);
+        tick = pools[id].initialize(sqrtPriceX96, protocolFee, swapFee);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (
@@ -217,8 +216,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        Pool.FeeAmounts memory feeAmounts;
-        (delta, feeAmounts) = pools[id].modifyPosition(
+        delta = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -229,21 +227,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         );
 
         _accountPoolBalanceDelta(key, delta);
-
-        unchecked {
-            if (feeAmounts.feeForProtocol0 > 0) {
-                protocolFeesAccrued[key.currency0] += feeAmounts.feeForProtocol0;
-            }
-            if (feeAmounts.feeForProtocol1 > 0) {
-                protocolFeesAccrued[key.currency1] += feeAmounts.feeForProtocol1;
-            }
-            if (feeAmounts.feeForHook0 > 0) {
-                hookFeesAccrued[address(key.hooks)][key.currency0] += feeAmounts.feeForHook0;
-            }
-            if (feeAmounts.feeForHook1 > 0) {
-                hookFeesAccrued[address(key.hooks)][key.currency1] += feeAmounts.feeForHook1;
-            }
-        }
 
         if (key.hooks.shouldCallAfterModifyPosition()) {
             if (
@@ -286,10 +269,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         }
 
         uint256 feeForProtocol;
-        uint256 feeForHook;
         uint24 swapFee;
         Pool.SwapState memory state;
-        (delta, feeForProtocol, feeForHook, swapFee, state) = pools[id].swap(
+        (delta, feeForProtocol, swapFee, state) = pools[id].swap(
             Pool.SwapParams({
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
@@ -304,9 +286,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         unchecked {
             if (feeForProtocol > 0) {
                 protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
-            }
-            if (feeForHook > 0) {
-                hookFeesAccrued[address(key.hooks)][params.zeroForOne ? key.currency0 : key.currency1] += feeForHook;
             }
         }
 
@@ -391,19 +370,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         _burn(currency, amount);
     }
 
-    function setProtocolFees(PoolKey memory key) external {
-        (bool success, uint24 newProtocolFees) = _fetchProtocolFees(key);
+    function setProtocolFee(PoolKey memory key) external {
+        (bool success, uint16 newProtocolFee) = _fetchProtocolFee(key);
         if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
         PoolId id = key.toId();
-        pools[id].setProtocolFees(newProtocolFees);
-        emit ProtocolFeeUpdated(id, newProtocolFees);
-    }
-
-    function setHookFees(PoolKey memory key) external {
-        uint24 newHookFees = _fetchHookFees(key);
-        PoolId id = key.toId();
-        pools[id].setHookFees(newHookFees);
-        emit HookFeeUpdated(id, newHookFees);
+        pools[id].setProtocolFee(newProtocolFee);
+        emit ProtocolFeeUpdated(id, newProtocolFee);
     }
 
     function updateDynamicSwapFee(PoolKey memory key) external {
