@@ -16,40 +16,40 @@ contract HooksTest {
     }
 
     function shouldCallBeforeInitialize(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeInitialize();
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_INITIALIZE_FLAG);
     }
 
     function shouldCallAfterInitialize(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterInitialize();
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_INITIALIZE_FLAG);
     }
 
     function shouldCallBeforeSwap(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeSwap();
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_SWAP_FLAG);
     }
 
     function shouldCallAfterSwap(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterSwap();
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_SWAP_FLAG);
     }
 
     function shouldCallBeforeModifyPosition(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeModifyPosition();
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG);
     }
 
     function shouldCallAfterModifyPosition(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterModifyPosition();
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG);
     }
 
     function shouldCallBeforeDonate(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeDonate();
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_DONATE_FLAG);
     }
 
     function shouldCallAfterDonate(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterDonate();
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_DONATE_FLAG);
     }
 
     function getGasCostOfShouldCall(address hookAddress) external view returns (uint256) {
         uint256 gasBefore = gasleft();
-        IHooks(hookAddress).shouldCallBeforeSwap();
+        IHooks(hookAddress).hasPermission(Hooks.BEFORE_SWAP_FLAG);
         return gasBefore - gasleft();
     }
 

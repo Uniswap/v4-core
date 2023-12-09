@@ -44,7 +44,7 @@ contract PoolInitializeTest is Test, PoolTestBase {
         int256 delta1 = manager.currencyDelta(address(this), data.key.currency1);
         uint256 nonZeroDC = manager.getLockNonzeroDeltaCount();
 
-        if (!data.key.hooks.hasPermissionToAccessLock()) {
+        if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
             assertEq(delta0, 0, "delta0");
             assertEq(delta1, 0, "delta1");
             assertEq(nonZeroDC, 0, "NonzeroDeltaCount");
