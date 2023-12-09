@@ -390,14 +390,14 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     }
 
     function test_initialize_succeedsAndSetsProtocolFee() public {
-        uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
+        uint16 protocolFee = 1028; // swap fee0 = 4, fee1 = 4
 
         // set a non zero protocol fee to be fetched on pool initialization
         feeController.setSwapFeeForPool(uninitializedKey.toId(), uint16(protocolFee));
 
         initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFee, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee);
     }
 
     function test_initialize_gas() public {
