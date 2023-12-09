@@ -88,8 +88,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_mint_succeedsIfInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         vm.expectEmit(true, true, true, true);
         emit ModifyPosition(
@@ -104,8 +103,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_mint_succeedsForNativeTokensIfInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         vm.expectEmit(true, true, true, true);
         emit ModifyPosition(
@@ -120,8 +118,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_mint_succeedsWithHooksIfInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable mockAddr =
             payable(address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
@@ -319,8 +316,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_failsIfNotInitialized(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         key.fee = 100;
         IPoolManager.SwapParams memory params =
@@ -636,14 +632,52 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
+    function test_swap_accruesProtocolFees(uint8 protocolFee1, uint8 protocolFee0) public {
+        protocolFee0 = uint8(bound(protocolFee0, 4, type(uint8).max));
+        protocolFee1 = uint8(bound(protocolFee1, 4, type(uint8).max));
+
+        uint16 protocolFee = (uint16(protocolFee1) << 8) | (uint16(protocolFee0) & uint16(0xFF));
+
+        feeController.setSwapFeeForPool(key.toId(), protocolFee);
+        manager.setProtocolFee(key);
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFee, protocolFee);
+
+        // Add liquidity - Fees dont accrue for positive liquidity delta.
+        IPoolManager.ModifyPositionParams memory params = LIQ_PARAMS;
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+
+        assertEq(manager.protocolFeesAccrued(currency0), 0);
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+
+        // Remove liquidity - Fees dont accrue for negative liquidity delta.
+        params.liquidityDelta = -LIQ_PARAMS.liquidityDelta;
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+
+        assertEq(manager.protocolFeesAccrued(currency0), 0);
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+
+        // Now re-add the liquidity to test swap
+        params.liquidityDelta = LIQ_PARAMS.liquidityDelta;
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1);
+        swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES);
+
+        uint256 expectedTotalSwapFee = uint256(swapParams.amountSpecified) * key.fee / 1e6;
+        uint256 expectedProtocolFee = expectedTotalSwapFee / protocolFee1;
+        assertEq(manager.protocolFeesAccrued(currency0), 0);
+        assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
+    }
+
     function test_donate_failsIfNotInitialized() public {
         vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
         donateRouter.donate(uninitializedKey, 100, 100, ZERO_BYTES);
     }
 
     function test_donate_failsIfNoLiquidity(uint160 sqrtPriceX96) public {
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         (key,) = initPool(currency0, currency1, IHooks(address(0)), 100, sqrtPriceX96, ZERO_BYTES);
 
@@ -763,39 +797,45 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         takeRouter.take{value: 1}(nativeKey, 1, 1); // assertions inside takeRouter because it takes then settles
     }
 
-    function test_setProtocolFee_updatesProtocolFeeForInitializedPool() public {
-        uint24 protocolFee = 4;
-
+    function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint16 protocolFee) public {
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFees, 0);
-        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+        assertEq(slot0.protocolFee, 0);
+        feeController.setSwapFeeForPool(key.toId(), protocolFee);
 
-        vm.expectEmit(false, false, false, true);
-        emit ProtocolFeeUpdated(key.toId(), protocolFee << 12);
-        manager.setProtocolFees(key);
+        uint8 fee0 = uint8(protocolFee >> 8);
+        uint8 fee1 = uint8(protocolFee % 256);
+        if ((0 < fee0 && fee0 < 4) || (0 < fee1 && fee1 < 4)) {
+            vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+            manager.setProtocolFee(key);
+        } else {
+            vm.expectEmit(false, false, false, true);
+            emit ProtocolFeeUpdated(key.toId(), protocolFee);
+            manager.setProtocolFee(key);
+
+            (slot0,,,) = manager.pools(key.toId());
+            assertEq(slot0.protocolFee, protocolFee);
+        }
     }
 
     function test_setProtocolFee_failsWithInvalidProtocolFeeControllers() public {
-        uint24 protocolFee = 4;
-
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFees, 0);
+        assertEq(slot0.protocolFee, 0);
 
         manager.setProtocolFeeController(revertingFeeController);
         vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(outOfBoundsFeeController);
         vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(overflowFeeController);
         vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(invalidReturnSizeFeeController);
         vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
     }
 
     function test_collectProtocolFees_ERC20_returnsCorrectFeesWithParameters(uint256 swapAmount, uint256 balanceToClaim)
@@ -850,10 +890,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 expectedFees = 7;
 
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee);
 
         swapRouter.swap(
             key,
@@ -902,8 +942,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_gas(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(
@@ -943,8 +982,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_succeedsOnAllActions(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(
@@ -993,8 +1031,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_failsOnUninitializedPools(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(
@@ -1031,8 +1068,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_failsOnForbiddenFunctions(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(
@@ -1085,8 +1121,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_noop_failsWithoutNoOpFlag(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        vm.assume(sqrtPriceX96 >= TickMath.MIN_SQRT_RATIO);
-        vm.assume(sqrtPriceX96 < TickMath.MAX_SQRT_RATIO);
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable hookAddr = payable(
             address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_DONATE_FLAG))

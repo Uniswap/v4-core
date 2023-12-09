@@ -59,10 +59,10 @@ contract PoolDonateTest is PoolTestBase, Test {
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
 
-        if (!data.key.hooks.hasPermissionToAccessLock()) {
+        if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
             assertEq(reserveBefore0, reserveAfter0);
             assertEq(reserveBefore1, reserveAfter1);
-            if (!data.key.hooks.hasPermissionToNoOp()) {
+            if (!data.key.hooks.hasPermission(Hooks.NO_OP_FLAG)) {
                 assertEq(deltaAfter0, int256(data.amount0));
                 assertEq(deltaAfter1, int256(data.amount1));
             }
@@ -70,7 +70,7 @@ contract PoolDonateTest is PoolTestBase, Test {
 
         if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
             // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
-            assertTrue(data.key.hooks.hasPermissionToNoOp(), "Invalid NoOp returned");
+            assertTrue(data.key.hooks.hasPermission(Hooks.NO_OP_FLAG), "Invalid NoOp returned");
             return abi.encode(delta);
         }
 

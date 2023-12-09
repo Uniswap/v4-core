@@ -6,8 +6,10 @@ import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
+import {PoolGetters} from "../src/libraries/PoolGetters.sol";
 
 contract TickTest is Test, GasSnapshot {
+    using PoolGetters for Pool.State;
     using Pool for Pool.State;
 
     int24 constant LOW_TICK_SPACING = 10;
@@ -26,6 +28,10 @@ contract TickTest is Test, GasSnapshot {
 
     function setTick(int24 tick, Pool.TickInfo memory info) internal {
         pool.ticks[tick] = info;
+    }
+
+    function setTickBitmap(int16 word, uint256 bitmap) internal {
+        pool.tickBitmap[word] = bitmap;
     }
 
     function getFeeGrowthInside(
@@ -459,9 +465,22 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.feeGrowthOutside1X128, 2);
     }
 
+    function test_getPoolTickInfo(int24 tick, Pool.TickInfo memory info) public {
+        setTick(tick, info);
+        Pool.TickInfo memory actualInfo = pool.getPoolTickInfo(tick);
+        assertEq(actualInfo.liquidityGross, info.liquidityGross);
+        assertEq(actualInfo.liquidityNet, info.liquidityNet);
+        assertEq(actualInfo.feeGrowthOutside0X128, info.feeGrowthOutside0X128);
+        assertEq(actualInfo.feeGrowthOutside1X128, info.feeGrowthOutside1X128);
+    }
+
+    function test_getPoolBitmapInfo(int16 word, uint256 bitmap) public {
+        setTickBitmap(word, bitmap);
+        assertEq(pool.getPoolBitmapInfo(word), bitmap);
+    }
+
     function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public {
-        vm.assume(tickSpacing <= TickMath.MAX_TICK_SPACING);
-        vm.assume(tickSpacing >= TickMath.MIN_TICK_SPACING);
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
         int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
