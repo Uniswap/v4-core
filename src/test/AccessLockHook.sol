@@ -13,6 +13,7 @@ import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {PoolIdLibrary} from "../types/PoolId.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 
 contract AccessLockHook is Test, BaseTestHooks {
     using PoolIdLibrary for PoolKey;
@@ -219,5 +220,61 @@ contract AccessLockHook3 is Test, ILockCallback, BaseTestHooks {
             manager.settle(key.currency0);
         }
         return data;
+    }
+}
+
+contract AccessLockFeeHook is Test, BaseTestHooks {
+    IPoolManager manager;
+
+    uint256 constant WITHDRAWAL_FEE_BIPS = 40; // 40/10000 = 0.4%
+    uint256 constant SWAP_FEE_BIPS = 55; // 55/10000 = 0.55%
+    uint256 constant TOTAL_BIPS = 10000;
+
+    constructor(IPoolManager _manager) {
+        manager = _manager;
+    }
+
+    function afterModifyPosition(
+        address, /* sender **/
+        PoolKey calldata key,
+        IPoolManager.ModifyPositionParams calldata, /* params **/
+        BalanceDelta delta,
+        bytes calldata /* hookData **/
+    ) external override returns (bytes4) {
+        int128 amount0 = delta.amount0();
+        int128 amount1 = delta.amount1();
+
+        // positive delta => user owes money => liquidity addition
+        if (amount0 >= 0 && amount1 >= 0) return IHooks.afterModifyPosition.selector;
+
+        // negative delta => user is owed money => liquidity withdrawal
+        uint256 amount0Fee = uint128(-amount0) * WITHDRAWAL_FEE_BIPS / TOTAL_BIPS;
+        uint256 amount1Fee = uint128(-amount1) * WITHDRAWAL_FEE_BIPS / TOTAL_BIPS;
+
+        manager.take(key.currency0, address(this), amount0Fee);
+        manager.take(key.currency1, address(this), amount1Fee);
+
+        return IHooks.afterModifyPosition.selector;
+    }
+
+    function afterSwap(
+        address, /* sender **/
+        PoolKey calldata key,
+        IPoolManager.SwapParams calldata params,
+        BalanceDelta delta,
+        bytes calldata /* hookData **/
+    ) external override returns (bytes4) {
+        int128 amount0 = delta.amount0();
+        int128 amount1 = delta.amount1();
+
+        // fee on output token - output delta will be negative
+        (Currency feeCurrency, uint256 outputAmount) =
+            (params.zeroForOne) ? (key.currency1, uint128(-amount1)) : (key.currency0, uint128(-amount0));
+
+        uint256 feeAmount = outputAmount * SWAP_FEE_BIPS / TOTAL_BIPS;
+
+        manager.take(feeCurrency, address(this), feeAmount);
+
+        return IHooks.afterSwap.selector;
     }
 }

@@ -82,9 +82,7 @@ interface IPoolManager is IFees, IClaims {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
-
-    event HookFeeUpdated(PoolId indexed id, uint24 hookFees);
+    event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
 
     event DynamicSwapFeeUpdated(PoolId indexed id, uint24 dynamicSwapFee);
 
@@ -95,10 +93,7 @@ interface IPoolManager is IFees, IClaims {
     function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(PoolId id)
-        external
-        view
-        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFees, uint24 hookFees);
+    function getSlot0(PoolId id) external view returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);
@@ -188,12 +183,9 @@ interface IPoolManager is IFees, IClaims {
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
 
-    /// @notice Sets the protocol's swap and withdrawal fees for the given pool
-    /// Protocol fees are always a portion of a fee that is owed. If that underlying fee is 0, no protocol fees will accrue even if it is set to > 0.
-    function setProtocolFees(PoolKey memory key) external;
-
-    /// @notice Sets the hook's swap and withdrawal fees for the given pool
-    function setHookFees(PoolKey memory key) external;
+    /// @notice Sets the protocol's swap fee for the given pool
+    /// Protocol fees are always a portion of the LP swap fee that is owed. If that fee is 0, no protocol fees will accrue even if it is set to > 0.
+    function setProtocolFee(PoolKey memory key) external;
 
     /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
     function updateDynamicSwapFee(PoolKey memory key) external;
