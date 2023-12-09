@@ -581,7 +581,7 @@ contract AccessLockTest is Test, Deployers {
 
         initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.Mint));
 
-        assertEq(manager.balanceOf(address(accessLockNoOpHook), currency1), amount);
+        assertEq(manager.balanceOf(address(accessLockNoOpHook), currency1.toId()), amount);
     }
 
     function test_beforeInitialize_take_succeedsWithAccessLock() public {

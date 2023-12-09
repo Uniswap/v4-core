@@ -648,15 +648,15 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         IPoolManager.ModifyPositionParams memory params = LIQ_PARAMS;
         modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
 
-        assertEq(manager.protocolFeesAccrued(currency0), 0);
-        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(manager.balanceOf(address(feeController), currency0.toId()), 0);
+        assertEq(manager.balanceOf(address(feeController), currency1.toId()), 0);
 
         // Remove liquidity - Fees dont accrue for negative liquidity delta.
         params.liquidityDelta = -LIQ_PARAMS.liquidityDelta;
         modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
 
-        assertEq(manager.protocolFeesAccrued(currency0), 0);
-        assertEq(manager.protocolFeesAccrued(currency1), 0);
+        assertEq(manager.balanceOf(address(feeController), currency0.toId()), 0);
+        assertEq(manager.balanceOf(address(feeController), currency1.toId()), 0);
 
         // Now re-add the liquidity to test swap
         params.liquidityDelta = LIQ_PARAMS.liquidityDelta;
@@ -667,8 +667,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         uint256 expectedTotalSwapFee = uint256(swapParams.amountSpecified) * key.fee / 1e6;
         uint256 expectedProtocolFee = expectedTotalSwapFee / protocolFee1;
-        assertEq(manager.protocolFeesAccrued(currency0), 0);
-        assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
+        assertEq(manager.balanceOf(address(feeController), currency0.toId()), 0);
+        assertEq(manager.balanceOf(address(feeController), currency1.toId()), expectedProtocolFee);
     }
 
     function test_donate_failsIfNotInitialized() public {
@@ -846,9 +846,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint24 protocolFee = 16644; // swapFee = 4 (fee0 = 4, fee1 = 0), withdrawFee = 260 (fee0 = 4, fee1 = 4)
         address protocolFeeRecipient = address(1);
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee << 12);
         console2.log(slot0.swapFee);
         uint256 expectedTotalSwapFee = swapAmount *  key.fee / 1e6;
         console2.log(expectedTotalSwapFee);
@@ -919,10 +919,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
         feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
-        manager.setProtocolFees(nativeKey);
+        manager.setProtocolFee(nativeKey);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee << 12);
 
         swapRouter.swap{value: 10000}(
             nativeKey,

@@ -397,7 +397,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee << 12);
     }
 
     function test_initialize_gas() public {
