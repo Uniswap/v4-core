@@ -850,7 +850,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(slot0.protocolFee, protocolFee);
 
         // token 1 for 0
-        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, SafeCast.toInt256(swapAmount), TickMath.MAX_SQRT_RATIO - 1);
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams(false, SafeCast.toInt256(swapAmount), TickMath.MAX_SQRT_RATIO - 1);
         swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES);
 
         uint256 feesAccrued = manager.balanceOf(address(feeController), currency1.toId());
