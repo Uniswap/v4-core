@@ -26,6 +26,7 @@ import {PoolLockTest} from "../src/test/PoolLockTest.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
 import {Position} from "../src/libraries/Position.sol";
+import {SafeCast} from "../src/libraries/SafeCast.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -233,6 +234,24 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         );
 
         snapEnd();
+    }
+
+    function test_swap_EOAInitiated(uint256 swapAmount) public {
+        vm.assume(swapAmount > 100);
+        IPoolManager.ModifyPositionParams memory liqParams =
+            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: SafeCast.toInt256(swapAmount), sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        manager.lock(
+            address(swapRouter),
+            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, key, params, ZERO_BYTES))
+        );
     }
 
     function test_swap_EOAInitiated() public {
