@@ -240,7 +240,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
-    function test_swap_EOAInitiated() public {
+    function test_swap_EOAInitiated_gas() public {
         IPoolManager.ModifyPositionParams memory liqParams =
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
         modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
