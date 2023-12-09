@@ -810,9 +810,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
         assertEq(slot0.protocolFees, protocolFee << 12);
         console2.log(slot0.swapFee);
-        uint256 feeAmount = FullMath.mulDivRoundingUp(swapAmount, slot0.swapFee, 1e6 - slot0.swapFee);
-        console2.log(feeAmount);
-        uint256 expectedFees = feeAmount / (uint16(protocolFee >> 12) % 64); // zeroForOne true so we use fee0
+        uint256 expectedTotalSwapFee = swapAmount *  key.fee / 1e6;
+        console2.log(expectedTotalSwapFee);
+        uint256 expectedFees = expectedTotalSwapFee / (uint16(protocolFee >> 12) % 64);
         console2.log(expectedFees);
 
         swapRouter.swap(
