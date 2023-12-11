@@ -6,7 +6,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {FeeLibrary} from "./FeeLibrary.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {Lockers} from "./Lockers.sol";
+import {Locker} from "./Locker.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.

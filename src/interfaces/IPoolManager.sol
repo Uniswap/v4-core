@@ -25,6 +25,9 @@ interface IPoolManager is IFees, IClaims {
     /// @param locker The current locker
     error LockedBy(address locker);
 
+    /// @notice Thrown when a function is called by an address that is not the current locker
+    error ManagerNotLocked();
+
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
 
@@ -112,11 +115,8 @@ interface IPoolManager is IFees, IClaims {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
-    /// @notice Returns the locker in the ith position of the locker queue.
-    function getLock(uint256 i) external view returns (address locker, address lockCaller);
-
-    /// @notice Returns the length of the lockers array, which is the number of locks open on the PoolManager.
-    function getLockLength() external view returns (uint256 _length);
+    /// @notice Returns the locker and lockCaller of the pool
+    function getLock() external view returns (address locker, address lockCaller);
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
