@@ -48,7 +48,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         int24 tick,
         uint24 fee
     );
-    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
+    event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
     event Transfer(
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
     );
