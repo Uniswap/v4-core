@@ -100,7 +100,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     function _checkLocker(address caller, address locker, IHooks hook) internal pure {
         if (caller == locker) return;
-        if (caller == address(hook) && hook.hasPermission(Hooks.ACCESS_LOCK_FLAG)) return;
         revert LockedBy(locker, address(hook));
     }
 

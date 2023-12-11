@@ -25,7 +25,6 @@ library Hooks {
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 153;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 152;
     uint256 internal constant NO_OP_FLAG = 1 << 151;
-    uint256 internal constant ACCESS_LOCK_FLAG = 1 << 150;
 
     bytes4 public constant NO_OP_SELECTOR = bytes4(keccak256(abi.encodePacked("NoOp")));
 
@@ -39,7 +38,6 @@ library Hooks {
         bool beforeDonate;
         bool afterDonate;
         bool noOp;
-        bool accessLock;
     }
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
@@ -67,7 +65,6 @@ library Hooks {
                 || permissions.beforeDonate != self.hasPermission(BEFORE_DONATE_FLAG)
                 || permissions.afterDonate != self.hasPermission(AFTER_DONATE_FLAG)
                 || permissions.noOp != self.hasPermission(NO_OP_FLAG)
-                || permissions.accessLock != self.hasPermission(ACCESS_LOCK_FLAG)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -87,7 +84,7 @@ library Hooks {
         // If a hook contract is set, it must have at least 1 flag set, or have a dynamic fee
         return address(hook) == address(0)
             ? !fee.isDynamicFee()
-            : (uint160(address(hook)) >= ACCESS_LOCK_FLAG || fee.isDynamicFee());
+            : (uint160(address(hook)) >= NO_OP_FLAG || fee.isDynamicFee());
     }
 
     /// @notice performs a hook call using the given calldata on the given hook

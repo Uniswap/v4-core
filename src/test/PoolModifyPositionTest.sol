@@ -52,15 +52,12 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender);
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
 
-        // These assertions only apply in non lock-accessing pools.
-        if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
-            if (data.params.liquidityDelta > 0) {
-                assert(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
-                assert(!(delta0 < 0 || delta1 < 0));
-            } else {
-                assert(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
-                assert(!(delta0 > 0 || delta1 > 0));
-            }
+        if (data.params.liquidityDelta > 0) {
+            assert(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
+            assert(!(delta0 < 0 || delta1 < 0));
+        } else {
+            assert(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
+            assert(!(delta0 > 0 || delta1 > 0));
         }
 
         if (delta0 > 0) _settle(data.key.currency0, data.sender, int128(delta0), true);

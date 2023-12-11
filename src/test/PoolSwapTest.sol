@@ -68,33 +68,29 @@ contract PoolSwapTest is Test, PoolTestBase {
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
 
-        if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
-            // Hanndle assertions when the hook cannot access the lock.
-            // IE if the hook can access the lock, the reserves before and after are not necessarily the same. Hook can "take".
-            assertEq(reserveBefore0, reserveAfter0);
-            assertEq(reserveBefore1, reserveAfter1);
+        assertEq(reserveBefore0, reserveAfter0);
+        assertEq(reserveBefore1, reserveAfter1);
 
-            if (!data.key.hooks.hasPermission(Hooks.NO_OP_FLAG)) {
-                if (data.params.zeroForOne) {
-                    if (data.params.amountSpecified > 0) {
-                        // exact input, 0 for 1
-                        assertEq(deltaAfter0, data.params.amountSpecified);
-                        assert(deltaAfter1 < 0);
-                    } else {
-                        // exact output, 0 for 1
-                        assert(deltaAfter0 > 0);
-                        assertEq(deltaAfter1, data.params.amountSpecified);
-                    }
+        if (!data.key.hooks.hasPermission(Hooks.NO_OP_FLAG)) {
+            if (data.params.zeroForOne) {
+                if (data.params.amountSpecified > 0) {
+                    // exact input, 0 for 1
+                    assertEq(deltaAfter0, data.params.amountSpecified);
+                    assert(deltaAfter1 < 0);
                 } else {
-                    if (data.params.amountSpecified > 0) {
-                        // exact input, 1 for 0
-                        assertEq(deltaAfter1, data.params.amountSpecified);
-                        assert(deltaAfter0 < 0);
-                    } else {
-                        // exact output, 1 for 0
-                        assert(deltaAfter1 > 0);
-                        assertEq(deltaAfter0, data.params.amountSpecified);
-                    }
+                    // exact output, 0 for 1
+                    assert(deltaAfter0 > 0);
+                    assertEq(deltaAfter1, data.params.amountSpecified);
+                }
+            } else {
+                if (data.params.amountSpecified > 0) {
+                    // exact input, 1 for 0
+                    assertEq(deltaAfter1, data.params.amountSpecified);
+                    assert(deltaAfter0 < 0);
+                } else {
+                    // exact output, 1 for 0
+                    assert(deltaAfter1 > 0);
+                    assertEq(deltaAfter0, data.params.amountSpecified);
                 }
             }
         }

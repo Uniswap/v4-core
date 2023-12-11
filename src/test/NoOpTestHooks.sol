@@ -20,8 +20,7 @@ contract NoOpTestHooks is BaseTestHooks {
                 afterSwap: false,
                 beforeDonate: true,
                 afterDonate: false,
-                noOp: true,
-                accessLock: false
+                noOp: true
             })
         );
     }
