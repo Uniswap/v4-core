@@ -1,8 +1,9 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.19;
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0;
 
-import {ERC6909} from "solmate/tokens/ERC6909.sol";
+import {ERC6909} from "./ERC6909.sol";
 
+/// @notice ERC6909Claims inherits ERC6909 and implements an internal burnFrom function
 abstract contract ERC6909Claims is ERC6909 {
     /// @notice Burn `amount` tokens of token type `id` from `from`.
     /// @param from The address to burn tokens from.

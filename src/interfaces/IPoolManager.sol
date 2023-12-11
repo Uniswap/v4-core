@@ -5,12 +5,13 @@ import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {IHooks} from "./IHooks.sol";
+import {IERC6909Claims} from "./external/IERC6909Claims.sol";
 import {IFees} from "./IFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IFees {
+interface IPoolManager is IFees, IERC6909Claims {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
@@ -99,6 +100,12 @@ interface IPoolManager is IFees {
         external
         view
         returns (uint128 liquidity);
+
+    /// @notice Getter for TickInfo for the given poolId and tick
+    function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory);
+
+    /// @notice Getter for the bitmap given the poolId and word position
+    function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap);
 
     /// @notice Get the position struct for a specified pool and position
     function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
