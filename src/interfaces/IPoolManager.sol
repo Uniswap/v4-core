@@ -104,6 +104,12 @@ interface IPoolManager is IFees, IClaims {
         view
         returns (uint128 liquidity);
 
+    /// @notice Getter for TickInfo for the given poolId and tick
+    function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory);
+
+    /// @notice Getter for the bitmap given the poolId and word position
+    function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap);
+
     /// @notice Get the position struct for a specified pool and position
     function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
         external
