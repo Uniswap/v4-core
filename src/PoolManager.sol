@@ -94,13 +94,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
     modifier onlyByLocker() {
-        _checkLocker(msg.sender, Lockers.getCurrentLocker(), Lockers.getCurrentHook());
+        _checkLocker(msg.sender, Lockers.getCurrentLocker());
         _;
     }
 
-    function _checkLocker(address caller, address locker, IHooks hook) internal pure {
+    function _checkLocker(address caller, address locker) internal pure {
         if (caller == locker) return;
-        revert LockedBy(locker, address(hook));
+        revert LockedBy(locker);
     }
 
     /// @inheritdoc IPoolManager
@@ -343,10 +343,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
         return Lockers.nonzeroDeltaCount();
-    }
-
-    function getCurrentHook() external view returns (IHooks) {
-        return Lockers.getCurrentHook();
     }
 
     function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory) {

@@ -121,33 +121,10 @@ library Lockers {
         }
     }
 
-    function getCurrentHook() internal view returns (IHooks currentHook) {
-        return IHooks(getHook(length()));
-    }
-
     function getHook(uint256 i) internal view returns (address hook) {
         uint256 slot = HOOK_ADDRESS_SLOT + i;
         assembly {
             hook := tload(slot)
-        }
-    }
-
-    function setCurrentHook(IHooks currentHook) internal returns (bool set) {
-        // Set the hook address for the current locker if the address is 0.
-        // If the address is nonzero, a hook has already been set for this lock, and is not allowed to be updated or cleared at the end of the call.
-        if (address(getCurrentHook()) == address(0)) {
-            uint256 slot = HOOK_ADDRESS_SLOT + length();
-            assembly {
-                tstore(slot, currentHook)
-            }
-            return true;
-        }
-    }
-
-    function clearCurrentHook() internal {
-        uint256 slot = HOOK_ADDRESS_SLOT + length();
-        assembly {
-            tstore(slot, 0)
         }
     }
 }

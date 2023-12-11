@@ -91,8 +91,6 @@ library Hooks {
     /// @return expectedSelector The selector that the hook is expected to return
     /// @return selector The selector that the hook actually returned
     function _callHook(IHooks self, bytes memory data) private returns (bytes4 expectedSelector, bytes4 selector) {
-        bool set = Lockers.setCurrentHook(self);
-
         assembly {
             expectedSelector := mload(add(data, 0x20))
         }
@@ -101,9 +99,6 @@ library Hooks {
         if (!success) _revert(result);
 
         selector = abi.decode(result, (bytes4));
-
-        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-        if (set) Lockers.clearCurrentHook();
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
