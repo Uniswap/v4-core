@@ -197,8 +197,7 @@ contract AccessLockTest is Test, Deployers {
     function test_beforeRemoveLiquidity_take_succeedsWithAccessLock() public {
         // Add liquidity so there is something to take.
         delta = modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
-        // Can't take more than the manager has.
-        uint128 takeAmount = uint128(key.currency1.balanceOf(address(manager)) - 1);
+        uint128 takeAmount = uint128(key.currency1.balanceOf(address(manager)));
 
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));

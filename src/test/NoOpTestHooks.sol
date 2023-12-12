@@ -16,7 +16,7 @@ contract NoOpTestHooks is BaseTestHooks {
                 afterInitialize: false,
                 beforeAddLiquidity: true,
                 afterAddLiquidity: false,
-                beforeRemoveLiquidity: false,
+                beforeRemoveLiquidity: true,
                 afterRemoveLiquidity: false,
                 beforeSwap: true,
                 afterSwap: false,
