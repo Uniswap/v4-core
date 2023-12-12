@@ -69,7 +69,7 @@ library Locker {
     }
 
     /// @notice Potential to underflow.
-    /// Current usage ensures this will not happen because we call decrememnt with known boundaries (only up to the numer of times we call increment).
+    /// Current usage ensures this will not happen because we call decrememnt with known boundaries (only up to the number of times we call increment).
     function decrementNonzeroDeltaCount() internal {
         uint256 slot = NONZERO_DELTA_COUNT;
         assembly {

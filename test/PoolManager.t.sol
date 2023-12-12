@@ -22,7 +22,7 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {PoolLockTest} from "../src/test/PoolLockTest.sol";
+import {PoolEmptyLockTest} from "../src/test/PoolEmptyLockTest.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
 import {Position} from "../src/libraries/Position.sol";
@@ -52,7 +52,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     event Burn(address indexed from, Currency indexed currency, uint256 amount);
     event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
 
-    PoolLockTest lockTest;
+    PoolEmptyLockTest emptyLockRouter;
 
     address ADDRESS_ZERO = address(0);
     address EMPTY_HOOKS = address(0xf000000000000000000000000000000000000000);
@@ -61,7 +61,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
 
-        lockTest = new PoolLockTest(manager);
+        emptyLockRouter = new PoolEmptyLockTest(manager);
     }
 
     function test_bytecodeSize() public {
@@ -1115,16 +1115,16 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
 
-    function test_lock_NoOpIsOk() public {
+    function test_lock_NoOp_gas() public {
         snapStart("gas overhead of no-op lock");
-        lockTest.lock();
+        emptyLockRouter.lock();
         snapEnd();
     }
 
     function test_lock_EmitsCorrectId() public {
         vm.expectEmit(false, false, false, true);
         emit LockAcquired();
-        lockTest.lock();
+        emptyLockRouter.lock();
     }
 
     // function testExtsloadForPoolPrice() public {
