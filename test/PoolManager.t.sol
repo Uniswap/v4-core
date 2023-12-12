@@ -2,13 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {Vm} from "forge-std/Vm.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IFees} from "../src/interfaces/IFees.sol";
-import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
-import {PoolManager} from "../src/PoolManager.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
@@ -23,9 +20,11 @@ import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolEmptyLockTest} from "../src/test/PoolEmptyLockTest.sol";
+import {Action} from "../src/test/PoolNestedActionsTest.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
 import {Position} from "../src/libraries/Position.sol";
+import {Constants} from "./utils/Constants.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -53,10 +52,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
 
     PoolEmptyLockTest emptyLockRouter;
-
-    address ADDRESS_ZERO = address(0);
-    address EMPTY_HOOKS = address(0xf000000000000000000000000000000000000000);
-    address MOCK_HOOKS = address(0xfF00000000000000000000000000000000000000);
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
@@ -117,7 +112,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         address payable mockAddr =
             payable(address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG)));
-        address payable hookAddr = payable(MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -199,7 +194,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_mint_withHooks_gas() public {
-        address hookEmptyAddr = EMPTY_HOOKS;
+        address hookEmptyAddr = Constants.EMPTY_HOOKS;
         MockHooks impl = new MockHooks();
         vm.etch(hookEmptyAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookEmptyAddr);
@@ -212,7 +207,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_mint_withHooks_EOAInitiated() public {
-        address hookEmptyAddr = EMPTY_HOOKS;
+        address hookEmptyAddr = Constants.EMPTY_HOOKS;
         MockHooks impl = new MockHooks();
         vm.etch(hookEmptyAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookEmptyAddr);
@@ -363,7 +358,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_swap_succeedsWithHooksIfInitialized() public {
         address payable mockAddr = payable(address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
-        address payable hookAddr = payable(MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -470,7 +465,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_withHooks_gas() public {
-        address hookEmptyAddr = EMPTY_HOOKS;
+        address hookEmptyAddr = Constants.EMPTY_HOOKS;
 
         MockHooks impl = new MockHooks();
         vm.etch(hookEmptyAddr, address(impl).code);
@@ -1125,6 +1120,18 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.expectEmit(false, false, false, true);
         emit LockAcquired();
         emptyLockRouter.lock();
+    }
+
+    Action[] actions;
+
+    function test_lock_cannotBeCalledTwiceByLocker() public {
+        actions = [Action.NESTED_SELF_LOCK];
+        nestedActionRouter.lock(actions);
+    }
+
+    function test_lock_cannotBeCalledTwiceByDifferentLockers() public {
+        actions = [Action.NESTED_EXECUTOR_LOCK];
+        nestedActionRouter.lock(actions);
     }
 
     // function testExtsloadForPoolPrice() public {

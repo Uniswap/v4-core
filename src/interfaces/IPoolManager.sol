@@ -21,11 +21,11 @@ interface IPoolManager is IFees, IClaims {
     /// @notice Thrown when trying to interact with a non-initialized pool
     error PoolNotInitialized();
 
-    /// @notice Thrown when a function is called by an address that is not the current locker
+    /// @notice Thrown when lock is called, but a lock is already open
     /// @param locker The current locker
     error LockedBy(address locker);
 
-    /// @notice Thrown when a function is called by an address that is not the current locker
+    /// @notice Thrown when a function is called outside of a lock
     error ManagerNotLocked();
 
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155

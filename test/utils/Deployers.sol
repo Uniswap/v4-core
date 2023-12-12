@@ -16,6 +16,7 @@ import {PoolModifyPositionTest} from "../../src/test/PoolModifyPositionTest.sol"
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolInitializeTest} from "../../src/test/PoolInitializeTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
+import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
 import {
     ProtocolFeeControllerTest,
@@ -30,7 +31,7 @@ contract Deployers {
     using PoolIdLibrary for PoolKey;
 
     // Helpful test constants
-    bytes constant ZERO_BYTES = new bytes(0);
+    bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
     uint160 constant SQRT_RATIO_1_1 = Constants.SQRT_RATIO_1_1;
     uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
@@ -48,6 +49,7 @@ contract Deployers {
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
     PoolInitializeTest initializeRouter;
+    PoolNestedActionsTest nestedActionRouter;
     ProtocolFeeControllerTest feeController;
     RevertingProtocolFeeControllerTest revertingFeeController;
     OutOfBoundsProtocolFeeControllerTest outOfBoundsFeeController;
@@ -70,6 +72,7 @@ contract Deployers {
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
         initializeRouter = new PoolInitializeTest(manager);
+        nestedActionRouter = new PoolNestedActionsTest(manager);
         feeController = new ProtocolFeeControllerTest();
         revertingFeeController = new RevertingProtocolFeeControllerTest();
         outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
@@ -150,6 +153,7 @@ contract Deployers {
         // sets the global currencyies and key
         (currency0, currency1) = deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        nestedActionRouter.executor().setKey(key);
         (nativeKey,) = initPoolAndAddLiquidityETH(
             CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
         );
