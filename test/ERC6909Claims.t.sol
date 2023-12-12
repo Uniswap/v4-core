@@ -36,7 +36,7 @@ contract ERC6909ClaimsTest is Test {
             assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
         }
     }
-    
+
     /// ---- Tests copied from solmate ---- ///
 
     function testMint() public {
@@ -184,21 +184,13 @@ contract ERC6909ClaimsTest is Test {
         token.transferFrom(sender, receiver, 1337, 100);
     }
 
-    function testMint(
-        address receiver,
-        uint256 id,
-        uint256 amount
-    ) public {
+    function testMint(address receiver, uint256 id, uint256 amount) public {
         token.mint(receiver, id, amount);
 
         assertEq(token.balanceOf(receiver, id), amount);
     }
 
-    function testBurn(
-        address sender,
-        uint256 id,
-        uint256 amount
-    ) public {
+    function testBurn(address sender, uint256 id, uint256 amount) public {
         token.mint(sender, id, amount);
         vm.prank(sender);
         token.burn(id, amount);
@@ -212,23 +204,15 @@ contract ERC6909ClaimsTest is Test {
         assertEq(token.isOperator(address(this), operator), approved);
     }
 
-    function testApprove(
-        address spender,
-        uint256 id,
-        uint256 amount
-    ) public {
+    function testApprove(address spender, uint256 id, uint256 amount) public {
         token.approve(spender, id, amount);
 
         assertEq(token.allowance(address(this), spender, id), amount);
     }
 
-    function testTransfer(
-        address sender,
-        address receiver,
-        uint256 id,
-        uint256 mintAmount,
-        uint256 transferAmount
-    ) public {
+    function testTransfer(address sender, address receiver, uint256 id, uint256 mintAmount, uint256 transferAmount)
+        public
+    {
         transferAmount = bound(transferAmount, 0, mintAmount);
 
         token.mint(sender, id, mintAmount);
@@ -324,24 +308,14 @@ contract ERC6909ClaimsTest is Test {
         }
     }
 
-    function testFailTransferBalanceUnderflow(
-        address sender,
-        address receiver,
-        uint256 id,
-        uint256 amount
-    ) public {
+    function testFailTransferBalanceUnderflow(address sender, address receiver, uint256 id, uint256 amount) public {
         amount = bound(amount, 1, type(uint256).max);
 
         vm.prank(sender);
         token.transfer(receiver, id, amount);
     }
 
-    function testFailTransferBalanceOverflow(
-        address sender,
-        address receiver,
-        uint256 id,
-        uint256 amount
-    ) public {
+    function testFailTransferBalanceOverflow(address sender, address receiver, uint256 id, uint256 amount) public {
         amount = bound(amount, 1, type(uint256).max);
         uint256 overflowAmount = type(uint256).max - amount + 1;
 
@@ -356,24 +330,16 @@ contract ERC6909ClaimsTest is Test {
         token.transfer(receiver, id, overflowAmount);
     }
 
-    function testFailTransferFromBalanceUnderflow(
-        address sender,
-        address receiver,
-        uint256 id,
-        uint256 amount
-    ) public {
+    function testFailTransferFromBalanceUnderflow(address sender, address receiver, uint256 id, uint256 amount)
+        public
+    {
         amount = bound(amount, 1, type(uint256).max);
 
         vm.prank(sender);
         token.transferFrom(sender, receiver, id, amount);
     }
 
-    function testFailTransferFromBalanceOverflow(
-        address sender,
-        address receiver,
-        uint256 id,
-        uint256 amount
-    ) public {
+    function testFailTransferFromBalanceOverflow(address sender, address receiver, uint256 id, uint256 amount) public {
         amount = bound(amount, 1, type(uint256).max);
         uint256 overflowAmount = type(uint256).max - amount + 1;
 
@@ -388,12 +354,7 @@ contract ERC6909ClaimsTest is Test {
         token.transferFrom(sender, receiver, id, overflowAmount);
     }
 
-    function testFailTransferFromNotAuthorized(
-        address sender,
-        address receiver,
-        uint256 id,
-        uint256 amount
-    ) public {
+    function testFailTransferFromNotAuthorized(address sender, address receiver, uint256 id, uint256 amount) public {
         amount = bound(amount, 1, type(uint256).max);
 
         token.mint(sender, id, amount);

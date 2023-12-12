@@ -9,12 +9,12 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 contract MockERC6909Claims is ERC6909Claims {
     using CurrencyLibrary for Currency;
 
-    /// @notice mocked mint logic 
+    /// @notice mocked mint logic
     function mint(address to, uint256 id, uint256 amount) public {
         _mint(to, id, amount);
     }
 
-    /// @notice mocked burn logic 
+    /// @notice mocked burn logic
     function burn(uint256 id, uint256 amount) public {
         _burn(msg.sender, id, amount);
     }
