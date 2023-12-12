@@ -95,6 +95,12 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertEq(mockHooks.afterSwapData(), new bytes(222));
     }
 
+    function test_swap_helper() public {
+        int256 amountSpecified = 100;
+        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
+        assertEq(int256(result.amount0()), amountSpecified);
+    }
+
     function test_beforeSwap_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);

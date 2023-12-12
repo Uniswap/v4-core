@@ -10,6 +10,8 @@ import {PoolManager} from "../../src/PoolManager.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {FeeLibrary} from "../../src/libraries/FeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
+import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
+import {TickMath} from "../../src/libraries/TickMath.sol";
 import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
 import {PoolModifyPositionTest} from "../../src/test/PoolModifyPositionTest.sol";
@@ -35,6 +37,9 @@ contract Deployers {
     uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
     uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
+
+    uint160 public constant MIN_PRICE_LIMIT = TickMath.MIN_SQRT_RATIO + 1;
+    uint160 public constant MAX_PRICE_LIMIT = TickMath.MAX_SQRT_RATIO - 1;
 
     IPoolManager.ModifyPositionParams internal LIQ_PARAMS =
         IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
@@ -157,6 +162,23 @@ contract Deployers {
         uninitializedNativeKey = nativeKey;
         uninitializedKey.fee = 100;
         uninitializedNativeKey.fee = 100;
+    }
+
+    /// @notice Helper function for a simple swap that allows for unlimited price impact
+    function swap(PoolKey memory _key, bool zeroForOne, int256 amountSpecified, bytes memory hookData)
+        internal
+        returns (BalanceDelta)
+    {
+        return swapRouter.swap(
+            _key,
+            IPoolManager.SwapParams({
+                zeroForOne: zeroForOne,
+                amountSpecified: amountSpecified,
+                sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
+            }),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
+            hookData
+        );
     }
 
     // to receive refunds of spare eth from test helpers
