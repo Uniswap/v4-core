@@ -100,7 +100,8 @@ contract Deployers {
             tokens[1].approve(toApprove[i], Constants.MAX_UINT256);
         }
 
-        return SortTokens.sort(tokens[0], tokens[1]);
+        (currency0, currency1) = SortTokens.sort(tokens[0], tokens[1]);
+        return (currency0, currency1);
     }
 
     function deployTokens(uint8 count, uint256 totalSupply) internal returns (MockERC20[] memory tokens) {
@@ -153,7 +154,7 @@ contract Deployers {
     function initializeManagerRoutersAndPoolsWithLiq(IHooks hooks) internal {
         deployFreshManagerAndRouters();
         // sets the global currencyies and key
-        (currency0, currency1) = deployMintAndApprove2Currencies();
+        deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
         (nativeKey,) = initPoolAndAddLiquidityETH(
             CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
