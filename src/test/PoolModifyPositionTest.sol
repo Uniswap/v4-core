@@ -45,9 +45,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta;
-        delta = manager.modifyPosition(data.key, data.params, data.hookData);
-
+        BalanceDelta delta = manager.modifyPosition(data.key, data.params, data.hookData);
         // Checks that the current hook is cleared if there is an access lock. Note that if this router is ever used in a nested lock this will fail.
         assertEq(address(manager.getCurrentHook()), address(0));
 
@@ -57,11 +55,11 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         // These assertions only apply in non lock-accessing pools.
         if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
             if (data.params.liquidityDelta >= 0) {
-                require(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG), "assert 1 failed");
-                require(!(delta0 < 0 || delta1 < 0), "assert 2 failed");
+                assert(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
+                assert(!(delta0 < 0 || delta1 < 0));
             } else {
-                require(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG), "assert 3 failed");
-                require(!(delta0 > 0 || delta1 > 0), "assert 4 failed");
+                assert(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
+                assert(!(delta0 > 0 || delta1 > 0));
             }
         }
 

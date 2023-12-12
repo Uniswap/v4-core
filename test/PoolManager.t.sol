@@ -96,7 +96,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             address(modifyPositionRouter),
             LIQ_PARAMS.tickLower,
             LIQ_PARAMS.tickUpper,
-            int128(int256(LIQ_PARAMS.liquidityDelta))
+            LIQ_PARAMS.liquidityDelta
         );
 
         modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
@@ -109,9 +109,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         emit ModifyPosition(
             key.toId(),
             address(modifyPositionRouter),
-            LIQ_PARAMS.tickLower,
-            LIQ_PARAMS.tickUpper,
-            -int128(int256(LIQ_PARAMS.liquidityDelta))
+            REMOVE_LIQ_PARAMS.tickLower,
+            REMOVE_LIQ_PARAMS.tickUpper,
+            REMOVE_LIQ_PARAMS.liquidityDelta
         );
 
         modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
@@ -126,7 +126,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             address(modifyPositionRouter),
             LIQ_PARAMS.tickLower,
             LIQ_PARAMS.tickUpper,
-            int128(int256(LIQ_PARAMS.liquidityDelta))
+            LIQ_PARAMS.liquidityDelta
         );
 
         modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
@@ -139,9 +139,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         emit ModifyPosition(
             nativeKey.toId(),
             address(modifyPositionRouter),
-            LIQ_PARAMS.tickLower,
-            LIQ_PARAMS.tickUpper,
-            -int128(int256(LIQ_PARAMS.liquidityDelta))
+            REMOVE_LIQ_PARAMS.tickLower,
+            REMOVE_LIQ_PARAMS.tickUpper,
+            REMOVE_LIQ_PARAMS.liquidityDelta
         );
 
         modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, REMOVE_LIQ_PARAMS, ZERO_BYTES);
@@ -267,7 +267,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             address(modifyPositionRouter),
             LIQ_PARAMS.tickLower,
             LIQ_PARAMS.tickUpper,
-            int128(int256(LIQ_PARAMS.liquidityDelta))
+            LIQ_PARAMS.liquidityDelta
         );
 
         modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
@@ -292,7 +292,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             address(modifyPositionRouter),
             REMOVE_LIQ_PARAMS.tickLower,
             REMOVE_LIQ_PARAMS.tickUpper,
-            int128(REMOVE_LIQ_PARAMS.liquidityDelta)
+            REMOVE_LIQ_PARAMS.liquidityDelta
         );
 
         modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);

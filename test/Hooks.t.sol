@@ -65,9 +65,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_beforeAfterAddLiquidity_beforeAfterRemoveLiquidity_succeedsWithHook() public {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 10 ** 18), new bytes(111));
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
+        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 1e18);
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1e18), new bytes(111));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
 
@@ -77,17 +77,17 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_beforeAfterAddLiquidity_calledWithPositiveLiquidityDelta() public {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
+        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 1e18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 100), new bytes(111));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
     }
 
     function test_beforeAfterAddLiquidity_calledWithZeroLiquidityDelta() public {
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 10 ** 18), new bytes(111));
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
+        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 1e18);
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1e18), new bytes(111));
         assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
 
@@ -97,9 +97,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_beforeAfterRemoveLiquidity_calledWithPositiveLiquidityDelta() public {
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 10 ** 18), new bytes(111));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
+        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1e18), new bytes(111));
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
+        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 1e18);
         modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, -1e18), new bytes(111));
         assertEq(mockHooks.beforeRemoveLiquidityData(), new bytes(111));
         assertEq(mockHooks.afterRemoveLiquidityData(), new bytes(111));
@@ -107,16 +107,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function test_beforeAddLiquidity_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeAddLiquidity.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
+        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 1e18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_beforeRemoveLiquidity_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
+        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 1e18);
         modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
@@ -124,16 +124,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function test_afterAddLiquidity_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterAddLiquidity.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
+        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 1e18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_afterRemoveLiquidity_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterRemoveLiquidity.selector, bytes4(0xdeadbeef));
-        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 10 ** 18);
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 10 ** 18);
+        MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
+        MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyPositionRouter), 1e18);
         modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
@@ -174,7 +174,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_donate_succeedsWithHook() public {
-        donateRouter.donate(key, 10, 200, new bytes(333));
+        donateRouter.donate(key, 100, 200, new bytes(333));
         assertEq(mockHooks.beforeDonateData(), new bytes(333));
         assertEq(mockHooks.afterDonateData(), new bytes(333));
     }
