@@ -292,15 +292,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function mint(address to, Currency currency, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-        _mint(to, currency.toId(), amount);
+    function mint(address to, uint256 id, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
+        _mint(to, id, amount);
     }
 
     /// @inheritdoc IPoolManager
-    function burn(address from, Currency currency, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, -(amount.toInt128()));
-        _burnFrom(from, currency.toId(), amount);
+    function burn(address from, uint256 id, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
+        _burnFrom(from, id, amount);
     }
 
     function setProtocolFee(PoolKey memory key) external {
