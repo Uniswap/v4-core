@@ -181,10 +181,10 @@ interface IPoolManager is IFees, IERC6909Claims {
     function take(Currency currency, address to, uint256 amount) external;
 
     /// @notice Called by the user to move value into ERC6909 balance
-    function mint(address to, Currency token, uint256 amount) external;
+    function mint(address to, uint256 id, uint256 amount) external;
 
     /// @notice Called by the user to move value from ERC6909 balance
-    function burn(address from, Currency token, uint256 amount) external;
+    function burn(address from, uint256 id, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
