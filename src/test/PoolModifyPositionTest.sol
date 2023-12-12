@@ -16,11 +16,6 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
     using Hooks for IHooks;
     using FeeLibrary for uint24;
 
-    enum LockAction {
-        AddLiquidity,
-        RemoveLiquidity
-    }
-
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
     struct CallbackData {
@@ -28,34 +23,15 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         PoolKey key;
         IPoolManager.ModifyPositionParams params;
         bytes hookData;
-        LockAction action;
     }
 
-    function removeLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
+    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
         external
         payable
         returns (BalanceDelta delta)
     {
-        delta = _modifyPosition(key, params, hookData, LockAction.RemoveLiquidity);
-    }
-
-    function addLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
-        external
-        payable
-        returns (BalanceDelta delta)
-    {
-        delta = _modifyPosition(key, params, hookData, LockAction.AddLiquidity);
-    }
-
-    function _modifyPosition(
-        PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params,
-        bytes memory hookData,
-        LockAction action
-    ) internal returns (BalanceDelta delta) {
         delta = abi.decode(
-            manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, params, hookData, action))),
-            (BalanceDelta)
+            manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, params, hookData))), (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
@@ -70,11 +46,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
         BalanceDelta delta;
-        if (data.action == LockAction.AddLiquidity) {
-            delta = manager.addLiquidity(data.key, data.params, data.hookData);
-        } else {
-            delta = manager.removeLiquidity(data.key, data.params, data.hookData);
-        }
+        delta = manager.modifyPosition(data.key, data.params, data.hookData);
 
         // Checks that the current hook is cleared if there is an access lock. Note that if this router is ever used in a nested lock this will fail.
         assertEq(address(manager.getCurrentHook()), address(0));
@@ -83,12 +55,12 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
 
         // These assertions only apply in non lock-accessing pools.
-        if (!data.key.hooks.hasPermissionToAccessLock() && !data.key.fee.hasHookWithdrawFee()) {
-            if (data.action == LockAction.AddLiquidity) {
-                require(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermissionToNoOp(), "assert 1 failed");
+        if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
+            if (data.params.liquidityDelta >= 0) {
+                require(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG), "assert 1 failed");
                 require(!(delta0 < 0 || delta1 < 0), "assert 2 failed");
             } else {
-                require(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermissionToNoOp(), "assert 3 failed");
+                require(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG), "assert 3 failed");
                 require(!(delta0 > 0 || delta1 > 0), "assert 4 failed");
             }
         }

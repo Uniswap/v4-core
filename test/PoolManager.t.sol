@@ -50,7 +50,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     );
     event Mint(address indexed to, Currency indexed currency, uint256 amount);
     event Burn(address indexed from, Currency indexed currency, uint256 amount);
-    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
+    event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
 
     PoolLockTest lockTest;
 
@@ -79,12 +79,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_addLiquidity_failsIfNotInitialized() public {
         vm.expectRevert(Pool.PoolNotInitialized.selector);
-        modifyPositionRouter.addLiquidity(uninitializedKey, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(uninitializedKey, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_removeLiquidity_failsIfNotInitialized() public {
         vm.expectRevert(Pool.PoolNotInitialized.selector);
-        modifyPositionRouter.removeLiquidity(uninitializedKey, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(uninitializedKey, REMOVE_LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_addLiquidity_succeedsIfInitialized(uint160 sqrtPriceX96) public {
@@ -99,7 +99,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             int128(int256(LIQ_PARAMS.liquidityDelta))
         );
 
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_removeLiquidity_succeedsIfInitialized(uint160 sqrtPriceX96) public {
@@ -114,7 +114,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             -int128(int256(LIQ_PARAMS.liquidityDelta))
         );
 
-        modifyPositionRouter.removeLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_addLiquidity_succeedsForNativeTokensIfInitialized(uint160 sqrtPriceX96) public {
@@ -129,7 +129,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             int128(int256(LIQ_PARAMS.liquidityDelta))
         );
 
-        modifyPositionRouter.addLiquidity{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_removeLiquidity_succeedsForNativeTokensIfInitialized(uint160 sqrtPriceX96) public {
@@ -144,7 +144,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             -int128(int256(LIQ_PARAMS.liquidityDelta))
         );
 
-        modifyPositionRouter.removeLiquidity{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, REMOVE_LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_addLiquidity_succeedsWithHooksIfInitialized(uint160 sqrtPriceX96) public {
@@ -162,7 +162,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         (key,) = initPool(currency0, currency1, IHooks(mockAddr), 3000, sqrtPriceX96, ZERO_BYTES);
 
-        BalanceDelta balanceDelta = modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        BalanceDelta balanceDelta = modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
         bytes32 beforeSelector = MockHooks.beforeAddLiquidity.selector;
         bytes memory beforeParams = abi.encode(address(modifyPositionRouter), key, LIQ_PARAMS, ZERO_BYTES);
@@ -189,13 +189,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         MockContract(mockAddr).setImplementation(hookAddr);
 
         (key,) = initPool(currency0, currency1, IHooks(mockAddr), 3000, sqrtPriceX96, ZERO_BYTES);
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
-        BalanceDelta balanceDelta = modifyPositionRouter.removeLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
+        BalanceDelta balanceDelta = modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
 
         bytes32 beforeSelector = MockHooks.beforeRemoveLiquidity.selector;
-        bytes memory beforeParams = abi.encode(address(modifyPositionRouter), key, LIQ_PARAMS, ZERO_BYTES);
+        bytes memory beforeParams = abi.encode(address(modifyPositionRouter), key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
         bytes32 afterSelector = MockHooks.afterRemoveLiquidity.selector;
-        bytes memory afterParams = abi.encode(address(modifyPositionRouter), key, LIQ_PARAMS, balanceDelta, ZERO_BYTES);
+        bytes memory afterParams =
+            abi.encode(address(modifyPositionRouter), key, REMOVE_LIQ_PARAMS, balanceDelta, ZERO_BYTES);
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
@@ -217,12 +218,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         // Fails at beforeAddLiquidity hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
         // Fail at afterAddLiquidity hook.
         mockHooks.setReturnValue(mockHooks.beforeAddLiquidity.selector, mockHooks.beforeAddLiquidity.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_removeLiquidity_failsWithIncorrectSelectors() public {
@@ -233,19 +234,19 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         MockHooks mockHooks = MockHooks(hookAddr);
 
         (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_RATIO_1_1, ZERO_BYTES);
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, bytes4(0xdeadbeef));
         mockHooks.setReturnValue(mockHooks.afterRemoveLiquidity.selector, bytes4(0xdeadbeef));
 
         // Fails at beforeRemoveLiquidity hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.removeLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
 
         // Fail at afterRemoveLiquidity hook.
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, mockHooks.beforeRemoveLiquidity.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.removeLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_addLiquidity_succeedsWithCorrectSelectors() public {
@@ -269,7 +270,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             int128(int256(LIQ_PARAMS.liquidityDelta))
         );
 
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_removeLiquidity_succeedsWithCorrectSelectors() public {
@@ -280,7 +281,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         MockHooks mockHooks = MockHooks(hookAddr);
 
         (key,) = initPool(currency0, currency1, mockHooks, 100, SQRT_RATIO_1_1, ZERO_BYTES);
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, mockHooks.beforeRemoveLiquidity.selector);
         mockHooks.setReturnValue(mockHooks.afterRemoveLiquidity.selector, mockHooks.afterRemoveLiquidity.selector);
@@ -289,35 +290,35 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         emit ModifyPosition(
             key.toId(),
             address(modifyPositionRouter),
-            LIQ_PARAMS.tickLower,
-            LIQ_PARAMS.tickUpper,
-            -int128(int256(LIQ_PARAMS.liquidityDelta))
+            REMOVE_LIQ_PARAMS.tickLower,
+            REMOVE_LIQ_PARAMS.tickUpper,
+            int128(REMOVE_LIQ_PARAMS.liquidityDelta)
         );
 
-        modifyPositionRouter.removeLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_addLiquidity_gas() public {
         snapStart("addLiquidity");
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
     function test_removeLiquidity_gas() public {
         snapStart("removeLiquidity");
-        modifyPositionRouter.removeLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
     function test_addLiquidity_withNative_gas() public {
         snapStart("addLiquidity with native token");
-        modifyPositionRouter.addLiquidity{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
     function test_removeLiquidity_withNative_gas() public {
         snapStart("removeLiquidity with native token");
-        modifyPositionRouter.removeLiquidity{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, REMOVE_LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
@@ -330,7 +331,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
 
         snapStart("addLiquidity with empty hook");
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
@@ -341,10 +342,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         MockHooks mockHooks = MockHooks(hookEmptyAddr);
 
         (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
         snapStart("removeLiquidity with empty hook");
-        modifyPositionRouter.removeLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
@@ -364,8 +365,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
                     address(this),
                     key,
                     IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}),
-                    ZERO_BYTES,
-                    PoolModifyPositionTest.LockAction.AddLiquidity
+                    ZERO_BYTES
                 )
             )
         );
@@ -376,7 +376,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_swap_EOAInitiated() public {
         IPoolManager.ModifyPositionParams memory liqParams =
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyPositionRouter.addLiquidity(key, liqParams, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
 
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
@@ -395,7 +395,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_swap_native_EOAInitiated() public {
         IPoolManager.ModifyPositionParams memory liqParams =
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyPositionRouter.addLiquidity{value: 1 ether}(nativeKey, liqParams, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, liqParams, ZERO_BYTES);
 
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
@@ -414,7 +414,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_invalidLockTarget() public {
         IPoolManager.ModifyPositionParams memory liqParams =
             IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyPositionRouter.addLiquidity{value: 1 ether}(nativeKey, liqParams, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition{value: 1 ether}(nativeKey, liqParams, ZERO_BYTES);
 
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
@@ -634,7 +634,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
-    function test_swap_GasMintClaimIfOutputNotTaken() public {
+    function test_swap_mintClaimIfOutputNotTaken_gas() public {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
@@ -651,7 +651,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(claimsBalance, 98);
     }
 
-    function test_swap_GasUseClaimAsInput() public {
+    function test_swap_useClaimAsInput_gas() public {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
@@ -712,6 +712,45 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapStart("swap against liquidity with native token");
         swapRouter.swap{value: 1 ether}(nativeKey, params, testSettings, ZERO_BYTES);
         snapEnd();
+    }
+
+    function test_swap_accruesProtocolFees(uint8 protocolFee1, uint8 protocolFee0) public {
+        protocolFee0 = uint8(bound(protocolFee0, 4, type(uint8).max));
+        protocolFee1 = uint8(bound(protocolFee1, 4, type(uint8).max));
+
+        uint16 protocolFee = (uint16(protocolFee1) << 8) | (uint16(protocolFee0) & uint16(0xFF));
+
+        feeController.setSwapFeeForPool(key.toId(), protocolFee);
+        manager.setProtocolFee(key);
+
+        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
+        assertEq(slot0.protocolFee, protocolFee);
+
+        // Add liquidity - Fees dont accrue for positive liquidity delta.
+        IPoolManager.ModifyPositionParams memory params = LIQ_PARAMS;
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+
+        assertEq(manager.protocolFeesAccrued(currency0), 0);
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+
+        // Remove liquidity - Fees dont accrue for negative liquidity delta.
+        params.liquidityDelta = -LIQ_PARAMS.liquidityDelta;
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+
+        assertEq(manager.protocolFeesAccrued(currency0), 0);
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
+
+        // Now re-add the liquidity to test swap
+        params.liquidityDelta = LIQ_PARAMS.liquidityDelta;
+        modifyPositionRouter.modifyPosition(key, params, ZERO_BYTES);
+
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, 10000, TickMath.MAX_SQRT_RATIO - 1);
+        swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES);
+
+        uint256 expectedTotalSwapFee = uint256(swapParams.amountSpecified) * key.fee / 1e6;
+        uint256 expectedProtocolFee = expectedTotalSwapFee / protocolFee1;
+        assertEq(manager.protocolFeesAccrued(currency0), 0);
+        assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }
 
     function test_donate_failsIfNotInitialized() public {
@@ -840,59 +879,67 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         takeRouter.take{value: 1}(nativeKey, 1, 1); // assertions inside takeRouter because it takes then settles
     }
 
-    function test_setProtocolFee_updatesProtocolFeeForInitializedPool() public {
-        uint24 protocolFee = 4;
-
+    function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint16 protocolFee) public {
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFees, 0);
-        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+        assertEq(slot0.protocolFee, 0);
+        feeController.setSwapFeeForPool(key.toId(), protocolFee);
 
-        vm.expectEmit(false, false, false, true);
-        emit ProtocolFeeUpdated(key.toId(), protocolFee << 12);
-        manager.setProtocolFees(key);
+        uint8 fee0 = uint8(protocolFee >> 8);
+        uint8 fee1 = uint8(protocolFee % 256);
+        if ((0 < fee0 && fee0 < 4) || (0 < fee1 && fee1 < 4)) {
+            vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+            manager.setProtocolFee(key);
+        } else {
+            vm.expectEmit(false, false, false, true);
+            emit ProtocolFeeUpdated(key.toId(), protocolFee);
+            manager.setProtocolFee(key);
+
+            (slot0,,,) = manager.pools(key.toId());
+            assertEq(slot0.protocolFee, protocolFee);
+        }
     }
 
     function test_setProtocolFee_failsWithInvalidProtocolFeeControllers() public {
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFees, 0);
+        assertEq(slot0.protocolFee, 0);
 
         manager.setProtocolFeeController(revertingFeeController);
         vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(outOfBoundsFeeController);
         vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(overflowFeeController);
         vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(invalidReturnSizeFeeController);
         vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
     }
 
     function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
-        uint24 protocolFee = 260; // 0001 00 00 0100
+        uint16 protocolFee = 1028; // 00000100 00000100
 
         // sets the upper 12 bits
         feeController.setSwapFeeForPool(uninitializedKey.toId(), uint16(protocolFee));
 
         initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee);
     }
 
     function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees_gas() public {
-        uint24 protocolFee = 260; // 0001 00 00 0100
+        uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
 
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee);
 
         swapRouter.swap(
             key,
@@ -931,7 +978,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // Test add liquidity
         snapStart("modify position with noop");
         BalanceDelta delta =
-            modifyPositionRouter.addLiquidity(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
+            modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
         snapEnd();
 
         // Swap
@@ -973,7 +1020,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         // Test add liquidity
         BalanceDelta delta =
-            modifyPositionRouter.addLiquidity(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
+            modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
 
         assertTrue(delta == BalanceDeltaLibrary.MAXIMUM_DELTA, "Max delta not returned");
         assertEq(manager.reservesOf(currency0), reserveBefore0);
@@ -1020,7 +1067,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
         BalanceDelta delta =
-            modifyPositionRouter.addLiquidity(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
+            modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES);
 
         // Swap
         IPoolManager.SwapParams memory swapParams =
@@ -1068,11 +1115,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // Fails at afterAddLiquidity hook when it returns a NoOp
         mockHooks.setReturnValue(mockHooks.afterAddLiquidity.selector, Hooks.NO_OP_SELECTOR);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
         // Now we let the modify position succeed (so we can test other functions)
         mockHooks.setReturnValue(mockHooks.afterAddLiquidity.selector, mockHooks.afterAddLiquidity.selector);
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
         // Fails at afterSwap hook when it returns a NoOp
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, Hooks.NO_OP_SELECTOR);
@@ -1108,7 +1155,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // Fails at beforeAddLiquidity hook when it returns a NoOp but doesnt have permission
         mockHooks.setReturnValue(mockHooks.beforeAddLiquidity.selector, Hooks.NO_OP_SELECTOR);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyPositionRouter.addLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
 
         // Fails at beforeSwap hook when it returns a NoOp but doesnt have permission
         mockHooks.setReturnValue(mockHooks.beforeSwap.selector, Hooks.NO_OP_SELECTOR);
@@ -1127,14 +1174,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint24 protocolFee = 260; // 0001 00 00 0100
+        uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
 
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
-        manager.setProtocolFees(key);
+        manager.setProtocolFee(key);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee);
 
         swapRouter.swap(
             key,
@@ -1152,16 +1199,16 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees_gas() public {
-        uint24 protocolFee = 260; // 0001 00 00 0100
+        uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
         // set protocol fee before initializing the pool as it is fetched on initialization
         feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
-        manager.setProtocolFees(nativeKey);
+        manager.setProtocolFee(nativeKey);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee);
 
         swapRouter.swap{value: 10000}(
             nativeKey,
@@ -1181,15 +1228,15 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint24 protocolFee = 260; // 0001 00 00 0100
+        uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
         feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
-        manager.setProtocolFees(nativeKey);
+        manager.setProtocolFee(nativeKey);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFees, protocolFee << 12);
+        assertEq(slot0.protocolFee, protocolFee);
 
         swapRouter.swap{value: 10000}(
             nativeKey,
@@ -1254,7 +1301,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     //     manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
     //     // populate feeGrowthGlobalX128 struct w/ modify + swap
-    //     modifyPositionRouter.addLiquidity(key, IPoolManager.ModifyPositionParams(-120, 120, 5 ether));
+    //     modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(-120, 120, 5 ether));
     //     swapRouter.swap(
     //         key,
     //         IPoolManager.SwapParams(false, 1 ether, TickMath.MAX_SQRT_RATIO - 1),

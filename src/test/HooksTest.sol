@@ -16,48 +16,48 @@ contract HooksTest {
     }
 
     function shouldCallBeforeInitialize(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeInitialize();
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_INITIALIZE_FLAG);
     }
 
     function shouldCallAfterInitialize(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterInitialize();
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_INITIALIZE_FLAG);
     }
 
     function shouldCallBeforeSwap(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeSwap();
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_SWAP_FLAG);
     }
 
     function shouldCallAfterSwap(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterSwap();
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_SWAP_FLAG);
     }
 
     function shouldCallBeforeAddLiquidity(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeAddLiquidity();
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG);
     }
 
     function shouldCallAfterAddLiquidity(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterAddLiquidity();
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG);
     }
 
     function shouldCallBeforeRemoveLiquidity(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeRemoveLiquidity();
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG);
     }
 
     function shouldCallAfterRemoveLiquidity(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterRemoveLiquidity();
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG);
     }
 
     function shouldCallBeforeDonate(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallBeforeDonate();
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_DONATE_FLAG);
     }
 
     function shouldCallAfterDonate(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).shouldCallAfterDonate();
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_DONATE_FLAG);
     }
 
     function getGasCostOfShouldCall(address hookAddress) external view returns (uint256) {
         uint256 gasBefore = gasleft();
-        IHooks(hookAddress).shouldCallBeforeSwap();
+        IHooks(hookAddress).hasPermission(Hooks.BEFORE_SWAP_FLAG);
         return gasBefore - gasleft();
     }
 
