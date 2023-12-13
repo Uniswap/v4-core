@@ -37,6 +37,14 @@ contract ERC6909ClaimsTest is Test {
         }
     }
 
+    function test_burnFrom_revertsWithNoApproval() public {
+        token.mint(address(this), 1337, 100);
+
+        vm.prank(address(0xBEEF));
+        vm.expectRevert();
+        token.burnFrom(address(this), 1337, 100);
+    }
+
     /// ---- Tests copied from solmate ---- ///
 
     function testMint() public {
