@@ -12,7 +12,3 @@
 	path = lib/solmate
 	url = https://github.com/transmissions11/solmate
 	branch = main
-[submodule "lib/ERC-6909"]
-	path = lib/ERC-6909
-	url = https://github.com/jtriley-eth/ERC-6909
-	branch = main
