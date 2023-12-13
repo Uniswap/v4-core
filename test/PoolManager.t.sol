@@ -254,11 +254,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_EOAInitiated(uint256 swapAmount) public {
-        // lower bound for precision purposes
-        vm.assume(swapAmount > 100 && swapAmount < type(uint256).max - 1);
-
+        
+        IPoolManager.ModifyPositionParams memory liqParams =
+            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
+        
         (uint256 amount0,) = getMaxAmountInForPool(Deployers.LIQ_PARAMS, key);
-        vm.assume(swapAmount <= amount0);
+        // lower bound for precision purposes
+        swapAmount = uint256(bound(swapAmount, 100, amount0));
 
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
             zeroForOne: true,
