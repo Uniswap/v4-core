@@ -172,7 +172,7 @@ library Hooks {
             shouldExecute = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData)
             );
-        } else if (params.liquidityDelta < 0 && key.hooks.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
+        } else if (params.liquidityDelta <= 0 && key.hooks.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
             shouldExecute = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
             );
@@ -193,7 +193,7 @@ library Hooks {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterAddLiquidity.selector, msg.sender, key, params, delta, hookData)
             );
-        } else if (params.liquidityDelta < 0 && key.hooks.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
+        } else if (params.liquidityDelta <= 0 && key.hooks.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterRemoveLiquidity.selector, msg.sender, key, params, delta, hookData)
             );
