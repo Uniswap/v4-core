@@ -18,7 +18,7 @@ contract ClaimsTest is Test, Deployers {
     event Transfer(address indexed from, address indexed to, Currency indexed currency, uint256 amount);
 
     function setUp() public {
-        (currency0, currency1) = deployMintAndApprove2Currencies();
+        (currency0, currency1) = deployAndMint2Currencies();
     }
 
     function testCanBurn(uint256 amount) public {

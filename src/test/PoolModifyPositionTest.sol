@@ -47,8 +47,8 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
 
         BalanceDelta delta = manager.modifyPosition(data.key, data.params, data.hookData);
 
-        (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender);
-        (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
+        (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         if (data.params.liquidityDelta > 0) {
             assert(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));

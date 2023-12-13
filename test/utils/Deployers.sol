@@ -82,15 +82,18 @@ contract Deployers {
         manager.setProtocolFeeController(feeController);
     }
 
+    // You must have first initialised the routers with deployFreshManagerAndRouters
+    // If you only need the currencies (and not approvals) call deployAndMint2Currencies
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
         MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
 
-        address[5] memory toApprove = [
+        address[6] memory toApprove = [
             address(swapRouter),
             address(modifyPositionRouter),
             address(donateRouter),
             address(takeRouter),
-            address(initializeRouter)
+            address(initializeRouter),
+            address(nestedActionRouter.executor())
         ];
 
         for (uint256 i = 0; i < toApprove.length; i++) {
@@ -98,6 +101,11 @@ contract Deployers {
             tokens[1].approve(toApprove[i], Constants.MAX_UINT256);
         }
 
+        return SortTokens.sort(tokens[0], tokens[1]);
+    }
+
+    function deployAndMint2Currencies() internal returns (Currency, Currency) {
+        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
         return SortTokens.sort(tokens[0], tokens[1]);
     }
 

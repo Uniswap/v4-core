@@ -22,14 +22,12 @@ enum Action {
 contract PoolNestedActionsTest is Test, ILockCallback {
     IPoolManager manager;
     NestedActionExecutor public executor;
+    address user;
 
     constructor(IPoolManager _manager) {
         manager = _manager;
-        executor = new NestedActionExecutor(manager);
-    }
-
-    function lock(Action[] memory actions) external {
-        manager.lock(address(this), abi.encode(actions));
+        user = msg.sender;
+        executor = new NestedActionExecutor(manager, user);
     }
 
     /// @notice Called by the pool manager on `msg.sender` when a lock is acquired
@@ -46,19 +44,20 @@ contract PoolNestedActionsTest is Test, ILockCallback {
     function _nestedLock() internal {
         (address locker, address lockCaller) = manager.getLock();
         assertEq(locker, address(this));
-        assertEq(lockCaller, address(this));
+        assertEq(lockCaller, user);
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(this)));
         manager.lock(address(this), "");
 
         (locker, lockCaller) = manager.getLock();
         assertEq(locker, address(this));
-        assertEq(lockCaller, address(this));
+        assertEq(lockCaller, user);
     }
 }
 
 contract NestedActionExecutor is Test, PoolTestBase {
     PoolKey internal key;
+    address user;
 
     error KeyNotSet();
 
@@ -71,7 +70,9 @@ contract NestedActionExecutor is Test, PoolTestBase {
     IPoolManager.SwapParams internal SWAP_PARAMS =
         IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: Constants.SQRT_RATIO_1_2});
 
-    constructor(IPoolManager _manager) PoolTestBase(_manager) {}
+    constructor(IPoolManager _manager, address _user) PoolTestBase(_manager) {
+        user = _user;
+    }
 
     function setKey(PoolKey memory _key) external {
         key = _key;
@@ -92,36 +93,43 @@ contract NestedActionExecutor is Test, PoolTestBase {
     function _nestedLock() internal {
         (address locker, address lockCaller) = manager.getLock();
         assertEq(locker, msg.sender);
-        assertEq(lockCaller, msg.sender);
+        assertEq(lockCaller, user);
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, msg.sender));
         manager.lock(address(this), "");
 
         (locker, lockCaller) = manager.getLock();
         assertEq(locker, msg.sender);
-        assertEq(lockCaller, msg.sender);
+        assertEq(lockCaller, user);
     }
 
     function _swap() internal {
-        // swap without a lock, checking that the deltas are applied to this contract's address
-        (,,, int256 deltaLockerBefore0) = _fetchBalances(key.currency0, msg.sender);
-        (,,, int256 deltaLockerBefore1) = _fetchBalances(key.currency1, msg.sender);
-        (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, address(this));
-        (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, address(this));
+        (address locker, address lockCaller) = manager.getLock();
+
+        // swap without a lock, checking that the deltas are applied to this contract's address not the locker's address
+        assertTrue(locker != address(this), "Locker wrong");
+        assertEq(lockCaller, user);
+        (,,, int256 deltaLockerBefore0) = _fetchBalances(key.currency0, user, locker);
+        (,,, int256 deltaLockerBefore1) = _fetchBalances(key.currency1, user, locker);
+        (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
+        (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
         BalanceDelta delta = manager.swap(key, SWAP_PARAMS, "");
 
-        (,,, int256 deltaLockerAfter0) = _fetchBalances(key.currency0, msg.sender);
-        (,,, int256 deltaLockerAfter1) = _fetchBalances(key.currency1, msg.sender);
-        (,,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, address(this));
-        (,,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, address(this));
+        (,,, int256 deltaLockerAfter0) = _fetchBalances(key.currency0, user, locker);
+        (,,, int256 deltaLockerAfter1) = _fetchBalances(key.currency1, user, locker);
+        (,,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, user, address(this));
+        (,,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, user, address(this));
 
-        assertEq(deltaLockerBefore0, deltaLockerAfter0);
-        assertEq(deltaLockerBefore1, deltaLockerAfter1);
-        assertEq(deltaThisBefore0 + SWAP_PARAMS.amountSpecified, deltaThisAfter0);
-        assertEq(deltaThisBefore1 - 98, deltaThisAfter1);
-        assertEq(delta.amount0(), deltaThisAfter0);
-        assertEq(delta.amount1(), deltaThisAfter1);
+        assertEq(deltaLockerBefore0, deltaLockerAfter0, "Locker delta 0");
+        assertEq(deltaLockerBefore1, deltaLockerAfter1, "Locker delta 1");
+        assertEq(deltaThisBefore0 + SWAP_PARAMS.amountSpecified, deltaThisAfter0, "Executor delta 0");
+        assertEq(deltaThisBefore1 - 98, deltaThisAfter1, "Executor delta 1");
+        assertEq(delta.amount0(), deltaThisAfter0, "Swap delta 0");
+        assertEq(delta.amount1(), deltaThisAfter1, "Swap delta 1");
+
+        _settle(key.currency0, user, int128(deltaThisAfter0), true);
+        _take(key.currency1, user, int128(deltaThisAfter1), true);
     }
 
     function _addLiquidity() internal {}
