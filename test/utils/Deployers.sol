@@ -7,7 +7,6 @@ import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
-import {ERC6909Claims} from "../../src/ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {FeeLibrary} from "../../src/libraries/FeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
