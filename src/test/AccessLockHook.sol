@@ -110,7 +110,7 @@ contract AccessLockHook is Test, BaseTestHooks {
                 new bytes(0)
             );
         } else if (action == LockAction.ModifyPosition) {
-            manager.modifyPosition(
+            manager.modifyLiquidity(
                 key,
                 IPoolManager.ModifyPositionParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),
                 new bytes(0)
@@ -174,7 +174,7 @@ contract AccessLockHook2 is Test, BaseTestHooks {
         } else {
             // Should succeed and should NOT set the current hook to key2.hooks.
             // The permissions should remain to THIS hook during this lock.
-            manager.modifyPosition(key2, params, new bytes(0));
+            manager.modifyLiquidity(key2, params, new bytes(0));
 
             if (address(manager.getCurrentHook()) != address(this)) {
                 revert IncorrectHookSet();

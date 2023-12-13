@@ -155,13 +155,13 @@ interface IPoolManager is IFees, IClaims {
         int256 liquidityDelta;
     }
 
-    /// @notice Modify the position for the given pool
+    /// @notice Modify the liquidity for the given pool
     /// @dev Poke by calling with a zero liquidityDelta
-    /// @param key The pool to modify a position in
-    /// @param params The parameters for modifying the position
+    /// @param key The pool to modify liquidity in
+    /// @param params The parameters for modifying the liquidity
     /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
-    /// @return delta The balance delta of the position
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
+    /// @return delta The balance delta of the liquidity
+    function modifyLiquidity(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta);
 

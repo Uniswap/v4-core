@@ -25,7 +25,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         bytes hookData;
     }
 
-    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
+    function modifyLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
         external
         payable
         returns (BalanceDelta delta)
@@ -45,7 +45,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.modifyPosition(data.key, data.params, data.hookData);
+        BalanceDelta delta = manager.modifyLiquidity(data.key, data.params, data.hookData);
         // Checks that the current hook is cleared if there is an access lock. Note that if this router is ever used in a nested lock this will fail.
         assertEq(address(manager.getCurrentHook()), address(0));
 
@@ -54,7 +54,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
 
         // These assertions only apply in non lock-accessing pools.
         if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
-            if (data.params.liquidityDelta >= 0) {
+            if (data.params.liquidityDelta > 0) {
                 assert(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
                 assert(!(delta0 < 0 || delta1 < 0));
             } else {

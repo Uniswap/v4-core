@@ -168,22 +168,16 @@ library Hooks {
         IPoolManager.ModifyPositionParams memory params,
         bytes calldata hookData
     ) internal returns (bool shouldExecute) {
-        if (params.liquidityDelta >= 0) {
-            if (key.hooks.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
-                shouldExecute = self.callHookNoopable(
-                    abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData)
-                );
-            } else {
-                shouldExecute = true;
-            }
+        if (params.liquidityDelta > 0 && key.hooks.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
+            shouldExecute = self.callHookNoopable(
+                abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData)
+            );
+        } else if (params.liquidityDelta < 0 && key.hooks.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
+            shouldExecute = self.callHookNoopable(
+                abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
+            );
         } else {
-            if (key.hooks.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
-                shouldExecute = self.callHookNoopable(
-                    abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
-                );
-            } else {
-                shouldExecute = true;
-            }
+            shouldExecute = true;
         }
     }
 
@@ -195,20 +189,14 @@ library Hooks {
         BalanceDelta delta,
         bytes calldata hookData
     ) internal {
-        if (params.liquidityDelta >= 0) {
-            if (key.hooks.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
-                self.callHook(
-                    abi.encodeWithSelector(IHooks.afterAddLiquidity.selector, msg.sender, key, params, delta, hookData)
-                );
-            }
-        } else {
-            if (key.hooks.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
-                self.callHook(
-                    abi.encodeWithSelector(
-                        IHooks.afterRemoveLiquidity.selector, msg.sender, key, params, delta, hookData
-                    )
-                );
-            }
+        if (params.liquidityDelta > 0 && key.hooks.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
+            self.callHook(
+                abi.encodeWithSelector(IHooks.afterAddLiquidity.selector, msg.sender, key, params, delta, hookData)
+            );
+        } else if (params.liquidityDelta < 0 && key.hooks.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
+            self.callHook(
+                abi.encodeWithSelector(IHooks.afterRemoveLiquidity.selector, msg.sender, key, params, delta, hookData)
+            );
         }
     }
 
