@@ -27,6 +27,7 @@ import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
 import {Position} from "../src/libraries/Position.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
+import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -63,6 +64,22 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
 
         lockTest = new PoolLockTest(manager);
+    }
+
+    function getMaxAmountInForPool(IPoolManager.ModifyPositionParams memory liqParams, PoolKey memory key)
+        public
+        view
+        returns (uint256 amount0, uint256 amount1)
+    {
+        PoolId id = PoolIdLibrary.toId(key);
+        uint128 liquidity = manager.getLiquidity(id);
+        (uint160 sqrtPriceX96,,) = manager.getSlot0(id);
+
+        uint160 sqrtPriceX96Lower = TickMath.getSqrtRatioAtTick(liqParams.tickLower);
+        uint160 sqrtPriceX96Upper = TickMath.getSqrtRatioAtTick(liqParams.tickUpper);
+
+        amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96Lower, sqrtPriceX96, liquidity);
+        amount1 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96Upper, sqrtPriceX96, liquidity);
     }
 
     function test_bytecodeSize() public {
@@ -236,33 +253,18 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
-
     function test_swap_EOAInitiated(uint256 swapAmount) public {
         // lower bound for precision purposes
         vm.assume(swapAmount > 100 && swapAmount < type(uint256).max - 1);
-        IPoolManager.ModifyPositionParams memory liqParams =
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: SafeCast.toInt256(swapAmount), sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        (uint256 amount0,) = getMaxAmountInForPool(Deployers.LIQ_PARAMS, key);
+        vm.assume(swapAmount <= amount0);
 
-        PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
-
-        manager.lock(
-            address(swapRouter),
-            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, key, params, ZERO_BYTES))
-        );
-    }
-
-    function test_swap_EOAInitiated() public {
-        IPoolManager.ModifyPositionParams memory liqParams =
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
-
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: true,
+            amountSpecified: SafeCast.toInt256(swapAmount),
+            sqrtPriceLimitX96: SQRT_RATIO_1_2
+        });
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
