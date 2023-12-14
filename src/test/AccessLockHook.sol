@@ -32,7 +32,7 @@ contract AccessLockHook is Test, BaseTestHooks {
         Take,
         Donate,
         Swap,
-        ModifyPosition,
+        ModifyLiquidity,
         Burn,
         Settle,
         Initialize,
@@ -109,7 +109,7 @@ contract AccessLockHook is Test, BaseTestHooks {
                 }),
                 new bytes(0)
             );
-        } else if (action == LockAction.ModifyPosition) {
+        } else if (action == LockAction.ModifyLiquidity) {
             manager.modifyLiquidity(
                 key,
                 IPoolManager.ModifyLiquidityParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),

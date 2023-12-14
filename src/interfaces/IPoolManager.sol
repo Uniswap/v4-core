@@ -59,7 +59,7 @@ interface IPoolManager is IFees, IClaims {
     /// @param tickLower The lower tick of the position
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
-    event ModifyPosition(
+    event ModifyLiquidity(
         PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
     );
 
