@@ -21,11 +21,11 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
     struct CallbackData {
         address sender;
         PoolKey key;
-        IPoolManager.ModifyPositionParams params;
+        IPoolManager.ModifyLiquidityParams params;
         bytes hookData;
     }
 
-    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
+    function modifyPosition(PoolKey memory key, IPoolManager.ModifyLiquidityParams memory params, bytes memory hookData)
         external
         payable
         returns (BalanceDelta delta)
