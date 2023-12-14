@@ -31,7 +31,8 @@ Only the net balances owed to the pool (positive) or to the user (negative) are 
 Additionally, a pool may be initialized with a hook contract, that can implement any of the following callbacks in the lifecycle of pool actions:
 
 - {before,after}Initialize
-- {before,after}ModifyPosition
+- {before,after}AddLiquidity
+- {before,after}RemoveLiquidity
 - {before,after}Swap
 - {before,after}Donate
 

@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
+import {IERC6909} from "@erc-6909/interfaces/IERC6909.sol";
 import {IHooks} from "./IHooks.sol";
 import {IERC6909Claims} from "./external/IERC6909Claims.sol";
 import {IFees} from "./IFees.sol";
@@ -26,9 +27,6 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @param locker The current locker
     /// @param currentHook The most recently called hook
     error LockedBy(address locker, address currentHook);
-
-    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
-    error NotPoolManagerToken();
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
@@ -60,7 +58,7 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @param tickLower The lower tick of the position
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
-    event ModifyPosition(
+    event ModifyLiquidity(
         PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
     );
 
@@ -148,7 +146,7 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @return The data returned by the call to `ILockCallback(msg.sender).lockAcquired(data)`
     function lock(address lockTarget, bytes calldata data) external payable returns (bytes memory);
 
-    struct ModifyPositionParams {
+    struct ModifyLiquidityParams {
         // the lower and upper tick of the position
         int24 tickLower;
         int24 tickUpper;
@@ -156,8 +154,13 @@ interface IPoolManager is IFees, IERC6909Claims {
         int256 liquidityDelta;
     }
 
-    /// @notice Modify the position for the given pool
-    function modifyPosition(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
+    /// @notice Modify the liquidity for the given pool
+    /// @dev Poke by calling with a zero liquidityDelta
+    /// @param key The pool to modify liquidity in
+    /// @param params The parameters for modifying the liquidity
+    /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
+    /// @return delta The balance delta of the liquidity
+    function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta);
 
