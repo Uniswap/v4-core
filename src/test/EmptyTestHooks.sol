@@ -47,7 +47,7 @@ contract EmptyTestHooks is IHooks {
         return IHooks.afterInitialize.selector;
     }
 
-    function beforeAddLiquidity(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata)
+    function beforeAddLiquidity(address, PoolKey calldata, IPoolManager.ModifyLiquidityParams calldata, bytes calldata)
         external
         pure
         override
@@ -59,7 +59,7 @@ contract EmptyTestHooks is IHooks {
     function afterAddLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata
     ) external pure override returns (bytes4) {
@@ -69,7 +69,7 @@ contract EmptyTestHooks is IHooks {
     function beforeRemoveLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         bytes calldata
     ) external pure override returns (bytes4) {
         return IHooks.beforeRemoveLiquidity.selector;
@@ -78,7 +78,7 @@ contract EmptyTestHooks is IHooks {
     function afterRemoveLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata
     ) external pure override returns (bytes4) {

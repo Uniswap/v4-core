@@ -70,7 +70,7 @@ contract AccessLockHook is Test, BaseTestHooks {
     function beforeAddLiquidity(
         address, /* sender **/
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata hookData
     ) external override returns (bytes4) {
         return _executeAction(key, hookData, IHooks.beforeAddLiquidity.selector);
@@ -79,7 +79,7 @@ contract AccessLockHook is Test, BaseTestHooks {
     function beforeRemoveLiquidity(
         address, /* sender **/
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata hookData
     ) external override returns (bytes4) {
         return _executeAction(key, hookData, IHooks.beforeRemoveLiquidity.selector);
@@ -112,7 +112,7 @@ contract AccessLockHook is Test, BaseTestHooks {
         } else if (action == LockAction.ModifyPosition) {
             manager.modifyLiquidity(
                 key,
-                IPoolManager.ModifyPositionParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),
+                IPoolManager.ModifyLiquidityParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),
                 new bytes(0)
             );
         } else if (action == LockAction.NoOp) {
@@ -158,7 +158,7 @@ contract AccessLockHook2 is Test, BaseTestHooks {
     function beforeAddLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
+        IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external override returns (bytes4) {
         if (address(manager.getCurrentHook()) != address(this)) {
@@ -205,7 +205,7 @@ contract AccessLockHook3 is Test, ILockCallback, BaseTestHooks {
     function beforeAddLiquidity(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata /* hookData **/
     ) external override returns (bytes4) {
         assertEq(address(manager.getCurrentHook()), address(this));
@@ -246,7 +246,7 @@ contract AccessLockFeeHook is Test, BaseTestHooks {
     function afterAddLiquidity(
         address, /* sender **/
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta delta,
         bytes calldata /* hookData **/
     ) external override returns (bytes4) {
@@ -262,7 +262,7 @@ contract AccessLockFeeHook is Test, BaseTestHooks {
     function afterRemoveLiquidity(
         address, /* sender **/
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta delta,
         bytes calldata /* hookData **/
     ) external override returns (bytes4) {

@@ -44,7 +44,7 @@ interface IHooks {
     function beforeAddLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
+        IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4);
 
@@ -57,7 +57,7 @@ interface IHooks {
     function afterAddLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
+        IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
     ) external returns (bytes4);
@@ -71,7 +71,7 @@ interface IHooks {
     function beforeRemoveLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
+        IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4);
 
@@ -84,7 +84,7 @@ interface IHooks {
     function afterRemoveLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
+        IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
     ) external returns (bytes4);

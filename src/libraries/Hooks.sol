@@ -161,11 +161,11 @@ library Hooks {
         }
     }
 
-    /// @notice calls beforeModifyPosition hook if permissioned and validates return value
-    function beforeModifyPosition(
+    /// @notice calls beforeModifyLiquidity hook if permissioned and validates return value
+    function beforeModifyLiquidity(
         IHooks self,
         PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params,
+        IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
     ) internal returns (bool shouldExecute) {
         if (params.liquidityDelta > 0 && key.hooks.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
@@ -181,11 +181,11 @@ library Hooks {
         }
     }
 
-    /// @notice calls afterModifyPosition hook if permissioned and validates return value
-    function afterModifyPosition(
+    /// @notice calls afterModifyLiquidity hook if permissioned and validates return value
+    function afterModifyLiquidity(
         IHooks self,
         PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params,
+        IPoolManager.ModifyLiquidityParams memory params,
         BalanceDelta delta,
         bytes calldata hookData
     ) internal {

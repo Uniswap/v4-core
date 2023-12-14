@@ -364,7 +364,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
                 PoolModifyPositionTest.CallbackData(
                     address(this),
                     key,
-                    IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}),
+                    IPoolManager.ModifyLiquidityParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}),
                     ZERO_BYTES
                 )
             )
@@ -374,8 +374,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_EOAInitiated() public {
-        IPoolManager.ModifyPositionParams memory liqParams =
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        IPoolManager.ModifyLiquidityParams memory liqParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
         modifyPositionRouter.modifyLiquidity(key, liqParams, ZERO_BYTES);
 
         IPoolManager.SwapParams memory params =
@@ -393,8 +393,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_native_EOAInitiated() public {
-        IPoolManager.ModifyPositionParams memory liqParams =
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        IPoolManager.ModifyLiquidityParams memory liqParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
         modifyPositionRouter.modifyLiquidity{value: 1 ether}(nativeKey, liqParams, ZERO_BYTES);
 
         IPoolManager.SwapParams memory params =
@@ -412,8 +412,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_invalidLockTarget() public {
-        IPoolManager.ModifyPositionParams memory liqParams =
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        IPoolManager.ModifyLiquidityParams memory liqParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
         modifyPositionRouter.modifyLiquidity{value: 1 ether}(nativeKey, liqParams, ZERO_BYTES);
 
         IPoolManager.SwapParams memory params =
@@ -727,7 +727,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(slot0.protocolFee, protocolFee);
 
         // Add liquidity - Fees dont accrue for positive liquidity delta.
-        IPoolManager.ModifyPositionParams memory params = LIQ_PARAMS;
+        IPoolManager.ModifyLiquidityParams memory params = LIQ_PARAMS;
         modifyPositionRouter.modifyLiquidity(key, params, ZERO_BYTES);
 
         assertEq(manager.protocolFeesAccrued(currency0), 0);
@@ -978,7 +978,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // Test add liquidity
         snapStart("modify position with noop");
         BalanceDelta delta = modifyPositionRouter.modifyLiquidity(
-            key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-120, 120, 10 ether), ZERO_BYTES
         );
         snapEnd();
 
@@ -1021,7 +1021,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         // Test add liquidity
         BalanceDelta delta = modifyPositionRouter.modifyLiquidity(
-            key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-120, 120, 10 ether), ZERO_BYTES
         );
 
         assertTrue(delta == BalanceDeltaLibrary.MAXIMUM_DELTA, "Max delta not returned");
@@ -1069,7 +1069,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
         BalanceDelta delta = modifyPositionRouter.modifyLiquidity(
-            key, IPoolManager.ModifyPositionParams(-120, 120, 10 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-120, 120, 10 ether), ZERO_BYTES
         );
 
         // Swap
@@ -1304,7 +1304,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     //     manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
     //     // populate feeGrowthGlobalX128 struct w/ modify + swap
-    //     modifyPositionRouter.modifyLiquidity(key, IPoolManager.ModifyPositionParams(-120, 120, 5 ether));
+    //     modifyPositionRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 5 ether));
     //     swapRouter.swap(
     //         key,
     //         IPoolManager.SwapParams(false, 1 ether, TickMath.MAX_SQRT_RATIO - 1),

@@ -31,7 +31,7 @@ contract BaseTestHooks is IHooks {
     function beforeAddLiquidity(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
         revert HookNotImplemented();
@@ -40,7 +40,7 @@ contract BaseTestHooks is IHooks {
     function afterAddLiquidity(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
@@ -50,7 +50,7 @@ contract BaseTestHooks is IHooks {
     function beforeRemoveLiquidity(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
         revert HookNotImplemented();
@@ -59,7 +59,7 @@ contract BaseTestHooks is IHooks {
     function afterRemoveLiquidity(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {

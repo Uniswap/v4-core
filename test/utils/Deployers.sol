@@ -36,10 +36,10 @@ contract Deployers {
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
     uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
 
-    IPoolManager.ModifyPositionParams internal LIQ_PARAMS =
-        IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-    IPoolManager.ModifyPositionParams internal REMOVE_LIQ_PARAMS =
-        IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
+    IPoolManager.ModifyLiquidityParams internal LIQ_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+    IPoolManager.ModifyLiquidityParams internal REMOVE_LIQ_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
 
     // Global variables
     Currency internal currency0;

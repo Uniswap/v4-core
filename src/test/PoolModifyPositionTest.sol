@@ -21,15 +21,15 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
     struct CallbackData {
         address sender;
         PoolKey key;
-        IPoolManager.ModifyPositionParams params;
+        IPoolManager.ModifyLiquidityParams params;
         bytes hookData;
     }
 
-    function modifyLiquidity(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
-        external
-        payable
-        returns (BalanceDelta delta)
-    {
+    function modifyLiquidity(
+        PoolKey memory key,
+        IPoolManager.ModifyLiquidityParams memory params,
+        bytes memory hookData
+    ) external payable returns (BalanceDelta delta) {
         delta = abi.decode(
             manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, params, hookData))), (BalanceDelta)
         );

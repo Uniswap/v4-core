@@ -50,7 +50,7 @@ contract MockHooks is IHooks {
     function beforeAddLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         bytes calldata hookData
     ) external override returns (bytes4) {
         beforeAddLiquidityData = hookData;
@@ -61,7 +61,7 @@ contract MockHooks is IHooks {
     function afterAddLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4) {
@@ -73,7 +73,7 @@ contract MockHooks is IHooks {
     function beforeRemoveLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         bytes calldata hookData
     ) external override returns (bytes4) {
         beforeRemoveLiquidityData = hookData;
@@ -84,7 +84,7 @@ contract MockHooks is IHooks {
     function afterRemoveLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4) {

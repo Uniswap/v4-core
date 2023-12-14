@@ -28,7 +28,7 @@ contract NoOpTestHooks is BaseTestHooks {
         );
     }
 
-    function beforeAddLiquidity(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata)
+    function beforeAddLiquidity(address, PoolKey calldata, IPoolManager.ModifyLiquidityParams calldata, bytes calldata)
         external
         pure
         override
@@ -40,7 +40,7 @@ contract NoOpTestHooks is BaseTestHooks {
     function beforeRemoveLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         bytes calldata
     ) external pure override returns (bytes4) {
         return Hooks.NO_OP_SELECTOR;

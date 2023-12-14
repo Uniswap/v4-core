@@ -147,7 +147,7 @@ interface IPoolManager is IFees, IClaims {
     /// @return The data returned by the call to `ILockCallback(msg.sender).lockAcquired(data)`
     function lock(address lockTarget, bytes calldata data) external payable returns (bytes memory);
 
-    struct ModifyPositionParams {
+    struct ModifyLiquidityParams {
         // the lower and upper tick of the position
         int24 tickLower;
         int24 tickUpper;
@@ -161,7 +161,7 @@ interface IPoolManager is IFees, IClaims {
     /// @param params The parameters for modifying the liquidity
     /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
     /// @return delta The balance delta of the liquidity
-    function modifyLiquidity(PoolKey memory key, ModifyPositionParams memory params, bytes calldata hookData)
+    function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta);
 
