@@ -31,12 +31,20 @@ contract HooksTest {
         return IHooks(hookAddress).hasPermission(Hooks.AFTER_SWAP_FLAG);
     }
 
-    function shouldCallBeforeModifyPosition(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_MODIFY_POSITION_FLAG);
+    function shouldCallBeforeAddLiquidity(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG);
     }
 
-    function shouldCallAfterModifyPosition(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).hasPermission(Hooks.AFTER_MODIFY_POSITION_FLAG);
+    function shouldCallAfterAddLiquidity(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG);
+    }
+
+    function shouldCallBeforeRemoveLiquidity(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG);
+    }
+
+    function shouldCallAfterRemoveLiquidity(address hookAddress) external pure returns (bool) {
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG);
     }
 
     function shouldCallBeforeDonate(address hookAddress) external pure returns (bool) {
