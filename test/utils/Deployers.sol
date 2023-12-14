@@ -12,7 +12,7 @@ import {FeeLibrary} from "../../src/libraries/FeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
-import {PoolModifyPositionTest} from "../../src/test/PoolModifyPositionTest.sol";
+import {PoolModifyLiquidityTest} from "../../src/test/PoolModifyLiquidityTest.sol";
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolInitializeTest} from "../../src/test/PoolInitializeTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
@@ -36,14 +36,16 @@ contract Deployers {
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
     uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
 
-    IPoolManager.ModifyPositionParams internal LIQ_PARAMS =
-        IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+    IPoolManager.ModifyLiquidityParams internal LIQ_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+    IPoolManager.ModifyLiquidityParams internal REMOVE_LIQ_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
 
     // Global variables
     Currency internal currency0;
     Currency internal currency1;
     PoolManager manager;
-    PoolModifyPositionTest modifyPositionRouter;
+    PoolModifyLiquidityTest modifyLiquidityRouter;
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
@@ -66,7 +68,7 @@ contract Deployers {
     function deployFreshManagerAndRouters() internal {
         deployFreshManager();
         swapRouter = new PoolSwapTest(manager);
-        modifyPositionRouter = new PoolModifyPositionTest(manager);
+        modifyLiquidityRouter = new PoolModifyLiquidityTest(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
         initializeRouter = new PoolInitializeTest(manager);
@@ -84,7 +86,7 @@ contract Deployers {
 
         address[5] memory toApprove = [
             address(swapRouter),
-            address(modifyPositionRouter),
+            address(modifyLiquidityRouter),
             address(donateRouter),
             address(takeRouter),
             address(initializeRouter)
@@ -128,7 +130,7 @@ contract Deployers {
         bytes memory initData
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyPositionRouter.modifyPosition{value: msg.value}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity{value: msg.value}(_key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     function initPoolAndAddLiquidityETH(
@@ -141,7 +143,7 @@ contract Deployers {
         uint256 msgValue
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyPositionRouter.modifyPosition{value: msgValue}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity{value: msgValue}(_key, LIQ_PARAMS, ZERO_BYTES);
     }
 
     // Deploys the manager, all test routers, and sets up 2 pools: with and without native
