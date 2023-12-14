@@ -66,7 +66,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         lockTest = new PoolLockTest(manager);
     }
 
-    function getMaxAmountInForPool(IPoolManager.ModifyPositionParams memory liqParams, PoolKey memory key)
+    function getMaxAmountInForPool(IPoolManager.ModifyLiquidityParams memory params, PoolKey memory key)
         public
         view
         returns (uint256 amount0, uint256 amount1)
@@ -75,8 +75,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint128 liquidity = manager.getLiquidity(id);
         (uint160 sqrtPriceX96,,) = manager.getSlot0(id);
 
-        uint160 sqrtPriceX96Lower = TickMath.getSqrtRatioAtTick(liqParams.tickLower);
-        uint160 sqrtPriceX96Upper = TickMath.getSqrtRatioAtTick(liqParams.tickUpper);
+        uint160 sqrtPriceX96Lower = TickMath.getSqrtRatioAtTick(params.tickLower);
+        uint160 sqrtPriceX96Upper = TickMath.getSqrtRatioAtTick(params.tickUpper);
 
         amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96Lower, sqrtPriceX96, liquidity);
         amount1 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96Upper, sqrtPriceX96, liquidity);
@@ -392,9 +392,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_EOAInitiated(uint256 swapAmount) public {
-        IPoolManager.ModifyPositionParams memory liqParams =
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyPositionRouter.modifyPosition(key, liqParams, ZERO_BYTES);
+        IPoolManager.ModifyLiquidityParams memory liqParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        modifyLiquidityRouter.modifyLiquidity(key, liqParams, ZERO_BYTES);
 
         (uint256 amount0,) = getMaxAmountInForPool(Deployers.LIQ_PARAMS, key);
         // lower bound for precision purposes
