@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {AccessLockHook, AccessLockHook2, AccessLockHook3, AccessLockFeeHook} from "../src/test/AccessLockHook.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {PoolModifyPositionTest} from "../src/test/PoolModifyPositionTest.sol";
+import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../src/test/PoolDonateTest.sol";
 import {Constants} from "./utils/Constants.sol";
@@ -45,8 +45,8 @@ contract AccessLockTest is Test, Deployers {
         // Create AccessLockHook.
         address accessLockAddress = address(
             uint160(
-                Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG
-                    | Hooks.BEFORE_DONATE_FLAG
+                Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG
+                    | Hooks.BEFORE_DONATE_FLAG | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
             )
         );
         deployCodeTo("AccessLockHook.sol:AccessLockHook", abi.encode(manager), accessLockAddress);
@@ -56,20 +56,20 @@ contract AccessLockTest is Test, Deployers {
             initPool(currency0, currency1, IHooks(accessLockAddress), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
 
         // Create AccessLockHook2.
-        address accessLockAddress2 = address(uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        address accessLockAddress2 = address(uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
         deployCodeTo("AccessLockHook.sol:AccessLockHook2", abi.encode(manager), accessLockAddress2);
         accessLockHook2 = AccessLockHook2(accessLockAddress2);
 
         // Create AccessLockHook3.
         address accessLockAddress3 = address(
             (uint160(makeAddr("hook3")) << 10) >> 10
-                | (uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_MODIFY_POSITION_FLAG))
+                | (uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG))
         );
         deployCodeTo("AccessLockHook.sol:AccessLockHook3", abi.encode(manager), accessLockAddress3);
         accessLockHook3 = AccessLockHook3(accessLockAddress3);
 
         // Create NoAccessLockHook.
-        address noAccessLockHookAddress = address(uint160(Hooks.BEFORE_MODIFY_POSITION_FLAG));
+        address noAccessLockHookAddress = address(uint160(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
         deployCodeTo("AccessLockHook.sol:AccessLockHook", abi.encode(manager), noAccessLockHookAddress);
         noAccessLockHook = AccessLockHook(noAccessLockHookAddress);
 
@@ -77,15 +77,19 @@ contract AccessLockTest is Test, Deployers {
         address accessLockNoOpHookAddress = address(
             uint160(
                 Hooks.NO_OP_FLAG | Hooks.ACCESS_LOCK_FLAG | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.BEFORE_SWAP_FLAG
-                    | Hooks.BEFORE_MODIFY_POSITION_FLAG | Hooks.BEFORE_DONATE_FLAG
+                    | Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.BEFORE_DONATE_FLAG
             )
         );
         deployCodeTo("AccessLockHook.sol:AccessLockHook", abi.encode(manager), accessLockNoOpHookAddress);
         accessLockNoOpHook = AccessLockHook(accessLockNoOpHookAddress);
 
         // Create AccessLockFeeHook
-        address accessLockFeeHookAddress =
-            address(uint160(Hooks.ACCESS_LOCK_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_MODIFY_POSITION_FLAG));
+        address accessLockFeeHookAddress = address(
+            uint160(
+                Hooks.ACCESS_LOCK_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG
+                    | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
+            )
+        );
         deployCodeTo("AccessLockHook.sol:AccessLockFeeHook", abi.encode(manager), accessLockFeeHookAddress);
         accessLockFeeHook = AccessLockFeeHook(accessLockFeeHookAddress);
     }
@@ -96,12 +100,12 @@ contract AccessLockTest is Test, Deployers {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                IPoolManager.LockedBy.selector, address(modifyPositionRouter), address(noAccessLockHook)
+                IPoolManager.LockedBy.selector, address(modifyLiquidityRouter), address(noAccessLockHook)
             )
         );
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             keyWithoutAccessLockFlag,
-            IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 0}),
+            IPoolManager.ModifyLiquidityParams({tickLower: 0, tickUpper: 60, liquidityDelta: 1e18}),
             abi.encode(10, AccessLockHook.LockAction.Mint) // attempts a mint action that should revert
         );
     }
@@ -115,13 +119,13 @@ contract AccessLockTest is Test, Deployers {
      *  - Mint
      *  - Take
      *  - Swap
-     *  - ModifyPosition
+     *  - ModifyLiquidity
      *  - Donate
      *  - Burn
      *  - Settle
      *  - Initialize
      * Each of these calls is then tested from every callback after the
-     * currentHook gets set (beforeModifyPosition, beforeSwap, and beforeDonate).
+     * currentHook gets set (beforeAddLiquidity, beforeSwap, and beforeDonate).
      *
      */
 
@@ -130,29 +134,49 @@ contract AccessLockTest is Test, Deployers {
      * BEFORE MODIFY POSITION TESTS
      *
      */
-    function test_beforeModifyPosition_mint_succeedsWithAccessLock() public {
+    function test_beforeAddLiquidity_mint_succeedsWithAccessLock() public {
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
-        delta = modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(0, 60, 1e18), abi.encode(amount, AccessLockHook.LockAction.Mint)
+        delta = modifyLiquidityRouter.modifyLiquidity(
+            key, IPoolManager.ModifyLiquidityParams(0, 60, 1e18), abi.encode(amount, AccessLockHook.LockAction.Mint)
         );
 
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
 
         assertEq(balanceOfBefore0 - balanceOfAfter0, uint256(uint128(delta.amount0())));
-        // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
+        // The balance of our contract should be from the modifyLiquidityRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
 
         assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
     }
 
-    function test_beforeModifyPosition_take_succeedsWithAccessLock() public {
+    function test_beforeRemoveLiquidity_mint_succeedsWithAccessLock() public {
+        uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
+        uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
+
+        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(
+            key, REMOVE_LIQ_PARAMS, abi.encode(amount, AccessLockHook.LockAction.Mint)
+        );
+
+        uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
+        uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
+
+        // The balance of our contract should be equal to our original balance because we added and removed our liquidity.
+        // Note: the balance is off by one and is a known issue documented here: https://github.com/Uniswap/v3-core/issues/570
+        assertTrue(balanceOfBefore0 - balanceOfAfter0 <= 1);
+        assertTrue(balanceOfBefore1 - balanceOfAfter1 - amount <= 1);
+
+        assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
+    }
+
+    function test_beforeAddLiquidity_take_succeedsWithAccessLock() public {
         // Add liquidity so there is something to take.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -160,23 +184,45 @@ contract AccessLockTest is Test, Deployers {
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
         // Hook only takes currency 1 rn.
-        delta = modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-60, 60, 1e18), abi.encode(amount, AccessLockHook.LockAction.Take)
+        delta = modifyLiquidityRouter.modifyLiquidity(
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, 1e18), abi.encode(amount, AccessLockHook.LockAction.Take)
         );
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
 
         assertEq(balanceOfBefore0 - balanceOfAfter0, uint256(uint128(delta.amount0())));
-        // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
+        // The balance of our contract should be from the modifyLiquidityRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
         assertEq(MockERC20(Currency.unwrap(currency1)).balanceOf(address(accessLockHook)), amount);
     }
 
-    function test_beforeModifyPosition_swap_succeedsWithAccessLock() public {
+    function test_beforeRemoveLiquidity_take_succeedsWithAccessLock() public {
+        // Add liquidity so there is something to take.
+        delta = modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        uint128 takeAmount = uint128(key.currency1.balanceOf(address(manager)));
+
+        uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
+        uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
+
+        // Hook only takes currency 1 rn.
+        modifyLiquidityRouter.modifyLiquidity(
+            key, REMOVE_LIQ_PARAMS, abi.encode(takeAmount, AccessLockHook.LockAction.Take)
+        );
+        uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
+        uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
+
+        // The balance of our contract should be equal to our original balance because we added and removed our liquidity.
+        // Note: the balance is off by one and is a known issue documented here: https://github.com/Uniswap/v3-core/issues/570
+        assertTrue(balanceOfBefore0 + uint256(uint128(delta.amount0())) - balanceOfAfter0 <= 1);
+        assertTrue(balanceOfBefore1 + uint256(uint128(delta.amount1())) - balanceOfAfter1 - takeAmount <= 1);
+        assertEq(MockERC20(Currency.unwrap(currency1)).balanceOf(address(accessLockHook)), takeAmount);
+    }
+
+    function test_beforeAddLiquidity_swap_succeedsWithAccessLock() public {
         // Add liquidity so there is something to swap over.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -184,8 +230,8 @@ contract AccessLockTest is Test, Deployers {
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
         // Essentially "no-op"s the modifyPosition call and executes a swap before hand, applying the deltas from the swap to the locker.
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-120, 120, 0), abi.encode(amount, AccessLockHook.LockAction.Swap)
+        modifyLiquidityRouter.modifyLiquidity(
+            key, IPoolManager.ModifyLiquidityParams(-120, 120, 1e18), abi.encode(amount, AccessLockHook.LockAction.Swap)
         );
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
@@ -196,14 +242,14 @@ contract AccessLockTest is Test, Deployers {
         assertGt(balanceOfAfter1, balanceOfBefore1);
     }
 
-    function test_beforeModifyPosition_modifyPosition_succeedsWithAccessLock() public {
+    function test_beforeAddLiquidity_addLiquidity_succeedsWithAccessLock() public {
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams(-120, 120, 1e18),
-            abi.encode(amount, AccessLockHook.LockAction.ModifyPosition)
+            IPoolManager.ModifyLiquidityParams(-120, 120, 10e18),
+            abi.encode(amount, AccessLockHook.LockAction.ModifyLiquidity)
         );
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
@@ -213,20 +259,20 @@ contract AccessLockTest is Test, Deployers {
         assertLt(balanceOfAfter1, balanceOfBefore1);
     }
 
-    function test_beforeModifyPosition_donate_succeedsWithAccessLock() public {
+    function test_beforeAddLiquidity_donate_succeedsWithAccessLock() public {
         // Add liquidity so there is a position to receive fees.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams(-120, 120, 1e18),
+            IPoolManager.ModifyLiquidityParams(-120, 120, 1e18),
             abi.encode(amount, AccessLockHook.LockAction.Donate)
         );
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
@@ -237,11 +283,11 @@ contract AccessLockTest is Test, Deployers {
         assertLt(balanceOfAfter1, balanceOfBefore1);
     }
 
-    function test_beforeModifyPosition_burn_succeedsWithAccessLock() public {
+    function test_beforeAddLiquidity_burn_succeedsWithAccessLock() public {
         // Add liquidity so there is a position to swap over.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -259,35 +305,39 @@ contract AccessLockTest is Test, Deployers {
         manager.transfer(address(key.hooks), currency1, amount1);
         assertEq(manager.balanceOf(address(key.hooks), currency1), amount1);
 
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-120, 120, 0), abi.encode(amount1, AccessLockHook.LockAction.Burn)
+        delta = modifyLiquidityRouter.modifyLiquidity(
+            key,
+            IPoolManager.ModifyLiquidityParams(-120, 120, 1e18),
+            abi.encode(amount1, AccessLockHook.LockAction.Burn)
         );
 
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
 
-        assertEq(balanceOfAfter1, balanceOfBefore1 + amount1);
+        assertEq(balanceOfAfter1, balanceOfBefore1 + amount1 - uint256(uint128(delta.amount1())));
     }
 
-    function test_beforeModifyPosition_settle_succeedsWithAccessLock() public {
+    function test_beforeAddLiquidity_settle_succeedsWithAccessLock() public {
         // Add liquidity so there is something to take.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
         // Assertions in the hook. Takes and then settles within the hook.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams(-120, 120, 1e18),
+            IPoolManager.ModifyLiquidityParams(-120, 120, 1e18),
             abi.encode(amount, AccessLockHook.LockAction.Settle)
         );
     }
 
-    function test_beforeModifyPosition_initialize_succeedsWithAccessLock() public {
+    function test_beforeAddLiquidity_initialize_succeedsWithAccessLock() public {
         // The hook intitializes a new pool with the new key at Constants.SQRT_RATIO_1_2;
-        modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(-120, 120, 1e18), abi.encode(0, AccessLockHook.LockAction.Initialize)
+        modifyLiquidityRouter.modifyLiquidity(
+            key,
+            IPoolManager.ModifyLiquidityParams(-120, 120, 1e18),
+            abi.encode(0, AccessLockHook.LockAction.Initialize)
         );
 
         PoolKey memory newKey = PoolKey({
@@ -310,9 +360,9 @@ contract AccessLockTest is Test, Deployers {
 
     function test_beforeSwap_mint_succeedsWithAccessLock() public {
         // Add liquidity so there is something to swap against.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -331,7 +381,7 @@ contract AccessLockTest is Test, Deployers {
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
 
         assertEq(balanceOfBefore0 - balanceOfAfter0, uint256(uint128(delta.amount0())));
-        // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
+        // The balance of our contract should be from the modifyLiquidityRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
 
         assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
@@ -339,9 +389,9 @@ contract AccessLockTest is Test, Deployers {
 
     function test_beforeSwap_take_succeedsWithAccessLock() public {
         // Add liquidity so there is something to take.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -360,16 +410,16 @@ contract AccessLockTest is Test, Deployers {
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
 
         assertEq(balanceOfBefore0 - balanceOfAfter0, uint256(uint128(delta.amount0())));
-        // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
+        // The balance of our contract should be from the modifyLiquidityRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
         assertEq(MockERC20(Currency.unwrap(currency1)).balanceOf(address(accessLockHook)), amount);
     }
 
     function test_beforeSwap_swap_succeedsWithAccessLock() public {
         // Add liquidity so there is something to swap over.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -394,11 +444,11 @@ contract AccessLockTest is Test, Deployers {
         assertGt(balanceOfAfter1, balanceOfBefore1);
     }
 
-    function test_beforeSwap_modifyPosition_succeedsWithAccessLock() public {
+    function test_beforeSwap_addLiquidity_succeedsWithAccessLock() public {
         // Add liquidity so there is something to swap over.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -410,7 +460,7 @@ contract AccessLockTest is Test, Deployers {
             key,
             IPoolManager.SwapParams(true, 1, TickMath.MIN_SQRT_RATIO + 1),
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
-            abi.encode(amount, AccessLockHook.LockAction.ModifyPosition)
+            abi.encode(amount, AccessLockHook.LockAction.ModifyLiquidity)
         );
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
@@ -422,9 +472,9 @@ contract AccessLockTest is Test, Deployers {
 
     function test_beforeSwap_donate_succeedsWithAccessLock() public {
         // Add liquidity so there is a position to receive fees.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -454,9 +504,9 @@ contract AccessLockTest is Test, Deployers {
 
     function test_beforeDonate_mint_succeedsWithAccessLock() public {
         // Add liquidity so there is something to donate to.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -477,9 +527,9 @@ contract AccessLockTest is Test, Deployers {
 
     function test_beforeDonate_take_succeedsWithAccessLock() public {
         // Add liquidity so there is something to take.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -494,16 +544,16 @@ contract AccessLockTest is Test, Deployers {
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
 
         assertEq(balanceOfBefore0 - balanceOfAfter0, uint256(uint128(delta.amount0())));
-        // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
+        // The balance of our contract should be from the modifyLiquidityRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
         assertEq(MockERC20(Currency.unwrap(currency1)).balanceOf(address(accessLockHook)), amount);
     }
 
     function test_beforeDonate_swap_succeedsWithAccessLock() public {
         // Add liquidity so there is something to swap over.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -522,18 +572,18 @@ contract AccessLockTest is Test, Deployers {
         assertGt(balanceOfAfter1, balanceOfBefore1);
     }
 
-    function test_beforeDonate_modifyPosition_succeedsWithAccessLock() public {
+    function test_beforeDonate_addLiquidity_succeedsWithAccessLock() public {
         // Add liquidity so there is something to donate to.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
-        donateRouter.donate(key, 1e18, 1e18, abi.encode(amount, AccessLockHook.LockAction.ModifyPosition));
+        donateRouter.donate(key, 1e18, 1e18, abi.encode(amount, AccessLockHook.LockAction.ModifyLiquidity));
 
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
@@ -545,9 +595,9 @@ contract AccessLockTest is Test, Deployers {
 
     function test_beforeDonate_donate_succeedsWithAccessLock() public {
         // Add liquidity so there is a position to receive fees.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -594,9 +644,9 @@ contract AccessLockTest is Test, Deployers {
         });
 
         // Add liquidity to a different pool there is something to take.
-        modifyPositionRouter.modifyPosition(
+        modifyLiquidityRouter.modifyLiquidity(
             key,
-            IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1000e18}),
             ZERO_BYTES
         );
 
@@ -618,7 +668,7 @@ contract AccessLockTest is Test, Deployers {
         initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.Swap));
     }
 
-    function test_beforeInitialize_modifyPosition_revertsOnPoolNotInitialized() public {
+    function test_beforeInitialize_addLiquidity_revertsOnPoolNotInitialized() public {
         PoolKey memory key1 = PoolKey({
             currency0: currency0,
             currency1: currency1,
@@ -628,7 +678,7 @@ contract AccessLockTest is Test, Deployers {
         });
 
         vm.expectRevert(IPoolManager.PoolNotInitialized.selector);
-        initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.ModifyPosition));
+        initializeRouter.initialize(key1, SQRT_RATIO_1_1, abi.encode(amount, AccessLockHook.LockAction.ModifyLiquidity));
     }
 
     function test_beforeInitialize_donate_revertsOnPoolNotInitialized() public {
@@ -659,7 +709,7 @@ contract AccessLockTest is Test, Deployers {
         (uint256 userBalanceBefore1, uint256 poolBalanceBefore1, uint256 reservesBefore1) = _fetchBalances(currency1);
 
         // add liquidity
-        delta = modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
+        delta = modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
 
         (uint256 userBalanceAfter0, uint256 poolBalanceAfter0, uint256 reservesAfter0) = _fetchBalances(currency0);
         (uint256 userBalanceAfter1, uint256 poolBalanceAfter1, uint256 reservesAfter1) = _fetchBalances(currency1);
@@ -679,7 +729,7 @@ contract AccessLockTest is Test, Deployers {
 
         // remove liquidity, a 40 bip fee should be taken
         LIQ_PARAMS.liquidityDelta *= -1;
-        delta = modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
+        delta = modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
 
         (userBalanceAfter0, poolBalanceAfter0, reservesAfter0) = _fetchBalances(currency0);
         (userBalanceAfter1, poolBalanceAfter1, reservesAfter1) = _fetchBalances(currency1);
@@ -703,7 +753,7 @@ contract AccessLockTest is Test, Deployers {
         );
 
         // add liquidity
-        delta = modifyPositionRouter.modifyPosition(key, LIQ_PARAMS, ZERO_BYTES);
+        delta = modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
 
         // now swap, with a hook fee of 55 bips
         (uint256 userBalanceBefore0, uint256 poolBalanceBefore0, uint256 reservesBefore0) = _fetchBalances(currency0);
@@ -743,15 +793,15 @@ contract AccessLockTest is Test, Deployers {
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
         uint256 balanceOfBefore0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
 
-        delta = modifyPositionRouter.modifyPosition(
-            key, IPoolManager.ModifyPositionParams(0, 60, 1e18), abi.encode(amount, AccessLockHook.LockAction.Mint)
+        delta = modifyLiquidityRouter.modifyLiquidity(
+            key, IPoolManager.ModifyLiquidityParams(0, 60, 1e18), abi.encode(amount, AccessLockHook.LockAction.Mint)
         );
 
         uint256 balanceOfAfter0 = MockERC20(Currency.unwrap(currency0)).balanceOf(address(this));
         uint256 balanceOfAfter1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
 
         assertEq(balanceOfBefore0 - balanceOfAfter0, uint256(uint128(delta.amount0())));
-        // The balance of our contract should be from the modifyPositionRouter (delta) AND the hook (amount).
+        // The balance of our contract should be from the modifyLiquidityRouter (delta) AND the hook (amount).
         assertEq(balanceOfBefore1 - balanceOfAfter1, uint256(amount + uint256(uint128(delta.amount1()))));
 
         assertEq(manager.balanceOf(address(accessLockHook), currency1), amount);
@@ -761,15 +811,15 @@ contract AccessLockTest is Test, Deployers {
         (PoolKey memory keyAccessLockHook2,) =
             initPool(currency0, currency1, IHooks(accessLockHook2), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        // Delegates the beforeModifyPosition call to the hook in `key` which tries to mint on manager
+        // Delegates the beforeAddLiquidity call to the hook in `key` which tries to mint on manager
         //  but reverts because hook in `key` is not the current hook.
         vm.expectRevert(
             abi.encodeWithSelector(
-                IPoolManager.LockedBy.selector, address(modifyPositionRouter), address(accessLockHook2)
+                IPoolManager.LockedBy.selector, address(modifyLiquidityRouter), address(accessLockHook2)
             )
         );
-        delta = modifyPositionRouter.modifyPosition(
-            keyAccessLockHook2, IPoolManager.ModifyPositionParams(0, 60, 1e18), abi.encode(true, key)
+        delta = modifyLiquidityRouter.modifyLiquidity(
+            keyAccessLockHook2, IPoolManager.ModifyLiquidityParams(0, 60, 1e18), abi.encode(true, key)
         );
     }
 
@@ -780,19 +830,19 @@ contract AccessLockTest is Test, Deployers {
         (PoolKey memory keyAccessLockHook2,) =
             initPool(currency0, currency1, IHooks(accessLockHook2), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        modifyPositionRouter.modifyPosition(
-            keyAccessLockHook2, IPoolManager.ModifyPositionParams(0, 60, 1e18), abi.encode(false, keyWithNoHook)
+        modifyLiquidityRouter.modifyLiquidity(
+            keyAccessLockHook2, IPoolManager.ModifyLiquidityParams(0, 60, 1e18), abi.encode(false, keyWithNoHook)
         );
         assertEq(manager.balanceOf(address(accessLockHook2), currency1), 10);
     }
 
     function test_onlyByLocker_revertsWhenThereIsNoOutsideLock() public {
-        modifyPositionRouter.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1e18), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, 1e18), ZERO_BYTES);
         assertEq(address(manager.getCurrentHook()), address(0));
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(0), address(0)));
         vm.prank(address(key.hooks));
-        manager.modifyPosition(key, IPoolManager.ModifyPositionParams(0, 60, 1e18), ZERO_BYTES);
+        manager.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, 1e18), ZERO_BYTES);
     }
 
     function test_getCurrentHook_isClearedAfterNestedLock() public {
@@ -808,12 +858,14 @@ contract AccessLockTest is Test, Deployers {
         (PoolKey memory _key,) =
             initPool(currency0, currency1, IHooks(address(0)), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
         // Add liquidity so that the AccessLockHook3 can donate to something.
-        modifyPositionRouter.modifyPosition(_key, IPoolManager.ModifyPositionParams(-60, 60, 10 * 10 ** 18), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(
+            _key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 * 10 ** 18), ZERO_BYTES
+        );
         accessLockHook3.setKey(_key);
 
         // Asserts are in the AccessLockHook3.
-        modifyPositionRouter.modifyPosition(
-            keyAccessLockHook3, IPoolManager.ModifyPositionParams(0, 60, 1e18), ZERO_BYTES
+        modifyLiquidityRouter.modifyLiquidity(
+            keyAccessLockHook3, IPoolManager.ModifyLiquidityParams(0, 60, 1e18), ZERO_BYTES
         );
     }
 
@@ -822,10 +874,10 @@ contract AccessLockTest is Test, Deployers {
             initPool(currency0, currency1, IHooks(accessLockNoOpHook), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES);
 
         // Assertions for current hook address in AccessLockHook and respective routers.
-        // beforeModifyPosition noOp
-        modifyPositionRouter.modifyPosition(
+        // beforeAddLiquidity noOp
+        modifyLiquidityRouter.modifyLiquidity(
             noOpKey,
-            IPoolManager.ModifyPositionParams({tickLower: 0, tickUpper: 60, liquidityDelta: 0}),
+            IPoolManager.ModifyLiquidityParams({tickLower: 0, tickUpper: 60, liquidityDelta: 1e18}),
             abi.encode(0, AccessLockHook.LockAction.NoOp)
         );
 
