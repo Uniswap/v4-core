@@ -33,10 +33,12 @@ contract PoolInitializeTest is Test, PoolTestBase {
         );
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(address lockCaller, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
+
+        address sender = (lockCaller == address(this)) ? data.sender : lockCaller;
 
         int24 tick = manager.initialize(data.key, data.sqrtPriceX96, data.hookData);
 
@@ -50,10 +52,10 @@ contract PoolInitializeTest is Test, PoolTestBase {
             assertEq(nonZeroDC, 0, "NonzeroDeltaCount");
         } else {
             // settle deltas
-            if (delta0 > 0) _settle(data.key.currency0, data.sender, int128(delta0), true);
-            if (delta1 > 0) _settle(data.key.currency1, data.sender, int128(delta1), true);
-            if (delta0 < 0) _take(data.key.currency0, data.sender, int128(delta0), true);
-            if (delta1 < 0) _take(data.key.currency1, data.sender, int128(delta1), true);
+            if (delta0 > 0) _settle(data.key.currency0, sender, int128(delta0), true);
+            if (delta1 > 0) _settle(data.key.currency1, sender, int128(delta1), true);
+            if (delta0 < 0) _take(data.key.currency0, sender, int128(delta0), true);
+            if (delta1 < 0) _take(data.key.currency1, sender, int128(delta1), true);
         }
 
         return abi.encode(tick);

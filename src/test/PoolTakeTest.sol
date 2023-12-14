@@ -25,13 +25,15 @@ contract PoolTakeTest is Test, PoolTestBase {
         manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(address lockCaller, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        if (data.amount0 > 0) _testTake(data.key.currency0, data.sender, data.amount0);
-        if (data.amount1 > 0) _testTake(data.key.currency1, data.sender, data.amount1);
+        address sender = (lockCaller == address(this)) ? data.sender : lockCaller;
+
+        if (data.amount0 > 0) _testTake(data.key.currency0, sender, data.amount0);
+        if (data.amount1 > 0) _testTake(data.key.currency1, sender, data.amount1);
 
         return abi.encode(0);
     }

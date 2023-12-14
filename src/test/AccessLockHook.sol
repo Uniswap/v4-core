@@ -208,7 +208,9 @@ contract AccessLockHook3 is Test, ILockCallback, BaseTestHooks {
     }
 
     function lockAcquired(address caller, bytes memory data) external returns (bytes memory) {
+        require(msg.sender == address(manager));
         require(caller == address(this));
+
         assertEq(manager.getLockLength(), 2);
         assertEq(address(manager.getCurrentHook()), address(0));
 

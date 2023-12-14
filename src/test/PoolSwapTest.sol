@@ -49,13 +49,15 @@ contract PoolSwapTest is Test, PoolTestBase {
         if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(address lockCaller, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        (,, uint256 reserveBefore0, int256 deltaBefore0) = _fetchBalances(data.key.currency0, data.sender);
-        (,, uint256 reserveBefore1, int256 deltaBefore1) = _fetchBalances(data.key.currency1, data.sender);
+        address sender = (lockCaller == address(this)) ? data.sender : lockCaller;
+
+        (,, uint256 reserveBefore0, int256 deltaBefore0) = _fetchBalances(data.key.currency0, sender);
+        (,, uint256 reserveBefore1, int256 deltaBefore1) = _fetchBalances(data.key.currency1, sender);
 
         assertEq(deltaBefore0, 0);
         assertEq(deltaBefore1, 0);
@@ -65,8 +67,8 @@ contract PoolSwapTest is Test, PoolTestBase {
         // Checks that the current hook is cleared if there is an access lock. Note that if this router is ever used in a nested lock this will fail.
         assertEq(address(manager.getCurrentHook()), address(0));
 
-        (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender);
-        (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender);
+        (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, sender);
+        (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, sender);
 
         if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
             // Hanndle assertions when the hook cannot access the lock.
@@ -109,21 +111,21 @@ contract PoolSwapTest is Test, PoolTestBase {
             if (data.testSettings.currencyAlreadySent) {
                 manager.settle(data.key.currency0);
             } else {
-                _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
+                _settle(data.key.currency0, sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
             }
         }
         if (deltaAfter1 > 0) {
             if (data.testSettings.currencyAlreadySent) {
                 manager.settle(data.key.currency1);
             } else {
-                _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
+                _settle(data.key.currency1, sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
             }
         }
         if (deltaAfter0 < 0) {
-            _take(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.withdrawTokens);
+            _take(data.key.currency0, sender, int128(deltaAfter0), data.testSettings.withdrawTokens);
         }
         if (deltaAfter1 < 0) {
-            _take(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.withdrawTokens);
+            _take(data.key.currency1, sender, int128(deltaAfter1), data.testSettings.withdrawTokens);
         }
 
         return abi.encode(delta);

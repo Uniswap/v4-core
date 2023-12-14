@@ -40,17 +40,19 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
         }
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(address lockCaller, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
+
+        address sender = (lockCaller == address(this)) ? data.sender : lockCaller;
 
         BalanceDelta delta = manager.modifyPosition(data.key, data.params, data.hookData);
         // Checks that the current hook is cleared if there is an access lock. Note that if this router is ever used in a nested lock this will fail.
         assertEq(address(manager.getCurrentHook()), address(0));
 
-        (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender);
-        (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
+        (,,, int256 delta0) = _fetchBalances(data.key.currency0, sender);
+        (,,, int256 delta1) = _fetchBalances(data.key.currency1, sender);
 
         // These assertions only apply in non lock-accessing pools.
         if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
@@ -63,10 +65,10 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
             }
         }
 
-        if (delta0 > 0) _settle(data.key.currency0, data.sender, int128(delta0), true);
-        if (delta1 > 0) _settle(data.key.currency1, data.sender, int128(delta1), true);
-        if (delta0 < 0) _take(data.key.currency0, data.sender, int128(delta0), true);
-        if (delta1 < 0) _take(data.key.currency1, data.sender, int128(delta1), true);
+        if (delta0 > 0) _settle(data.key.currency0, sender, int128(delta0), true);
+        if (delta1 > 0) _settle(data.key.currency1, sender, int128(delta1), true);
+        if (delta0 < 0) _take(data.key.currency0, sender, int128(delta0), true);
+        if (delta1 < 0) _take(data.key.currency1, sender, int128(delta1), true);
 
         return abi.encode(delta);
     }

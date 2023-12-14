@@ -143,8 +143,8 @@ interface IPoolManager is IFees, IClaims {
 
     /// @notice All operations go through this function
     /// @param lockTarget The address to call the callback on
-    /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
-    /// @return The data returned by the call to `ILockCallback(msg.sender).lockAcquired(data)`
+    /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(lockCaller, data)`
+    /// @return The data returned by the call to `ILockCallback(msg.sender).lockAcquired(lockCaller, data)`
     function lock(address lockTarget, bytes calldata data) external payable returns (bytes memory);
 
     struct ModifyPositionParams {
