@@ -14,8 +14,25 @@ contract NestedActions is Test, Deployers, GasSnapshot {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
     }
 
+    // Asserts and expected outcomes are tested inside the nestedActionRouter
+
     function test_nestedSwap() public {
         actions = [Action.SWAP_AND_SETTLE];
+        manager.lock(address(nestedActionRouter), abi.encode(actions));
+    }
+
+    function test_nestedAddLiquidity() public {
+        actions = [Action.ADD_LIQ_AND_SETTLE];
+        manager.lock(address(nestedActionRouter), abi.encode(actions));
+    }
+
+    function test_nestedRemoveLiquidity() public {
+        actions = [Action.ADD_LIQ_AND_SETTLE, Action.REMOVE_LIQ_AND_SETTLE];
+        manager.lock(address(nestedActionRouter), abi.encode(actions));
+    }
+
+    function test_nestedDonate() public {
+        actions = [Action.DONATE_AND_SETTLE];
         manager.lock(address(nestedActionRouter), abi.encode(actions));
     }
 }
