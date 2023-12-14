@@ -148,6 +148,7 @@ contract AccessLockHook is Test, BaseTestHooks {
 // Also has the ability to call out to another hook or pool.
 contract AccessLockHook2 is Test, BaseTestHooks {
     IPoolManager manager;
+
     using CurrencyLibrary for Currency;
 
     error IncorrectHookSet();
@@ -181,7 +182,7 @@ contract AccessLockHook2 is Test, BaseTestHooks {
                 revert IncorrectHookSet();
             }
             // Should succeed.
-            manager.mint( address(this), key.currency1.toId(), 10);
+            manager.mint(address(this), key.currency1.toId(), 10);
         }
         return IHooks.beforeAddLiquidity.selector;
     }
