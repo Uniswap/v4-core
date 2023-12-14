@@ -863,11 +863,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.setProtocolFee(key);
     }
 
-    /// @dev TODO: this test with an off by one error for large swapAmounts
     function test_collectProtocolFees_ERC20_returnsCorrectFeesWithParameters(uint256 swapAmount, uint256 balanceToClaim)
         public
     {
-        swapAmount = bound(swapAmount, 100, 10 ** 6);
+
+        (,uint256 amount1) = getMaxAmountInForPool(Deployers.LIQ_PARAMS, key);
+        // lower bound for precision purposes
+        swapAmount = uint256(bound(swapAmount, 100, amount1));
+
         uint16 protocolFee = 1028; //  swap fee0 = 4, fee1 = 4
         address protocolFeeRecipient = address(1);
         feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
