@@ -30,6 +30,7 @@ import {
 contract Deployers {
     using FeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
+    using CurrencyLibrary for Currency;
 
     // Helpful test constants
     bytes constant ZERO_BYTES = new bytes(0);
@@ -167,12 +168,41 @@ contract Deployers {
         uninitializedNativeKey.fee = 100;
     }
 
-    /// @notice Helper function for a simple swap that allows for unlimited price impact
+    /// @notice Helper function for a simple ERC20 swaps that allows for unlimited price impact
     function swap(PoolKey memory _key, bool zeroForOne, int256 amountSpecified, bytes memory hookData)
         internal
         returns (BalanceDelta)
     {
-        return swapRouter.swap(
+        // allow native input for exact-input, guide users to the `swapNativeInput` function
+        bool isNativeInput = zeroForOne && _key.currency0.isNative();
+        if (isNativeInput) require(0 < amountSpecified, "Use swapNativeInput() for native-token exact-output swaps");
+
+        uint256 value = isNativeInput ? uint256(amountSpecified) : 0;
+
+        return swapRouter.swap{value: value}(
+            _key,
+            IPoolManager.SwapParams({
+                zeroForOne: zeroForOne,
+                amountSpecified: amountSpecified,
+                sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
+            }),
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
+            hookData
+        );
+    }
+
+    /// @notice Helper function for a simple Native-token swap that allows for unlimited price impact
+    function swapNativeInput(
+        PoolKey memory _key,
+        bool zeroForOne,
+        int256 amountSpecified,
+        bytes memory hookData,
+        uint256 msgValue
+    ) internal returns (BalanceDelta) {
+        require(_key.currency0.isNative(), "currency0 is not native. Use swap() instead");
+        if (zeroForOne == false) require(msgValue == 0, "msgValue must be 0 for oneForZero swaps");
+
+        return swapRouter.swap{value: msgValue}(
             _key,
             IPoolManager.SwapParams({
                 zeroForOne: zeroForOne,
