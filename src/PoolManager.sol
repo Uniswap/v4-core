@@ -275,7 +275,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function settle(Currency currency, address target) external payable override noDelegateCall isLocked returns (uint256 paid) {
+    function settle(Currency currency, address target)
+        external
+        payable
+        override
+        noDelegateCall
+        isLocked
+        returns (uint256 paid)
+    {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
