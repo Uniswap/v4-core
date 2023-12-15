@@ -169,15 +169,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function modifyPosition(
+    function modifyLiquidity(
         PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params,
+        IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall isLocked returns (BalanceDelta delta) {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeModifyPosition(key, params, hookData)) {
+        if (!key.hooks.beforeModifyLiquidity(key, params, hookData)) {
             return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
@@ -193,9 +193,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         _accountPoolBalanceDelta(key, delta);
 
-        key.hooks.afterModifyPosition(key, params, delta, hookData);
+        key.hooks.afterModifyLiquidity(key, params, delta, hookData);
 
-        emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
+        emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
 
     /// @inheritdoc IPoolManager

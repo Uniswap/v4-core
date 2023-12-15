@@ -61,11 +61,11 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
     error KeyNotSet();
 
-    IPoolManager.ModifyPositionParams internal ADD_LIQ_PARAMS =
-        IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+    IPoolManager.ModifyLiquidityParams internal ADD_LIQ_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
 
-    IPoolManager.ModifyPositionParams internal REMOVE_LIQ_PARAMS =
-        IPoolManager.ModifyPositionParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
+    IPoolManager.ModifyLiquidityParams internal REMOVE_LIQ_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
 
     IPoolManager.SwapParams internal SWAP_PARAMS =
         IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: Constants.SQRT_RATIO_1_2});
@@ -144,7 +144,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        BalanceDelta delta = manager.modifyPosition(key, ADD_LIQ_PARAMS, "");
+        BalanceDelta delta = manager.modifyLiquidity(key, ADD_LIQ_PARAMS, "");
 
         (,,, int256 deltaLockerAfter0) = _fetchBalances(key.currency0, user, locker);
         (,,, int256 deltaLockerAfter1) = _fetchBalances(key.currency1, user, locker);
@@ -171,7 +171,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        BalanceDelta delta = manager.modifyPosition(key, REMOVE_LIQ_PARAMS, "");
+        BalanceDelta delta = manager.modifyLiquidity(key, REMOVE_LIQ_PARAMS, "");
 
         (,,, int256 deltaLockerAfter0) = _fetchBalances(key.currency0, user, locker);
         (,,, int256 deltaLockerAfter1) = _fetchBalances(key.currency1, user, locker);

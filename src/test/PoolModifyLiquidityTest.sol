@@ -11,7 +11,7 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {Test} from "forge-std/Test.sol";
 import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 
-contract PoolModifyPositionTest is Test, PoolTestBase {
+contract PoolModifyLiquidityTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
     using FeeLibrary for uint24;
@@ -21,15 +21,15 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
     struct CallbackData {
         address sender;
         PoolKey key;
-        IPoolManager.ModifyPositionParams params;
+        IPoolManager.ModifyLiquidityParams params;
         bytes hookData;
     }
 
-    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
-        external
-        payable
-        returns (BalanceDelta delta)
-    {
+    function modifyLiquidity(
+        PoolKey memory key,
+        IPoolManager.ModifyLiquidityParams memory params,
+        bytes memory hookData
+    ) external payable returns (BalanceDelta delta) {
         delta = abi.decode(
             manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, params, hookData))), (BalanceDelta)
         );
@@ -45,7 +45,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.modifyPosition(data.key, data.params, data.hookData);
+        BalanceDelta delta = manager.modifyLiquidity(data.key, data.params, data.hookData);
 
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));

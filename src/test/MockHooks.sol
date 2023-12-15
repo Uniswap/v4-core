@@ -14,8 +14,10 @@ contract MockHooks is IHooks {
 
     bytes public beforeInitializeData;
     bytes public afterInitializeData;
-    bytes public beforeModifyPositionData;
-    bytes public afterModifyPositionData;
+    bytes public beforeAddLiquidityData;
+    bytes public afterAddLiquidityData;
+    bytes public beforeRemoveLiquidityData;
+    bytes public afterRemoveLiquidityData;
     bytes public beforeSwapData;
     bytes public afterSwapData;
     bytes public beforeDonateData;
@@ -45,26 +47,49 @@ contract MockHooks is IHooks {
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function beforeModifyPosition(
+    function beforeAddLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         bytes calldata hookData
     ) external override returns (bytes4) {
-        beforeModifyPositionData = hookData;
-        bytes4 selector = MockHooks.beforeModifyPosition.selector;
+        beforeAddLiquidityData = hookData;
+        bytes4 selector = MockHooks.beforeAddLiquidity.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterModifyPosition(
+    function afterAddLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4) {
-        afterModifyPositionData = hookData;
-        bytes4 selector = MockHooks.afterModifyPosition.selector;
+        afterAddLiquidityData = hookData;
+        bytes4 selector = MockHooks.afterAddLiquidity.selector;
+        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+    }
+
+    function beforeRemoveLiquidity(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
+        bytes calldata hookData
+    ) external override returns (bytes4) {
+        beforeRemoveLiquidityData = hookData;
+        bytes4 selector = MockHooks.beforeRemoveLiquidity.selector;
+        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+    }
+
+    function afterRemoveLiquidity(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
+        BalanceDelta,
+        bytes calldata hookData
+    ) external override returns (bytes4) {
+        afterRemoveLiquidityData = hookData;
+        bytes4 selector = MockHooks.afterRemoveLiquidity.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
