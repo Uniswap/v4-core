@@ -36,9 +36,9 @@ contract Deployers {
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
     uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
 
-    IPoolManager.ModifyLiquidityParams internal LIQ_PARAMS =
+    IPoolManager.ModifyLiquidityParams public LIQ_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-    IPoolManager.ModifyLiquidityParams internal REMOVE_LIQ_PARAMS =
+    IPoolManager.ModifyLiquidityParams public REMOVE_LIQ_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
 
     // Global variables
