@@ -6,6 +6,7 @@ import {ERC6909} from "./ERC6909.sol";
 /// @notice ERC6909Claims inherits ERC6909 and implements an internal burnFrom function
 abstract contract ERC6909Claims is ERC6909 {
     /// @notice Burn `amount` tokens of token type `id` from `from`.
+    /// @dev if sender is not `from` they must be an operator or have sufficient allowance.
     /// @param from The address to burn tokens from.
     /// @param id The currency to burn.
     /// @param amount The amount to burn.
