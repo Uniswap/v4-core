@@ -42,7 +42,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
     /// TODO this needs to be transient
-    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
+    mapping(address caller => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
 
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
@@ -142,9 +142,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
+        _accountDeltaForTarget(currency, delta, msg.sender);
+    }
+
+    function _accountDeltaForTarget(Currency currency, int128 delta, address target) internal {
         if (delta == 0) return;
 
-        int256 current = currencyDelta[msg.sender][currency];
+        int256 current = currencyDelta[target][currency];
         int256 next = current + delta;
 
         unchecked {
@@ -155,7 +159,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        currencyDelta[msg.sender][currency] = next;
+        currencyDelta[target][currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
@@ -271,12 +275,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function settle(Currency currency) external payable override noDelegateCall isLocked returns (uint256 paid) {
+    function settle(Currency currency, address target) external payable override noDelegateCall isLocked returns (uint256 paid) {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt128()));
+        _accountDeltaForTarget(currency, -(paid.toInt128()), target);
     }
 
     /// @inheritdoc IPoolManager

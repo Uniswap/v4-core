@@ -182,13 +182,15 @@ interface IPoolManager is IFees, IClaims {
     function take(Currency currency, address to, uint256 amount) external;
 
     /// @notice Called by the user to move value into Claims balance
-    function mint(Currency token, address to, uint256 amount) external;
+    function mint(Currency currency, address to, uint256 amount) external;
 
     /// @notice Called by the user to redeem their Claims balance
-    function burn(Currency token, uint256 amount) external;
+    function burn(Currency currency, uint256 amount) external;
 
-    /// @notice Called by the user to pay what is owed
-    function settle(Currency token) external payable returns (uint256 paid);
+    /// @notice Called to pay what is owed by an address
+    /// @param currency The currency to pay to the pool manager
+    /// @param target The address whose delta will be modified in this call
+    function settle(Currency currency, address target) external payable returns (uint256 paid);
 
     /// @notice Sets the protocol's swap fee for the given pool
     /// Protocol fees are always a portion of the LP swap fee that is owed. If that fee is 0, no protocol fees will accrue even if it is set to > 0.

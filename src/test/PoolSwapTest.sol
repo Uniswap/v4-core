@@ -102,14 +102,14 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         if (deltaAfter0 > 0) {
             if (data.testSettings.currencyAlreadySent) {
-                manager.settle(data.key.currency0);
+                manager.settle(data.key.currency0, address(this));
             } else {
                 _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
             }
         }
         if (deltaAfter1 > 0) {
             if (data.testSettings.currencyAlreadySent) {
-                manager.settle(data.key.currency1);
+                manager.settle(data.key.currency1, address(this));
             } else {
                 _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
             }
