@@ -11,7 +11,7 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {Test} from "forge-std/Test.sol";
 import {FeeLibrary} from "../libraries/FeeLibrary.sol";
 
-contract PoolModifyPositionTest is Test, PoolTestBase {
+contract PoolModifyLiquidityTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
     using FeeLibrary for uint24;
@@ -21,15 +21,15 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
     struct CallbackData {
         address sender;
         PoolKey key;
-        IPoolManager.ModifyPositionParams params;
+        IPoolManager.ModifyLiquidityParams params;
         bytes hookData;
     }
 
-    function modifyPosition(PoolKey memory key, IPoolManager.ModifyPositionParams memory params, bytes memory hookData)
-        external
-        payable
-        returns (BalanceDelta delta)
-    {
+    function modifyLiquidity(
+        PoolKey memory key,
+        IPoolManager.ModifyLiquidityParams memory params,
+        bytes memory hookData
+    ) external payable returns (BalanceDelta delta) {
         delta = abi.decode(
             manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, params, hookData))), (BalanceDelta)
         );
@@ -45,7 +45,7 @@ contract PoolModifyPositionTest is Test, PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.modifyPosition(data.key, data.params, data.hookData);
+        BalanceDelta delta = manager.modifyLiquidity(data.key, data.params, data.hookData);
         // Checks that the current hook is cleared if there is an access lock. Note that if this router is ever used in a nested lock this will fail.
         assertEq(address(manager.getCurrentHook()), address(0));
 
