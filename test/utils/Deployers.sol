@@ -33,6 +33,7 @@ contract Deployers {
     bytes constant ZERO_BYTES = new bytes(0);
     uint160 constant SQRT_RATIO_1_1 = Constants.SQRT_RATIO_1_1;
     uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
+    uint160 constant SQRT_RATIO_2_1 = Constants.SQRT_RATIO_2_1;
     uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
     uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
 
