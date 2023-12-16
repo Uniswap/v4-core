@@ -94,7 +94,7 @@ contract AccessLockHook is Test, BaseTestHooks {
 
         // These actions just use some hardcoded parameters.
         if (action == LockAction.Mint) {
-            manager.mint(key.currency1, address(this), amount);
+            manager.mint(address(this), key.currency1.toId(), amount);
         } else if (action == LockAction.Take) {
             manager.take(key.currency1, address(this), amount);
         } else if (action == LockAction.Donate) {
@@ -119,7 +119,7 @@ contract AccessLockHook is Test, BaseTestHooks {
             assertEq(address(manager.getCurrentHook()), address(this));
             return Hooks.NO_OP_SELECTOR;
         } else if (action == LockAction.Burn) {
-            manager.burn(key.currency1, amount);
+            manager.burn(address(this), key.currency1.toId(), amount);
         } else if (action == LockAction.Settle) {
             manager.take(key.currency1, address(this), amount);
             assertEq(MockERC20(Currency.unwrap(key.currency1)).balanceOf(address(this)), amount);
@@ -148,6 +148,8 @@ contract AccessLockHook is Test, BaseTestHooks {
 // Also has the ability to call out to another hook or pool.
 contract AccessLockHook2 is Test, BaseTestHooks {
     IPoolManager manager;
+
+    using CurrencyLibrary for Currency;
 
     error IncorrectHookSet();
 
@@ -180,7 +182,7 @@ contract AccessLockHook2 is Test, BaseTestHooks {
                 revert IncorrectHookSet();
             }
             // Should succeed.
-            manager.mint(key.currency1, address(this), 10);
+            manager.mint(address(this), key.currency1.toId(), 10);
         }
         return IHooks.beforeAddLiquidity.selector;
     }
