@@ -11,12 +11,14 @@ import {Pool} from "../src/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockHooks} from "../src/test/MockHooks.sol";
+import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
 import {MockContract} from "../src/test/MockContract.sol";
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
+import {PoolSwapWithFeeTest} from "../src/test/PoolSwapWithFeeTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolEmptyLockTest} from "../src/test/PoolEmptyLockTest.sol";
@@ -27,6 +29,7 @@ import {Position} from "../src/libraries/Position.sol";
 import {Constants} from "./utils/Constants.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -768,6 +771,21 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapStart("swap against liquidity with native token");
         swapRouter.swap{value: 1 ether}(nativeKey, params, testSettings, ZERO_BYTES);
         snapEnd();
+    }
+
+    function test_swap_withFeeTakingHook() public {
+        address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
+        FeeTakingHook impl = new FeeTakingHook(manager);
+        vm.etch(hookAddr, address(impl).code);
+
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        PoolSwapWithFeeTest router = new PoolSwapWithFeeTest(manager);
+        MockERC20(Currency.unwrap(currency0)).approve(address(router), Constants.MAX_UINT256);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        router.swapExactInput(key, params, 95);
     }
 
     function test_swap_accruesProtocolFees(uint8 protocolFee1, uint8 protocolFee0) public {

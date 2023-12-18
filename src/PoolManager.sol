@@ -39,10 +39,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     /// @inheritdoc IPoolManager
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
+    uint256 public constant TOTAL_DEBT = uint256(0);
+
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
     /// TODO this needs to be transient
-    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
+    mapping(address caller => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
 
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
@@ -142,9 +144,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
+        _accountDeltaForTarget(currency, delta, msg.sender);
+    }
+
+    function _accountDeltaForTarget(Currency currency, int128 delta, address target) internal {
         if (delta == 0) return;
 
-        int256 current = currencyDelta[msg.sender][currency];
+        int256 current = currencyDelta[target][currency];
         int256 next = current + delta;
 
         unchecked {
@@ -155,7 +161,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             }
         }
 
-        currencyDelta[msg.sender][currency] = next;
+        currencyDelta[target][currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
@@ -289,6 +295,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     function burn(address from, uint256 id, uint256 amount) external override noDelegateCall isLocked {
         _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
         _burnFrom(from, id, amount);
+    }
+
+    // Allows one caller to resolve a debt on behalf of another address
+    function acceptDebt(Currency currency, address caller, uint256 amount) external isLocked {
+        if (amount == TOTAL_DEBT) amount = currencyDelta[caller][currency].toUint256();
+        _accountDelta(currency, amount.toInt128());
+        _accountDeltaForTarget(currency, -(amount.toInt128()), caller);
     }
 
     function setProtocolFee(PoolKey memory key) external {
