@@ -16,14 +16,14 @@ import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
-import {Claims} from "./Claims.sol";
+import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
+contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -288,15 +288,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function mint(Currency currency, address to, uint256 amount) external noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-        _mint(to, currency, amount);
+    function mint(address to, uint256 id, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
+        _mint(to, id, amount);
     }
 
     /// @inheritdoc IPoolManager
-    function burn(Currency currency, uint256 amount) external noDelegateCall onlyByLocker {
-        _accountDelta(currency, -(amount.toInt128()));
-        _burn(currency, amount);
+    function burn(address from, uint256 id, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
+        _burnFrom(from, id, amount);
     }
 
     function setProtocolFee(PoolKey memory key) external {
