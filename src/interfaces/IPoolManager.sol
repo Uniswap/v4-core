@@ -7,7 +7,6 @@ import {Pool} from "../libraries/Pool.sol";
 import {IHooks} from "./IHooks.sol";
 import {IERC6909Claims} from "./external/IERC6909Claims.sol";
 import {IFees} from "./IFees.sol";
-import {IClaims} from "./IClaims.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
@@ -26,9 +25,6 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @param locker The current locker
     /// @param currentHook The most recently called hook
     error LockedBy(address locker, address currentHook);
-
-    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
-    error NotPoolManagerToken();
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
@@ -198,6 +194,15 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @notice Sets the protocol's swap fee for the given pool
     /// Protocol fees are always a portion of the LP swap fee that is owed. If that fee is 0, no protocol fees will accrue even if it is set to > 0.
     function setProtocolFee(PoolKey memory key) external;
+
+    /// @notice Called by the protocol fee controller to collect accumulated protocol fees
+    /// @param recipient The address to receive the ERC20 protocol fees
+    /// @param currency The currency to collect protocol fees for
+    /// @param amount The amount of protocol fees to collect. Use 0 to collect all.
+    /// @dev Protocol fees are stored as Claims and will be burnt for ERC20s
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected);
 
     /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
     function updateDynamicSwapFee(PoolKey memory key) external;

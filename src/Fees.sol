@@ -19,8 +19,6 @@ abstract contract Fees is IFees, Owned {
     // the swap fee is represented in hundredths of a bip, so the max is 100%
     uint24 public constant MAX_SWAP_FEE = 1000000;
 
-    mapping(Currency currency => uint256) public protocolFeesAccrued;
-
     IProtocolFeeController public protocolFeeController;
 
     uint256 private immutable controllerGasLimit;
@@ -79,16 +77,5 @@ abstract contract Fees is IFees, Owned {
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
         protocolFeeController = controller;
         emit ProtocolFeeControllerUpdated(address(controller));
-    }
-
-    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
-        external
-        returns (uint256 amountCollected)
-    {
-        if (msg.sender != owner && msg.sender != address(protocolFeeController)) revert InvalidCaller();
-
-        amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
-        protocolFeesAccrued[currency] -= amountCollected;
-        currency.transfer(recipient, amountCollected);
     }
 }

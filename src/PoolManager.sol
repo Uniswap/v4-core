@@ -238,7 +238,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
         unchecked {
             if (feeForProtocol > 0) {
-                protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
+                _mint(
+                    address(protocolFeeController),
+                    params.zeroForOne ? key.currency0.toId() : key.currency1.toId(),
+                    feeForProtocol
+                );
             }
         }
 
@@ -305,6 +309,17 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         pools[id].setProtocolFee(newProtocolFee);
         emit ProtocolFeeUpdated(id, newProtocolFee);
+    }
+
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected)
+    {
+        if (msg.sender != address(protocolFeeController)) revert InvalidCaller();
+
+        amountCollected = (amount == 0) ? balanceOf[msg.sender][currency.toId()] : amount;
+        _burn(msg.sender, currency.toId(), amountCollected);
+        currency.transfer(recipient, amountCollected);
     }
 
     function updateDynamicSwapFee(PoolKey memory key) external {
