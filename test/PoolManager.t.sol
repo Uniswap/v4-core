@@ -1005,8 +1005,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_collectProtocolFees_ERC20_returnsCorrectFeesWithParameters(uint256 swapAmount, uint256 balanceToClaim)
         public
     {
-
-        (,uint256 amount1) = getMaxAmountInForPool(Deployers.LIQ_PARAMS, key);
+        (, uint256 amount1) = getMaxAmountInForPool(Deployers.LIQ_PARAMS, key);
         // lower bound for precision purposes
         swapAmount = uint256(bound(swapAmount, 100, amount1));
 
