@@ -25,13 +25,18 @@ abstract contract PoolTestBase is ILockCallback {
     }
 
     function _settle(Currency currency, address payer, int128 amount, bool settleUsingTransfer) internal {
+        _settle(currency, payer, address(this), amount, settleUsingTransfer);
+    }
+
+
+    function _settle(Currency currency, address payer, address target, int128 amount, bool settleUsingTransfer) internal {
         assert(amount > 0);
         if (settleUsingTransfer) {
             if (currency.isNative()) {
-                manager.settle{value: uint128(amount)}(currency, address(this));
+                manager.settle{value: uint128(amount)}(currency, target);
             } else {
                 IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), uint128(amount));
-                manager.settle(currency, address(this));
+                manager.settle(currency, target);
             }
         } else {
             manager.burn(currency, uint128(amount));

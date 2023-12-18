@@ -49,23 +49,24 @@ contract PoolSwapTest is Test, PoolTestBase {
         if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(address sender, bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
+        sender = (sender == address(this)) ? data.sender : sender;
 
         (,, uint256 reserveBefore0, int256 deltaBefore0) =
-            _fetchBalances(data.key.currency0, data.sender, address(this));
+            _fetchBalances(data.key.currency0, sender, address(this));
         (,, uint256 reserveBefore1, int256 deltaBefore1) =
-            _fetchBalances(data.key.currency1, data.sender, address(this));
+            _fetchBalances(data.key.currency1, sender, address(this));
 
         assertEq(deltaBefore0, 0);
         assertEq(deltaBefore1, 0);
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
-        (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
-        (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
+        (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, sender, address(this));
+        (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, sender, address(this));
 
         assertEq(reserveBefore0, reserveAfter0);
         assertEq(reserveBefore1, reserveAfter1);
@@ -104,21 +105,21 @@ contract PoolSwapTest is Test, PoolTestBase {
             if (data.testSettings.currencyAlreadySent) {
                 manager.settle(data.key.currency0, address(this));
             } else {
-                _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
+                _settle(data.key.currency0, sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
             }
         }
         if (deltaAfter1 > 0) {
             if (data.testSettings.currencyAlreadySent) {
                 manager.settle(data.key.currency1, address(this));
             } else {
-                _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
+                _settle(data.key.currency1, sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
             }
         }
         if (deltaAfter0 < 0) {
-            _take(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.withdrawTokens);
+            _take(data.key.currency0, sender, int128(deltaAfter0), data.testSettings.withdrawTokens);
         }
         if (deltaAfter1 < 0) {
-            _take(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.withdrawTokens);
+            _take(data.key.currency1, sender, int128(deltaAfter1), data.testSettings.withdrawTokens);
         }
 
         return abi.encode(delta);

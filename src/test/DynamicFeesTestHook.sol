@@ -11,6 +11,11 @@ contract DynamicFeesTestHook is BaseTestHooks, IDynamicFeeManager {
     uint24 internal fee;
     IPoolManager manager;
 
+    modifier onlyPoolManager() {
+        require(msg.sender == address(manager));
+        _;
+    }
+
     constructor() {}
 
     function setManager(IPoolManager _manager) external {
@@ -28,6 +33,7 @@ contract DynamicFeesTestHook is BaseTestHooks, IDynamicFeeManager {
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata, bytes calldata hookData)
         external
         override
+        onlyPoolManager
         returns (bytes4)
     {
         // updates the dynamic fee in the pool if update is true

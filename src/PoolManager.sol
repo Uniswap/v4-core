@@ -274,8 +274,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         currency.transfer(to, amount);
     }
 
-    /// @inheritdoc IPoolManager
-    function settle(Currency currency, address target)
+    function settle(Currency currency)
         external
         payable
         override
@@ -287,7 +286,22 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
         // subtraction must be safe
-        _accountDeltaForTarget(currency, -(paid.toInt128()), target);
+        _accountDelta(currency, -(paid.toInt128()));
+    }
+
+    /// @inheritdoc IPoolManager
+    function settleForTarget(Currency currency, address target, uint256 amount)
+        external
+        payable
+        override
+        noDelegateCall
+        isLocked
+    {
+        uint256 reservesBefore = reservesOf[currency];
+        require(reservesBefore + amount <= currency.balanceOfSelf());
+        reservesOf[currency] = reservesBefore + amount;
+        // subtraction must be safe
+        _accountDeltaForTarget(currency, -(amount.toInt128()), target);
     }
 
     /// @inheritdoc IPoolManager
