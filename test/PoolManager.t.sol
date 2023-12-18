@@ -1027,18 +1027,18 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.prank(address(feeController));
         if (balanceToClaim == 0 || balanceToClaim == feesAccrued) {
             // Expect that they claimed their entire balance
-            manager.collectProtocolFees(protocolFeeRecipient, currency1, balanceToClaim);
+            manager.collectProtocolFees(protocolFeeRecipient, currency1.toId(), balanceToClaim);
             assertEq(currency1.balanceOf(protocolFeeRecipient), feesAccrued);
             assertEq(manager.balanceOf(address(feeController), currency0.toId()), 0);
         } else if (balanceToClaim < feesAccrued) {
             // Expect that they claimed some of their balance
-            manager.collectProtocolFees(protocolFeeRecipient, currency1, balanceToClaim);
+            manager.collectProtocolFees(protocolFeeRecipient, currency1.toId(), balanceToClaim);
             assertEq(currency1.balanceOf(protocolFeeRecipient), balanceToClaim);
             assertEq(manager.balanceOf(address(feeController), currency1.toId()), feesAccrued - balanceToClaim);
         } else {
             // Must revert
             vm.expectRevert();
-            manager.collectProtocolFees(protocolFeeRecipient, currency1, balanceToClaim);
+            manager.collectProtocolFees(protocolFeeRecipient, currency1.toId(), balanceToClaim);
         }
     }
 
@@ -1064,7 +1064,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(currency0.balanceOf(address(1)), 0);
         vm.prank(address(feeController));
         snapStart("erc20 collect protocol fees");
-        manager.collectProtocolFees(address(1), currency0, 0);
+        manager.collectProtocolFees(address(1), currency0.toId(), 0);
         snapEnd();
         assertEq(currency0.balanceOf(address(1)), expectedFees);
         assertEq(manager.balanceOf(address(feeController), currency0.toId()), 0);
@@ -1092,7 +1092,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.balanceOf(address(feeController), currency1.toId()), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
         vm.prank(address(feeController));
-        manager.collectProtocolFees(address(1), nativeCurrency, 0);
+        manager.collectProtocolFees(address(1), nativeCurrency.toId(), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
         assertEq(manager.balanceOf(address(feeController), nativeCurrency.toId()), 0);
     }

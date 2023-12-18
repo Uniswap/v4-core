@@ -311,15 +311,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         emit ProtocolFeeUpdated(id, newProtocolFee);
     }
 
-    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+    function collectProtocolFees(address recipient, uint256 id, uint256 amount)
         external
         returns (uint256 amountCollected)
     {
         if (msg.sender != address(protocolFeeController)) revert InvalidCaller();
 
-        amountCollected = (amount == 0) ? balanceOf[msg.sender][currency.toId()] : amount;
-        _burn(msg.sender, currency.toId(), amountCollected);
-        currency.transfer(recipient, amountCollected);
+        amountCollected = (amount == 0) ? balanceOf[msg.sender][id] : amount;
+        _burn(msg.sender, id, amountCollected);
+        CurrencyLibrary.fromId(id).transfer(recipient, amountCollected);
     }
 
     function updateDynamicSwapFee(PoolKey memory key) external {
