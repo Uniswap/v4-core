@@ -72,7 +72,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         lockTest = new PoolLockTest(manager);
     }
 
-    function getMaxAmountInForPool(IPoolManager.ModifyPositionParams memory liqParams, PoolKey memory key)
+    function getMaxAmountInForPool(IPoolManager.ModifyLiquidityParams memory liqParams, PoolKey memory key)
         public
         view
         returns (uint256 amount0, uint256 amount1)
