@@ -177,15 +177,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function modifyPosition(
+    function modifyLiquidity(
         PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params,
+        IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeModifyPosition(key, params, hookData)) {
+        if (!key.hooks.beforeModifyLiquidity(key, params, hookData)) {
             return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
@@ -201,9 +201,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
         _accountPoolBalanceDelta(key, delta);
 
-        key.hooks.afterModifyPosition(key, params, delta, hookData);
+        key.hooks.afterModifyLiquidity(key, params, delta, hookData);
 
-        emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
+        emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
 
     /// @inheritdoc IPoolManager
@@ -292,15 +292,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function mint(address to, Currency currency, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-        _mint(to, currency.toId(), amount);
+    function mint(address to, uint256 id, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
+        _mint(to, id, amount);
     }
 
     /// @inheritdoc IPoolManager
-    function burn(address from, Currency currency, uint256 amount) external override noDelegateCall onlyByLocker {
-        _accountDelta(currency, -(amount.toInt128()));
-        _burnFrom(from, currency.toId(), amount);
+    function burn(address from, uint256 id, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
+        _burnFrom(from, id, amount);
     }
 
     function setProtocolFee(PoolKey memory key) external {

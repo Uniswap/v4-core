@@ -9,13 +9,18 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 contract MockERC6909Claims is ERC6909Claims {
     using CurrencyLibrary for Currency;
 
-    /// @notice mocked mint logic without delta accounting
-    function mint(address to, Currency currency, uint256 amount) public {
-        _mint(to, currency.toId(), amount);
+    /// @notice mocked mint logic
+    function mint(address to, uint256 id, uint256 amount) public {
+        _mint(to, id, amount);
     }
 
-    /// @notice mocked burn logic without delta accounting and without checking allowance
-    function burnFrom(address from, Currency currency, uint256 amount) public {
-        _burnFrom(from, currency.toId(), amount);
+    /// @notice mocked burn logic
+    function burn(uint256 id, uint256 amount) public {
+        _burn(msg.sender, id, amount);
+    }
+
+    /// @notice mocked burn logic without checking sender allowance
+    function burnFrom(address from, uint256 id, uint256 amount) public {
+        _burnFrom(from, id, amount);
     }
 }

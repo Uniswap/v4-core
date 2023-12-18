@@ -5,6 +5,7 @@ import {IERC6909Claims} from "./interfaces/external/IERC6909Claims.sol";
 
 /// @notice Minimalist and gas efficient standard ERC6909 implementation.
 /// @author Solmate (https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC6909.sol)
+/// @dev Copied from the commit at 4b47a19038b798b4a33d9749d25e570443520647
 /// @dev This contract has been modified from the implementation at the above link.
 abstract contract ERC6909 is IERC6909Claims {
     /*//////////////////////////////////////////////////////////////

@@ -32,7 +32,7 @@ contract AccessLockHook is Test, BaseTestHooks {
         Take,
         Donate,
         Swap,
-        ModifyPosition,
+        ModifyLiquidity,
         Burn,
         Settle,
         Initialize,
@@ -67,13 +67,22 @@ contract AccessLockHook is Test, BaseTestHooks {
         return _executeAction(key, hookData, IHooks.beforeDonate.selector);
     }
 
-    function beforeModifyPosition(
+    function beforeAddLiquidity(
         address, /* sender **/
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata hookData
     ) external override returns (bytes4) {
-        return _executeAction(key, hookData, IHooks.beforeModifyPosition.selector);
+        return _executeAction(key, hookData, IHooks.beforeAddLiquidity.selector);
+    }
+
+    function beforeRemoveLiquidity(
+        address, /* sender **/
+        PoolKey calldata key,
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
+        bytes calldata hookData
+    ) external override returns (bytes4) {
+        return _executeAction(key, hookData, IHooks.beforeRemoveLiquidity.selector);
     }
 
     function _executeAction(PoolKey memory key, bytes calldata hookData, bytes4 selector) internal returns (bytes4) {
@@ -85,7 +94,7 @@ contract AccessLockHook is Test, BaseTestHooks {
 
         // These actions just use some hardcoded parameters.
         if (action == LockAction.Mint) {
-            manager.mint(address(this), key.currency1, amount);
+            manager.mint(address(this), key.currency1.toId(), amount);
         } else if (action == LockAction.Take) {
             manager.take(key.currency1, address(this), amount);
         } else if (action == LockAction.Donate) {
@@ -100,17 +109,17 @@ contract AccessLockHook is Test, BaseTestHooks {
                 }),
                 new bytes(0)
             );
-        } else if (action == LockAction.ModifyPosition) {
-            manager.modifyPosition(
+        } else if (action == LockAction.ModifyLiquidity) {
+            manager.modifyLiquidity(
                 key,
-                IPoolManager.ModifyPositionParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),
+                IPoolManager.ModifyLiquidityParams({tickLower: -60, tickUpper: 60, liquidityDelta: int256(amount)}),
                 new bytes(0)
             );
         } else if (action == LockAction.NoOp) {
             assertEq(address(manager.getCurrentHook()), address(this));
             return Hooks.NO_OP_SELECTOR;
         } else if (action == LockAction.Burn) {
-            manager.burn(address(this), key.currency1, amount);
+            manager.burn(address(this), key.currency1.toId(), amount);
         } else if (action == LockAction.Settle) {
             manager.take(key.currency1, address(this), amount);
             assertEq(MockERC20(Currency.unwrap(key.currency1)).balanceOf(address(this)), amount);
@@ -140,16 +149,18 @@ contract AccessLockHook is Test, BaseTestHooks {
 contract AccessLockHook2 is Test, BaseTestHooks {
     IPoolManager manager;
 
+    using CurrencyLibrary for Currency;
+
     error IncorrectHookSet();
 
     constructor(IPoolManager _manager) {
         manager = _manager;
     }
 
-    function beforeModifyPosition(
+    function beforeAddLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
+        IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external override returns (bytes4) {
         if (address(manager.getCurrentHook()) != address(this)) {
@@ -161,19 +172,19 @@ contract AccessLockHook2 is Test, BaseTestHooks {
         if (shouldCallHook) {
             // Should revert.
             bytes memory hookData2 = abi.encode(100, AccessLockHook.LockAction.Mint);
-            IHooks(key2.hooks).beforeModifyPosition(sender, key, params, hookData2); // params dont really matter, just want to tell the other hook to do a mint action, but will revert
+            IHooks(key2.hooks).beforeAddLiquidity(sender, key, params, hookData2); // params dont really matter, just want to tell the other hook to do a mint action, but will revert
         } else {
             // Should succeed and should NOT set the current hook to key2.hooks.
             // The permissions should remain to THIS hook during this lock.
-            manager.modifyPosition(key2, params, new bytes(0));
+            manager.modifyLiquidity(key2, params, new bytes(0));
 
             if (address(manager.getCurrentHook()) != address(this)) {
                 revert IncorrectHookSet();
             }
             // Should succeed.
-            manager.mint(address(this), key.currency1, 10);
+            manager.mint(address(this), key.currency1.toId(), 10);
         }
-        return IHooks.beforeModifyPosition.selector;
+        return IHooks.beforeAddLiquidity.selector;
     }
 }
 
@@ -193,10 +204,10 @@ contract AccessLockHook3 is Test, ILockCallback, BaseTestHooks {
         key = _key;
     }
 
-    function beforeModifyPosition(
+    function beforeAddLiquidity(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata /* hookData **/
     ) external override returns (bytes4) {
         assertEq(address(manager.getCurrentHook()), address(this));
@@ -204,7 +215,7 @@ contract AccessLockHook3 is Test, ILockCallback, BaseTestHooks {
         assertEq(address(manager.getCurrentHook()), address(this));
         manager.lock(address(this), abi.encode(false));
         assertEq(address(manager.getCurrentHook()), address(this));
-        return IHooks.beforeModifyPosition.selector;
+        return IHooks.beforeAddLiquidity.selector;
     }
 
     function lockAcquired(address caller, bytes memory data) external returns (bytes memory) {
@@ -234,10 +245,10 @@ contract AccessLockFeeHook is Test, BaseTestHooks {
         manager = _manager;
     }
 
-    function afterModifyPosition(
+    function afterAddLiquidity(
         address, /* sender **/
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta delta,
         bytes calldata /* hookData **/
     ) external override returns (bytes4) {
@@ -245,7 +256,20 @@ contract AccessLockFeeHook is Test, BaseTestHooks {
         int128 amount1 = delta.amount1();
 
         // positive delta => user owes money => liquidity addition
-        if (amount0 >= 0 && amount1 >= 0) return IHooks.afterModifyPosition.selector;
+        assert(amount0 >= 0 && amount1 >= 0);
+
+        return IHooks.afterAddLiquidity.selector;
+    }
+
+    function afterRemoveLiquidity(
+        address, /* sender **/
+        PoolKey calldata key,
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
+        BalanceDelta delta,
+        bytes calldata /* hookData **/
+    ) external override returns (bytes4) {
+        int128 amount0 = delta.amount0();
+        int128 amount1 = delta.amount1();
 
         // negative delta => user is owed money => liquidity withdrawal
         uint256 amount0Fee = uint128(-amount0) * WITHDRAWAL_FEE_BIPS / TOTAL_BIPS;
@@ -254,7 +278,7 @@ contract AccessLockFeeHook is Test, BaseTestHooks {
         manager.take(key.currency0, address(this), amount0Fee);
         manager.take(key.currency1, address(this), amount1Fee);
 
-        return IHooks.afterModifyPosition.selector;
+        return IHooks.afterRemoveLiquidity.selector;
     }
 
     function afterSwap(

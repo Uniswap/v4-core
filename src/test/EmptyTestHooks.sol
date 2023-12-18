@@ -15,8 +15,10 @@ contract EmptyTestHooks is IHooks {
             Hooks.Permissions({
                 beforeInitialize: true,
                 afterInitialize: true,
-                beforeModifyPosition: true,
-                afterModifyPosition: true,
+                beforeAddLiquidity: true,
+                afterAddLiquidity: true,
+                beforeRemoveLiquidity: true,
+                afterRemoveLiquidity: true,
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
@@ -45,23 +47,42 @@ contract EmptyTestHooks is IHooks {
         return IHooks.afterInitialize.selector;
     }
 
-    function beforeModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata)
+    function beforeAddLiquidity(address, PoolKey calldata, IPoolManager.ModifyLiquidityParams calldata, bytes calldata)
         external
         pure
         override
         returns (bytes4)
     {
-        return IHooks.beforeModifyPosition.selector;
+        return IHooks.beforeAddLiquidity.selector;
     }
 
-    function afterModifyPosition(
+    function afterAddLiquidity(
         address,
         PoolKey calldata,
-        IPoolManager.ModifyPositionParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata
     ) external pure override returns (bytes4) {
-        return IHooks.afterModifyPosition.selector;
+        return IHooks.afterAddLiquidity.selector;
+    }
+
+    function beforeRemoveLiquidity(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return IHooks.beforeRemoveLiquidity.selector;
+    }
+
+    function afterRemoveLiquidity(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
+        BalanceDelta,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return IHooks.afterRemoveLiquidity.selector;
     }
 
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
