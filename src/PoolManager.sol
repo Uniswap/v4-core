@@ -42,7 +42,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
     /// TODO this needs to be transient
-    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
+    mapping(Currency currency => int256 currencyDelta) public currencyDelta;
 
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
@@ -144,7 +144,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        int256 current = currencyDelta[msg.sender][currency];
+        int256 current = currencyDelta[currency];
         int256 next = current + delta;
 
         unchecked {
@@ -155,7 +155,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             }
         }
 
-        currencyDelta[msg.sender][currency] = next;
+        currencyDelta[currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes

@@ -134,9 +134,8 @@ interface IPoolManager is IFees, IERC6909Claims {
         returns (int24 tick);
 
     /// @notice Get the current delta for a locker in the given currency
-    /// @param locker The address of the locker
     /// @param currency The currency for which to lookup the delta
-    function currencyDelta(address locker, Currency currency) external view returns (int256);
+    function currencyDelta(Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
     /// @param lockTarget The address to call the callback on

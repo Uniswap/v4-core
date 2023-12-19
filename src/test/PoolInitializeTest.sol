@@ -40,8 +40,8 @@ contract PoolInitializeTest is Test, PoolTestBase {
 
         int24 tick = manager.initialize(data.key, data.sqrtPriceX96, data.hookData);
 
-        int256 delta0 = manager.currencyDelta(address(this), data.key.currency0);
-        int256 delta1 = manager.currencyDelta(address(this), data.key.currency1);
+        int256 delta0 = manager.currencyDelta(data.key.currency0);
+        int256 delta1 = manager.currencyDelta(data.key.currency1);
         uint256 nonZeroDC = manager.getLockNonzeroDeltaCount();
 
         assertEq(delta0, 0, "delta0");
