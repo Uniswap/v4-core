@@ -302,6 +302,36 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
     }
 
+    function test_addLiquidity_6909() public {
+        // convert test tokens into ERC6909 claims
+        claimsRouter.deposit(currency0, address(this), 10_000e18);
+        claimsRouter.deposit(currency1, address(this), 10_000e18);
+        assertEq(manager.balanceOf(address(this), currency0.toId()), 10_000e18);
+        assertEq(manager.balanceOf(address(this), currency1.toId()), 10_000e18);
+
+        // allow liquidity router to burn our 6909 tokens
+        manager.setOperator(address(modifyLiquidityRouter), true);
+
+        // add liquidity with 6909: settleUsingTransfer=false, withdrawTokens=false (unused)
+        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES, false, false);
+
+        assertLt(manager.balanceOf(address(this), currency0.toId()), 10_000e18);
+        assertLt(manager.balanceOf(address(this), currency1.toId()), 10_000e18);
+    }
+
+    function test_removeLiquidity_6909() public {
+        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+
+        assertEq(manager.balanceOf(address(this), currency0.toId()), 0);
+        assertEq(manager.balanceOf(address(this), currency1.toId()), 0);
+
+        // remove liquidity as 6909: settleUsingTransfer=false (unused), withdrawTokens=false
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES, false, false);
+
+        assertTrue(manager.balanceOf(address(this), currency0.toId()) > 0);
+        assertTrue(manager.balanceOf(address(this), currency1.toId()) > 0);
+    }
+
     function test_addLiquidity_gas() public {
         snapStart("addLiquidity");
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
