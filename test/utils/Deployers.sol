@@ -17,6 +17,7 @@ import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolInitializeTest} from "../../src/test/PoolInitializeTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
+import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
 import {
     ProtocolFeeControllerTest,
     OutOfBoundsProtocolFeeControllerTest,
@@ -50,6 +51,7 @@ contract Deployers {
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
+    PoolClaimsTest claimsRouter;
     PoolInitializeTest initializeRouter;
     ProtocolFeeControllerTest feeController;
     RevertingProtocolFeeControllerTest revertingFeeController;
@@ -72,6 +74,7 @@ contract Deployers {
         modifyLiquidityRouter = new PoolModifyLiquidityTest(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
+        claimsRouter = new PoolClaimsTest(manager);
         initializeRouter = new PoolInitializeTest(manager);
         feeController = new ProtocolFeeControllerTest();
         revertingFeeController = new RevertingProtocolFeeControllerTest();
@@ -85,11 +88,12 @@ contract Deployers {
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
         MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
 
-        address[5] memory toApprove = [
+        address[6] memory toApprove = [
             address(swapRouter),
             address(modifyLiquidityRouter),
             address(donateRouter),
             address(takeRouter),
+            address(claimsRouter),
             address(initializeRouter)
         ];
 
