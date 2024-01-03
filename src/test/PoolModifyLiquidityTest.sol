@@ -10,7 +10,6 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {Test} from "forge-std/Test.sol";
 import {FeeLibrary} from "../libraries/FeeLibrary.sol";
-import {console2} from "forge-std/console2.sol";
 
 contract PoolModifyLiquidityTest is Test, PoolTestBase {
     using CurrencyLibrary for Currency;
@@ -68,11 +67,6 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
 
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender);
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender);
-        console2.log(data.settleUsingTransfer);
-        console2.log("delta.amount0", int256(delta.amount0()));
-        console2.log("delta.amount1", int256(delta.amount1()));
-        console2.log("delta0", delta0);
-        console2.log("delta1", delta1);
 
         // These assertions only apply in non lock-accessing pools.
         if (!data.key.hooks.hasPermission(Hooks.ACCESS_LOCK_FLAG)) {
