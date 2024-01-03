@@ -369,7 +369,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
                     address(this),
                     key,
                     IPoolManager.ModifyLiquidityParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}),
-                    ZERO_BYTES
+                    ZERO_BYTES,
+                    true,
+                    true
                 )
             )
         );
