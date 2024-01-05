@@ -59,6 +59,14 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
+    /// @notice Thrown when the amounts and ticks length don't match required for `donate`.
+    error LengthMismatch();
+
+    /// @notice Thrown when the ticks list is not submitted in the proper order.
+    /// @notice Ticks must be entirely increasing or decreasing. If increasing, they must begin above the current tick. If decreasing, they must start at or below the current tick.
+    /// @dev It is not possible to donate to both sides of the current tick in one donate call. It is a "one-sided" donate and the direction depends on the first inputted tick.
+    error DonateTicksIncorrectlyOrdered();
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
@@ -160,6 +168,7 @@ library Pool {
         uint256 feesOwed0;
         uint256 feesOwed1;
         {
+            // TODO change this name, overloaded state name
             ModifyPositionState memory state;
 
             // if we need to update the ticks, do it
@@ -187,9 +196,11 @@ library Pool {
                 }
             }
 
+            // nonzero number
             (state.feeGrowthInside0X128, state.feeGrowthInside1X128) =
                 getFeeGrowthInside(self, params.tickLower, params.tickUpper);
 
+            // lastInside is 0
             (feesOwed0, feesOwed1) = self.positions.get(params.owner, params.tickLower, params.tickUpper).update(
                 params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128
             );
@@ -460,16 +471,120 @@ library Pool {
     }
 
     /// @notice Donates the given amount of currency0 and currency1 to the pool
-    function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
-        if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
-        delta = toBalanceDelta(amount0.toInt128(), amount1.toInt128());
-        unchecked {
-            if (amount0 > 0) {
-                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
+    /// ticks must be ordered closest to farthest tick, and can only increase or decrease (one-sided) donate
+    function donate(
+        State storage state,
+        uint256[] memory amount0,
+        uint256[] memory amount1,
+        int24[] memory ticks,
+        int24 tickSpacing
+    ) internal returns (BalanceDelta delta) {
+        if (state.liquidity == 0) revert NoLiquidityToReceiveFees(); // TODO: Can we still allow donating to other ranges if the current liq is 0?
+        if (amount0.length != amount1.length || amount1.length != ticks.length) revert LengthMismatch();
+        _checkTicks(ticks, ticks[0] <= state.slot0.tick);
+
+        (
+            uint256 cumulativeFeeGrowth0X128,
+            uint256 cumulativeFeeGrowth1X128,
+            uint256[] memory individualFeeGrowth0X128,
+            uint256[] memory individualFeeGrowth1X128
+        ) = state.calculateDonateFeeGrowth(amount0, amount1, ticks, tickSpacing);
+
+        uint256 total0;
+        uint256 total1;
+        for (uint256 i = 0; i < ticks.length; i++) {
+            int24 tick = ticks[i];
+            uint256 feeGrowthOutside0X128Current = state.ticks[tick].feeGrowthOutside0X128;
+            state.ticks[tick].feeGrowthOutside0X128 =
+                feeGrowthOutside0X128Current + cumulativeFeeGrowth0X128 - individualFeeGrowth0X128[i];
+
+            total0 += amount0[i];
+            total1 += amount1[i];
+        }
+
+        delta = toBalanceDelta(total0.toInt128(), total1.toInt128());
+
+        /// Note: A more readable algorithm would create a liquidityArray[](ticks.length) saving the liquidity value at every tick
+        /// We could then iterate through the liquidityArray twice, calculating first the cumulative amount
+
+        /// And then second, recalculating the individual fee growth and changing the feeGrowthOutisde value for each of the ticks
+
+        /// Similarly, we could save the calculation for the individual fee growth the first time...
+    }
+
+    function calculateDonateFeeGrowth(
+        State storage state,
+        uint256[] memory amount0,
+        uint256[] memory amount1,
+        int24[] memory ticks,
+        int24 tickSpacing
+    )
+        internal
+        returns (
+            uint256 cumulativeFeeGrowth0X128,
+            uint256 cumulativeFeeGrowth1X128,
+            uint256[] memory individualFeeGrowth0X128,
+            uint256[] memory individualFeeGrowth1X128
+        )
+    {
+        int24 startTick = ticks[0];
+        int24 endTick = ticks[ticks.length - 1];
+
+        int24 tickCurrent = state.slot0.tick;
+        bool left = startTick < tickCurrent;
+        bool initialized;
+        uint128 liquidity = state.liquidity;
+
+        uint256 i = 0; // index
+
+        individualFeeGrowth0X128 = new uint256[](ticks.length);
+        individualFeeGrowth1X128 = new uint256[](ticks.length);
+        // While we haven't reached the last tick we want to donate to, continue accumulating the cumulativeFeeGrowth value.
+        // while (startTick != endTick) <- we must iterate to the endTick otherwise this will not work
+        while (left ? tickCurrent > endTick : tickCurrent < endTick) {
+            // if the current tick we have iterated down (up) to is lte (gte) the tick we haven't donated to yet but want to, we can accumulate fees. we know the liquidity value is up to date
+            while (left ? tickCurrent <= startTick : tickCurrent >= startTick) {
+                // edge : what if you have a few ticks you want to donate to that are within the same word..
+                // ie the nextInitializedTick blows past 3 ticks you need to update
+                // thus I dont think this should check if == but rather it should iterate through the ticks list until the current tick is not caught up
+
+                // when we reach the start tick, use the liquidity value to update the cumulative fee growth
+                individualFeeGrowth0X128[i] = FullMath.mulDiv(amount0[i], FixedPoint128.Q128, liquidity);
+                cumulativeFeeGrowth0X128 += individualFeeGrowth0X128[i]; // alternatively re-calculate on the way back? tradeoff memory vs. runtime
+                individualFeeGrowth0X128[i] = FullMath.mulDiv(amount1[i], FixedPoint128.Q128, liquidity);
+                cumulativeFeeGrowth1X128 += individualFeeGrowth1X128[i]; // alternatively re-calculate on the way back? tradeoff memory vs. runtime
+                // move to the next tick, increment i
+                startTick = ticks[i++]; // does that incrememnt i?
             }
-            if (amount1 > 0) {
-                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
+
+            // @AUSTIN.. can we only bump down on the FIRST left search? or is it all left searches?
+            // (left && tickCurrent == state.slot0.tick ? tickCurrent - 1 : tickCurrent)
+            (tickCurrent, initialized) = state.tickBitmap.nextInitializedTickWithinOneWord(
+                (left ? tickCurrent - 1 : tickCurrent), tickSpacing, left
+            );
+            if (initialized) {
+                int128 liquidityNet = state.ticks[tickCurrent].liquidityNet;
+                // @AUSTIN do we need to check direction here too? or does the sign of liquidityNet tell us whether to add/subtract like I assume below:
+                liquidity = liquidityNet < 0 ? liquidity + uint128(-liquidityNet) : liquidity + uint128(liquidityNet);
             }
+        }
+    }
+
+    // @sara TODO: unit tests here...
+    // Some thoughts/edge cases:
+    // No repeated ticks
+    // No ticks on both sides of current
+    // No ticks out of bounds.
+    // Even with proper increasing the first tick cannot be the max. Even with proper decreasing the first tick cannot be the min.
+    function _checkTicks(int24[] memory ticks, bool lte) private {
+        for (uint256 i = 0; i < ticks.length - 1; i++) {
+            if (lte ? ticks[i] <= ticks[i + 1] : ticks[i] >= ticks[i + 1]) revert DonateTicksIncorrectlyOrdered();
+        }
+
+        if (lte) {
+            if (ticks[ticks.length - 1] < TickMath.MIN_TICK) revert TickLowerOutOfBounds(ticks[ticks.length - 1]);
+        } else if (ticks[ticks.length - 1] > TickMath.MAX_TICK) {
+            revert TickUpperOutOfBounds(ticks[ticks.length - 1]);
         }
     }
 
@@ -486,16 +601,17 @@ library Pool {
     {
         TickInfo storage lower = self.ticks[tickLower];
         TickInfo storage upper = self.ticks[tickUpper];
-        int24 tickCurrent = self.slot0.tick;
+        int24 tickCurrent = self.slot0.tick; // dependent on the current tick, the current tick is the most updated tick
 
         unchecked {
             if (tickCurrent < tickLower) {
-                feeGrowthInside0X128 = lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128;
+                feeGrowthInside0X128 = lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128; // 0 - 0 = 0
                 feeGrowthInside1X128 = lower.feeGrowthOutside1X128 - upper.feeGrowthOutside1X128;
             } else if (tickCurrent >= tickUpper) {
                 feeGrowthInside0X128 = upper.feeGrowthOutside0X128 - lower.feeGrowthOutside0X128;
                 feeGrowthInside1X128 = upper.feeGrowthOutside1X128 - lower.feeGrowthOutside1X128;
             } else {
+                // in-range, inside SHOULD include the global amount, minus all the fees that were accrued when it was NOT in range
                 feeGrowthInside0X128 =
                     self.feeGrowthGlobal0X128 - lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128;
                 feeGrowthInside1X128 =
@@ -536,6 +652,8 @@ library Pool {
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 
         if (liquidityGrossBefore == 0) {
+            // COME BACK TO THIS
+            // we are updating an uninitialized tick,(had no positions), now it has a position which is why we r updating
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
             if (tick <= self.slot0.tick) {
                 info.feeGrowthOutside0X128 = self.feeGrowthGlobal0X128;

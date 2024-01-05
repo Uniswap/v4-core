@@ -264,7 +264,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
-        delta = pools[id].donate(amount0, amount1);
+        delta = pools[id].donate(amount0, amount1, tickSpacing);
 
         _accountPoolBalanceDelta(key, delta);
 
