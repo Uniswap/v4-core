@@ -298,7 +298,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     // Allows one caller to resolve a debt on behalf of another address
-    function settleFor(Currency currency, address caller, uint256 amount) external isLocked {
+    function payOnBehalf(Currency currency, address caller, uint256 amount) external isLocked {
         if (amount == TOTAL_DEBT) amount = currencyDelta[caller][currency].toUint256();
         _accountDelta(currency, amount.toInt128());
         _accountDeltaForTarget(currency, -(amount.toInt128()), caller);

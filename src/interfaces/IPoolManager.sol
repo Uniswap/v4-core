@@ -195,7 +195,7 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @param currency The currency to settle
     /// @param caller The address whose delta will be updated
     /// @param amount The amount to settle. 0 to settle all outstanding debt
-    function settleFor(Currency currency, address caller, uint256 amount) external;
+    function payOnBehalf(Currency currency, address caller, uint256 amount) external;
 
     /// @notice Sets the protocol's swap fee for the given pool
     /// Protocol fees are always a portion of the LP swap fee that is owed. If that fee is 0, no protocol fees will accrue even if it is set to > 0.
