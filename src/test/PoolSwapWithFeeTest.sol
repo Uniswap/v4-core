@@ -58,7 +58,7 @@ contract PoolSwapWithFeeTest is Test, PoolTestBase {
             _settle(data.key.currency0, sender, delta.amount0(), true);
 
             // settle output and fee
-            manager.acceptDebt(data.key.currency1, address(data.key.hooks), TOTAL_DEBT);
+            manager.settleFor(data.key.currency1, address(data.key.hooks), TOTAL_DEBT);
             int256 amountOut = manager.currencyDelta(address(this), data.key.currency1);
             require((-amountOut).toUint256() >= data.minAmountOut);
             _take(data.key.currency1, sender, amountOut.toInt128(), true);
@@ -67,7 +67,7 @@ contract PoolSwapWithFeeTest is Test, PoolTestBase {
             _settle(data.key.currency1, sender, delta.amount1(), true);
 
             // settle output and fee
-            manager.acceptDebt(data.key.currency0, address(data.key.hooks), TOTAL_DEBT);
+            manager.settleFor(data.key.currency0, address(data.key.hooks), TOTAL_DEBT);
             int256 amountOut = manager.currencyDelta(address(this), data.key.currency1);
             require((-amountOut).toUint256() >= data.minAmountOut);
             _take(data.key.currency0, sender, amountOut.toInt128(), true);
