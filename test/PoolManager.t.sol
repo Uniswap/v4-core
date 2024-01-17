@@ -309,6 +309,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.balanceOf(address(this), currency0.toId()), 10_000e18);
         assertEq(manager.balanceOf(address(this), currency1.toId()), 10_000e18);
 
+        uint256 currency0BalanceBefore = currency0.balanceOfSelf();
+        uint256 currency1BalanceBefore = currency1.balanceOfSelf();
+
         // allow liquidity router to burn our 6909 tokens
         manager.setOperator(address(modifyLiquidityRouter), true);
 
@@ -317,6 +320,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         assertLt(manager.balanceOf(address(this), currency0.toId()), 10_000e18);
         assertLt(manager.balanceOf(address(this), currency1.toId()), 10_000e18);
+
+        // ERC20s are unspent
+        assertEq(currency0.balanceOfSelf(), currency0BalanceBefore);
+        assertEq(currency1.balanceOfSelf(), currency1BalanceBefore);
     }
 
     function test_removeLiquidity_6909() public {
@@ -325,11 +332,18 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.balanceOf(address(this), currency0.toId()), 0);
         assertEq(manager.balanceOf(address(this), currency1.toId()), 0);
 
+        uint256 currency0BalanceBefore = currency0.balanceOfSelf();
+        uint256 currency1BalanceBefore = currency1.balanceOfSelf();
+
         // remove liquidity as 6909: settleUsingTransfer=false (unused), withdrawTokens=false
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES, false, false);
 
         assertTrue(manager.balanceOf(address(this), currency0.toId()) > 0);
         assertTrue(manager.balanceOf(address(this), currency1.toId()) > 0);
+
+        // ERC20s are unspent
+        assertEq(currency0.balanceOfSelf(), currency0BalanceBefore);
+        assertEq(currency1.balanceOfSelf(), currency1BalanceBefore);
     }
 
     function test_addLiquidity_gas() public {
