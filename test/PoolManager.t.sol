@@ -311,6 +311,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         uint256 currency0BalanceBefore = currency0.balanceOfSelf();
         uint256 currency1BalanceBefore = currency1.balanceOfSelf();
+        uint256 currency0PMBalanceBefore = currency0.balanceOf(address(manager));
+        uint256 currency1PMBalanceBefore = currency1.balanceOf(address(manager));
 
         // allow liquidity router to burn our 6909 tokens
         manager.setOperator(address(modifyLiquidityRouter), true);
@@ -324,6 +326,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // ERC20s are unspent
         assertEq(currency0.balanceOfSelf(), currency0BalanceBefore);
         assertEq(currency1.balanceOfSelf(), currency1BalanceBefore);
+
+        // PoolManager did not receive net-new ERC20s
+        assertEq(currency0.balanceOf(address(manager)), currency0PMBalanceBefore);
+        assertEq(currency1.balanceOf(address(manager)), currency1PMBalanceBefore);
     }
 
     function test_removeLiquidity_6909() public {
@@ -334,6 +340,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         uint256 currency0BalanceBefore = currency0.balanceOfSelf();
         uint256 currency1BalanceBefore = currency1.balanceOfSelf();
+        uint256 currency0PMBalanceBefore = currency0.balanceOf(address(manager));
+        uint256 currency1PMBalanceBefore = currency1.balanceOf(address(manager));
 
         // remove liquidity as 6909: settleUsingTransfer=false (unused), withdrawTokens=false
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES, false, false);
@@ -344,6 +352,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // ERC20s are unspent
         assertEq(currency0.balanceOfSelf(), currency0BalanceBefore);
         assertEq(currency1.balanceOfSelf(), currency1BalanceBefore);
+
+        // PoolManager did lose ERC-20s
+        assertEq(currency0.balanceOf(address(manager)), currency0PMBalanceBefore);
+        assertEq(currency1.balanceOf(address(manager)), currency1PMBalanceBefore);
     }
 
     function test_addLiquidity_gas() public {
