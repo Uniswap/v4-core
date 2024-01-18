@@ -182,13 +182,28 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
-        PoolId id = key.toId();
+        PoolId id = _initializeLiquidityModification(key, params, hookData);
+        delta = _executeLiquidityModification(id, key, params);
+        _finalizeLiquidityModification(key, params, delta, hookData);
+    }
+
+    function _initializeLiquidityModification(
+        PoolKey memory key,
+        IPoolManager.ModifyLiquidityParams memory params,
+        bytes calldata hookData
+    ) internal returns (PoolId id) {
+        id = key.toId();
         _checkPoolInitialized(id);
-
         if (!key.hooks.beforeModifyLiquidity(key, params, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
+            revert("Liquidity modification failed at pre-hook");
         }
+    }
 
+    function _executeLiquidityModification(
+        PoolId id,
+        PoolKey memory key,
+        IPoolManager.ModifyLiquidityParams memory params
+    ) internal returns (BalanceDelta delta) {
         delta = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
                 owner: msg.sender,
@@ -198,13 +213,19 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
                 tickSpacing: key.tickSpacing
             })
         );
-
         _accountPoolBalanceDelta(key, delta);
-
-        key.hooks.afterModifyLiquidity(key, params, delta, hookData);
-
-        emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
     }
+
+    function _finalizeLiquidityModification(
+        PoolKey memory key,
+        IPoolManager.ModifyLiquidityParams memory params,
+        BalanceDelta delta,
+        bytes calldata hookData
+    ) internal {
+        key.hooks.afterModifyLiquidity(key, params, delta, hookData);
+        emit ModifyLiquidity(key.toId(), msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
+    }
+
 
     /// @inheritdoc IPoolManager
     function swap(PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
