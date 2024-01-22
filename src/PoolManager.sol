@@ -201,9 +201,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
         _accountPoolBalanceDelta(key, delta);
 
-        key.hooks.afterModifyLiquidity(key, params, delta, hookData);
-
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
+
+        key.hooks.afterModifyLiquidity(key, params, delta, hookData);
     }
 
     /// @inheritdoc IPoolManager
