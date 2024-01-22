@@ -242,11 +242,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             }
         }
 
-        key.hooks.afterSwap(key, params, delta, hookData);
-
         emit Swap(
             id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
         );
+
+        key.hooks.afterSwap(key, params, delta, hookData);
+
     }
 
     /// @inheritdoc IPoolManager
