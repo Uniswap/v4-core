@@ -178,7 +178,7 @@ interface IPoolManager is IFees, IERC6909Claims {
         returns (BalanceDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
+    function donate(PoolKey memory key, Pool.DonateTickInfo[] memory upper, Pool.DonateTickInfo[] memory lower, bytes calldata hookData)
         external
         returns (BalanceDelta);
 

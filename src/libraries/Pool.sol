@@ -59,6 +59,20 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
+    /// @notice Thrown when the amounts and ticks length don't match required for `donate`.
+    error LengthMismatch();
+
+    /// @notice Thrown when the ticks list is not submitted in the proper order.
+    /// @notice Ticks must be entirely increasing or decreasing. If increasing, they must begin above the current tick. If decreasing, they must start at or below the current tick.
+    /// @dev It is not possible to donate to both sides of the current tick in one donate call. It is a "one-sided" donate and the direction depends on the first inputted tick.
+    error DonateTicksIncorrectlyOrdered();
+
+    struct DonateTickInfo {
+        int24 tick;
+        uint256 amount0;
+        uint256 amount1;
+    }
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
@@ -459,17 +473,192 @@ library Pool {
         }
     }
 
-    /// @notice Donates the given amount of currency0 and currency1 to the pool
-    function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
-        if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
-        delta = toBalanceDelta(amount0.toInt128(), amount1.toInt128());
-        unchecked {
-            if (amount0 > 0) {
-                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
+    /// @notice Donates the given amount of currency0 and currency1 to the pool.
+    // TODO: Handle when currentTick == tick[0]. (When the first tick you want to donate to is equal to the current tick)
+    function donate(
+        State storage state,
+        DonateTickInfo[] memory upper,
+        DonateTickInfo[] memory lower,
+        int24 tickSpacing
+    ) internal returns (BalanceDelta delta) {
+        if (state.liquidity == 0) revert NoLiquidityToReceiveFees(); // TODO: Remove - can still allow donating to other ranges if the current liq is 0
+
+        _checkTicks(upper, state.slot0.tick, false);
+        _checkTicks(lower, state.slot0.tick, true);
+
+        // Update the upper donate ticks and the ticks between the current tick and max donate tick.
+        (
+            uint256 cumulativeFeeGrowth0X128Upper,
+            uint256 cumulativeFeeGrowth1X128Upper,
+            uint256 amount0Upper,
+            uint256 amount1Upper
+        ) = state.donateUpper(upper, tickSpacing);
+        // Update the lower donate ticks and the ticks between the current tick and min donate tick.
+        (
+            uint256 cumulativeFeeGrowth0X128Lower,
+            uint256 cumulativeFeeGrowth1X128Lower,
+            uint256 amount0Lower,
+            uint256 amount1Lower
+        ) = state.donateLower(lower, tickSpacing);
+
+        uint256 feeGrowthGlobalDelta0 = cumulativeFeeGrowth0X128Upper + cumulativeFeeGrowth0X128Lower;
+        uint256 feeGrowthGlobalDelta1 = cumulativeFeeGrowth1X128Upper + cumulativeFeeGrowth1X128Lower;
+
+        state.feeGrowthGlobal0X128 += feeGrowthGlobalDelta0;
+        state.feeGrowthGlobal1X128 += feeGrowthGlobalDelta1;
+
+        uint256 total0 = amount0Lower + amount0Upper;
+        uint256 total1 = amount0Lower + amount1Upper;
+
+        delta = toBalanceDelta(total0.toInt128(), total1.toInt128());
+    }
+
+    function donateLower(State storage state, DonateTickInfo[] memory lowerTicks, int24 tickSpacing)
+        internal
+        returns (uint256 cumulativeFeeGrowth0X128, uint256 cumulativeFeeGrowth1X128, uint256 amount0, uint256 amount1)
+    {
+        int24 tickCurrent = state.slot0.tick;
+        uint256 i = lowerTicks.length - 1; // Index for the furtest away tick from the current tick.
+        int24 furthestTick = lowerTicks[i].tick;
+
+        uint128 liquidity = state.liquidity;
+        bool initialized;
+
+        int24 tickNext = tickCurrent;
+        // Iterate down to furthest tick.
+        while (tickNext > furthestTick) {
+            // If less than, continue. If equal, break.
+            // Since we are moving left, we must push the tick 1 less on the first time.
+            (tickNext, initialized) = state.tickBitmap.nextInitializedTickWithinOneWord(tickNext - 1, tickSpacing, true);
+            if (initialized) {
+                int128 liquidityNet = state.ticks[tickNext].liquidityNet;
+                liquidity = liquidityNet < 0 ? liquidity + uint128(-liquidityNet) : liquidity + uint128(liquidityNet);
             }
-            if (amount1 > 0) {
-                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
+            // Whatever the value for liquidity at the end, is the value we can use to iterate backwards through.
+        }
+
+        // Iterate from furthestTick to firstTick.
+
+        int24 firstTick = lowerTicks[0].tick;
+        while (tickNext <= firstTick) {
+            // TODO: firstTick could be the currentTick of the pool, in which case I think we don't want to update the feeGrowthOutside.
+            // Update the cumulativeFeeGrowth when we reach a tick in the donate ticks, lowerTicks array.
+            if (tickNext == lowerTicks[i].tick) {
+                amount0 += lowerTicks[i].amount0;
+                amount1 += lowerTicks[i].amount1;
+                cumulativeFeeGrowth0X128 += FullMath.mulDiv(lowerTicks[i].amount0, FixedPoint128.Q128, liquidity);
+                cumulativeFeeGrowth1X128 += FullMath.mulDiv(lowerTicks[i].amount1, FixedPoint128.Q128, liquidity);
+
+                // Move to the next donate tick unless we have reached the final (first) tick.
+                if (i != 0) i--;
             }
+
+            // Every tick between the lowest tick, and the actual current tick of the pool must update their feeGrowthOutside value.abi
+            state.ticks[tickNext].feeGrowthOutside0X128 += cumulativeFeeGrowth0X128; // If tickCurrent < endTick this will be 0.
+            state.ticks[tickNext].feeGrowthOutside1X128 += cumulativeFeeGrowth1X128; // If tickCurrent < endTick this will be 0.
+
+            // Move tickCurrent upwards. lte = false
+            (tickNext, initialized) = state.tickBitmap.nextInitializedTickWithinOneWord(tickNext, tickSpacing, false);
+            if (initialized) {
+                int128 liquidityNet = state.ticks[tickCurrent].liquidityNet;
+                liquidity = liquidityNet < 0 ? liquidity + uint128(-liquidityNet) : liquidity + uint128(liquidityNet);
+            }
+        }
+
+        // Finally, update all tick FGO with the new cumulativeFeeGrowth, until we arrive back at the current tick.
+        while (tickNext <= tickCurrent) {
+            // TODO: Should this be greater than AND equal to?
+            // Address case when we want to donate TO the current tick. (Note that tick would be inputted in the donateLower parameters).
+            state.ticks[tickNext].feeGrowthOutside0X128 += cumulativeFeeGrowth0X128;
+            state.ticks[tickNext].feeGrowthOutside1X128 += cumulativeFeeGrowth1X128;
+
+            // Move up.
+            (tickNext,) = state.tickBitmap.nextInitializedTickWithinOneWord(tickNext, tickSpacing, false);
+        }
+    }
+
+    function donateUpper(State storage state, DonateTickInfo[] memory upperTicks, int24 tickSpacing)
+        internal
+        returns (uint256 cumulativeFeeGrowth0X128, uint256 cumulativeFeeGrowth1X128, uint256 amount0, uint256 amount1)
+    {
+        int24 tickCurrent = state.slot0.tick;
+        uint256 i = upperTicks.length - 1; // Index for the tick furthest away from the current tick.
+        int24 furthestTick = upperTicks[i].tick;
+
+        uint128 liquidity = state.liquidity;
+        bool initialized;
+        int24 tickNext = tickCurrent;
+        // Iterate up to the furthestTick.
+        while (tickNext < furthestTick) {
+            (tickNext, initialized) = state.tickBitmap.nextInitializedTickWithinOneWord(tickNext, tickSpacing, false);
+            if (initialized) {
+                // Update the liquidity
+                int128 liquidityNet = state.ticks[tickNext].liquidityNet;
+                liquidity = liquidityNet < 0 ? liquidity + (uint128(-liquidityNet)) : liquidity + uint128(liquidityNet);
+            }
+        }
+
+        // Iterate backwards from furthest tick to start tick.
+        int24 startTick = upperTicks[0].tick;
+        while (tickNext >= startTick) {
+            if (tickNext == upperTicks[i].tick) {
+                amount0 += upperTicks[i].amount0;
+                amount1 += upperTicks[i].amount1;
+                cumulativeFeeGrowth0X128 += FullMath.mulDiv(upperTicks[i].amount0, FixedPoint128.Q128, liquidity);
+                cumulativeFeeGrowth1X128 += FullMath.mulDiv(upperTicks[i].amount1, FixedPoint128.Q128, liquidity);
+
+                // Move down to next donate-able tick.
+                if (i != 0) i--;
+            }
+            // Update every tick between the max tick and the start tick.
+            state.ticks[tickNext].feeGrowthOutside0X128 += cumulativeFeeGrowth0X128; // If tickCurrent > endTick this will be 0 until cumulativeFeeGrowth updates AT end tick.
+            state.ticks[tickNext].feeGrowthOutside1X128 += cumulativeFeeGrowth1X128; // If tickCurrent > endTick this will be 0 until cumulativeFeeGrowth updates AT end tick.
+
+            // Iterate down.
+            (tickNext, initialized) = state.tickBitmap.nextInitializedTickWithinOneWord(tickNext - 1, tickSpacing, true);
+            if (initialized) {
+                // Update the liquidity
+                int128 liquidityNet = state.ticks[tickNext].liquidityNet;
+                liquidity = liquidityNet < 0 ? liquidity + (uint128(-liquidityNet)) : liquidity + uint128(liquidityNet);
+            }
+        }
+
+        // Finally update the ticks between the start tick and the true current tick.
+        while (tickNext >= tickCurrent) {
+            // TODO: Should this be greater than AND equal to.
+            // Address case when we want to donate TO the current tick. (Note that tick would be inputted in the donateLower parameters).
+            state.ticks[tickNext].feeGrowthOutside0X128 += cumulativeFeeGrowth0X128;
+            state.ticks[tickNext].feeGrowthOutside1X128 += cumulativeFeeGrowth1X128;
+
+            // Move down.
+            (tickNext,) = state.tickBitmap.nextInitializedTickWithinOneWord(tickNext - 1, tickSpacing, true);
+        }
+    }
+
+    // @sara TODO: unit tests here...
+    // Some thoughts/edge cases:
+    // No repeated ticks
+    // No ticks on both sides of current
+    // No ticks out of bounds.
+    // Even with proper increasing the first tick cannot be the max. Even with proper decreasing the first tick cannot be the min.
+    function _checkTicks(DonateTickInfo[] memory ticks, int24 currentTick, bool lte) private {
+        // If less than or equal to is true, the starting tick must be less than or equal to the current tick.
+        if (lte ? ((ticks[0].tick) >= currentTick) : ((ticks[0].tick) < currentTick)) {
+            revert DonateTicksIncorrectlyOrdered();
+        }
+
+        for (uint256 i = 0; i < ticks.length - 1; i++) {
+            // If less than or equal to is true, the tick list must be descending from highest to lowest so we revert if we find a lower tick before a higher tick.
+            // This also enforces that there can be no repeated ticks.
+            if (lte ? ticks[i].tick <= ticks[i + 1].tick : ticks[i].tick >= ticks[i + 1].tick) {
+                revert DonateTicksIncorrectlyOrdered();
+            }
+        }
+        uint256 lastIndex = ticks.length - 1;
+        if (lte) {
+            if (ticks[lastIndex].tick < TickMath.MIN_TICK) revert TickLowerOutOfBounds(ticks[lastIndex].tick);
+        } else {
+            if (ticks[lastIndex].tick > TickMath.MAX_TICK) revert TickUpperOutOfBounds(ticks[lastIndex].tick);
         }
     }
 
@@ -490,7 +679,7 @@ library Pool {
 
         unchecked {
             if (tickCurrent < tickLower) {
-                feeGrowthInside0X128 = lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128;
+                feeGrowthInside0X128 = lower.feeGrowthOutside0X128 - upper.feeGrowthOutside0X128; // 0 - 0 = 0
                 feeGrowthInside1X128 = lower.feeGrowthOutside1X128 - upper.feeGrowthOutside1X128;
             } else if (tickCurrent >= tickUpper) {
                 feeGrowthInside0X128 = upper.feeGrowthOutside0X128 - lower.feeGrowthOutside0X128;

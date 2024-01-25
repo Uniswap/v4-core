@@ -7,6 +7,7 @@ import {FeeLibrary} from "./FeeLibrary.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Lockers} from "./Lockers.sol";
+import {Pool} from "../libraries/Pool.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -228,13 +229,16 @@ library Hooks {
     }
 
     /// @notice calls beforeDonate hook if permissioned and validates return value
-    function beforeDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
-        internal
-        returns (bool shouldExecute)
-    {
+    function beforeDonate(
+        IHooks self,
+        PoolKey memory key,
+        Pool.DonateTickInfo[] memory upper,
+        Pool.DonateTickInfo[] memory lower,
+        bytes calldata hookData
+    ) internal returns (bool shouldExecute) {
         if (key.hooks.hasPermission(BEFORE_DONATE_FLAG)) {
             shouldExecute = self.callHookNoopable(
-                abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
+                abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, upper, lower, hookData)
             );
         } else {
             return true;
@@ -242,13 +246,15 @@ library Hooks {
     }
 
     /// @notice calls afterDonate hook if permissioned and validates return value
-    function afterDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
-        internal
-    {
+    function afterDonate(
+        IHooks self,
+        PoolKey memory key,
+        Pool.DonateTickInfo[] memory upper,
+        Pool.DonateTickInfo[] memory lower,
+        bytes calldata hookData
+    ) internal {
         if (key.hooks.hasPermission(AFTER_DONATE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, amount0, amount1, hookData)
-            );
+            self.callHook(abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, upper, lower, hookData));
         }
     }
 
