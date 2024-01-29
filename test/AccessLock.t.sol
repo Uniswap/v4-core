@@ -357,7 +357,6 @@ contract AccessLockTest is Test, Deployers {
      * BEFORE SWAP TESTS
      *
      */
-
     function test_beforeSwap_mint_succeedsWithAccessLock() public {
         // Add liquidity so there is something to swap against.
         modifyLiquidityRouter.modifyLiquidity(
@@ -501,7 +500,6 @@ contract AccessLockTest is Test, Deployers {
      * BEFORE DONATE TESTS
      *
      */
-
     function test_beforeDonate_mint_succeedsWithAccessLock() public {
         // Add liquidity so there is something to donate to.
         modifyLiquidityRouter.modifyLiquidity(
@@ -699,7 +697,6 @@ contract AccessLockTest is Test, Deployers {
      * HOOK FEE TESTS
      *
      */
-
     function test_hookFees_takesFeeOnWithdrawal() public {
         (key,) = initPool(
             currency0, currency1, IHooks(address(accessLockFeeHook)), Constants.FEE_MEDIUM, SQRT_RATIO_1_1, ZERO_BYTES
@@ -787,7 +784,6 @@ contract AccessLockTest is Test, Deployers {
      * EDGE CASE TESTS
      *
      */
-
     function test_onlyByLocker_revertsWhenHookIsNotCurrentHook() public {
         // Call first access lock hook. Should succeed.
         uint256 balanceOfBefore1 = MockERC20(Currency.unwrap(currency1)).balanceOf(address(this));
