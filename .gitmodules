@@ -1,3 +1,6 @@
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
 [submodule "lib/forge-gas-snapshot"]
 	path = lib/forge-gas-snapshot
 	url = https://github.com/marktoda/forge-gas-snapshot
@@ -8,6 +11,3 @@
 [submodule "lib/solmate"]
 	path = lib/solmate
 	url = https://github.com/transmissions11/solmate
-[submodule "lib/forge-std"]
-	path = lib/forge-std
-	url = https://github.com/foundry-rs/forge-std
