@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {console2} from "forge-std/console2.sol";
-
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
@@ -1080,17 +1078,17 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES);
 
         uint256 feesAccrued = manager.balanceOf(address(feeController), currency1.toId());
-        console2.log(feesAccrued);
+        assertEq(manager.balanceOf(address(feeController), currency0.toId()), 0);
 
         vm.prank(address(feeController));
         if (balanceToClaim == 0 || balanceToClaim == feesAccrued) {
+            manager.collectProtocolFees(protocolFeeRecipient, currency1.toId(), balanceToClaim);
             // Expect that they claimed their entire balance
-            manager.collectProtocolFees(protocolFeeRecipient, currency1.toId(), balanceToClaim);
             assertEq(currency1.balanceOf(protocolFeeRecipient), feesAccrued);
-            assertEq(manager.balanceOf(address(feeController), currency0.toId()), 0);
+            assertEq(manager.balanceOf(address(feeController), currency1.toId()), 0);
         } else if (balanceToClaim < feesAccrued) {
-            // Expect that they claimed some of their balance
             manager.collectProtocolFees(protocolFeeRecipient, currency1.toId(), balanceToClaim);
+            // Expect that they claimed some of their balance
             assertEq(currency1.balanceOf(protocolFeeRecipient), balanceToClaim);
             assertEq(manager.balanceOf(address(feeController), currency1.toId()), feesAccrued - balanceToClaim);
         } else {
