@@ -23,8 +23,7 @@ interface IPoolManager is IFees, IERC6909Claims {
     error PoolNotInitialized();
 
     /// @notice Thrown when lock is called, but a lock is already open
-    /// @param locker The current locker
-    error LockedBy(address locker);
+    error AlreadyLocked();
 
     /// @notice Thrown when a function is called outside of a lock
     error ManagerNotLocked();

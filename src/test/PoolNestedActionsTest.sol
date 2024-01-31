@@ -46,7 +46,7 @@ contract PoolNestedActionsTest is Test, ILockCallback {
         assertEq(locker, address(this));
         assertEq(lockCaller, user);
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, address(this)));
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyLocked.selector));
         manager.lock(address(this), "");
 
         (locker, lockCaller) = manager.getLock();
@@ -98,7 +98,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(locker, msg.sender);
         assertEq(lockCaller, user);
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.LockedBy.selector, msg.sender));
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyLocked.selector));
         manager.lock(address(this), "");
 
         (locker, lockCaller) = manager.getLock();

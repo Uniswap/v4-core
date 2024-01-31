@@ -20,6 +20,7 @@ import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Locker} from "./libraries/Locker.sol";
+import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 
 /// @notice Holds the state for all pools
@@ -130,14 +131,14 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     /// @inheritdoc IPoolManager
     function lock(address lockTarget, bytes calldata data) external payable override returns (bytes memory result) {
         // Get the lock caller because thats an EOA and is not user-controlable
-        if (Locker.isLocked()) revert LockedBy(Locker.getLocker());
+        if (Locker.isLocked()) revert AlreadyLocked();
 
         Locker.setLockerAndCaller(lockTarget, msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(lockTarget).lockAcquired(msg.sender, data);
 
-        if (Locker.nonzeroDeltaCount() != 0) revert CurrencyNotSettled();
+        if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
         Locker.clearLockerAndCaller();
     }
 
@@ -149,9 +150,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
         unchecked {
             if (next == 0) {
-                Locker.decrementNonzeroDeltaCount();
+                NonZeroDeltaCount.decrement();
             } else if (current == 0) {
-                Locker.incrementNonzeroDeltaCount();
+                NonZeroDeltaCount.increment();
             }
         }
 
@@ -331,7 +332,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
-        return Locker.nonzeroDeltaCount();
+        return NonZeroDeltaCount.read();
     }
 
     function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory) {
