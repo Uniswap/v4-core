@@ -97,8 +97,8 @@ contract MyContract is ILockCallback {
 
 The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/v4-core/blob/main/LICENSE). Minus the following exceptions:
 
-- Some [libraries](./contracts/libraries) have a GPL license
-- Both [FullMath.sol](./contracts/libraries/FullMath.sol) and [Hooks.sol](./contracts/libraries/Hooks.sol) have an MIT License
-- [Interfaces](./contracts/interfaces) and [types](./contracts/types/) have an MIT license
+- Some [libraries](./src/libraries) have a GPL license
+- Both [FullMath.sol](./src/libraries/FullMath.sol) and [Hooks.sol](./src/libraries/Hooks.sol) have an MIT License
+- [Interfaces](./src/interfaces) and [types](./src/types/) have an MIT license
 
 Each of these files states their license type.
