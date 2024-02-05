@@ -4,7 +4,7 @@ test *args: (test-forge args)
 build *args: (build-forge args)
 prep *args: fix (test args)
 
-test-forge *args: install-forge build-forge
+test-forge *args: install-forge
     forge test --use {{ solc_file }} {{ args }}
 
 build-forge *args: install-forge

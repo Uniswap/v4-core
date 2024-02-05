@@ -22,6 +22,8 @@ contract MockHooks is IHooks {
     bytes public afterSwapData;
     bytes public beforeDonateData;
     bytes public afterDonateData;
+    bytes public beforeMultiDonateData;
+    bytes public afterMultiDonateData;
 
     mapping(bytes4 => bytes4) public returnValues;
 
@@ -132,6 +134,28 @@ contract MockHooks is IHooks {
     {
         afterDonateData = hookData;
         bytes4 selector = MockHooks.afterDonate.selector;
+        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+    }
+
+    function beforeMultiDonate(
+        address,
+        PoolKey calldata,
+        IPoolManager.MultiDonateParams calldata,
+        bytes calldata hookData
+    ) external returns (bytes4) {
+        beforeMultiDonateData = hookData;
+        bytes4 selector = MockHooks.beforeMultiDonate.selector;
+        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+    }
+
+    function afterMultiDonate(
+        address,
+        PoolKey calldata,
+        IPoolManager.MultiDonateParams calldata,
+        bytes calldata hookData
+    ) external returns (bytes4) {
+        afterMultiDonateData = hookData;
+        bytes4 selector = MockHooks.afterMultiDonate.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 

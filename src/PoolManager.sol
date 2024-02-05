@@ -22,6 +22,8 @@ import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 
+import {console2 as console} from "forge-std/console2.sol";
+
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     using PoolIdLibrary for PoolKey;
@@ -247,6 +249,34 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         );
 
         key.hooks.afterSwap(key, params, delta, hookData);
+    }
+
+    /// @inheritdoc IPoolManager
+    function donate(PoolKey memory key, IPoolManager.MultiDonateParams calldata params, bytes calldata hookData)
+        external
+        override
+        noDelegateCall
+        onlyByLocker
+        returns (BalanceDelta delta)
+    {
+        PoolId id = key.toId();
+        _checkPoolInitialized(id);
+
+        if (!key.hooks.beforeMultiDonate(key, params, hookData)) {
+            return BalanceDeltaLibrary.MAXIMUM_DELTA;
+        }
+
+        delta = pools[id].donate({
+            tickNext: params.startTick,
+            tickSpacing: key.tickSpacing,
+            liquidityAtTick: params.liquidityAtStart,
+            amounts0: params.amounts0,
+            amounts1: params.amounts1
+        });
+
+        _accountPoolBalanceDelta(key, delta);
+
+        key.hooks.afterMultiDonate(key, params, hookData);
     }
 
     /// @inheritdoc IPoolManager

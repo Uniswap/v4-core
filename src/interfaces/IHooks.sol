@@ -146,4 +146,18 @@ interface IHooks {
         uint256 amount1,
         bytes calldata hookData
     ) external returns (bytes4);
+
+    function beforeMultiDonate(
+        address sender,
+        PoolKey calldata key,
+        IPoolManager.MultiDonateParams calldata params,
+        bytes calldata hookData
+    ) external returns (bytes4);
+
+    function afterMultiDonate(
+        address sender,
+        PoolKey calldata key,
+        IPoolManager.MultiDonateParams calldata params,
+        bytes calldata hookData
+    ) external returns (bytes4);
 }

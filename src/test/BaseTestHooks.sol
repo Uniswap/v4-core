@@ -104,4 +104,22 @@ contract BaseTestHooks is IHooks {
     ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
+
+    function beforeMultiDonate(
+        address, /* sender **/
+        PoolKey calldata, /* key **/
+        IPoolManager.MultiDonateParams calldata, /* params **/
+        bytes calldata /* hookData **/
+    ) external virtual returns (bytes4) {
+        revert HookNotImplemented();
+    }
+
+    function afterMultiDonate(
+        address, /* sender **/
+        PoolKey calldata, /* key **/
+        IPoolManager.MultiDonateParams calldata, /* params **/
+        bytes calldata /* hookData **/
+    ) external virtual returns (bytes4) {
+        revert HookNotImplemented();
+    }
 }

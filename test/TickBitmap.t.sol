@@ -264,11 +264,17 @@ contract TickBitmapTest is Test, GasSnapshot {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(tick, 1, lte);
 
         if (lte) {
-            assertLe(next, tick);
-            assertLe(tick - next, 256);
+            assertLe(next, tick, "next not <= start");
+            assertLe(tick - next, 256, "jump larger than 256");
             // all the ticks between the input tick and the next tick should be uninitialized
+            uint256 totalIters = 0;
             for (int24 i = tick; i > next; i--) {
-                assertTrue(!isInitialized(i));
+                if (isInitialized(i)) {
+                    emit log("Error: skipped tick initialized (isInitialized(tick) == true)");
+                    emit log_named_int("tick", i);
+                    fail();
+                }
+                if (++totalIters > 256) break;
             }
             assertEq(isInitialized(next), initialized);
         } else {
@@ -283,8 +289,7 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function isInitialized(int24 tick) internal view returns (bool) {
-        (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(tick, 1, true);
-        return next == tick ? initialized : false;
+        return bitmap.tickInitialized(tick, 1);
     }
 
     function flipTick(int24 tick) internal {

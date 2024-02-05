@@ -30,7 +30,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     MockHooks mockHooks;
 
     // Update this value when you add a new hook flag. And then update all appropriate asserts.
-    uint256 hookPermissionCount = 12;
+    uint256 hookPermissionCount = 14;
     uint256 clearAllHookPermisssionsMask;
 
     function setUp() public {
@@ -211,6 +211,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -246,6 +248,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -281,6 +285,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -315,6 +321,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -349,6 +357,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -383,6 +393,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -418,6 +430,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -452,6 +466,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -486,6 +502,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -521,6 +539,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -556,6 +576,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -590,6 +612,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -624,6 +648,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: true,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -658,6 +684,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: true,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -692,6 +720,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: true,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -726,6 +756,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: true,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -760,6 +792,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: true,
                 afterDonate: true,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -794,6 +828,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: true
             })
@@ -829,6 +865,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: true,
                 beforeDonate: true,
                 afterDonate: true,
+                beforeMultiDonate: true,
+                afterMultiDonate: true,
                 noOp: true,
                 accessLock: true
             })
@@ -843,6 +881,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_MULTI_DONATE_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_MULTI_DONATE_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.NO_OP_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.ACCESS_LOCK_FLAG));
     }
@@ -870,6 +910,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: true,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: true,
                 accessLock: false
             })
@@ -906,6 +948,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: true,
                 beforeDonate: true,
                 afterDonate: true,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: true,
                 accessLock: true
             })
@@ -931,6 +975,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: false,
                 accessLock: false
             })
@@ -971,8 +1017,17 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_invalidIfNoFlags() public {
-        assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), 3000));
-        assertFalse(Hooks.isValidHookAddress(IHooks(0x0020000000000000000000000000000000000001), 3000));
-        assertFalse(Hooks.isValidHookAddress(IHooks(0x003840a85d5Af5Bf1d1762F925BDADDc4201f984), 3000));
+        assertHookAddressInvalid(0x0000000000000000000000000000000000000001, 3000);
+        assertHookAddressInvalid(0x0002000000000000000000000000000000000001, 3000);
+        assertHookAddressInvalid(0x000340A85D5AF5bf1D1762F925BdaddC4201f984, 3000);
+    }
+
+    function assertHookAddressInvalid(address hookAddr, uint24 fee) internal {
+        if (Hooks.isValidHookAddress(IHooks(hookAddr), fee)) {
+            emit log("Error: Hook.isValidHookAddress(hookAddr, fee) == true");
+            emit log_named_address("hookAddr", hookAddr);
+            emit log_named_uint("fee", fee);
+            fail();
+        }
     }
 }

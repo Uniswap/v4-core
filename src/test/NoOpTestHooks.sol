@@ -22,6 +22,8 @@ contract NoOpTestHooks is BaseTestHooks {
                 afterSwap: false,
                 beforeDonate: true,
                 afterDonate: false,
+                beforeMultiDonate: false,
+                afterMultiDonate: false,
                 noOp: true,
                 accessLock: false
             })

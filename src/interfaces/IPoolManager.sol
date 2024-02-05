@@ -177,6 +177,23 @@ interface IPoolManager is IFees, IERC6909Claims {
         external
         returns (BalanceDelta);
 
+    struct MultiDonateParams {
+        uint256[] amounts0;
+        uint256[] amounts1;
+        int24 startTick;
+        uint128 liquidityAtStart;
+    }
+
+    /// @notice Donate the respective currency amounts to liquidity providers at the respective
+    /// ticks in the pool with the given pool key. Can only donate from the start tick to the
+    /// current tick, not across the current tick.
+    /// @dev If donating above the current tick (startTick > getSlot0(id).tick) the provided amounts
+    /// will be consumed backwards in the order that ticks are traversed i.e. amounts0[0], amounts1[0]
+    /// will be distributed to the highest tick and amounts0[length-1], amounts1[length-1] to the lowest.
+    function donate(PoolKey memory key, MultiDonateParams calldata params, bytes calldata hookData)
+        external
+        returns (BalanceDelta);
+
     /// @notice Donate the given currency amounts to the pool with the given pool key
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external

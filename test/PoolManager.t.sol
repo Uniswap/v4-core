@@ -29,12 +29,27 @@ import {Position} from "../src/libraries/Position.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
+import {ExtTickBitmap} from "../src/libraries/ExtTickBitmap.sol";
+import {PoolDonateTest} from "../src/test/PoolDonateTest.sol";
+import {UnsignedSignedMath} from "../src/libraries/UnsignedSignedMath.sol";
+
+import {console2 as console} from "forge-std/console2.sol";
+import {LibString} from "solmate/utils/LibString.sol";
+import {FormatLib} from "../src/libraries/FormatLib.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
+    using LibString for int256;
+    using LibString for int128;
+
+    using FormatLib for uint256;
+    using FormatLib for int256;
+
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
     using FeeLibrary for uint24;
     using CurrencyLibrary for Currency;
+    using ExtTickBitmap for PoolManager;
+    using UnsignedSignedMath for uint128;
 
     event LockAcquired();
     event ProtocolFeeControllerUpdated(address feeController);
@@ -955,6 +970,126 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapStart("donate gas with 1 token");
         donateRouter.donate(key, 100, 0, ZERO_BYTES);
         snapEnd();
+    }
+
+    function test_multiDonate_BelowActiveDirectBoundary() external {
+        int128 extraLiquidityA = 1e18;
+        BalanceDelta delta = modifyLiquidityRouter.modifyLiquidity(
+            key,
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: extraLiquidityA}),
+            ZERO_BYTES
+        );
+        int128 liquidityA = 1e18 + extraLiquidityA;
+        console.log("%s (-120, 120)", int256(extraLiquidityA).formatDecimals(18, 3));
+        console.log("  delta.0: %s", int256(delta.amount0()).formatDecimals(18, 6));
+        console.log("  delta.1: %s", int256(delta.amount1()).formatDecimals(18, 6));
+        int128 liquidityB = 3.2e18;
+        delta = modifyLiquidityRouter.modifyLiquidity(
+            key,
+            IPoolManager.ModifyLiquidityParams({tickLower: -60, tickUpper: 60, liquidityDelta: liquidityB}),
+            ZERO_BYTES
+        );
+        console.log("%s (-60, 60)", int256(liquidityB).formatDecimals(18, 3));
+        console.log("  delta.0: %s", int256(delta.amount0()).formatDecimals(18, 6));
+        console.log("  delta.1: %s", int256(delta.amount1()).formatDecimals(18, 6));
+
+        int128 net = manager.getTotalNetLiquidity(key, -120, -60);
+
+        console.log("net: %s", int256(net).formatDecimals(18, 3));
+
+        PoolId id = key.toId();
+        (, int24 tick,) = manager.getSlot0(id);
+
+        // 1. Get the end liquidity
+        uint128 endLiquidity = manager.getLiquidity(id);
+        // 2. subtract the net
+
+        uint128 startLiquidity = endLiquidity.sub(net);
+
+        // 3. donate some bogus amounts
+
+        uint256[] memory amounts0 = new uint256[](2);
+        amounts0[0] = 1.0e18;
+        amounts0[1] = 1.5e18;
+
+        uint256[] memory amounts1 = new uint256[](2);
+        amounts1[0] = 0;
+        amounts1[1] = 0;
+
+        console.log("\n  calling donateMulti");
+        console.log("start liquidity: %s", uint256(startLiquidity).formatDecimals(18, 6));
+        donateRouter.donateMulti(key, IPoolManager.MultiDonateParams(amounts0, amounts1, -120, startLiquidity), "");
+
+        console.log("\n  withdrawing A:");
+        delta = modifyLiquidityRouter.modifyLiquidity(
+            key,
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -liquidityA}),
+            ZERO_BYTES
+        );
+        console.log("%s (-120, 120)", int256(liquidityA).formatDecimals(18, 3));
+        console.log("  delta.0: %s", int256(delta.amount0()).formatDecimals(18, 6));
+        console.log("  delta.1: %s", int256(delta.amount1()).formatDecimals(18, 6));
+        console.log("\n  withdrawing B:");
+        delta = modifyLiquidityRouter.modifyLiquidity(
+            key,
+            IPoolManager.ModifyLiquidityParams({tickLower: -60, tickUpper: 60, liquidityDelta: -liquidityB}),
+            ZERO_BYTES
+        );
+        {
+            uint256 rawDelta;
+            assembly {
+                rawDelta := delta
+            }
+            console.log("rawDelta: %x", rawDelta);
+        }
+        console.log("%s (-60, 60)", int256(liquidityB).formatDecimals(18, 3));
+        console.log("delta.amount0: %s", delta.amount0().toString());
+        console.log("delta.amount1: %s", delta.amount1().toString());
+        console.log("delta.amount0: %s", int256(delta.amount0()).toString());
+        console.log("delta.amount1: %s", int256(delta.amount1()).toString());
+        console.log("  delta.0: %s", int256(delta.amount0()).formatDecimals(18, 6));
+        console.log("  delta.1: %s", int256(delta.amount1()).formatDecimals(18, 6));
+
+        // 4. setup a print of accrued fees across the positions
+
+        // // Donate 2 eth of each asset to the position in range at tick 10 (tickLower = 10).
+        // uint256 lDonateAmount = 2 ether;
+        // uint256[] memory amounts0 = new uint256[](1);
+        // amounts0[0] = lDonateAmount;
+        // uint256[] memory amounts1 = new uint256[](1);
+        // amounts1[0] = lDonateAmount;
+        // int24[] memory ticks = new int24[](1);
+        // ticks[0] = lpInfo1.tickLower;
+
+        // // Donate & check that balances were pulled to the pool.
+        // uint256 lBefore0 = key.currency0.balanceOf(address(manager));
+        // uint256 lBefore1 = key.currency1.balanceOf(address(manager));
+        // donateRouter.donateRange(key, amounts0, amounts1, ticks);
+        // assertEq(key.currency0.balanceOf(address(manager)), lBefore0 + lDonateAmount, "amount0 donation failed");
+        // assertEq(key.currency1.balanceOf(address(manager)), lBefore1 + lDonateAmount, "amount1 donation failed");
+
+        // // Close position that received the donate.
+        // vm.prank(lpInfo1.lpAddress);
+        // modifyPositionRouter.modifyPosition(
+        //     key, IPoolManager.ModifyPositionParams(lpInfo1.tickLower, lpInfo1.tickUpper, -lpInfo1.liquidity), ZERO_BYTES
+        // );
+
+        // // Ensure users received their intended donations.
+        // assertApproxEqAbs(
+        //     key.currency0.balanceOf(lpInfo1.lpAddress), lpInfo1.amount0 + lDonateAmount, 1, "amount0 withdraw mismatch"
+        // );
+        // assertApproxEqAbs(
+        //     key.currency1.balanceOf(lpInfo1.lpAddress), lpInfo1.amount1 + lDonateAmount, 1, "amount1 withdraw mismatch"
+        // );
+
+        // // Redeem the other position and ensure pool is empty (math precision leaves some wei).
+        // vm.prank(lpInfo0.lpAddress);
+        // modifyPositionRouter.modifyPosition(
+        //     key, IPoolManager.ModifyPositionParams(lpInfo0.tickLower, lpInfo0.tickUpper, -lpInfo0.liquidity), ZERO_BYTES
+        // );
+        // assertLt(key.currency0.balanceOf(address(manager)), 10, "Too much amount0 dust");
+        // assertLt(key.currency1.balanceOf(address(manager)), 10, "Too much amount1 dust");
+        // assertEq(manager.getLiquidity(key.toId()), 0, "Liquidity left over");
     }
 
     function test_take_failsWithNoLiquidity() public {

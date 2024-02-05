@@ -28,6 +28,10 @@ library Hooks {
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 150;
     uint256 internal constant NO_OP_FLAG = 1 << 149;
     uint256 internal constant ACCESS_LOCK_FLAG = 1 << 148;
+    uint256 internal constant BEFORE_MULTI_DONATE_FLAG = 1 << 147;
+    uint256 internal constant AFTER_MULTI_DONATE_FLAG = 1 << 146;
+
+    // uint internal constant LOWEST_FLAG = AFTER_MULTI_DONATE_FLAG;
 
     bytes4 public constant NO_OP_SELECTOR = bytes4(keccak256(abi.encodePacked("NoOp")));
 
@@ -42,6 +46,8 @@ library Hooks {
         bool afterSwap;
         bool beforeDonate;
         bool afterDonate;
+        bool beforeMultiDonate;
+        bool afterMultiDonate;
         bool noOp;
         bool accessLock;
     }
@@ -72,6 +78,8 @@ library Hooks {
                 || permissions.afterSwap != self.hasPermission(AFTER_SWAP_FLAG)
                 || permissions.beforeDonate != self.hasPermission(BEFORE_DONATE_FLAG)
                 || permissions.afterDonate != self.hasPermission(AFTER_DONATE_FLAG)
+                || permissions.beforeMultiDonate != self.hasPermission(BEFORE_MULTI_DONATE_FLAG)
+                || permissions.afterMultiDonate != self.hasPermission(AFTER_MULTI_DONATE_FLAG)
                 || permissions.noOp != self.hasPermission(NO_OP_FLAG)
                 || permissions.accessLock != self.hasPermission(ACCESS_LOCK_FLAG)
         ) {
@@ -82,11 +90,12 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
-        // if NoOp is allowed, at least one of beforeRemoveLiquidity, beforeAddLiquidity, beforeSwap and beforeDonate should be allowed
+        // if NoOp is allowed, at least one of beforeRemoveLiquidity, beforeAddLiquidity,
+        // beforeSwap, beforeDonate or beforeMultiDonate should be allowed
         if (
             hook.hasPermission(NO_OP_FLAG) && !hook.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)
                 && !hook.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG) && !hook.hasPermission(BEFORE_SWAP_FLAG)
-                && !hook.hasPermission(BEFORE_DONATE_FLAG)
+                && !hook.hasPermission(BEFORE_DONATE_FLAG) && !hook.hasPermission(BEFORE_MULTI_DONATE_FLAG)
         ) {
             return false;
         }
@@ -249,6 +258,34 @@ library Hooks {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, amount0, amount1, hookData)
             );
+        }
+    }
+
+    /// @notice calls beforeMultiDonate hook if permissioned and validates return value
+    function beforeMultiDonate(
+        IHooks self,
+        PoolKey memory key,
+        IPoolManager.MultiDonateParams calldata params,
+        bytes calldata hookData
+    ) internal returns (bool shouldExecute) {
+        if (key.hooks.hasPermission(BEFORE_MULTI_DONATE_FLAG)) {
+            shouldExecute = self.callHookNoopable(
+                abi.encodeWithSelector(IHooks.beforeMultiDonate.selector, msg.sender, key, params, hookData)
+            );
+        } else {
+            return true;
+        }
+    }
+
+    /// @notice calls afterMultiDonate hook if permissioned and validates return value
+    function afterMultiDonate(
+        IHooks self,
+        PoolKey memory key,
+        IPoolManager.MultiDonateParams calldata params,
+        bytes calldata hookData
+    ) internal {
+        if (key.hooks.hasPermission(AFTER_MULTI_DONATE_FLAG)) {
+            self.callHook(abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, params, hookData));
         }
     }
 
