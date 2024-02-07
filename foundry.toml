@@ -12,7 +12,4 @@ seed = "0x4444"
 [profile.ci.fuzz]
 runs = 100000
 
-[profile.ci]
-solc = "./bin/solc-static-linux"
-
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
