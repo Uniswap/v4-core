@@ -9,6 +9,7 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IFees} from "../src/interfaces/IFees.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {PoolManager} from "../src/PoolManager.sol";
+import {Owned} from "../src/Owned.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
@@ -1049,6 +1050,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFee, protocolFee);
+    }
+
+    function test_collectProtocolFees_revertsIfCallerIsNotController() public {
+        vm.expectRevert(Owned.InvalidCaller.selector);
+        manager.collectProtocolFees(address(1), currency0, 0);
     }
 
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
