@@ -1051,7 +1051,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(slot0.protocolFee, protocolFee);
     }
 
-    function test_collectProtocolFees_ERC20_allowsOwnerToAccumulateFees_gas() public {
+    function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
         uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
 
@@ -1071,6 +1071,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
         snapStart("erc20 collect protocol fees");
         manager.collectProtocolFees(address(1), currency0, expectedFees);
         snapEnd();
@@ -1316,12 +1317,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
         manager.collectProtocolFees(address(1), currency0, 0);
         assertEq(currency0.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
-    function test_collectProtocolFees_nativeToken_allowsOwnerToAccumulateFees_gas() public {
+    function test_collectProtocolFees_nativeToken_accumulateFees_gas() public {
         uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
@@ -1343,6 +1345,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
         snapStart("native collect protocol fees");
         manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
         snapEnd();
@@ -1371,6 +1374,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
         manager.collectProtocolFees(address(1), nativeCurrency, 0);
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
