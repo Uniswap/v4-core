@@ -46,12 +46,6 @@ All contributions must follow the below standards. Maintainers will close out PR
 
 ## Setup
 
-For V4, an unreleased solc binary is used to add support for TLOAD and TSTORE. There are options for using this binary with forge:
-
-### Using environment variables
-
-Run `source .env` to set `FOUNDRY_FUZZ_SEED` and `FOUNDRY_SOLC` environment variables. You can then use forge directly
-
 `forge build` to get contract artifacts and dependencies for forge
 
 `forge test` to run forge tests and update snapshots
