@@ -20,7 +20,7 @@ Feel free to tag the issue as a “good first issue” for any clean-up related 
 
 ## Opening a Pull Request
 
-All pull requests should be opened against the `main` branch.  In the pull request, please reference the issue you are fixing.
+All pull requests should be opened against the `main` branch. In the pull request, please reference the issue you are fixing.
 
 Pull requests can be reviewed by community members, but to be merged they will need approval from the repository maintainers. Please understand it will take time to receive a response, although the maintainers will aim to respond and comment as soon as possible.
 
@@ -39,24 +39,12 @@ Finally, before opening a pull request please do the following:
 All contributions must follow the below standards. Maintainers will close out PRs that do not adhere to these standards.
 
 1. All contracts should be formatted with the default forge fmt config. Run `forge fmt`.
-2. These contracts follow the [solidity style guide](https://docs.soliditylang.org/en/v0.8.17/style-guide.html) with one minor exception of using the _prependUnderscore style naming for internal contract functions, internal top-level parameters, and function parameters with naming collisions.
+2. These contracts follow the [solidity style guide](https://docs.soliditylang.org/en/v0.8.17/style-guide.html) with one minor exception of using the \_prependUnderscore style naming for internal contract functions, internal top-level parameters, and function parameters with naming collisions.
 3. All external facing contracts should inherit from interfaces, which specify and document its functions with natspec.
 4. Picking up stale issues by other authors is fine! Please just communicate with them ahead of time and it is best practice to include co-authors in any commits.
 5. Squash commits where possible to make reviews clean and efficient. PRs that are merged to main will be squashed into 1 commit.
 
 ## Setup
-
-For V4, an unreleased solc binary is used to add support for TLOAD and TSTORE. There are options for using this binary with forge:
-
-### Using `just`
-
-`just build` to get contract artifacts and dependencies for forge
-
-`just test` to run forge tests and update snapshots
-
-### Using environment variables
-
-Run `source .env` to set `FOUNDRY_FUZZ_SEED` and `FOUNDRY_SOLC` environment variables. You can then use forge directly
 
 `forge build` to get contract artifacts and dependencies for forge
 
