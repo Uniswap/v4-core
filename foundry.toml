@@ -3,7 +3,7 @@ optimizer_runs = 800
 via_ir = false
 ffi = true
 fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./out"}]
-cancun = true
+evm_version = "cancun"
 
 [profile.default.fuzz]
 runs = 1000
@@ -11,8 +11,5 @@ seed = "0x4444"
 
 [profile.ci.fuzz]
 runs = 100000
-
-[profile.ci]
-solc = "./bin/solc-static-linux"
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

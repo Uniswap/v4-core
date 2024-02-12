@@ -9,7 +9,7 @@ The contracts in this repo are in early stages - we are releasing the draft code
 
 ## Contributing
 
-If you’re interested in contributing please see our [contribution guidelines](./CONTRIBUTING.md)! This includes instructions on how to compile using `TSTORE` and `TLOAD` opcodes in the `Setup` section.
+If you’re interested in contributing please see our [contribution guidelines](./CONTRIBUTING.md)!
 
 ## Whitepaper
 
@@ -38,7 +38,7 @@ Additionally, a pool may be initialized with a hook contract, that can implement
 
 Hooks may also elect to specify fees on swaps, or liquidity withdrawal. Much like the actions above, fees are implemented using callback functions.
 
-The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after  pool initialization.
+The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after pool initialization.
 
 ## Repository Structure
 
