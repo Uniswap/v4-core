@@ -23,6 +23,8 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
         PoolKey key;
         IPoolManager.ModifyLiquidityParams params;
         bytes hookData;
+        bool settleUsingTransfer;
+        bool withdrawTokens;
     }
 
     function modifyLiquidity(
@@ -30,8 +32,22 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
         IPoolManager.ModifyLiquidityParams memory params,
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {
+        delta = modifyLiquidity(key, params, hookData, true, true);
+    }
+
+    function modifyLiquidity(
+        PoolKey memory key,
+        IPoolManager.ModifyLiquidityParams memory params,
+        bytes memory hookData,
+        bool settleUsingTransfer,
+        bool withdrawTokens
+    ) public payable returns (BalanceDelta delta) {
         delta = abi.decode(
-            manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, params, hookData))), (BalanceDelta)
+            manager.lock(
+                address(this),
+                abi.encode(CallbackData(msg.sender, key, params, hookData, settleUsingTransfer, withdrawTokens))
+            ),
+            (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
@@ -63,10 +79,10 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
             }
         }
 
-        if (delta0 > 0) _settle(data.key.currency0, data.sender, int128(delta0), true);
-        if (delta1 > 0) _settle(data.key.currency1, data.sender, int128(delta1), true);
-        if (delta0 < 0) _take(data.key.currency0, data.sender, int128(delta0), true);
-        if (delta1 < 0) _take(data.key.currency1, data.sender, int128(delta1), true);
+        if (delta0 > 0) _settle(data.key.currency0, data.sender, int128(delta0), data.settleUsingTransfer);
+        if (delta1 > 0) _settle(data.key.currency1, data.sender, int128(delta1), data.settleUsingTransfer);
+        if (delta0 < 0) _take(data.key.currency0, data.sender, int128(delta0), data.withdrawTokens);
+        if (delta1 < 0) _take(data.key.currency1, data.sender, int128(delta1), data.withdrawTokens);
 
         return abi.encode(delta);
     }
