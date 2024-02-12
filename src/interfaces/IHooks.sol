@@ -35,29 +35,56 @@ interface IHooks {
         bytes calldata hookData
     ) external returns (bytes4);
 
-    /// @notice The hook called before a position is modified
-    /// @param sender The initial msg.sender for the modify position call
+    /// @notice The hook called before liquidity is added
+    /// @param sender The initial msg.sender for the add liquidity call
     /// @param key The key for the pool
-    /// @param params The parameters for modifying the position
+    /// @param params The parameters for adding liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    function beforeModifyPosition(
+    function beforeAddLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
+        IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4);
 
-    /// @notice The hook called after a position is modified
-    /// @param sender The initial msg.sender for the modify position call
+    /// @notice The hook called after liquidity is added
+    /// @param sender The initial msg.sender for the add liquidity call
     /// @param key The key for the pool
-    /// @param params The parameters for modifying the position
+    /// @param params The parameters for adding liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    function afterModifyPosition(
+    function afterAddLiquidity(
         address sender,
         PoolKey calldata key,
-        IPoolManager.ModifyPositionParams calldata params,
+        IPoolManager.ModifyLiquidityParams calldata params,
+        BalanceDelta delta,
+        bytes calldata hookData
+    ) external returns (bytes4);
+
+    /// @notice The hook called before liquidity is removed
+    /// @param sender The initial msg.sender for the remove liquidity call
+    /// @param key The key for the pool
+    /// @param params The parameters for removing liquidity
+    /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
+    /// @return bytes4 The function selector for the hook
+    function beforeRemoveLiquidity(
+        address sender,
+        PoolKey calldata key,
+        IPoolManager.ModifyLiquidityParams calldata params,
+        bytes calldata hookData
+    ) external returns (bytes4);
+
+    /// @notice The hook called after liquidity is removed
+    /// @param sender The initial msg.sender for the remove liquidity call
+    /// @param key The key for the pool
+    /// @param params The parameters for removing liquidity
+    /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
+    /// @return bytes4 The function selector for the hook
+    function afterRemoveLiquidity(
+        address sender,
+        PoolKey calldata key,
+        IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
     ) external returns (bytes4);

@@ -14,8 +14,10 @@ contract NoOpTestHooks is BaseTestHooks {
             Hooks.Permissions({
                 beforeInitialize: false,
                 afterInitialize: false,
-                beforeModifyPosition: true,
-                afterModifyPosition: false,
+                beforeAddLiquidity: true,
+                afterAddLiquidity: false,
+                beforeRemoveLiquidity: true,
+                afterRemoveLiquidity: false,
                 beforeSwap: true,
                 afterSwap: false,
                 beforeDonate: true,
@@ -26,12 +28,21 @@ contract NoOpTestHooks is BaseTestHooks {
         );
     }
 
-    function beforeModifyPosition(address, PoolKey calldata, IPoolManager.ModifyPositionParams calldata, bytes calldata)
+    function beforeAddLiquidity(address, PoolKey calldata, IPoolManager.ModifyLiquidityParams calldata, bytes calldata)
         external
         pure
         override
         returns (bytes4)
     {
+        return Hooks.NO_OP_SELECTOR;
+    }
+
+    function beforeRemoveLiquidity(
+        address,
+        PoolKey calldata,
+        IPoolManager.ModifyLiquidityParams calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         return Hooks.NO_OP_SELECTOR;
     }
 

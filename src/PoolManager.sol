@@ -16,14 +16,14 @@ import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
-import {Claims} from "./Claims.sol";
+import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lockers} from "./libraries/Lockers.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
+contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -177,15 +177,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function modifyPosition(
+    function modifyLiquidity(
         PoolKey memory key,
-        IPoolManager.ModifyPositionParams memory params,
+        IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
     ) external override noDelegateCall onlyByLocker returns (BalanceDelta delta) {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeModifyPosition(key, params, hookData)) {
+        if (!key.hooks.beforeModifyLiquidity(key, params, hookData)) {
             return BalanceDeltaLibrary.MAXIMUM_DELTA;
         }
 
@@ -201,9 +201,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
 
         _accountPoolBalanceDelta(key, delta);
 
-        key.hooks.afterModifyPosition(key, params, delta, hookData);
+        emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
 
-        emit ModifyPosition(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
+        key.hooks.afterModifyLiquidity(key, params, delta, hookData);
     }
 
     /// @inheritdoc IPoolManager
@@ -242,11 +242,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
             }
         }
 
-        key.hooks.afterSwap(key, params, delta, hookData);
-
         emit Swap(
             id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
         );
+
+        key.hooks.afterSwap(key, params, delta, hookData);
     }
 
     /// @inheritdoc IPoolManager
@@ -288,15 +288,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function mint(Currency currency, address to, uint256 amount) external noDelegateCall onlyByLocker {
-        _accountDelta(currency, amount.toInt128());
-        _mint(to, currency, amount);
+    function mint(address to, uint256 id, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
+        _mint(to, id, amount);
     }
 
     /// @inheritdoc IPoolManager
-    function burn(Currency currency, uint256 amount) external noDelegateCall onlyByLocker {
-        _accountDelta(currency, -(amount.toInt128()));
-        _burn(currency, amount);
+    function burn(address from, uint256 id, uint256 amount) external override noDelegateCall onlyByLocker {
+        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
+        _burnFrom(from, id, amount);
     }
 
     function setProtocolFee(PoolKey memory key) external {
