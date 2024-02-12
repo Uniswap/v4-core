@@ -121,8 +121,8 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
-    /// @notice Returns the locker and lockCaller of the pool
-    function getLock() external view returns (address locker, address lockCaller);
+    /// @notice Returns the locker of the pool
+    function getLocker() external view returns (address locker);
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);

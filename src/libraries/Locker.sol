@@ -8,26 +8,26 @@ import {IHooks} from "../interfaces/IHooks.sol";
 /// TODO: This library can be deleted when we have the transient keyword support in solidity.
 library Locker {
     // The slot holding the locker, transiently, and the lock caller in the next slot
-    uint256 constant LOCKER_SLOT = uint256(keccak256("Locker")) - 2;
-    uint256 constant LOCK_CALLER_SLOT = LOCKER_SLOT + 1;
+    uint256 constant LOCKER_SLOT = uint256(keccak256("Locker")) - 1;
 
-    function setLockerAndCaller(address locker, address lockCaller) internal {
+    /// @notice Thrown when trying to set the lock target as address(0)
+    /// we use locker==address(0) to signal that the pool is not locked
+    error InvalidLocker();
+
+    function setLocker(address locker) internal {
+        if (locker == address(0)) revert InvalidLocker();
         uint256 slot = LOCKER_SLOT;
 
         assembly {
             // set the locker
             tstore(slot, locker)
-
-            // set the lock caller
-            tstore(add(slot, 1), lockCaller)
         }
     }
 
-    function clearLockerAndCaller() internal {
+    function clearLocker() internal {
         uint256 slot = LOCKER_SLOT;
         assembly {
             tstore(slot, 0)
-            tstore(add(slot, 1), 0)
         }
     }
 
@@ -39,13 +39,6 @@ library Locker {
     }
 
     function isLocked() internal view returns (bool) {
-        return Locker.getLockCaller() != address(0);
-    }
-
-    function getLockCaller() internal view returns (address locker) {
-        uint256 slot = LOCK_CALLER_SLOT;
-        assembly {
-            locker := tload(slot)
-        }
+        return getLocker() != address(0);
     }
 }

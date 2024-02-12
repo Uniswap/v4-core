@@ -89,8 +89,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function getLock() external view override returns (address locker, address lockCaller) {
-        return (Locker.getLocker(), Locker.getLockCaller());
+    function getLocker() external view override returns (address locker) {
+        return Locker.getLocker();
     }
 
     /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
@@ -133,13 +133,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         // Get the lock caller because thats an EOA and is not user-controlable
         if (Locker.isLocked()) revert AlreadyLocked();
 
-        Locker.setLockerAndCaller(lockTarget, msg.sender);
+        Locker.setLocker(lockTarget);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(lockTarget).lockAcquired(msg.sender, data);
 
         if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
-        Locker.clearLockerAndCaller();
+        Locker.clearLocker();
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {

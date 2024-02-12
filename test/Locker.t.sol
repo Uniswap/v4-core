@@ -8,42 +8,38 @@ contract LockerTest is Test {
     address constant ADDRESS_AS = 0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa;
     address constant ADDRESS_BS = 0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB;
 
-    function test_setLockerAndCaller() public {
+    function test_setLocker(address locker) public {
         assertEq(address(Locker.getLocker()), address(0));
-        assertEq(address(Locker.getLockCaller()), address(0));
 
-        Locker.setLockerAndCaller(ADDRESS_AS, ADDRESS_BS);
-
-        assertEq(address(Locker.getLocker()), ADDRESS_AS);
-        assertEq(address(Locker.getLockCaller()), ADDRESS_BS);
-
-        // in the way this library is used in V4, this function will never be called when non-0
-        Locker.setLockerAndCaller(ADDRESS_BS, ADDRESS_AS);
-
-        assertEq(address(Locker.getLocker()), ADDRESS_BS);
-        assertEq(address(Locker.getLockCaller()), ADDRESS_AS);
+        if (locker == address(0)) {
+            vm.expectRevert(Locker.InvalidLocker.selector);
+            Locker.setLocker(locker);
+        } else {
+            Locker.setLocker(locker);
+            assertEq(address(Locker.getLocker()), locker);
+        }
     }
 
-    function test_clearLockerAndCaller() public {
-        Locker.setLockerAndCaller(ADDRESS_AS, ADDRESS_BS);
+    function test_clearLocker(address locker) public {
+        vm.assume(locker != address(0));
+        Locker.setLocker(locker);
 
-        assertEq(address(Locker.getLocker()), ADDRESS_AS);
-        assertEq(address(Locker.getLockCaller()), ADDRESS_BS);
+        assertEq(address(Locker.getLocker()), locker);
 
-        Locker.clearLockerAndCaller();
+        Locker.clearLocker();
 
         assertEq(address(Locker.getLocker()), address(0));
-        assertEq(address(Locker.getLockCaller()), address(0));
     }
 
-    function test_isLocked() public {
+    function test_isLocked(address locker) public {
+        vm.assume(locker != address(0));
         assertFalse(Locker.isLocked());
 
-        Locker.setLockerAndCaller(ADDRESS_AS, ADDRESS_BS);
+        Locker.setLocker(locker);
 
         assertTrue(Locker.isLocked());
 
-        Locker.clearLockerAndCaller();
+        Locker.clearLocker();
 
         assertFalse(Locker.isLocked());
     }
