@@ -22,10 +22,10 @@ contract PoolTakeTest is Test, PoolTestBase {
     }
 
     function take(PoolKey memory key, uint256 amount0, uint256 amount1) external payable {
-        manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
+        manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));

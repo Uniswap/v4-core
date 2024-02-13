@@ -10,6 +10,7 @@ import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {console2} from "forge-std/console2.sol";
 
 library Pool {
     using SafeCast for *;
@@ -204,9 +205,20 @@ library Pool {
                 }
             }
         }
+        console2.log("0");
 
         if (params.liquidityDelta != 0) {
             if (self.slot0.tick < params.tickLower) {
+                console2.log(TickMath.getSqrtRatioAtTick(params.tickLower));
+                console2.log(TickMath.getSqrtRatioAtTick(params.tickUpper));
+                console2.log(params.liquidityDelta);
+                console2.log(
+                    SqrtPriceMath.getAmount0Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower),
+                        TickMath.getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta
+                    )
+                );
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
                 result = result
@@ -219,6 +231,7 @@ library Pool {
                         0
                     );
             } else if (self.slot0.tick < params.tickUpper) {
+                console2.log("101");
                 result = result
                     + toBalanceDelta(
                         SqrtPriceMath.getAmount0Delta(
@@ -233,6 +246,7 @@ library Pool {
                     ? self.liquidity - uint128(-params.liquidityDelta)
                     : self.liquidity + uint128(params.liquidityDelta);
             } else {
+                console2.log("000");
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
                 result = result
@@ -246,6 +260,7 @@ library Pool {
                     );
             }
         }
+        console2.log("1");
 
         // Fees earned from LPing are removed from the pool balance.
         result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());

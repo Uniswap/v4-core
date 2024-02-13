@@ -129,14 +129,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function lock(address lockTarget, bytes calldata data) external payable override returns (bytes memory result) {
-        // Get the lock caller because thats an EOA and is not user-controlable
+    function lock(bytes calldata data) external payable override returns (bytes memory result) {
         if (Locker.isLocked()) revert AlreadyLocked();
 
-        Locker.setLocker(lockTarget);
+        Locker.setLocker(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(lockTarget).lockAcquired(msg.sender, data);
+        result = ILockCallback(msg.sender).lockAcquired(data);
 
         if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
         Locker.clearLocker();
