@@ -126,7 +126,10 @@ library Hooks {
     /// @notice performs a hook call using the given calldata on the given hook
     /// @return shouldExecute Whether the operation should be executed or nooped
     /// @return returnData The complete data returned by the hook
-    function callHookNoopable(IHooks self, bytes memory data) internal returns (bool shouldExecute, bytes memory returnData) {
+    function callHookNoopable(IHooks self, bytes memory data)
+        internal
+        returns (bool shouldExecute, bytes memory returnData)
+    {
         bytes4 expectedSelector;
         bytes4 selector;
         (expectedSelector, returnData) = _callHook(self, data);
@@ -174,11 +177,11 @@ library Hooks {
         bytes calldata hookData
     ) internal returns (bool shouldExecute) {
         if (params.liquidityDelta > 0 && key.hooks.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
-            (shouldExecute, ) = self.callHookNoopable(
+            (shouldExecute,) = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData)
             );
         } else if (params.liquidityDelta <= 0 && key.hooks.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
-            (shouldExecute, ) = self.callHookNoopable(
+            (shouldExecute,) = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
             );
         } else {
@@ -211,7 +214,7 @@ library Hooks {
         returns (bool shouldExecute)
     {
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
-            (shouldExecute, ) = self.callHookNoopable(
+            (shouldExecute,) = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData)
             );
         } else {
