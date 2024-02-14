@@ -18,7 +18,6 @@ import {Deployers} from "./Deployers.sol";
 import {Fees} from "../../src/Fees.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
-import {AccessLockHook} from "../../src/test/AccessLockHook.sol";
 import {IERC20Minimal} from "../../src/interfaces/external/IERC20Minimal.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 
