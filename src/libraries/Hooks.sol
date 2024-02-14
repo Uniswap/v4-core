@@ -96,21 +96,27 @@ library Hooks {
 
     /// @notice performs a hook call using the given calldata on the given hook
     /// @return expectedSelector The selector that the hook is expected to return
-    /// @return selector The selector that the hook actually returned
-    function _callHook(IHooks self, bytes memory data) private returns (bytes4 expectedSelector, bytes4 selector) {
+    /// @return result The complete data returned by the hook
+    function _callHook(IHooks self, bytes memory data) private returns (bytes4 expectedSelector, bytes memory result) {
         assembly {
             expectedSelector := mload(add(data, 0x20))
         }
 
-        (bool success, bytes memory result) = address(self).call(data);
+        bool success;
+        (success, result) = address(self).call(data);
         if (!success) _revert(result);
-
-        selector = abi.decode(result, (bytes4));
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
-    function callHook(IHooks self, bytes memory data) internal {
-        (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
+    /// @return returnData The complete data returned by the hook
+    function callHook(IHooks self, bytes memory data) internal returns (bytes memory returnData) {
+        bytes4 expectedSelector;
+        bytes4 selector;
+        (expectedSelector, returnData) = _callHook(self, data);
+
+        assembly {
+            selector := mload(add(returnData, 0x20))
+        }
 
         if (selector != expectedSelector) {
             revert InvalidHookResponse();
@@ -119,8 +125,15 @@ library Hooks {
 
     /// @notice performs a hook call using the given calldata on the given hook
     /// @return shouldExecute Whether the operation should be executed or nooped
-    function callHookNoopable(IHooks self, bytes memory data) internal returns (bool shouldExecute) {
-        (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
+    /// @return returnData The complete data returned by the hook
+    function callHookNoopable(IHooks self, bytes memory data) internal returns (bool shouldExecute, bytes memory returnData) {
+        bytes4 expectedSelector;
+        bytes4 selector;
+        (expectedSelector, returnData) = _callHook(self, data);
+
+        assembly {
+            selector := mload(add(returnData, 0x20))
+        }
 
         if (selector == expectedSelector) {
             shouldExecute = true;
@@ -161,11 +174,11 @@ library Hooks {
         bytes calldata hookData
     ) internal returns (bool shouldExecute) {
         if (params.liquidityDelta > 0 && key.hooks.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
-            shouldExecute = self.callHookNoopable(
+            (shouldExecute, ) = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData)
             );
         } else if (params.liquidityDelta <= 0 && key.hooks.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
-            shouldExecute = self.callHookNoopable(
+            (shouldExecute, ) = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
             );
         } else {
@@ -198,7 +211,7 @@ library Hooks {
         returns (bool shouldExecute)
     {
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
-            shouldExecute = self.callHookNoopable(
+            (shouldExecute, ) = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData)
             );
         } else {
@@ -225,7 +238,7 @@ library Hooks {
         returns (bool shouldExecute)
     {
         if (key.hooks.hasPermission(BEFORE_DONATE_FLAG)) {
-            shouldExecute = self.callHookNoopable(
+            (shouldExecute,) = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
             );
         } else {
