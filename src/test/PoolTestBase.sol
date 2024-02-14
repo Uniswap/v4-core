@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+import {Test} from "forge-std/Test.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
-abstract contract PoolTestBase is ILockCallback {
+abstract contract PoolTestBase is Test, ILockCallback {
     using CurrencyLibrary for Currency;
 
     IPoolManager public immutable manager;
@@ -17,25 +18,25 @@ abstract contract PoolTestBase is ILockCallback {
     }
 
     function _take(Currency currency, address recipient, int128 amount, bool withdrawTokens) internal {
-        assert(amount < 0);
+        assertGt(amount, 0);
         if (withdrawTokens) {
-            manager.take(currency, recipient, uint128(-amount));
+            manager.take(currency, recipient, uint128(amount));
         } else {
-            manager.mint(recipient, currency.toId(), uint128(-amount));
+            manager.mint(recipient, currency.toId(), uint128(amount));
         }
     }
 
     function _settle(Currency currency, address payer, int128 amount, bool settleUsingTransfer) internal {
-        assert(amount > 0);
+        assertLt(amount, 0);
         if (settleUsingTransfer) {
             if (currency.isNative()) {
-                manager.settle{value: uint128(amount)}(currency);
+                manager.settle{value: uint128(-amount)}(currency);
             } else {
-                IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), uint128(amount));
+                IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), uint128(-amount));
                 manager.settle(currency);
             }
         } else {
-            manager.burn(payer, currency.toId(), uint128(amount));
+            manager.burn(payer, currency.toId(), uint128(-amount));
         }
     }
 

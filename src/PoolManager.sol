@@ -227,8 +227,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         );
 
         _accountPoolBalanceDelta(key, delta);
-        // the fee is on the input currency
 
+        // the fee is on the input currency
         unchecked {
             if (feeForProtocol > 0) {
                 protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
@@ -236,7 +236,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         }
 
         emit Swap(
-            id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
+            id, msg.sender, -delta.amount0(), -delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
         );
 
         key.hooks.afterSwap(key, params, delta, hookData);
@@ -266,7 +266,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall isLocked {
-        _accountDelta(currency, amount.toInt128());
+        // flipping a postive number in an int is always safe
+        _accountDelta(currency, -(amount.toInt128()));
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
@@ -276,19 +277,19 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
-        // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt128()));
+        _accountDelta(currency, paid.toInt128());
     }
 
     /// @inheritdoc IPoolManager
     function mint(address to, uint256 id, uint256 amount) external override noDelegateCall isLocked {
-        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
+        // flipping a postive number in an int is always safe
+        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
         _mint(to, id, amount);
     }
 
     /// @inheritdoc IPoolManager
     function burn(address from, uint256 id, uint256 amount) external override noDelegateCall isLocked {
-        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
+        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
         _burnFrom(from, id, amount);
     }
 

@@ -210,7 +210,7 @@ library Pool {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
                 result = result
-                    + toBalanceDelta(
+                    - toBalanceDelta(
                         SqrtPriceMath.getAmount0Delta(
                             TickMath.getSqrtRatioAtTick(params.tickLower),
                             TickMath.getSqrtRatioAtTick(params.tickUpper),
@@ -220,7 +220,7 @@ library Pool {
                     );
             } else if (self.slot0.tick < params.tickUpper) {
                 result = result
-                    + toBalanceDelta(
+                    - toBalanceDelta(
                         SqrtPriceMath.getAmount0Delta(
                             self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
                         ).toInt128(),
@@ -236,7 +236,7 @@ library Pool {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
                 result = result
-                    + toBalanceDelta(
+                    - toBalanceDelta(
                         0,
                         SqrtPriceMath.getAmount1Delta(
                             TickMath.getSqrtRatioAtTick(params.tickLower),
@@ -248,7 +248,7 @@ library Pool {
         }
 
         // Fees earned from LPing are removed from the pool balance.
-        result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
+        result = result + toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
     struct SwapCache {
@@ -444,16 +444,17 @@ library Pool {
             self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
         }
 
+        // in an unchecked block so sign flipping is not safe without a helper function
         unchecked {
             if (params.zeroForOne == exactInput) {
                 result = toBalanceDelta(
-                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
-                    state.amountCalculated.toInt128()
+                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128().flipSign(),
+                    state.amountCalculated.toInt128().flipSign()
                 );
             } else {
                 result = toBalanceDelta(
-                    state.amountCalculated.toInt128(),
-                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128()
+                    state.amountCalculated.toInt128().flipSign(),
+                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128().flipSign()
                 );
             }
         }
@@ -462,7 +463,7 @@ library Pool {
     /// @notice Donates the given amount of currency0 and currency1 to the pool
     function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
         if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
-        delta = toBalanceDelta(amount0.toInt128(), amount1.toInt128());
+        delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
         unchecked {
             if (amount0 > 0) {
                 state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);

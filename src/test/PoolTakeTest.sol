@@ -41,17 +41,17 @@ contract PoolTakeTest is Test, PoolTestBase {
             _fetchBalances(currency, sender, address(this));
         assertEq(deltaBefore, 0);
 
-        _take(currency, sender, -(amount.toInt128()), true);
+        _take(currency, sender, amount.toInt128(), true);
 
         (uint256 userBalAfter, uint256 pmBalAfter, uint256 reserveAfter, int256 deltaAfter) =
             _fetchBalances(currency, sender, address(this));
-        assertEq(deltaAfter, amount.toInt128());
+        assertEq(deltaAfter, -amount.toInt128());
 
         assertEq(userBalAfter - userBalBefore, amount);
         assertEq(pmBalBefore - pmBalAfter, amount);
         assertEq(reserveBefore - reserveAfter, amount);
         assertEq(reserveBefore - reserveAfter, amount);
 
-        _settle(currency, sender, amount.toInt128(), true);
+        _settle(currency, sender, -amount.toInt128(), true);
     }
 }

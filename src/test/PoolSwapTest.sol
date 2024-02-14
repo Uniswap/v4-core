@@ -9,6 +9,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Test} from "forge-std/Test.sol";
+import {console2} from "forge-std/console2.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 
@@ -74,22 +75,22 @@ contract PoolSwapTest is Test, PoolTestBase {
             if (data.params.zeroForOne) {
                 if (data.params.amountSpecified > 0) {
                     // exact input, 0 for 1
-                    assertEq(deltaAfter0, data.params.amountSpecified);
-                    assert(deltaAfter1 < 0);
+                    assertEq(-deltaAfter0, data.params.amountSpecified);
+                    assertGt(deltaAfter1, 0);
                 } else {
                     // exact output, 0 for 1
-                    assert(deltaAfter0 > 0);
-                    assertEq(deltaAfter1, data.params.amountSpecified);
+                    assertLt(deltaAfter0, 0);
+                    assertEq(-deltaAfter1, data.params.amountSpecified);
                 }
             } else {
                 if (data.params.amountSpecified > 0) {
                     // exact input, 1 for 0
-                    assertEq(deltaAfter1, data.params.amountSpecified);
-                    assert(deltaAfter0 < 0);
+                    assertEq(-deltaAfter1, data.params.amountSpecified);
+                    assertGt(deltaAfter0, 0);
                 } else {
                     // exact output, 1 for 0
-                    assert(deltaAfter1 > 0);
-                    assertEq(deltaAfter0, data.params.amountSpecified);
+                    assertLt(deltaAfter1, 0);
+                    assertEq(-deltaAfter0, data.params.amountSpecified);
                 }
             }
         }
@@ -100,24 +101,24 @@ contract PoolSwapTest is Test, PoolTestBase {
             return abi.encode(delta);
         }
 
-        if (deltaAfter0 > 0) {
+        if (deltaAfter0 < 0) {
             if (data.testSettings.currencyAlreadySent) {
                 manager.settle(data.key.currency0);
             } else {
                 _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
             }
         }
-        if (deltaAfter1 > 0) {
+        if (deltaAfter1 < 0) {
             if (data.testSettings.currencyAlreadySent) {
                 manager.settle(data.key.currency1);
             } else {
                 _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
             }
         }
-        if (deltaAfter0 < 0) {
+        if (deltaAfter0 > 0) {
             _take(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.withdrawTokens);
         }
-        if (deltaAfter1 < 0) {
+        if (deltaAfter1 > 0) {
             _take(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.withdrawTokens);
         }
 

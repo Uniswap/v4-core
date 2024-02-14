@@ -6,11 +6,10 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
-import {Test} from "forge-std/Test.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 
-contract PoolDonateTest is PoolTestBase, Test {
+contract PoolDonateTest is PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
 
@@ -61,8 +60,8 @@ contract PoolDonateTest is PoolTestBase, Test {
         assertEq(reserveBefore0, reserveAfter0);
         assertEq(reserveBefore1, reserveAfter1);
         if (!data.key.hooks.hasPermission(Hooks.NO_OP_FLAG)) {
-            assertEq(deltaAfter0, int256(data.amount0));
-            assertEq(deltaAfter1, int256(data.amount1));
+            assertEq(deltaAfter0, -int256(data.amount0));
+            assertEq(deltaAfter1, -int256(data.amount1));
         }
 
         if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
@@ -71,10 +70,10 @@ contract PoolDonateTest is PoolTestBase, Test {
             return abi.encode(delta);
         }
 
-        if (deltaAfter0 > 0) _settle(data.key.currency0, data.sender, int128(deltaAfter0), true);
-        if (deltaAfter1 > 0) _settle(data.key.currency1, data.sender, int128(deltaAfter1), true);
-        if (deltaAfter0 < 0) _take(data.key.currency0, data.sender, int128(deltaAfter0), true);
-        if (deltaAfter1 < 0) _take(data.key.currency1, data.sender, int128(deltaAfter1), true);
+        if (deltaAfter0 < 0) _settle(data.key.currency0, data.sender, int128(deltaAfter0), true);
+        if (deltaAfter1 < 0) _settle(data.key.currency1, data.sender, int128(deltaAfter1), true);
+        if (deltaAfter0 > 0) _take(data.key.currency0, data.sender, int128(deltaAfter0), true);
+        if (deltaAfter1 > 0) _take(data.key.currency1, data.sender, int128(deltaAfter1), true);
 
         return abi.encode(delta);
     }
