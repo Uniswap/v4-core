@@ -214,13 +214,12 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
+        // The hook's deltas are from the point of view of the hook. Positive: the hook took money, negative: the hook sent money to the pool
         (bool shouldExecute, int128 hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
         if (!shouldExecute) return BalanceDeltaLibrary.MAXIMUM_DELTA;
 
         bool exactInput = params.amountSpecified > 0;
-        bool specifiedIsZero = (exactInput == params.zeroForOne);
-
-        params.amountSpecified += hookDeltaInSpecified;
+        params.amountSpecified -= hookDeltaInSpecified;
         require(exactInput ? params.amountSpecified > 0 : params.amountSpecified < 0);
 
         // ExactIn (amountSpecified is positive)
@@ -229,37 +228,53 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         // ExactOut (amountSpecified is negative)
         // In the case where the hook contributed x, x output is given to the user now. The swap of amountSpecified + x is swapping for x fewer output tokens - so the user gets amountSpecified overall.
         // In the case where the hook took x, x output is taken from the user now. The swap of amountSpecified - x is swapping for x extra output tokens - so the user gets amountSpecified overall.
-        _accountDelta(specifiedIsZero ? key.currency0 : key.currency1, hookDeltaInSpecified);
-        _accountDeltaFor(specifiedIsZero ? key.currency0 : key.currency1, -hookDeltaInSpecified, address(key.hooks));
-
-        uint256 feeForProtocol;
-        uint24 swapFee;
-        Pool.SwapState memory state;
-        (delta, feeForProtocol, swapFee, state) = pools[id].swap(
-            Pool.SwapParams({
-                tickSpacing: key.tickSpacing,
-                zeroForOne: params.zeroForOne,
-                amountSpecified: (params.amountSpecified + hookDeltaInSpecified),
-                sqrtPriceLimitX96: params.sqrtPriceLimitX96
-            })
+        _accountDelta((exactInput == params.zeroForOne) ? key.currency0 : key.currency1, -hookDeltaInSpecified);
+        _accountDeltaFor(
+            (exactInput == params.zeroForOne) ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks)
         );
 
-        _accountPoolBalanceDelta(key, delta);
+        {
+            uint256 feeForProtocol;
+            uint24 swapFee;
+            Pool.SwapState memory state;
+            (delta, feeForProtocol, swapFee, state) = pools[id].swap(
+                Pool.SwapParams({
+                    tickSpacing: key.tickSpacing,
+                    zeroForOne: params.zeroForOne,
+                    amountSpecified: (params.amountSpecified - hookDeltaInSpecified),
+                    sqrtPriceLimitX96: params.sqrtPriceLimitX96
+                })
+            );
 
-        // the fee is on the input currency
-        unchecked {
-            if (feeForProtocol > 0) {
-                protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
+            // TODO optimise! currently we write to the caller's deltas twice for each currency
+            _accountPoolBalanceDelta(key, delta);
+
+            // the fee is on the input currency
+            unchecked {
+                if (feeForProtocol > 0) {
+                    protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
+                }
             }
+
+            emit Swap(
+                id,
+                msg.sender,
+                -delta.amount0(),
+                -delta.amount1(),
+                state.sqrtPriceX96,
+                state.liquidity,
+                state.tick,
+                swapFee
+            );
         }
 
-        emit Swap(
-            id, msg.sender, -delta.amount0(), -delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
-        );
-
         (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
-        _accountDelta(specifiedIsZero ? key.currency1 : key.currency0, hookDeltaInSpecified);
-        _accountDeltaFor(specifiedIsZero ? key.currency1 : key.currency0, -hookDeltaInSpecified, address(key.hooks));
+        _accountDelta((exactInput == params.zeroForOne) ? key.currency1 : key.currency0, -hookDeltaInUnspecified);
+        _accountDeltaFor(
+            (exactInput == params.zeroForOne) ? key.currency1 : key.currency0,
+            hookDeltaInUnspecified,
+            address(key.hooks)
+        );
     }
 
     /// @inheritdoc IPoolManager

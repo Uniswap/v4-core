@@ -28,7 +28,7 @@ contract DynamicFeesTestHook is BaseTestHooks, IDynamicFeeManager {
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata, bytes calldata hookData)
         external
         override
-        returns (bytes4)
+        returns (bytes4, int128)
     {
         // updates the dynamic fee in the pool if update is true
         bool _update;
@@ -42,6 +42,6 @@ contract DynamicFeesTestHook is BaseTestHooks, IDynamicFeeManager {
 
             manager.updateDynamicSwapFee(key);
         }
-        return IHooks.beforeSwap.selector;
+        return (IHooks.beforeSwap.selector, 0);
     }
 }

@@ -101,7 +101,7 @@ interface IHooks {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata hookData
-    ) external returns (bytes4, int256);
+    ) external returns (bytes4, int128);
 
     /// @notice The hook called after a swap
     /// @param sender The initial msg.sender for the swap call
@@ -110,14 +110,14 @@ interface IHooks {
     /// @param delta The amount owed to the locker (positive) or owed to the pool (negative)
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    /// @return int256 The amount of unspecified token that should go to the hook
+    /// @return int128 The amount of unspecified token that should go to the hook
     function afterSwap(
         address sender,
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) external returns (bytes4, int256);
+    ) external returns (bytes4, int128);
 
     /// @notice The hook called before donate
     /// @param sender The initial msg.sender for the donate call

@@ -96,11 +96,11 @@ contract MockHooks is IHooks {
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata hookData)
         external
         override
-        returns (bytes4)
+        returns (bytes4, int128)
     {
         beforeSwapData = hookData;
         bytes4 selector = MockHooks.beforeSwap.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        return (returnValues[selector] == bytes4(0) ? selector : returnValues[selector], 0);
     }
 
     function afterSwap(
@@ -109,10 +109,10 @@ contract MockHooks is IHooks {
         IPoolManager.SwapParams calldata,
         BalanceDelta,
         bytes calldata hookData
-    ) external override returns (bytes4) {
+    ) external override returns (bytes4, int128) {
         afterSwapData = hookData;
         bytes4 selector = MockHooks.afterSwap.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        return (returnValues[selector] == bytes4(0) ? selector : returnValues[selector], 0);
     }
 
     function beforeDonate(address, PoolKey calldata, uint256, uint256, bytes calldata hookData)

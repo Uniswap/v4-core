@@ -49,9 +49,9 @@ contract NoOpTestHooks is BaseTestHooks {
         external
         pure
         override
-        returns (bytes4)
+        returns (bytes4, int128)
     {
-        return Hooks.NO_OP_SELECTOR;
+        return (Hooks.NO_OP_SELECTOR, 0);
     }
 
     function beforeDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)
