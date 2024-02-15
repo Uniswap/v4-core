@@ -211,14 +211,16 @@ library Hooks {
     /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
-        returns (bool shouldExecute)
+        returns (bool shouldExecute, int128 hookDeltaInSpecified)
     {
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
-            (shouldExecute,) = self.callHookNoopable(
+            bytes memory returnData;
+            (shouldExecute, returnData) = self.callHookNoopable(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData)
             );
+            (, hookDeltaInSpecified) = abi.decode(returnData, (bytes4, int128));
         } else {
-            return true;
+            return (true, 0);
         }
     }
 
@@ -229,10 +231,14 @@ library Hooks {
         IPoolManager.SwapParams memory params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) internal {
+    ) internal returns (int128 hookDeltaInUnspecified) {
         if (key.hooks.hasPermission(AFTER_SWAP_FLAG)) {
-            self.callHook(abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData));
+            bytes memory returnData = self.callHook(
+                abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData)
+            );
+            (, hookDeltaInUnspecified) = abi.decode(returnData, (bytes4, int128));
         }
+        return 0;
     }
 
     /// @notice calls beforeDonate hook if permissioned and validates return value

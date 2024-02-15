@@ -143,9 +143,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
+        _accountDeltaFor(currency, delta, msg.sender);
+    }
+
+    function _accountDeltaFor(Currency currency, int128 delta, address target) internal {
         if (delta == 0) return;
 
-        int256 current = currencyDelta[msg.sender][currency];
+        int256 current = currencyDelta[target][currency];
         int256 next = current + delta;
 
         unchecked {
@@ -156,7 +160,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             }
         }
 
-        currencyDelta[msg.sender][currency] = next;
+        currencyDelta[target][currency] = next;
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
@@ -210,9 +214,23 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeSwap(key, params, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        (bool shouldExecute, int128 hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
+        if (!shouldExecute) return BalanceDeltaLibrary.MAXIMUM_DELTA;
+
+        bool exactInput = params.amountSpecified > 0;
+        bool specifiedIsZero = (exactInput == params.zeroForOne);
+
+        params.amountSpecified += hookDeltaInSpecified;
+        require(exactInput ? params.amountSpecified > 0 : params.amountSpecified < 0);
+
+        // ExactIn (amountSpecified is positive)
+        // In the case where the hook contributed x, x is given to the user now. After the swap amountSpecified + x input are taken from the user, meaning the user pays amountSpecified overall.
+        // In the case where the hook took x, x is taken from the user now. After the swap amountSpecified - x input are taken from the user, meaning the user pays amountSpecified overall.
+        // ExactOut (amountSpecified is negative)
+        // In the case where the hook contributed x, x output is given to the user now. The swap of amountSpecified + x is swapping for x fewer output tokens - so the user gets amountSpecified overall.
+        // In the case where the hook took x, x output is taken from the user now. The swap of amountSpecified - x is swapping for x extra output tokens - so the user gets amountSpecified overall.
+        _accountDelta(specifiedIsZero ? key.currency0 : key.currency1, hookDeltaInSpecified);
+        _accountDeltaFor(specifiedIsZero ? key.currency0 : key.currency1, -hookDeltaInSpecified, address(key.hooks));
 
         uint256 feeForProtocol;
         uint24 swapFee;
@@ -221,7 +239,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             Pool.SwapParams({
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
-                amountSpecified: params.amountSpecified,
+                amountSpecified: (params.amountSpecified + hookDeltaInSpecified),
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96
             })
         );
@@ -239,7 +257,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             id, msg.sender, -delta.amount0(), -delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
         );
 
-        key.hooks.afterSwap(key, params, delta, hookData);
+        (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
+        _accountDelta(specifiedIsZero ? key.currency1 : key.currency0, hookDeltaInSpecified);
+        _accountDeltaFor(specifiedIsZero ? key.currency1 : key.currency0, -hookDeltaInSpecified, address(key.hooks));
     }
 
     /// @inheritdoc IPoolManager
