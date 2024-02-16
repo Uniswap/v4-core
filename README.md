@@ -13,7 +13,7 @@ If you’re interested in contributing please see our [contribution guidelines](
 
 ## Whitepaper
 
-A more detailed description of Uniswap v4 Core can be found in the draft of the [Uniswap v4 Core Whitepaper](./whitepaper-v4-draft.pdf).
+A more detailed description of Uniswap v4 Core can be found in the draft of the [Uniswap v4 Core Whitepaper](./docs/whitepaper-v4.pdf).
 
 ## Architecture
 
@@ -26,18 +26,19 @@ A more detailed description of Uniswap v4 Core can be found in the draft of the 
 - `settle`
 - `mint`
 
-Only the net balances owed to the pool (negative) or to the user (positive) are tracked throughout the duration of a lock. This is the `delta` field held in the lock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the lock reach 0 by the lock’s release. This lock and call style architecture gives callers maximum flexibility in integrating with the core code.
+Only the net balances owed to the pool (positive) or to the user (negative) are tracked throughout the duration of a lock. This is the `delta` field held in the lock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the lock reach 0 by the lock’s release. This lock and call style architecture gives callers maximum flexibility in integrating with the core code.
 
 Additionally, a pool may be initialized with a hook contract, that can implement any of the following callbacks in the lifecycle of pool actions:
 
 - {before,after}Initialize
-- {before,after}ModifyPosition
+- {before,after}AddLiquidity
+- {before,after}RemoveLiquidity
 - {before,after}Swap
 - {before,after}Donate
 
 Hooks may also elect to specify fees on swaps, or liquidity withdrawal. Much like the actions above, fees are implemented using callback functions.
 
-The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after  pool initialization.
+The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after pool initialization.
 
 ## Repository Structure
 
@@ -96,8 +97,8 @@ contract MyContract is ILockCallback {
 
 The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/v4-core/blob/main/LICENSE). Minus the following exceptions:
 
-- [Interfaces](./contracts/interfaces) have a General Public License
-- Some [libraries](./contracts/libraries) and [types](./contracts/types/) have a General Public License
-- [FullMath.sol](./contracts/libraries/FullMath.sol) has an MIT License
+- Some [libraries](./src/libraries) have a GPL license
+- Both [FullMath.sol](./src/libraries/FullMath.sol) and [Hooks.sol](./src/libraries/Hooks.sol) have an MIT License
+- [Interfaces](./src/interfaces) and [types](./src/types/) have an MIT license
 
 Each of these files states their license type.
