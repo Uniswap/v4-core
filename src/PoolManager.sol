@@ -257,6 +257,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
                 }
             }
 
+            // TODO returning deltas here doesnt make any sense
             emit Swap(
                 id,
                 msg.sender,
