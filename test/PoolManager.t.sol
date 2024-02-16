@@ -1006,7 +1006,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         feeController.setSwapFeeForPool(key.toId(), protocolFee);
 
         uint8 fee0 = uint8(protocolFee >> 8);
-        uint8 fee1 = uint8(protocolFee % 256);
+        uint8 fee1 = uint8(protocolFee & (256 - 1));
         if ((0 < fee0 && fee0 < 4) || (0 < fee1 && fee1 < 4)) {
             vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
             manager.setProtocolFee(key);

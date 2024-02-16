@@ -64,7 +64,7 @@ abstract contract Fees is IFees, Owned {
 
     function _isFeeWithinBounds(uint16 fee) internal pure returns (bool) {
         if (fee != 0) {
-            uint16 fee0 = fee % 256;
+            uint16 fee0 = fee & (256 - 1);
             uint16 fee1 = fee >> 8;
             // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
             if (

@@ -326,7 +326,7 @@ library Pool {
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
-            protocolFee: params.zeroForOne ? uint8(slot0Start.protocolFee % 256) : uint8(slot0Start.protocolFee >> 8)
+            protocolFee: params.zeroForOne ? uint8(slot0Start.protocolFee & (256 - 1)) : uint8(slot0Start.protocolFee >> 8)
         });
 
         bool exactInput = params.amountSpecified > 0;
