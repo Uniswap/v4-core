@@ -237,8 +237,9 @@ library Hooks {
                 abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData)
             );
             (, hookDeltaInUnspecified) = abi.decode(returnData, (bytes4, int128));
+        } else {
+            return 0;
         }
-        return 0;
     }
 
     /// @notice calls beforeDonate hook if permissioned and validates return value

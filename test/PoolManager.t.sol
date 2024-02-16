@@ -8,6 +8,7 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IFees} from "../src/interfaces/IFees.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {PoolManager} from "../src/PoolManager.sol";
+import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
 import {Owned} from "../src/Owned.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
@@ -829,6 +830,26 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapStart("swap against liquidity with native token");
         swapRouter.swap{value: 1 ether}(nativeKey, params, testSettings, ZERO_BYTES);
         snapEnd();
+    }
+
+    function test_swap_withFeeTakingHook() public {
+        address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG));
+        FeeTakingHook impl = new FeeTakingHook(manager);
+        vm.etch(hookAddr, address(impl).code);
+
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        uint256 balanceBefore0 = currency0.balanceOf(address(this));
+        uint256 balanceBefore1 = currency1.balanceOf(address(this));
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 1000, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+        assertEq(currency0.balanceOf(address(this)), balanceBefore0 - uint256(params.amountSpecified), "amount 0");
+        assertEq(currency1.balanceOf(address(this)), balanceBefore1 + (998 - 12), "amount 1");
     }
 
     function test_swap_accruesProtocolFees(uint8 protocolFee1, uint8 protocolFee0) public {

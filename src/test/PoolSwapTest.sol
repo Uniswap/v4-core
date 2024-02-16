@@ -9,7 +9,6 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Test} from "forge-std/Test.sol";
-import {console2} from "forge-std/console2.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 
@@ -67,9 +66,6 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
-
-        assertEq(reserveBefore0, reserveAfter0);
-        assertEq(reserveBefore1, reserveAfter1);
 
         if (!data.key.hooks.hasPermission(Hooks.NO_OP_FLAG)) {
             if (data.params.zeroForOne) {

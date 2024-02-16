@@ -18,7 +18,7 @@ import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
 import {Fees} from "./Fees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "./types/BalanceDelta.sol";
 import {Locker} from "./libraries/Locker.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
@@ -215,6 +215,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         _checkPoolInitialized(id);
 
         // The hook's deltas are from the point of view of the hook. Positive: the hook took money, negative: the hook sent money to the pool
+        // TODO need to add check that this hook is allowed to return a non-0 delta in the hook callsite
         (bool shouldExecute, int128 hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
         if (!shouldExecute) return BalanceDeltaLibrary.MAXIMUM_DELTA;
 
@@ -275,6 +276,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             hookDeltaInUnspecified,
             address(key.hooks)
         );
+
+        delta = delta
+            + (
+                (exactInput == params.zeroForOne)
+                    ? toBalanceDelta(0, -hookDeltaInUnspecified)
+                    : toBalanceDelta(-hookDeltaInUnspecified, 0)
+            );
     }
 
     /// @inheritdoc IPoolManager
