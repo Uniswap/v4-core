@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import {IHooks} from "../interfaces/IHooks.sol";
 import {PoolKey} from "../types/PoolKey.sol";
@@ -28,19 +28,38 @@ contract BaseTestHooks is IHooks {
         revert HookNotImplemented();
     }
 
-    function beforeModifyPosition(
+    function beforeAddLiquidity(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
 
-    function afterModifyPosition(
+    function afterAddLiquidity(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        IPoolManager.ModifyPositionParams calldata, /* params **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
+        BalanceDelta, /* delta **/
+        bytes calldata /* hookData **/
+    ) external virtual returns (bytes4) {
+        revert HookNotImplemented();
+    }
+
+    function beforeRemoveLiquidity(
+        address, /* sender **/
+        PoolKey calldata, /* key **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
+        bytes calldata /* hookData **/
+    ) external virtual returns (bytes4) {
+        revert HookNotImplemented();
+    }
+
+    function afterRemoveLiquidity(
+        address, /* sender **/
+        PoolKey calldata, /* key **/
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {

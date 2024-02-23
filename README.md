@@ -9,7 +9,7 @@ The contracts in this repo are in early stages - we are releasing the draft code
 
 ## Contributing
 
-If you’re interested in contributing please see our [contribution guidelines](./CONTRIBUTING.md)! This includes instructions on how to compile using `TSTORE` and `TLOAD` opcodes in the `Setup` section.
+If you’re interested in contributing please see our [contribution guidelines](./CONTRIBUTING.md)!
 
 ## Whitepaper
 
@@ -31,13 +31,14 @@ Only the net balances owed to the pool (positive) or to the user (negative) are 
 Additionally, a pool may be initialized with a hook contract, that can implement any of the following callbacks in the lifecycle of pool actions:
 
 - {before,after}Initialize
-- {before,after}ModifyPosition
+- {before,after}AddLiquidity
+- {before,after}RemoveLiquidity
 - {before,after}Swap
 - {before,after}Donate
 
 Hooks may also elect to specify fees on swaps, or liquidity withdrawal. Much like the actions above, fees are implemented using callback functions.
 
-The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after  pool initialization.
+The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after pool initialization.
 
 ## Repository Structure
 
@@ -96,8 +97,8 @@ contract MyContract is ILockCallback {
 
 The primary license for Uniswap V4 Core is the Business Source License 1.1 (`BUSL-1.1`), see [LICENSE](https://github.com/Uniswap/v4-core/blob/main/LICENSE). Minus the following exceptions:
 
-- Some [libraries](./contracts/libraries) have a GPL license
-- Both [FullMath.sol](./contracts/libraries/FullMath.sol) and [Hooks.sol](./contracts/libraries/Hooks.sol) have an MIT License
-- [Interfaces](./contracts/interfaces) and [types](./contracts/types/) have an MIT license
+- Some [libraries](./src/libraries) have a GPL license
+- Both [FullMath.sol](./src/libraries/FullMath.sol) and [Hooks.sol](./src/libraries/Hooks.sol) have an MIT License
+- [Interfaces](./src/interfaces) and [types](./src/types/) have an MIT license
 
 Each of these files states their license type.
