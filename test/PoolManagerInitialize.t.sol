@@ -127,8 +127,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         bytes memory beforeParams = abi.encode(address(this), uninitializedKey, sqrtPriceX96, ZERO_BYTES);
 
         bytes32 afterSelector = MockHooks.afterInitialize.selector;
-        bytes memory afterParams =
-            abi.encode(address(this), uninitializedKey, sqrtPriceX96, tick, ZERO_BYTES);
+        bytes memory afterParams = abi.encode(address(this), uninitializedKey, sqrtPriceX96, tick, ZERO_BYTES);
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1, "beforeSelector count");
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams), "beforeSelector params");
