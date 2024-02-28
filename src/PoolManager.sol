@@ -230,7 +230,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         // ExactOut (amountSpecified is negative)
         // In the case where the hook contributed x, x output is given to the user now. The swap of amountSpecified + x is swapping for x fewer output tokens - so the user gets amountSpecified overall.
         // In the case where the hook took x, x output is taken from the user now. The swap of amountSpecified - x is swapping for x extra output tokens - so the user gets amountSpecified overall.
-        _accountDelta((exactInput == params.zeroForOne) ? key.currency0 : key.currency1, -hookDeltaInSpecified);
         _accountDeltaFor(
             (exactInput == params.zeroForOne) ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks)
         );
@@ -247,9 +246,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
                     sqrtPriceLimitX96: params.sqrtPriceLimitX96
                 })
             );
-
-            // TODO optimise! currently we write to the caller's deltas twice for each currency
-            _accountPoolBalanceDelta(key, delta);
 
             // the fee is on the input currency
             unchecked {
@@ -272,7 +268,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         }
 
         (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
-        _accountDelta((exactInput == params.zeroForOne) ? key.currency1 : key.currency0, -hookDeltaInUnspecified);
         _accountDeltaFor(
             (exactInput == params.zeroForOne) ? key.currency1 : key.currency0,
             hookDeltaInUnspecified,
@@ -285,6 +280,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
                     ? toBalanceDelta(0, -hookDeltaInUnspecified)
                     : toBalanceDelta(-hookDeltaInUnspecified, 0)
             );
+        _accountPoolBalanceDelta(key, delta);
     }
 
     /// @inheritdoc IPoolManager
