@@ -241,7 +241,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
                 Pool.SwapParams({
                     tickSpacing: key.tickSpacing,
                     zeroForOne: params.zeroForOne,
-                    amountSpecified: (params.amountSpecified - hookDeltaInSpecified),
+                    amountSpecified: params.amountSpecified,
                     sqrtPriceLimitX96: params.sqrtPriceLimitX96
                 })
             );
@@ -276,8 +276,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         delta = delta
             + (
                 (exactInput == params.zeroForOne)
-                    ? toBalanceDelta(0, -hookDeltaInUnspecified)
-                    : toBalanceDelta(-hookDeltaInUnspecified, 0)
+                    ? toBalanceDelta(hookDeltaInSpecified, -hookDeltaInUnspecified)
+                    : toBalanceDelta(-hookDeltaInUnspecified, hookDeltaInSpecified)
             );
         _accountPoolBalanceDelta(key, delta);
     }

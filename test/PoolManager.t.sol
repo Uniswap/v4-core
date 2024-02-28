@@ -846,7 +846,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 1000, sqrtPriceLimitX96: SQRT_RATIO_1_2});
-        BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
         assertEq(currency0.balanceOf(address(this)), balanceBefore0 - uint256(params.amountSpecified), "amount 0");
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + (998 - 12), "amount 1");
