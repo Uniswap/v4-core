@@ -215,7 +215,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         _checkPoolInitialized(id);
 
         // The hook's deltas are from the point of view of the hook. Positive: the hook took money, negative: the hook sent money to the pool
-        // TODO need to add check that this hook is allowed to return a non-0 delta in the hook callsite
         // TODO consider adding hookDeltaInUnspecified to beforeSwap hook too
         (bool shouldExecute, int128 hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
         if (!shouldExecute) return BalanceDeltaLibrary.MAXIMUM_DELTA;

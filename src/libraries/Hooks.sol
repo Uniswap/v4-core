@@ -27,6 +27,7 @@ library Hooks {
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 151;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 150;
     uint256 internal constant NO_OP_FLAG = 1 << 149;
+    uint256 internal constant MODIFY_DELTA_FLAG = 1 << 148;
 
     bytes4 public constant NO_OP_SELECTOR = bytes4(keccak256(abi.encodePacked("NoOp")));
 
@@ -219,6 +220,7 @@ library Hooks {
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData)
             );
             (, hookDeltaInSpecified) = abi.decode(returnData, (bytes4, int128));
+            if (hookDeltaInSpecified != 0 && !key.hooks.hasPermission(MODIFY_DELTA_FLAG)) revert InvalidHookResponse();
         } else {
             return (true, 0);
         }
@@ -237,6 +239,9 @@ library Hooks {
                 abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData)
             );
             (, hookDeltaInUnspecified) = abi.decode(returnData, (bytes4, int128));
+            if (hookDeltaInUnspecified != 0 && !key.hooks.hasPermission(MODIFY_DELTA_FLAG)) {
+                revert InvalidHookResponse();
+            }
         } else {
             return 0;
         }

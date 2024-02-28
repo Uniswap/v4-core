@@ -833,7 +833,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_withFeeTakingHook() public {
-        address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG));
+        address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG | Hooks.MODIFY_DELTA_FLAG));
         FeeTakingHook impl = new FeeTakingHook(manager);
         vm.etch(hookAddr, address(impl).code);
 
