@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
@@ -7,7 +7,6 @@ import {Pool} from "../libraries/Pool.sol";
 import {IHooks} from "./IHooks.sol";
 import {IERC6909Claims} from "./external/IERC6909Claims.sol";
 import {IFees} from "./IFees.sol";
-import {IClaims} from "./IClaims.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
