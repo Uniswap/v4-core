@@ -329,7 +329,7 @@ library Pool {
             protocolFee: params.zeroForOne ? uint8(slot0Start.protocolFee % 256) : uint8(slot0Start.protocolFee >> 8)
         });
 
-        bool exactInput = params.amountSpecified > 0;
+        bool exactInput = params.amountSpecified < 0;
 
         state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,
@@ -374,14 +374,14 @@ library Pool {
             if (exactInput) {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
-                    state.amountSpecifiedRemaining -= (step.amountIn + step.feeAmount).toInt256();
+                    state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
                 }
-                state.amountCalculated = state.amountCalculated - step.amountOut.toInt256();
+                state.amountCalculated = state.amountCalculated + step.amountOut.toInt256();
             } else {
                 unchecked {
-                    state.amountSpecifiedRemaining += step.amountOut.toInt256();
+                    state.amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
-                state.amountCalculated = state.amountCalculated + (step.amountIn + step.feeAmount).toInt256();
+                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
@@ -448,13 +448,13 @@ library Pool {
         unchecked {
             if (params.zeroForOne == exactInput) {
                 result = toBalanceDelta(
-                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128().flipSign(),
-                    state.amountCalculated.toInt128().flipSign()
+                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
+                    state.amountCalculated.toInt128()
                 );
             } else {
                 result = toBalanceDelta(
-                    state.amountCalculated.toInt128().flipSign(),
-                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128().flipSign()
+                    state.amountCalculated.toInt128(),
+                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128()
                 );
             }
         }
