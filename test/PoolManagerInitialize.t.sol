@@ -10,6 +10,7 @@ import {PoolManager} from "../src/PoolManager.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
+import {Constants} from "./utils/Constants.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockHooks} from "../src/test/MockHooks.sol";
 import {MockContract} from "../src/test/MockContract.sol";
@@ -35,11 +36,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         IHooks hooks
     );
 
-    address ADDRESS_ZERO = address(0);
-    address EMPTY_HOOKS = address(0xf000000000000000000000000000000000000000);
-    address ALL_HOOKS = address(0xff00000000000000000000000000000000000001);
-    address MOCK_HOOKS = address(0xfF00000000000000000000000000000000000000);
-
     function setUp() public {
         deployFreshManagerAndRouters();
         (currency0, currency1) = deployMintAndApprove2Currencies();
@@ -48,7 +44,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             currency0: currency0,
             currency1: currency1,
             fee: 3000,
-            hooks: IHooks(ADDRESS_ZERO),
+            hooks: IHooks(Constants.ADDRESS_ZERO),
             tickSpacing: 60
         });
     }
@@ -58,7 +54,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         // tested in Hooks.t.sol
-        key0.hooks = IHooks(ADDRESS_ZERO);
+        key0.hooks = IHooks(Constants.ADDRESS_ZERO);
 
         if (key0.fee & FeeLibrary.STATIC_FEE_MASK >= 1000000) {
             vm.expectRevert(abi.encodeWithSelector(IFees.FeeTooLarge.selector));
@@ -113,7 +109,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
         address payable mockAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
-        address payable hookAddr = payable(MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -163,7 +159,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
-        address hookEmptyAddr = EMPTY_HOOKS;
+        address hookEmptyAddr = Constants.EMPTY_HOOKS;
 
         MockHooks impl = new MockHooks();
         vm.etch(hookEmptyAddr, address(impl).code);

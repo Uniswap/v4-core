@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {Vm} from "forge-std/Vm.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
@@ -23,12 +22,13 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {PoolLockTest} from "../src/test/PoolLockTest.sol";
+import {PoolEmptyLockTest} from "../src/test/PoolEmptyLockTest.sol";
+import {Action} from "../src/test/PoolNestedActionsTest.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
 import {Position} from "../src/libraries/Position.sol";
+import {Constants} from "./utils/Constants.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
-import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
@@ -57,16 +57,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
     );
 
-    PoolLockTest lockTest;
-
-    address ADDRESS_ZERO = address(0);
-    address EMPTY_HOOKS = address(0xf000000000000000000000000000000000000000);
-    address MOCK_HOOKS = address(0xfF00000000000000000000000000000000000000);
+    PoolEmptyLockTest emptyLockRouter;
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
 
-        lockTest = new PoolLockTest(manager);
+        emptyLockRouter = new PoolEmptyLockTest(manager);
     }
 
     function test_bytecodeSize() public {
@@ -157,7 +153,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         address payable mockAddr =
             payable(address(uint160(Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
-        address payable hookAddr = payable(MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -185,7 +181,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         address payable mockAddr =
             payable(address(uint160(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)));
-        address payable hookAddr = payable(MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -384,7 +380,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_withHooks_gas() public {
-        address hookEmptyAddr = EMPTY_HOOKS;
+        address hookEmptyAddr = Constants.EMPTY_HOOKS;
         MockHooks impl = new MockHooks();
         vm.etch(hookEmptyAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookEmptyAddr);
@@ -397,7 +393,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_removeLiquidity_withHooks_gas() public {
-        address hookEmptyAddr = EMPTY_HOOKS;
+        address hookEmptyAddr = Constants.EMPTY_HOOKS;
         MockHooks impl = new MockHooks();
         vm.etch(hookEmptyAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookEmptyAddr);
@@ -411,7 +407,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_mint_withHooks_EOAInitiated() public {
-        address hookEmptyAddr = EMPTY_HOOKS;
+        address hookEmptyAddr = Constants.EMPTY_HOOKS;
         MockHooks impl = new MockHooks();
         vm.etch(hookEmptyAddr, address(impl).code);
         MockHooks mockHooks = MockHooks(hookEmptyAddr);
@@ -571,7 +567,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_swap_succeedsWithHooksIfInitialized() public {
         address payable mockAddr = payable(address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
-        address payable hookAddr = payable(MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -678,7 +674,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_withHooks_gas() public {
-        address hookEmptyAddr = EMPTY_HOOKS;
+        address hookEmptyAddr = Constants.EMPTY_HOOKS;
 
         MockHooks impl = new MockHooks();
         vm.etch(hookEmptyAddr, address(impl).code);
@@ -1386,16 +1382,28 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
 
-    function test_lock_NoOpIsOk() public {
+    function test_lock_NoOp_gas() public {
         snapStart("gas overhead of no-op lock");
-        lockTest.lock();
+        emptyLockRouter.lock();
         snapEnd();
     }
 
     function test_lock_EmitsCorrectId() public {
         vm.expectEmit(false, false, false, true);
         emit LockAcquired();
-        lockTest.lock();
+        emptyLockRouter.lock();
+    }
+
+    Action[] actions;
+
+    function test_lock_cannotBeCalledTwiceByLocker() public {
+        actions = [Action.NESTED_SELF_LOCK];
+        manager.lock(address(nestedActionRouter), abi.encode(actions));
+    }
+
+    function test_lock_cannotBeCalledTwiceByDifferentLockers() public {
+        actions = [Action.NESTED_EXECUTOR_LOCK];
+        manager.lock(address(nestedActionRouter), abi.encode(actions));
     }
 
     // function testExtsloadForPoolPrice() public {

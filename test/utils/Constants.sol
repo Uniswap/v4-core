@@ -13,10 +13,16 @@ library Constants {
     uint128 constant MAX_UINT128 = type(uint128).max;
     uint160 constant MAX_UINT160 = type(uint160).max;
 
+    address constant ADDRESS_ZERO = address(0);
+    address constant EMPTY_HOOKS = address(0xf000000000000000000000000000000000000000);
+    address constant MOCK_HOOKS = address(0xfF00000000000000000000000000000000000000);
+
     uint256 constant POOL_SLOT = 10;
     uint256 constant TICKS_OFFSET = 4;
 
     uint24 constant FEE_LOW = 500;
     uint24 constant FEE_MEDIUM = 3000;
     uint24 constant FEE_HIGH = 10000;
+
+    bytes constant ZERO_BYTES = new bytes(0);
 }

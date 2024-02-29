@@ -6,7 +6,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {FeeLibrary} from "./FeeLibrary.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {Lockers} from "./Lockers.sol";
+import {Locker} from "./Locker.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -27,7 +27,6 @@ library Hooks {
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 151;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 150;
     uint256 internal constant NO_OP_FLAG = 1 << 149;
-    uint256 internal constant ACCESS_LOCK_FLAG = 1 << 148;
 
     bytes4 public constant NO_OP_SELECTOR = bytes4(keccak256(abi.encodePacked("NoOp")));
 
@@ -43,7 +42,6 @@ library Hooks {
         bool beforeDonate;
         bool afterDonate;
         bool noOp;
-        bool accessLock;
     }
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
@@ -73,7 +71,6 @@ library Hooks {
                 || permissions.beforeDonate != self.hasPermission(BEFORE_DONATE_FLAG)
                 || permissions.afterDonate != self.hasPermission(AFTER_DONATE_FLAG)
                 || permissions.noOp != self.hasPermission(NO_OP_FLAG)
-                || permissions.accessLock != self.hasPermission(ACCESS_LOCK_FLAG)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -94,15 +91,13 @@ library Hooks {
         // If a hook contract is set, it must have at least 1 flag set, or have a dynamic fee
         return address(hook) == address(0)
             ? !fee.isDynamicFee()
-            : (uint160(address(hook)) >= ACCESS_LOCK_FLAG || fee.isDynamicFee());
+            : (uint160(address(hook)) >= NO_OP_FLAG || fee.isDynamicFee());
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
     /// @return expectedSelector The selector that the hook is expected to return
     /// @return selector The selector that the hook actually returned
     function _callHook(IHooks self, bytes memory data) private returns (bytes4 expectedSelector, bytes4 selector) {
-        bool set = Lockers.setCurrentHook(self);
-
         assembly {
             expectedSelector := mload(add(data, 0x20))
         }
@@ -111,9 +106,6 @@ library Hooks {
         if (!success) _revert(result);
 
         selector = abi.decode(result, (bytes4));
-
-        // We only want to clear the current hook if it was set in setCurrentHook in this execution frame.
-        if (set) Lockers.clearCurrentHook();
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
