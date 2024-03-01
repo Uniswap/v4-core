@@ -31,8 +31,12 @@ contract PoolNestedActionsTest is Test, ILockCallback {
         executor = new NestedActionExecutor(manager, user);
     }
 
+    function lock(bytes calldata data) external {
+        manager.lock(data);
+    }
+
     /// @notice Called by the pool manager on `msg.sender` when a lock is acquired
-    function lockAcquired(address, bytes calldata data) external override returns (bytes memory) {
+    function lockAcquired(bytes calldata data) external override returns (bytes memory) {
         Action[] memory actions = abi.decode(data, (Action[]));
         if (actions.length == 1 && actions[0] == Action.NESTED_SELF_LOCK) {
             _nestedLock();
@@ -47,7 +51,7 @@ contract PoolNestedActionsTest is Test, ILockCallback {
         assertEq(locker, address(this));
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyLocked.selector));
-        manager.lock(address(this), "");
+        manager.lock("");
 
         locker = manager.getLocker();
         assertEq(locker, address(this));
@@ -98,7 +102,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(locker, msg.sender);
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyLocked.selector));
-        manager.lock(address(this), "");
+        manager.lock("");
 
         (locker) = manager.getLocker();
         assertEq(locker, msg.sender);
@@ -213,11 +217,11 @@ contract NestedActionExecutor is Test, PoolTestBase {
         address locker = manager.getLocker();
         assertTrue(locker != address(this), "Locker wrong");
         key.tickSpacing = 50;
-        manager.initialize(key, Constants.SQRT_RATIO_1_2, Constants.ZERO_BYTES);
+        manager.initialize(key, Constants.SQRT_RATIO_1_1, Constants.ZERO_BYTES);
     }
 
     // This will never actually be used - its just to allow us to use the PoolTestBase helper contact
-    function lockAcquired(address, bytes calldata) external pure override returns (bytes memory) {
+    function lockAcquired(bytes calldata) external pure override returns (bytes memory) {
         return "";
     }
 }

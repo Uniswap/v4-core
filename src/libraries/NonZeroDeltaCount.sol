@@ -27,7 +27,7 @@ library NonZeroDeltaCount {
     }
 
     /// @notice Potential to underflow.
-    /// Current usage ensures this will not happen because we call decrememnt with known boundaries (only up to the number of times we call increment).
+    /// Current usage ensures this will not happen because we call decrement with known boundaries (only up to the number of times we call increment).
     function decrement() internal {
         uint256 slot = NONZERO_DELTA_COUNT;
         assembly {

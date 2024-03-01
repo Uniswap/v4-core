@@ -8,7 +8,7 @@ contract LockerTest is Test {
     address constant ADDRESS_AS = 0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa;
     address constant ADDRESS_BS = 0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB;
 
-    function test_setLocker(address locker) public {
+    function test_fuzz_setLocker(address locker) public {
         assertEq(address(Locker.getLocker()), address(0));
 
         if (locker == address(0)) {
@@ -20,7 +20,7 @@ contract LockerTest is Test {
         }
     }
 
-    function test_clearLocker(address locker) public {
+    function test_fuzz_clearLocker(address locker) public {
         vm.assume(locker != address(0));
         Locker.setLocker(locker);
 
@@ -31,7 +31,7 @@ contract LockerTest is Test {
         assertEq(address(Locker.getLocker()), address(0));
     }
 
-    function test_isLocked(address locker) public {
+    function test_fuzz_isLocked(address locker) public {
         vm.assume(locker != address(0));
         assertFalse(Locker.isLocked());
 

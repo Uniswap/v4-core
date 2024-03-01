@@ -406,114 +406,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
-    function test_mint_withHooks_EOAInitiated() public {
-        address hookEmptyAddr = Constants.EMPTY_HOOKS;
-        MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
-
-        (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
-
-        snapStart("mintWithEmptyHookEOAInitiated");
-        manager.lock(
-            address(modifyLiquidityRouter),
-            abi.encode(
-                PoolModifyLiquidityTest.CallbackData(
-                    address(this),
-                    key,
-                    IPoolManager.ModifyLiquidityParams({tickLower: 0, tickUpper: 60, liquidityDelta: 100}),
-                    ZERO_BYTES,
-                    true,
-                    true
-                )
-            )
-        );
-
-        snapEnd();
-    }
-
-    function test_swap_EOAInitiated(uint256 swapAmount) public {
-        IPoolManager.ModifyLiquidityParams memory liqParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyLiquidityRouter.modifyLiquidity(key, liqParams, ZERO_BYTES);
-
-        (uint256 amount0,) = AmountHelpers.getMaxAmountInForPool(manager, Deployers.LIQ_PARAMS, key);
-        // lower bound for precision purposes
-        swapAmount = uint256(bound(swapAmount, 100, amount0));
-
-        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
-            zeroForOne: true,
-            amountSpecified: SafeCast.toInt256(swapAmount),
-            sqrtPriceLimitX96: SQRT_RATIO_1_2
-        });
-
-        PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
-
-        snapStart("simpleSwapEOAInitiated");
-        manager.lock(
-            address(swapRouter),
-            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, key, params, ZERO_BYTES))
-        );
-        snapEnd();
-    }
-
-    function test_swap_native_EOAInitiated() public {
-        IPoolManager.ModifyLiquidityParams memory liqParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyLiquidityRouter.modifyLiquidity{value: 1 ether}(nativeKey, liqParams, ZERO_BYTES);
-
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
-
-        PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: true});
-
-        snapStart("simpleSwapNativeEOAInitiated");
-        manager.lock{value: 100}(
-            address(swapRouter),
-            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, nativeKey, params, ZERO_BYTES))
-        );
-        snapEnd();
-    }
-
-    function test_invalidLockTarget() public {
-        IPoolManager.ModifyLiquidityParams memory liqParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-        modifyLiquidityRouter.modifyLiquidity{value: 1 ether}(nativeKey, liqParams, ZERO_BYTES);
-
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
-
-        PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: true});
-
-        // ensure reverts wen locking to variety of contracts which don't properly implement ILockCallback
-        vm.expectRevert();
-        manager.lock{value: 100}(
-            address(0),
-            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, nativeKey, params, ZERO_BYTES))
-        );
-
-        vm.expectRevert();
-        manager.lock{value: 100}(
-            address(this),
-            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, nativeKey, params, ZERO_BYTES))
-        );
-
-        vm.expectRevert();
-        manager.lock{value: 100}(
-            address(manager),
-            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, nativeKey, params, ZERO_BYTES))
-        );
-
-        vm.expectRevert();
-        manager.lock{value: 100}(
-            address(Currency.unwrap(currency0)),
-            abi.encode(PoolSwapTest.CallbackData(address(this), testSettings, nativeKey, params, ZERO_BYTES))
-        );
-    }
-
     function test_swap_failsIfNotInitialized(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
@@ -1398,12 +1290,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_lock_cannotBeCalledTwiceByLocker() public {
         actions = [Action.NESTED_SELF_LOCK];
-        manager.lock(address(nestedActionRouter), abi.encode(actions));
+        nestedActionRouter.lock(abi.encode(actions));
     }
 
     function test_lock_cannotBeCalledTwiceByDifferentLockers() public {
         actions = [Action.NESTED_EXECUTOR_LOCK];
-        manager.lock(address(nestedActionRouter), abi.encode(actions));
+        nestedActionRouter.lock(abi.encode(actions));
     }
 
     // function testExtsloadForPoolPrice() public {
