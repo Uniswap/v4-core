@@ -14,31 +14,25 @@ library Locker {
     /// we use locker==address(0) to signal that the pool is not locked
     error InvalidLocker();
 
-    function setLocker(address locker) internal {
-        if (locker == address(0)) revert InvalidLocker();
+    function lock() internal {
         uint256 slot = LOCKER_SLOT;
-
         assembly {
-            // set the locker
-            tstore(slot, locker)
+            // set the lock
+            tstore(slot, true)
         }
     }
 
-    function clearLocker() internal {
+    function unlock() internal {
         uint256 slot = LOCKER_SLOT;
         assembly {
-            tstore(slot, 0)
+            tstore(slot, false)
         }
     }
 
-    function getLocker() internal view returns (address locker) {
+    function isLocked() internal view returns (bool locked) {
         uint256 slot = LOCKER_SLOT;
         assembly {
-            locker := tload(slot)
+            locked := tload(slot)
         }
-    }
-
-    function isLocked() internal view returns (bool) {
-        return getLocker() != address(0);
     }
 }
