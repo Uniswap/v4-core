@@ -16,7 +16,8 @@ enum Action {
     SWAP_AND_SETTLE,
     DONATE_AND_SETTLE,
     ADD_LIQ_AND_SETTLE,
-    REMOVE_LIQ_AND_SETTLE
+    REMOVE_LIQ_AND_SETTLE,
+    INITIALIZE
 }
 
 contract PoolNestedActionsTest is Test, ILockCallback {
@@ -88,6 +89,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
             else if (action == Action.ADD_LIQ_AND_SETTLE) _addLiquidity();
             else if (action == Action.REMOVE_LIQ_AND_SETTLE) _removeLiquidity();
             else if (action == Action.DONATE_AND_SETTLE) _donate();
+            else if (action == Action.INITIALIZE) _initialize();
         }
     }
 
@@ -205,6 +207,13 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
         _settle(key.currency0, user, int128(deltaThisAfter0), true);
         _settle(key.currency1, user, int128(deltaThisAfter1), true);
+    }
+
+    function _initialize() internal {
+        address locker = manager.getLocker();
+        assertTrue(locker != address(this), "Locker wrong");
+        key.tickSpacing = 50;
+        manager.initialize(key, Constants.SQRT_RATIO_1_2, Constants.ZERO_BYTES);
     }
 
     // This will never actually be used - its just to allow us to use the PoolTestBase helper contact
