@@ -9,6 +9,7 @@ import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
+import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 
 enum Action {
     NESTED_SELF_LOCK,
@@ -59,6 +60,8 @@ contract PoolNestedActionsTest is Test, ILockCallback {
 }
 
 contract NestedActionExecutor is Test, PoolTestBase {
+    using PoolIdLibrary for PoolKey;
+
     PoolKey internal key;
     address user;
 
@@ -216,8 +219,14 @@ contract NestedActionExecutor is Test, PoolTestBase {
     function _initialize() internal {
         address locker = manager.getLocker();
         assertTrue(locker != address(this), "Locker wrong");
+        PoolId id = key.toId();
+        (uint256 price,,) = manager.getSlot0(id);
+        assertEq(price, Constants.SQRT_RATIO_1_1);
         key.tickSpacing = 50;
-        manager.initialize(key, Constants.SQRT_RATIO_1_1, Constants.ZERO_BYTES);
+        manager.initialize(key, Constants.SQRT_RATIO_1_2, Constants.ZERO_BYTES);
+        id = key.toId();
+        (price,,) = manager.getSlot0(id);
+        assertEq(price, Constants.SQRT_RATIO_1_2);
     }
 
     // This will never actually be used - its just to allow us to use the PoolTestBase helper contact
