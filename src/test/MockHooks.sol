@@ -64,10 +64,10 @@ contract MockHooks is IHooks {
         IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata hookData
-    ) external override returns (bytes4) {
+    ) external override returns (bytes4, BalanceDelta) {
         afterAddLiquidityData = hookData;
         bytes4 selector = MockHooks.afterAddLiquidity.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        return (returnValues[selector] == bytes4(0) ? selector : returnValues[selector], BalanceDelta.wrap(0));
     }
 
     function beforeRemoveLiquidity(
@@ -87,10 +87,10 @@ contract MockHooks is IHooks {
         IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata hookData
-    ) external override returns (bytes4) {
+    ) external override returns (bytes4, BalanceDelta) {
         afterRemoveLiquidityData = hookData;
         bytes4 selector = MockHooks.afterRemoveLiquidity.selector;
-        return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
+        return (returnValues[selector] == bytes4(0) ? selector : returnValues[selector], BalanceDelta.wrap(0));
     }
 
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata hookData)

@@ -54,13 +54,14 @@ interface IHooks {
     /// @param params The parameters for adding liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
+    /// @return BalanceDelta The hook's delta in token0 and token1
     function afterAddLiquidity(
         address sender,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) external returns (bytes4);
+    ) external returns (bytes4, BalanceDelta);
 
     /// @notice The hook called before liquidity is removed
     /// @param sender The initial msg.sender for the remove liquidity call
@@ -81,13 +82,14 @@ interface IHooks {
     /// @param params The parameters for removing liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
+    /// @return BalanceDelta The hook's delta in token0 and token1
     function afterRemoveLiquidity(
         address sender,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) external returns (bytes4);
+    ) external returns (bytes4, BalanceDelta);
 
     /// @notice The hook called before a swap
     /// @param sender The initial msg.sender for the swap call

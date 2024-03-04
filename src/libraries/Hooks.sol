@@ -197,15 +197,30 @@ library Hooks {
         IPoolManager.ModifyLiquidityParams memory params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) internal {
-        if (params.liquidityDelta > 0 && key.hooks.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.afterAddLiquidity.selector, msg.sender, key, params, delta, hookData)
-            );
-        } else if (params.liquidityDelta <= 0 && key.hooks.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.afterRemoveLiquidity.selector, msg.sender, key, params, delta, hookData)
-            );
+    ) internal returns (BalanceDelta hookDelta) {
+        bytes memory returnData;
+        if (params.liquidityDelta > 0) {
+            if (key.hooks.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
+                returnData = self.callHook(
+                    abi.encodeWithSelector(IHooks.afterAddLiquidity.selector, msg.sender, key, params, delta, hookData)
+                );
+                (, hookDelta) = abi.decode(returnData, (bytes4, BalanceDelta));
+                if (BalanceDelta.unwrap(hookDelta) != 0 && !key.hooks.hasPermission(MODIFY_DELTA_FLAG)) {
+                    revert InvalidHookResponse();
+                }
+            }
+        } else {
+            if (key.hooks.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
+                returnData = self.callHook(
+                    abi.encodeWithSelector(
+                        IHooks.afterRemoveLiquidity.selector, msg.sender, key, params, delta, hookData
+                    )
+                );
+                (, hookDelta) = abi.decode(returnData, (bytes4, BalanceDelta));
+                if (BalanceDelta.unwrap(hookDelta) != 0 && !key.hooks.hasPermission(MODIFY_DELTA_FLAG)) {
+                    revert InvalidHookResponse();
+                }
+            }
         }
     }
 
