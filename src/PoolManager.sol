@@ -19,7 +19,7 @@ import {Fees} from "./Fees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
-import {Locker} from "./libraries/Locker.sol";
+import {Lock} from "./libraries/Lock.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 
@@ -88,9 +88,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         return pools[id].positions.get(_owner, tickLower, tickUpper);
     }
 
+    function isLockSet() external view returns (bool) {
+        return Lock.isLocked();
+    }
+
     /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
     modifier isLocked() {
-        if (!Locker.isLocked()) revert ManagerNotLocked();
+        if (!Lock.isLocked()) revert ManagerNotLocked();
         _;
     }
 
@@ -125,15 +129,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external payable override returns (bytes memory result) {
-        if (Locker.isLocked()) revert AlreadyLocked();
+        if (Lock.isLocked()) revert AlreadyLocked();
 
-        Locker.lock();
+        Lock.lock();
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
-        Locker.unlock();
+        Lock.unlock();
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {

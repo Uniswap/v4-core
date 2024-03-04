@@ -120,6 +120,9 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
+    /// @notice Returns whether the contract is locked
+    function isLockSet() external view returns (bool);
+
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
 

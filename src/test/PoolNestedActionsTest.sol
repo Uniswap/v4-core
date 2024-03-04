@@ -46,8 +46,12 @@ contract PoolNestedActionsTest is Test, ILockCallback {
     }
 
     function _nestedLock() internal {
+        bool locked = manager.isLockSet();
+        assertEq(locked, true);
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyLocked.selector));
         manager.lock("");
+        locked = manager.isLockSet();
+        assertEq(locked, true);
     }
 }
 
@@ -90,11 +94,17 @@ contract NestedActionExecutor is Test, PoolTestBase {
     }
 
     function _nestedLock() internal {
+        bool locked = manager.isLockSet();
+        assertEq(locked, true);
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyLocked.selector));
         manager.lock("");
+        locked = manager.isLockSet();
+        assertEq(locked, true);
     }
 
     function _swap(address locker) internal {
+        bool locked = manager.isLockSet();
+        assertEq(locked, true);
         (,,, int256 deltaLockerBefore0) = _fetchBalances(key.currency0, user, locker);
         (,,, int256 deltaLockerBefore1) = _fetchBalances(key.currency1, user, locker);
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
@@ -119,6 +129,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
     }
 
     function _addLiquidity(address locker) internal {
+        bool locked = manager.isLockSet();
+        assertEq(locked, true);
         (,,, int256 deltaLockerBefore0) = _fetchBalances(key.currency0, user, locker);
         (,,, int256 deltaLockerBefore1) = _fetchBalances(key.currency1, user, locker);
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
@@ -142,6 +154,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
     // cannot remove non-existent liquidity - need to perform an add before this removal
     function _removeLiquidity(address locker) internal {
+        bool locked = manager.isLockSet();
+        assertEq(locked, true);
         (,,, int256 deltaLockerBefore0) = _fetchBalances(key.currency0, user, locker);
         (,,, int256 deltaLockerBefore1) = _fetchBalances(key.currency1, user, locker);
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
@@ -164,6 +178,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
     }
 
     function _donate(address locker) internal {
+        bool locked = manager.isLockSet();
+        assertEq(locked, true);
         (,,, int256 deltaLockerBefore0) = _fetchBalances(key.currency0, user, locker);
         (,,, int256 deltaLockerBefore1) = _fetchBalances(key.currency1, user, locker);
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
