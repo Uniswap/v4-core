@@ -6,7 +6,7 @@ import {SafeCast} from "../libraries/SafeCast.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
 
@@ -26,8 +26,9 @@ contract FeeTakingHook is BaseTestHooks {
         _;
     }
 
-    uint256 public constant SWAP_FEE_BIPS = 123; // 123/10000 = 1.23%
-    uint256 public constant TOTAL_BIPS = 10000;
+    uint128 public constant REMOVE_LIQUIDITY_FEE = 543; // 543/10000 = 5.43%
+    uint128 public constant SWAP_FEE_BIPS = 123; // 123/10000 = 1.23%
+    uint128 public constant TOTAL_BIPS = 10000;
 
     function afterSwap(
         address, /* sender **/
@@ -48,5 +49,23 @@ contract FeeTakingHook is BaseTestHooks {
         manager.take(feeCurrency, address(this), feeAmount);
 
         return (IHooks.afterSwap.selector, feeAmount.toInt128());
+    }
+
+    function afterRemoveLiquidity(
+        address, /* sender **/
+        PoolKey calldata key,
+        IPoolManager.ModifyLiquidityParams calldata, /* params **/
+        BalanceDelta delta,
+        bytes calldata /* hookData **/
+    ) external override onlyPoolManager returns (bytes4, BalanceDelta) {
+        assert(delta.amount0() >= 0 && delta.amount1() >= 0);
+
+        uint128 feeAmount0 = uint128(delta.amount0()) * REMOVE_LIQUIDITY_FEE / TOTAL_BIPS;
+        uint128 feeAmount1 = uint128(delta.amount1()) * REMOVE_LIQUIDITY_FEE / TOTAL_BIPS;
+
+        manager.take(key.currency0, address(this), feeAmount0);
+        manager.take(key.currency1, address(this), feeAmount1);
+
+        return (IHooks.afterRemoveLiquidity.selector, toBalanceDelta(int128(feeAmount0), int128(feeAmount1)));
     }
 }

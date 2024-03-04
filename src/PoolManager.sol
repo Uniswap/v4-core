@@ -169,6 +169,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         _accountDelta(key.currency1, delta.amount1());
     }
 
+    function _accountPoolBalanceDeltaFor(PoolKey memory key, BalanceDelta delta, address target) internal {
+        _accountDeltaFor(key.currency0, delta.amount0(), target);
+        _accountDeltaFor(key.currency1, delta.amount1(), target);
+    }
+
     function _checkPoolInitialized(PoolId id) internal view {
         if (pools[id].isNotInitialized()) revert PoolNotInitialized();
     }
@@ -196,11 +201,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             })
         );
 
-        _accountPoolBalanceDelta(key, delta);
-
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
 
-        key.hooks.afterModifyLiquidity(key, params, delta, hookData);
+        BalanceDelta hookDelta = key.hooks.afterModifyLiquidity(key, params, delta, hookData);
+        delta = delta - hookDelta;
+
+        _accountPoolBalanceDeltaFor(key, hookDelta, address(key.hooks));
+        _accountPoolBalanceDelta(key, delta);
     }
 
     /// @inheritdoc IPoolManager
