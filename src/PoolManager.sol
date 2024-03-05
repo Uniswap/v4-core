@@ -20,6 +20,7 @@ import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Locker} from "./libraries/Locker.sol";
+import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 
@@ -33,17 +34,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     using CurrencyLibrary for Currency;
     using FeeLibrary for uint24;
     using PoolGetters for Pool.State;
+    using CurrencyDelta for address;
 
     /// @inheritdoc IPoolManager
     int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
     /// @inheritdoc IPoolManager
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
-
-    /// @dev Represents the currencies due/owed to each locker.
-    /// Must all net to zero when the last lock is released.
-    /// TODO this needs to be transient
-    mapping(address locker => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
 
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
@@ -86,6 +83,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         returns (Position.Info memory position)
     {
         return pools[id].positions.get(_owner, tickLower, tickUpper);
+    }
+
+    function currencyDelta(address locker, Currency currency) external view returns (int256) {
+        return locker.getCurrencyDelta(currency);
     }
 
     /// @inheritdoc IPoolManager
@@ -144,7 +145,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        int256 current = currencyDelta[msg.sender][currency];
+        int256 current = msg.sender.getCurrencyDelta(currency);
         int256 next = current + delta;
 
         unchecked {
@@ -155,7 +156,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             }
         }
 
-        currencyDelta[msg.sender][currency] = next;
+        msg.sender.setCurrencyDelta(currency, next);
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
