@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {console2} from "forge-std/console2.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
@@ -117,6 +118,30 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         );
 
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
+    }
+
+    function test_addLiquidity_withFeeTakingHook() public {
+        address hookAddr = address(uint160(Hooks.AFTER_ADD_LIQUIDITY_FLAG | Hooks.MODIFY_DELTA_FLAG));
+        FeeTakingHook impl = new FeeTakingHook(manager);
+        vm.etch(hookAddr, address(impl).code);
+
+        (key,) = initPool(currency0, currency1, IHooks(hookAddr), 100, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        uint256 balanceBefore0 = currency0.balanceOf(address(this));
+        uint256 balanceBefore1 = currency1.balanceOf(address(this));
+        uint256 hookBalanceBefore0 = currency0.balanceOf(hookAddr);
+        uint256 hookBalanceBefore1 = currency1.balanceOf(hookAddr);
+
+        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+
+        uint256 hookGain0 = currency0.balanceOf(hookAddr) - hookBalanceBefore0;
+        uint256 hookGain1 = currency1.balanceOf(hookAddr) - hookBalanceBefore1;
+        uint256 thisLoss0 = balanceBefore0 - currency0.balanceOf(address(this));
+        uint256 thisLoss1 = balanceBefore1 - currency1.balanceOf(address(this));
+
+        // Assert that the hook got 5.43% of the withdrawn liquidity
+        assertEq(hookGain0, (thisLoss0 - hookGain0) * 543 / 10000, "hook amount 0");
+        assertEq(hookGain1, (thisLoss1 - hookGain1) * 543 / 10000, "hook amount 1");
     }
 
     function test_removeLiquidity_withFeeTakingHook() public {
