@@ -92,10 +92,10 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
 
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(0, 60, 0), new bytes(222));
-        // assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
-        // assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
-        // assertEq(mockHooks.beforeRemoveLiquidityData(), new bytes(222));
-        // assertEq(mockHooks.afterRemoveLiquidityData(), new bytes(222));
+        assertEq(mockHooks.beforeAddLiquidityData(), new bytes(111));
+        assertEq(mockHooks.afterAddLiquidityData(), new bytes(111));
+        assertEq(mockHooks.beforeRemoveLiquidityData(), new bytes(222));
+        assertEq(mockHooks.afterRemoveLiquidityData(), new bytes(222));
     }
 
     function test_beforeAfterRemoveLiquidity_calledWithPositiveLiquidityDelta() public {
