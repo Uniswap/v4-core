@@ -224,7 +224,6 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (uint256 price,,) = manager.getSlot0(id);
         assertEq(price, 0);
         manager.initialize(key, Constants.SQRT_RATIO_1_2, Constants.ZERO_BYTES);
-        id = key.toId();
         (price,,) = manager.getSlot0(id);
         assertEq(price, Constants.SQRT_RATIO_1_2);
     }
