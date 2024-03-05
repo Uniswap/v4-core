@@ -189,7 +189,8 @@ library Hooks {
         returns (int128 hookDeltaInSpecified)
     {
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
-            bytes memory returnData = self.callHook(abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
+            bytes memory returnData =
+                self.callHook(abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
             (, hookDeltaInSpecified) = abi.decode(returnData, (bytes4, int128));
             if (hookDeltaInSpecified != 0 && !key.hooks.hasPermission(MODIFY_DELTA_FLAG)) revert InvalidHookResponse();
         }
