@@ -25,15 +25,15 @@ contract PoolClaimsTest is PoolTestBase {
 
     /// @notice Convert ERC20 into a claimable 6909
     function deposit(Currency currency, address user, uint256 amount) external payable {
-        manager.lock(address(this), abi.encode(CallbackData(msg.sender, user, currency, amount, true)));
+        manager.lock(abi.encode(CallbackData(msg.sender, user, currency, amount, true)));
     }
 
     /// @notice Redeem claimable 6909 for ERC20
     function withdraw(Currency currency, address user, uint256 amount) external payable {
-        manager.lock(address(this), abi.encode(CallbackData(msg.sender, user, currency, amount, false)));
+        manager.lock(abi.encode(CallbackData(msg.sender, user, currency, amount, false)));
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
