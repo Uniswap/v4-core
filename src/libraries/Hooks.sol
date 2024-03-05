@@ -26,9 +26,6 @@ library Hooks {
     uint256 internal constant AFTER_SWAP_FLAG = 1 << 152;
     uint256 internal constant BEFORE_DONATE_FLAG = 1 << 151;
     uint256 internal constant AFTER_DONATE_FLAG = 1 << 150;
-    uint256 internal constant NO_OP_FLAG = 1 << 149;
-
-    bytes4 public constant NO_OP_SELECTOR = bytes4(keccak256(abi.encodePacked("NoOp")));
 
     struct Permissions {
         bool beforeInitialize;
@@ -41,7 +38,6 @@ library Hooks {
         bool afterSwap;
         bool beforeDonate;
         bool afterDonate;
-        bool noOp;
     }
 
     /// @notice Thrown if the address will not lead to the specified hook calls being called
@@ -70,7 +66,6 @@ library Hooks {
                 || permissions.afterSwap != self.hasPermission(AFTER_SWAP_FLAG)
                 || permissions.beforeDonate != self.hasPermission(BEFORE_DONATE_FLAG)
                 || permissions.afterDonate != self.hasPermission(AFTER_DONATE_FLAG)
-                || permissions.noOp != self.hasPermission(NO_OP_FLAG)
         ) {
             revert HookAddressNotValid(address(self));
         }
@@ -79,19 +74,11 @@ library Hooks {
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param hook The hook to verify
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
-        // if NoOp is allowed, at least one of beforeRemoveLiquidity, beforeAddLiquidity, beforeSwap and beforeDonate should be allowed
-        if (
-            hook.hasPermission(NO_OP_FLAG) && !hook.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)
-                && !hook.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG) && !hook.hasPermission(BEFORE_SWAP_FLAG)
-                && !hook.hasPermission(BEFORE_DONATE_FLAG)
-        ) {
-            return false;
-        }
         // If there is no hook contract set, then fee cannot be dynamic
         // If a hook contract is set, it must have at least 1 flag set, or have a dynamic fee
         return address(hook) == address(0)
             ? !fee.isDynamicFee()
-            : (uint160(address(hook)) >= NO_OP_FLAG || fee.isDynamicFee());
+            : (uint160(address(hook)) >= AFTER_DONATE_FLAG || fee.isDynamicFee());
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
@@ -113,20 +100,6 @@ library Hooks {
         (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
 
         if (selector != expectedSelector) {
-            revert InvalidHookResponse();
-        }
-    }
-
-    /// @notice performs a hook call using the given calldata on the given hook
-    /// @return shouldExecute Whether the operation should be executed or nooped
-    function callHookNoopable(IHooks self, bytes memory data) internal returns (bool shouldExecute) {
-        (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
-
-        if (selector == expectedSelector) {
-            shouldExecute = true;
-        } else if (selector == NO_OP_SELECTOR && self.hasPermission(NO_OP_FLAG)) {
-            shouldExecute = false;
-        } else {
             revert InvalidHookResponse();
         }
     }
@@ -159,17 +132,13 @@ library Hooks {
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) internal returns (bool shouldExecute) {
+    ) internal {
         if (params.liquidityDelta > 0 && key.hooks.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
-            shouldExecute = self.callHookNoopable(
-                abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData)
-            );
+            self.callHook(abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData));
         } else if (params.liquidityDelta <= 0 && key.hooks.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
-            shouldExecute = self.callHookNoopable(
+            self.callHook(
                 abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
             );
-        } else {
-            shouldExecute = true;
         }
     }
 
@@ -195,14 +164,9 @@ library Hooks {
     /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
-        returns (bool shouldExecute)
     {
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
-            shouldExecute = self.callHookNoopable(
-                abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData)
-            );
-        } else {
-            return true;
+            self.callHook(abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
         }
     }
 
@@ -222,14 +186,11 @@ library Hooks {
     /// @notice calls beforeDonate hook if permissioned and validates return value
     function beforeDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         internal
-        returns (bool shouldExecute)
     {
         if (key.hooks.hasPermission(BEFORE_DONATE_FLAG)) {
-            shouldExecute = self.callHookNoopable(
+            self.callHook(
                 abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
             );
-        } else {
-            return true;
         }
     }
 

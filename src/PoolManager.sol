@@ -177,9 +177,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeModifyLiquidity(key, params, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeModifyLiquidity(key, params, hookData);
 
         delta = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
@@ -209,9 +207,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeSwap(key, params, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeSwap(key, params, hookData);
 
         uint256 feeForProtocol;
         uint24 swapFee;
@@ -252,9 +248,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeDonate(key, amount0, amount1, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
         delta = pools[id].donate(amount0, amount1);
 
