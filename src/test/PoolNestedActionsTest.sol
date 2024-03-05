@@ -219,10 +219,10 @@ contract NestedActionExecutor is Test, PoolTestBase {
     function _initialize() internal {
         address locker = manager.getLocker();
         assertTrue(locker != address(this), "Locker wrong");
+        key.tickSpacing = 50;
         PoolId id = key.toId();
         (uint256 price,,) = manager.getSlot0(id);
-        assertEq(price, Constants.SQRT_RATIO_1_1);
-        key.tickSpacing = 50;
+        assertEq(price, 0);
         manager.initialize(key, Constants.SQRT_RATIO_1_2, Constants.ZERO_BYTES);
         id = key.toId();
         (price,,) = manager.getSlot0(id);
