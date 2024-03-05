@@ -46,7 +46,6 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
     ) public payable returns (BalanceDelta delta) {
         delta = abi.decode(
             manager.lock(
-                address(this),
                 abi.encode(CallbackData(msg.sender, key, params, hookData, settleUsingTransfer, withdrawTokens))
             ),
             (BalanceDelta)
@@ -58,7 +57,7 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
         }
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));

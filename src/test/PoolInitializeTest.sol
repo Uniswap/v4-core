@@ -28,12 +28,10 @@ contract PoolInitializeTest is Test, PoolTestBase {
         external
         returns (int24 tick)
     {
-        tick = abi.decode(
-            manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, sqrtPriceX96, hookData))), (int24)
-        );
+        tick = abi.decode(manager.lock(abi.encode(CallbackData(msg.sender, key, sqrtPriceX96, hookData))), (int24));
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
