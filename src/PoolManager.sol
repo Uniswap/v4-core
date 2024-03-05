@@ -186,9 +186,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeModifyLiquidity(key, params, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeModifyLiquidity(key, params, hookData);
 
         delta = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
@@ -222,8 +220,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
         // The hook's deltas are from the point of view of the hook. Positive: the hook took money, negative: the hook sent money to the pool
         // TODO consider adding hookDeltaInUnspecified to beforeSwap hook too
-        (bool shouldExecute, int128 hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
-        if (!shouldExecute) return BalanceDeltaLibrary.MAXIMUM_DELTA;
+        int128 hookDeltaInSpecified = key.hooks.beforeSwap(key, params, hookData);
 
         bool exactInput = params.amountSpecified > 0;
         params.amountSpecified -= hookDeltaInSpecified;
@@ -299,9 +296,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeDonate(key, amount0, amount1, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
         delta = pools[id].donate(amount0, amount1);
 

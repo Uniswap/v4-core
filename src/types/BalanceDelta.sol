@@ -27,9 +27,6 @@ function eq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
 }
 
 library BalanceDeltaLibrary {
-    // Sentinel return value used to signify that a NoOp occurred.
-    BalanceDelta public constant MAXIMUM_DELTA = BalanceDelta.wrap(int256(type(uint256).max));
-
     function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {
         /// @solidity memory-safe-assembly
         assembly {
