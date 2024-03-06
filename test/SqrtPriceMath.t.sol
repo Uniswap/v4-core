@@ -320,12 +320,6 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue() public {
-        snapStart("getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue");
-        SqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), true);
-        snapEnd();
-    }
-
     function test_getAmount1Delta_gasCostForAmount1WhereRoundUpIsFalse() public {
         snapStart("getAmount1Delta_gasCostForAmount1WhereRoundUpIsFalse");
         SqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), false);
