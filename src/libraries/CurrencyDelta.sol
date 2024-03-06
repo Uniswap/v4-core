@@ -6,7 +6,7 @@ import {Currency} from "../types/Currency.sol";
 library CurrencyDelta {
     uint256 constant CURRENCY_DELTA_SLOT = uint256(keccak256("CurrencyDelta")) - 1;
 
-    function _hashkey(address locker, Currency currency) internal pure returns (bytes32)
+    function _computeKey(address locker, Currency currency) internal pure returns (bytes32)
     {
         uint256 slot = CURRENCY_DELTA_SLOT;
         bytes32 hashSlot;
@@ -23,7 +23,7 @@ library CurrencyDelta {
     }
 
     function setCurrencyDelta(address locker, Currency currency, int256 delta) internal {
-        bytes32 hashSlot= _hashkey(locker, currency);
+        bytes32 hashSlot= _computeKey(locker, currency);
 
         assembly {
             tstore(hashSlot, delta)
@@ -31,7 +31,7 @@ library CurrencyDelta {
     }
 
     function getCurrencyDelta(address locker, Currency currency) internal view returns (int256 delta) {        
-        bytes32 hashSlot= _hashkey(locker, currency);
+        bytes32 hashSlot= _computeKey(locker, currency);
         assembly {
             delta := tload(hashSlot)
         }
