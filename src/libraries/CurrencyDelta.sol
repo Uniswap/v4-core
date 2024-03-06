@@ -8,6 +8,7 @@ library CurrencyDelta {
 
     function _computeSlot(address locker, Currency currency) internal pure returns (bytes32 hashSlot) {
         uint256 slot = CURRENCY_DELTA_SLOT;
+
         assembly {
             mstore(0, locker)
             mstore(32, slot)
@@ -29,6 +30,7 @@ library CurrencyDelta {
 
     function getCurrencyDelta(address locker, Currency currency) internal view returns (int256 delta) {
         bytes32 hashSlot = _computeSlot(locker, currency);
+
         assembly {
             delta := tload(hashSlot)
         }
