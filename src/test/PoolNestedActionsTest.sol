@@ -70,7 +70,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
 
     IPoolManager.SwapParams internal SWAP_PARAMS =
-        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: Constants.SQRT_RATIO_1_2});
+        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: Constants.SQRT_RATIO_1_2});
 
     uint256 internal DONATE_AMOUNT0 = 12345e6;
     uint256 internal DONATE_AMOUNT1 = 98765e4;
@@ -124,7 +124,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
         assertEq(deltaLockerBefore0, deltaLockerAfter0, "Locker delta 0");
         assertEq(deltaLockerBefore1, deltaLockerAfter1, "Locker delta 1");
-        assertEq(deltaThisBefore0 - SWAP_PARAMS.amountSpecified, deltaThisAfter0, "Executor delta 0");
+        assertEq(deltaThisBefore0 + SWAP_PARAMS.amountSpecified, deltaThisAfter0, "Executor delta 0");
         assertEq(deltaThisBefore1 + 98, deltaThisAfter1, "Executor delta 1");
         assertEq(delta.amount0(), deltaThisAfter0, "Swap delta 0");
         assertEq(delta.amount1(), deltaThisAfter1, "Swap delta 1");

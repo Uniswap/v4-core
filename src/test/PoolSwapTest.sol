@@ -71,24 +71,24 @@ contract PoolSwapTest is Test, PoolTestBase {
         assertEq(reserveBefore1, reserveAfter1);
 
         if (data.params.zeroForOne) {
-            if (data.params.amountSpecified > 0) {
+            if (data.params.amountSpecified < 0) {
                 // exact input, 0 for 1
-                assertEq(-deltaAfter0, data.params.amountSpecified);
+                assertEq(deltaAfter0, data.params.amountSpecified);
                 assertGt(deltaAfter1, 0);
             } else {
                 // exact output, 0 for 1
                 assertLt(deltaAfter0, 0);
-                assertEq(-deltaAfter1, data.params.amountSpecified);
+                assertEq(deltaAfter1, data.params.amountSpecified);
             }
         } else {
-            if (data.params.amountSpecified > 0) {
+            if (data.params.amountSpecified < 0) {
                 // exact input, 1 for 0
-                assertEq(-deltaAfter1, data.params.amountSpecified);
+                assertEq(deltaAfter1, data.params.amountSpecified);
                 assertGt(deltaAfter0, 0);
             } else {
                 // exact output, 1 for 0
                 assertLt(deltaAfter1, 0);
-                assertEq(-deltaAfter0, data.params.amountSpecified);
+                assertEq(deltaAfter0, data.params.amountSpecified);
             }
         }
 
