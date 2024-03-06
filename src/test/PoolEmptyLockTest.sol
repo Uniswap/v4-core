@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
 
-contract PoolLockTest is ILockCallback {
+contract PoolEmptyLockTest is ILockCallback {
     event LockAcquired();
 
     IPoolManager manager;
@@ -14,11 +14,11 @@ contract PoolLockTest is ILockCallback {
     }
 
     function lock() external {
-        manager.lock(address(this), "");
+        manager.lock("");
     }
 
     /// @notice Called by the pool manager on `msg.sender` when a lock is acquired
-    function lockAcquired(address, bytes calldata) external override returns (bytes memory) {
+    function lockAcquired(bytes calldata) external override returns (bytes memory) {
         emit LockAcquired();
         return "";
     }

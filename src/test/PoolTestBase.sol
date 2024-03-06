@@ -39,7 +39,7 @@ abstract contract PoolTestBase is ILockCallback {
         }
     }
 
-    function _fetchBalances(Currency currency, address user)
+    function _fetchBalances(Currency currency, address user, address deltaHolder)
         internal
         view
         returns (uint256 userBalance, uint256 poolBalance, uint256 reserves, int256 delta)
@@ -47,6 +47,6 @@ abstract contract PoolTestBase is ILockCallback {
         userBalance = currency.balanceOf(user);
         poolBalance = currency.balanceOf(address(manager));
         reserves = manager.reservesOf(currency);
-        delta = manager.currencyDelta(address(this), currency);
+        delta = manager.currencyDelta(deltaHolder, currency);
     }
 }

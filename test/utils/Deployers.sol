@@ -18,6 +18,7 @@ import {PoolModifyLiquidityTest} from "../../src/test/PoolModifyLiquidityTest.so
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolInitializeTest} from "../../src/test/PoolInitializeTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
+import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
 import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
 import {
@@ -34,7 +35,7 @@ contract Deployers {
     using CurrencyLibrary for Currency;
 
     // Helpful test constants
-    bytes constant ZERO_BYTES = new bytes(0);
+    bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
     uint160 constant SQRT_RATIO_1_1 = Constants.SQRT_RATIO_1_1;
     uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
     uint160 constant SQRT_RATIO_2_1 = Constants.SQRT_RATIO_2_1;
@@ -59,6 +60,7 @@ contract Deployers {
     PoolTakeTest takeRouter;
     PoolClaimsTest claimsRouter;
     PoolInitializeTest initializeRouter;
+    PoolNestedActionsTest nestedActionRouter;
     ProtocolFeeControllerTest feeController;
     RevertingProtocolFeeControllerTest revertingFeeController;
     OutOfBoundsProtocolFeeControllerTest outOfBoundsFeeController;
@@ -82,6 +84,7 @@ contract Deployers {
         takeRouter = new PoolTakeTest(manager);
         claimsRouter = new PoolClaimsTest(manager);
         initializeRouter = new PoolInitializeTest(manager);
+        nestedActionRouter = new PoolNestedActionsTest(manager);
         feeController = new ProtocolFeeControllerTest();
         revertingFeeController = new RevertingProtocolFeeControllerTest();
         outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
@@ -91,16 +94,19 @@ contract Deployers {
         manager.setProtocolFeeController(feeController);
     }
 
+    // You must have first initialised the routers with deployFreshManagerAndRouters
+    // If you only need the currencies (and not approvals) call deployAndMint2Currencies
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
         MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
 
-        address[6] memory toApprove = [
+        address[7] memory toApprove = [
             address(swapRouter),
             address(modifyLiquidityRouter),
             address(donateRouter),
             address(takeRouter),
             address(claimsRouter),
-            address(initializeRouter)
+            address(initializeRouter),
+            address(nestedActionRouter.executor())
         ];
 
         for (uint256 i = 0; i < toApprove.length; i++) {
@@ -110,6 +116,11 @@ contract Deployers {
 
         (currency0, currency1) = SortTokens.sort(tokens[0], tokens[1]);
         return (currency0, currency1);
+    }
+
+    function deployAndMint2Currencies() internal returns (Currency, Currency) {
+        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
+        return SortTokens.sort(tokens[0], tokens[1]);
     }
 
     function deployTokens(uint8 count, uint256 totalSupply) internal returns (MockERC20[] memory tokens) {
@@ -164,6 +175,7 @@ contract Deployers {
         // sets the global currencyies and key
         deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        nestedActionRouter.executor().setKey(key);
         (nativeKey,) = initPoolAndAddLiquidityETH(
             CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
         );
