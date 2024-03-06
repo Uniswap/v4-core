@@ -29,8 +29,7 @@ contract PoolDonateTest is PoolTestBase {
         returns (BalanceDelta delta)
     {
         delta = abi.decode(
-            manager.lock(address(this), abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))),
-            (BalanceDelta)
+            manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
@@ -39,7 +38,7 @@ contract PoolDonateTest is PoolTestBase {
         }
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
@@ -59,16 +58,8 @@ contract PoolDonateTest is PoolTestBase {
 
         assertEq(reserveBefore0, reserveAfter0);
         assertEq(reserveBefore1, reserveAfter1);
-        if (!data.key.hooks.hasPermission(Hooks.NO_OP_FLAG)) {
-            assertEq(deltaAfter0, -int256(data.amount0));
-            assertEq(deltaAfter1, -int256(data.amount1));
-        }
-
-        if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
-            // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
-            assertTrue(data.key.hooks.hasPermission(Hooks.NO_OP_FLAG), "Invalid NoOp returned");
-            return abi.encode(delta);
-        }
+        assertEq(deltaAfter0, -int256(data.amount0));
+        assertEq(deltaAfter1, -int256(data.amount1));
 
         if (deltaAfter0 < 0) _settle(data.key.currency0, data.sender, int128(deltaAfter0), true);
         if (deltaAfter1 < 0) _settle(data.key.currency1, data.sender, int128(deltaAfter1), true);

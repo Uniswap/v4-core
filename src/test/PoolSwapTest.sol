@@ -42,15 +42,14 @@ contract PoolSwapTest is Test, PoolTestBase {
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {
         delta = abi.decode(
-            manager.lock(address(this), abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))),
-            (BalanceDelta)
+            manager.lock(abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))), (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
     }
 
-    function lockAcquired(address, bytes calldata rawData) external returns (bytes memory) {
+    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
@@ -71,34 +70,26 @@ contract PoolSwapTest is Test, PoolTestBase {
         assertEq(reserveBefore0, reserveAfter0);
         assertEq(reserveBefore1, reserveAfter1);
 
-        if (!data.key.hooks.hasPermission(Hooks.NO_OP_FLAG)) {
-            if (data.params.zeroForOne) {
-                if (data.params.amountSpecified < 0) {
-                    // exact input, 0 for 1
-                    assertEq(deltaAfter0, data.params.amountSpecified);
-                    assertGt(deltaAfter1, 0);
-                } else {
-                    // exact output, 0 for 1
-                    assertLt(deltaAfter0, 0);
-                    assertEq(deltaAfter1, data.params.amountSpecified);
-                }
+        if (data.params.zeroForOne) {
+            if (data.params.amountSpecified < 0) {
+                // exact input, 0 for 1
+                assertEq(deltaAfter0, data.params.amountSpecified);
+                assertGt(deltaAfter1, 0);
             } else {
-                if (data.params.amountSpecified < 0) {
-                    // exact input, 1 for 0
-                    assertEq(deltaAfter1, data.params.amountSpecified);
-                    assertGt(deltaAfter0, 0);
-                } else {
-                    // exact output, 1 for 0
-                    assertLt(deltaAfter1, 0);
-                    assertEq(deltaAfter0, data.params.amountSpecified);
-                }
+                // exact output, 0 for 1
+                assertLt(deltaAfter0, 0);
+                assertEq(deltaAfter1, data.params.amountSpecified);
             }
-        }
-
-        if (delta == BalanceDeltaLibrary.MAXIMUM_DELTA) {
-            // Check that this hook is allowed to NoOp, then we can return as we dont need to settle
-            assertTrue(data.key.hooks.hasPermission(Hooks.NO_OP_FLAG), "Invalid NoOp returned");
-            return abi.encode(delta);
+        } else {
+            if (data.params.amountSpecified < 0) {
+                // exact input, 1 for 0
+                assertEq(deltaAfter1, data.params.amountSpecified);
+                assertGt(deltaAfter0, 0);
+            } else {
+                // exact output, 1 for 0
+                assertLt(deltaAfter1, 0);
+                assertEq(deltaAfter0, data.params.amountSpecified);
+            }
         }
 
         if (deltaAfter0 < 0) {

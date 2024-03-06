@@ -209,25 +209,23 @@ library Pool {
             if (self.slot0.tick < params.tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
-                result = result
-                    - toBalanceDelta(
-                        SqrtPriceMath.getAmount0Delta(
-                            TickMath.getSqrtRatioAtTick(params.tickLower),
-                            TickMath.getSqrtRatioAtTick(params.tickUpper),
-                            params.liquidityDelta
-                        ).toInt128(),
-                        0
-                    );
+                result = toBalanceDelta(
+                    SqrtPriceMath.getAmount0Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower),
+                        TickMath.getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta
+                    ).toInt128(),
+                    0
+                );
             } else if (self.slot0.tick < params.tickUpper) {
-                result = result
-                    - toBalanceDelta(
-                        SqrtPriceMath.getAmount0Delta(
-                            self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
-                        ).toInt128(),
-                        SqrtPriceMath.getAmount1Delta(
-                            TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
-                        ).toInt128()
-                    );
+                result = toBalanceDelta(
+                    SqrtPriceMath.getAmount0Delta(
+                        self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
+                    ).toInt128(),
+                    SqrtPriceMath.getAmount1Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
+                    ).toInt128()
+                );
 
                 self.liquidity = params.liquidityDelta < 0
                     ? self.liquidity - uint128(-params.liquidityDelta)
@@ -235,19 +233,18 @@ library Pool {
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
-                result = result
-                    - toBalanceDelta(
-                        0,
-                        SqrtPriceMath.getAmount1Delta(
-                            TickMath.getSqrtRatioAtTick(params.tickLower),
-                            TickMath.getSqrtRatioAtTick(params.tickUpper),
-                            params.liquidityDelta
-                        ).toInt128()
-                    );
+                result = toBalanceDelta(
+                    0,
+                    SqrtPriceMath.getAmount1Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower),
+                        TickMath.getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta
+                    ).toInt128()
+                );
             }
         }
 
-        // Fees earned from LPing are removed from the pool balance.
+        // Fees earned from LPing are added to the user's currency delta.
         result = result + toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 

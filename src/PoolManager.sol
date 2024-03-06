@@ -129,14 +129,13 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function lock(address lockTarget, bytes calldata data) external payable override returns (bytes memory result) {
-        // Get the lock caller because thats an EOA and is not user-controlable
+    function lock(bytes calldata data) external payable override returns (bytes memory result) {
         if (Locker.isLocked()) revert AlreadyLocked();
 
-        Locker.setLocker(lockTarget);
+        Locker.setLocker(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(lockTarget).lockAcquired(msg.sender, data);
+        result = ILockCallback(msg.sender).lockAcquired(data);
 
         if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
         Locker.clearLocker();
@@ -178,9 +177,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeModifyLiquidity(key, params, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeModifyLiquidity(key, params, hookData);
 
         delta = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
@@ -210,9 +207,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeSwap(key, params, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeSwap(key, params, hookData);
 
         uint256 feeForProtocol;
         uint24 swapFee;
@@ -253,9 +248,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeDonate(key, amount0, amount1, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
         delta = pools[id].donate(amount0, amount1);
 
