@@ -249,7 +249,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(amount0, 0);
     }
 
-    function test_getAmount0Delta_returns0_1Amount1ForPriceOf1To1_21() public {
+    function test_getAmount0Delta_1Amount1ForPriceOf1To1_21() public {
         uint256 amount0 = SqrtPriceMath.getAmount0Delta(
             Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_121_100, uint128(1 ether), true
         );
@@ -300,7 +300,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(amount1, 0);
     }
 
-    function test_getAmount1Delta_returns0_1Amount1ForPriceOf1To1_21() public {
+    function test_getAmount1Delta_1Amount1ForPriceOf1To1_21() public {
         uint256 amount1 = SqrtPriceMath.getAmount1Delta(
             Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_121_100, uint128(1 ether), true
         );
@@ -312,6 +312,12 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         );
 
         assertEq(amount1RoundedDown, amount1 - 1);
+    }
+
+    function test_getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue() public {
+        snapStart("getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue");
+        SqrtPriceMath.getAmount1Delta(Constants.SQRT_RATIO_121_100, Constants.SQRT_RATIO_1_1, uint128(1 ether), true);
+        snapEnd();
     }
 
     function test_getAmount1Delta_gasCostForAmount1WhereRoundUpIsTrue() public {
