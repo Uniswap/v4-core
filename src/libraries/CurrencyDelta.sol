@@ -17,7 +17,6 @@ library CurrencyDelta {
             mstore(32, currency)
             hashSlot := keccak256(0, 64)
         }
-        return hashSlot;
     }
 
     function setCurrencyDelta(address locker, Currency currency, int256 delta) internal {
