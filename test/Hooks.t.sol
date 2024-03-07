@@ -44,7 +44,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_initialize_succeedsWithHook() public {
-        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, new bytes(123));
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, new bytes(123));
 
         (uint160 sqrtPriceX96,,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
@@ -55,13 +55,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function test_beforeInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function test_afterInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function test_beforeAfterAddLiquidity_beforeAfterRemoveLiquidity_succeedsWithHook() public {
