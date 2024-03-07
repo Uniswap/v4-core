@@ -32,19 +32,19 @@ contract HooksTest {
     }
 
     function shouldCallBeforeAddLiquidity(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG);
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG);
     }
 
     function shouldCallAfterAddLiquidity(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG);
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_ADD_LIQ_FLAG);
     }
 
     function shouldCallBeforeRemoveLiquidity(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG);
+        return IHooks(hookAddress).hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG);
     }
 
     function shouldCallAfterRemoveLiquidity(address hookAddress) external pure returns (bool) {
-        return IHooks(hookAddress).hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG);
+        return IHooks(hookAddress).hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG);
     }
 
     function shouldCallBeforeDonate(address hookAddress) external pure returns (bool) {

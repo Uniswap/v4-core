@@ -22,7 +22,11 @@ contract EmptyTestHooks is IHooks {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                beforeSwapReturnDelta: true,
+                afterSwapReturnDelta: true,
+                afterAddLiqReturnDelta: true,
+                afterRemoveLiqReturnDelta: true
             })
         );
     }

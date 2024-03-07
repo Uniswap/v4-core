@@ -72,6 +72,10 @@ contract Deployers {
     PoolKey uninitializedKey;
     PoolKey uninitializedNativeKey;
 
+    // Update this value when you add a new hook flag.
+    uint256 hookPermissionCount = 14;
+    uint256 clearAllHookPermisssionsMask = uint256(~uint160(0) >> (hookPermissionCount));
+
     function deployFreshManager() internal {
         manager = new PoolManager(500000);
     }

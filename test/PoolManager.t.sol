@@ -121,7 +121,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_withFeeTakingHook() public {
-        address hookAddr = address(uint160(Hooks.AFTER_ADD_LIQUIDITY_FLAG | Hooks.MODIFY_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.AFTER_ADD_LIQ_FLAG | Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
         FeeTakingHook impl = new FeeTakingHook(manager);
         vm.etch(hookAddr, address(impl).code);
 
@@ -145,7 +145,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_removeLiquidity_withFeeTakingHook() public {
-        address hookAddr = address(uint160(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG | Hooks.MODIFY_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.AFTER_REMOVE_LIQ_FLAG | Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
         FeeTakingHook impl = new FeeTakingHook(manager);
         vm.etch(hookAddr, address(impl).code);
 
@@ -201,8 +201,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_addLiquidity_succeedsWithHooksIfInitialized(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
-        address payable mockAddr =
-            payable(address(uint160(Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
+        address payable mockAddr = payable(address(uint160(Hooks.BEFORE_ADD_LIQ_FLAG | Hooks.AFTER_ADD_LIQ_FLAG)));
         address payable hookAddr = payable(Constants.MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
@@ -229,8 +228,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_removeLiquidity_succeedsWithHooksIfInitialized(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
-        address payable mockAddr =
-            payable(address(uint160(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)));
+        address payable mockAddr = payable(address(uint160(Hooks.BEFORE_REMOVE_LIQ_FLAG | Hooks.AFTER_REMOVE_LIQ_FLAG)));
         address payable hookAddr = payable(Constants.MOCK_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
@@ -256,7 +254,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_failsWithIncorrectSelectors() public {
-        address hookAddr = address(uint160(Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_ADD_LIQ_FLAG | Hooks.AFTER_ADD_LIQ_FLAG));
 
         MockHooks impl = new MockHooks();
         vm.etch(hookAddr, address(impl).code);
@@ -278,7 +276,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_removeLiquidity_failsWithIncorrectSelectors() public {
-        address hookAddr = address(uint160(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_REMOVE_LIQ_FLAG | Hooks.AFTER_REMOVE_LIQ_FLAG));
 
         MockHooks impl = new MockHooks();
         vm.etch(hookAddr, address(impl).code);
@@ -301,7 +299,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_succeedsWithCorrectSelectors() public {
-        address hookAddr = address(uint160(Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_ADD_LIQ_FLAG | Hooks.AFTER_ADD_LIQ_FLAG));
 
         MockHooks impl = new MockHooks();
         vm.etch(hookAddr, address(impl).code);
@@ -325,7 +323,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_removeLiquidity_succeedsWithCorrectSelectors() public {
-        address hookAddr = address(uint160(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_REMOVE_LIQ_FLAG | Hooks.AFTER_REMOVE_LIQ_FLAG));
 
         MockHooks impl = new MockHooks();
         vm.etch(hookAddr, address(impl).code);
@@ -774,7 +772,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_withFeeTakingHook() public {
-        address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG | Hooks.MODIFY_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
         FeeTakingHook impl = new FeeTakingHook(manager);
         vm.etch(hookAddr, address(impl).code);
 
