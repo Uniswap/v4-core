@@ -223,8 +223,10 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         int128 hookDeltaInSpecified = key.hooks.beforeSwap(key, params, hookData);
 
         bool exactInput = params.amountSpecified < 0;
+        bool zeroIsSpecified = exactInput == params.zeroForOne;
         params.amountSpecified += hookDeltaInSpecified;
-        require(exactInput ? params.amountSpecified < 0 : params.amountSpecified > 0);
+
+        if (exactInput ? params.amountSpecified > 0 : params.amountSpecified < 0) revert SwapTypeChanged();
 
         // ExactIn (amountSpecified is positive)
         // In the case where the hook contributed x, x is given to the user now. After the swap amountSpecified + x input are taken from the user, meaning the user pays amountSpecified overall.
@@ -232,9 +234,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         // ExactOut (amountSpecified is negative)
         // In the case where the hook contributed x, x output is given to the user now. The swap of amountSpecified + x is swapping for x fewer output tokens - so the user gets amountSpecified overall.
         // In the case where the hook took x, x output is taken from the user now. The swap of amountSpecified - x is swapping for x extra output tokens - so the user gets amountSpecified overall.
-        _accountDeltaFor(
-            (exactInput == params.zeroForOne) ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks)
-        );
+        _accountDeltaFor(zeroIsSpecified ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks));
 
         {
             uint256 feeForProtocol;
@@ -270,15 +270,11 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         }
 
         (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
-        _accountDeltaFor(
-            (exactInput == params.zeroForOne) ? key.currency1 : key.currency0,
-            hookDeltaInUnspecified,
-            address(key.hooks)
-        );
+        _accountDeltaFor(zeroIsSpecified ? key.currency1 : key.currency0, hookDeltaInUnspecified, address(key.hooks));
 
         delta = delta
             + (
-                (exactInput == params.zeroForOne)
+                zeroIsSpecified
                     ? toBalanceDelta(hookDeltaInSpecified, -hookDeltaInUnspecified)
                     : toBalanceDelta(-hookDeltaInUnspecified, hookDeltaInSpecified)
             );

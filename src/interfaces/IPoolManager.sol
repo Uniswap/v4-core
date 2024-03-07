@@ -38,6 +38,9 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
     error CurrenciesOutOfOrderOrEqual();
 
+    /// @notice The hook's delta changed the swap from exactIn to exactOut or vice versa
+    error SwapTypeChanged();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
