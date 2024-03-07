@@ -222,9 +222,9 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         // TODO consider adding hookDeltaInUnspecified to beforeSwap hook too
         int128 hookDeltaInSpecified = key.hooks.beforeSwap(key, params, hookData);
 
-        bool exactInput = params.amountSpecified > 0;
-        params.amountSpecified -= hookDeltaInSpecified;
-        require(exactInput ? params.amountSpecified > 0 : params.amountSpecified < 0);
+        bool exactInput = params.amountSpecified < 0;
+        params.amountSpecified += hookDeltaInSpecified;
+        require(exactInput ? params.amountSpecified < 0 : params.amountSpecified > 0);
 
         // ExactIn (amountSpecified is positive)
         // In the case where the hook contributed x, x is given to the user now. After the swap amountSpecified + x input are taken from the user, meaning the user pays amountSpecified overall.
@@ -260,8 +260,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             emit Swap(
                 id,
                 msg.sender,
-                -delta.amount0(),
-                -delta.amount1(),
+                delta.amount0(),
+                delta.amount1(),
                 state.sqrtPriceX96,
                 state.liquidity,
                 state.tick,

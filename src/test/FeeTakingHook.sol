@@ -38,7 +38,7 @@ contract FeeTakingHook is BaseTestHooks {
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, int128) {
         // fee will be in the unspecified token of the swap
-        bool specifiedTokenIs0 = (params.amountSpecified > 0 == params.zeroForOne);
+        bool specifiedTokenIs0 = (params.amountSpecified < 0 == params.zeroForOne);
         (Currency feeCurrency, int128 swapAmount) =
             (specifiedTokenIs0) ? (key.currency1, delta.amount1()) : (key.currency0, delta.amount0());
 

@@ -37,12 +37,4 @@ library SafeCast {
         if (y > uint128(type(int128).max)) revert SafeCastOverflow();
         z = int128(int256(y));
     }
-
-    /// @notice Flip the sign of an int128, revert on overflow
-    /// @param y The int128 to flip the sign of
-    /// @return The flipped integer, still an int128
-    function flipSign(int128 y) internal pure returns (int128) {
-        // this is not unchecked, so it will revert if y==type(int128).min
-        return -y;
-    }
 }
