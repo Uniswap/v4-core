@@ -7,7 +7,6 @@ import {SwapFeeLibrary} from "./SwapFeeLibrary.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Locker} from "./Locker.sol";
-import {IDynamicFeeManager} from "../interfaces/IDynamicFeeManager.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -210,18 +209,11 @@ library Hooks {
         return uint256(uint160(address(self))) & flag != 0;
     }
 
-    function fetchDynamicSwapFee(IHooks self, PoolKey memory key) internal view returns (uint24 dynamicSwapFee) {
-        dynamicSwapFee = IDynamicFeeManager(address(self)).getFee(msg.sender, key);
-    }
-
     /// @notice bubble up revert if present. Else throw FailedHookCall
     function _revert(bytes memory result) private pure {
-        if (result.length > 0) {
-            assembly {
-                revert(add(0x20, result), mload(result))
-            }
-        } else {
-            revert FailedHookCall();
+        if (result.length == 0) revert FailedHookCall();
+        assembly {
+            revert(add(0x20, result), mload(result))
         }
     }
 }

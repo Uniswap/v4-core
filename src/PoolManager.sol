@@ -56,11 +56,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         view
         override
-        returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee)
+        returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee, uint24 swapFee)
     {
         Pool.Slot0 memory slot0 = pools[id].slot0;
 
-        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee);
+        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee, slot0.swapFee);
     }
 
     /// @inheritdoc IPoolManager
@@ -110,12 +110,17 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
+        uint24 swapFee = 0;
+        // Initial swap fee on dynamic fee pools is set to 0, unless updateDynamicSwapFee is called in the afterInitialize hook
+        if (!key.fee.isDynamicFee()) {
+            swapFee = key.fee.getStaticFee();
+            swapFee.validateSwapFee();
+        }
+
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
         PoolId id = key.toId();
         (, uint16 protocolFee) = _fetchProtocolFee(key);
-        uint24 swapFee = key.fee.isDynamicFee() ? key.hooks.fetchDynamicSwapFee(key) : key.fee.getStaticFee();
-        swapFee.validateSwapFee();
 
         tick = pools[id].initialize(sqrtPriceX96, protocolFee, swapFee);
 
@@ -290,16 +295,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         emit ProtocolFeeUpdated(id, newProtocolFee);
     }
 
-    function updateDynamicSwapFee(PoolKey memory key) external {
-        if (key.fee.isDynamicFee()) {
-            uint24 newDynamicSwapFee = key.hooks.fetchDynamicSwapFee(key);
-            newDynamicSwapFee.validateSwapFee();
-            PoolId id = key.toId();
-            pools[id].setSwapFee(newDynamicSwapFee);
-            emit DynamicSwapFeeUpdated(id, newDynamicSwapFee);
-        } else {
-            revert FeeNotDynamic();
-        }
+    function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external {
+        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicSwapFeeUpdate();
+        newDynamicSwapFee.validateSwapFee();
+        PoolId id = key.toId();
+        pools[id].setSwapFee(newDynamicSwapFee);
     }
 
     function extsload(bytes32 slot) external view returns (bytes32 value) {
