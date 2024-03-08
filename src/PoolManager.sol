@@ -5,17 +5,16 @@ import {Hooks} from "./libraries/Hooks.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
 import {Position} from "./libraries/Position.sol";
-import {FeeLibrary} from "./libraries/FeeLibrary.sol";
+import {SwapFeeLibrary} from "./libraries/SwapFeeLibrary.sol";
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {TickMath} from "./libraries/TickMath.sol";
 import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
-import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
-import {Fees} from "./Fees.sol";
+import {ProtocolFees} from "./ProtocolFees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
@@ -24,14 +23,14 @@ import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
+contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
-    using FeeLibrary for uint24;
+    using SwapFeeLibrary for uint24;
     using PoolGetters for Pool.State;
 
     /// @inheritdoc IPoolManager
@@ -50,7 +49,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
     mapping(PoolId id => Pool.State) public pools;
 
-    constructor(uint256 controllerGasLimit) Fees(controllerGasLimit) {}
+    constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
 
     /// @inheritdoc IPoolManager
     function getSlot0(PoolId id)
@@ -105,8 +104,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         override
         returns (int24 tick)
     {
-        if (key.fee.isStaticFeeTooLarge()) revert FeeTooLarge();
-
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
@@ -117,7 +114,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
         PoolId id = key.toId();
         (, uint16 protocolFee) = _fetchProtocolFee(key);
-        uint24 swapFee = key.fee.isDynamicFee() ? _fetchDynamicSwapFee(key) : key.fee.getStaticFee();
+        uint24 swapFee = key.fee.isDynamicFee() ? key.hooks.fetchDynamicSwapFee(key) : key.fee.getStaticFee();
+        swapFee.validateSwapFee();
 
         tick = pools[id].initialize(sqrtPriceX96, protocolFee, swapFee);
 
@@ -294,7 +292,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
     function updateDynamicSwapFee(PoolKey memory key) external {
         if (key.fee.isDynamicFee()) {
-            uint24 newDynamicSwapFee = _fetchDynamicSwapFee(key);
+            uint24 newDynamicSwapFee = key.hooks.fetchDynamicSwapFee(key);
+            newDynamicSwapFee.validateSwapFee();
             PoolId id = key.toId();
             pools[id].setSwapFee(newDynamicSwapFee);
             emit DynamicSwapFeeUpdated(id, newDynamicSwapFee);

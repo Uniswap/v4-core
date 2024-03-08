@@ -3,17 +3,18 @@ pragma solidity ^0.8.24;
 
 import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
-import {FeeLibrary} from "./FeeLibrary.sol";
+import {SwapFeeLibrary} from "./SwapFeeLibrary.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Locker} from "./Locker.sol";
+import {IDynamicFeeManager} from "../interfaces/IDynamicFeeManager.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
 /// has leading bits '1001' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
 library Hooks {
-    using FeeLibrary for uint24;
+    using SwapFeeLibrary for uint24;
     using Hooks for IHooks;
 
     uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
@@ -207,6 +208,10 @@ library Hooks {
 
     function hasPermission(IHooks self, uint256 flag) internal pure returns (bool) {
         return uint256(uint160(address(self))) & flag != 0;
+    }
+
+    function fetchDynamicSwapFee(IHooks self, PoolKey memory key) internal view returns (uint24 dynamicSwapFee) {
+        dynamicSwapFee = IDynamicFeeManager(address(self)).getFee(msg.sender, key);
     }
 
     /// @notice bubble up revert if present. Else throw FailedHookCall

@@ -5,9 +5,9 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
-import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
+import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {IFees} from "../src/interfaces/IFees.sol";
+import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolManager} from "../src/PoolManager.sol";
@@ -60,7 +60,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             currency0,
             currency1,
             IHooks(address(dynamicFeesHook)),
-            FeeLibrary.DYNAMIC_FEE_FLAG,
+            SwapFeeLibrary.DYNAMIC_FEE_FLAG,
             SQRT_RATIO_1_1,
             ZERO_BYTES
         );
@@ -71,19 +71,19 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         key = PoolKey({
             currency0: currency2,
             currency1: currency3,
-            fee: FeeLibrary.DYNAMIC_FEE_FLAG,
+            fee: SwapFeeLibrary.DYNAMIC_FEE_FLAG,
             hooks: dynamicFeesHook,
             tickSpacing: 60
         });
         dynamicFeesHook.setFee(1000000);
 
-        vm.expectRevert(IFees.FeeTooLarge.selector);
+        vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testUpdateFailsWithTooLargeFee() public {
         dynamicFeesHook.setFee(1000000);
-        vm.expectRevert(IFees.FeeTooLarge.selector);
+        vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
         manager.updateDynamicSwapFee(key);
     }
 
@@ -153,13 +153,13 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function testUpdateRevertsOnStaticFeePool() public {
         (key,) = initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES);
-        vm.expectRevert(IFees.FeeNotDynamic.selector);
+        vm.expectRevert(IProtocolFees.FeeNotDynamic.selector);
         manager.updateDynamicSwapFee(key);
     }
 
     function testDynamicFeesCacheNoOtherHooks() public {
         (key,) = initPoolAndAddLiquidity(
-            currency0, currency1, dynamicFeesNoHook, FeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1, ZERO_BYTES
+            currency0, currency1, dynamicFeesNoHook, SwapFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1, ZERO_BYTES
         );
 
         dynamicFeesNoHook.setFee(123);
