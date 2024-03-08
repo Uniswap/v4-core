@@ -441,7 +441,6 @@ library Pool {
             self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
         }
 
-        // in an unchecked block so sign flipping is not safe without a helper function
         unchecked {
             if (params.zeroForOne == exactInput) {
                 result = toBalanceDelta(
