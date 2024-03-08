@@ -102,7 +102,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         override
-        isLocked
         returns (int24 tick)
     {
         if (key.fee.isStaticFeeTooLarge()) revert FeeTooLarge();
@@ -176,9 +175,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeModifyLiquidity(key, params, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeModifyLiquidity(key, params, hookData);
 
         delta = pools[id].modifyPosition(
             Pool.ModifyPositionParams({
@@ -208,9 +205,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeSwap(key, params, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeSwap(key, params, hookData);
 
         uint256 feeForProtocol;
         uint24 swapFee;
@@ -251,9 +246,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        if (!key.hooks.beforeDonate(key, amount0, amount1, hookData)) {
-            return BalanceDeltaLibrary.MAXIMUM_DELTA;
-        }
+        key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
         delta = pools[id].donate(amount0, amount1);
 

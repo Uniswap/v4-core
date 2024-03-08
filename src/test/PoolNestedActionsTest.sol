@@ -9,6 +9,7 @@ import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
+import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 
 enum Action {
     NESTED_SELF_LOCK,
@@ -16,7 +17,8 @@ enum Action {
     SWAP_AND_SETTLE,
     DONATE_AND_SETTLE,
     ADD_LIQ_AND_SETTLE,
-    REMOVE_LIQ_AND_SETTLE
+    REMOVE_LIQ_AND_SETTLE,
+    INITIALIZE
 }
 
 contract PoolNestedActionsTest is Test, ILockCallback {
@@ -56,6 +58,8 @@ contract PoolNestedActionsTest is Test, ILockCallback {
 }
 
 contract NestedActionExecutor is Test, PoolTestBase {
+    using PoolIdLibrary for PoolKey;
+
     PoolKey internal key;
     address user;
 
@@ -90,6 +94,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
             else if (action == Action.ADD_LIQ_AND_SETTLE) _addLiquidity(msg.sender);
             else if (action == Action.REMOVE_LIQ_AND_SETTLE) _removeLiquidity(msg.sender);
             else if (action == Action.DONATE_AND_SETTLE) _donate(msg.sender);
+            else if (action == Action.INITIALIZE) _initialize();
         }
     }
 
@@ -201,6 +206,18 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
         _settle(key.currency0, user, int128(deltaThisAfter0), true);
         _settle(key.currency1, user, int128(deltaThisAfter1), true);
+    }
+
+    function _initialize() internal {
+        bool locked = manager.isLockSet();
+        assertEq(locked, true);
+        key.tickSpacing = 50;
+        PoolId id = key.toId();
+        (uint256 price,,) = manager.getSlot0(id);
+        assertEq(price, 0);
+        manager.initialize(key, Constants.SQRT_RATIO_1_2, Constants.ZERO_BYTES);
+        (price,,) = manager.getSlot0(id);
+        assertEq(price, Constants.SQRT_RATIO_1_2);
     }
 
     // This will never actually be used - its just to allow us to use the PoolTestBase helper contact

@@ -29,7 +29,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
                     ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
                         & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
                         & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.AFTER_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG
-                        & ~Hooks.AFTER_DONATE_FLAG & ~Hooks.NO_OP_FLAG
+                        & ~Hooks.AFTER_DONATE_FLAG
                 )
         )
     );
@@ -41,7 +41,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
                     ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
                         & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
                         & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG & ~Hooks.AFTER_SWAP_FLAG
-                        & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG & ~Hooks.NO_OP_FLAG
+                        & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG
                 )
         )
     );
@@ -78,7 +78,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHook.setFee(1000000);
 
         vm.expectRevert(IFees.FeeTooLarge.selector);
-        initializeRouter.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function testUpdateFailsWithTooLargeFee() public {

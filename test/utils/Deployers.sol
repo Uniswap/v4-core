@@ -16,7 +16,6 @@ import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
 import {PoolModifyLiquidityTest} from "../../src/test/PoolModifyLiquidityTest.sol";
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
-import {PoolInitializeTest} from "../../src/test/PoolInitializeTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
@@ -59,7 +58,6 @@ contract Deployers {
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
     PoolClaimsTest claimsRouter;
-    PoolInitializeTest initializeRouter;
     PoolNestedActionsTest nestedActionRouter;
     ProtocolFeeControllerTest feeController;
     RevertingProtocolFeeControllerTest revertingFeeController;
@@ -83,7 +81,6 @@ contract Deployers {
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
         claimsRouter = new PoolClaimsTest(manager);
-        initializeRouter = new PoolInitializeTest(manager);
         nestedActionRouter = new PoolNestedActionsTest(manager);
         feeController = new ProtocolFeeControllerTest();
         revertingFeeController = new RevertingProtocolFeeControllerTest();
@@ -99,13 +96,12 @@ contract Deployers {
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
         MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
 
-        address[7] memory toApprove = [
+        address[6] memory toApprove = [
             address(swapRouter),
             address(modifyLiquidityRouter),
             address(donateRouter),
             address(takeRouter),
             address(claimsRouter),
-            address(initializeRouter),
             address(nestedActionRouter.executor())
         ];
 
@@ -141,7 +137,7 @@ contract Deployers {
     ) internal returns (PoolKey memory _key, PoolId id) {
         _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = _key.toId();
-        initializeRouter.initialize(_key, sqrtPriceX96, initData);
+        manager.initialize(_key, sqrtPriceX96, initData);
     }
 
     function initPoolAndAddLiquidity(

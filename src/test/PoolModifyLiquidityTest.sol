@@ -66,10 +66,10 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         if (data.params.liquidityDelta > 0) {
-            assert(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
+            assert(delta0 > 0 || delta1 > 0);
             assert(!(delta0 < 0 || delta1 < 0));
-        } else {
-            assert(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
+        } else if (data.params.liquidityDelta < 0) {
+            assert(delta0 < 0 || delta1 < 0);
             assert(!(delta0 > 0 || delta1 > 0));
         }
 

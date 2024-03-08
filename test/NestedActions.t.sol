@@ -35,4 +35,9 @@ contract NestedActions is Test, Deployers, GasSnapshot {
         actions = [Action.DONATE_AND_SETTLE];
         nestedActionRouter.lock(abi.encode(actions));
     }
+
+    function test_nestedInitialize() public {
+        actions = [Action.INITIALIZE];
+        nestedActionRouter.lock(abi.encode(actions));
+    }
 }
