@@ -92,7 +92,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         return Lock.isLocked();
     }
 
-    /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
+    /// @notice This will revert if the contract is not locked
     modifier isLocked() {
         if (!Lock.isLocked()) revert ManagerNotLocked();
         _;
