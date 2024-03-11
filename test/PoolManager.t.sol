@@ -1064,12 +1064,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     Action[] actions;
 
-    function test_lock_cannotBeCalledTwiceByLocker() public {
+    function test_lock_cannotBeCalledTwiceByCaller() public {
         actions = [Action.NESTED_SELF_LOCK];
         nestedActionRouter.lock(abi.encode(actions));
     }
 
-    function test_lock_cannotBeCalledTwiceByDifferentLockers() public {
+    function test_lock_cannotBeCalledTwiceByDifferentCallers() public {
         actions = [Action.NESTED_EXECUTOR_LOCK];
         nestedActionRouter.lock(abi.encode(actions));
     }
