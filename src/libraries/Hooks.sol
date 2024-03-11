@@ -107,7 +107,7 @@ library Hooks {
     function beforeInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         internal
     {
-        if (self.hasPermission(BEFORE_INITIALIZE_FLAG)) {
+        if (self.hasPermission(BEFORE_INITIALIZE_FLAG) && (msg.sender != address(self))) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.beforeInitialize.selector, msg.sender, key, sqrtPriceX96, hookData)
             );
@@ -118,7 +118,7 @@ library Hooks {
     function afterInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, int24 tick, bytes calldata hookData)
         internal
     {
-        if (self.hasPermission(AFTER_INITIALIZE_FLAG)) {
+        if (self.hasPermission(AFTER_INITIALIZE_FLAG) && (msg.sender != address(self))) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterInitialize.selector, msg.sender, key, sqrtPriceX96, tick, hookData)
             );
@@ -132,9 +132,13 @@ library Hooks {
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
     ) internal {
-        if (params.liquidityDelta > 0 && key.hooks.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
+        if (params.liquidityDelta > 0 && self.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG) && (msg.sender != address(self)))
+        {
             self.callHook(abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData));
-        } else if (params.liquidityDelta <= 0 && key.hooks.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
+        } else if (
+            params.liquidityDelta <= 0 && self.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)
+                && (msg.sender != address(self))
+        ) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
             );
@@ -149,11 +153,15 @@ library Hooks {
         BalanceDelta delta,
         bytes calldata hookData
     ) internal {
-        if (params.liquidityDelta > 0 && key.hooks.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
+        if (params.liquidityDelta > 0 && self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG) && (msg.sender != address(self)))
+        {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterAddLiquidity.selector, msg.sender, key, params, delta, hookData)
             );
-        } else if (params.liquidityDelta <= 0 && key.hooks.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
+        } else if (
+            params.liquidityDelta <= 0 && self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)
+                && (msg.sender != address(self))
+        ) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterRemoveLiquidity.selector, msg.sender, key, params, delta, hookData)
             );
@@ -164,7 +172,7 @@ library Hooks {
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
     {
-        if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
+        if (self.hasPermission(BEFORE_SWAP_FLAG) && (msg.sender != address(self))) {
             self.callHook(abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
         }
     }
@@ -177,7 +185,7 @@ library Hooks {
         BalanceDelta delta,
         bytes calldata hookData
     ) internal {
-        if (key.hooks.hasPermission(AFTER_SWAP_FLAG)) {
+        if (self.hasPermission(AFTER_SWAP_FLAG) && (msg.sender != address(self))) {
             self.callHook(abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData));
         }
     }
@@ -186,7 +194,7 @@ library Hooks {
     function beforeDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         internal
     {
-        if (key.hooks.hasPermission(BEFORE_DONATE_FLAG)) {
+        if (self.hasPermission(BEFORE_DONATE_FLAG) && (msg.sender != address(self))) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
             );
@@ -197,7 +205,7 @@ library Hooks {
     function afterDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         internal
     {
-        if (key.hooks.hasPermission(AFTER_DONATE_FLAG)) {
+        if (self.hasPermission(AFTER_DONATE_FLAG) && (msg.sender != address(self))) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, amount0, amount1, hookData)
             );
