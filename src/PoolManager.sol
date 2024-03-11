@@ -34,7 +34,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     using CurrencyLibrary for Currency;
     using FeeLibrary for uint24;
     using PoolGetters for Pool.State;
-    using CurrencyDelta for address;
 
     /// @inheritdoc IPoolManager
     int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
