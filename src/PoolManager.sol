@@ -19,7 +19,7 @@ import {Fees} from "./Fees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
-import {Locker} from "./libraries/Locker.sol";
+import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
@@ -85,18 +85,19 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         return pools[id].positions.get(_owner, tickLower, tickUpper);
     }
 
+    /// @inheritdoc IPoolManager
     function currencyDelta(address locker, Currency currency) external view returns (int256) {
         return locker.getCurrencyDelta(currency);
     }
 
     /// @inheritdoc IPoolManager
-    function getLocker() external view override returns (address locker) {
-        return Locker.getLocker();
+    function isLockSet() external view returns (bool) {
+        return Lock.isLocked();
     }
 
-    /// @notice This will revert if a function is called by any address other than the current locker OR the most recently called, pre-permissioned hook.
+    /// @notice This will revert if the contract is not locked
     modifier isLocked() {
-        if (!Locker.isLocked()) revert ManagerNotLocked();
+        if (!Lock.isLocked()) revert ManagerNotLocked();
         _;
     }
 
@@ -104,7 +105,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         override
-        isLocked
         returns (int24 tick)
     {
         if (key.fee.isStaticFeeTooLarge()) revert FeeTooLarge();
@@ -131,15 +131,15 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
 
     /// @inheritdoc IPoolManager
     function lock(bytes calldata data) external payable override returns (bytes memory result) {
-        if (Locker.isLocked()) revert AlreadyLocked();
+        if (Lock.isLocked()) revert AlreadyLocked();
 
-        Locker.setLocker(msg.sender);
+        Lock.lock();
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
         if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
-        Locker.clearLocker();
+        Lock.unlock();
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {

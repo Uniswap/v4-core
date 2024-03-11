@@ -935,7 +935,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         // sets the upper 12 bits
         feeController.setSwapFeeForPool(uninitializedKey.toId(), uint16(protocolFee));
 
-        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFee, protocolFee);
     }
@@ -1064,12 +1064,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     Action[] actions;
 
-    function test_lock_cannotBeCalledTwiceByLocker() public {
+    function test_lock_cannotBeCalledTwiceByCaller() public {
         actions = [Action.NESTED_SELF_LOCK];
         nestedActionRouter.lock(abi.encode(actions));
     }
 
-    function test_lock_cannotBeCalledTwiceByDifferentLockers() public {
+    function test_lock_cannotBeCalledTwiceByDifferentCallers() public {
         actions = [Action.NESTED_EXECUTOR_LOCK];
         nestedActionRouter.lock(abi.encode(actions));
     }
