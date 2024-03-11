@@ -86,8 +86,8 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     /// @inheritdoc IPoolManager
-    function currencyDelta(address locker, Currency currency) external view returns (int256) {
-        return locker.getCurrencyDelta(currency);
+    function currencyDelta(address caller, Currency currency) external view returns (int256) {
+        return CurrencyDelta.get(caller, currency);
     }
 
     /// @inheritdoc IPoolManager
@@ -145,7 +145,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        int256 current = msg.sender.getCurrencyDelta(currency);
+        int256 current = CurrencyDelta.get(msg.sender, currency);
         int256 next = current + delta;
 
         unchecked {
@@ -156,7 +156,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
             }
         }
 
-        msg.sender.setCurrencyDelta(currency, next);
+        CurrencyDelta.set(msg.sender, currency, next);
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes

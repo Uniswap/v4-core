@@ -20,7 +20,7 @@ library CurrencyDelta {
         }
     }
 
-    function setCurrencyDelta(address locker, Currency currency, int256 delta) internal {
+    function set(address locker, Currency currency, int256 delta) internal {
         bytes32 hashSlot = _computeSlot(locker, currency);
 
         assembly {
@@ -28,7 +28,7 @@ library CurrencyDelta {
         }
     }
 
-    function getCurrencyDelta(address locker, Currency currency) internal view returns (int256 delta) {
+    function get(address locker, Currency currency) internal view returns (int256 delta) {
         bytes32 hashSlot = _computeSlot(locker, currency);
 
         assembly {
