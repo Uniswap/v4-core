@@ -106,7 +106,7 @@ interface IHooks {
     /// @param sender The initial msg.sender for the swap call
     /// @param key The key for the pool
     /// @param params The parameters for the swap
-    /// @param delta The amount owed to the locker (positive) or owed to the pool (negative)
+    /// @param delta The amount owed to the caller (positive) or owed to the pool (negative)
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function afterSwap(
