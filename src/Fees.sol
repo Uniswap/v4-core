@@ -14,7 +14,7 @@ abstract contract Fees is IFees, Owned {
     using FeeLibrary for uint24;
     using CurrencyLibrary for Currency;
 
-    uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
+    uint16 public constant MAX_PROTOCOL_FEE = 2500;
 
     // the swap fee is represented in hundredths of a bip, so the max is 100%
     uint24 public constant MAX_SWAP_FEE = 1000000;
@@ -33,7 +33,7 @@ abstract contract Fees is IFees, Owned {
     /// @dev to prevent an invalid protocol fee controller from blocking pools from being initialized
     ///      the success of this function is NOT checked on initialize and if the call fails, the protocol fees are set to 0.
     /// @dev the success of this function must be checked when called in setProtocolFee
-    function _fetchProtocolFee(PoolKey memory key) internal returns (bool success, uint16 protocolFees) {
+    function _fetchProtocolFee(PoolKey memory key) internal returns (bool success, uint32 protocolFees) {
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
@@ -50,9 +50,9 @@ abstract contract Fees is IFees, Owned {
             assembly {
                 returnData := mload(add(_data, 0x20))
             }
-            // Ensure return data does not overflow a uint16 and that the underlying fees are within bounds.
-            (success, protocolFees) = returnData == uint16(returnData) && _isFeeWithinBounds(uint16(returnData))
-                ? (true, uint16(returnData))
+            // Ensure return data does not overflow a uint32 and that the underlying fees are within bounds.
+            (success, protocolFees) = returnData == uint32(returnData) && _isFeeWithinBounds(uint32(returnData))
+                ? (true, uint32(returnData))
                 : (false, 0);
         }
     }
@@ -62,14 +62,12 @@ abstract contract Fees is IFees, Owned {
         if (dynamicSwapFee >= MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
-    function _isFeeWithinBounds(uint16 fee) internal pure returns (bool) {
+    function _isFeeWithinBounds(uint32 fee) internal pure returns (bool) {
         if (fee != 0) {
-            uint16 fee0 = fee % 256;
-            uint16 fee1 = fee >> 8;
-            // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-            if (
-                (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
-            ) {
+            uint32 fee0 = fee % 65536;
+            uint32 fee1 = fee >> 16;
+            // The fee is represented in bips so it cannot be GREATER than the MAX_PROTOCOL_FEE.
+            if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
                 return false;
             }
         }
