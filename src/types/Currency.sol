@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 type Currency is address;
 
@@ -74,6 +75,17 @@ library CurrencyLibrary {
             }
 
             if (!success) revert ERC20TransferFailed();
+        }
+    }
+
+    function settle(Currency currency, IPoolManager manager, address payer, uint256 amount, bool burn) internal {
+        if (isNative(currency)) {
+            manager.settle{value: amount}(currency);
+        } else if (burn) {
+            manager.burn(payer, toId(currency), amount);
+        } else {
+            IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), amount);
+            manager.settle(currency);
         }
     }
 
