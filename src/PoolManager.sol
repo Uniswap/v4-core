@@ -109,12 +109,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
-        uint24 swapFee = 0;
-        // Initial swap fee on dynamic fee pools is set to 0, unless updateDynamicSwapFee is called in the afterInitialize hook
-        if (!key.fee.isDynamicFee()) {
-            swapFee = key.fee.getStaticFee();
-            swapFee.validateSwapFee();
-        }
+        uint24 swapFee = key.fee.getSwapFee();
 
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
