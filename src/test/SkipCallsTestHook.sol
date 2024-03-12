@@ -13,7 +13,6 @@ import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Test} from "forge-std/Test.sol";
-import "forge-std/console.sol";
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
     using PoolIdLibrary for PoolKey;
@@ -23,8 +22,6 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     uint256 public counter;
     IPoolManager manager;
     uint24 internal fee;
-
-    constructor() {}
 
     function setManager(IPoolManager _manager) external {
         manager = _manager;
