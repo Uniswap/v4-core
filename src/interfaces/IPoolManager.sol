@@ -120,8 +120,8 @@ interface IPoolManager is IFees, IERC6909Claims {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
-    /// @notice Returns the locker of the pool
-    function getLocker() external view returns (address locker);
+    /// @notice Returns whether the contract is locked
+    function isLockSet() external view returns (bool);
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
     function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
@@ -131,10 +131,10 @@ interface IPoolManager is IFees, IERC6909Claims {
         external
         returns (int24 tick);
 
-    /// @notice Get the current delta for a locker in the given currency
-    /// @param locker The address of the locker
+    /// @notice Get the current delta for a caller in the given currency
+    /// @param caller The address of the caller
     /// @param currency The currency for which to lookup the delta
-    function currencyDelta(address locker, Currency currency) external view returns (int256);
+    function currencyDelta(address caller, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
