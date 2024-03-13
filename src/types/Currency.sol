@@ -78,7 +78,6 @@ library CurrencyLibrary {
         }
     }
 
-    
     function balanceOfSelf(Currency currency) internal view returns (uint256) {
         if (currency.isNative()) {
             return address(this).balance;
