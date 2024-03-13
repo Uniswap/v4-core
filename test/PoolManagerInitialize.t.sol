@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {IFees} from "../src/interfaces/IFees.sol";
+import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
@@ -18,14 +18,14 @@ import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
-import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
+import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
 import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 
 contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
-    using FeeLibrary for uint24;
+    using SwapFeeLibrary for uint24;
 
     event Initialize(
         PoolId indexed poolId,
@@ -56,10 +56,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // tested in Hooks.t.sol
         key0.hooks = IHooks(Constants.ADDRESS_ZERO);
 
-        if (key0.fee & FeeLibrary.STATIC_FEE_MASK >= 1000000) {
-            vm.expectRevert(abi.encodeWithSelector(IFees.FeeTooLarge.selector));
-            manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
-        } else if (key0.tickSpacing > manager.MAX_TICK_SPACING()) {
+        if (key0.tickSpacing > manager.MAX_TICK_SPACING()) {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (key0.tickSpacing < manager.MIN_TICK_SPACING()) {
@@ -70,6 +67,11 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (!key0.hooks.isValidHookAddress(key0.fee)) {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key0.hooks)));
+            manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
+        } else if (
+            (key.fee & SwapFeeLibrary.DYNAMIC_FEE_FLAG == 0) && (key0.fee & SwapFeeLibrary.STATIC_FEE_MASK >= 1000000)
+        ) {
+            vm.expectRevert(abi.encodeWithSelector(SwapFeeLibrary.FeeTooLarge.selector));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else {
             vm.expectEmit(true, true, true, true);
@@ -317,7 +319,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
         assertEq(slot0.protocolFee, 0);
         // call to setProtocolFee should also revert
-        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(uninitializedKey);
     }
 

@@ -3,21 +3,15 @@ pragma solidity ^0.8.19;
 
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
-import {IFees} from "./interfaces/IFees.sol";
-import {FeeLibrary} from "./libraries/FeeLibrary.sol";
+import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {Owned} from "./Owned.sol";
-import {IDynamicFeeManager} from "./interfaces/IDynamicFeeManager.sol";
 
-abstract contract Fees is IFees, Owned {
-    using FeeLibrary for uint24;
+abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
 
     uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
-
-    // the swap fee is represented in hundredths of a bip, so the max is 100%
-    uint24 public constant MAX_SWAP_FEE = 1000000;
 
     mapping(Currency currency => uint256) public protocolFeesAccrued;
 
@@ -51,18 +45,13 @@ abstract contract Fees is IFees, Owned {
                 returnData := mload(add(_data, 0x20))
             }
             // Ensure return data does not overflow a uint16 and that the underlying fees are within bounds.
-            (success, protocolFees) = returnData == uint16(returnData) && _isFeeWithinBounds(uint16(returnData))
+            (success, protocolFees) = returnData == uint16(returnData) && _isValidProtocolFee(uint16(returnData))
                 ? (true, uint16(returnData))
                 : (false, 0);
         }
     }
 
-    function _fetchDynamicSwapFee(PoolKey memory key) internal view returns (uint24 dynamicSwapFee) {
-        dynamicSwapFee = IDynamicFeeManager(address(key.hooks)).getFee(msg.sender, key);
-        if (dynamicSwapFee >= MAX_SWAP_FEE) revert FeeTooLarge();
-    }
-
-    function _isFeeWithinBounds(uint16 fee) internal pure returns (bool) {
+    function _isValidProtocolFee(uint16 fee) internal pure returns (bool) {
         if (fee != 0) {
             uint16 fee0 = fee % 256;
             uint16 fee1 = fee >> 8;
