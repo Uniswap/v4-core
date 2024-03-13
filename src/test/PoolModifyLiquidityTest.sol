@@ -65,18 +65,18 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
-        if (data.params.liquidityDelta > 0) {
+        if (data.params.liquidityDelta < 0) {
             assert(delta0 > 0 || delta1 > 0);
             assert(!(delta0 < 0 || delta1 < 0));
-        } else if (data.params.liquidityDelta < 0) {
+        } else if (data.params.liquidityDelta > 0) {
             assert(delta0 < 0 || delta1 < 0);
             assert(!(delta0 > 0 || delta1 > 0));
         }
 
-        if (delta0 > 0) _settle(data.key.currency0, data.sender, int128(delta0), data.settleUsingTransfer);
-        if (delta1 > 0) _settle(data.key.currency1, data.sender, int128(delta1), data.settleUsingTransfer);
-        if (delta0 < 0) _take(data.key.currency0, data.sender, int128(delta0), data.withdrawTokens);
-        if (delta1 < 0) _take(data.key.currency1, data.sender, int128(delta1), data.withdrawTokens);
+        if (delta0 < 0) _settle(data.key.currency0, data.sender, int128(delta0), data.settleUsingTransfer);
+        if (delta1 < 0) _settle(data.key.currency1, data.sender, int128(delta1), data.settleUsingTransfer);
+        if (delta0 > 0) _take(data.key.currency0, data.sender, int128(delta0), data.withdrawTokens);
+        if (delta1 > 0) _take(data.key.currency1, data.sender, int128(delta1), data.withdrawTokens);
 
         return abi.encode(delta);
     }

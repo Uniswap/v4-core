@@ -72,7 +72,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
 
     IPoolManager.SwapParams internal SWAP_PARAMS =
-        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: Constants.SQRT_RATIO_1_2});
+        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: Constants.SQRT_RATIO_1_2});
 
     uint256 internal DONATE_AMOUNT0 = 12345e6;
     uint256 internal DONATE_AMOUNT1 = 98765e4;
@@ -125,7 +125,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaCallerBefore0, deltaCallerAfter0, "Caller delta 0");
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
         assertEq(deltaThisBefore0 + SWAP_PARAMS.amountSpecified, deltaThisAfter0, "Executor delta 0");
-        assertEq(deltaThisBefore1 - 98, deltaThisAfter1, "Executor delta 1");
+        assertEq(deltaThisBefore1 + 98, deltaThisAfter1, "Executor delta 1");
         assertEq(delta.amount0(), deltaThisAfter0, "Swap delta 0");
         assertEq(delta.amount1(), deltaThisAfter1, "Swap delta 1");
 
@@ -199,10 +199,10 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
         assertEq(deltaCallerBefore0, deltaCallerAfter0, "Caller delta 0");
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
-        assertEq(deltaThisBefore0 + int256(DONATE_AMOUNT0), deltaThisAfter0, "Executor delta 0");
-        assertEq(deltaThisBefore1 + int256(DONATE_AMOUNT1), deltaThisAfter1, "Executor delta 1");
-        assertEq(delta.amount0(), int256(DONATE_AMOUNT0), "Donate delta 0");
-        assertEq(delta.amount1(), int256(DONATE_AMOUNT1), "Donate delta 1");
+        assertEq(deltaThisBefore0 - int256(DONATE_AMOUNT0), deltaThisAfter0, "Executor delta 0");
+        assertEq(deltaThisBefore1 - int256(DONATE_AMOUNT1), deltaThisAfter1, "Executor delta 1");
+        assertEq(-delta.amount0(), int256(DONATE_AMOUNT0), "Donate delta 0");
+        assertEq(-delta.amount1(), int256(DONATE_AMOUNT1), "Donate delta 1");
 
         _settle(key.currency0, user, int128(deltaThisAfter0), true);
         _settle(key.currency1, user, int128(deltaThisAfter1), true);
