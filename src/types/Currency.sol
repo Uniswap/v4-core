@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 type Currency is address;
 
