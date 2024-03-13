@@ -18,7 +18,7 @@ library AmountHelpers {
     ) public view returns (uint256 amount0, uint256 amount1) {
         PoolId id = PoolIdLibrary.toId(key);
         uint128 liquidity = manager.getLiquidity(id);
-        (uint160 sqrtPriceX96,,) = manager.getSlot0(id);
+        (uint160 sqrtPriceX96,,,) = manager.getSlot0(id);
 
         uint160 sqrtPriceX96Lower = TickMath.getSqrtRatioAtTick(params.tickLower);
         uint160 sqrtPriceX96Upper = TickMath.getSqrtRatioAtTick(params.tickUpper);
