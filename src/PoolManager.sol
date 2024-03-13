@@ -218,8 +218,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         );
 
         _accountPoolBalanceDelta(key, delta);
-        // the fee is on the input currency
 
+        // the fee is on the input currency
         unchecked {
             if (feeForProtocol > 0) {
                 protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
@@ -255,7 +255,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall isLocked {
-        _accountDelta(currency, amount.toInt128());
+        // subtraction must be safe
+        _accountDelta(currency, -(amount.toInt128()));
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
@@ -265,19 +266,19 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
-        // subtraction must be safe
-        _accountDelta(currency, -(paid.toInt128()));
+        _accountDelta(currency, paid.toInt128());
     }
 
     /// @inheritdoc IPoolManager
     function mint(address to, uint256 id, uint256 amount) external override noDelegateCall isLocked {
-        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
+        // subtraction must be safe
+        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
         _mint(to, id, amount);
     }
 
     /// @inheritdoc IPoolManager
     function burn(address from, uint256 id, uint256 amount) external override noDelegateCall isLocked {
-        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
+        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
         _burnFrom(from, id, amount);
     }
 

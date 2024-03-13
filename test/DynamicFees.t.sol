@@ -121,7 +121,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(1000000);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
@@ -135,12 +135,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(123);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), 100, -98, 79228162514264329749955861424, 1e18, -1, 123);
+        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         snapStart("update dynamic fee in before swap");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
@@ -159,12 +159,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolSwapFee(key), 123);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), 100, -98, 79228162514264329749955861424, 1e18, -1, 123);
+        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         snapStart("swap with dynamic fee");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
