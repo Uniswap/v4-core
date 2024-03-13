@@ -78,17 +78,7 @@ library CurrencyLibrary {
         }
     }
 
-    function settle(Currency currency, IPoolManager manager, address payer, uint256 amount, bool burn) internal {
-        if (isNative(currency)) {
-            manager.settle{value: amount}(currency);
-        } else if (burn) {
-            manager.burn(payer, toId(currency), amount);
-        } else {
-            IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), amount);
-            manager.settle(currency);
-        }
-    }
-
+    
     function balanceOfSelf(Currency currency) internal view returns (uint256) {
         if (currency.isNative()) {
             return address(this).balance;
