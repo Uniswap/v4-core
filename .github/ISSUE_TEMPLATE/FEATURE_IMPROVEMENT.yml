@@ -18,7 +18,7 @@ body:
             - Lock and Call
             - Delta accounting
             - 1155 Balances
-            - Pool Actions (swap, modifyPosition, donate, take, settle, mint)
+            - Pool Actions (swap, modifyLiquidity, donate, take, settle, mint)
             - Gas Optimization
             - General design optimization (improving efficiency, cleanliness, or developer experience)
             - Documentation
