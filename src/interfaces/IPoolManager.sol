@@ -12,9 +12,6 @@ import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
 interface IPoolManager is IProtocolFees, IERC6909Claims {
-    /// @notice Thrown when currencies touched has exceeded max of 256
-    error MaxCurrenciesTouched();
-
     /// @notice Thrown when a currency is not netted out after a lock
     error CurrencyNotSettled();
 
@@ -26,9 +23,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
 
     /// @notice Thrown when a function is called outside of a lock
     error ManagerNotLocked();
-
-    /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
-    error NotPoolManagerToken();
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
