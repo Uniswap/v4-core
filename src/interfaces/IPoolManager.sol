@@ -83,7 +83,7 @@ interface IPoolManager is IFees, IERC6909Claims {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
+    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
 
     event DynamicSwapFeeUpdated(PoolId indexed id, uint24 dynamicSwapFee);
 
@@ -94,7 +94,7 @@ interface IPoolManager is IFees, IERC6909Claims {
     function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(PoolId id) external view returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee);
+    function getSlot0(PoolId id) external view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);

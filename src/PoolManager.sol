@@ -57,7 +57,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         external
         view
         override
-        returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee)
+        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee)
     {
         Pool.Slot0 memory slot0 = pools[id].slot0;
 
@@ -115,7 +115,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
         PoolId id = key.toId();
-        (, uint16 protocolFee) = _fetchProtocolFee(key);
+        (, uint24 protocolFee) = _fetchProtocolFee(key);
         uint24 swapFee = key.fee.isDynamicFee() ? _fetchDynamicSwapFee(key) : key.fee.getStaticFee();
 
         tick = pools[id].initialize(sqrtPriceX96, protocolFee, swapFee);
@@ -284,7 +284,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
     }
 
     function setProtocolFee(PoolKey memory key) external {
-        (bool success, uint16 newProtocolFee) = _fetchProtocolFee(key);
+        (bool success, uint24 newProtocolFee) = _fetchProtocolFee(key);
         if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
         PoolId id = key.toId();
         pools[id].setProtocolFee(newProtocolFee);
