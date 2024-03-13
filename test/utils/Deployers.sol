@@ -8,7 +8,7 @@ import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
-import {FeeLibrary} from "../../src/libraries/FeeLibrary.sol";
+import {SwapFeeLibrary} from "../../src/libraries/SwapFeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
@@ -29,7 +29,7 @@ import {
 } from "../../src/test/ProtocolFeeControllerTest.sol";
 
 contract Deployers {
-    using FeeLibrary for uint24;
+    using SwapFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 

@@ -6,12 +6,12 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {IHooks} from "./IHooks.sol";
 import {IERC6909Claims} from "./external/IERC6909Claims.sol";
-import {IFees} from "./IFees.sol";
+import {IProtocolFees} from "./IProtocolFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 
-interface IPoolManager is IFees, IERC6909Claims {
+interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
@@ -37,6 +37,10 @@ interface IPoolManager is IFees, IERC6909Claims {
 
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
     error CurrenciesOutOfOrderOrEqual();
+
+    /// @notice Thrown when a call to updateDynamicSwapFee is made by an address that is not the hook,
+    /// or on a pool that does not have a dynamic swap fee.
+    error UnauthorizedDynamicSwapFeeUpdate();
 
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
@@ -85,8 +89,6 @@ interface IPoolManager is IFees, IERC6909Claims {
 
     event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
 
-    event DynamicSwapFeeUpdated(PoolId indexed id, uint24 dynamicSwapFee);
-
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
 
@@ -94,7 +96,10 @@ interface IPoolManager is IFees, IERC6909Claims {
     function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(PoolId id) external view returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee);
+    function getSlot0(PoolId id)
+        external
+        view
+        returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee, uint24 swapFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);
@@ -193,7 +198,7 @@ interface IPoolManager is IFees, IERC6909Claims {
     function setProtocolFee(PoolKey memory key) external;
 
     /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
-    function updateDynamicSwapFee(PoolKey memory key) external;
+    function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external;
 
     /// @notice Called by external contracts to access granular pool state
     /// @param slot Key of slot to sload

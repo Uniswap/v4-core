@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {IFees} from "../src/interfaces/IFees.sol";
+import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {Owned} from "../src/Owned.sol";
@@ -25,7 +25,7 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolEmptyLockTest} from "../src/test/PoolEmptyLockTest.sol";
 import {Action} from "../src/test/PoolNestedActionsTest.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
-import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
+import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
 import {Position} from "../src/libraries/Position.sol";
 import {Constants} from "./utils/Constants.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
@@ -34,7 +34,7 @@ import {AmountHelpers} from "./utils/AmountHelpers.sol";
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
-    using FeeLibrary for uint24;
+    using SwapFeeLibrary for uint24;
     using CurrencyLibrary for Currency;
 
     event LockAcquired();
@@ -896,7 +896,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint8 fee0 = uint8(protocolFee >> 8);
         uint8 fee1 = uint8(protocolFee % 256);
         if ((0 < fee0 && fee0 < 4) || (0 < fee1 && fee1 < 4)) {
-            vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+            vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
             manager.setProtocolFee(key);
         } else {
             vm.expectEmit(false, false, false, true);
@@ -913,19 +913,19 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(slot0.protocolFee, 0);
 
         manager.setProtocolFeeController(revertingFeeController);
-        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(outOfBoundsFeeController);
-        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(overflowFeeController);
-        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(invalidReturnSizeFeeController);
-        vm.expectRevert(IFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(key);
     }
 
