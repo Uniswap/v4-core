@@ -22,7 +22,7 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {PoolEmptyLockTest} from "../src/test/PoolEmptyLockTest.sol";
+import {PoolEmptyUnlockTest} from "../src/test/PoolEmptyUnlockTest.sol";
 import {Action} from "../src/test/PoolNestedActionsTest.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
@@ -37,7 +37,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using FeeLibrary for uint24;
     using CurrencyLibrary for Currency;
 
-    event LockAcquired();
+    event ManagerUnlocked();
     event ProtocolFeeControllerUpdated(address feeController);
     event ModifyLiquidity(
         PoolId indexed poolId, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
@@ -57,12 +57,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
     );
 
-    PoolEmptyLockTest emptyLockRouter;
+    PoolEmptyUnlockTest emptyUnlockRouter;
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
 
-        emptyLockRouter = new PoolEmptyLockTest(manager);
+        emptyUnlockRouter = new PoolEmptyUnlockTest(manager);
     }
 
     function test_bytecodeSize() public {
@@ -1056,22 +1056,22 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
 
-    function test_lock_EmitsCorrectId() public {
+    function test_unlock_EmitsCorrectId() public {
         vm.expectEmit(false, false, false, true);
-        emit LockAcquired();
-        emptyLockRouter.lock();
+        emit ManagerUnlocked();
+        emptyUnlockRouter.unlock();
     }
 
     Action[] actions;
 
-    function test_lock_cannotBeCalledTwiceByCaller() public {
-        actions = [Action.NESTED_SELF_LOCK];
-        nestedActionRouter.lock(abi.encode(actions));
+    function test_unlock_cannotBeCalledTwiceByCaller() public {
+        actions = [Action.NESTED_SELF_UNLOCK];
+        nestedActionRouter.unlock(abi.encode(actions));
     }
 
-    function test_lock_cannotBeCalledTwiceByDifferentCallers() public {
-        actions = [Action.NESTED_EXECUTOR_LOCK];
-        nestedActionRouter.lock(abi.encode(actions));
+    function test_unlock_cannotBeCalledTwiceByDifferentCallers() public {
+        actions = [Action.NESTED_EXECUTOR_UNLOCK];
+        nestedActionRouter.unlock(abi.encode(actions));
     }
 
     // function testExtsloadForPoolPrice() public {

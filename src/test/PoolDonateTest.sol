@@ -30,7 +30,7 @@ contract PoolDonateTest is PoolTestBase, Test {
         returns (BalanceDelta delta)
     {
         delta = abi.decode(
-            manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDelta)
+            manager.unlock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
@@ -39,7 +39,7 @@ contract PoolDonateTest is PoolTestBase, Test {
         }
     }
 
-    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
+    function managerUnlocked(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));

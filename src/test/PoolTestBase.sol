@@ -4,10 +4,10 @@ pragma solidity ^0.8.24;
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
-import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
+import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
-abstract contract PoolTestBase is ILockCallback {
+abstract contract PoolTestBase is IUnlockCallback {
     using CurrencyLibrary for Currency;
 
     IPoolManager public immutable manager;
