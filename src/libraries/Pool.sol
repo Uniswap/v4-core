@@ -209,25 +209,23 @@ library Pool {
             if (self.slot0.tick < params.tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
-                result = result
-                    + toBalanceDelta(
-                        SqrtPriceMath.getAmount0Delta(
-                            TickMath.getSqrtRatioAtTick(params.tickLower),
-                            TickMath.getSqrtRatioAtTick(params.tickUpper),
-                            params.liquidityDelta
-                        ).toInt128(),
-                        0
-                    );
+                result = toBalanceDelta(
+                    SqrtPriceMath.getAmount0Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower),
+                        TickMath.getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta
+                    ).toInt128(),
+                    0
+                );
             } else if (self.slot0.tick < params.tickUpper) {
-                result = result
-                    + toBalanceDelta(
-                        SqrtPriceMath.getAmount0Delta(
-                            self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
-                        ).toInt128(),
-                        SqrtPriceMath.getAmount1Delta(
-                            TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
-                        ).toInt128()
-                    );
+                result = toBalanceDelta(
+                    SqrtPriceMath.getAmount0Delta(
+                        self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
+                    ).toInt128(),
+                    SqrtPriceMath.getAmount1Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
+                    ).toInt128()
+                );
 
                 self.liquidity = params.liquidityDelta < 0
                     ? self.liquidity - uint128(-params.liquidityDelta)
@@ -235,20 +233,19 @@ library Pool {
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
-                result = result
-                    + toBalanceDelta(
-                        0,
-                        SqrtPriceMath.getAmount1Delta(
-                            TickMath.getSqrtRatioAtTick(params.tickLower),
-                            TickMath.getSqrtRatioAtTick(params.tickUpper),
-                            params.liquidityDelta
-                        ).toInt128()
-                    );
+                result = toBalanceDelta(
+                    0,
+                    SqrtPriceMath.getAmount1Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower),
+                        TickMath.getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta
+                    ).toInt128()
+                );
             }
         }
 
-        // Fees earned from LPing are removed from the pool balance.
-        result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
+        // Fees earned from LPing are added to the user's currency delta.
+        result = result + toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
     struct SwapCache {
@@ -329,7 +326,7 @@ library Pool {
             protocolFee: params.zeroForOne ? uint8(slot0Start.protocolFee % 256) : uint8(slot0Start.protocolFee >> 8)
         });
 
-        bool exactInput = params.amountSpecified > 0;
+        bool exactInput = params.amountSpecified < 0;
 
         state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,
@@ -374,14 +371,14 @@ library Pool {
             if (exactInput) {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
-                    state.amountSpecifiedRemaining -= (step.amountIn + step.feeAmount).toInt256();
+                    state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
                 }
-                state.amountCalculated = state.amountCalculated - step.amountOut.toInt256();
+                state.amountCalculated = state.amountCalculated + step.amountOut.toInt256();
             } else {
                 unchecked {
-                    state.amountSpecifiedRemaining += step.amountOut.toInt256();
+                    state.amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
-                state.amountCalculated = state.amountCalculated + (step.amountIn + step.feeAmount).toInt256();
+                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
@@ -462,7 +459,7 @@ library Pool {
     /// @notice Donates the given amount of currency0 and currency1 to the pool
     function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
         if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
-        delta = toBalanceDelta(amount0.toInt128(), amount1.toInt128());
+        delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
         unchecked {
             if (amount0 > 0) {
                 state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
