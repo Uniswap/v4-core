@@ -19,7 +19,7 @@ library SwapFeeLibrary {
         return self & DYNAMIC_FEE_FLAG != 0;
     }
 
-    function validateSwapFee(uint24 self) internal pure {
+    function validate(uint24 self) internal pure {
         if (self >= MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
@@ -27,6 +27,6 @@ library SwapFeeLibrary {
         // the initial fee for a dynamic fee pool is 0
         if (self.isDynamicFee()) return 0;
         swapFee = self & STATIC_FEE_MASK;
-        swapFee.validateSwapFee();
+        swapFee.validate();
     }
 }

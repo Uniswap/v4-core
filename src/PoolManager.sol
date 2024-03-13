@@ -291,7 +291,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external {
         if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicSwapFeeUpdate();
-        newDynamicSwapFee.validateSwapFee();
+        newDynamicSwapFee.validate();
         PoolId id = key.toId();
         pools[id].setSwapFee(newDynamicSwapFee);
     }
