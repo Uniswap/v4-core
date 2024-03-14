@@ -37,7 +37,7 @@ contract PoolNestedActionsTest is Test, IUnlockCallback {
     }
 
     /// @notice Called by the pool manager on `msg.sender` when the manager is unlocked
-    function managerUnlocked(bytes calldata data) external override returns (bytes memory) {
+    function unlockCallback(bytes calldata data) external override returns (bytes memory) {
         Action[] memory actions = abi.decode(data, (Action[]));
         if (actions.length == 1 && actions[0] == Action.NESTED_SELF_UNLOCK) {
             _nestedUnlock();
@@ -221,7 +221,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
     }
 
     // This will never actually be used - its just to allow us to use the PoolTestBase helper contact
-    function managerUnlocked(bytes calldata) external pure override returns (bytes memory) {
+    function unlockCallback(bytes calldata) external pure override returns (bytes memory) {
         return "";
     }
 }

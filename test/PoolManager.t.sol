@@ -37,7 +37,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using SwapFeeLibrary for uint24;
     using CurrencyLibrary for Currency;
 
-    event ManagerUnlocked();
+    event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);
     event ModifyLiquidity(
         PoolId indexed poolId, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
@@ -1058,7 +1058,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_unlock_EmitsCorrectId() public {
         vm.expectEmit(false, false, false, true);
-        emit ManagerUnlocked();
+        emit UnlockCallback();
         emptyUnlockRouter.unlock();
     }
 

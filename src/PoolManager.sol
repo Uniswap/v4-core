@@ -131,7 +131,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         Lock.unlock();
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = IUnlockCallback(msg.sender).managerUnlocked(data);
+        result = IUnlockCallback(msg.sender).unlockCallback(data);
 
         if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
         Lock.lock();
@@ -324,7 +324,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         return value;
     }
 
-    function getUnlockedNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
+    function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
         return NonZeroDeltaCount.read();
     }
 

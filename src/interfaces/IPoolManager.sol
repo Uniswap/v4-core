@@ -129,7 +129,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     function isUnlocked() external view returns (bool);
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod out before the contract is locked
-    function getUnlockedNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
+    function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
@@ -142,8 +142,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     function currencyDelta(address caller, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
-    /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).managerUnlocked(data)`
-    /// @return The data returned by the call to `IUnlockCallback(msg.sender).managerUnlocked(data)`
+    /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
+    /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
     function unlock(bytes calldata data) external payable returns (bytes memory);
 
     struct ModifyLiquidityParams {
@@ -158,7 +158,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @dev Poke by calling with a zero liquidityDelta
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
-    /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).managerUnlocked(data)`
+    /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
     /// @return delta The balance delta of the liquidity
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external

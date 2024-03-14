@@ -33,7 +33,7 @@ contract PoolClaimsTest is PoolTestBase {
         manager.unlock(abi.encode(CallbackData(msg.sender, user, currency, amount, false)));
     }
 
-    function managerUnlocked(bytes calldata rawData) external returns (bytes memory) {
+    function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));

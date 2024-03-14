@@ -5,7 +5,7 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 
 contract PoolEmptyUnlockTest is IUnlockCallback {
-    event ManagerUnlocked();
+    event UnlockCallback();
 
     IPoolManager manager;
 
@@ -18,8 +18,8 @@ contract PoolEmptyUnlockTest is IUnlockCallback {
     }
 
     /// @notice Called by the pool manager on `msg.sender` when the manager is unlocked
-    function managerUnlocked(bytes calldata) external override returns (bytes memory) {
-        emit ManagerUnlocked();
+    function unlockCallback(bytes calldata) external override returns (bytes memory) {
+        emit UnlockCallback();
         return "";
     }
 }
