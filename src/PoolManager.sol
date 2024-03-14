@@ -221,12 +221,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
         params.amountSpecified += hookDeltaInSpecified;
-        if (exactInput ? params.amountSpecified > 0 : params.amountSpecified < 0) revert SwapTypeChanged();
+        if (exactInput ? params.amountSpecified >= 0 : params.amountSpecified <= 0) revert SwapTypeChanged();
 
         // Account the hook's delta to the hook's address
         _accountDeltaFor(zeroIsSpecified ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks));
 
-        {
+        if (params.amountSpecified != 0) {
             uint256 feeForProtocol;
             uint24 swapFee;
             Pool.SwapState memory state;
