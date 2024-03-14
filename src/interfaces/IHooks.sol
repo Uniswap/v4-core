@@ -54,7 +54,7 @@ interface IHooks {
     /// @param params The parameters for adding liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    /// @return BalanceDelta The hook's delta in token0 and token1
+    /// @return BalanceDelta The hook's delta in token0 and token1. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterAddLiquidity(
         address sender,
         PoolKey calldata key,
@@ -82,7 +82,7 @@ interface IHooks {
     /// @param params The parameters for removing liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    /// @return BalanceDelta The hook's delta in token0 and token1
+    /// @return BalanceDelta The hook's delta in token0 and token1. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterRemoveLiquidity(
         address sender,
         PoolKey calldata key,
@@ -97,7 +97,7 @@ interface IHooks {
     /// @param params The parameters for the swap
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    /// @return int256 The amount of amountSpecified that should go to the hook
+    /// @return int256 The hook's delta in specified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function beforeSwap(
         address sender,
         PoolKey calldata key,
@@ -112,7 +112,7 @@ interface IHooks {
     /// @param delta The amount owed to the locker (positive) or owed to the pool (negative)
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    /// @return int128 The amount of unspecified token that should go to the hook
+    /// @return int128 The hook's delta in unspecified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterSwap(
         address sender,
         PoolKey calldata key,

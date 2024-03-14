@@ -218,22 +218,16 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        // The hook's deltas are from the point of view of the hook. Positive: the hook took money, negative: the hook sent money to the pool
-        // TODO consider adding hookDeltaInUnspecified to beforeSwap hook too
         int128 hookDeltaInSpecified = key.hooks.beforeSwap(key, params, hookData);
 
         bool exactInput = params.amountSpecified < 0;
         bool zeroIsSpecified = exactInput == params.zeroForOne;
-        params.amountSpecified += hookDeltaInSpecified;
 
+        // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
+        params.amountSpecified += hookDeltaInSpecified;
         if (exactInput ? params.amountSpecified > 0 : params.amountSpecified < 0) revert SwapTypeChanged();
 
-        // ExactIn (amountSpecified is positive)
-        // In the case where the hook contributed x, x is given to the user now. After the swap amountSpecified + x input are taken from the user, meaning the user pays amountSpecified overall.
-        // In the case where the hook took x, x is taken from the user now. After the swap amountSpecified - x input are taken from the user, meaning the user pays amountSpecified overall.
-        // ExactOut (amountSpecified is negative)
-        // In the case where the hook contributed x, x output is given to the user now. The swap of amountSpecified + x is swapping for x fewer output tokens - so the user gets amountSpecified overall.
-        // In the case where the hook took x, x output is taken from the user now. The swap of amountSpecified - x is swapping for x extra output tokens - so the user gets amountSpecified overall.
+        // Account the hook's delta to the hook's address
         _accountDeltaFor(zeroIsSpecified ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks));
 
         {
@@ -272,6 +266,7 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
         _accountDeltaFor(zeroIsSpecified ? key.currency1 : key.currency0, hookDeltaInUnspecified, address(key.hooks));
 
+        // After this addition, the delta in specified will equal the amountSpecified passed in by the user again
         delta = delta
             + (
                 zeroIsSpecified
