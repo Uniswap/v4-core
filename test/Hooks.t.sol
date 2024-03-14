@@ -5,7 +5,7 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
-import {FeeLibrary} from "../src/libraries/FeeLibrary.sol";
+import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
 import {MockHooks} from "../src/test/MockHooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
@@ -15,7 +15,7 @@ import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../src/test/PoolDonateTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {Fees} from "../src/Fees.sol";
+import {ProtocolFees} from "../src/ProtocolFees.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {IERC20Minimal} from "../src/interfaces/external/IERC20Minimal.sol";
@@ -38,9 +38,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_initialize_succeedsWithHook() public {
-        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, new bytes(123));
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, new bytes(123));
 
-        (uint160 sqrtPriceX96,,) = manager.getSlot0(uninitializedKey.toId());
+        (uint160 sqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
         assertEq(mockHooks.beforeInitializeData(), new bytes(123));
         assertEq(mockHooks.afterInitializeData(), new bytes(123));
@@ -49,13 +49,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function test_beforeInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function test_afterInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        initializeRouter.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
     function test_beforeAfterAddLiquidity_beforeAfterRemoveLiquidity_succeedsWithHook() public {
@@ -955,7 +955,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function testIsValidHookAddress_invalid_zeroAddressWithDynamicFee() public {
-        assertFalse(Hooks.isValidHookAddress(IHooks(address(0)), FeeLibrary.DYNAMIC_FEE_FLAG));
+        assertFalse(Hooks.isValidHookAddress(IHooks(address(0)), SwapFeeLibrary.DYNAMIC_FEE_FLAG));
     }
 
     function testIsValidHookAddress_invalid_returnsDeltaWithoutHookFlag(uint160 addr) public {
@@ -972,11 +972,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function test_isValidHookAddress_valid_noFlagsWithDynamicFee() public {
         assertTrue(
-            Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), FeeLibrary.DYNAMIC_FEE_FLAG)
+            Hooks.isValidHookAddress(
+                IHooks(0x0000000000000000000000000000000000000001), SwapFeeLibrary.DYNAMIC_FEE_FLAG
+            )
         );
         assertTrue(
             Hooks.isValidHookAddress(
-                IHooks(0x0000000000000000000000000000000000000001), FeeLibrary.DYNAMIC_FEE_FLAG | uint24(3000)
+                IHooks(0x0000000000000000000000000000000000000001), SwapFeeLibrary.DYNAMIC_FEE_FLAG | uint24(3000)
             )
         );
         assertTrue(Hooks.isValidHookAddress(IHooks(0x8000000000000000000000000000000000000000), 3000));
