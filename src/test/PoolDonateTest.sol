@@ -31,7 +31,6 @@ contract PoolDonateTest is PoolTestBase, Test {
         payable
         returns (BalanceDelta delta)
     {
-        console2.log("here");
         delta = abi.decode(
             manager.lock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDelta)
         );
@@ -56,9 +55,6 @@ contract PoolDonateTest is PoolTestBase, Test {
 
         assertEq(deltaBefore0, 0);
         assertEq(deltaBefore1, 0);
-
-        console2.log(reserveBefore0);
-
         BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, data.hookData);
 
         // Must call sync again so that the reservesAfter0/reservesAfter1 are the most up to date
@@ -70,8 +66,6 @@ contract PoolDonateTest is PoolTestBase, Test {
 
         assertEq(reserveBefore0, reserveAfter0);
         assertEq(reserveBefore1, reserveAfter1);
-
-        console2.log(reserveAfter0);
 
         assertEq(deltaAfter0, int256(data.amount0));
         assertEq(deltaAfter1, int256(data.amount1));
