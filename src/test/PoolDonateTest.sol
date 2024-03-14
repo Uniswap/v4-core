@@ -10,7 +10,6 @@ import {Test} from "forge-std/Test.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 
-import "forge-std/console2.sol";
 
 contract PoolDonateTest is PoolTestBase, Test {
     using CurrencyLibrary for Currency;
