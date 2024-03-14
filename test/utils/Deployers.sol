@@ -188,9 +188,9 @@ contract Deployers {
     {
         // allow native input for exact-input, guide users to the `swapNativeInput` function
         bool isNativeInput = zeroForOne && _key.currency0.isNative();
-        if (isNativeInput) require(0 < amountSpecified, "Use swapNativeInput() for native-token exact-output swaps");
+        if (isNativeInput) require(0 > amountSpecified, "Use swapNativeInput() for native-token exact-output swaps");
 
-        uint256 value = isNativeInput ? uint256(amountSpecified) : 0;
+        uint256 value = isNativeInput ? uint256(-amountSpecified) : 0;
 
         return swapRouter.swap{value: value}(
             _key,

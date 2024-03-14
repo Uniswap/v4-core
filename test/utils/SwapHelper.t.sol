@@ -39,98 +39,98 @@ contract SwapHelperTest is Test, Deployers, GasSnapshot {
 
     // --- Deployers.swap() tests --- //
     function test_swap_helper_zeroForOne_exactInput() public {
-        int256 amountSpecified = 100;
+        int256 amountSpecified = -100;
         BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
-        assertEq(int256(result.amount0()), amountSpecified);
+        assertEq(result.amount0(), amountSpecified);
     }
 
     function test_swap_helper_zeroForOne_exactOutput() public {
-        int256 amountSpecified = -100;
+        int256 amountSpecified = 100;
         BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
-        assertEq(int256(result.amount1()), amountSpecified);
+        assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swap_helper_oneForZero_exactInput() public {
-        int256 amountSpecified = 100;
+        int256 amountSpecified = -100;
         BalanceDelta result = swap(key, false, amountSpecified, ZERO_BYTES);
-        assertEq(int256(result.amount1()), amountSpecified);
+        assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swap_helper_oneForZero_exactOutput() public {
-        int256 amountSpecified = -100;
+        int256 amountSpecified = 100;
         BalanceDelta result = swap(key, false, amountSpecified, ZERO_BYTES);
-        assertEq(int256(result.amount0()), amountSpecified);
+        assertEq(result.amount0(), amountSpecified);
     }
 
     function test_swap_helper_native_zeroForOne_exactInput() public {
-        int256 amountSpecified = 100;
+        int256 amountSpecified = -100;
         BalanceDelta result = swap(nativeKey, true, amountSpecified, ZERO_BYTES);
-        assertEq(int256(result.amount0()), amountSpecified);
+        assertEq(result.amount0(), amountSpecified);
     }
 
     function test_swap_helper_native_zeroForOne_exactOutput() public {
-        int256 amountSpecified = -100;
+        int256 amountSpecified = 100;
         vm.expectRevert();
         swap(nativeKey, true, amountSpecified, ZERO_BYTES);
     }
 
     function test_swap_helper_native_oneForZero_exactInput() public {
-        int256 amountSpecified = 100;
+        int256 amountSpecified = -100;
         BalanceDelta result = swap(nativeKey, false, amountSpecified, ZERO_BYTES);
-        assertEq(int256(result.amount1()), amountSpecified);
+        assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swap_helper_native_oneForZero_exactOutput() public {
-        int256 amountSpecified = -100;
+        int256 amountSpecified = 100;
         BalanceDelta result = swap(nativeKey, false, amountSpecified, ZERO_BYTES);
-        assertEq(int256(result.amount0()), amountSpecified);
+        assertEq(result.amount0(), amountSpecified);
     }
 
     // --- Deployers.swapNativeInput() tests --- //
     function test_swapNativeInput_helper_zeroForOne_exactInput() public {
-        int256 amountSpecified = 100;
+        int256 amountSpecified = -100;
         BalanceDelta result = swapNativeInput(nativeKey, true, amountSpecified, ZERO_BYTES, 100 wei);
-        assertEq(int256(result.amount0()), amountSpecified);
+        assertEq(result.amount0(), amountSpecified);
     }
 
     function test_swapNativeInput_helper_zeroForOne_exactOutput() public {
-        int256 amountSpecified = -100;
+        int256 amountSpecified = 100;
         BalanceDelta result = swapNativeInput(nativeKey, true, amountSpecified, ZERO_BYTES, 200 wei); // overpay
-        assertEq(int256(result.amount1()), amountSpecified);
+        assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swapNativeInput_helper_oneForZero_exactInput() public {
-        int256 amountSpecified = 100;
+        int256 amountSpecified = -100;
         BalanceDelta result = swapNativeInput(nativeKey, false, amountSpecified, ZERO_BYTES, 0 wei);
-        assertEq(int256(result.amount1()), amountSpecified);
+        assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swapNativeInput_helper_oneForZero_exactOutput() public {
-        int256 amountSpecified = -100;
+        int256 amountSpecified = 100;
         BalanceDelta result = swapNativeInput(nativeKey, false, amountSpecified, ZERO_BYTES, 0 wei);
-        assertEq(int256(result.amount0()), amountSpecified);
+        assertEq(result.amount0(), amountSpecified);
     }
 
     function test_swapNativeInput_helper_nonnative_zeroForOne_exactInput() public {
-        int256 amountSpecified = 100;
+        int256 amountSpecified = -100;
         vm.expectRevert();
         swapNativeInput(key, true, amountSpecified, ZERO_BYTES, 0 wei);
     }
 
     function test_swapNativeInput_helper_nonnative_zeroForOne_exactOutput() public {
-        int256 amountSpecified = -100;
+        int256 amountSpecified = 100;
         vm.expectRevert();
         swapNativeInput(key, true, amountSpecified, ZERO_BYTES, 0 wei);
     }
 
     function test_swapNativeInput_helper_nonnative_oneForZero_exactInput() public {
-        int256 amountSpecified = 100;
+        int256 amountSpecified = -100;
         vm.expectRevert();
         swapNativeInput(key, false, amountSpecified, ZERO_BYTES, 0 wei);
     }
 
     function test_swapNativeInput_helper_nonnative_oneForZero_exactOutput() public {
-        int256 amountSpecified = -100;
+        int256 amountSpecified = 100;
         vm.expectRevert();
         swapNativeInput(key, false, amountSpecified, ZERO_BYTES, 0 wei);
     }
