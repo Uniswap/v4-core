@@ -29,8 +29,10 @@ abstract contract PoolTestBase is ILockCallback {
         assert(amount > 0);
         if (settleUsingTransfer) {
             if (currency.isNative()) {
+                manager.sync(currency);
                 manager.settle{value: uint128(amount)}(currency);
             } else {
+                manager.sync(currency);
                 IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), uint128(amount));
                 manager.settle(currency);
             }

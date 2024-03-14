@@ -37,6 +37,7 @@ contract PoolTakeTest is Test, PoolTestBase {
     }
 
     function _testTake(Currency currency, address sender, uint256 amount) internal {
+        manager.sync(currency);
         (uint256 userBalBefore, uint256 pmBalBefore, uint256 reserveBefore, int256 deltaBefore) =
             _fetchBalances(currency, sender, address(this));
         assertEq(deltaBefore, 0);

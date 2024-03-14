@@ -53,6 +53,8 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
+        manager.sync(data.key.currency0);
+        manager.sync(data.key.currency1);
         (,, uint256 reserveBefore0, int256 deltaBefore0) =
             _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, uint256 reserveBefore1, int256 deltaBefore1) =
@@ -63,6 +65,8 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
+        manager.sync(data.key.currency0);
+        manager.sync(data.key.currency1);
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
@@ -93,6 +97,8 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         if (deltaAfter0 > 0) {
             if (data.testSettings.currencyAlreadySent) {
+                // Todo: This is a downside of sync!!! We must call sync before transferring in assets.
+                // Doesn't let integrators seamlessly send in funds and then settle.
                 manager.settle(data.key.currency0);
             } else {
                 _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
@@ -100,6 +106,8 @@ contract PoolSwapTest is Test, PoolTestBase {
         }
         if (deltaAfter1 > 0) {
             if (data.testSettings.currencyAlreadySent) {
+                // Todo: This is a downside of sync!!! We must call sync before transferring in assets.
+                // Doesn't let integrators seamlessly send in funds and then settle.
                 manager.settle(data.key.currency1);
             } else {
                 _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
