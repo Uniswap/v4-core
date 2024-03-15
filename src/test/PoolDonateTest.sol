@@ -10,7 +10,6 @@ import {Test} from "forge-std/Test.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 
-
 contract PoolDonateTest is PoolTestBase, Test {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
@@ -45,8 +44,6 @@ contract PoolDonateTest is PoolTestBase, Test {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        manager.sync(data.key.currency0);
-        manager.sync(data.key.currency1);
         (,, uint256 reserveBefore0, int256 deltaBefore0) =
             _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, uint256 reserveBefore1, int256 deltaBefore1) =
@@ -56,10 +53,6 @@ contract PoolDonateTest is PoolTestBase, Test {
         assertEq(deltaBefore1, 0);
         BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, data.hookData);
 
-        // Must call sync again so that the reservesAfter0/reservesAfter1 are the most up to date
-        // and check that there should be no change in balances from the donate call.
-        manager.sync(data.key.currency0);
-        manager.sync(data.key.currency1);
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 

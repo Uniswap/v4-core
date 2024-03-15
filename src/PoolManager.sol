@@ -276,8 +276,6 @@ contract PoolManager is IPoolManager, Fees, NoDelegateCall, ERC6909Claims {
         sync(currency);
     }
 
-    /// Is there anyway you could still get reserves to be out of sync?
-    /// TODO: Handle eth
     /// @inheritdoc IPoolManager
     function settle(Currency currency) external payable override noDelegateCall isLocked returns (uint256 paid) {
         uint256 reservesBefore = Reserves.get(currency);

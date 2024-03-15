@@ -301,6 +301,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_addLiquidity_6909() public {
         // convert test tokens into ERC6909 claims
+        manager.sync(currency0);
+        manager.sync(currency1);
         claimsRouter.deposit(currency0, address(this), 10_000e18);
         claimsRouter.deposit(currency1, address(this), 10_000e18);
         assertEq(manager.balanceOf(address(this), currency0.toId()), 10_000e18);
