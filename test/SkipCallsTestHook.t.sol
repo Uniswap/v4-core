@@ -24,10 +24,7 @@ import {SkipCallsTestHook} from "../src/test/SkipCallsTestHook.sol";
 contract SkipCallsTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
-    SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-        address(
-            uint160(Hooks.BEFORE_SWAP_FLAG))
-    );
+    SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(address(uint160(Hooks.BEFORE_SWAP_FLAG)));
 
     function setUp() public {
         SkipCallsTestHook impl = new SkipCallsTestHook();
@@ -37,12 +34,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         (currency0, currency1) = deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(
-            currency0,
-            currency1,
-            IHooks(address(skipCallsTestHook)),
-            3000,
-            SQRT_RATIO_1_1,
-            ZERO_BYTES
+            currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_RATIO_1_1, ZERO_BYTES
         );
     }
 

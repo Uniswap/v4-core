@@ -53,10 +53,8 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        (,,, int256 deltaBefore0) =
-            _fetchBalances(data.key.currency0, data.sender, address(this));
-        (,,, int256 deltaBefore1) =
-            _fetchBalances(data.key.currency1, data.sender, address(this));
+        (,,, int256 deltaBefore0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,,, int256 deltaBefore1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         assertEq(deltaBefore0, 0);
         assertEq(deltaBefore1, 0);
