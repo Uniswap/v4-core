@@ -73,7 +73,7 @@ contract PoolTest is Test {
         }
 
         params.owner = address(this);
-        state.modifyPosition(params);
+        state.modifyLiquidity(params);
     }
 
     function testSwap(uint160 sqrtPriceX96, uint24 swapFee, Pool.SwapParams memory params) public {
