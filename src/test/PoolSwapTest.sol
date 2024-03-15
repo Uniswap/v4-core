@@ -53,9 +53,9 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        (,, uint256 reserveBefore0, int256 deltaBefore0) =
+        (,,, int256 deltaBefore0) =
             _fetchBalances(data.key.currency0, data.sender, address(this));
-        (,, uint256 reserveBefore1, int256 deltaBefore1) =
+        (,,, int256 deltaBefore1) =
             _fetchBalances(data.key.currency1, data.sender, address(this));
 
         assertEq(deltaBefore0, 0);
@@ -63,8 +63,8 @@ contract PoolSwapTest is Test, PoolTestBase {
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
-        (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
-        (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
+        (,,, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,,, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         if (data.params.zeroForOne) {
             if (data.params.amountSpecified > 0) {

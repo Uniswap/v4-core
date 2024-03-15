@@ -24,17 +24,9 @@ import {SkipCallsTestHook} from "../src/test/SkipCallsTestHook.sol";
 contract SkipCallsTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
-    /// 1111 1111 1100
     SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
         address(
-            uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                & uint160(
-                    ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                        & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
-                        & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.AFTER_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG
-                        & ~Hooks.AFTER_DONATE_FLAG
-                )
-        )
+            uint160(Hooks.BEFORE_SWAP_FLAG))
     );
 
     function setUp() public {
@@ -48,13 +40,13 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
             currency0,
             currency1,
             IHooks(address(skipCallsTestHook)),
-            FeeLibrary.DYNAMIC_FEE_FLAG,
+            3000,
             SQRT_RATIO_1_1,
             ZERO_BYTES
         );
     }
 
-    function test_beforeSwap_invalidSender() public {
+    function test_beforeSwap_skipIfCalledByHook() public {
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 

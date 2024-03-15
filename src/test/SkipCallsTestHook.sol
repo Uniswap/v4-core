@@ -27,14 +27,6 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         manager = _manager;
     }
 
-    function setFee(uint24 _fee) external {
-        fee = _fee;
-    }
-
-    function getFee(address, PoolKey calldata) public view returns (uint24) {
-        return fee;
-    }
-
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData)
         external
         override
@@ -46,13 +38,13 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     }
 
     function callSwap(PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData) public {
-        IPoolManager(msg.sender).swap(key, params, hookData);
+        IPoolManager(manager).swap(key, params, hookData);
         address payer = abi.decode(hookData, (address));
-        int256 delta0 = IPoolManager(msg.sender).currencyDelta(address(this), key.currency0);
+        int256 delta0 = IPoolManager(manager).currencyDelta(address(this), key.currency0);
         assertEq(delta0, params.amountSpecified);
-        int256 delta1 = IPoolManager(msg.sender).currencyDelta(address(this), key.currency1);
+        int256 delta1 = IPoolManager(manager).currencyDelta(address(this), key.currency1);
         assert(delta1 < 0);
-        IERC20Minimal(Currency.unwrap(key.currency0)).transferFrom(payer, msg.sender, uint256(delta0));
+        IERC20Minimal(Currency.unwrap(key.currency0)).transferFrom(payer, address(manager), uint256(delta0));
         manager.settle(key.currency0);
         manager.take(key.currency1, payer, uint256(-delta1));
     }
