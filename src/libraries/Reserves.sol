@@ -22,7 +22,12 @@ library Reserves {
         }
     }
 
-    function _getKey(Currency currency) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(uint256(uint160(Currency.unwrap(currency))), RESERVES_OF_SLOT));
+    function _getKey(Currency currency) private pure returns (bytes32 key) {
+        uint256 slot = RESERVES_OF_SLOT;
+        assembly {
+            mstore(0, slot)
+            mstore(32, currency)
+            key := keccak256(0, 64)
+        }
     }
 }
