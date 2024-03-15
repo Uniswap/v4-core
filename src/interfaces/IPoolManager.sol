@@ -25,7 +25,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     error AlreadyUnlocked();
 
     /// @notice Thrown when a function is called that requires the contract to be unlocked, but it is not
-    error ManagerNotUnlocked();
+    error ManagerLocked();
 
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();

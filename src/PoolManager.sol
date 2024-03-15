@@ -93,7 +93,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @notice This will revert if the contract is locked
     modifier onlyWhenUnlocked() {
-        if (!Lock.isUnlocked()) revert ManagerNotUnlocked();
+        if (!Lock.isUnlocked()) revert ManagerLocked();
         _;
     }
 

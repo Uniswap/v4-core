@@ -83,9 +83,19 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(uninitializedKey, LIQ_PARAMS, ZERO_BYTES);
     }
 
+    function test_addLiquidity_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.modifyLiquidity(uninitializedKey, LIQ_PARAMS, ZERO_BYTES);
+    }
+
     function test_removeLiquidity_failsIfNotInitialized() public {
         vm.expectRevert(Pool.PoolNotInitialized.selector);
         modifyLiquidityRouter.modifyLiquidity(uninitializedKey, REMOVE_LIQ_PARAMS, ZERO_BYTES);
+    }
+
+    function test_removeLiquidity_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_addLiquidity_succeedsIfInitialized(uint160 sqrtPriceX96) public {
@@ -435,6 +445,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
     }
 
+    function test_swap_failsIfLocked() public {
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.swap(key, swapParams, ZERO_BYTES);
+    }
+
     function test_swap_succeedsWithNativeTokensIfInitialized() public {
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
@@ -767,6 +785,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         donateRouter.donate(uninitializedKey, 100, 100, ZERO_BYTES);
     }
 
+    function test_donate_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.donate(key, 100, 100, ZERO_BYTES);
+    }
+
     function test_donate_failsIfNoLiquidity(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
@@ -884,8 +907,28 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         takeRouter.take(key, 1, 1); // assertions inside takeRouter because it takes then settles
     }
 
+    function test_take_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.take(key.currency0, address(this), 1);
+    }
+
     function test_take_succeedsWithPoolWithLiquidityWithNativeToken() public {
         takeRouter.take{value: 1}(nativeKey, 1, 1); // assertions inside takeRouter because it takes then settles
+    }
+
+    function test_settle_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.settle(key.currency0);
+    }
+
+    function test_mint_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.mint(address(this), key.currency0.toId(), 1);
+    }
+
+    function test_burn_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.burn(address(this), key.currency0.toId(), 1);
     }
 
     function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint16 protocolFee) public {
