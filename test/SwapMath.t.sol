@@ -66,7 +66,7 @@ contract SwapMathTest is Test, GasSnapshot {
         uint160 priceTarget = SQRT_RATIO_1000_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
-        int256 amount = 1 ether;
+        int256 amount = 1 ether * -1;
         uint24 fee = 600;
         bool zeroForOne = false;
 
@@ -76,10 +76,10 @@ contract SwapMathTest is Test, GasSnapshot {
         assertEq(amountIn, 999400000000000000);
         assertEq(amountOut, 666399946655997866);
         assertEq(feeAmount, 600000000000000);
-        assertEq(amountIn + feeAmount, uint256(amount));
+        assertEq(amountIn + feeAmount, uint256(-amount));
 
         uint256 priceAfterWholeInputAmountLessFee =
-            SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, uint256(uint256(amount) - feeAmount), zeroForOne);
+            SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, uint256(uint256(-amount) - feeAmount), zeroForOne);
 
         assert(sqrtQ < priceTarget);
         assertEq(sqrtQ, priceAfterWholeInputAmountLessFee);
@@ -89,7 +89,7 @@ contract SwapMathTest is Test, GasSnapshot {
         uint160 priceTarget = SQRT_RATIO_10000_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
-        int256 amount = (1 ether) * -1;
+        int256 amount = (1 ether);
         uint24 fee = 600;
         bool zeroForOne = false;
 
@@ -98,10 +98,10 @@ contract SwapMathTest is Test, GasSnapshot {
 
         assertEq(amountIn, 2000000000000000000);
         assertEq(feeAmount, 1200720432259356);
-        assertEq(amountOut, uint256(amount * -1));
+        assertEq(amountOut, uint256(amount));
 
         uint256 priceAfterWholeOutputAmount =
-            SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, uint256(amount * -1), zeroForOne);
+            SqrtPriceMath.getNextSqrtPriceFromOutput(price, liquidity, uint256(amount), zeroForOne);
 
         assert(sqrtQ < priceTarget);
         assertEq(sqrtQ, priceAfterWholeOutputAmount);
@@ -109,7 +109,7 @@ contract SwapMathTest is Test, GasSnapshot {
 
     function test_amountOut_isCappedAtTheDesiredAmountOut() public {
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) = SwapMath.computeSwapStep(
-            417332158212080721273783715441582, 1452870262520218020823638996, 159344665391607089467575320103, -1, 1
+            417332158212080721273783715441582, 1452870262520218020823638996, 159344665391607089467575320103, 1, 1
         );
 
         assertEq(amountIn, 1);
@@ -130,7 +130,7 @@ contract SwapMathTest is Test, GasSnapshot {
 
     function test_entireInputAmountTakenAsFee() public {
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
-            SwapMath.computeSwapStep(2413, 79887613182836312, 1985041575832132834610021537970, 10, 1872);
+            SwapMath.computeSwapStep(2413, 79887613182836312, 1985041575832132834610021537970, -10, 1872);
 
         assertEq(amountIn, 0);
         assertEq(feeAmount, 10);
@@ -144,7 +144,7 @@ contract SwapMathTest is Test, GasSnapshot {
         uint128 liquidity = 1024;
         // virtual reserves of one are only 4
         // https://www.wolframalpha.com/input/?i=1024+%2F+%2820282409603651670423947251286016+%2F+2**96%29
-        int256 amountRemaining = -4;
+        int256 amountRemaining = 4;
         uint24 feePips = 3000;
 
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
@@ -162,7 +162,7 @@ contract SwapMathTest is Test, GasSnapshot {
         uint128 liquidity = 1024;
         // virtual reserves of zero are only 262144
         // https://www.wolframalpha.com/input/?i=1024+*+%2820282409603651670423947251286016+%2F+2**96%29
-        int256 amountRemaining = -263000;
+        int256 amountRemaining = 263000;
         uint24 feePips = 3000;
 
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
@@ -192,10 +192,10 @@ contract SwapMathTest is Test, GasSnapshot {
         assertLe(amountIn, type(uint256).max - feeAmount);
 
         unchecked {
-            if (amountRemaining < 0) {
-                assertLe(amountOut, uint256(-amountRemaining));
+            if (amountRemaining >= 0) {
+                assertLe(amountOut, uint256(amountRemaining));
             } else {
-                assertLe(amountIn + feeAmount, uint256(amountRemaining));
+                assertLe(amountIn + feeAmount, uint256(-amountRemaining));
             }
         }
 
@@ -208,8 +208,8 @@ contract SwapMathTest is Test, GasSnapshot {
 
         // didn't reach price target, entire amount must be consumed
         if (sqrtQ != sqrtPriceTargetRaw) {
-            if (amountRemaining < 0) assertEq(amountOut, uint256(-amountRemaining));
-            else assertEq(amountIn + feeAmount, uint256(amountRemaining));
+            if (amountRemaining > 0) assertEq(amountOut, uint256(amountRemaining));
+            else assertEq(amountIn + feeAmount, uint256(-amountRemaining));
         }
 
         // next price is between price and price target

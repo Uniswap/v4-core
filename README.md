@@ -20,13 +20,13 @@ A more detailed description of Uniswap v4 Core can be found in the draft of the 
 `v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by acquiring a lock on the contract and implementing the `lockAcquired` callback to then proceed with any of the following actions on the pools:
 
 - `swap`
-- `modifyPosition`
+- `modifyLiquidity`
 - `donate`
 - `take`
 - `settle`
 - `mint`
 
-Only the net balances owed to the pool (positive) or to the user (negative) are tracked throughout the duration of a lock. This is the `delta` field held in the lock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the lock reach 0 by the lock’s release. This lock and call style architecture gives callers maximum flexibility in integrating with the core code.
+Only the net balances owed to the user (positive) or to the pool (negative) are tracked throughout the duration of a lock. This is the `delta` field held in the lock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the lock reach 0 by the lock’s release. This lock and call style architecture gives callers maximum flexibility in integrating with the core code.
 
 Additionally, a pool may be initialized with a hook contract, that can implement any of the following callbacks in the lifecycle of pool actions:
 
