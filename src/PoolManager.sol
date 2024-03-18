@@ -137,11 +137,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         Lock.lock();
     }
 
-    function _accountDelta(Currency currency, int128 delta) internal {
-        _accountDeltaFor(currency, delta, msg.sender);
-    }
-
-    function _accountDeltaFor(Currency currency, int128 delta, address target) internal {
+    function _accountDelta(Currency currency, int128 delta, address target) internal {
         if (delta == 0) return;
 
         int256 current = currencyDelta[target][currency];
@@ -159,14 +155,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta) internal {
-        _accountDelta(key.currency0, delta.amount0());
-        _accountDelta(key.currency1, delta.amount1());
-    }
-
-    function _accountPoolBalanceDeltaFor(PoolKey memory key, BalanceDelta delta, address target) internal {
-        _accountDeltaFor(key.currency0, delta.amount0(), target);
-        _accountDeltaFor(key.currency1, delta.amount1(), target);
+    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta, address target) internal {
+        _accountDelta(key.currency0, delta.amount0(), target);
+        _accountDelta(key.currency1, delta.amount1(), target);
     }
 
     function _checkPoolInitialized(PoolId id) internal view {
@@ -199,8 +190,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         BalanceDelta hookDelta = key.hooks.afterModifyLiquidity(key, params, delta, hookData);
         delta = delta - hookDelta;
 
-        _accountPoolBalanceDeltaFor(key, hookDelta, address(key.hooks));
-        _accountPoolBalanceDelta(key, delta);
+        _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
+        _accountPoolBalanceDelta(key, delta, msg.sender);
     }
 
     /// @inheritdoc IPoolManager
@@ -221,10 +212,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
         params.amountSpecified += hookDeltaInSpecified;
-        if (exactInput ? params.amountSpecified > 0 : params.amountSpecified < 0) revert SwapTypeChanged();
+        if (exactInput ? params.amountSpecified > 0 : params.amountSpecified < 0) revert HookDeltaExceedsSwapAmount();
 
         // Account the hook's delta to the hook's address
-        _accountDeltaFor(zeroIsSpecified ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks));
+        _accountDelta(zeroIsSpecified ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks));
 
         if (params.amountSpecified != 0) {
             uint256 feeForProtocol;
@@ -260,7 +251,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         }
 
         (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
-        _accountDeltaFor(zeroIsSpecified ? key.currency1 : key.currency0, hookDeltaInUnspecified, address(key.hooks));
+        _accountDelta(zeroIsSpecified ? key.currency1 : key.currency0, hookDeltaInUnspecified, address(key.hooks));
 
         // After this addition, the delta in specified will equal the amountSpecified passed in by the user again
         delta = delta
@@ -269,7 +260,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
                     ? toBalanceDelta(-hookDeltaInSpecified, -hookDeltaInUnspecified)
                     : toBalanceDelta(-hookDeltaInUnspecified, -hookDeltaInSpecified)
             );
-        _accountPoolBalanceDelta(key, delta);
+        _accountPoolBalanceDelta(key, delta, msg.sender);
     }
 
     /// @inheritdoc IPoolManager
@@ -287,7 +278,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         delta = pools[id].donate(amount0, amount1);
 
-        _accountPoolBalanceDelta(key, delta);
+        _accountPoolBalanceDelta(key, delta, msg.sender);
 
         key.hooks.afterDonate(key, amount0, amount1, hookData);
     }
@@ -295,7 +286,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyWhenUnlocked {
         // subtraction must be safe
-        _accountDelta(currency, -(amount.toInt128()));
+        _accountDelta(currency, -(amount.toInt128()), msg.sender);
         reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
@@ -312,19 +303,19 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
-        _accountDelta(currency, paid.toInt128());
+        _accountDelta(currency, paid.toInt128(), msg.sender);
     }
 
     /// @inheritdoc IPoolManager
     function mint(address to, uint256 id, uint256 amount) external override noDelegateCall onlyWhenUnlocked {
         // subtraction must be safe
-        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
+        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()), msg.sender);
         _mint(to, id, amount);
     }
 
     /// @inheritdoc IPoolManager
     function burn(address from, uint256 id, uint256 amount) external override noDelegateCall onlyWhenUnlocked {
-        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
+        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128(), msg.sender);
         _burnFrom(from, id, amount);
     }
 

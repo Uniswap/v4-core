@@ -33,7 +33,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     error CurrenciesOutOfOrderOrEqual();
 
     /// @notice The hook's delta changed the swap from exactIn to exactOut or vice versa
-    error SwapTypeChanged();
+    error HookDeltaExceedsSwapAmount();
 
     /// @notice Thrown when a call to updateDynamicSwapFee is made by an address that is not the hook,
     /// or on a pool that does not have a dynamic swap fee.
