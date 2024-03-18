@@ -22,7 +22,7 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {PoolEmptyLockTest} from "../src/test/PoolEmptyLockTest.sol";
+import {PoolEmptyUnlockTest} from "../src/test/PoolEmptyUnlockTest.sol";
 import {Action} from "../src/test/PoolNestedActionsTest.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
@@ -37,7 +37,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using SwapFeeLibrary for uint24;
     using CurrencyLibrary for Currency;
 
-    event LockAcquired();
+    event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);
     event ModifyLiquidity(
         PoolId indexed poolId, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
@@ -57,12 +57,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
     );
 
-    PoolEmptyLockTest emptyLockRouter;
+    PoolEmptyUnlockTest emptyUnlockRouter;
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
 
-        emptyLockRouter = new PoolEmptyLockTest(manager);
+        emptyUnlockRouter = new PoolEmptyUnlockTest(manager);
     }
 
     function test_bytecodeSize() public {
@@ -83,9 +83,19 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(uninitializedKey, LIQ_PARAMS, ZERO_BYTES);
     }
 
+    function test_addLiquidity_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.modifyLiquidity(uninitializedKey, LIQ_PARAMS, ZERO_BYTES);
+    }
+
     function test_removeLiquidity_failsIfNotInitialized() public {
         vm.expectRevert(Pool.PoolNotInitialized.selector);
         modifyLiquidityRouter.modifyLiquidity(uninitializedKey, REMOVE_LIQ_PARAMS, ZERO_BYTES);
+    }
+
+    function test_removeLiquidity_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
     }
 
     function test_addLiquidity_succeedsIfInitialized(uint160 sqrtPriceX96) public {
@@ -435,6 +445,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
     }
 
+    function test_swap_failsIfLocked() public {
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.swap(key, swapParams, ZERO_BYTES);
+    }
+
     function test_swap_succeedsWithNativeTokensIfInitialized() public {
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
@@ -767,6 +785,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         donateRouter.donate(uninitializedKey, 100, 100, ZERO_BYTES);
     }
 
+    function test_donate_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.donate(key, 100, 100, ZERO_BYTES);
+    }
+
     function test_donate_failsIfNoLiquidity(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
@@ -884,8 +907,28 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         takeRouter.take(key, 1, 1); // assertions inside takeRouter because it takes then settles
     }
 
+    function test_take_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.take(key.currency0, address(this), 1);
+    }
+
     function test_take_succeedsWithPoolWithLiquidityWithNativeToken() public {
         takeRouter.take{value: 1}(nativeKey, 1, 1); // assertions inside takeRouter because it takes then settles
+    }
+
+    function test_settle_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.settle(key.currency0);
+    }
+
+    function test_mint_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.mint(address(this), key.currency0.toId(), 1);
+    }
+
+    function test_burn_failsIfLocked() public {
+        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+        manager.burn(address(this), key.currency0.toId(), 1);
     }
 
     function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint16 protocolFee) public {
@@ -1056,22 +1099,22 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(nativeCurrency), 0);
     }
 
-    function test_lock_EmitsCorrectId() public {
+    function test_unlock_EmitsCorrectId() public {
         vm.expectEmit(false, false, false, true);
-        emit LockAcquired();
-        emptyLockRouter.lock();
+        emit UnlockCallback();
+        emptyUnlockRouter.unlock();
     }
 
     Action[] actions;
 
-    function test_lock_cannotBeCalledTwiceByCaller() public {
-        actions = [Action.NESTED_SELF_LOCK];
-        nestedActionRouter.lock(abi.encode(actions));
+    function test_unlock_cannotBeCalledTwiceByCaller() public {
+        actions = [Action.NESTED_SELF_UNLOCK];
+        nestedActionRouter.unlock(abi.encode(actions));
     }
 
-    function test_lock_cannotBeCalledTwiceByDifferentCallers() public {
-        actions = [Action.NESTED_EXECUTOR_LOCK];
-        nestedActionRouter.lock(abi.encode(actions));
+    function test_unlock_cannotBeCalledTwiceByDifferentCallers() public {
+        actions = [Action.NESTED_EXECUTOR_UNLOCK];
+        nestedActionRouter.unlock(abi.encode(actions));
     }
 
     // function testExtsloadForPoolPrice() public {

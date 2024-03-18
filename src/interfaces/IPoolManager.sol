@@ -15,17 +15,17 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice Thrown when currencies touched has exceeded max of 256
     error MaxCurrenciesTouched();
 
-    /// @notice Thrown when a currency is not netted out after a lock
+    /// @notice Thrown when a currency is not netted out after the contract is unlocked
     error CurrencyNotSettled();
 
     /// @notice Thrown when trying to interact with a non-initialized pool
     error PoolNotInitialized();
 
-    /// @notice Thrown when lock is called, but a lock is already open
-    error AlreadyLocked();
+    /// @notice Thrown when unlock is called, but the contract is already unlocked
+    error AlreadyUnlocked();
 
-    /// @notice Thrown when a function is called outside of a lock
-    error ManagerNotLocked();
+    /// @notice Thrown when a function is called that requires the contract to be unlocked, but it is not
+    error ManagerLocked();
 
     /// @notice The ERC1155 being deposited is not the Uniswap ERC1155
     error NotPoolManagerToken();
@@ -125,11 +125,11 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice Returns the reserves for a given ERC20 currency
     function reservesOf(Currency currency) external view returns (uint256);
 
-    /// @notice Returns whether the contract is locked
-    function isLockSet() external view returns (bool);
+    /// @notice Returns whether the contract is unlocked or not
+    function isUnlocked() external view returns (bool);
 
-    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod by the close of the initial lock.
-    function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
+    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod out before the contract is locked
+    function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
@@ -142,9 +142,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     function currencyDelta(address caller, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
-    /// @param data Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
-    /// @return The data returned by the call to `ILockCallback(msg.sender).lockAcquired(data)`
-    function lock(bytes calldata data) external payable returns (bytes memory);
+    /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
+    /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
+    function unlock(bytes calldata data) external payable returns (bytes memory);
 
     struct ModifyLiquidityParams {
         // the lower and upper tick of the position
@@ -158,7 +158,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @dev Poke by calling with a zero liquidityDelta
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
-    /// @param hookData Any data to pass to the callback, via `ILockCallback(msg.sender).lockAcquired(data)`
+    /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
     /// @return delta The balance delta of the liquidity
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
