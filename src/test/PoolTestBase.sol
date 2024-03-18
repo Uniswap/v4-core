@@ -8,7 +8,7 @@ import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
-abstract contract PoolTestBase is Test, IUnlockCallback {
+abstract contract PoolTestBase is IUnlockCallback {
     using CurrencyLibrary for Currency;
 
     IPoolManager public immutable manager;
@@ -18,7 +18,7 @@ abstract contract PoolTestBase is Test, IUnlockCallback {
     }
 
     function _take(Currency currency, address recipient, int128 amount, bool withdrawTokens) internal {
-        assertGt(amount, 0);
+        require(amount > 0);
         if (withdrawTokens) {
             manager.take(currency, recipient, uint128(amount));
         } else {
@@ -27,7 +27,7 @@ abstract contract PoolTestBase is Test, IUnlockCallback {
     }
 
     function _settle(Currency currency, address payer, int128 amount, bool settleUsingTransfer) internal {
-        assertLt(amount, 0);
+        require(amount < 0);
         if (settleUsingTransfer) {
             if (currency.isNative()) {
                 manager.settle{value: uint128(-amount)}(currency);

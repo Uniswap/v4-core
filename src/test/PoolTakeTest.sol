@@ -6,9 +6,8 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
-import {Test} from "forge-std/Test.sol";
 
-contract PoolTakeTest is Test, PoolTestBase {
+contract PoolTakeTest is PoolTestBase {
     using CurrencyLibrary for Currency;
     using SafeCast for uint256;
 
@@ -39,18 +38,18 @@ contract PoolTakeTest is Test, PoolTestBase {
     function _testTake(Currency currency, address sender, uint256 amount) internal {
         (uint256 userBalBefore, uint256 pmBalBefore, uint256 reserveBefore, int256 deltaBefore) =
             _fetchBalances(currency, sender, address(this));
-        assertEq(deltaBefore, 0);
+        require(deltaBefore == 0);
 
         _take(currency, sender, amount.toInt128(), true);
 
         (uint256 userBalAfter, uint256 pmBalAfter, uint256 reserveAfter, int256 deltaAfter) =
             _fetchBalances(currency, sender, address(this));
-        assertEq(deltaAfter, -amount.toInt128());
+        require(deltaAfter == -amount.toInt128());
 
-        assertEq(userBalAfter - userBalBefore, amount);
-        assertEq(pmBalBefore - pmBalAfter, amount);
-        assertEq(reserveBefore - reserveAfter, amount);
-        assertEq(reserveBefore - reserveAfter, amount);
+        require(userBalAfter - userBalBefore == amount);
+        require(pmBalBefore - pmBalAfter == amount);
+        require(reserveBefore - reserveAfter == amount);
+        require(reserveBefore - reserveAfter == amount);
 
         _settle(currency, sender, -amount.toInt128(), true);
     }
