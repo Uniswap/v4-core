@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {ILockCallback} from "../interfaces/callback/ILockCallback.sol";
+import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Constants} from "../../test/utils/Constants.sol";
@@ -12,8 +12,8 @@ import {Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 
 enum Action {
-    NESTED_SELF_LOCK,
-    NESTED_EXECUTOR_LOCK,
+    NESTED_SELF_UNLOCK,
+    NESTED_EXECUTOR_UNLOCK,
     SWAP_AND_SETTLE,
     DONATE_AND_SETTLE,
     ADD_LIQ_AND_SETTLE,
@@ -21,7 +21,7 @@ enum Action {
     INITIALIZE
 }
 
-contract PoolNestedActionsTest is Test, ILockCallback {
+contract PoolNestedActionsTest is Test, IUnlockCallback {
     IPoolManager manager;
     NestedActionExecutor public executor;
     address user;
@@ -32,28 +32,28 @@ contract PoolNestedActionsTest is Test, ILockCallback {
         executor = new NestedActionExecutor(manager, user);
     }
 
-    function lock(bytes calldata data) external {
-        manager.lock(data);
+    function unlock(bytes calldata data) external {
+        manager.unlock(data);
     }
 
-    /// @notice Called by the pool manager on `msg.sender` when a lock is acquired
-    function lockAcquired(bytes calldata data) external override returns (bytes memory) {
+    /// @notice Called by the pool manager on `msg.sender` when the manager is unlocked
+    function unlockCallback(bytes calldata data) external override returns (bytes memory) {
         Action[] memory actions = abi.decode(data, (Action[]));
-        if (actions.length == 1 && actions[0] == Action.NESTED_SELF_LOCK) {
-            _nestedLock();
+        if (actions.length == 1 && actions[0] == Action.NESTED_SELF_UNLOCK) {
+            _nestedUnlock();
         } else {
             executor.execute(actions);
         }
         return "";
     }
 
-    function _nestedLock() internal {
-        bool locked = manager.isLockSet();
-        assertEq(locked, true);
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyLocked.selector));
-        manager.lock("");
-        locked = manager.isLockSet();
-        assertEq(locked, true);
+    function _nestedUnlock() internal {
+        bool unlocked = manager.isUnlocked();
+        assertEq(unlocked, true);
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyUnlocked.selector));
+        manager.unlock("");
+        unlocked = manager.isUnlocked();
+        assertEq(unlocked, true);
     }
 }
 
@@ -89,7 +89,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         if (Currency.unwrap(key.currency0) == address(0)) revert KeyNotSet();
         for (uint256 i = 0; i < actions.length; i++) {
             Action action = actions[i];
-            if (action == Action.NESTED_EXECUTOR_LOCK) _nestedLock();
+            if (action == Action.NESTED_EXECUTOR_UNLOCK) _nestedUnlock();
             else if (action == Action.SWAP_AND_SETTLE) _swap(msg.sender);
             else if (action == Action.ADD_LIQ_AND_SETTLE) _addLiquidity(msg.sender);
             else if (action == Action.REMOVE_LIQ_AND_SETTLE) _removeLiquidity(msg.sender);
@@ -98,18 +98,18 @@ contract NestedActionExecutor is Test, PoolTestBase {
         }
     }
 
-    function _nestedLock() internal {
-        bool locked = manager.isLockSet();
-        assertEq(locked, true);
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyLocked.selector));
-        manager.lock("");
-        locked = manager.isLockSet();
-        assertEq(locked, true);
+    function _nestedUnlock() internal {
+        bool unlocked = manager.isUnlocked();
+        assertEq(unlocked, true);
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.AlreadyUnlocked.selector));
+        manager.unlock("");
+        unlocked = manager.isUnlocked();
+        assertEq(unlocked, true);
     }
 
     function _swap(address caller) internal {
-        bool locked = manager.isLockSet();
-        assertEq(locked, true);
+        bool unlocked = manager.isUnlocked();
+        assertEq(unlocked, true);
         (,,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
         (,,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
@@ -134,8 +134,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
     }
 
     function _addLiquidity(address caller) internal {
-        bool locked = manager.isLockSet();
-        assertEq(locked, true);
+        bool unlocked = manager.isUnlocked();
+        assertEq(unlocked, true);
         (,,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
         (,,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
@@ -159,8 +159,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
     // cannot remove non-existent liquidity - need to perform an add before this removal
     function _removeLiquidity(address caller) internal {
-        bool locked = manager.isLockSet();
-        assertEq(locked, true);
+        bool unlocked = manager.isUnlocked();
+        assertEq(unlocked, true);
         (,,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
         (,,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
@@ -183,8 +183,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
     }
 
     function _donate(address caller) internal {
-        bool locked = manager.isLockSet();
-        assertEq(locked, true);
+        bool unlocked = manager.isUnlocked();
+        assertEq(unlocked, true);
         (,,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
         (,,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
@@ -209,8 +209,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
     }
 
     function _initialize() internal {
-        bool locked = manager.isLockSet();
-        assertEq(locked, true);
+        bool unlocked = manager.isUnlocked();
+        assertEq(unlocked, true);
         key.tickSpacing = 50;
         PoolId id = key.toId();
         (uint256 price,,,) = manager.getSlot0(id);
@@ -221,7 +221,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
     }
 
     // This will never actually be used - its just to allow us to use the PoolTestBase helper contact
-    function lockAcquired(bytes calldata) external pure override returns (bytes memory) {
+    function unlockCallback(bytes calldata) external pure override returns (bytes memory) {
         return "";
     }
 }

@@ -6,14 +6,14 @@ import {Lock} from "../src/libraries/Lock.sol";
 
 contract LockTest is Test {
     function test_lock() public {
-        assertFalse(Lock.isLocked());
-
-        Lock.lock();
-
-        assertTrue(Lock.isLocked());
+        assertFalse(Lock.isUnlocked());
 
         Lock.unlock();
 
-        assertFalse(Lock.isLocked());
+        assertTrue(Lock.isUnlocked());
+
+        Lock.lock();
+
+        assertFalse(Lock.isUnlocked());
     }
 }
