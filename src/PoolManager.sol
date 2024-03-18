@@ -266,8 +266,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         delta = delta
             + (
                 zeroIsSpecified
-                    ? toBalanceDelta(hookDeltaInSpecified, -hookDeltaInUnspecified)
-                    : toBalanceDelta(-hookDeltaInUnspecified, hookDeltaInSpecified)
+                    ? toBalanceDelta(-hookDeltaInSpecified, -hookDeltaInUnspecified)
+                    : toBalanceDelta(-hookDeltaInUnspecified, -hookDeltaInSpecified)
             );
         _accountPoolBalanceDelta(key, delta);
     }
