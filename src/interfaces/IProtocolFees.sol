@@ -3,9 +3,7 @@ pragma solidity ^0.8.19;
 
 import {Currency} from "../types/Currency.sol";
 
-interface IFees {
-    /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
-    error FeeTooLarge();
+interface IProtocolFees {
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
     error ProtocolFeeCannotBeFetched();
     /// @notice Thrown when the call to fetch the protocol fee reverts or returns invalid data.
