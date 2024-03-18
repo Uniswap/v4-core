@@ -151,7 +151,7 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
-    function modifyPosition(State storage self, ModifyPositionParams memory params)
+    function modifyLiquidity(State storage self, ModifyPositionParams memory params)
         internal
         returns (BalanceDelta result)
     {
