@@ -11,6 +11,7 @@ import {Owned} from "./Owned.sol";
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
 
+    // Max protocol fee is 25% (2500 bips)
     uint16 public constant MAX_PROTOCOL_FEE = 2500;
 
     mapping(Currency currency => uint256) public protocolFeesAccrued;

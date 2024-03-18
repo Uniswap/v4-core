@@ -59,6 +59,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     PoolEmptyUnlockTest emptyUnlockRouter;
 
+    uint24 constant MAX_FEE_BOTH_TOKENS = 10242500; // 2500 2500
+
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
 
@@ -973,13 +975,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
-        uint24 protocolFee = 10242500; // 100111000100 100111000100
-
-        feeController.setSwapFeeForPool(uninitializedKey.toId(), protocolFee);
+        feeController.setSwapFeeForPool(uninitializedKey.toId(), MAX_FEE_BOTH_TOKENS);
 
         manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
         (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
     }
 
     function test_collectProtocolFees_revertsIfCallerIsNotController() public {
@@ -988,14 +988,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
-        uint24 protocolFee = 10242500; // 100111000100 100111000100
         uint256 expectedFees = 7;
 
-        feeController.setSwapFeeForPool(key.toId(), protocolFee);
+        feeController.setSwapFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
             key,
@@ -1016,14 +1015,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint24 protocolFee = 10242500; // 100111000100 100111000100
         uint256 expectedFees = 7;
 
-        feeController.setSwapFeeForPool(key.toId(), protocolFee);
+        feeController.setSwapFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
             key,
@@ -1042,16 +1040,15 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_nativeToken_accumulateFees_gas() public {
-        uint24 protocolFee = 10242500; // 100111000100 100111000100
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
         // set protocol fee before initializing the pool as it is fetched on initialization
-        feeController.setSwapFeeForPool(nativeKey.toId(), protocolFee);
+        feeController.setSwapFeeForPool(nativeKey.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(nativeKey);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
             nativeKey,
@@ -1072,15 +1069,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint24 protocolFee = 10242500; // 100111000100 100111000100
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
-        feeController.setSwapFeeForPool(nativeKey.toId(), protocolFee);
+        feeController.setSwapFeeForPool(nativeKey.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(nativeKey);
 
         (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
             nativeKey,
