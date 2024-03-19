@@ -13,7 +13,7 @@ import {NoDelegateCall} from "./NoDelegateCall.sol";
 import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
-import {ILockCallback} from "./interfaces/callback/ILockCallback.sol";
+import {IUnlockCallback} from "./interfaces/callback/IUnlockCallback.sol";
 import {ProtocolFees} from "./ProtocolFees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
@@ -89,13 +89,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function isLockSet() external view returns (bool) {
-        return Lock.isLocked();
+    function isUnlocked() external view override returns (bool) {
+        return Lock.isUnlocked();
     }
 
-    /// @notice This will revert if the contract is not locked
-    modifier isLocked() {
-        if (!Lock.isLocked()) revert ManagerNotLocked();
+    /// @notice This will revert if the contract is locked
+    modifier onlyWhenUnlocked() {
+        if (!Lock.isUnlocked()) revert ManagerLocked();
         _;
     }
 
@@ -127,16 +127,16 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function lock(bytes calldata data) external payable override returns (bytes memory result) {
-        if (Lock.isLocked()) revert AlreadyLocked();
+    function unlock(bytes calldata data) external payable override returns (bytes memory result) {
+        if (Lock.isUnlocked()) revert AlreadyUnlocked();
 
-        Lock.lock();
+        Lock.unlock();
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = ILockCallback(msg.sender).lockAcquired(data);
+        result = IUnlockCallback(msg.sender).unlockCallback(data);
 
         if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
-        Lock.unlock();
+        Lock.lock();
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
@@ -171,14 +171,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override noDelegateCall isLocked returns (BalanceDelta delta) {
+    ) external override noDelegateCall onlyWhenUnlocked returns (BalanceDelta delta) {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
-        delta = pools[id].modifyPosition(
-            Pool.ModifyPositionParams({
+        delta = pools[id].modifyLiquidity(
+            Pool.ModifyLiquidityParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,
@@ -199,7 +199,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         override
         noDelegateCall
-        isLocked
+        onlyWhenUnlocked
         returns (BalanceDelta delta)
     {
         PoolId id = key.toId();
@@ -240,7 +240,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         override
         noDelegateCall
-        isLocked
+        onlyWhenUnlocked
         returns (BalanceDelta delta)
     {
         PoolId id = key.toId();
@@ -256,7 +256,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function take(Currency currency, address to, uint256 amount) external override noDelegateCall isLocked {
+    function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyWhenUnlocked {
         // subtraction must be safe
         _accountDelta(currency, -(amount.toInt128()));
         reservesOf[currency] -= amount;
@@ -264,7 +264,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function settle(Currency currency) external payable override noDelegateCall isLocked returns (uint256 paid) {
+    function settle(Currency currency)
+        external
+        payable
+        override
+        noDelegateCall
+        onlyWhenUnlocked
+        returns (uint256 paid)
+    {
         uint256 reservesBefore = reservesOf[currency];
         reservesOf[currency] = currency.balanceOfSelf();
         paid = reservesOf[currency] - reservesBefore;
@@ -272,14 +279,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function mint(address to, uint256 id, uint256 amount) external override noDelegateCall isLocked {
+    function mint(address to, uint256 id, uint256 amount) external override noDelegateCall onlyWhenUnlocked {
         // subtraction must be safe
         _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
         _mint(to, id, amount);
     }
 
     /// @inheritdoc IPoolManager
-    function burn(address from, uint256 id, uint256 amount) external override noDelegateCall isLocked {
+    function burn(address from, uint256 id, uint256 amount) external override noDelegateCall onlyWhenUnlocked {
         _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128());
         _burnFrom(from, id, amount);
     }
@@ -319,7 +326,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         return value;
     }
 
-    function getLockNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
+    function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
         return NonZeroDeltaCount.read();
     }
 
