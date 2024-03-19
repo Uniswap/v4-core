@@ -176,7 +176,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
         delta = pools[id].modifyLiquidity(
-            Pool.ModifyPositionParams({
+            Pool.ModifyLiquidityParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,

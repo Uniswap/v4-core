@@ -31,7 +31,7 @@ contract PoolTest is Test {
         }
     }
 
-    function testModifyPosition(uint160 sqrtPriceX96, Pool.ModifyPositionParams memory params) public {
+    function testModifyLiquidity(uint160 sqrtPriceX96, Pool.ModifyLiquidityParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
@@ -81,7 +81,17 @@ contract PoolTest is Test {
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
         swapFee = uint24(bound(swapFee, 0, 999999));
 
-        testPoolInitialize(sqrtPriceX96, 0, 0);
+        // initialize and add liquidity
+        testModifyLiquidity(
+            sqrtPriceX96,
+            Pool.ModifyLiquidityParams({
+                owner: address(this),
+                tickLower: -120,
+                tickUpper: 120,
+                liquidityDelta: 1e18,
+                tickSpacing: 60
+            })
+        );
         Pool.Slot0 memory slot0 = state.slot0;
 
         if (params.amountSpecified == 0) {
