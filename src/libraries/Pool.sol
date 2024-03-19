@@ -126,7 +126,7 @@ library Pool {
         self.slot0.swapFee = swapFee;
     }
 
-    struct ModifyPositionParams {
+    struct ModifyLiquidityParams {
         // the address that owns the position
         address owner;
         // the lower and upper tick of the position
@@ -138,7 +138,7 @@ library Pool {
         int24 tickSpacing;
     }
 
-    struct ModifyPositionState {
+    struct ModifyLiquidityState {
         bool flippedLower;
         uint128 liquidityGrossAfterLower;
         bool flippedUpper;
@@ -151,7 +151,7 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
-    function modifyLiquidity(State storage self, ModifyPositionParams memory params)
+    function modifyLiquidity(State storage self, ModifyLiquidityParams memory params)
         internal
         returns (BalanceDelta result)
     {
@@ -160,7 +160,7 @@ library Pool {
         uint256 feesOwed0;
         uint256 feesOwed1;
         {
-            ModifyPositionState memory state;
+            ModifyLiquidityState memory state;
 
             // if we need to update the ticks, do it
             if (params.liquidityDelta != 0) {
