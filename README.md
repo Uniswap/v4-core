@@ -75,17 +75,17 @@ To integrate with the contracts, the interfaces are available to use:
 ```solidity
 
 import {IPoolManager} from 'v4-core/contracts/interfaces/IPoolManager.sol';
-import {ILockCallback} from 'v4-core/contracts/interfaces/callback/ILockCallback.sol';
+import {IUnlockCallback} from 'v4-core/contracts/interfaces/callback/IUnlockCallback.sol';
 
-contract MyContract is ILockCallback {
+contract MyContract is IUnlockCallback {
     IPoolManager poolManager;
 
     function doSomethingWithPools() {
-        // this function will call `lockAcquired` below
+        // this function will call `unlockCallback` below
         poolManager.lock(...);
     }
 
-    function lockAcquired(bytes calldata data) external returns (bytes memory) {
+    function unlockCallback(bytes calldata data) external returns (bytes memory) {
         // perform pool actions
         poolManager.swap(...)
     }
