@@ -46,9 +46,9 @@ contract PoolTakeTest is PoolTestBase {
             _fetchBalances(currency, sender, address(this));
         require(deltaAfter == -amount.toInt128(), "deltaAfter is not equal to -amount.toInt128()");
 
-        require(userBalAfter - userBalBefore == amount, "userBalAfter - userBalBefore is not equal to amount");
-        require(pmBalBefore - pmBalAfter == amount, "pmBalBefore - pmBalAfter is not equal to amount");
-        require(reserveBefore - reserveAfter == amount, "reserveBefore - reserveAfter is not equal to amount");
+        require(userBalAfter - userBalBefore == amount, "the difference between userBalAfter and userBalBefore is not equal to amount");
+        require(pmBalBefore - pmBalAfter == amount, "the difference between pmBalBefore and pmBalAfter is not equal to amount");
+        require(reserveBefore - reserveAfter == amount, "the difference between reserveBefore and reserveAfter is not equal to amount");
 
         _settle(currency, sender, -amount.toInt128(), true);
     }
