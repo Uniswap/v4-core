@@ -82,7 +82,7 @@ contract MyContract is IUnlockCallback {
 
     function doSomethingWithPools() {
         // this function will call `unlockCallback` below
-        poolManager.lock(...);
+        poolManager.unlock(...);
     }
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
