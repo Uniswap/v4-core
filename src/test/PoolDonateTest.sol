@@ -48,18 +48,18 @@ contract PoolDonateTest is PoolTestBase {
         (,, uint256 reserveBefore1, int256 deltaBefore1) =
             _fetchBalances(data.key.currency1, data.sender, address(this));
 
-        assertEq(deltaBefore0, 0);
-        assertEq(deltaBefore1, 0);
+        require(deltaBefore0 == 0, "deltaBefore0 is not 0");
+        require(deltaBefore1 == 0, "deltaBefore1 is not 0");
 
         BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, data.hookData);
 
         (,, uint256 reserveAfter0, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, uint256 reserveAfter1, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
-        assertEq(reserveBefore0, reserveAfter0);
-        assertEq(reserveBefore1, reserveAfter1);
-        assertEq(deltaAfter0, -int256(data.amount0));
-        assertEq(deltaAfter1, -int256(data.amount1));
+        require(reserveBefore0 == reserveAfter0, "reserveBefore0 is not equal to reserveAfter0");
+        require(reserveBefore1 == reserveAfter1, "reserveBefore1 is not equal to reserveAfter1");
+        require(deltaAfter0 == -int256(data.amount0), "deltaAfter0 is not equal to -int256(data.amount0)");
+        require(deltaAfter1 == -int256(data.amount1), "deltaAfter1 is not equal to -int256(data.amount1)");
 
         if (deltaAfter0 < 0) _settle(data.key.currency0, data.sender, int128(deltaAfter0), true);
         if (deltaAfter1 < 0) _settle(data.key.currency1, data.sender, int128(deltaAfter1), true);
