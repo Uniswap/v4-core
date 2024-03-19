@@ -301,10 +301,25 @@ library Pool {
         internal
         returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
     {
-        if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
-
         Slot0 memory slot0Start = self.slot0;
         swapFee = slot0Start.swapFee;
+
+        SwapCache memory cache = SwapCache({
+            liquidityStart: self.liquidity,
+            protocolFee: params.zeroForOne ? uint8(slot0Start.protocolFee % 256) : uint8(slot0Start.protocolFee >> 8)
+        });
+
+        state = SwapState({
+            amountSpecifiedRemaining: params.amountSpecified,
+            amountCalculated: 0,
+            sqrtPriceX96: slot0Start.sqrtPriceX96,
+            tick: slot0Start.tick,
+            feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
+            liquidity: cache.liquidityStart
+        });
+
+        if (params.amountSpecified == 0) return (BalanceDelta.wrap(0), 0, swapFee, state);
+
         if (params.zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
@@ -321,21 +336,7 @@ library Pool {
             }
         }
 
-        SwapCache memory cache = SwapCache({
-            liquidityStart: self.liquidity,
-            protocolFee: params.zeroForOne ? uint8(slot0Start.protocolFee % 256) : uint8(slot0Start.protocolFee >> 8)
-        });
-
         bool exactInput = params.amountSpecified < 0;
-
-        state = SwapState({
-            amountSpecifiedRemaining: params.amountSpecified,
-            amountCalculated: 0,
-            sqrtPriceX96: slot0Start.sqrtPriceX96,
-            tick: slot0Start.tick,
-            feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
-            liquidity: cache.liquidityStart
-        });
 
         StepComputations memory step;
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit

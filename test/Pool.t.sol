@@ -10,6 +10,7 @@ import {TickMath} from "../src/libraries/TickMath.sol";
 import {TickBitmap} from "../src/libraries/TickBitmap.sol";
 import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
 import {Constants} from "./utils/Constants.sol";
+import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 
 contract PoolTest is Test {
@@ -17,12 +18,14 @@ contract PoolTest is Test {
 
     Pool.State state;
 
-    function testPoolInitialize(uint160 sqrtPriceX96, uint16 protocolFee, uint24 dynamicFee) public {
+    uint24 constant DEFAULT_SWAP_FEE = (4 << 8) & 4;
+
+    function testPoolInitialize(uint160 sqrtPriceX96, uint16 protocolFee, uint24 swapFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
             vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
-            state.initialize(sqrtPriceX96, protocolFee, dynamicFee);
+            state.initialize(sqrtPriceX96, protocolFee, swapFee);
         } else {
-            state.initialize(sqrtPriceX96, protocolFee, dynamicFee);
+            state.initialize(sqrtPriceX96, protocolFee, swapFee);
             assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
             assertEq(state.slot0.protocolFee, protocolFee);
             assertEq(state.slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
@@ -35,7 +38,7 @@ contract PoolTest is Test {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
-        testPoolInitialize(sqrtPriceX96, 0, 0);
+        testPoolInitialize(sqrtPriceX96, 0, DEFAULT_SWAP_FEE);
 
         if (params.tickLower >= params.tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
@@ -76,10 +79,9 @@ contract PoolTest is Test {
         state.modifyLiquidity(params);
     }
 
-    function testSwap(uint160 sqrtPriceX96, uint24 swapFee, Pool.SwapParams memory params) public {
+    function testSwap(uint160 sqrtPriceX96, Pool.SwapParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
-        swapFee = uint24(bound(swapFee, 0, 999999));
 
         // initialize and add liquidity
         testModifyLiquidity(
@@ -94,36 +96,45 @@ contract PoolTest is Test {
         );
         Pool.Slot0 memory slot0 = state.slot0;
 
-        if (params.amountSpecified == 0) {
-            vm.expectRevert(Pool.SwapAmountCannotBeZero.selector);
-        } else if (params.zeroForOne) {
+        if (params.zeroForOne && params.amountSpecified != 0) {
             if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96) {
                 vm.expectRevert(
                     abi.encodeWithSelector(
                         Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
                     )
                 );
+                state.swap(params);
             } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO) {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
+                state.swap(params);
             }
-        } else if (!params.zeroForOne) {
+        } else if (!params.zeroForOne && params.amountSpecified != 0) {
             if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96) {
                 vm.expectRevert(
                     abi.encodeWithSelector(
                         Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
                     )
                 );
+                state.swap(params);
             } else if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
+                state.swap(params);
             }
-        }
-
-        state.swap(params);
-
-        if (params.zeroForOne) {
-            assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
         } else {
-            assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+            (BalanceDelta _result, uint256 _feeForProtocol, uint24 _swapFee, Pool.SwapState memory _state) =
+                state.swap(params);
+
+            assertEq(state.slot0.sqrtPriceX96, _state.sqrtPriceX96);
+            assertEq(state.slot0.tick, _state.tick);
+            assertEq(_swapFee, DEFAULT_SWAP_FEE);
+            assertEq(_feeForProtocol, 0);
+            if (params.amountSpecified == 0) {
+                assertEq(BalanceDelta.unwrap(_result), 0);
+            } else if (params.zeroForOne) {
+                assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+            } else {
+                assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+            }
         }
     }
 }

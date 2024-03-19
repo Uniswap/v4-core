@@ -205,19 +205,15 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        int128 hookDeltaInSpecified = key.hooks.beforeSwap(key, params, hookData);
+        int128 hookDeltaInSpecified;
+        (params.amountSpecified, hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
 
-        bool exactInput = params.amountSpecified < 0;
-        bool zeroIsSpecified = exactInput == params.zeroForOne;
-
-        // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
-        params.amountSpecified += hookDeltaInSpecified;
-        if (exactInput ? params.amountSpecified > 0 : params.amountSpecified < 0) revert HookDeltaExceedsSwapAmount();
+        bool zeroIsSpecified = ((params.amountSpecified < 0) == params.zeroForOne);
 
         // Account the hook's delta to the hook's address
         _accountDelta(zeroIsSpecified ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks));
 
-        if (params.amountSpecified != 0) {
+        {
             uint256 feeForProtocol;
             uint24 swapFee;
             Pool.SwapState memory state;
@@ -237,7 +233,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
                 }
             }
 
-            // TODO returning deltas here doesnt make any sense
             emit Swap(
                 id,
                 msg.sender,

@@ -64,6 +64,9 @@ library Hooks {
     /// @notice thrown when a hook call fails
     error FailedHookCall();
 
+    /// @notice The hook's delta changed the swap from exactIn to exactOut or vice versa
+    error HookDeltaExceedsSwapAmount();
+
     /// @notice Utility function intended to be used in hook constructors to ensure
     /// the deployed hooks address causes the intended hooks to be called
     /// @param permissions The hooks that are intended to be called
@@ -217,13 +220,21 @@ library Hooks {
     /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
-        returns (int128 hookDeltaInSpecified)
+        returns (int256 amountToSwap, int128 hookDeltaInSpecified)
     {
+        amountToSwap = params.amountSpecified;
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
             hookDeltaInSpecified = self.callHookWithReturnDelta(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
                 key.hooks.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)
             ).toInt128();
+
+            // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
+            if (hookDeltaInSpecified != 0) {
+                bool exactInput = amountToSwap < 0;
+                amountToSwap += hookDeltaInSpecified;
+                if (exactInput ? amountToSwap > 0 : amountToSwap < 0) revert HookDeltaExceedsSwapAmount();
+            }
         }
     }
 
