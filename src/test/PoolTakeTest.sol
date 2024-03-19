@@ -38,18 +38,18 @@ contract PoolTakeTest is PoolTestBase {
     function _testTake(Currency currency, address sender, uint256 amount) internal {
         (uint256 userBalBefore, uint256 pmBalBefore, uint256 reserveBefore, int256 deltaBefore) =
             _fetchBalances(currency, sender, address(this));
-        require(deltaBefore == 0);
+        require(deltaBefore == 0, "deltaBefore is not equal to 0");
 
         _take(currency, sender, amount.toInt128(), true);
 
         (uint256 userBalAfter, uint256 pmBalAfter, uint256 reserveAfter, int256 deltaAfter) =
             _fetchBalances(currency, sender, address(this));
-        require(deltaAfter == -amount.toInt128());
+        require(deltaAfter == -amount.toInt128(), "deltaAfter is not equal to -amount.toInt128()");
 
-        require(userBalAfter - userBalBefore == amount);
-        require(pmBalBefore - pmBalAfter == amount);
-        require(reserveBefore - reserveAfter == amount);
-        require(reserveBefore - reserveAfter == amount);
+        require(userBalAfter - userBalBefore == amount, "userBalAfter - userBalBefore is not equal to amount");
+        require(pmBalBefore - pmBalAfter == amount, "pmBalBefore - pmBalAfter is not equal to amount");
+        require(reserveBefore - reserveAfter == amount, "reserveBefore - reserveAfter is not equal to amount");
+        require(reserveBefore - reserveAfter == amount, "reserveBefore - reserveAfter is not equal to amount");
 
         _settle(currency, sender, -amount.toInt128(), true);
     }
