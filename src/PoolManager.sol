@@ -208,50 +208,47 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         int128 hookDeltaInSpecified;
         (params.amountSpecified, hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
 
-        {
-            uint256 feeForProtocol;
-            uint24 swapFee;
-            Pool.SwapState memory state;
-            (delta, feeForProtocol, swapFee, state) = pools[id].swap(
-                Pool.SwapParams({
-                    tickSpacing: key.tickSpacing,
-                    zeroForOne: params.zeroForOne,
-                    amountSpecified: params.amountSpecified,
-                    sqrtPriceLimitX96: params.sqrtPriceLimitX96
-                })
-            );
+        // execute swap, account protocol fees, and emit swap event
+        delta = _swap(
+            id,
+            Pool.SwapParams({
+                tickSpacing: key.tickSpacing,
+                zeroForOne: params.zeroForOne,
+                amountSpecified: params.amountSpecified,
+                sqrtPriceLimitX96: params.sqrtPriceLimitX96
+            }),
+            params.zeroForOne ? key.currency0 : key.currency1
+        );
 
-            // the fee is on the input currency
-            unchecked {
-                if (feeForProtocol > 0) {
-                    protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
-                }
+        (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
+
+        // calculates if currency0 or currency1 is the specified token
+        BalanceDelta hookDelta = ((params.amountSpecified < 0) == params.zeroForOne)
+            ? toBalanceDelta(hookDeltaInSpecified, hookDeltaInUnspecified)
+            : toBalanceDelta(hookDeltaInUnspecified, hookDeltaInSpecified);
+
+        // Account the hook's delta to the hook's address, and charge them to the caller's deltas
+        _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
+        _accountPoolBalanceDelta(key, delta - hookDelta, msg.sender);
+    }
+
+    // Internal swap function to execute a swap, account protocol fees, and emit the swap event
+    function _swap(PoolId id, Pool.SwapParams memory params, Currency inputCurrency) internal returns (BalanceDelta) {
+        (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) =
+            pools[id].swap(params);
+
+        // the fee is on the input currency
+        unchecked {
+            if (feeForProtocol > 0) {
+                protocolFeesAccrued[inputCurrency] += feeForProtocol;
             }
-
-            emit Swap(
-                id,
-                msg.sender,
-                delta.amount0(),
-                delta.amount1(),
-                state.sqrtPriceX96,
-                state.liquidity,
-                state.tick,
-                swapFee
-            );
         }
 
-        {
-            (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
+        emit Swap(
+            id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
+        );
 
-            // calculates if currency0 or currency1 is the specified token
-            BalanceDelta hookDelta = ((params.amountSpecified < 0) == params.zeroForOne)
-                ? toBalanceDelta(hookDeltaInSpecified, hookDeltaInUnspecified)
-                : toBalanceDelta(hookDeltaInUnspecified, hookDeltaInSpecified);
-
-            // Account the hook's delta to the hook's address, and charge them to the caller's deltas
-            _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
-            _accountPoolBalanceDelta(key, delta - hookDelta, msg.sender);
-        }
+        return delta;
     }
 
     /// @inheritdoc IPoolManager
