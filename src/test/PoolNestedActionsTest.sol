@@ -16,8 +16,8 @@ enum Action {
     NESTED_EXECUTOR_UNLOCK,
     SWAP_AND_SETTLE,
     DONATE_AND_SETTLE,
-    ADD_LIQ_AND_SETTLE,
-    REMOVE_LIQ_AND_SETTLE,
+    ADD_LIQUIDITY_AND_SETTLE,
+    REMOVE_LIQUIDITY_AND_SETTLE,
     INITIALIZE
 }
 
@@ -65,10 +65,10 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
     error KeyNotSet();
 
-    IPoolManager.ModifyLiquidityParams internal ADD_LIQ_PARAMS =
+    IPoolManager.ModifyLiquidityParams internal ADD_LIQUIDITY_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
 
-    IPoolManager.ModifyLiquidityParams internal REMOVE_LIQ_PARAMS =
+    IPoolManager.ModifyLiquidityParams internal REMOVE_LIQUIDITY_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
 
     IPoolManager.SwapParams internal SWAP_PARAMS =
@@ -91,8 +91,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
             Action action = actions[i];
             if (action == Action.NESTED_EXECUTOR_UNLOCK) _nestedUnlock();
             else if (action == Action.SWAP_AND_SETTLE) _swap(msg.sender);
-            else if (action == Action.ADD_LIQ_AND_SETTLE) _addLiquidity(msg.sender);
-            else if (action == Action.REMOVE_LIQ_AND_SETTLE) _removeLiquidity(msg.sender);
+            else if (action == Action.ADD_LIQUIDITY_AND_SETTLE) _addLiquidity(msg.sender);
+            else if (action == Action.REMOVE_LIQUIDITY_AND_SETTLE) _removeLiquidity(msg.sender);
             else if (action == Action.DONATE_AND_SETTLE) _donate(msg.sender);
             else if (action == Action.INITIALIZE) _initialize();
         }
@@ -141,7 +141,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        BalanceDelta delta = manager.modifyLiquidity(key, ADD_LIQ_PARAMS, "");
+        BalanceDelta delta = manager.modifyLiquidity(key, ADD_LIQUIDITY_PARAMS, "");
 
         (,,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
         (,,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
@@ -166,7 +166,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        BalanceDelta delta = manager.modifyLiquidity(key, REMOVE_LIQ_PARAMS, "");
+        BalanceDelta delta = manager.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, "");
 
         (,,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
         (,,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);

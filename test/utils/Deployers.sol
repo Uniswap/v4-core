@@ -44,9 +44,9 @@ contract Deployers {
     uint160 public constant MIN_PRICE_LIMIT = TickMath.MIN_SQRT_RATIO + 1;
     uint160 public constant MAX_PRICE_LIMIT = TickMath.MAX_SQRT_RATIO - 1;
 
-    IPoolManager.ModifyLiquidityParams public LIQ_PARAMS =
+    IPoolManager.ModifyLiquidityParams public LIQUIDITY_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-    IPoolManager.ModifyLiquidityParams public REMOVE_LIQ_PARAMS =
+    IPoolManager.ModifyLiquidityParams public REMOVE_LIQUIDITY_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
 
     // Global variables
@@ -153,7 +153,7 @@ contract Deployers {
         bytes memory initData
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyLiquidityRouter.modifyLiquidity{value: msg.value}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity{value: msg.value}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     function initPoolAndAddLiquidityETH(
@@ -166,7 +166,7 @@ contract Deployers {
         uint256 msgValue
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyLiquidityRouter.modifyLiquidity{value: msgValue}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity{value: msgValue}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     // Deploys the manager, all test routers, and sets up 2 pools: with and without native

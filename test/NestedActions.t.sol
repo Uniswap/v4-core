@@ -22,12 +22,12 @@ contract NestedActions is Test, Deployers, GasSnapshot {
     }
 
     function test_nestedAddLiquidity() public {
-        actions = [Action.ADD_LIQ_AND_SETTLE];
+        actions = [Action.ADD_LIQUIDITY_AND_SETTLE];
         nestedActionRouter.unlock(abi.encode(actions));
     }
 
     function test_nestedRemoveLiquidity() public {
-        actions = [Action.ADD_LIQ_AND_SETTLE, Action.REMOVE_LIQ_AND_SETTLE];
+        actions = [Action.ADD_LIQUIDITY_AND_SETTLE, Action.REMOVE_LIQUIDITY_AND_SETTLE];
         nestedActionRouter.unlock(abi.encode(actions));
     }
 

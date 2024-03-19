@@ -25,8 +25,8 @@ contract EmptyTestHooks is IHooks {
                 afterDonate: true,
                 beforeSwapReturnDelta: true,
                 afterSwapReturnDelta: true,
-                afterAddLiqReturnDelta: true,
-                afterRemoveLiqReturnDelta: true
+                afterAddLiquidityReturnDelta: true,
+                afterRemoveLiquidityReturnDelta: true
             })
         );
     }

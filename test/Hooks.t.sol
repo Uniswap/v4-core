@@ -106,16 +106,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyLiquidityRouter), 1e18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     function test_beforeRemoveLiquidity_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, bytes4(0xdeadbeef));
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyLiquidityRouter), 1e18);
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     function test_afterAddLiquidity_invalidReturn() public {
@@ -123,16 +123,16 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyLiquidityRouter), 1e18);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     function test_afterRemoveLiquidity_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterRemoveLiquidity.selector, bytes4(0xdeadbeef));
         MockERC20(Currency.unwrap(key.currency0)).mint(address(this), 1e18);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(modifyLiquidityRouter), 1e18);
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     function test_swap_succeedsWithHook() public {
@@ -207,24 +207,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeInitialize(uint160 addr) public {
@@ -246,24 +246,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_afterInitialize(uint160 addr) public {
@@ -285,24 +285,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeAndAfterInitialize(uint160 addr) public {
@@ -323,29 +323,29 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeAddLiquidity(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_ADD_LIQ_FLAG)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
@@ -361,29 +361,29 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_afterAddLiquidity(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_ADD_LIQ_FLAG)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
@@ -399,29 +399,30 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeAndAfterAddLiquidity(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_ADD_LIQ_FLAG | Hooks.AFTER_ADD_LIQ_FLAG)));
+        IHooks hookAddr =
+            IHooks(address(uint160(preAddr | Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
@@ -437,29 +438,29 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeRemoveLiquidity(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_REMOVE_LIQ_FLAG)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
@@ -475,29 +476,29 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_afterRemoveLiquidity(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_REMOVE_LIQ_FLAG)));
+        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
@@ -513,29 +514,30 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeAfterRemoveLiquidity(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_REMOVE_LIQ_FLAG | Hooks.AFTER_REMOVE_LIQ_FLAG)));
+        IHooks hookAddr =
+            IHooks(address(uint160(preAddr | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
@@ -551,29 +553,30 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeInitializeAfterAddLiquidity(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
-        IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_ADD_LIQ_FLAG)));
+        IHooks hookAddr =
+            IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
             hookAddr,
             Hooks.Permissions({
@@ -589,24 +592,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeSwap(uint160 addr) public {
@@ -627,24 +630,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_afterSwap(uint160 addr) public {
@@ -665,24 +668,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeAndAfterSwap(uint160 addr) public {
@@ -703,24 +706,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeDonate(uint160 addr) public {
@@ -741,24 +744,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_afterDonate(uint160 addr) public {
@@ -779,24 +782,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: true,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_beforeAndAfterDonate(uint160 addr) public {
@@ -817,24 +820,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: true,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_allHooks(uint160 addr) public {
@@ -856,24 +859,24 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: true,
                 beforeSwapReturnDelta: true,
                 afterSwapReturnDelta: true,
-                afterAddLiqReturnDelta: true,
-                afterRemoveLiqReturnDelta: true
+                afterAddLiquidityReturnDelta: true,
+                afterRemoveLiquidityReturnDelta: true
             })
         );
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_INITIALIZE_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_INITIALIZE_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQ_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_ADD_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_SWAP_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_SWAP_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_DONATE_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG));
-        assertTrue(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG));
+        assertTrue(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
     function test_validateHookPermissions_failsAllHooks(uint152 addr, uint16 mask) public {
@@ -897,8 +900,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: true,
                 beforeSwapReturnDelta: true,
                 afterSwapReturnDelta: true,
-                afterAddLiqReturnDelta: true,
-                afterRemoveLiqReturnDelta: true
+                afterAddLiquidityReturnDelta: true,
+                afterRemoveLiquidityReturnDelta: true
             })
         );
     }
@@ -924,8 +927,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterDonate: false,
                 beforeSwapReturnDelta: false,
                 afterSwapReturnDelta: false,
-                afterAddLiqReturnDelta: false,
-                afterRemoveLiqReturnDelta: false
+                afterAddLiquidityReturnDelta: false,
+                afterRemoveLiquidityReturnDelta: false
             })
         );
     }
@@ -964,9 +967,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.isValidHookAddress(hookAddr, 3000));
         hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG)));
         assertFalse(Hooks.isValidHookAddress(hookAddr, 3000));
-        hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_ADD_LIQ_RETURNS_DELTA_FLAG)));
+        hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG)));
         assertFalse(Hooks.isValidHookAddress(hookAddr, 3000));
-        hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_REMOVE_LIQ_RETURNS_DELTA_FLAG)));
+        hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)));
         assertFalse(Hooks.isValidHookAddress(hookAddr, 3000));
     }
 
