@@ -26,7 +26,7 @@ abstract contract PoolTestBase is IUnlockCallback {
     }
 
     function _settle(Currency currency, address payer, int128 amount, bool settleUsingTransfer) internal {
-        require(amount < 0, "amount is not lesser than zero");
+        require(amount < 0, "amount is not less than zero");
         if (settleUsingTransfer) {
             if (currency.isNative()) {
                 manager.settle{value: uint128(-amount)}(currency);
