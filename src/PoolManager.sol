@@ -208,11 +208,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         int128 hookDeltaInSpecified;
         (params.amountSpecified, hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
 
-        bool zeroIsSpecified = ((params.amountSpecified < 0) == params.zeroForOne);
-
-        // Account the hook's delta to the hook's address
-        _accountDelta(zeroIsSpecified ? key.currency0 : key.currency1, hookDeltaInSpecified, address(key.hooks));
-
         {
             uint256 feeForProtocol;
             uint24 swapFee;
@@ -245,17 +240,18 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             );
         }
 
-        (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
-        _accountDelta(zeroIsSpecified ? key.currency1 : key.currency0, hookDeltaInUnspecified, address(key.hooks));
+        {
+            (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
 
-        // After this addition, the delta in specified will equal the amountSpecified passed in by the user again
-        delta = delta
-            + (
-                zeroIsSpecified
-                    ? toBalanceDelta(-hookDeltaInSpecified, -hookDeltaInUnspecified)
-                    : toBalanceDelta(-hookDeltaInUnspecified, -hookDeltaInSpecified)
-            );
-        _accountPoolBalanceDelta(key, delta, msg.sender);
+            // calculates if currency0 or currency1 is the specified token
+            BalanceDelta hookDelta = ((params.amountSpecified < 0) == params.zeroForOne)
+                ? toBalanceDelta(hookDeltaInSpecified, hookDeltaInUnspecified)
+                : toBalanceDelta(hookDeltaInUnspecified, hookDeltaInSpecified);
+
+            // Account the hook's delta to the hook's address, and charge them to the caller's deltas
+            _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
+            _accountPoolBalanceDelta(key, delta - hookDelta, msg.sender);
+        }
     }
 
     /// @inheritdoc IPoolManager
