@@ -7,7 +7,6 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
-import {Test} from "forge-std/Test.sol";
 
 contract PoolClaimsTest is PoolTestBase {
     using CurrencyLibrary for Currency;
