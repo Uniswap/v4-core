@@ -257,7 +257,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyWhenUnlocked {
         // subtraction must be safe
         _accountDelta(currency, -(amount.toInt128()));
-        reservesOf[currency] -= amount;
+        if (!currency.isNative()) reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
 
@@ -270,9 +270,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         onlyWhenUnlocked
         returns (uint256 paid)
     {
-        uint256 reservesBefore = reservesOf[currency];
-        reservesOf[currency] = currency.balanceOfSelf();
-        paid = reservesOf[currency] - reservesBefore;
+        if (currency.isNative()) {
+            paid = msg.value;
+        } else {
+            uint256 reservesBefore = reservesOf[currency];
+            reservesOf[currency] = currency.balanceOfSelf();
+            paid = reservesOf[currency] - reservesBefore;
+        }
+
         _accountDelta(currency, paid.toInt128());
     }
 

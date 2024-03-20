@@ -52,6 +52,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         IHooks hooks
     );
 
+    function reservesOf(Currency currency) external view returns (uint256);
+
     /// @notice Emitted when a liquidity position is modified
     /// @param id The abi encoded hash of the pool key struct for the pool that was modified
     /// @param sender The address that modified the pool
@@ -115,9 +117,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         external
         view
         returns (Position.Info memory position);
-
-    /// @notice Returns the reserves for a given ERC20 currency
-    function reservesOf(Currency currency) external view returns (uint256);
 
     /// @notice Returns whether the contract is unlocked or not
     function isUnlocked() external view returns (bool);
