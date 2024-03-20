@@ -278,10 +278,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         onlyWhenUnlocked
         returns (uint256 paid)
     {
-        uint256 reservesBefore = Reserves.get(currency);
-        if (reservesBefore == 0) revert ReservesMustBeSynced();
-        uint256 reservesNow = sync(currency);
-        paid = reservesBefore == ZERO_BALANCE ? reservesNow : reservesNow - reservesBefore;
+        if (currency.isNative()) {
+            paid = msg.value;
+        } else {
+            uint256 reservesBefore = Reserves.get(currency);
+            if (reservesBefore == 0) revert ReservesMustBeSynced();
+            uint256 reservesNow = sync(currency);
+            paid = reservesBefore == ZERO_BALANCE ? reservesNow : reservesNow - reservesBefore;
+        }
         _accountDelta(currency, paid.toInt128());
     }
 

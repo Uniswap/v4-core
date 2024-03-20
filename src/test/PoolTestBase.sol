@@ -30,7 +30,7 @@ abstract contract PoolTestBase is Test, IUnlockCallback {
         assertLt(amount, 0);
         if (settleUsingTransfer) {
             if (currency.isNative()) {
-                manager.sync(currency);
+                // Sync does not need to be called for native currencies.
                 manager.settle{value: uint128(-amount)}(currency);
             } else {
                 manager.sync(currency);
