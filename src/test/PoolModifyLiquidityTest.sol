@@ -8,13 +8,12 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
-import {Test} from "forge-std/Test.sol";
-import {FeeLibrary} from "../libraries/FeeLibrary.sol";
+import {SwapFeeLibrary} from "../libraries/SwapFeeLibrary.sol";
 
-contract PoolModifyLiquidityTest is Test, PoolTestBase {
+contract PoolModifyLiquidityTest is PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
-    using FeeLibrary for uint24;
+    using SwapFeeLibrary for uint24;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
@@ -43,7 +42,7 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
         bool withdrawTokens
     ) public payable returns (BalanceDelta delta) {
         delta = abi.decode(
-            manager.lock(
+            manager.unlock(
                 abi.encode(CallbackData(msg.sender, key, params, hookData, settleUsingTransfer, withdrawTokens))
             ),
             (BalanceDelta)
@@ -55,7 +54,7 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
         }
     }
 
-    function lockAcquired(bytes calldata rawData) external returns (bytes memory) {
+    function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
@@ -65,18 +64,18 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
         (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
-        if (data.params.liquidityDelta > 0) {
-            assert(delta0 > 0 || delta1 > 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
+        if (data.params.liquidityDelta < 0) {
+            assert(delta0 > 0 || delta1 > 0);
             assert(!(delta0 < 0 || delta1 < 0));
-        } else {
-            assert(delta0 < 0 || delta1 < 0 || data.key.hooks.hasPermission(Hooks.NO_OP_FLAG));
+        } else if (data.params.liquidityDelta > 0) {
+            assert(delta0 < 0 || delta1 < 0);
             assert(!(delta0 > 0 || delta1 > 0));
         }
 
-        if (delta0 > 0) _settle(data.key.currency0, data.sender, int128(delta0), data.settleUsingTransfer);
-        if (delta1 > 0) _settle(data.key.currency1, data.sender, int128(delta1), data.settleUsingTransfer);
-        if (delta0 < 0) _take(data.key.currency0, data.sender, int128(delta0), data.withdrawTokens);
-        if (delta1 < 0) _take(data.key.currency1, data.sender, int128(delta1), data.withdrawTokens);
+        if (delta0 < 0) _settle(data.key.currency0, data.sender, int128(delta0), data.settleUsingTransfer);
+        if (delta1 < 0) _settle(data.key.currency1, data.sender, int128(delta1), data.settleUsingTransfer);
+        if (delta0 > 0) _take(data.key.currency0, data.sender, int128(delta0), data.withdrawTokens);
+        if (delta1 > 0) _take(data.key.currency1, data.sender, int128(delta1), data.withdrawTokens);
 
         return abi.encode(delta);
     }
