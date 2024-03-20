@@ -124,9 +124,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         view
         returns (Position.Info memory position);
 
-    /// @notice Returns the reserves for a given ERC20 currency
-    function reservesOf(Currency currency) external view returns (uint256);
-
     /// @notice Writes the current ERC20 balance of the specified currency to transient storage
     /// This is used to checkpoint balances for the manager and derive deltas for the caller.
     /// @dev This MUST be called before any ERC20 tokens are sent into the contract.

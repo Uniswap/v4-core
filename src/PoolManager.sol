@@ -145,10 +145,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         Reserves.set(currency, balance);
     }
 
-    function reservesOf(Currency currency) external view returns (uint256 balance) {
-        balance = Reserves.get(currency);
-    }
-
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 

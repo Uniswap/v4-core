@@ -37,20 +37,17 @@ contract PoolTakeTest is Test, PoolTestBase {
     }
 
     function _testTake(Currency currency, address sender, uint256 amount) internal {
-        (uint256 userBalBefore, uint256 pmBalBefore, uint256 reserveBefore, int256 deltaBefore) =
+        (uint256 userBalBefore, uint256 pmBalBefore, int256 deltaBefore) =
             _fetchBalances(currency, sender, address(this));
         assertEq(deltaBefore, 0);
 
         _take(currency, sender, amount.toInt128(), true);
 
-        (uint256 userBalAfter, uint256 pmBalAfter, uint256 reserveAfter, int256 deltaAfter) =
-            _fetchBalances(currency, sender, address(this));
+        (uint256 userBalAfter, uint256 pmBalAfter, int256 deltaAfter) = _fetchBalances(currency, sender, address(this));
         assertEq(deltaAfter, -amount.toInt128());
 
         assertEq(userBalAfter - userBalBefore, amount);
         assertEq(pmBalBefore - pmBalAfter, amount);
-        assertEq(reserveBefore - reserveAfter, amount);
-        assertEq(reserveBefore - reserveAfter, amount);
 
         _settle(currency, sender, -amount.toInt128(), true);
     }

@@ -30,10 +30,10 @@ abstract contract PoolTestBase is Test, IUnlockCallback {
         assertLt(amount, 0);
         if (settleUsingTransfer) {
             if (currency.isNative()) {
-                // Sync has been called. Note: Another negative :/
+                manager.sync(currency);
                 manager.settle{value: uint128(-amount)}(currency);
             } else {
-                // Sync has been called. Note: Another negative :/
+                manager.sync(currency);
                 IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), uint128(-amount));
                 manager.settle(currency);
             }
@@ -44,12 +44,11 @@ abstract contract PoolTestBase is Test, IUnlockCallback {
 
     function _fetchBalances(Currency currency, address user, address deltaHolder)
         internal
-        returns (uint256 userBalance, uint256 poolBalance, uint256 reserves, int256 delta)
+        view
+        returns (uint256 userBalance, uint256 poolBalance, int256 delta)
     {
-        manager.sync(currency);
         userBalance = currency.balanceOf(user);
         poolBalance = currency.balanceOf(address(manager));
-        reserves = manager.reservesOf(currency);
         delta = manager.currencyDelta(deltaHolder, currency);
     }
 }
