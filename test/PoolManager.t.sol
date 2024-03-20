@@ -8,7 +8,6 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {PoolManager} from "../src/PoolManager.sol";
-import {Owned} from "../src/Owned.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
@@ -984,7 +983,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_revertsIfCallerIsNotController() public {
-        vm.expectRevert(Owned.InvalidCaller.selector);
+        vm.expectRevert(IProtocolFees.InvalidCaller.selector);
         manager.collectProtocolFees(address(1), currency0, 0);
     }
 

@@ -10,7 +10,6 @@ import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {TickMath} from "./libraries/TickMath.sol";
 import {NoDelegateCall} from "./NoDelegateCall.sol";
-import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "./interfaces/callback/IUnlockCallback.sol";
