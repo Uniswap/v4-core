@@ -61,8 +61,8 @@ contract PoolModifyLiquidityTest is PoolTestBase {
 
         BalanceDelta delta = manager.modifyLiquidity(data.key, data.params, data.hookData);
 
-        (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
-        (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
+        (,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         if (data.params.liquidityDelta < 0) {
             assert(delta0 > 0 || delta1 > 0);
