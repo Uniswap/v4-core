@@ -106,8 +106,6 @@ contract PoolSwapTest is PoolTestBase {
 
         if (deltaAfter0 < 0) {
             if (data.testSettings.currencyAlreadySent) {
-                // Todo: This is a downside of sync!!! We must call sync before transferring in assets.
-                // Doesn't let integrators seamlessly send in funds and then settle.
                 manager.settle(data.key.currency0);
             } else {
                 _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
@@ -115,8 +113,6 @@ contract PoolSwapTest is PoolTestBase {
         }
         if (deltaAfter1 < 0) {
             if (data.testSettings.currencyAlreadySent) {
-                // Todo: This is a downside of sync!!! We must call sync before transferring in assets.
-                // Doesn't let integrators seamlessly send in funds and then settle.
                 manager.settle(data.key.currency1);
             } else {
                 _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
