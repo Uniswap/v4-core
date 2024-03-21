@@ -126,7 +126,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function unlock(bytes calldata data) external payable override returns (bytes memory result) {
+    function unlock(bytes calldata data) external override returns (bytes memory result) {
         if (Lock.isUnlocked()) revert AlreadyUnlocked();
 
         Lock.unlock();
@@ -184,7 +184,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
         delta = pools[id].modifyLiquidity(
-            Pool.ModifyPositionParams({
+            Pool.ModifyLiquidityParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,
@@ -266,7 +266,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         // subtraction must be safe
         _accountDelta(currency, -(amount.toInt128()));
         currency.transfer(to, amount);
-        sync(currency);
+        if (!currency.isNative()) {
+            sync(currency);
+        }
     }
 
     /// @inheritdoc IPoolManager
@@ -348,7 +350,4 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
         return pools[id].getPoolBitmapInfo(word);
     }
-
-    /// @notice receive native tokens for native pools
-    receive() external payable {}
 }
