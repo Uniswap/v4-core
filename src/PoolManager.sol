@@ -266,9 +266,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         // subtraction must be safe
         _accountDelta(currency, -(amount.toInt128()));
         currency.transfer(to, amount);
-        if (!currency.isNative()) {
-            sync(currency);
-        }
     }
 
     /// @inheritdoc IPoolManager
