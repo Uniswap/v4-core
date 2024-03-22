@@ -124,7 +124,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function unlock(bytes calldata data) external payable override returns (bytes memory result) {
+    function unlock(bytes calldata data) external override returns (bytes memory result) {
         if (Lock.isUnlocked()) revert AlreadyUnlocked();
 
         Lock.unlock();
@@ -256,7 +256,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyWhenUnlocked {
         // subtraction must be safe
         _accountDelta(currency, -(amount.toInt128()));
-        reservesOf[currency] -= amount;
+        if (!currency.isNative()) reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
 
@@ -269,9 +269,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         onlyWhenUnlocked
         returns (uint256 paid)
     {
-        uint256 reservesBefore = reservesOf[currency];
-        reservesOf[currency] = currency.balanceOfSelf();
-        paid = reservesOf[currency] - reservesBefore;
+        if (currency.isNative()) {
+            paid = msg.value;
+        } else {
+            uint256 reservesBefore = reservesOf[currency];
+            reservesOf[currency] = currency.balanceOfSelf();
+            paid = reservesOf[currency] - reservesBefore;
+        }
+
         _accountDelta(currency, paid.toInt128());
     }
 
@@ -334,7 +339,4 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
         return pools[id].getPoolBitmapInfo(word);
     }
-
-    /// @notice receive native tokens for native pools
-    receive() external payable {}
 }
