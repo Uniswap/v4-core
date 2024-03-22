@@ -4,7 +4,8 @@ pragma solidity ^0.8.20;
 import {Currency} from "../types/Currency.sol";
 
 library CurrencyDelta {
-    uint256 constant CURRENCY_DELTA_SLOT = uint256(keccak256("CurrencyDelta")) - 1;
+    // Equivalent to uint256(keccak256("CurrencyDelta")) - 1;
+    uint256 constant CURRENCY_DELTA_SLOT = uint256(0x95b400a0305233758f18c75aa62cbbb5d6882951dd55f1407390ee7b6924e26d);
 
     function _computeSlot(address caller_, Currency currency) internal pure returns (bytes32 hashSlot) {
         uint256 slot = CURRENCY_DELTA_SLOT;
