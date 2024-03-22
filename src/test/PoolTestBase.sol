@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
 import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
-abstract contract PoolTestBase is Test, IUnlockCallback {
+abstract contract PoolTestBase is IUnlockCallback {
     using CurrencyLibrary for Currency;
 
     IPoolManager public immutable manager;
@@ -18,7 +17,7 @@ abstract contract PoolTestBase is Test, IUnlockCallback {
     }
 
     function _take(Currency currency, address recipient, int128 amount, bool withdrawTokens) internal {
-        assertGt(amount, 0);
+        require(amount > 0, "amount is not greater than zero");
         if (withdrawTokens) {
             manager.take(currency, recipient, uint128(amount));
         } else {
@@ -27,7 +26,7 @@ abstract contract PoolTestBase is Test, IUnlockCallback {
     }
 
     function _settle(Currency currency, address payer, int128 amount, bool settleUsingTransfer) internal {
-        assertLt(amount, 0);
+        require(amount < 0, "amount is not less than zero");
         if (settleUsingTransfer) {
             if (currency.isNative()) {
                 manager.settle{value: uint128(-amount)}(currency);
@@ -43,11 +42,10 @@ abstract contract PoolTestBase is Test, IUnlockCallback {
     function _fetchBalances(Currency currency, address user, address deltaHolder)
         internal
         view
-        returns (uint256 userBalance, uint256 poolBalance, uint256 reserves, int256 delta)
+        returns (uint256 userBalance, uint256 poolBalance, int256 delta)
     {
         userBalance = currency.balanceOf(user);
         poolBalance = currency.balanceOf(address(manager));
-        reserves = manager.reservesOf(currency);
         delta = manager.currencyDelta(deltaHolder, currency);
     }
 }

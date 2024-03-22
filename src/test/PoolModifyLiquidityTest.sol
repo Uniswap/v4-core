@@ -9,10 +9,9 @@ import {PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
-import {Test} from "forge-std/Test.sol";
 import {SwapFeeLibrary} from "../libraries/SwapFeeLibrary.sol";
 
-contract PoolModifyLiquidityTest is Test, PoolTestBase {
+contract PoolModifyLiquidityTest is PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;
     using SwapFeeLibrary for uint24;
@@ -70,10 +69,12 @@ contract PoolModifyLiquidityTest is Test, PoolTestBase {
         uint128 liquidityAfter =
             manager.getPosition(data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper).liquidity;
 
-        (,,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
-        (,,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
+        (,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
-        assertEq(int128(liquidityBefore) + data.params.liquidityDelta, int128(liquidityAfter));
+        require(
+            int128(liquidityBefore) + data.params.liquidityDelta == int128(liquidityAfter), "liquidity change incorrect"
+        );
 
         if (data.params.liquidityDelta < 0) {
             assert(delta0 > 0 || delta1 > 0);
