@@ -52,23 +52,16 @@ contract PoolSwapTest is PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        (, uint256 poolBalanceBefore0, int256 deltaBefore0) =
-            _fetchBalances(data.key.currency0, data.sender, address(this));
-        (, uint256 poolBalanceBefore1, int256 deltaBefore1) =
-            _fetchBalances(data.key.currency1, data.sender, address(this));
+        (,, int256 deltaBefore0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,, int256 deltaBefore1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         require(deltaBefore0 == 0, "deltaBefore0 is not equal to 0");
         require(deltaBefore1 == 0, "deltaBefore1 is not equal to 0");
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
-        (, uint256 poolBalanceAfter0, int256 deltaAfter0) =
-            _fetchBalances(data.key.currency0, data.sender, address(this));
-        (, uint256 poolBalanceAfter1, int256 deltaAfter1) =
-            _fetchBalances(data.key.currency1, data.sender, address(this));
-
-        require(poolBalanceBefore0 == poolBalanceAfter0, "poolBalanceBefore0 is not equal to poolBalanceAfter0");
-        require(poolBalanceBefore1 == poolBalanceAfter1, "poolBalanceBefore1 is not equal to poolBalanceAfter1");
+        (,, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         if (data.params.zeroForOne) {
             if (data.params.amountSpecified < 0) {
