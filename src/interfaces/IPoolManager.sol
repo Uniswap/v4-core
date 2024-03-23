@@ -138,7 +138,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
     /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
-    function unlock(bytes calldata data) external payable returns (bytes memory);
+    function unlock(bytes calldata data) external returns (bytes memory);
 
     struct ModifyLiquidityParams {
         // the lower and upper tick of the position
