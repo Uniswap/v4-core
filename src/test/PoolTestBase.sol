@@ -42,11 +42,10 @@ abstract contract PoolTestBase is IUnlockCallback {
     function _fetchBalances(Currency currency, address user, address deltaHolder)
         internal
         view
-        returns (uint256 userBalance, uint256 poolBalance, uint256 reserves, int256 delta)
+        returns (uint256 userBalance, uint256 poolBalance, int256 delta)
     {
         userBalance = currency.balanceOf(user);
         poolBalance = currency.balanceOf(address(manager));
-        reserves = manager.reservesOf(currency);
         delta = manager.currencyDelta(deltaHolder, currency);
     }
 }

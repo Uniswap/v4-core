@@ -110,17 +110,17 @@ contract NestedActionExecutor is Test, PoolTestBase {
     function _swap(address caller) internal {
         bool unlocked = manager.isUnlocked();
         assertEq(unlocked, true);
-        (,,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
-        (,,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
-        (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
-        (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
+        (,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
+        (,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
+        (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
+        (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
         BalanceDelta delta = manager.swap(key, SWAP_PARAMS, "");
 
-        (,,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
-        (,,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
-        (,,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, user, address(this));
-        (,,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, user, address(this));
+        (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
+        (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
+        (,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, user, address(this));
+        (,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, user, address(this));
 
         assertEq(deltaCallerBefore0, deltaCallerAfter0, "Caller delta 0");
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
@@ -136,17 +136,17 @@ contract NestedActionExecutor is Test, PoolTestBase {
     function _addLiquidity(address caller) internal {
         bool unlocked = manager.isUnlocked();
         assertEq(unlocked, true);
-        (,,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
-        (,,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
-        (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
-        (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
+        (,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
+        (,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
+        (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
+        (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
         BalanceDelta delta = manager.modifyLiquidity(key, ADD_LIQ_PARAMS, "");
 
-        (,,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
-        (,,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
-        (,,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, user, address(this));
-        (,,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, user, address(this));
+        (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
+        (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
+        (,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, user, address(this));
+        (,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, user, address(this));
 
         assertEq(deltaCallerBefore0, deltaCallerAfter0, "Caller delta 0");
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
@@ -161,17 +161,17 @@ contract NestedActionExecutor is Test, PoolTestBase {
     function _removeLiquidity(address caller) internal {
         bool unlocked = manager.isUnlocked();
         assertEq(unlocked, true);
-        (,,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
-        (,,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
-        (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
-        (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
+        (,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
+        (,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
+        (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
+        (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
         BalanceDelta delta = manager.modifyLiquidity(key, REMOVE_LIQ_PARAMS, "");
 
-        (,,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
-        (,,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
-        (,,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, user, address(this));
-        (,,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, user, address(this));
+        (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
+        (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
+        (,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, user, address(this));
+        (,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, user, address(this));
 
         assertEq(deltaCallerBefore0, deltaCallerAfter0, "Caller delta 0");
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
@@ -185,17 +185,17 @@ contract NestedActionExecutor is Test, PoolTestBase {
     function _donate(address caller) internal {
         bool unlocked = manager.isUnlocked();
         assertEq(unlocked, true);
-        (,,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
-        (,,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
-        (,,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
-        (,,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
+        (,, int256 deltaCallerBefore0) = _fetchBalances(key.currency0, user, caller);
+        (,, int256 deltaCallerBefore1) = _fetchBalances(key.currency1, user, caller);
+        (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
+        (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
         BalanceDelta delta = manager.donate(key, DONATE_AMOUNT0, DONATE_AMOUNT1, "");
 
-        (,,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
-        (,,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
-        (,,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, user, address(this));
-        (,,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, user, address(this));
+        (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
+        (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
+        (,, int256 deltaThisAfter0) = _fetchBalances(key.currency0, user, address(this));
+        (,, int256 deltaThisAfter1) = _fetchBalances(key.currency1, user, address(this));
 
         assertEq(deltaCallerBefore0, deltaCallerAfter0, "Caller delta 0");
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
