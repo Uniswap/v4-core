@@ -21,11 +21,13 @@ import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
 import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
+import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 
 contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
     using SwapFeeLibrary for uint24;
+    using ProtocolFeeLibrary for uint24;
 
     event Initialize(
         PoolId indexed poolId,
@@ -197,10 +199,10 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_fetchFeeWhenController(uint24 protocolFee) public {
         manager.setProtocolFeeController(feeController);
-        feeController.setSwapFeeForPool(uninitializedKey.toId(), protocolFee);
+        feeController.setProtocolFeeForPool(uninitializedKey.toId(), protocolFee);
 
-        uint16 fee0 = uint16(protocolFee >> 12);
-        uint16 fee1 = uint16(protocolFee % 4096);
+        uint16 fee0 = protocolFee.getZeroForOneFee();
+        uint16 fee1 = protocolFee.getOneForZeroFee();
 
         manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
 

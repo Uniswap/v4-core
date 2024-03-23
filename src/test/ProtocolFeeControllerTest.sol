@@ -9,15 +9,15 @@ import {PoolKey} from "../types/PoolKey.sol";
 contract ProtocolFeeControllerTest is IProtocolFeeController {
     using PoolIdLibrary for PoolKey;
 
-    mapping(PoolId => uint24) public swapFeeForPool;
+    mapping(PoolId => uint24) public protocolFee;
 
     function protocolFeeForPool(PoolKey memory key) external view returns (uint24) {
-        return swapFeeForPool[key.toId()];
+        return protocolFee[key.toId()];
     }
 
     // for tests to set pool protocol fees
-    function setSwapFeeForPool(PoolId id, uint24 fee) external {
-        swapFeeForPool[id] = fee;
+    function setProtocolFeeForPool(PoolId id, uint24 fee) external {
+        protocolFee[id] = fee;
     }
 }
 

@@ -7,9 +7,11 @@ import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {Owned} from "./Owned.sol";
+import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
 
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
+    using ProtocolFeeLibrary for uint24;
 
     // Max protocol fee is 25% (2500 bips)
     uint16 public constant MAX_PROTOCOL_FEE = 2500;
@@ -54,8 +56,8 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
 
     function _isValidProtocolFee(uint24 fee) internal pure returns (bool) {
         if (fee != 0) {
-            uint16 fee0 = uint16(fee % 4096);
-            uint16 fee1 = uint16(fee >> 12);
+            uint16 fee0 = fee.getZeroForOneFee();
+            uint16 fee1 = fee.getOneForZeroFee();
             // The fee is represented in bips so it cannot be GREATER than the MAX_PROTOCOL_FEE.
             if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
                 return false;

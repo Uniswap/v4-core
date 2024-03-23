@@ -10,6 +10,7 @@ import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 
 library Pool {
     using SafeCast for *;
@@ -17,6 +18,7 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Pool for State;
+    using ProtocolFeeLibrary for uint24;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -322,7 +324,9 @@ library Pool {
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
-            protocolFee: params.zeroForOne ? uint16(slot0Start.protocolFee % 4096) : uint16(slot0Start.protocolFee >> 12)
+            protocolFee: params.zeroForOne
+                ? slot0Start.protocolFee.getZeroForOneFee()
+                : slot0Start.protocolFee.getOneForZeroFee()
         });
 
         bool exactInput = params.amountSpecified < 0;
