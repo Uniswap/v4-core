@@ -61,6 +61,8 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
+    uint256 internal constant BIPS_DENOMINATOR = 10_000;
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
@@ -387,7 +389,7 @@ library Pool {
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
             if (cache.protocolFee > 0) {
                 // A: calculate the amount of the fee that should go to the protocol
-                uint256 delta = step.feeAmount * cache.protocolFee / 1e4;
+                uint256 delta = step.feeAmount * cache.protocolFee / BIPS_DENOMINATOR;
                 // A: subtract it from the regular fee and add it to the protocol fee
                 unchecked {
                     step.feeAmount -= delta;
