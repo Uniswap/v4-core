@@ -77,7 +77,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function test_updateDynamicSwapFee_afterInitialize_failsWithTooLargeFee() public {
         key.tickSpacing = 30;
-        dynamicFeesHooks.setFee(1000000);
+        dynamicFeesHooks.setFee(1000001);
 
         vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
@@ -118,7 +118,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     function test_updateDynamicSwapFee_beforeSwap_failsWithTooLargeFee() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
-        dynamicFeesHooks.setFee(1000000);
+        dynamicFeesHooks.setFee(1000001);
 
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
