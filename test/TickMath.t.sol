@@ -87,14 +87,14 @@ contract TickMathTestTest is Test, JavascriptFfi {
         }
     }
 
-    function testFuzz_maxUsableTick_SpecificFeeTiers(int24 tickSpacing) public {
+    function testFuzz_maxUsableTick(int24 tickSpacing) public {
         vm.assume(tickSpacing > 0 && tickSpacing <= MAX_TICK && tickSpacing >= MIN_TICK);
 
         int24 expectedMaxTick = (MAX_TICK / tickSpacing) * tickSpacing;
         assertEq(tickMath.maxUsableTick(tickSpacing), expectedMaxTick);
     }
 
-    function testFuzz_minUsableTick_SpecificFeeTiers(int24 tickSpacing) public {
+    function testFuzz_minUsableTick(int24 tickSpacing) public {
         vm.assume(tickSpacing > 0 && tickSpacing <= MAX_TICK && tickSpacing >= MIN_TICK);
 
         int24 expectedMinTick = (MIN_TICK / tickSpacing) * tickSpacing;
