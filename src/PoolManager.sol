@@ -19,6 +19,7 @@ import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
+import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 import {Reserves} from "./libraries/Reserves.sol";
@@ -42,11 +43,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @notice The transient reserves for pools with no balance is set to the max as a sentinel to track that it has been synced.
     uint256 public constant ZERO_BALANCE = type(uint256).max;
-
-    /// @dev Represents the currencies due/owed to each caller.
-    /// Must all net to zero when manager gets locked again
-    /// TODO this needs to be transient
-    mapping(address caller => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
 
     mapping(PoolId id => Pool.State) public pools;
 
@@ -88,6 +84,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         return pools[id].positions.get(_owner, tickLower, tickUpper);
     }
 
+    /// @inheritdoc IPoolManager
+    function currencyDelta(address caller, Currency currency) external view returns (int256) {
+        return CurrencyDelta.get(caller, currency);
+    }
+
+    /// @inheritdoc IPoolManager
     function isUnlocked() external view override returns (bool) {
         return Lock.isUnlocked();
     }
@@ -148,7 +150,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        int256 current = currencyDelta[msg.sender][currency];
+        int256 current = CurrencyDelta.get(msg.sender, currency);
         int256 next = current + delta;
 
         unchecked {
@@ -159,7 +161,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             }
         }
 
-        currencyDelta[msg.sender][currency] = next;
+        CurrencyDelta.set(msg.sender, currency, next);
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
