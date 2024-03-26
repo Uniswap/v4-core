@@ -81,7 +81,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
+    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
 
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
@@ -93,7 +93,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     function getSlot0(PoolId id)
         external
         view
-        returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee, uint24 swapFee);
+        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);
