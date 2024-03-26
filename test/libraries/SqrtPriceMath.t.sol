@@ -4,9 +4,9 @@ pragma solidity ^0.8.20;
 import "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
-import {SqrtPriceMath} from "../src/libraries/SqrtPriceMath.sol";
-import {Constants} from "./utils/Constants.sol";
+import {GasSnapshot} from "lib/forge-gas-snapshot/src/GasSnapshot.sol";
+import {SqrtPriceMath} from "src/libraries/SqrtPriceMath.sol";
+import {Constants} from "test/utils/Constants.sol";
 
 contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromInput_revertsIfPriceIsZero() public {
