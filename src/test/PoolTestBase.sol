@@ -29,8 +29,10 @@ abstract contract PoolTestBase is IUnlockCallback {
         require(amount < 0, "amount is not less than zero");
         if (settleUsingTransfer) {
             if (currency.isNative()) {
+                // Sync does not need to be called for native currencies.
                 manager.settle{value: uint128(-amount)}(currency);
             } else {
+                manager.sync(currency);
                 IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), uint128(-amount));
                 manager.settle(currency);
             }

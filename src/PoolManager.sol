@@ -22,6 +22,7 @@ import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
+import {Reserves} from "./libraries/Reserves.sol";
 
 /// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims {
@@ -40,8 +41,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
-    /// @inheritdoc IPoolManager
-    mapping(Currency currency => uint256) public override reservesOf;
+    /// @notice The transient reserves for pools with no balance is set to the max as a sentinel to track that it has been synced.
+    uint256 public constant ZERO_BALANCE = type(uint256).max;
 
     mapping(PoolId id => Pool.State) public pools;
 
@@ -137,6 +138,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
         Lock.lock();
+    }
+
+    /// @inheritdoc IPoolManager
+    function sync(Currency currency) public returns (uint256 balance) {
+        balance = currency.balanceOfSelf();
+        if (balance == 0) balance = ZERO_BALANCE;
+        Reserves.set(currency, balance);
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
@@ -259,7 +267,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function take(Currency currency, address to, uint256 amount) external override noDelegateCall onlyWhenUnlocked {
         // subtraction must be safe
         _accountDelta(currency, -(amount.toInt128()));
-        if (!currency.isNative()) reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
 
@@ -275,11 +282,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (currency.isNative()) {
             paid = msg.value;
         } else {
-            uint256 reservesBefore = reservesOf[currency];
-            reservesOf[currency] = currency.balanceOfSelf();
-            paid = reservesOf[currency] - reservesBefore;
+            uint256 reservesBefore = Reserves.get(currency);
+            if (reservesBefore == 0) revert ReservesMustBeSynced();
+            uint256 reservesNow = sync(currency);
+            paid = reservesBefore == ZERO_BALANCE ? reservesNow : reservesNow - reservesBefore;
         }
-
         _accountDelta(currency, paid.toInt128());
     }
 

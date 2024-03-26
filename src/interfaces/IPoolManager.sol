@@ -32,6 +32,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
     error CurrenciesOutOfOrderOrEqual();
 
+    /// @notice Thrown when the transient reserves are not in sync with the current balance
+    error ReservesMustBeSynced();
     /// @notice Thrown when a call to updateDynamicSwapFee is made by an address that is not the hook,
     /// or on a pool that does not have a dynamic swap fee.
     error UnauthorizedDynamicSwapFeeUpdate();
@@ -116,8 +118,10 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         view
         returns (Position.Info memory position);
 
-    /// @notice Returns the reserves for a given ERC20 currency
-    function reservesOf(Currency currency) external view returns (uint256);
+    /// @notice Writes the current ERC20 balance of the specified currency to transient storage
+    /// This is used to checkpoint balances for the manager and derive deltas for the caller.
+    /// @dev This MUST be called before any ERC20 tokens are sent into the contract.
+    function sync(Currency currency) external returns (uint256 balance);
 
     /// @notice Returns whether the contract is unlocked or not
     function isUnlocked() external view returns (bool);
