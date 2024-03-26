@@ -7,9 +7,6 @@ import {TickMathTest} from "../src/test/TickMathTest.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
 
-// rm before git add .
-import "forge-std/console.sol";
-
 contract TickMathTestTest is Test, JavascriptFfi {
     int24 constant MIN_TICK = -887272;
     int24 constant MAX_TICK = -MIN_TICK;
@@ -67,11 +64,7 @@ contract TickMathTestTest is Test, JavascriptFfi {
         for (uint256 i = 0; i < feeTiers.length; i++) {
             FeeTier memory tier = feeTiers[i];
             int24 expectedMaxTick = (MAX_TICK / tier.tickSpacing) * tier.tickSpacing;
-            assertEq(
-                tickMath.maxUsableTick(tier.tickSpacing),
-                expectedMaxTick,
-                "Max usable tick does not match for fee tier."
-            );
+            assertEq(tickMath.maxUsableTick(tier.tickSpacing), expectedMaxTick);
         }
     }
 
@@ -90,11 +83,7 @@ contract TickMathTestTest is Test, JavascriptFfi {
         for (uint256 i = 0; i < feeTiers.length; i++) {
             FeeTier memory tier = feeTiers[i];
             int24 expectedMinTick = (MIN_TICK / tier.tickSpacing) * tier.tickSpacing;
-            assertEq(
-                tickMath.minUsableTick(tier.tickSpacing),
-                expectedMinTick,
-                "Min usable tick does not match for fee tier."
-            );
+            assertEq(tickMath.minUsableTick(tier.tickSpacing), expectedMinTick);
         }
     }
 
@@ -102,14 +91,14 @@ contract TickMathTestTest is Test, JavascriptFfi {
         vm.assume(tickSpacing > 0 && tickSpacing <= MAX_TICK && tickSpacing >= MIN_TICK);
 
         int24 expectedMaxTick = (MAX_TICK / tickSpacing) * tickSpacing;
-        assertEq(tickMath.maxUsableTick(tickSpacing), expectedMaxTick, "Max usable tick does not match for fee tier.");
+        assertEq(tickMath.maxUsableTick(tickSpacing), expectedMaxTick);
     }
 
     function testFuzz_minUsableTick_SpecificFeeTiers(int24 tickSpacing) public {
         vm.assume(tickSpacing > 0 && tickSpacing <= MAX_TICK && tickSpacing >= MIN_TICK);
 
         int24 expectedMinTick = (MIN_TICK / tickSpacing) * tickSpacing;
-        assertEq(tickMath.minUsableTick(tickSpacing), expectedMinTick, "Max usable tick does not match for fee tier.");
+        assertEq(tickMath.minUsableTick(tickSpacing), expectedMinTick);
     }
 
     function test_maxUsableTick_revertsForZero() public {
