@@ -5,9 +5,6 @@ import {Test} from "forge-std/Test.sol";
 import {NonZeroDeltaCount} from "../src/libraries/NonZeroDeltaCount.sol";
 
 contract NonZeroDeltaCountTest is Test {
-    address constant ADDRESS_AS = 0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa;
-    address constant ADDRESS_BS = 0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB;
-
     function test_incrementNonzeroDeltaCount() public {
         NonZeroDeltaCount.increment();
         assertEq(NonZeroDeltaCount.read(), 1);
