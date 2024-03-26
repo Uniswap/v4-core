@@ -188,9 +188,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
 
         BalanceDelta hookDelta = key.hooks.afterModifyLiquidity(key, params, delta, hookData);
+        delta = delta - hookDelta;
 
         _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
-        _accountPoolBalanceDelta(key, delta - hookDelta, msg.sender);
+        _accountPoolBalanceDelta(key, delta, msg.sender);
     }
 
     /// @inheritdoc IPoolManager
@@ -224,10 +225,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         BalanceDelta hookDelta = ((params.amountSpecified < 0) == params.zeroForOne)
             ? toBalanceDelta(hookDeltaInSpecified, hookDeltaInUnspecified)
             : toBalanceDelta(hookDeltaInUnspecified, hookDeltaInSpecified);
+        delta = delta - hookDelta;
 
         // Account the hook's delta to the hook's address, and charge them to the caller's deltas
         _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
-        _accountPoolBalanceDelta(key, delta - hookDelta, msg.sender);
+        _accountPoolBalanceDelta(key, delta, msg.sender);
     }
 
     // Internal swap function to execute a swap, account protocol fees, and emit the swap event

@@ -10,6 +10,7 @@ import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {PoolManager} from "../src/PoolManager.sol";
 import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
+import {CustomCurveHook} from "../src/test/CustomCurveHook.sol";
 import {Owned} from "../src/Owned.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
@@ -794,7 +795,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
-    function test_swap_withFeeTakingHook() public {
+    function test_swap_afterSwapCustomAccounting_exactInput() public {
         address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
         FeeTakingHook impl = new FeeTakingHook(manager);
         vm.etch(hookAddr, address(impl).code);
@@ -816,6 +817,97 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         assertEq(currency0.balanceOf(address(this)), balanceBefore0 - amountToSwap, "amount 0");
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + (998 - 12), "amount 1");
+    }
+
+    function test_swap_afterSwapCustomAccounting_exactOutput() public {
+        address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
+        FeeTakingHook impl = new FeeTakingHook(manager);
+        vm.etch(hookAddr, address(impl).code);
+
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_RATIO_1_1, ZERO_BYTES);
+
+        uint256 balanceBefore0 = currency0.balanceOf(address(this));
+        uint256 balanceBefore1 = currency1.balanceOf(address(this));
+
+        uint256 amountToSwap = 1000;
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: true,
+            amountSpecified: int256(amountToSwap),
+            sqrtPriceLimitX96: SQRT_RATIO_1_2
+        });
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+        // input is 1002 plus a fee of 12 (1002*123)/10000
+        assertEq(currency0.balanceOf(address(this)), balanceBefore0 - 1002 - 12, "amount 0");
+        assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
+    }
+
+    function test_swap_beforeSwapNoOpsSwap_exactInput() public {
+        address hookAddr = address(
+            uint160(
+                Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG | Hooks.BEFORE_SWAP_FLAG
+                    | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG
+            )
+        );
+        CustomCurveHook impl = new CustomCurveHook(manager);
+        vm.etch(hookAddr, address(impl).code);
+
+        (key,) = initPool(currency0, currency1, IHooks(hookAddr), 100, SQRT_RATIO_1_1, ZERO_BYTES);
+        // add liquidity by sending tokens straight into the contract
+        key.currency0.transfer(hookAddr, 10e18);
+        key.currency1.transfer(hookAddr, 10e18);
+
+        uint256 balanceBefore0 = currency0.balanceOf(address(this));
+        uint256 balanceBefore1 = currency1.balanceOf(address(this));
+
+        uint256 amountToSwap = 123456;
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: true,
+            amountSpecified: -int256(amountToSwap),
+            sqrtPriceLimitX96: SQRT_RATIO_1_2
+        });
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+        // the custom curve hook is 1-1 linear
+        assertEq(currency0.balanceOf(address(this)), balanceBefore0 - amountToSwap, "amount 0");
+        assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
+    }
+
+    function test_swap_beforeSwapNoOpsSwap_exactOutput() public {
+        address hookAddr = address(
+            uint160(
+                Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG | Hooks.BEFORE_SWAP_FLAG
+                    | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG
+            )
+        );
+        CustomCurveHook impl = new CustomCurveHook(manager);
+        vm.etch(hookAddr, address(impl).code);
+
+        (key,) = initPool(currency0, currency1, IHooks(hookAddr), 100, SQRT_RATIO_1_1, ZERO_BYTES);
+        // add liquidity by sending tokens straight into the contract
+        key.currency0.transfer(hookAddr, 10e18);
+        key.currency1.transfer(hookAddr, 10e18);
+
+        uint256 balanceBefore0 = currency0.balanceOf(address(this));
+        uint256 balanceBefore1 = currency1.balanceOf(address(this));
+
+        uint256 amountToSwap = 123456;
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: true,
+            amountSpecified: int256(amountToSwap),
+            sqrtPriceLimitX96: SQRT_RATIO_1_2
+        });
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+        // the custom curve hook is 1-1 linear
+        assertEq(currency0.balanceOf(address(this)), balanceBefore0 - amountToSwap, "amount 0");
+        assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
     }
 
     function test_swap_accruesProtocolFees(uint8 protocolFee1, uint8 protocolFee0) public {

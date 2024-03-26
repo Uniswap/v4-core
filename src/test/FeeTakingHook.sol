@@ -9,6 +9,7 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
+import "forge-std/console2.sol";
 
 contract FeeTakingHook is BaseTestHooks {
     using Hooks for IHooks;
@@ -41,7 +42,6 @@ contract FeeTakingHook is BaseTestHooks {
         bool specifiedTokenIs0 = (params.amountSpecified < 0 == params.zeroForOne);
         (Currency feeCurrency, int128 swapAmount) =
             (specifiedTokenIs0) ? (key.currency1, delta.amount1()) : (key.currency0, delta.amount0());
-
         // if fee is on output, get the absolute output amount
         if (swapAmount < 0) swapAmount = -swapAmount;
 
