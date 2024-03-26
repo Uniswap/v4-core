@@ -61,7 +61,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     PoolEmptyUnlockTest emptyUnlockRouter;
 
-    uint24 constant MAX_FEE_BOTH_TOKENS = 10242500; // 2500 2500
+    uint24 constant MAX_FEE_BOTH_TOKENS = (2500 << 12) | 2500; // 2500 2500
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
@@ -749,7 +749,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         protocolFee0 = uint16(bound(protocolFee0, 1, 2500));
         protocolFee1 = uint16(bound(protocolFee1, 1, 2500));
 
-        uint24 protocolFee = (uint24(protocolFee1) << 12) | (uint24(protocolFee0) & uint24(0x1000));
+        uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
 
         feeController.setProtocolFeeForPool(key.toId(), protocolFee);
         manager.setProtocolFee(key);
