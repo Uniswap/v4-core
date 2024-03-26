@@ -20,7 +20,7 @@ library SwapFeeLibrary {
     }
 
     function validate(uint24 self) internal pure {
-        if (self >= MAX_SWAP_FEE) revert FeeTooLarge();
+        if (self > MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
     function getSwapFee(uint24 self) internal pure returns (uint24 swapFee) {
