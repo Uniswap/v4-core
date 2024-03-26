@@ -6,7 +6,7 @@ import {PoolKey} from "../types/PoolKey.sol";
 library SwapFeeLibrary {
     using SwapFeeLibrary for uint24;
 
-    /// @notice Thrown when the static or dynamic fee on a pool is exceeds 100%.
+    /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
     error FeeTooLarge();
 
     uint24 public constant STATIC_FEE_MASK = 0x7FFFFF;
