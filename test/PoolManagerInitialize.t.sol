@@ -49,7 +49,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         });
     }
 
-    function test_initialize(PoolKey memory key0, uint160 sqrtPriceX96) public {
+    function test_fuzz_initialize(PoolKey memory key0, uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
 
@@ -69,7 +69,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key0.hooks)));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (
-            (key.fee & SwapFeeLibrary.DYNAMIC_FEE_FLAG == 0) && (key0.fee & SwapFeeLibrary.STATIC_FEE_MASK > 1000000)
+            (key0.fee & SwapFeeLibrary.DYNAMIC_FEE_FLAG == 0) && (key0.fee & SwapFeeLibrary.STATIC_FEE_MASK > 1000000)
         ) {
             vm.expectRevert(abi.encodeWithSelector(SwapFeeLibrary.FeeTooLarge.selector));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
