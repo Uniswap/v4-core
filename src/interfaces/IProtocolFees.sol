@@ -7,8 +7,6 @@ import {IProtocolFeeController} from "./IProtocolFeeController.sol";
 interface IProtocolFees {
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
     error ProtocolFeeCannotBeFetched();
-    /// @notice Thrown when the call to fetch the protocol fee reverts or returns invalid data.
-    error ProtocolFeeControllerCallFailedOrInvalidResult();
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 

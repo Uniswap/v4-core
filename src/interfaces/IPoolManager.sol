@@ -36,6 +36,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// or on a pool that does not have a dynamic swap fee.
     error UnauthorizedDynamicSwapFeeUpdate();
 
+    /// @notice Thrown when the call to fetch the protocol fee reverts or returns invalid data.
+    error ProtocolFeeControllerCallFailedOrInvalidResult();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order

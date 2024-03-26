@@ -939,7 +939,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint8 fee0 = uint8(protocolFee >> 8);
         uint8 fee1 = uint8(protocolFee % 256);
         if ((0 < fee0 && fee0 < 4) || (0 < fee1 && fee1 < 4)) {
-            vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+            vm.expectRevert(IPoolManager.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
             manager.setProtocolFee(key);
         } else {
             vm.expectEmit(false, false, false, true);
@@ -956,19 +956,19 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(slot0ProtocolFee, 0);
 
         manager.setProtocolFeeController(revertingFeeController);
-        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IPoolManager.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(outOfBoundsFeeController);
-        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IPoolManager.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(overflowFeeController);
-        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IPoolManager.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(key);
 
         manager.setProtocolFeeController(invalidReturnSizeFeeController);
-        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IPoolManager.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(key);
     }
 

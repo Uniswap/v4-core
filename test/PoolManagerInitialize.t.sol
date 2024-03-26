@@ -320,7 +320,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         (,, uint16 slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, 0);
         // call to setProtocolFee should also revert
-        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
+        vm.expectRevert(IPoolManager.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(uninitializedKey);
     }
 
