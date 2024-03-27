@@ -10,17 +10,23 @@ contract SwapFeeLibraryTest is Test {
         assertTrue(SwapFeeLibrary.isDynamicFee(dynamicFee));
     }
 
+    function test_isDynamicFee_returnsTrue_forMaxValue() public {
+        uint24 dynamicFee = 0xFFFFFF;
+        assertTrue(SwapFeeLibrary.isDynamicFee(dynamicFee));
+    }
+
     function test_isDynamicFee_returnsFalse() public {
         uint24 dynamicFee = 0x7FFFFF;
         assertFalse(SwapFeeLibrary.isDynamicFee(dynamicFee));
     }
 
     function test_fuzz_isDynamicFee(uint24 fee) public {
-        if (fee >> 23 == 1) {
-            assertTrue(SwapFeeLibrary.isDynamicFee(fee));
-        } else {
-            assertFalse(SwapFeeLibrary.isDynamicFee(fee));
-        }
+        assertEq((fee >> 23 == 1), SwapFeeLibrary.isDynamicFee(fee));
+    }
+
+    function test_validate_doesNotRevertWithNoFee() public pure {
+        uint24 fee = 0;
+        SwapFeeLibrary.validate(fee);
     }
 
     function test_validate_doesNotRevert() public pure {
@@ -42,36 +48,34 @@ contract SwapFeeLibraryTest is Test {
     function test_fuzz_validate(uint24 fee) public {
         if (fee > 1000000) {
             vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
-            SwapFeeLibrary.validate(fee);
-        } else {
-            SwapFeeLibrary.validate(fee);
         }
+        SwapFeeLibrary.validate(fee);
     }
 
-    function test_getSwapFee_forStaticFeeIsCorrect() public {
+    function test_getInitialSwapFee_forStaticFeeIsCorrect() public {
         uint24 staticFee = 3000; // 30 bps
-        assertEq(SwapFeeLibrary.getSwapFee(staticFee), staticFee);
+        assertEq(SwapFeeLibrary.getInitialSwapFee(staticFee), staticFee);
     }
 
-    function test_getSwapFee_revertsWithFeeTooLarge_forStaticFee() public {
+    function test_getInitialSwapFee_revertsWithFeeTooLarge_forStaticFee() public {
         uint24 staticFee = 1000001;
         vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
-        SwapFeeLibrary.getSwapFee(staticFee);
+        SwapFeeLibrary.getInitialSwapFee(staticFee);
     }
 
-    function test_getSwapFee_forDynamicFeeIsZero() public {
+    function test_getInitialSwapFee_forDynamicFeeIsZero() public {
         uint24 dynamicFee = 0x800BB8;
-        assertEq(SwapFeeLibrary.getSwapFee(dynamicFee), 0);
+        assertEq(SwapFeeLibrary.getInitialSwapFee(dynamicFee), 0);
     }
 
-    function test_fuzz_getSwapFee(uint24 fee) public {
+    function test_fuzz_getInitialSwapFee(uint24 fee) public {
         if (fee >> 23 == 1) {
-            assertEq(SwapFeeLibrary.getSwapFee(fee), 0);
+            assertEq(SwapFeeLibrary.getInitialSwapFee(fee), 0);
         } else if (fee > 1000000) {
             vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
-            SwapFeeLibrary.getSwapFee(fee);
+            SwapFeeLibrary.getInitialSwapFee(fee);
         } else {
-            assertEq(SwapFeeLibrary.getSwapFee(fee), fee);
+            assertEq(SwapFeeLibrary.getInitialSwapFee(fee), fee);
         }
     }
 }
