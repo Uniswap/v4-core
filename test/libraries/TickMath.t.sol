@@ -22,7 +22,7 @@ contract TickMathTestTest is Test, JavascriptFfi {
     int24[] getTickAtSqrtRatioFuzzResults;
 
     struct FeeTier {
-        uint256 fee;
+        uint24 fee;
         int24 tickSpacing;
     }
 
@@ -49,17 +49,17 @@ contract TickMathTestTest is Test, JavascriptFfi {
         assertEq(maxTick, MAX_TICK);
     }
 
-    function test_maxUsableTick_SpecificFeeTiers() public {
+    function test_maxUsableTick_checkTypicalFeeTiers() public {
         // The size of tick spacing is relative to the fee tier.
         // The tick spacing is double the size of the fee tier.
         // For example, a tick for 0.30% fee tier pool will be 0.60% in size.
         // The 0.01% fee tier has a size of 0.01%.
         FeeTier[] memory feeTiers = new FeeTier[](5);
-        feeTiers[0] = FeeTier({fee: 1, tickSpacing: 1}); // 0.01% fee tier
-        feeTiers[1] = FeeTier({fee: 5, tickSpacing: 10}); // 0.05% fee tier
-        feeTiers[2] = FeeTier({fee: 30, tickSpacing: 60}); // 0.30% fee tier
-        feeTiers[3] = FeeTier({fee: 100, tickSpacing: 200}); // 1% fee tier
-        feeTiers[4] = FeeTier({fee: 500, tickSpacing: 1000}); // very high fee tier
+        feeTiers[0] = FeeTier({fee: 1, tickSpacing: 1}); // 0.01% fee
+        feeTiers[1] = FeeTier({fee: 5, tickSpacing: 10}); // 0.05% fee
+        feeTiers[2] = FeeTier({fee: 30, tickSpacing: 60}); // 0.30% fee
+        feeTiers[3] = FeeTier({fee: 100, tickSpacing: 200}); // 1% fee
+        feeTiers[4] = FeeTier({fee: 1000000, tickSpacing: 2000000}); // max fee
 
         for (uint256 i = 0; i < feeTiers.length; i++) {
             FeeTier memory tier = feeTiers[i];
@@ -68,17 +68,17 @@ contract TickMathTestTest is Test, JavascriptFfi {
         }
     }
 
-    function test_minUsableTick_SpecificFeeTiers() public {
+    function test_minUsableTick_checkTypicalFeeTiers() public {
         // The size of tick spacing is relative to the fee tier.
         // The tick spacing is double the size of the fee tier.
         // For example, a tick for 0.30% fee tier pool will be 0.60% in size.
         // The 0.01% fee tier has a size of 0.01%.
         FeeTier[] memory feeTiers = new FeeTier[](5);
-        feeTiers[0] = FeeTier({fee: 1, tickSpacing: 1}); // 0.01% fee tier
-        feeTiers[1] = FeeTier({fee: 5, tickSpacing: 10}); // 0.05% fee tier
-        feeTiers[2] = FeeTier({fee: 30, tickSpacing: 60}); // 0.30% fee tier
-        feeTiers[3] = FeeTier({fee: 100, tickSpacing: 200}); // 1% fee tier
-        feeTiers[4] = FeeTier({fee: 500, tickSpacing: 1000}); // very high fee tier
+        feeTiers[0] = FeeTier({fee: 1, tickSpacing: 1}); // 0.01% fee
+        feeTiers[1] = FeeTier({fee: 5, tickSpacing: 10}); // 0.05% fee
+        feeTiers[2] = FeeTier({fee: 30, tickSpacing: 60}); // 0.30% fee
+        feeTiers[3] = FeeTier({fee: 100, tickSpacing: 200}); // 1% fee
+        feeTiers[4] = FeeTier({fee: 1000000, tickSpacing: 2000000}); // max fee
 
         for (uint256 i = 0; i < feeTiers.length; i++) {
             FeeTier memory tier = feeTiers[i];
@@ -87,15 +87,17 @@ contract TickMathTestTest is Test, JavascriptFfi {
         }
     }
 
-    function testFuzz_maxUsableTick(int24 tickSpacing) public {
-        vm.assume(tickSpacing > 0 && tickSpacing <= MAX_TICK && tickSpacing >= MIN_TICK);
+    function test_maxUsableTick_shouldMatchExpectedMaxTickGivenSpacing_fuzz(int24 tickSpacing) public {
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        vm.assume(tickSpacing != 0);
 
         int24 expectedMaxTick = (MAX_TICK / tickSpacing) * tickSpacing;
         assertEq(tickMath.maxUsableTick(tickSpacing), expectedMaxTick);
     }
 
-    function testFuzz_minUsableTick(int24 tickSpacing) public {
-        vm.assume(tickSpacing > 0 && tickSpacing <= MAX_TICK && tickSpacing >= MIN_TICK);
+    function test_minUsableTick_shouldMatchExpectedMinTickGivenSpacing_fuzz(int24 tickSpacing) public {
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        vm.assume(tickSpacing != 0);
 
         int24 expectedMinTick = (MIN_TICK / tickSpacing) * tickSpacing;
         assertEq(tickMath.minUsableTick(tickSpacing), expectedMinTick);
