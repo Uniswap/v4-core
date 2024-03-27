@@ -66,7 +66,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_bytecodeSize() public {
-        snapSize("poolManager bytecode size", address(manager));
+        snapSize("PoolManager.bytecodeSize", address(manager));
     }
 
     function test_feeControllerSet() public {
@@ -366,25 +366,25 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_gas() public {
-        snapStart("addLiquidity");
+        snapStart("PoolManager.addLiquidity");
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
     function test_removeLiquidity_gas() public {
-        snapStart("removeLiquidity");
+        snapStart("PoolManager.removeLiquidity");
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
     function test_addLiquidity_withNative_gas() public {
-        snapStart("addLiquidity with native token");
+        snapStart("PoolManager.addLiquidityWithNativeToken");
         modifyLiquidityRouter.modifyLiquidity{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
 
     function test_removeLiquidity_withNative_gas() public {
-        snapStart("removeLiquidity with native token");
+        snapStart("PoolManager.removeLiquidityWithNativeToken");
         modifyLiquidityRouter.modifyLiquidity{value: 1 ether}(nativeKey, REMOVE_LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
@@ -397,7 +397,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        snapStart("addLiquidity with empty hook");
+        snapStart("PoolManager.addLiquidityWithEmptyHook");
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
@@ -411,7 +411,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
 
-        snapStart("removeLiquidity with empty hook");
+        snapStart("PoolManager.removeLiquidityWithEmptyHook");
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
         snapEnd();
     }
@@ -566,7 +566,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
-        snapStart("simple swap");
+        snapStart("PoolManager.simpleSwap");
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
         snapEnd();
     }
@@ -578,7 +578,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
-        snapStart("simple swap with native");
+        snapStart("PoolManager.simpleSwapWithNative");
         swapRouter.swap{value: 100}(nativeKey, swapParams, testSettings, ZERO_BYTES);
         snapEnd();
     }
@@ -605,7 +605,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
-        snapStart("swap with hooks");
+        snapStart("PoolManager.swapWithHooks");
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
         snapEnd();
     }
@@ -619,7 +619,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit();
         emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
-        snapStart("swap mint output as 6909");
+        snapStart("PoolManager.swapMintOutputAs6909");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
@@ -636,7 +636,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit();
         emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 98);
-        snapStart("swap mint native output as 6909");
+        snapStart("PoolManager.swapMintNativeOutputAs6909");
         swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
         snapEnd();
 
@@ -668,7 +668,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit();
         emit Transfer(address(swapRouter), address(this), address(0), CurrencyLibrary.toId(currency1), 27);
-        snapStart("swap burn 6909 for input");
+        snapStart("PoolManager.swapBurn6909ForInput");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
@@ -700,7 +700,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit();
         emit Transfer(address(swapRouter), address(this), address(0), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 27);
-        snapStart("swap burn native 6909 for input");
+        snapStart("PoolManager.swapBurnNative6909ForInput");
         // don't have to send in native currency since burning 6909 for input
         swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
         snapEnd();
@@ -720,7 +720,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
 
-        snapStart("swap against liquidity");
+        snapStart("PoolManager.swapAgainstLiquidity");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
     }
@@ -736,7 +736,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_4});
 
-        snapStart("swap against liquidity with native token");
+        snapStart("PoolManager.swapAgainstLiquidityWithNativeToken");
         swapRouter.swap{value: 1 ether}(nativeKey, params, testSettings, ZERO_BYTES);
         snapEnd();
     }
@@ -805,7 +805,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(feeGrowthGlobal0X128, 0);
         assertEq(feeGrowthGlobal1X128, 0);
 
-        snapStart("donate gas with 2 tokens");
+        snapStart("PoolManager.donateGasWith2Tokens");
         donateRouter.donate(key, 100, 200, ZERO_BYTES);
         snapEnd();
 
@@ -864,7 +864,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_donate_OneToken_gas() public {
-        snapStart("donate gas with 1 token");
+        snapStart("PoolManager.donateGasWith1Token");
         donateRouter.donate(key, 100, 0, ZERO_BYTES);
         snapEnd();
     }
@@ -1009,7 +1009,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(currency0.balanceOf(address(1)), 0);
         vm.prank(address(feeController));
-        snapStart("erc20 collect protocol fees");
+        snapStart("PoolManager.erc20CollectProtocolFees");
         manager.collectProtocolFees(address(1), currency0, expectedFees);
         snapEnd();
         assertEq(currency0.balanceOf(address(1)), expectedFees);
@@ -1065,7 +1065,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency1), 0);
         assertEq(nativeCurrency.balanceOf(address(1)), 0);
         vm.prank(address(feeController));
-        snapStart("native collect protocol fees");
+        snapStart("PoolManager.nativeCollectProtocolFees");
         manager.collectProtocolFees(address(1), nativeCurrency, expectedFees);
         snapEnd();
         assertEq(nativeCurrency.balanceOf(address(1)), expectedFees);
