@@ -566,7 +566,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
-        snapStart("PoolManager.simpleSwap");
+        snapStart("PoolManager.swap_simple");
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
         snapEnd();
     }
@@ -578,7 +578,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
-        snapStart("PoolManager.simpleSwap_withNative");
+        snapStart("PoolManager.swap_simpleWithNative");
         swapRouter.swap{value: 100}(nativeKey, swapParams, testSettings, ZERO_BYTES);
         snapEnd();
     }
