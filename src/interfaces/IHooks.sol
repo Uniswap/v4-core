@@ -54,13 +54,14 @@ interface IHooks {
     /// @param params The parameters for adding liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
+    /// @return BalanceDelta The hook's delta in token0 and token1. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterAddLiquidity(
         address sender,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) external returns (bytes4);
+    ) external returns (bytes4, BalanceDelta);
 
     /// @notice The hook called before liquidity is removed
     /// @param sender The initial msg.sender for the remove liquidity call
@@ -81,13 +82,14 @@ interface IHooks {
     /// @param params The parameters for removing liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
+    /// @return BalanceDelta The hook's delta in token0 and token1. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterRemoveLiquidity(
         address sender,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) external returns (bytes4);
+    ) external returns (bytes4, BalanceDelta);
 
     /// @notice The hook called before a swap
     /// @param sender The initial msg.sender for the swap call
@@ -95,12 +97,13 @@ interface IHooks {
     /// @param params The parameters for the swap
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
+    /// @return int256 The hook's delta in specified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function beforeSwap(
         address sender,
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata hookData
-    ) external returns (bytes4);
+    ) external returns (bytes4, int128);
 
     /// @notice The hook called after a swap
     /// @param sender The initial msg.sender for the swap call
@@ -109,13 +112,14 @@ interface IHooks {
     /// @param delta The amount owed to the caller (positive) or owed to the pool (negative)
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
+    /// @return int128 The hook's delta in unspecified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterSwap(
         address sender,
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) external returns (bytes4);
+    ) external returns (bytes4, int128);
 
     /// @notice The hook called before donate
     /// @param sender The initial msg.sender for the donate call
