@@ -23,7 +23,7 @@ library SwapFeeLibrary {
         if (self > MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
-    function getSwapFee(uint24 self) internal pure returns (uint24 swapFee) {
+    function getInitialSwapFee(uint24 self) internal pure returns (uint24 swapFee) {
         // the initial fee for a dynamic fee pool is 0
         if (self.isDynamicFee()) return 0;
         swapFee = self & STATIC_FEE_MASK;
