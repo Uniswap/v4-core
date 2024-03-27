@@ -103,6 +103,13 @@ contract TickMathTestTest is Test, JavascriptFfi {
         assertEq(tickMath.minUsableTick(tickSpacing), expectedMinTick);
     }
 
+    function test_maxUsableTick_equalsMinUsableTick_fuzz(int24 tickSpacing) public {
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        vm.assume(tickSpacing != 0);
+
+        assertEq(-tickMath.minUsableTick(tickSpacing), tickMath.maxUsableTick(tickSpacing));
+    }
+
     function test_maxUsableTick_revertsForZero() public {
         vm.expectRevert();
         tickMath.maxUsableTick(0);
