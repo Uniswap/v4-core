@@ -3,9 +3,9 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {TickMathTest} from "../src/test/TickMathTest.sol";
-import {TickMath} from "../src/libraries/TickMath.sol";
-import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
+import {TickMathTest} from "src/test/TickMathTest.sol";
+import {TickMath} from "src/libraries/TickMath.sol";
+import {JavascriptFfi} from "test/utils/JavascriptFfi.sol";
 
 contract TickMathTestTest is Test, JavascriptFfi {
     int24 constant MIN_TICK = -887272;
