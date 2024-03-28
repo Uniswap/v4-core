@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.20;
 
-import {PoolKey} from "../types/PoolKey.sol";
-
 library ProtocolFeeLibrary {
     using ProtocolFeeLibrary for uint24;
 
@@ -21,11 +19,13 @@ library ProtocolFeeLibrary {
     }
 
     function validate(uint24 self) internal pure returns (bool) {
-        uint16 fee0 = self.getZeroForOneFee();
-        uint16 fee1 = self.getOneForZeroFee();
-        // The fee is represented in bips so it cannot be GREATER than the MAX_PROTOCOL_FEE.
-        if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
-            return false;
+        if (self != 0) {
+            uint16 fee0 = self.getZeroForOneFee();
+            uint16 fee1 = self.getOneForZeroFee();
+            // The fee is represented in bips so it cannot be GREATER than the MAX_PROTOCOL_FEE.
+            if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
+                return false;
+            }
         }
         return true;
     }
