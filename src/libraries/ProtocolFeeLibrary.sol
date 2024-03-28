@@ -2,8 +2,6 @@
 pragma solidity ^0.8.20;
 
 library ProtocolFeeLibrary {
-    using ProtocolFeeLibrary for uint24;
-
     // Max protocol fee is 25% (2500 bips)
     uint16 public constant MAX_PROTOCOL_FEE = 2500;
 
@@ -20,8 +18,8 @@ library ProtocolFeeLibrary {
 
     function validate(uint24 self) internal pure returns (bool) {
         if (self != 0) {
-            uint16 fee0 = self.getZeroForOneFee();
-            uint16 fee1 = self.getOneForZeroFee();
+            uint16 fee0 = getZeroForOneFee(self);
+            uint16 fee1 = getOneForZeroFee(self);
             // The fee is represented in bips so it cannot be GREATER than the MAX_PROTOCOL_FEE.
             if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
                 return false;
