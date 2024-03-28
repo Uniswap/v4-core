@@ -6,8 +6,8 @@ import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
 import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {PoolKey} from "./types/PoolKey.sol";
-import {Owned} from "./Owned.sol";
 import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
+import {Owned} from "solmate/auth/Owned.sol";
 
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
@@ -19,7 +19,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
 
     uint256 private immutable controllerGasLimit;
 
-    constructor(uint256 _controllerGasLimit) {
+    constructor(uint256 _controllerGasLimit) Owned(msg.sender) {
         controllerGasLimit = _controllerGasLimit;
     }
 

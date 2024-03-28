@@ -10,6 +10,8 @@ interface IProtocolFees {
     error ProtocolFeeControllerCallFailedOrInvalidResult();
     /// @notice Thrown when a pool does not have a dynamic fee.
     error FeeNotDynamic();
+    /// @notice Thrown when collectProtocolFees is not called by the controller.
+    error InvalidCaller();
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
