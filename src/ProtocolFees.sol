@@ -13,9 +13,6 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
     using ProtocolFeeLibrary for uint24;
 
-    // Max protocol fee is 25% (2500 bips)
-    uint16 public constant MAX_PROTOCOL_FEE = 2500;
-
     mapping(Currency currency => uint256) public protocolFeesAccrued;
 
     IProtocolFeeController public protocolFeeController;
@@ -48,22 +45,10 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
                 returnData := mload(add(_data, 0x20))
             }
             // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
-            (success, protocolFees) = returnData == uint24(returnData) && _isValidProtocolFee(uint24(returnData))
+            (success, protocolFees) = (returnData == uint24(returnData)) && uint24(returnData).validate()
                 ? (true, uint24(returnData))
                 : (false, 0);
         }
-    }
-
-    function _isValidProtocolFee(uint24 fee) internal pure returns (bool) {
-        if (fee != 0) {
-            uint16 fee0 = fee.getZeroForOneFee();
-            uint16 fee1 = fee.getOneForZeroFee();
-            // The fee is represented in bips so it cannot be GREATER than the MAX_PROTOCOL_FEE.
-            if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {

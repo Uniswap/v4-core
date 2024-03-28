@@ -13,9 +13,6 @@ interface IProtocolFees {
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
-    /// @notice Returns the minimum denominator for the protocol fee, which restricts it to a maximum of 25%
-    function MAX_PROTOCOL_FEE() external view returns (uint16);
-
     /// @notice Given a currency address, returns the protocol fees accrued in that currency
     function protocolFeesAccrued(Currency) external view returns (uint256);
 }
