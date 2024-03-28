@@ -8,6 +8,9 @@ interface IProtocolFees {
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
     error ProtocolFeeCannotBeFetched();
 
+    /// @notice Thrown when collectProtocolFees is not called by the controller.
+    error InvalidCaller();
+
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
     /// @notice Returns the minimum denominator for the protocol fee, which restricts it to a maximum of 25%

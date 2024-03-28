@@ -8,7 +8,6 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {PoolManager} from "../src/PoolManager.sol";
-import {Owned} from "../src/Owned.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
@@ -69,13 +68,23 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapSize("poolManager bytecode size", address(manager));
     }
 
-    function test_feeControllerSet() public {
+    function test_setProtocolFeeController_succeeds() public {
         deployFreshManager();
         assertEq(address(manager.protocolFeeController()), address(0));
         vm.expectEmit(false, false, false, true, address(manager));
         emit ProtocolFeeControllerUpdated(address(feeController));
         manager.setProtocolFeeController(feeController);
         assertEq(address(manager.protocolFeeController()), address(feeController));
+    }
+
+    function test_setProtocolFeeController_failsIfNotOwner() public {
+        deployFreshManager();
+        assertEq(address(manager.protocolFeeController()), address(0));
+
+        vm.prank(address(1)); // not the owner address
+        vm.expectRevert("UNAUTHORIZED");
+        manager.setProtocolFeeController(feeController);
+        assertEq(address(manager.protocolFeeController()), address(0));
     }
 
     function test_addLiquidity_failsIfNotInitialized() public {
@@ -984,7 +993,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_revertsIfCallerIsNotController() public {
-        vm.expectRevert(Owned.InvalidCaller.selector);
+        vm.expectRevert(IProtocolFees.InvalidCaller.selector);
         manager.collectProtocolFees(address(1), currency0, 0);
     }
 
