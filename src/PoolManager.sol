@@ -112,7 +112,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
-        uint24 swapFee = key.fee.getSwapFee();
+        uint24 swapFee = key.fee.getInitialSwapFee();
 
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
