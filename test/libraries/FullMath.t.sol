@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
-import {FullMath} from "../src/libraries/FullMath.sol";
+import {FullMath} from "src/libraries/FullMath.sol";
 
 contract FullMathTest is Test {
     using FullMath for uint256;

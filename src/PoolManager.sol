@@ -30,6 +30,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
+    using CurrencyDelta for Currency;
     using SwapFeeLibrary for uint24;
     using PoolGetters for Pool.State;
 
@@ -84,7 +85,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function currencyDelta(address caller, Currency currency) external view returns (int256) {
-        return CurrencyDelta.get(caller, currency);
+        return currency.getDelta(caller);
     }
 
     /// @inheritdoc IPoolManager
@@ -141,7 +142,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        int256 current = CurrencyDelta.get(msg.sender, currency);
+        int256 current = currency.getDelta(msg.sender);
         int256 next = current + delta;
 
         unchecked {
@@ -152,7 +153,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             }
         }
 
-        CurrencyDelta.set(msg.sender, currency, next);
+        currency.setDelta(msg.sender, next);
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
