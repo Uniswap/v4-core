@@ -88,13 +88,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function isUnlocked() public view override returns (bool) {
+    function isUnlocked() external view override returns (bool) {
         return unlocked;
     }
 
     /// @notice This will revert if the contract is locked
     modifier onlyWhenUnlocked() {
-        if (!isUnlocked()) revert ManagerLocked();
+        if (!unlocked) revert ManagerLocked();
         _;
     }
 
@@ -127,7 +127,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function unlock(bytes calldata data) external override returns (bytes memory result) {
-        if (isUnlocked()) revert AlreadyUnlocked();
+        if (unlocked) revert AlreadyUnlocked();
 
         unlocked = true;
 
