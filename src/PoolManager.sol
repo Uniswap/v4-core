@@ -10,7 +10,6 @@ import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {TickMath} from "./libraries/TickMath.sol";
 import {NoDelegateCall} from "./NoDelegateCall.sol";
-import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "./interfaces/callback/IUnlockCallback.sol";
@@ -31,14 +30,15 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using SwapFeeLibrary for uint24;
     using PoolGetters for Pool.State;
 
-    bool transient private unlocked;
-    uint256 transient private nonZeroDeltaCount;
-
     /// @inheritdoc IPoolManager
     int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
     /// @inheritdoc IPoolManager
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
+
+    bool transient private unlocked;
+
+    uint256 transient private nonZeroDeltaCount;
 
     /// @dev Represents the currencies due/owed to each caller.
     /// Must all net to zero when manager gets locked again
@@ -87,6 +87,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         return Position.get(pools[id].positions, _owner, tickLower, tickUpper);
     }
 
+    /// @inheritdoc IPoolManager
     function isUnlocked() public view override returns (bool) {
         return unlocked;
     }
@@ -109,7 +110,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
-        uint24 swapFee = key.fee.getSwapFee();
+        uint24 swapFee = key.fee.getInitialSwapFee();
 
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
