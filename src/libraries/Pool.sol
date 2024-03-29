@@ -13,8 +13,8 @@ import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 
 library Pool {
     using SafeCast for *;
-    using TickBitmap for mapping(int16 => uint256);
-    using Position for mapping(bytes32 => Position.Info);
+    // using TickBitmap for mapping(int16 => uint256);
+    // using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Pool for State;
 
@@ -180,17 +180,17 @@ library Pool {
                 }
 
                 if (state.flippedLower) {
-                    self.tickBitmap.flipTick(params.tickLower, params.tickSpacing);
+                    TickBitmap.flipTick(self.tickBitmap, params.tickLower, params.tickSpacing);
                 }
                 if (state.flippedUpper) {
-                    self.tickBitmap.flipTick(params.tickUpper, params.tickSpacing);
+                    TickBitmap.flipTick(self.tickBitmap, params.tickUpper, params.tickSpacing);
                 }
             }
 
             (state.feeGrowthInside0X128, state.feeGrowthInside1X128) =
                 getFeeGrowthInside(self, params.tickLower, params.tickUpper);
 
-            (feesOwed0, feesOwed1) = self.positions.get(params.owner, params.tickLower, params.tickUpper).update(
+            (feesOwed0, feesOwed1) = Position.get(self.positions, params.owner, params.tickLower, params.tickUpper).update(
                 params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128
             );
 
@@ -343,7 +343,7 @@ library Pool {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
             (step.tickNext, step.initialized) =
-                self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, params.zeroForOne);
+                TickBitmap.nextInitializedTickWithinOneWord(self.tickBitmap, state.tick, params.tickSpacing, params.zeroForOne);
 
             // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
             if (step.tickNext < TickMath.MIN_TICK) {

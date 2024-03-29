@@ -18,8 +18,6 @@ import {ProtocolFees} from "./ProtocolFees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
-import {Lock} from "./libraries/Lock.sol";
-import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 
 /// @notice Holds the state for all pools
@@ -28,10 +26,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
-    using Position for mapping(bytes32 => Position.Info);
+    // using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
     using SwapFeeLibrary for uint24;
     using PoolGetters for Pool.State;
+
+    bool transient private unlocked;
+    uint256 transient private nonZeroDeltaCount;
 
     /// @inheritdoc IPoolManager
     int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
@@ -41,8 +42,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @dev Represents the currencies due/owed to each caller.
     /// Must all net to zero when manager gets locked again
-    /// TODO this needs to be transient
-    mapping(address caller => mapping(Currency currency => int256 currencyDelta)) public currencyDelta;
+    mapping(address caller => mapping(Currency currency => int256 currencyDelta)) transient public currencyDelta;
 
     /// @inheritdoc IPoolManager
     mapping(Currency currency => uint256) public override reservesOf;
@@ -75,7 +75,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         override
         returns (uint128 liquidity)
     {
-        return pools[id].positions.get(_owner, tickLower, tickUpper).liquidity;
+        return Position.get(pools[id].positions, _owner, tickLower, tickUpper).liquidity;
     }
 
     function getPosition(PoolId id, address _owner, int24 tickLower, int24 tickUpper)
@@ -84,16 +84,16 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         override
         returns (Position.Info memory position)
     {
-        return pools[id].positions.get(_owner, tickLower, tickUpper);
+        return Position.get(pools[id].positions, _owner, tickLower, tickUpper);
     }
 
-    function isUnlocked() external view override returns (bool) {
-        return Lock.isUnlocked();
+    function isUnlocked() public view override returns (bool) {
+        return unlocked;
     }
 
     /// @notice This will revert if the contract is locked
     modifier onlyWhenUnlocked() {
-        if (!Lock.isUnlocked()) revert ManagerLocked();
+        if (!isUnlocked()) revert ManagerLocked();
         _;
     }
 
@@ -126,15 +126,16 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function unlock(bytes calldata data) external override returns (bytes memory result) {
-        if (Lock.isUnlocked()) revert AlreadyUnlocked();
+        if (isUnlocked()) revert AlreadyUnlocked();
 
-        Lock.unlock();
+        unlocked = true;
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = IUnlockCallback(msg.sender).unlockCallback(data);
 
-        if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
-        Lock.lock();
+        if (nonZeroDeltaCount != 0) revert CurrencyNotSettled();
+
+        unlocked = false;
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
@@ -145,9 +146,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         unchecked {
             if (next == 0) {
-                NonZeroDeltaCount.decrement();
+                nonZeroDeltaCount -= 1;
             } else if (current == 0) {
-                NonZeroDeltaCount.increment();
+                nonZeroDeltaCount += 1;
             }
         }
 
@@ -330,7 +331,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
-        return NonZeroDeltaCount.read();
+        return nonZeroDeltaCount;
     }
 
     function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory) {
