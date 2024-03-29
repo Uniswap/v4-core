@@ -126,4 +126,58 @@ contract PoolTest is Test {
             assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
         }
     }
+
+    function test_unit_Swap() public {
+        // Assumptions tested in PoolManager.t.sol
+        uint160 sqrtPriceX96 = 79228162514264337593543950336;
+        uint24 swapFee = 0;
+        Pool.SwapParams memory params = Pool.SwapParams({tickSpacing: -2448282, zeroForOne: false, amountSpecified: 2459, sqrtPriceLimitX96: 183941092569902643409258474997558974124631523329 });
+        params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        swapFee = uint24(bound(swapFee, 0, 999999));
+
+        // initialize and add liquidity
+        testModifyLiquidity(
+            sqrtPriceX96,
+            Pool.ModifyLiquidityParams({
+                owner: address(this),
+                tickLower: -120,
+                tickUpper: 120,
+                liquidityDelta: 1e18,
+                tickSpacing: 60
+            })
+        );
+        Pool.Slot0 memory slot0 = state.slot0;
+
+        if (params.amountSpecified == 0) {
+            vm.expectRevert(Pool.SwapAmountCannotBeZero.selector);
+        } else if (params.zeroForOne) {
+            if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96) {
+                vm.expectRevert(
+                    abi.encodeWithSelector(
+                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                    )
+                );
+            } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO) {
+                vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
+            }
+        } else if (!params.zeroForOne) {
+            if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96) {
+                vm.expectRevert(
+                    abi.encodeWithSelector(
+                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                    )
+                );
+            } else if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
+                vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
+            }
+        }
+
+        state.swap(params);
+
+        if (params.zeroForOne) {
+            assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+        } else {
+            assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+        }
+    }
 }
