@@ -36,6 +36,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// or on a pool that does not have a dynamic swap fee.
     error UnauthorizedDynamicSwapFeeUpdate();
 
+    /// @notice Thrown when the call to fetch the protocol fee reverts or returns invalid data.
+    error ProtocolFeeControllerCallFailedOrInvalidResult();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
@@ -109,6 +112,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
 
     /// @notice Getter for the bitmap given the poolId and word position
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap);
+
+    /// @notice Getter for the fee growth globals for the given poolId
+    function getFeeGrowthGlobals(PoolId id)
+        external
+        view
+        returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1);
 
     /// @notice Get the position struct for a specified pool and position
     function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
