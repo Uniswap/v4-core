@@ -18,12 +18,24 @@ contract TransientTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_gas_transient_set_warm() public {
+    function test_regular_gas_transient_set_warm() public {
         storageLib.tstore(1, 2);
         snapStart("transient store warm");
         storageLib.tstore(1, 3);
         snapEnd();
         assertEq(storageLib.tload(1), 3);
+    }
+
+    function _test_gas_transient_set_warm() public {
+        storageLib.tstore(1, 2);
+        snapStart("isolate transient store warm");
+        storageLib.tstore(1, 3);
+        snapEnd();
+        assertEq(storageLib.tload(1), 3);
+    }
+
+    function test_isolate_gas_transient_set_warm() public {
+        this._test_gas_transient_set_warm();
     }
 
     function test_gas_transient_get() public {
