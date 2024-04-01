@@ -572,11 +572,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
-        PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
-
         snapStart("simple swap");
-        swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
+        swapRouterGas.swap(key, swapParams);
         snapEnd();
     }
 
