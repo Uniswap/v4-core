@@ -19,6 +19,7 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
+import {PoolSwapTestGas} from "../src/test/PoolSwapTestGas.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolEmptyUnlockTest} from "../src/test/PoolEmptyUnlockTest.sol";
@@ -572,8 +573,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
+        // so we dont SLOAD in the gas snapshot
+        PoolKey memory _key = key;
+        PoolSwapTestGas _router = swapRouterGas;
+
         snapStart("simple swap");
-        swapRouterGas.swap(key, swapParams);
+        _router.swap(_key, swapParams);
         snapEnd();
     }
 
@@ -581,11 +586,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
-        PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+        // so we dont SLOAD in the gas snapshot
+        PoolKey memory _key = nativeKey;
+        PoolSwapTestGas _router = swapRouterGas;
 
         snapStart("simple swap with native");
-        swapRouter.swap{value: 100}(nativeKey, swapParams, testSettings, ZERO_BYTES);
+        _router.swap{value: 100}(_key, swapParams);
         snapEnd();
     }
 
