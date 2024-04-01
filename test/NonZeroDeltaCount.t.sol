@@ -6,12 +6,15 @@ import {NonZeroDeltaCount} from "../src/libraries/NonZeroDeltaCount.sol";
 
 contract NonZeroDeltaCountTest is Test {
     function test_incrementNonzeroDeltaCount() public {
+        assertEq(NonZeroDeltaCount.read(), 0);
         NonZeroDeltaCount.increment();
         assertEq(NonZeroDeltaCount.read(), 1);
     }
 
     function test_decrementNonzeroDeltaCount() public {
+        assertEq(NonZeroDeltaCount.read(), 0);
         NonZeroDeltaCount.increment();
+        assertEq(NonZeroDeltaCount.read(), 1);
         NonZeroDeltaCount.decrement();
         assertEq(NonZeroDeltaCount.read(), 0);
     }
@@ -19,6 +22,7 @@ contract NonZeroDeltaCountTest is Test {
     // Reading from right to left. Bit of 0: call increase. Bit of 1: call decrease.
     // The library allows over over/underflow so we dont check for that here
     function test_fuzz_nonZeroDeltaCount(uint256 instructions) public {
+        assertEq(NonZeroDeltaCount.read(), 0);
         uint256 expectedCount;
         for (uint256 i = 0; i < 256; i++) {
             if ((instructions & (1 << i)) == 0) {
