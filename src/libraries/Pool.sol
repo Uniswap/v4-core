@@ -10,6 +10,7 @@ import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {SwapFeeLibrary} from "./SwapFeeLibrary.sol";
 
 library Pool {
     using SafeCast for *;
@@ -293,6 +294,7 @@ library Pool {
         bool zeroForOne;
         int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
+        uint24 fee;
     }
 
     /// @notice Executes a swap against the state, and returns the amount deltas of the pool
@@ -302,7 +304,7 @@ library Pool {
         returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
     {
         Slot0 memory slot0Start = self.slot0;
-        swapFee = slot0Start.swapFee;
+        swapFee = params.fee < SwapFeeLibrary.MAX_SWAP_FEE ? params.fee : slot0Start.swapFee;
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,

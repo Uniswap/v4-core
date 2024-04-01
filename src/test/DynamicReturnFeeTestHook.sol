@@ -6,7 +6,7 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 
-contract DynamicFeesTestHook is BaseTestHooks {
+contract DynamicReturnFeeTestHook is BaseTestHooks {
     uint24 internal fee;
     IPoolManager manager;
 
@@ -32,8 +32,7 @@ contract DynamicFeesTestHook is BaseTestHooks {
         override
         returns (bytes4, int128, uint24)
     {
-        manager.updateDynamicSwapFee(key, fee);
-        return (IHooks.beforeSwap.selector, 0, type(uint24).max);
+        return (IHooks.beforeSwap.selector, 0, fee);
     }
 
     function forcePoolFeeUpdate(PoolKey calldata _key, uint24 _fee) external {

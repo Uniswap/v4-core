@@ -146,6 +146,20 @@ library Hooks {
         (, delta) = abi.decode(result, (bytes4, int256));
     }
 
+    /// @notice performs a hook call using the given calldata on the given hook
+    /// @return delta The delta returned by the hook
+    function callHookWithReturnDeltaAndFee(IHooks self, bytes memory data, bool parseReturn)
+        internal
+        returns (int256 delta, uint24 fee)
+    {
+        bytes memory result = callHook(self, data);
+        (, delta, fee) = abi.decode(result, (bytes4, int256, uint24));
+
+        if (!parseReturn) {
+            delta = 0;
+        }
+    }
+
     /// @notice calls beforeInitialize hook if permissioned and validates return value
     function beforeInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         internal
@@ -220,14 +234,18 @@ library Hooks {
     /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
-        returns (int256 amountToSwap, int128 hookDeltaInSpecified)
+        returns (int256 amountToSwap, int128 hookDeltaInSpecified, uint24 swapFee)
     {
         amountToSwap = params.amountSpecified;
+        swapFee = type(uint24).max;
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
-            hookDeltaInSpecified = self.callHookWithReturnDelta(
+            (int256 hookDelta, uint24 _swapFee) = self.callHookWithReturnDeltaAndFee(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
                 key.hooks.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)
-            ).toInt128();
+            );
+            hookDeltaInSpecified = hookDelta.toInt128();
+
+            if (key.fee.isDynamicFee()) swapFee = _swapFee;
 
             // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
             if (hookDeltaInSpecified != 0) {

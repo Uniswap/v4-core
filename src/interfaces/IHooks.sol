@@ -98,12 +98,13 @@ interface IHooks {
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     /// @return int256 The hook's delta in specified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
+    /// @return uint24 The fee to be charged for the swap
     function beforeSwap(
         address sender,
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata hookData
-    ) external returns (bytes4, int128);
+    ) external returns (bytes4, int128, uint24);
 
     /// @notice The hook called after a swap
     /// @param sender The initial msg.sender for the swap call

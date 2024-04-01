@@ -71,7 +71,7 @@ contract BaseTestHooks is IHooks {
         PoolKey calldata, /* key **/
         IPoolManager.SwapParams calldata, /* params **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4, int128) {
+    ) external virtual returns (bytes4, int128, uint24) {
         revert HookNotImplemented();
     }
 

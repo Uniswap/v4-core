@@ -91,9 +91,9 @@ contract EmptyTestHooks is IHooks {
         external
         pure
         override
-        returns (bytes4, int128)
+        returns (bytes4, int128, uint24)
     {
-        return (IHooks.beforeSwap.selector, 0);
+        return (IHooks.beforeSwap.selector, 0, type(uint24).max);
     }
 
     function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta, bytes calldata)

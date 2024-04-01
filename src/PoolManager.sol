@@ -207,8 +207,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        (int256 amountToSwap, int128 hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
-
+        (int256 amountToSwap, int128 hookDeltaInSpecified, uint24 fee) = key.hooks.beforeSwap(key, params, hookData);
         // execute swap, account protocol fees, and emit swap event
         delta = _swap(
             id,
@@ -216,7 +215,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
                 amountSpecified: amountToSwap,
-                sqrtPriceLimitX96: params.sqrtPriceLimitX96
+                sqrtPriceLimitX96: params.sqrtPriceLimitX96,
+                fee: fee
             }),
             params.zeroForOne ? key.currency0 : key.currency1
         );
