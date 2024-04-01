@@ -204,6 +204,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         onlyWhenUnlocked
         returns (BalanceDelta delta)
     {
+        if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
+
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 

@@ -44,9 +44,6 @@ library Pool {
     /// @notice Thrown when trying to interact with a non-initialized pool
     error PoolNotInitialized();
 
-    /// @notice Thrown when trying to swap amount of 0
-    error SwapAmountCannotBeZero();
-
     /// @notice Thrown when sqrtPriceLimitX96 on a swap has already exceeded its limit
     /// @param sqrtPriceCurrentX96 The invalid, already surpassed sqrtPriceLimitX96
     /// @param sqrtPriceLimitX96 The surpassed price limit

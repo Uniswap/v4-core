@@ -11,6 +11,7 @@ import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.s
 import {PoolManager} from "../src/PoolManager.sol";
 import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
 import {CustomCurveHook} from "../src/test/CustomCurveHook.sol";
+import {DeltaReturningHook} from "../src/test/DeltaReturningHook.sol";
 import {Owned} from "../src/Owned.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
@@ -39,6 +40,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
     using SwapFeeLibrary for uint24;
     using CurrencyLibrary for Currency;
+    using SafeCast for uint256;
+    using SafeCast for uint128;
 
     event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);
@@ -910,6 +913,91 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
     }
 
+    function test_fuzz_swap_beforeSwapReturnsDelta(int128 hookDeltaSpecified, int128 amountSpecified, bool zeroForOne)
+        public
+    {
+        // ------------------------ SETUP ------------------------
+        // bound amount specified to be within the amount of liquidity we have
+        amountSpecified = int128(bound(amountSpecified, -3e11, 3e11));
+        // bound delta in specified to not take more than the reserves available, nor be the minimum int (that cannot be flipped)
+        uint128 reservesOfSpecified =
+            uint128(manager.reservesOf((amountSpecified < 0 && zeroForOne) ? key.currency0 : key.currency1));
+        hookDeltaSpecified = int128(bound(hookDeltaSpecified, type(int128).min + 1, int128(reservesOfSpecified)));
+
+        // setup the hook
+        {
+            // stack too deep management
+            address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+            DeltaReturningHook impl = new DeltaReturningHook(manager);
+            vm.etch(hookAddr, address(impl).code);
+            DeltaReturningHook(hookAddr).setDeltaInSpecified(hookDeltaSpecified);
+
+            // initialize the pool and give the hook tokens to pay into swaps
+            (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_RATIO_1_1, ZERO_BYTES);
+            key.currency0.transfer(hookAddr, type(uint128).max);
+            key.currency1.transfer(hookAddr, type(uint128).max);
+        }
+
+        // setup swap variables
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: zeroForOne,
+            amountSpecified: amountSpecified,
+            sqrtPriceLimitX96: (zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT)
+        });
+
+        // ------------------------ FUZZING CASES ------------------------
+        // with an amount specified of 0, the trade reverts
+        if (amountSpecified == 0) {
+            vm.expectRevert(IPoolManager.SwapAmountCannotBeZero.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // trade is exact input of n, the hook cannot TAKE (+ve hookDeltaSpecified) more than n in input
+        } else if ((amountSpecified < 0) && (hookDeltaSpecified > -amountSpecified)) {
+            vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // exact output of n, the hook cannot GIVE (-ve hookDeltaSpecified) more than n in output
+        } else if ((amountSpecified > 0) && (amountSpecified < -hookDeltaSpecified)) {
+            vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        } else {
+            // uint256 balanceThisBefore0 = currency0.balanceOf(address(this));
+            // uint256 balanceThisBefore1 = currency1.balanceOf(address(this));
+            // uint256 balanceHookBefore0 = currency0.balanceOf(address(this));
+            // uint256 balanceHookBefore1 = currency1.balanceOf(address(this));
+
+            BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+            int128 swappedSpecified = (zeroForOne == amountSpecified < 0) ? delta.amount0() : delta.amount1();
+
+            // uint256 balanceThisAfter0 = currency0.balanceOf(address(this));
+            // uint256 balanceThisAfter1 = currency1.balanceOf(address(this));
+            // uint256 balanceHookAfter0 = currency0.balanceOf(address(this));
+            // uint256 balanceHookAfter1 = currency1.balanceOf(address(this));
+
+            // exact input, where there isnt enough liquidity, delta will be maximum tradeable liquidity
+            // and any extra money sent by the hook will be credited to the user
+            // if (amountSpecified < 0 && (hookDeltaSpecified + amountSpecified < )) {
+
+            // }
+
+            // exact output, where there isnt enough output reserves available to pay swap and hook
+            if (amountSpecified > 0 && (uint128(hookDeltaSpecified + amountSpecified) > reservesOfSpecified)) {
+                // the hook will have taken `hookDeltaSpecified` already
+                // so only reservesOfSpecified - hookDeltaSpecified will have been left to swap
+                assertEq(
+                    swappedSpecified,
+                    reservesOfSpecified.toInt128() - hookDeltaSpecified,
+                    "swappedSpecified exact output"
+                );
+            }
+
+            // otherwise there must be enough liquidity so delta is amountSpecified
+            // assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
+        }
+    }
+
     function test_swap_accruesProtocolFees(uint8 protocolFee1, uint8 protocolFee0) public {
         protocolFee0 = uint8(bound(protocolFee0, 4, type(uint8).max));
         protocolFee1 = uint8(bound(protocolFee1, 4, type(uint8).max));
@@ -950,7 +1038,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_donate_failsIfNotInitialized() public {
-        vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
+        vm.expectRevert(Pool.PoolNotInitialized.selector);
         donateRouter.donate(uninitializedKey, 100, 100, ZERO_BYTES);
     }
 
@@ -964,7 +1052,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         (key,) = initPool(currency0, currency1, IHooks(address(0)), 100, sqrtPriceX96, ZERO_BYTES);
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.NoLiquidityToReceiveFees.selector));
+        vm.expectRevert(Pool.NoLiquidityToReceiveFees.selector);
         donateRouter.donate(key, 100, 100, ZERO_BYTES);
     }
 
