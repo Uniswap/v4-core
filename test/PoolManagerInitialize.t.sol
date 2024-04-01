@@ -80,9 +80,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             emit Initialize(key0.toId(), key0.currency0, key0.currency1, key0.fee, key0.tickSpacing, key0.hooks);
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
 
-            (Pool.Slot0 memory slot0,,,) = manager.pools(key0.toId());
-            assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(slot0.protocolFee, 0);
+            (uint160 slot0SqrtPriceX96,, uint24 slot0ProtocolFee,) = manager.getSlot0(key0.toId());
+            assertEq(slot0SqrtPriceX96, sqrtPriceX96);
+            assertEq(slot0ProtocolFee, 0);
         }
     }
 
@@ -102,10 +102,11 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
-        assertEq(slot0.protocolFee, 0);
-        assertEq(slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
+        (uint160 slot0SqrtPriceX96, int24 slot0Tick, uint24 slot0ProtocolFee,) =
+            manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0SqrtPriceX96, sqrtPriceX96);
+        assertEq(slot0ProtocolFee, 0);
+        assertEq(slot0Tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
     }
 
     function test_initialize_succeedsWithHooks(uint160 sqrtPriceX96) public {
@@ -124,8 +125,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         uninitializedKey.hooks = IHooks(mockAddr);
 
         int24 tick = manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.sqrtPriceX96, sqrtPriceX96, "sqrtPrice");
+        (uint160 slot0SqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0SqrtPriceX96, sqrtPriceX96, "sqrtPrice");
 
         bytes32 beforeSelector = MockHooks.beforeInitialize.selector;
         bytes memory beforeParams = abi.encode(address(this), uninitializedKey, sqrtPriceX96, ZERO_BYTES);
@@ -171,8 +172,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         uninitializedKey.hooks = mockHooks;
 
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.sqrtPriceX96, sqrtPriceX96);
+        (uint160 slot0SqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0SqrtPriceX96, sqrtPriceX96);
     }
 
     function test_initialize_revertsWithIdenticalTokens(uint160 sqrtPriceX96) public {
@@ -206,12 +207,12 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.sqrtPriceX96, SQRT_RATIO_1_1);
+        (uint160 slot0SqrtPriceX96,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0SqrtPriceX96, SQRT_RATIO_1_1);
         if ((fee0 > 2500) || (fee1 > 2500)) {
-            assertEq(slot0.protocolFee, 0);
+            assertEq(slot0ProtocolFee, 0);
         } else {
-            assertEq(slot0.protocolFee, protocolFee);
+            assertEq(slot0ProtocolFee, protocolFee);
         }
     }
 
@@ -318,8 +319,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFee, 0);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0ProtocolFee, 0);
         // call to setProtocolFee should also revert
         vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
         manager.setProtocolFee(uninitializedKey);
@@ -342,8 +343,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFee, 0);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0ProtocolFee, 0);
     }
 
     function test_initialize_succeedsWithOverflowFeeController(uint160 sqrtPriceX96) public {
@@ -363,8 +364,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFee, 0);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0ProtocolFee, 0);
     }
 
     function test_initialize_succeedsWithWrongReturnSizeFeeController(uint160 sqrtPriceX96) public {
@@ -384,8 +385,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFee, 0);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0ProtocolFee, 0);
     }
 
     function test_initialize_gas() public {

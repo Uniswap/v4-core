@@ -763,8 +763,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         feeController.setProtocolFeeForPool(key.toId(), protocolFee);
         manager.setProtocolFee(key);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, protocolFee);
 
         // Add liquidity - Fees dont accrue for positive liquidity delta.
         IPoolManager.ModifyLiquidityParams memory params = LIQ_PARAMS;
@@ -814,7 +814,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     // test successful donation if pool has liquidity
     function test_donate_succeedsWhenPoolHasLiquidity() public {
-        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(key.toId());
+        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(key.toId());
         assertEq(feeGrowthGlobal0X128, 0);
         assertEq(feeGrowthGlobal1X128, 0);
 
@@ -822,19 +822,19 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         donateRouter.donate(key, 100, 200, ZERO_BYTES);
         snapEnd();
 
-        (, feeGrowthGlobal0X128, feeGrowthGlobal1X128,) = manager.pools(key.toId());
+        (feeGrowthGlobal0X128, feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(key.toId());
         assertEq(feeGrowthGlobal0X128, 34028236692093846346337);
         assertEq(feeGrowthGlobal1X128, 68056473384187692692674);
     }
 
     function test_donate_succeedsForNativeTokensWhenPoolHasLiquidity() public {
-        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(nativeKey.toId());
+        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(nativeKey.toId());
         assertEq(feeGrowthGlobal0X128, 0);
         assertEq(feeGrowthGlobal1X128, 0);
 
         donateRouter.donate{value: 100}(nativeKey, 100, 200, ZERO_BYTES);
 
-        (, feeGrowthGlobal0X128, feeGrowthGlobal1X128,) = manager.pools(nativeKey.toId());
+        (feeGrowthGlobal0X128, feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(nativeKey.toId());
         assertEq(feeGrowthGlobal0X128, 34028236692093846346337);
         assertEq(feeGrowthGlobal1X128, 68056473384187692692674);
     }
@@ -945,8 +945,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint24 protocolFee) public {
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, 0);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
         feeController.setProtocolFeeForPool(key.toId(), protocolFee);
 
         uint16 fee0 = protocolFee.getZeroForOneFee();
@@ -959,14 +959,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             emit ProtocolFeeUpdated(key.toId(), protocolFee);
             manager.setProtocolFee(key);
 
-            (slot0,,,) = manager.pools(key.toId());
-            assertEq(slot0.protocolFee, protocolFee);
+            (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
+            assertEq(slot0ProtocolFee, protocolFee);
         }
     }
 
     function test_setProtocolFee_failsWithInvalidProtocolFeeControllers() public {
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, 0);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
 
         manager.setProtocolFeeController(revertingFeeController);
         vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
@@ -989,8 +989,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         feeController.setProtocolFeeForPool(uninitializedKey.toId(), MAX_FEE_BOTH_TOKENS);
 
         manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
     }
 
     function test_collectProtocolFees_revertsIfCallerIsNotController() public {
@@ -1004,8 +1004,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         feeController.setProtocolFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
             key,
@@ -1031,8 +1031,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         feeController.setProtocolFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
             key,
@@ -1058,8 +1058,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         feeController.setProtocolFeeForPool(nativeKey.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(nativeKey);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
             nativeKey,
@@ -1086,8 +1086,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         feeController.setProtocolFeeForPool(nativeKey.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(nativeKey);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFee, MAX_FEE_BOTH_TOKENS);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
             nativeKey,

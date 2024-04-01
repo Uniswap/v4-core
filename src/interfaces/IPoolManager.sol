@@ -110,6 +110,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice Getter for the bitmap given the poolId and word position
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap);
 
+    /// @notice Getter for the fee growth globals for the given poolId
+    function getFeeGrowthGlobals(PoolId id)
+        external
+        view
+        returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1);
+
     /// @notice Get the position struct for a specified pool and position
     function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
         external
