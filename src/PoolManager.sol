@@ -209,7 +209,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        (int256 amountToSwap, int128 hookDeltaInSpecified) = key.hooks.beforeSwap(key, params, hookData);
+        (int256 amountToSwap, int128 hookDeltaSpecified) = key.hooks.beforeSwap(key, params, hookData);
 
         // execute swap, account protocol fees, and emit swap event
         delta = _swap(
@@ -223,12 +223,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             params.zeroForOne ? key.currency0 : key.currency1
         );
 
-        (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
+        (int128 hookDeltaUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
 
         // calculates if currency0 or currency1 is the specified token
         BalanceDelta hookDelta = (params.amountSpecified < 0) == params.zeroForOne
-            ? toBalanceDelta(hookDeltaInSpecified, hookDeltaInUnspecified)
-            : toBalanceDelta(hookDeltaInUnspecified, hookDeltaInSpecified);
+            ? toBalanceDelta(hookDeltaSpecified, hookDeltaUnspecified)
+            : toBalanceDelta(hookDeltaUnspecified, hookDeltaSpecified);
         delta = delta - hookDelta;
 
         if (

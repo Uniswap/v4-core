@@ -18,8 +18,8 @@ contract DeltaReturningHook is BaseTestHooks {
 
     IPoolManager immutable manager;
 
-    int128 deltaInSpecified;
-    int128 deltaInUnspecified;
+    int128 deltaSpecified;
+    int128 deltaUnspecified;
 
     constructor(IPoolManager _manager) {
         manager = _manager;
@@ -30,12 +30,12 @@ contract DeltaReturningHook is BaseTestHooks {
         _;
     }
 
-    function setDeltaInSpecified(int128 delta) external {
-        deltaInSpecified = delta;
+    function setDeltaSpecified(int128 delta) external {
+        deltaSpecified = delta;
     }
 
-    function setDeltaInUnspecified(int128 delta) external {
-        deltaInUnspecified = delta;
+    function setDeltaUnspecified(int128 delta) external {
+        deltaUnspecified = delta;
     }
 
     function beforeSwap(
@@ -45,9 +45,9 @@ contract DeltaReturningHook is BaseTestHooks {
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, int128) {
         (Currency specifiedCurrency,) = _sortCurrencies(key, params);
-        _settleOrTake(specifiedCurrency, deltaInSpecified);
+        _settleOrTake(specifiedCurrency, deltaSpecified);
 
-        return (IHooks.beforeSwap.selector, deltaInSpecified);
+        return (IHooks.beforeSwap.selector, deltaSpecified);
     }
 
     function afterSwap(
@@ -58,9 +58,9 @@ contract DeltaReturningHook is BaseTestHooks {
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, int128) {
         (, Currency unspecifiedCurrency) = _sortCurrencies(key, params);
-        _settleOrTake(unspecifiedCurrency, deltaInUnspecified);
+        _settleOrTake(unspecifiedCurrency, deltaUnspecified);
 
-        return (IHooks.afterSwap.selector, deltaInUnspecified);
+        return (IHooks.afterSwap.selector, deltaUnspecified);
     }
 
     function _sortCurrencies(PoolKey calldata key, IPoolManager.SwapParams calldata params)

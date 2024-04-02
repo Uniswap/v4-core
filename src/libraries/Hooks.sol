@@ -220,19 +220,19 @@ library Hooks {
     /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
-        returns (int256 amountToSwap, int128 hookDeltaInSpecified)
+        returns (int256 amountToSwap, int128 hookDeltaSpecified)
     {
         amountToSwap = params.amountSpecified;
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
-            hookDeltaInSpecified = self.callHookWithReturnDelta(
+            hookDeltaSpecified = self.callHookWithReturnDelta(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
                 key.hooks.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)
             ).toInt128();
 
             // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
-            if (hookDeltaInSpecified != 0) {
+            if (hookDeltaSpecified != 0) {
                 bool exactInput = amountToSwap < 0;
-                amountToSwap += hookDeltaInSpecified;
+                amountToSwap += hookDeltaSpecified;
                 if (exactInput ? amountToSwap > 0 : amountToSwap < 0) revert HookDeltaExceedsSwapAmount();
             }
         }
@@ -245,9 +245,9 @@ library Hooks {
         IPoolManager.SwapParams memory params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) internal returns (int128 hookDeltaInUnspecified) {
+    ) internal returns (int128 hookDeltaUnspecified) {
         if (key.hooks.hasPermission(AFTER_SWAP_FLAG)) {
-            hookDeltaInUnspecified = self.callHookWithReturnDelta(
+            hookDeltaUnspecified = self.callHookWithReturnDelta(
                 abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData),
                 key.hooks.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)
             ).toInt128();
