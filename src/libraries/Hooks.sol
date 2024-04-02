@@ -150,10 +150,10 @@ library Hooks {
     /// @return delta The delta returned by the hook
     function callHookWithReturnDeltaAndFee(IHooks self, bytes memory data, bool parseReturn)
         internal
-        returns (int256 delta, uint24 fee)
+        returns (int128 delta, uint24 fee)
     {
         bytes memory result = callHook(self, data);
-        (, delta, fee) = abi.decode(result, (bytes4, int256, uint24));
+        (, delta, fee) = abi.decode(result, (bytes4, int128, uint24));
 
         if (!parseReturn) {
             delta = 0;
@@ -239,11 +239,11 @@ library Hooks {
         amountToSwap = params.amountSpecified;
         swapFee = type(uint24).max;
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
-            (int256 hookDelta, uint24 _swapFee) = self.callHookWithReturnDeltaAndFee(
+            (int128 hookDelta, uint24 _swapFee) = self.callHookWithReturnDeltaAndFee(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
                 key.hooks.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)
             );
-            hookDeltaInSpecified = hookDelta.toInt128();
+            hookDeltaInSpecified = hookDelta;
 
             if (key.fee.isDynamicFee()) swapFee = _swapFee;
 

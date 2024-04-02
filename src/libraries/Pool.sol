@@ -304,7 +304,7 @@ library Pool {
         returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
     {
         Slot0 memory slot0Start = self.slot0;
-        swapFee = params.fee < SwapFeeLibrary.MAX_SWAP_FEE ? params.fee : slot0Start.swapFee;
+        swapFee = params.fee <= SwapFeeLibrary.MAX_SWAP_FEE ? params.fee : slot0Start.swapFee;
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
