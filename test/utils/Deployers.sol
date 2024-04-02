@@ -52,7 +52,7 @@ contract Deployers {
     // Global variables
     Currency internal currency0;
     Currency internal currency1;
-    PoolManager manager;
+    IPoolManager manager;
     PoolModifyLiquidityTest modifyLiquidityRouter;
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;

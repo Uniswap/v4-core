@@ -10,7 +10,6 @@ import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {TickMath} from "./libraries/TickMath.sol";
 import {NoDelegateCall} from "./NoDelegateCall.sol";
-import {Owned} from "./Owned.sol";
 import {IHooks} from "./interfaces/IHooks.sol";
 import {IPoolManager} from "./interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "./interfaces/callback/IUnlockCallback.sol";
@@ -31,6 +30,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
+    using CurrencyDelta for Currency;
     using SwapFeeLibrary for uint24;
     using PoolGetters for Pool.State;
 
@@ -52,7 +52,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         view
         override
-        returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee, uint24 swapFee)
+        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee)
     {
         Pool.Slot0 memory slot0 = pools[id].slot0;
 
@@ -85,7 +85,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function currencyDelta(address caller, Currency currency) external view returns (int256) {
-        return CurrencyDelta.get(caller, currency);
+        return currency.getDelta(caller);
     }
 
     /// @inheritdoc IPoolManager
@@ -111,12 +111,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
-        uint24 swapFee = key.fee.getSwapFee();
+        uint24 swapFee = key.fee.getInitialSwapFee();
 
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
         PoolId id = key.toId();
-        (, uint16 protocolFee) = _fetchProtocolFee(key);
+        (, uint24 protocolFee) = _fetchProtocolFee(key);
 
         tick = pools[id].initialize(sqrtPriceX96, protocolFee, swapFee);
 
@@ -142,7 +142,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function _accountDelta(Currency currency, int128 delta, address target) internal {
         if (delta == 0) return;
 
-        int256 current = CurrencyDelta.get(target, currency);
+        int256 current = currency.getDelta(target);
         int256 next = current + delta;
 
         unchecked {
@@ -153,7 +153,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             }
         }
 
-        CurrencyDelta.set(target, currency, next);
+        currency.setDelta(target, next);
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
@@ -323,7 +323,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function setProtocolFee(PoolKey memory key) external {
-        (bool success, uint16 newProtocolFee) = _fetchProtocolFee(key);
+        (bool success, uint24 newProtocolFee) = _fetchProtocolFee(key);
         if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
         PoolId id = key.toId();
         pools[id].setProtocolFee(newProtocolFee);
@@ -367,5 +367,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
         return pools[id].getPoolBitmapInfo(word);
+    }
+
+    function getFeeGrowthGlobals(PoolId id)
+        external
+        view
+        returns (uint256 feeGrowthGlobal0x128, uint256 feeGrowthGlobal1x128)
+    {
+        return pools[id].getFeeGrowthGlobals();
     }
 }
