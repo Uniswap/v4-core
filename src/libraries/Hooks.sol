@@ -97,7 +97,7 @@ library Hooks {
     /// @param hook The hook to verify
     /// @return bool True if the hook address is valid
     function isValidHookAddress(IHooks hook, uint24 fee) internal pure returns (bool) {
-        // The hook can only have a flag to return a hook delta if it has the corresponding hook flag
+        // The hook can only have a flag to return a hook delta on an action if it also has the corresponding action flag
         if (
             (!hook.hasPermission(BEFORE_SWAP_FLAG) && hook.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG))
                 || (!hook.hasPermission(AFTER_SWAP_FLAG) && hook.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG))
