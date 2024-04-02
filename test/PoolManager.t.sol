@@ -941,7 +941,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             isExactIn = amountSpecified < 0;
             specifiedCurrency = (isExactIn == zeroForOne) ? key.currency0 : key.currency1;
 
-            // bound delta in specified to not take more than the reserves available, nor be the minimum int to stop the hook reverting on take/settle
+            // bound delta in specified to not take more than the reserves available, nor be the minimum int to
+            // stop the hook reverting on take/settle
             uint128 reservesOfSpecified = uint128(manager.reservesOf(specifiedCurrency));
             hookDeltaSpecified = int128(bound(hookDeltaSpecified, type(int128).min + 1, int128(reservesOfSpecified)));
             DeltaReturningHook(hookAddr).setDeltaSpecified(hookDeltaSpecified);
