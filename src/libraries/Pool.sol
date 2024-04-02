@@ -10,6 +10,7 @@ import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 
 library Pool {
     using SafeCast for *;
@@ -17,6 +18,7 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Pool for State;
+    using ProtocolFeeLibrary for uint24;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -64,11 +66,10 @@ library Pool {
         uint160 sqrtPriceX96;
         // the current tick
         int24 tick;
-        // protocol swap fee represented as integer denominator (1/x), taken as a % of the LP swap fee
-        // upper 8 bits are for 1->0, and the lower 8 are for 0->1
-        // the minimum permitted denominator is 4 - meaning the maximum protocol fee is 25%
-        // granularity is increments of 0.38% (100/type(uint8).max)
-        uint16 protocolFee;
+        // protocol swap fee, taken as a % of the LP swap fee
+        // upper 12 bits are for 1->0, and the lower 12 are for 0->1
+        // the maximum is 2500 - meaning the maximum protocol fee is 25%
+        uint24 protocolFee;
         // used for the swap fee, either static at initialize or dynamic via hook
         uint24 swapFee;
     }
@@ -103,7 +104,7 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint16 protocolFee, uint24 swapFee)
+    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 swapFee)
         internal
         returns (int24 tick)
     {
@@ -114,7 +115,7 @@ library Pool {
         self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, swapFee: swapFee});
     }
 
-    function setProtocolFee(State storage self, uint16 protocolFee) internal {
+    function setProtocolFee(State storage self, uint24 protocolFee) internal {
         if (self.isNotInitialized()) revert PoolNotInitialized();
 
         self.slot0.protocolFee = protocolFee;
@@ -252,7 +253,7 @@ library Pool {
         // liquidity at the beginning of the swap
         uint128 liquidityStart;
         // the protocol fee for the input token
-        uint8 protocolFee;
+        uint16 protocolFee;
     }
 
     // the top level state of the swap, the results of which are recorded in storage at the end
@@ -323,7 +324,9 @@ library Pool {
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
-            protocolFee: params.zeroForOne ? uint8(slot0Start.protocolFee % 256) : uint8(slot0Start.protocolFee >> 8)
+            protocolFee: params.zeroForOne
+                ? slot0Start.protocolFee.getZeroForOneFee()
+                : slot0Start.protocolFee.getOneForZeroFee()
         });
 
         bool exactInput = params.amountSpecified < 0;
@@ -383,9 +386,9 @@ library Pool {
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
             if (cache.protocolFee > 0) {
-                // A: calculate the amount of the fee that should go to the protocol
-                uint256 delta = step.feeAmount / cache.protocolFee;
-                // A: subtract it from the regular fee and add it to the protocol fee
+                // calculate the amount of the fee that should go to the protocol
+                uint256 delta = step.feeAmount * cache.protocolFee / ProtocolFeeLibrary.BIPS_DENOMINATOR;
+                // subtract it from the regular fee and add it to the protocol fee
                 unchecked {
                     step.feeAmount -= delta;
                     feeForProtocol += delta;
