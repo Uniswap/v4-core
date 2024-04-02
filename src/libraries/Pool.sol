@@ -10,6 +10,7 @@ import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 
 library Pool {
     using SafeCast for *;
@@ -17,6 +18,7 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Pool for State;
+    using ProtocolFeeLibrary for uint24;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -64,11 +66,10 @@ library Pool {
         uint160 sqrtPriceX96;
         // the current tick
         int24 tick;
-        // protocol swap fee represented as integer denominator (1/x), taken as a % of the LP swap fee
-        // upper 8 bits are for 1->0, and the lower 8 are for 0->1
-        // the minimum permitted denominator is 4 - meaning the maximum protocol fee is 25%
-        // granularity is increments of 0.38% (100/type(uint8).max)
-        uint16 protocolFee;
+        // protocol swap fee, taken as a % of the LP swap fee
+        // upper 12 bits are for 1->0, and the lower 12 are for 0->1
+        // the maximum is 2500 - meaning the maximum protocol fee is 25%
+        uint24 protocolFee;
         // used for the swap fee, either static at initialize or dynamic via hook
         uint24 swapFee;
     }
@@ -103,7 +104,7 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint16 protocolFee, uint24 swapFee)
+    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 swapFee)
         internal
         returns (int24 tick)
     {
@@ -114,7 +115,7 @@ library Pool {
         self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, swapFee: swapFee});
     }
 
-    function setProtocolFee(State storage self, uint16 protocolFee) internal {
+    function setProtocolFee(State storage self, uint24 protocolFee) internal {
         if (self.isNotInitialized()) revert PoolNotInitialized();
 
         self.slot0.protocolFee = protocolFee;
@@ -126,7 +127,7 @@ library Pool {
         self.slot0.swapFee = swapFee;
     }
 
-    struct ModifyPositionParams {
+    struct ModifyLiquidityParams {
         // the address that owns the position
         address owner;
         // the lower and upper tick of the position
@@ -138,7 +139,7 @@ library Pool {
         int24 tickSpacing;
     }
 
-    struct ModifyPositionState {
+    struct ModifyLiquidityState {
         bool flippedLower;
         uint128 liquidityGrossAfterLower;
         bool flippedUpper;
@@ -151,7 +152,7 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     /// @param params the position details and the change to the position's liquidity to effect
     /// @return result the deltas of the token balances of the pool
-    function modifyPosition(State storage self, ModifyPositionParams memory params)
+    function modifyLiquidity(State storage self, ModifyLiquidityParams memory params)
         internal
         returns (BalanceDelta result)
     {
@@ -160,7 +161,7 @@ library Pool {
         uint256 feesOwed0;
         uint256 feesOwed1;
         {
-            ModifyPositionState memory state;
+            ModifyLiquidityState memory state;
 
             // if we need to update the ticks, do it
             if (params.liquidityDelta != 0) {
@@ -209,25 +210,23 @@ library Pool {
             if (self.slot0.tick < params.tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
-                result = result
-                    + toBalanceDelta(
-                        SqrtPriceMath.getAmount0Delta(
-                            TickMath.getSqrtRatioAtTick(params.tickLower),
-                            TickMath.getSqrtRatioAtTick(params.tickUpper),
-                            params.liquidityDelta
-                        ).toInt128(),
-                        0
-                    );
+                result = toBalanceDelta(
+                    SqrtPriceMath.getAmount0Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower),
+                        TickMath.getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta
+                    ).toInt128(),
+                    0
+                );
             } else if (self.slot0.tick < params.tickUpper) {
-                result = result
-                    + toBalanceDelta(
-                        SqrtPriceMath.getAmount0Delta(
-                            self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
-                        ).toInt128(),
-                        SqrtPriceMath.getAmount1Delta(
-                            TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
-                        ).toInt128()
-                    );
+                result = toBalanceDelta(
+                    SqrtPriceMath.getAmount0Delta(
+                        self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
+                    ).toInt128(),
+                    SqrtPriceMath.getAmount1Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
+                    ).toInt128()
+                );
 
                 self.liquidity = params.liquidityDelta < 0
                     ? self.liquidity - uint128(-params.liquidityDelta)
@@ -235,27 +234,26 @@ library Pool {
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
-                result = result
-                    + toBalanceDelta(
-                        0,
-                        SqrtPriceMath.getAmount1Delta(
-                            TickMath.getSqrtRatioAtTick(params.tickLower),
-                            TickMath.getSqrtRatioAtTick(params.tickUpper),
-                            params.liquidityDelta
-                        ).toInt128()
-                    );
+                result = toBalanceDelta(
+                    0,
+                    SqrtPriceMath.getAmount1Delta(
+                        TickMath.getSqrtRatioAtTick(params.tickLower),
+                        TickMath.getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta
+                    ).toInt128()
+                );
             }
         }
 
-        // Fees earned from LPing are removed from the pool balance.
-        result = result - toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
+        // Fees earned from LPing are added to the user's currency delta.
+        result = result + toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
     struct SwapCache {
         // liquidity at the beginning of the swap
         uint128 liquidityStart;
         // the protocol fee for the input token
-        uint8 protocolFee;
+        uint16 protocolFee;
     }
 
     // the top level state of the swap, the results of which are recorded in storage at the end
@@ -326,10 +324,12 @@ library Pool {
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
-            protocolFee: params.zeroForOne ? uint8(slot0Start.protocolFee % 256) : uint8(slot0Start.protocolFee >> 8)
+            protocolFee: params.zeroForOne
+                ? slot0Start.protocolFee.getZeroForOneFee()
+                : slot0Start.protocolFee.getOneForZeroFee()
         });
 
-        bool exactInput = params.amountSpecified > 0;
+        bool exactInput = params.amountSpecified < 0;
 
         state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,
@@ -374,21 +374,21 @@ library Pool {
             if (exactInput) {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
-                    state.amountSpecifiedRemaining -= (step.amountIn + step.feeAmount).toInt256();
+                    state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
                 }
-                state.amountCalculated = state.amountCalculated - step.amountOut.toInt256();
+                state.amountCalculated = state.amountCalculated + step.amountOut.toInt256();
             } else {
                 unchecked {
-                    state.amountSpecifiedRemaining += step.amountOut.toInt256();
+                    state.amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
-                state.amountCalculated = state.amountCalculated + (step.amountIn + step.feeAmount).toInt256();
+                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
             if (cache.protocolFee > 0) {
-                // A: calculate the amount of the fee that should go to the protocol
-                uint256 delta = step.feeAmount / cache.protocolFee;
-                // A: subtract it from the regular fee and add it to the protocol fee
+                // calculate the amount of the fee that should go to the protocol
+                uint256 delta = step.feeAmount * cache.protocolFee / ProtocolFeeLibrary.BIPS_DENOMINATOR;
+                // subtract it from the regular fee and add it to the protocol fee
                 unchecked {
                     step.feeAmount -= delta;
                     feeForProtocol += delta;
@@ -462,7 +462,7 @@ library Pool {
     /// @notice Donates the given amount of currency0 and currency1 to the pool
     function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
         if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
-        delta = toBalanceDelta(amount0.toInt128(), amount1.toInt128());
+        delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
         unchecked {
             if (amount0 > 0) {
                 state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
