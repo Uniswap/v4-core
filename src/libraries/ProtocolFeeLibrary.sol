@@ -2,11 +2,11 @@
 pragma solidity ^0.8.20;
 
 library ProtocolFeeLibrary {
-    // Max protocol fee is 25% (2500 bips)
-    uint16 public constant MAX_PROTOCOL_FEE = 2500;
+    // Max protocol fee is 0.1%
+    uint16 public constant MAX_PROTOCOL_FEE = 1000;
 
-    // Total bips
-    uint16 internal constant BIPS_DENOMINATOR = 10_000;
+    // the protocol fee is represented in hundredths of a bip
+    uint24 internal constant BIPS_DENOMINATOR = 1_000_000;
 
     function getZeroForOneFee(uint24 self) internal pure returns (uint16) {
         return uint16(self % 4096);

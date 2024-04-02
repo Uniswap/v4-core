@@ -17,7 +17,7 @@ contract PoolTest is Test {
 
     Pool.State state;
 
-    function testPoolInitialize(uint160 sqrtPriceX96, uint16 protocolFee, uint24 dynamicFee) public {
+    function testPoolInitialize(uint160 sqrtPriceX96, uint24 protocolFee, uint24 dynamicFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
             vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
             state.initialize(sqrtPriceX96, protocolFee, dynamicFee);
@@ -31,11 +31,11 @@ contract PoolTest is Test {
         }
     }
 
-    function testModifyLiquidity(uint160 sqrtPriceX96, Pool.ModifyLiquidityParams memory params) public {
+    function testModifyLiquidity(uint160 sqrtPriceX96, uint24 protocolFee, uint24 swapFee, Pool.ModifyLiquidityParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
-        testPoolInitialize(sqrtPriceX96, 0, 0);
+        testPoolInitialize(sqrtPriceX96, protocolFee, swapFee);
 
         if (params.tickLower >= params.tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
@@ -76,14 +76,17 @@ contract PoolTest is Test {
         state.modifyLiquidity(params);
     }
 
-    function testSwap(uint160 sqrtPriceX96, uint24 swapFee, Pool.SwapParams memory params) public {
+    function testSwap(uint160 sqrtPriceX96, uint24 swapFee, uint24 protocolFee, Pool.SwapParams memory params) public {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
-        swapFee = uint24(bound(swapFee, 0, 999999));
+        swapFee = uint24(bound(swapFee, 0, 1000000));
+        protocolFee = uint24(bound(protocolFee, 0, 0x3E83E8));
 
         // initialize and add liquidity
         testModifyLiquidity(
             sqrtPriceX96,
+            protocolFee,
+            swapFee,
             Pool.ModifyLiquidityParams({
                 owner: address(this),
                 tickLower: -120,

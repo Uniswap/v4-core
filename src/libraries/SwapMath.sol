@@ -13,24 +13,30 @@ library SwapMath {
     /// @param sqrtRatioTargetX96 The price that cannot be exceeded, from which the direction of the swap is inferred
     /// @param liquidity The usable liquidity
     /// @param amountRemaining How much input or output amount is remaining to be swapped in/out
-    /// @param feePips The fee taken from the input amount, expressed in hundredths of a bip
+    /// @param swapFeePips The swap fee taken from the input amount, expressed in hundredths of a bip
+    /// @param protocolFeePips The protocol fee taken from the input amount, expressed in hundredths of a bip
     /// @return sqrtRatioNextX96 The price after swapping the amount in/out, not to exceed the price target
     /// @return amountIn The amount to be swapped in, of either currency0 or currency1, based on the direction of the swap
     /// @return amountOut The amount to be received, of either currency0 or currency1, based on the direction of the swap
-    /// @return feeAmount The amount of input that will be taken as a fee
+    /// @return feeAmount The amount of input that will be taken as a protocol and swap fee
+    /// @return protocolFeeAmount The amount of input that will be taken as a protocol fee
     function computeSwapStep(
         uint160 sqrtRatioCurrentX96,
         uint160 sqrtRatioTargetX96,
         uint128 liquidity,
         int256 amountRemaining,
-        uint24 feePips
-    ) internal pure returns (uint160 sqrtRatioNextX96, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
+        uint24 swapFeePips,
+        uint16 protocolFeePips
+    ) internal pure returns (uint160 sqrtRatioNextX96, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) {
         unchecked {
             bool zeroForOne = sqrtRatioCurrentX96 >= sqrtRatioTargetX96;
             bool exactIn = amountRemaining < 0;
 
             if (exactIn) {
-                uint256 amountRemainingLessFee = FullMath.mulDiv(uint256(-amountRemaining), 1e6 - feePips, 1e6);
+                protocolFeeAmount = protocolFeePips > 0
+                    ? FullMath.mulDiv(uint256(-amountRemaining), protocolFeePips, 1e6)
+                    : 0;
+                uint256 amountRemainingLessFee = FullMath.mulDiv(uint256(-amountRemaining) - protocolFeeAmount, 1e6 - swapFeePips, 1e6);
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, true);
@@ -82,7 +88,10 @@ library SwapMath {
                 // we didn't reach the target, so take the remainder of the maximum input as fee
                 feeAmount = uint256(-amountRemaining) - amountIn;
             } else {
-                feeAmount = FullMath.mulDivRoundingUp(amountIn, feePips, 1e6 - feePips);
+                if (protocolFeePips > 0) {
+                    protocolFeeAmount = FullMath.mulDivRoundingUp(amountIn, protocolFeePips, 1e6 - protocolFeePips);
+                }
+                feeAmount = FullMath.mulDivRoundingUp(amountIn - protocolFeeAmount, swapFeePips, 1e6 - swapFeePips);
             }
         }
     }

@@ -209,7 +209,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         (uint160 slot0SqrtPriceX96,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(slot0SqrtPriceX96, SQRT_RATIO_1_1);
-        if ((fee0 > 2500) || (fee1 > 2500)) {
+        if ((fee0 > 1000) || (fee1 > 1000)) {
             assertEq(slot0ProtocolFee, 0);
         } else {
             assertEq(slot0ProtocolFee, protocolFee);

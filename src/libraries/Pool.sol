@@ -66,9 +66,9 @@ library Pool {
         uint160 sqrtPriceX96;
         // the current tick
         int24 tick;
-        // protocol swap fee, taken as a % of the LP swap fee
+        // protocol fee, expressed in hundredths of a bip
         // upper 12 bits are for 1->0, and the lower 12 are for 0->1
-        // the maximum is 2500 - meaning the maximum protocol fee is 25%
+        // the maximum is 1000 - meaning the maximum protocol fee is 0.1%
         uint24 protocolFee;
         // used for the swap fee, either static at initialize or dynamic via hook
         uint24 swapFee;
@@ -359,7 +359,7 @@ library Pool {
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
 
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
-            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
+            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount, feeForProtocol) = SwapMath.computeSwapStep(
                 state.sqrtPriceX96,
                 (
                     params.zeroForOne
@@ -368,7 +368,8 @@ library Pool {
                 ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                swapFee
+                swapFee,
+                cache.protocolFee
             );
 
             if (exactInput) {
@@ -382,17 +383,6 @@ library Pool {
                     state.amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
                 state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
-            }
-
-            // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
-            if (cache.protocolFee > 0) {
-                // calculate the amount of the fee that should go to the protocol
-                uint256 delta = step.feeAmount * cache.protocolFee / ProtocolFeeLibrary.BIPS_DENOMINATOR;
-                // subtract it from the regular fee and add it to the protocol fee
-                unchecked {
-                    step.feeAmount -= delta;
-                    feeForProtocol += delta;
-                }
             }
 
             // update global fee tracker

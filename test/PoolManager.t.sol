@@ -60,7 +60,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     PoolEmptyUnlockTest emptyUnlockRouter;
 
-    uint24 constant MAX_FEE_BOTH_TOKENS = (2500 << 12) | 2500; // 2500 2500
+    uint24 constant MAX_FEE_BOTH_TOKENS = (1000 << 12) | 1000; // 1000 1000
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
@@ -755,8 +755,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_accruesProtocolFees(uint16 protocolFee0, uint16 protocolFee1) public {
-        protocolFee0 = uint16(bound(protocolFee0, 1, 2500));
-        protocolFee1 = uint16(bound(protocolFee1, 1, 2500));
+        protocolFee0 = uint16(bound(protocolFee0, 0, 1000));
+        protocolFee1 = uint16(bound(protocolFee1, 0, 1000));
 
         uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
 
@@ -787,8 +787,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, -10000, TickMath.MAX_SQRT_RATIO - 1);
         swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES);
 
-        uint256 expectedTotalSwapFee = uint256(-swapParams.amountSpecified) * key.fee / 1e6;
-        uint256 expectedProtocolFee = expectedTotalSwapFee * protocolFee1 / 1e4;
+        uint256 expectedProtocolFee = uint256(-swapParams.amountSpecified) * protocolFee1 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }
@@ -951,7 +950,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         uint16 fee0 = protocolFee.getZeroForOneFee();
         uint16 fee1 = protocolFee.getOneForZeroFee();
-        if ((fee0 > 2500) || (fee1 > 2500)) {
+        if ((fee0 > 1000) || (fee1 > 1000)) {
             vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
             manager.setProtocolFee(key);
         } else {
@@ -999,7 +998,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
-        uint256 expectedFees = 7;
+        uint256 expectedFees = 10;
 
         feeController.setProtocolFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
@@ -1026,7 +1025,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint256 expectedFees = 7;
+        uint256 expectedFees = 10;
 
         feeController.setProtocolFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
@@ -1051,7 +1050,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_nativeToken_accumulateFees_gas() public {
-        uint256 expectedFees = 7;
+        uint256 expectedFees = 10;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
         // set protocol fee before initializing the pool as it is fetched on initialization
@@ -1080,7 +1079,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint256 expectedFees = 7;
+        uint256 expectedFees = 10;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
         feeController.setProtocolFeeForPool(nativeKey.toId(), MAX_FEE_BOTH_TOKENS);
