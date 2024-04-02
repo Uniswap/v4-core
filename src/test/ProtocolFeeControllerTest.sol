@@ -9,36 +9,36 @@ import {PoolKey} from "../types/PoolKey.sol";
 contract ProtocolFeeControllerTest is IProtocolFeeController {
     using PoolIdLibrary for PoolKey;
 
-    mapping(PoolId => uint16) public swapFeeForPool;
+    mapping(PoolId => uint24) public protocolFee;
 
-    function protocolFeeForPool(PoolKey memory key) external view returns (uint16) {
-        return swapFeeForPool[key.toId()];
+    function protocolFeeForPool(PoolKey memory key) external view returns (uint24) {
+        return protocolFee[key.toId()];
     }
 
     // for tests to set pool protocol fees
-    function setSwapFeeForPool(PoolId id, uint16 fee) external {
-        swapFeeForPool[id] = fee;
+    function setProtocolFeeForPool(PoolId id, uint24 fee) external {
+        protocolFee[id] = fee;
     }
 }
 
 /// @notice Reverts on call
 contract RevertingProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint16) {
+    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint24) {
         revert();
     }
 }
 
 /// @notice Returns an out of bounds protocol fee
 contract OutOfBoundsProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint16) {
-        // set both swap and withdraw fees to 1, which is less than MIN_PROTOCOL_FEE_DENOMINATOR
-        return 0x001001;
+    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint24) {
+        // set both swap fees to 2501, which is greater than MAX_PROTOCOL_FEE
+        return 0x9C59C5;
     }
 }
 
 /// @notice Return a value that overflows a uint24
 contract OverflowProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint16) {
+    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint24) {
         assembly {
             let ptr := mload(0x40)
             mstore(ptr, 0xFFFFAAA001)
@@ -49,7 +49,7 @@ contract OverflowProtocolFeeControllerTest is IProtocolFeeController {
 
 /// @notice Returns data that is larger than a word
 contract InvalidReturnSizeProtocolFeeControllerTest is IProtocolFeeController {
-    function protocolFeeForPool(PoolKey memory /* key */ ) external view returns (uint16) {
+    function protocolFeeForPool(PoolKey memory /* key */ ) external view returns (uint24) {
         address a = address(this);
         assembly {
             let ptr := mload(0x40)
