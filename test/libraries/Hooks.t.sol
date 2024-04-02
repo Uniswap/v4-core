@@ -20,6 +20,8 @@ import {PoolId, PoolIdLibrary} from "src/types/PoolId.sol";
 import {PoolKey} from "src/types/PoolKey.sol";
 import {IERC20Minimal} from "src/interfaces/external/IERC20Minimal.sol";
 import {BalanceDelta} from "src/types/BalanceDelta.sol";
+import {BaseTestHooks} from "src/test/BaseTestHooks.sol";
+import {EmptyRevertHook} from "src/test/EmptyRevertHook.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
@@ -28,6 +30,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     /// 1111 1111 1100
     address payable ALL_HOOKS_ADDRESS = payable(0xFfC0000000000000000000000000000000000000);
     MockHooks mockHooks;
+    BaseTestHooks revertingHookImpl;
 
     // Update this value when you add a new hook flag. And then update all appropriate asserts.
     uint256 hookPermissionCount = 10;
@@ -39,6 +42,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         MockHooks impl = new MockHooks();
         vm.etch(ALL_HOOKS_ADDRESS, address(impl).code);
         mockHooks = MockHooks(ALL_HOOKS_ADDRESS);
+
+        revertingHookImpl = new BaseTestHooks();
 
         initializeManagerRoutersAndPoolsWithLiq(mockHooks);
     }
@@ -194,7 +199,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     // hook validation
-    function test_ValidateHookAddress_noHooks(uint160 addr) public {
+    function test_validateHookAddress_noHooks(uint160 addr) public {
         uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
 
         IHooks hookAddr = IHooks(address(preAddr));
@@ -741,10 +746,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_DONATE_FLAG));
     }
 
-    function test_validateHookAddress_failsAllHooks(uint152 addr, uint8 mask) public {
-        uint160 preAddr = uint160(uint256(addr));
-        vm.assume(mask != 0xff8);
-        IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 151)));
+    function test_validateHookAddress_failsAllHooks(uint160 addr, uint16 mask) public {
+        uint160 preAddr = uint160(uint256(addr) & clearAllHookPermisssionsMask);
+        // Set the upper `hooksPermissionCount` number of bits to get the full mask in uint16.
+        uint16 allHooksMask = (~uint16(0) << uint16(16 - hookPermissionCount));
+        // We want any combination except all hooks.
+        vm.assume(mask < allHooksMask);
+        IHooks hookAddr = IHooks(address(uint160(preAddr) | (uint160(mask) << 144)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
         Hooks.validateHookPermissions(
             hookAddr,
@@ -753,8 +761,8 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 afterInitialize: true,
                 beforeAddLiquidity: true,
                 afterAddLiquidity: true,
-                beforeRemoveLiquidity: false,
-                afterRemoveLiquidity: false,
+                beforeRemoveLiquidity: true,
+                afterRemoveLiquidity: true,
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
@@ -764,9 +772,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_validateHookAddress_failsNoHooks(uint160 addr, uint16 mask) public {
-        uint160 preAddr = addr & uint160(0x007ffffFfffffffffFffffFFfFFFFFFffFFfFFff);
-        mask = mask & 0xff80; // the last 7 bits are all 0, we just want a 9 bit mask
-        vm.assume(mask != 0); // we want any combination except no hooks
+        uint160 preAddr = addr & (~uint160(0) >> hookPermissionCount);
+        // We want any combination except no hooks.
+        vm.assume(mask >> (16 - hookPermissionCount) != 0);
         IHooks hookAddr = IHooks(address(preAddr | (uint160(mask) << 144)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
         Hooks.validateHookPermissions(
@@ -786,7 +794,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
     }
 
-    function testGas() public {
+    function test_gas_hookShouldCallBeforeSwap() public {
         snapStart("HooksShouldCallBeforeSwap");
         IHooks(address(0)).hasPermission(Hooks.BEFORE_SWAP_FLAG);
         snapEnd();
@@ -803,7 +811,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(Hooks.isValidHookAddress(IHooks(0xf09840a85d5Af5bF1d1762f925bdaDdC4201f984), 3000));
     }
 
-    function testIsValidHookAddress_zeroAddress() public {
+    function test_isValidHookAddress_zeroAddress() public {
         assertTrue(Hooks.isValidHookAddress(IHooks(address(0)), 3000));
     }
 
@@ -825,5 +833,44 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), 3000));
         assertFalse(Hooks.isValidHookAddress(IHooks(0x0020000000000000000000000000000000000001), 3000));
         assertFalse(Hooks.isValidHookAddress(IHooks(0x003840a85d5Af5Bf1d1762F925BDADDc4201f984), 3000));
+    }
+
+    function test_callHook_revertsWithBubbleUp() public {
+        // This test executes _callHook through beforeSwap.
+        address beforeSwapFlag = address(uint160(Hooks.BEFORE_SWAP_FLAG));
+        vm.etch(beforeSwapFlag, address(revertingHookImpl).code);
+        BaseTestHooks revertingHook = BaseTestHooks(beforeSwapFlag);
+
+        PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(revertingHook));
+        manager.initialize(key, SQRT_RATIO_1_1, new bytes(0));
+
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        vm.expectRevert(BaseTestHooks.HookNotImplemented.selector);
+        swapRouter.swap(key, swapParams, testSettings, new bytes(0));
+    }
+
+    function test_callHook_revertsWithInternalErrorHookCallFailed() public {
+        // This test executes _callHook through beforeSwap.
+        EmptyRevertHook emptyRevertingHookImpl = new EmptyRevertHook();
+        address beforeSwapFlag = address(uint160(Hooks.BEFORE_SWAP_FLAG));
+        vm.etch(beforeSwapFlag, address(emptyRevertingHookImpl).code);
+        EmptyRevertHook revertingHook = EmptyRevertHook(beforeSwapFlag);
+
+        PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(revertingHook));
+        manager.initialize(key, SQRT_RATIO_1_1, new bytes(0));
+
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        vm.expectRevert(Hooks.FailedHookCall.selector);
+        swapRouter.swap(key, swapParams, testSettings, new bytes(0));
     }
 }
