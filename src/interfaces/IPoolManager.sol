@@ -39,6 +39,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice Thrown when trying to swap amount of 0
     error SwapAmountCannotBeZero();
 
+    /// @notice Thrown when hook deltas and/or lack of liquidity causes swap deltas to flip
+    error SwapDeltaHasIncorrectSign();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order

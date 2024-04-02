@@ -913,29 +913,38 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
     }
 
+    int128 constant maxPossibleIn = -6018336102428409;
+    int128 constant maxPossibleOut = 5981737760509662;
+
     function test_fuzz_swap_beforeSwapReturnsDelta(int128 hookDeltaSpecified, int128 amountSpecified, bool zeroForOne)
         public
     {
         // ------------------------ SETUP ------------------------
-        // bound amount specified to be within the amount of liquidity we have
-        amountSpecified = int128(bound(amountSpecified, -3e11, 3e11));
-        // bound delta in specified to not take more than the reserves available, nor be the minimum int (that cannot be flipped)
-        uint128 reservesOfSpecified =
-            uint128(manager.reservesOf((amountSpecified < 0 && zeroForOne) ? key.currency0 : key.currency1));
-        hookDeltaSpecified = int128(bound(hookDeltaSpecified, type(int128).min + 1, int128(reservesOfSpecified)));
+        Currency specifiedCurrency;
+        bool isExactIn;
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
 
-        // setup the hook
+        // stack too deep management
         {
-            // stack too deep management
-            address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+            // setup the hook and the pool
+
             DeltaReturningHook impl = new DeltaReturningHook(manager);
             vm.etch(hookAddr, address(impl).code);
-            DeltaReturningHook(hookAddr).setDeltaInSpecified(hookDeltaSpecified);
 
             // initialize the pool and give the hook tokens to pay into swaps
             (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_RATIO_1_1, ZERO_BYTES);
             key.currency0.transfer(hookAddr, type(uint128).max);
             key.currency1.transfer(hookAddr, type(uint128).max);
+
+            // bound amount specified to be a fair amount less than the amount of liquidity we have
+            amountSpecified = int128(bound(amountSpecified, -3e11, 3e11));
+            isExactIn = amountSpecified < 0;
+            specifiedCurrency = (isExactIn == zeroForOne) ? key.currency0 : key.currency1;
+
+            // bound delta in specified to not take more than the reserves available, nor be the minimum int to stop the hook reverting on take/settle
+            uint128 reservesOfSpecified = uint128(manager.reservesOf(specifiedCurrency));
+            hookDeltaSpecified = int128(bound(hookDeltaSpecified, type(int128).min + 1, int128(reservesOfSpecified)));
+            DeltaReturningHook(hookAddr).setDeltaInSpecified(hookDeltaSpecified);
         }
 
         // setup swap variables
@@ -948,53 +957,73 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         });
 
         // ------------------------ FUZZING CASES ------------------------
-        // with an amount specified of 0, the trade reverts
+        // with an amount specified of 0: the trade reverts
         if (amountSpecified == 0) {
             vm.expectRevert(IPoolManager.SwapAmountCannotBeZero.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-            // trade is exact input of n, the hook cannot TAKE (+ve hookDeltaSpecified) more than n in input
-        } else if ((amountSpecified < 0) && (hookDeltaSpecified > -amountSpecified)) {
+            // trade is exact input of n:, the hook cannot TAKE (+ve hookDeltaSpecified) more than n in input
+            // otherwise the user would have to send more than n in input
+        } else if (isExactIn && (hookDeltaSpecified > -amountSpecified)) {
             vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-            // exact output of n, the hook cannot GIVE (-ve hookDeltaSpecified) more than n in output
-        } else if ((amountSpecified > 0) && (amountSpecified < -hookDeltaSpecified)) {
+            // exact output of n: the hook cannot GIVE (-ve hookDeltaSpecified) more than n in output
+            // otherwise the user would receive more than n in output
+        } else if (!isExactIn && (amountSpecified < -hookDeltaSpecified)) {
             vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // exact in: if the hook's delta is more than whats available in the pool, none of user's input will be swapped
+            // because the hook will have taken them all. Note: both hookDeltaSpecified and maxPossibleIn are negative so we use <
+        } else if (isExactIn && hookDeltaSpecified < maxPossibleIn) {
+            vm.expectRevert(IPoolManager.SwapDeltaHasIncorrectSign.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // exact out: if the hook's delta is more than whats available in the pool, none of user's output will be swapped
+            // because the hook will have taken them all.
+        } else if (!isExactIn && hookDeltaSpecified > maxPossibleOut) {
+            vm.expectRevert(IPoolManager.SwapDeltaHasIncorrectSign.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // successful swaps !
         } else {
-            // uint256 balanceThisBefore0 = currency0.balanceOf(address(this));
-            // uint256 balanceThisBefore1 = currency1.balanceOf(address(this));
-            // uint256 balanceHookBefore0 = currency0.balanceOf(address(this));
-            // uint256 balanceHookBefore1 = currency1.balanceOf(address(this));
+            uint256 balanceThisBefore = specifiedCurrency.balanceOf(address(this));
+            uint256 balanceHookBefore = specifiedCurrency.balanceOf(hookAddr);
 
             BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-            int128 swappedSpecified = (zeroForOne == amountSpecified < 0) ? delta.amount0() : delta.amount1();
+            int128 deltaSpecified = (zeroForOne == isExactIn) ? delta.amount0() : delta.amount1();
 
-            // uint256 balanceThisAfter0 = currency0.balanceOf(address(this));
-            // uint256 balanceThisAfter1 = currency1.balanceOf(address(this));
-            // uint256 balanceHookAfter0 = currency0.balanceOf(address(this));
-            // uint256 balanceHookAfter1 = currency1.balanceOf(address(this));
+            uint256 balanceThisAfter = specifiedCurrency.balanceOf(address(this));
+            uint256 balanceHookAfter = specifiedCurrency.balanceOf(hookAddr);
 
-            // exact input, where there isnt enough liquidity, delta will be maximum tradeable liquidity
-            // and any extra money sent by the hook will be credited to the user
-            // if (amountSpecified < 0 && (hookDeltaSpecified + amountSpecified < )) {
+            // in all cases the hook gets what they took, and the user gets the swap's output delta (checked more below)
+            assertEq(
+                balanceHookBefore.toInt256() + hookDeltaSpecified,
+                balanceHookAfter.toInt256(),
+                "hook balance change incorrect"
+            );
+            assertEq(
+                balanceThisBefore.toInt256() + deltaSpecified,
+                balanceThisAfter.toInt256(),
+                "swapper balance change incorrect"
+            );
 
-            // }
+            // exact input, where there arent enough input reserves available to pay swap and hook
+            // note: all 3 values are negative, so we use <
+            if (isExactIn && (hookDeltaSpecified + amountSpecified < maxPossibleIn)) {
+                // the hook will have taken hookDeltaSpecified of the maxPossibleIn
+                assertEq(deltaSpecified, maxPossibleIn - hookDeltaSpecified, "deltaSpecified exact input");
 
-            // exact output, where there isnt enough output reserves available to pay swap and hook
-            if (amountSpecified > 0 && (uint128(hookDeltaSpecified + amountSpecified) > reservesOfSpecified)) {
-                // the hook will have taken `hookDeltaSpecified` already
-                // so only reservesOfSpecified - hookDeltaSpecified will have been left to swap
-                assertEq(
-                    swappedSpecified,
-                    reservesOfSpecified.toInt128() - hookDeltaSpecified,
-                    "swappedSpecified exact output"
-                );
+                // exact output, where there isnt enough output reserves available to pay swap and hook
+            } else if (!isExactIn && (hookDeltaSpecified + amountSpecified > maxPossibleOut)) {
+                // the hook will have taken hookDeltaSpecified of the maxPossibleOut
+                assertEq(deltaSpecified, maxPossibleOut - hookDeltaSpecified, "deltaSpecified exact output");
+
+                // enough reserves were available, so the user got what they desired
+            } else {
+                assertEq(deltaSpecified, amountSpecified, "deltaSpecified not amountSpecified");
             }
-
-            // otherwise there must be enough liquidity so delta is amountSpecified
-            // assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
         }
     }
 

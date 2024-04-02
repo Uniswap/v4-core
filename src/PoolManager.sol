@@ -226,10 +226,16 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         (int128 hookDeltaInUnspecified) = key.hooks.afterSwap(key, params, delta, hookData);
 
         // calculates if currency0 or currency1 is the specified token
-        BalanceDelta hookDelta = ((params.amountSpecified < 0) == params.zeroForOne)
+        BalanceDelta hookDelta = (params.amountSpecified < 0) == params.zeroForOne
             ? toBalanceDelta(hookDeltaInSpecified, hookDeltaInUnspecified)
             : toBalanceDelta(hookDeltaInUnspecified, hookDeltaInSpecified);
         delta = delta - hookDelta;
+
+        if (
+            params.zeroForOne
+                ? (delta.amount0() > 0 || delta.amount1() < 0)
+                : (delta.amount1() > 0 || delta.amount0() < 0)
+        ) revert SwapDeltaHasIncorrectSign();
 
         // Account the hook's delta to the hook's address, and charge them to the caller's deltas
         _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
