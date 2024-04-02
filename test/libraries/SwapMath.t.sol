@@ -25,7 +25,7 @@ contract SwapMathTest is Test, GasSnapshot {
         uint16 protocolFee = 0;
         bool zeroForOne = false;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) =
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
             SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee, protocolFee);
 
         assertEq(amountIn, 9975124224178055);
@@ -49,7 +49,7 @@ contract SwapMathTest is Test, GasSnapshot {
         uint16 protocolFee = 0;
         bool zeroForOne = false;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) =
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
             SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee, protocolFee);
 
         assertEq(amountIn, 9975124224178055);
@@ -73,7 +73,7 @@ contract SwapMathTest is Test, GasSnapshot {
         uint16 protocolFee = 0;
         bool zeroForOne = false;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) =
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
             SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee, protocolFee);
 
         assertEq(amountIn, 999400000000000000);
@@ -97,7 +97,7 @@ contract SwapMathTest is Test, GasSnapshot {
         uint16 protocolFee = 0;
         bool zeroForOne = false;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) =
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
             SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee, protocolFee);
 
         assertEq(amountIn, 2000000000000000000);
@@ -112,8 +112,7 @@ contract SwapMathTest is Test, GasSnapshot {
     }
 
     function test_amountOut_isCappedAtTheDesiredAmountOut() public {
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) = SwapMath
-            .computeSwapStep(
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) = SwapMath.computeSwapStep(
             417332158212080721273783715441582, 1452870262520218020823638996, 159344665391607089467575320103, 1, 1, 0
         );
 
@@ -124,7 +123,7 @@ contract SwapMathTest is Test, GasSnapshot {
     }
 
     function test_targetPriceOf1UsesPartialInputAmount() public {
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) =
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
             SwapMath.computeSwapStep(2, 1, 1, 3915081100057732413702495386755767, 1, 0);
         assertEq(amountIn, 39614081257132168796771975168);
         assertEq(feeAmount, 39614120871253040049813);
@@ -134,7 +133,7 @@ contract SwapMathTest is Test, GasSnapshot {
     }
 
     function test_entireInputAmountTakenAsFee() public {
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) =
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
             SwapMath.computeSwapStep(2413, 79887613182836312, 1985041575832132834610021537970, -10, 1872, 0);
 
         assertEq(amountIn, 0);
@@ -151,9 +150,8 @@ contract SwapMathTest is Test, GasSnapshot {
         // https://www.wolframalpha.com/input/?i=1024+%2F+%2820282409603651670423947251286016+%2F+2**96%29
         int256 amountRemaining = 4;
         uint24 feePips = 3000;
-        uint16 protocolFeePips = 0;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) =
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
             SwapMath.computeSwapStep(sqrtP, sqrtPTarget, liquidity, amountRemaining, feePips, 0);
 
         assertEq(amountOut, 0);
@@ -170,9 +168,8 @@ contract SwapMathTest is Test, GasSnapshot {
         // https://www.wolframalpha.com/input/?i=1024+*+%2820282409603651670423947251286016+%2F+2**96%29
         int256 amountRemaining = 263000;
         uint24 feePips = 3000;
-        uint16 protocolFeePips = 0;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) =
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
             SwapMath.computeSwapStep(sqrtP, sqrtPTarget, liquidity, amountRemaining, feePips, 0);
 
         assertEq(amountOut, 26214);
@@ -193,7 +190,7 @@ contract SwapMathTest is Test, GasSnapshot {
         vm.assume(feePips > 0);
         vm.assume(feePips < 1e6);
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) =
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
             SwapMath.computeSwapStep(sqrtPriceRaw, sqrtPriceTargetRaw, liquidity, amountRemaining, feePips, 0);
 
         assertLe(amountIn, type(uint256).max - feeAmount);
