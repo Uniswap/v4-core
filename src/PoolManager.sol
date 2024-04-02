@@ -25,7 +25,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
-    // using Position for mapping(bytes32 => Position.Info);
+    using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
     using SwapFeeLibrary for uint24;
     using PoolGetters for Pool.State;
@@ -75,7 +75,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         override
         returns (uint128 liquidity)
     {
-        return Position.get(pools[id].positions, _owner, tickLower, tickUpper).liquidity;
+        return pools[id].positions.get(_owner, tickLower, tickUpper).liquidity;
     }
 
     function getPosition(PoolId id, address _owner, int24 tickLower, int24 tickUpper)
@@ -84,7 +84,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         override
         returns (Position.Info memory position)
     {
-        return Position.get(pools[id].positions, _owner, tickLower, tickUpper);
+        return pools[id].positions.get(_owner, tickLower, tickUpper);
     }
 
     /// @inheritdoc IPoolManager

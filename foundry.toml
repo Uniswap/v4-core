@@ -4,6 +4,7 @@ via_ir = false
 ffi = true
 fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./out"}]
 #solc = "0.8.24"
+# Compiler available at: https://shared.hadriencroubois.com/solc/solc.0.8.26-develop.2024.4.2+commit.33ad0c17.Linux.g++
 solc = "/home/amxx/Work/Repos/solidity/build/solc/solc"
 evm_version = "cancun"
 
