@@ -4,14 +4,13 @@ pragma solidity ^0.8.19;
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
 import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
-import {Pool} from "./libraries/Pool.sol";
 import {PoolKey} from "./types/PoolKey.sol";
+import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
 import {Owned} from "solmate/auth/Owned.sol";
 
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
-
-    uint8 public constant MIN_PROTOCOL_FEE_DENOMINATOR = 4;
+    using ProtocolFeeLibrary for uint24;
 
     mapping(Currency currency => uint256) public protocolFeesAccrued;
 
@@ -27,7 +26,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// @dev to prevent an invalid protocol fee controller from blocking pools from being initialized
     ///      the success of this function is NOT checked on initialize and if the call fails, the protocol fees are set to 0.
     /// @dev the success of this function must be checked when called in setProtocolFee
-    function _fetchProtocolFee(PoolKey memory key) internal returns (bool success, uint16 protocolFees) {
+    function _fetchProtocolFee(PoolKey memory key) internal returns (bool success, uint24 protocolFees) {
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
@@ -44,25 +43,11 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
             assembly {
                 returnData := mload(add(_data, 0x20))
             }
-            // Ensure return data does not overflow a uint16 and that the underlying fees are within bounds.
-            (success, protocolFees) = returnData == uint16(returnData) && _isValidProtocolFee(uint16(returnData))
-                ? (true, uint16(returnData))
+            // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
+            (success, protocolFees) = (returnData == uint24(returnData)) && uint24(returnData).validate()
+                ? (true, uint24(returnData))
                 : (false, 0);
         }
-    }
-
-    function _isValidProtocolFee(uint16 fee) internal pure returns (bool) {
-        if (fee != 0) {
-            uint16 fee0 = fee % 256;
-            uint16 fee1 = fee >> 8;
-            // The fee is specified as a denominator so it cannot be LESS than the MIN_PROTOCOL_FEE_DENOMINATOR (unless it is 0).
-            if (
-                (fee0 != 0 && fee0 < MIN_PROTOCOL_FEE_DENOMINATOR) || (fee1 != 0 && fee1 < MIN_PROTOCOL_FEE_DENOMINATOR)
-            ) {
-                return false;
-            }
-        }
-        return true;
     }
 
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {

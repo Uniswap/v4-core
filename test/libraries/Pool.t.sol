@@ -121,9 +121,9 @@ contract PoolTest is Test {
         state.swap(params);
 
         if (params.zeroForOne) {
-            assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
-        } else {
             assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+        } else {
+            assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
         }
     }
 }
