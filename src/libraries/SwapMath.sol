@@ -27,16 +27,26 @@ library SwapMath {
         int256 amountRemaining,
         uint24 swapFeePips,
         uint16 protocolFeePips
-    ) internal pure returns (uint160 sqrtRatioNextX96, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) {
+    )
+        internal
+        pure
+        returns (
+            uint160 sqrtRatioNextX96,
+            uint256 amountIn,
+            uint256 amountOut,
+            uint256 feeAmount,
+            uint256 protocolFeeAmount
+        )
+    {
         unchecked {
             bool zeroForOne = sqrtRatioCurrentX96 >= sqrtRatioTargetX96;
             bool exactIn = amountRemaining < 0;
 
             if (exactIn) {
-                protocolFeeAmount = protocolFeePips > 0
-                    ? FullMath.mulDiv(uint256(-amountRemaining), protocolFeePips, 1e6)
-                    : 0;
-                uint256 amountRemainingLessFee = FullMath.mulDiv(uint256(-amountRemaining) - protocolFeeAmount, 1e6 - swapFeePips, 1e6);
+                protocolFeeAmount =
+                    protocolFeePips > 0 ? FullMath.mulDiv(uint256(-amountRemaining), protocolFeePips, 1e6) : 0;
+                uint256 amountRemainingLessFee =
+                    FullMath.mulDiv(uint256(-amountRemaining) - protocolFeeAmount, 1e6 - swapFeePips, 1e6);
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, true);

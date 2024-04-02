@@ -112,7 +112,8 @@ contract SwapMathTest is Test, GasSnapshot {
     }
 
     function test_amountOut_isCappedAtTheDesiredAmountOut() public {
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) = SwapMath.computeSwapStep(
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount, uint256 protocolFeeAmount) = SwapMath
+            .computeSwapStep(
             417332158212080721273783715441582, 1452870262520218020823638996, 159344665391607089467575320103, 1, 1, 0
         );
 

@@ -359,7 +359,8 @@ library Pool {
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
 
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
-            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount, feeForProtocol) = SwapMath.computeSwapStep(
+            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount, feeForProtocol) = SwapMath
+                .computeSwapStep(
                 state.sqrtPriceX96,
                 (
                     params.zeroForOne
