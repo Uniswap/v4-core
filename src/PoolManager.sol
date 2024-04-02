@@ -226,7 +226,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _accountPoolBalanceDelta(key, delta);
 
         // The fee is on the input currency.
-        _updateProtocolFees(params.zeroForOne ? key.currency0 : key.currency1, feeForProtocol);
+        if (feeForProtocol > 0) {
+            _updateProtocolFees(params.zeroForOne ? key.currency0 : key.currency1, feeForProtocol);
+        }
 
         emit Swap(
             id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
