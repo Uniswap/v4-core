@@ -52,7 +52,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         uint160 sqrtPriceX96,
         uint128 liquidity,
         int24 tick,
-        uint24 fee
+        uint256 totalFeeAmount
     );
 
     function setUp() public {
@@ -140,7 +140,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
+        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 1);
 
         snapStart("update dynamic fee in before swap");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
@@ -164,7 +164,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
+        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 1);
 
         snapStart("swap with dynamic fee");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);

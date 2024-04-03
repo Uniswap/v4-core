@@ -285,8 +285,8 @@ library Pool {
         uint256 amountIn;
         // how much is being swapped out
         uint256 amountOut;
-        // how much fee is being paid in
-        uint256 feeAmount;
+        // how much fee (swap + protocol) is being paid in
+        uint256 totalFeeAmount;
     }
 
     struct SwapParams {
@@ -300,12 +300,11 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
+        returns (BalanceDelta result, uint256 feeForProtocol, uint256 totalFeeAmount, SwapState memory state)
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
-        swapFee = slot0Start.swapFee;
         if (params.zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
@@ -359,7 +358,7 @@ library Pool {
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
 
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
-            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount, feeForProtocol) = SwapMath
+            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.totalFeeAmount, feeForProtocol) = SwapMath
                 .computeSwapStep(
                 state.sqrtPriceX96,
                 (
@@ -369,27 +368,32 @@ library Pool {
                 ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                swapFee,
+                slot0Start.swapFee,
                 cache.protocolFee
             );
 
             if (exactInput) {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
-                    state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
+                    state.amountSpecifiedRemaining += (step.amountIn + step.totalFeeAmount).toInt256();
                 }
                 state.amountCalculated = state.amountCalculated + step.amountOut.toInt256();
             } else {
                 unchecked {
                     state.amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
-                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
+                state.amountCalculated = state.amountCalculated - (step.amountIn + step.totalFeeAmount).toInt256();
+            }
+
+            unchecked {
+                totalFeeAmount += step.totalFeeAmount;
             }
 
             // update global fee tracker
             if (state.liquidity > 0) {
                 unchecked {
-                    state.feeGrowthGlobalX128 += FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
+                    state.feeGrowthGlobalX128 +=
+                        FullMath.mulDiv(step.totalFeeAmount, FixedPoint128.Q128, state.liquidity);
                 }
             }
 

@@ -70,6 +70,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
     /// @param liquidity The liquidity of the pool after the swap
     /// @param tick The log base 1.0001 of the price of the pool after the swap
+    /// @param totalFeeAmount The amount of swap and protocol fees collected in the swap
     event Swap(
         PoolId indexed id,
         address indexed sender,
@@ -78,7 +79,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         uint160 sqrtPriceX96,
         uint128 liquidity,
         int24 tick,
-        uint24 fee
+        uint256 totalFeeAmount
     );
 
     event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);

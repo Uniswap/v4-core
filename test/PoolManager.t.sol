@@ -51,7 +51,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint160 sqrtPriceX96,
         uint128 liquidity,
         int24 tick,
-        uint24 fee
+        uint256 totaFeeAmount
     );
     event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
     event Transfer(
@@ -451,9 +451,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: false, settleUsingTransfer: true, currencyAlreadySent: false});
 
         vm.expectEmit(true, true, true, true);
-        emit Swap(
-            key.toId(), address(swapRouter), int128(-100), int128(98), 79228162514264329749955861424, 1e18, -1, 3000
-        );
+        emit Swap(key.toId(), address(swapRouter), int128(-100), int128(98), 79228162514264329749955861424, 1e18, -1, 1);
 
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
     }
@@ -475,14 +473,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit Swap(
-            nativeKey.toId(),
-            address(swapRouter),
-            int128(-100),
-            int128(98),
-            79228162514264329749955861424,
-            1e18,
-            -1,
-            3000
+            nativeKey.toId(), address(swapRouter), int128(-100), int128(98), 79228162514264329749955861424, 1e18, -1, 1
         );
 
         swapRouter.swap{value: 100}(nativeKey, swapParams, testSettings, ZERO_BYTES);
@@ -567,7 +558,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, mockHooks.afterSwap.selector);
 
         vm.expectEmit(true, true, true, true);
-        emit Swap(key.toId(), address(swapRouter), -10, 8, 79228162514264336880490487708, 1e18, -1, 100);
+        emit Swap(key.toId(), address(swapRouter), -10, 8, 79228162514264336880490487708, 1e18, -1, 1);
 
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
     }

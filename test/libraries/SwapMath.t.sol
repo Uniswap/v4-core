@@ -228,37 +228,37 @@ contract SwapMathTest is Test, GasSnapshot {
 
     function test_swapOneForZero_exactInCapped() public {
         snapStart("SwapMath_oneForZero_exactInCapped");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, 1 ether, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, (1 ether) * -1, 600, 0);
         snapEnd();
     }
 
     function test_swapZeroForOne_exactInCapped() public {
         snapStart("SwapMath_zeroForOne_exactInCapped");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, 1 ether, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, (1 ether) * -1, 600, 0);
         snapEnd();
     }
 
     function test_swapOneForZero_exactOutCapped() public {
         snapStart("SwapMath_oneForZero_exactOutCapped");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, (1 ether) * -1, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, 1 ether, 600, 0);
         snapEnd();
     }
 
     function test_swapZeroForOne_exactOutCapped() public {
         snapStart("SwapMath_zeroForOne_exactOutCapped");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, (1 ether) * -1, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, 1 ether, 600, 0);
         snapEnd();
     }
 
     function test_swapOneForZero_exactInPartial() public {
         snapStart("SwapMath_oneForZero_exactInPartial");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000 * -1, 600, 0);
         snapEnd();
     }
 
     function test_swapZeroForOne_exactInPartial() public {
         snapStart("SwapMath_zeroForOne_exactInPartial");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000 * -1, 600, 0);
         snapEnd();
     }
 

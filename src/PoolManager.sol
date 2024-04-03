@@ -208,9 +208,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         key.hooks.beforeSwap(key, params, hookData);
 
         uint256 feeForProtocol;
-        uint24 swapFee;
+        uint256 totalFee;
         Pool.SwapState memory state;
-        (delta, feeForProtocol, swapFee, state) = pools[id].swap(
+        (delta, feeForProtocol, totalFee, state) = pools[id].swap(
             Pool.SwapParams({
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
@@ -229,7 +229,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         }
 
         emit Swap(
-            id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
+            id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, totalFee
         );
 
         key.hooks.afterSwap(key, params, delta, hookData);

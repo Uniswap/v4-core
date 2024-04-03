@@ -18,7 +18,7 @@ library SwapMath {
     /// @return sqrtRatioNextX96 The price after swapping the amount in/out, not to exceed the price target
     /// @return amountIn The amount to be swapped in, of either currency0 or currency1, based on the direction of the swap
     /// @return amountOut The amount to be received, of either currency0 or currency1, based on the direction of the swap
-    /// @return feeAmount The amount of input that will be taken as a protocol and swap fee
+    /// @return totalFeeAmount The amount of input that will be taken as a protocol and swap fee
     /// @return protocolFeeAmount The amount of input that will be taken as a protocol fee
     function computeSwapStep(
         uint160 sqrtRatioCurrentX96,
@@ -34,7 +34,7 @@ library SwapMath {
             uint160 sqrtRatioNextX96,
             uint256 amountIn,
             uint256 amountOut,
-            uint256 feeAmount,
+            uint256 totalFeeAmount,
             uint256 protocolFeeAmount
         )
     {
@@ -43,8 +43,9 @@ library SwapMath {
             bool exactIn = amountRemaining < 0;
 
             if (exactIn) {
-                protocolFeeAmount =
-                    protocolFeePips > 0 ? FullMath.mulDiv(uint256(-amountRemaining), protocolFeePips, 1e6) : 0;
+                if (protocolFeePips > 0) {
+                    protocolFeeAmount = FullMath.mulDiv(uint256(-amountRemaining), protocolFeePips, 1e6);
+                }
                 uint256 amountRemainingLessFee =
                     FullMath.mulDiv(uint256(-amountRemaining) - protocolFeeAmount, 1e6 - swapFeePips, 1e6);
                 amountIn = zeroForOne
@@ -96,12 +97,12 @@ library SwapMath {
 
             if (exactIn && sqrtRatioNextX96 != sqrtRatioTargetX96) {
                 // we didn't reach the target, so take the remainder of the maximum input as fee
-                feeAmount = uint256(-amountRemaining) - amountIn;
+                totalFeeAmount = uint256(-amountRemaining) - amountIn;
             } else {
                 if (protocolFeePips > 0) {
                     protocolFeeAmount = FullMath.mulDivRoundingUp(amountIn, protocolFeePips, 1e6 - protocolFeePips);
                 }
-                feeAmount = FullMath.mulDivRoundingUp(amountIn - protocolFeeAmount, swapFeePips, 1e6 - swapFeePips);
+                totalFeeAmount = FullMath.mulDivRoundingUp(amountIn - protocolFeeAmount, swapFeePips, 1e6 - swapFeePips);
             }
         }
     }
