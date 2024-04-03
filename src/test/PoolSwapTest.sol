@@ -34,8 +34,8 @@ contract PoolSwapTest is PoolTestBase {
     }
 
     function swap(
-        PoolKey memory key,
-        IPoolManager.SwapParams memory params,
+        PoolKey calldata key,
+        IPoolManager.SwapParams calldata params,
         TestSettings memory testSettings,
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {
@@ -50,7 +50,10 @@ contract PoolSwapTest is PoolTestBase {
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
-        CallbackData memory data = abi.decode(rawData, (CallbackData));
+        CallbackData calldata data;
+        assembly {
+            data := rawData.offset
+        }
 
         (, uint256 poolBalanceBefore0, int256 deltaBefore0) =
             _fetchBalances(data.key.currency0, data.sender, address(this));

@@ -116,7 +116,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit ModifyLiquidity(
-            key.toId(),
+            key.toIdFromMemory(),
             address(modifyLiquidityRouter),
             LIQ_PARAMS.tickLower,
             LIQ_PARAMS.tickUpper,
@@ -131,7 +131,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit ModifyLiquidity(
-            key.toId(),
+            key.toIdFromMemory(),
             address(modifyLiquidityRouter),
             REMOVE_LIQ_PARAMS.tickLower,
             REMOVE_LIQ_PARAMS.tickUpper,
@@ -146,7 +146,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit ModifyLiquidity(
-            nativeKey.toId(),
+            nativeKey.toIdFromMemory(),
             address(modifyLiquidityRouter),
             LIQ_PARAMS.tickLower,
             LIQ_PARAMS.tickUpper,
@@ -161,7 +161,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit ModifyLiquidity(
-            nativeKey.toId(),
+            nativeKey.toIdFromMemory(),
             address(modifyLiquidityRouter),
             REMOVE_LIQ_PARAMS.tickLower,
             REMOVE_LIQ_PARAMS.tickUpper,
@@ -287,7 +287,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit ModifyLiquidity(
-            key.toId(),
+            key.toIdFromMemory(),
             address(modifyLiquidityRouter),
             LIQ_PARAMS.tickLower,
             LIQ_PARAMS.tickUpper,
@@ -312,7 +312,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit ModifyLiquidity(
-            key.toId(),
+            key.toIdFromMemory(),
             address(modifyLiquidityRouter),
             REMOVE_LIQ_PARAMS.tickLower,
             REMOVE_LIQ_PARAMS.tickUpper,
@@ -452,7 +452,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit Swap(
-            key.toId(), address(swapRouter), int128(-100), int128(98), 79228162514264329749955861424, 1e18, -1, 3000
+            key.toIdFromMemory(),
+            address(swapRouter),
+            int128(-100),
+            int128(98),
+            79228162514264329749955861424,
+            1e18,
+            -1,
+            3000
         );
 
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
@@ -475,7 +482,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         vm.expectEmit(true, true, true, true);
         emit Swap(
-            nativeKey.toId(),
+            nativeKey.toIdFromMemory(),
             address(swapRouter),
             int128(-100),
             int128(98),
@@ -567,7 +574,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.afterSwap.selector, mockHooks.afterSwap.selector);
 
         vm.expectEmit(true, true, true, true);
-        emit Swap(key.toId(), address(swapRouter), -10, 8, 79228162514264336880490487708, 1e18, -1, 100);
+        emit Swap(key.toIdFromMemory(), address(swapRouter), -10, 8, 79228162514264336880490487708, 1e18, -1, 100);
 
         swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
     }
@@ -760,10 +767,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
 
-        feeController.setProtocolFeeForPool(key.toId(), protocolFee);
+        feeController.setProtocolFeeForPool(key.toIdFromMemory(), protocolFee);
         manager.setProtocolFee(key);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toIdFromMemory());
         assertEq(slot0ProtocolFee, protocolFee);
 
         // Add liquidity - Fees dont accrue for positive liquidity delta.
@@ -814,7 +821,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     // test successful donation if pool has liquidity
     function test_donate_succeedsWhenPoolHasLiquidity() public {
-        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(key.toId());
+        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(key.toIdFromMemory());
         assertEq(feeGrowthGlobal0X128, 0);
         assertEq(feeGrowthGlobal1X128, 0);
 
@@ -822,19 +829,20 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         donateRouter.donate(key, 100, 200, ZERO_BYTES);
         snapEnd();
 
-        (feeGrowthGlobal0X128, feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(key.toId());
+        (feeGrowthGlobal0X128, feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(key.toIdFromMemory());
         assertEq(feeGrowthGlobal0X128, 34028236692093846346337);
         assertEq(feeGrowthGlobal1X128, 68056473384187692692674);
     }
 
     function test_donate_succeedsForNativeTokensWhenPoolHasLiquidity() public {
-        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(nativeKey.toId());
+        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) =
+            manager.getFeeGrowthGlobals(nativeKey.toIdFromMemory());
         assertEq(feeGrowthGlobal0X128, 0);
         assertEq(feeGrowthGlobal1X128, 0);
 
         donateRouter.donate{value: 100}(nativeKey, 100, 200, ZERO_BYTES);
 
-        (feeGrowthGlobal0X128, feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(nativeKey.toId());
+        (feeGrowthGlobal0X128, feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(nativeKey.toIdFromMemory());
         assertEq(feeGrowthGlobal0X128, 34028236692093846346337);
         assertEq(feeGrowthGlobal1X128, 68056473384187692692674);
     }
@@ -945,9 +953,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint24 protocolFee) public {
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toIdFromMemory());
         assertEq(slot0ProtocolFee, 0);
-        feeController.setProtocolFeeForPool(key.toId(), protocolFee);
+        feeController.setProtocolFeeForPool(key.toIdFromMemory(), protocolFee);
 
         uint16 fee0 = protocolFee.getZeroForOneFee();
         uint16 fee1 = protocolFee.getOneForZeroFee();
@@ -956,16 +964,16 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             manager.setProtocolFee(key);
         } else {
             vm.expectEmit(false, false, false, true);
-            emit ProtocolFeeUpdated(key.toId(), protocolFee);
+            emit ProtocolFeeUpdated(key.toIdFromMemory(), protocolFee);
             manager.setProtocolFee(key);
 
-            (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
+            (,, slot0ProtocolFee,) = manager.getSlot0(key.toIdFromMemory());
             assertEq(slot0ProtocolFee, protocolFee);
         }
     }
 
     function test_setProtocolFee_failsWithInvalidProtocolFeeControllers() public {
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toIdFromMemory());
         assertEq(slot0ProtocolFee, 0);
 
         manager.setProtocolFeeController(revertingFeeController);
@@ -986,10 +994,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
-        feeController.setProtocolFeeForPool(uninitializedKey.toId(), MAX_FEE_BOTH_TOKENS);
+        feeController.setProtocolFeeForPool(uninitializedKey.toIdFromMemory(), MAX_FEE_BOTH_TOKENS);
 
         manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toIdFromMemory());
         assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
     }
 
@@ -1001,10 +1009,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
         uint256 expectedFees = 7;
 
-        feeController.setProtocolFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
+        feeController.setProtocolFeeForPool(key.toIdFromMemory(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toIdFromMemory());
         assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
@@ -1028,10 +1036,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
         uint256 expectedFees = 7;
 
-        feeController.setProtocolFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
+        feeController.setProtocolFeeForPool(key.toIdFromMemory(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toIdFromMemory());
         assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
@@ -1055,10 +1063,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
         // set protocol fee before initializing the pool as it is fetched on initialization
-        feeController.setProtocolFeeForPool(nativeKey.toId(), MAX_FEE_BOTH_TOKENS);
+        feeController.setProtocolFeeForPool(nativeKey.toIdFromMemory(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(nativeKey);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toIdFromMemory());
         assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
@@ -1083,10 +1091,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
-        feeController.setProtocolFeeForPool(nativeKey.toId(), MAX_FEE_BOTH_TOKENS);
+        feeController.setProtocolFeeForPool(nativeKey.toIdFromMemory(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(nativeKey);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toIdFromMemory());
         assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
@@ -1133,7 +1141,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     //     });
     //     manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
-    //     PoolId poolId = key.toId();
+    //     PoolId poolId = key.toIdFromMemory();
     //     snapStart("poolExtsloadSlot0");
     //     bytes32 slot0Bytes = manager.extsload(keccak256(abi.encode(poolId, POOL_SLOT)));
     //     snapEnd();
@@ -1171,7 +1179,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     //         PoolSwapTest.TestSettings(true, true, false)
     //     );
 
-    //     PoolId poolId = key.toId();
+    //     PoolId poolId = key.toIdFromMemory();
     //     snapStart("poolExtsloadTickInfoStruct");
     //     bytes memory value = manager.extsload(bytes32(uint256(keccak256(abi.encode(poolId, POOL_SLOT))) + 1), 2);
     //     snapEnd();
@@ -1189,7 +1197,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_getPosition() public {
         Position.Info memory managerPosition =
-            manager.getPosition(key.toId(), address(modifyLiquidityRouter), -120, 120);
+            manager.getPosition(key.toIdFromMemory(), address(modifyLiquidityRouter), -120, 120);
         assert(LIQ_PARAMS.liquidityDelta > 0);
         assertEq(managerPosition.liquidity, uint128(uint256(LIQ_PARAMS.liquidityDelta)));
     }

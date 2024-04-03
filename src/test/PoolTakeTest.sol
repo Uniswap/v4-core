@@ -20,14 +20,17 @@ contract PoolTakeTest is PoolTestBase {
         uint256 amount1;
     }
 
-    function take(PoolKey memory key, uint256 amount0, uint256 amount1) external payable {
+    function take(PoolKey calldata key, uint256 amount0, uint256 amount1) external payable {
         manager.unlock(abi.encode(CallbackData(msg.sender, key, amount0, amount1)));
     }
 
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
-        CallbackData memory data = abi.decode(rawData, (CallbackData));
+        CallbackData calldata data;
+        assembly {
+            data := rawData.offset
+        }
 
         if (data.amount0 > 0) _testTake(data.key.currency0, data.sender, data.amount0);
         if (data.amount1 > 0) _testTake(data.key.currency1, data.sender, data.amount1);

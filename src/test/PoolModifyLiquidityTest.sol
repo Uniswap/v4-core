@@ -27,7 +27,7 @@ contract PoolModifyLiquidityTest is PoolTestBase {
     }
 
     function modifyLiquidity(
-        PoolKey memory key,
+        PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {
@@ -35,7 +35,7 @@ contract PoolModifyLiquidityTest is PoolTestBase {
     }
 
     function modifyLiquidity(
-        PoolKey memory key,
+        PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes memory hookData,
         bool settleUsingTransfer,
@@ -57,7 +57,10 @@ contract PoolModifyLiquidityTest is PoolTestBase {
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
-        CallbackData memory data = abi.decode(rawData, (CallbackData));
+        CallbackData calldata data;
+        assembly {
+            data := rawData.offset
+        }
 
         BalanceDelta delta = manager.modifyLiquidity(data.key, data.params, data.hookData);
 

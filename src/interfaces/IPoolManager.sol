@@ -132,7 +132,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
 
     /// @notice Initialize the state for a given pool ID
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
+    function initialize(PoolKey calldata key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         returns (int24 tick);
 
@@ -160,7 +160,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @param params The parameters for modifying the liquidity
     /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
     /// @return delta The balance delta of the liquidity
-    function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
+    function modifyLiquidity(PoolKey calldata key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta);
 
@@ -171,12 +171,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     }
 
     /// @notice Swap against the given pool
-    function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
+    function swap(PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
         external
         returns (BalanceDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
+    function donate(PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
         returns (BalanceDelta);
 
@@ -195,10 +195,10 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
 
     /// @notice Sets the protocol's swap fee for the given pool
     /// Protocol fees are always a portion of the LP swap fee that is owed. If that fee is 0, no protocol fees will accrue even if it is set to > 0.
-    function setProtocolFee(PoolKey memory key) external;
+    function setProtocolFee(PoolKey calldata key) external;
 
     /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
-    function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external;
+    function updateDynamicSwapFee(PoolKey calldata key, uint24 newDynamicSwapFee) external;
 
     /// @notice Called by external contracts to access granular pool state
     /// @param slot Key of slot to sload

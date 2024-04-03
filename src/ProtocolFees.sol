@@ -26,7 +26,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// @dev to prevent an invalid protocol fee controller from blocking pools from being initialized
     ///      the success of this function is NOT checked on initialize and if the call fails, the protocol fees are set to 0.
     /// @dev the success of this function must be checked when called in setProtocolFee
-    function _fetchProtocolFee(PoolKey memory key) internal returns (bool success, uint24 protocolFees) {
+    function _fetchProtocolFee(PoolKey calldata key) internal returns (bool success, uint24 protocolFees) {
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
             // will be allotted no more than this amount, so controllerGasLimit must be set with this

@@ -23,7 +23,7 @@ contract PoolDonateTest is PoolTestBase {
         bytes hookData;
     }
 
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory hookData)
+    function donate(PoolKey calldata key, uint256 amount0, uint256 amount1, bytes memory hookData)
         external
         payable
         returns (BalanceDelta delta)
@@ -41,7 +41,10 @@ contract PoolDonateTest is PoolTestBase {
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
-        CallbackData memory data = abi.decode(rawData, (CallbackData));
+        CallbackData calldata data;
+        assembly {
+            data := rawData.offset
+        }
 
         (, uint256 poolBalanceBefore0, int256 deltaBefore0) =
             _fetchBalances(data.key.currency0, data.sender, address(this));

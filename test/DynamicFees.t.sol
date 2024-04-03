@@ -140,7 +140,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
+        emit Swap(key.toIdFromMemory(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         snapStart("update dynamic fee in before swap");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
@@ -164,7 +164,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
+        emit Swap(key.toIdFromMemory(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
         snapStart("swap with dynamic fee");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
@@ -172,7 +172,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     }
 
     function _fetchPoolSwapFee(PoolKey memory _key) internal view returns (uint256 swapFee) {
-        PoolId id = _key.toId();
+        PoolId id = _key.toIdFromMemory();
         (,,, swapFee) = manager.getSlot0(id);
     }
 }

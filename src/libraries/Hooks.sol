@@ -104,7 +104,7 @@ library Hooks {
     }
 
     /// @notice calls beforeInitialize hook if permissioned and validates return value
-    function beforeInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
+    function beforeInitialize(IHooks self, PoolKey calldata key, uint160 sqrtPriceX96, bytes calldata hookData)
         internal
     {
         if (self.hasPermission(BEFORE_INITIALIZE_FLAG)) {
@@ -115,9 +115,13 @@ library Hooks {
     }
 
     /// @notice calls afterInitialize hook if permissioned and validates return value
-    function afterInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, int24 tick, bytes calldata hookData)
-        internal
-    {
+    function afterInitialize(
+        IHooks self,
+        PoolKey calldata key,
+        uint160 sqrtPriceX96,
+        int24 tick,
+        bytes calldata hookData
+    ) internal {
         if (self.hasPermission(AFTER_INITIALIZE_FLAG)) {
             self.callHook(
                 abi.encodeWithSelector(IHooks.afterInitialize.selector, msg.sender, key, sqrtPriceX96, tick, hookData)
@@ -128,7 +132,7 @@ library Hooks {
     /// @notice calls beforeModifyLiquidity hook if permissioned and validates return value
     function beforeModifyLiquidity(
         IHooks self,
-        PoolKey memory key,
+        PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
     ) internal {
@@ -144,7 +148,7 @@ library Hooks {
     /// @notice calls afterModifyLiquidity hook if permissioned and validates return value
     function afterModifyLiquidity(
         IHooks self,
-        PoolKey memory key,
+        PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams memory params,
         BalanceDelta delta,
         bytes calldata hookData
@@ -161,9 +165,12 @@ library Hooks {
     }
 
     /// @notice calls beforeSwap hook if permissioned and validates return value
-    function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
-        internal
-    {
+    function beforeSwap(
+        IHooks self,
+        PoolKey calldata key,
+        IPoolManager.SwapParams calldata params,
+        bytes calldata hookData
+    ) internal {
         if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
             self.callHook(abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
         }
@@ -172,8 +179,8 @@ library Hooks {
     /// @notice calls afterSwap hook if permissioned and validates return value
     function afterSwap(
         IHooks self,
-        PoolKey memory key,
-        IPoolManager.SwapParams memory params,
+        PoolKey calldata key,
+        IPoolManager.SwapParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
     ) internal {
@@ -183,7 +190,7 @@ library Hooks {
     }
 
     /// @notice calls beforeDonate hook if permissioned and validates return value
-    function beforeDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
+    function beforeDonate(IHooks self, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         internal
     {
         if (key.hooks.hasPermission(BEFORE_DONATE_FLAG)) {
@@ -194,7 +201,7 @@ library Hooks {
     }
 
     /// @notice calls afterDonate hook if permissioned and validates return value
-    function afterDonate(IHooks self, PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
+    function afterDonate(IHooks self, PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         internal
     {
         if (key.hooks.hasPermission(AFTER_DONATE_FLAG)) {

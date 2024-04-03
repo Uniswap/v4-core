@@ -35,7 +35,10 @@ contract PoolClaimsTest is PoolTestBase {
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
-        CallbackData memory data = abi.decode(rawData, (CallbackData));
+        CallbackData calldata data;
+        assembly {
+            data := rawData.offset
+        }
 
         if (data.deposit) {
             manager.mint(data.user, data.currency.toId(), uint128(data.amount));

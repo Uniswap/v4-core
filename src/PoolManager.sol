@@ -100,10 +100,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
+    function initialize(PoolKey calldata key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         override
-        noDelegateCall
         returns (int24 tick)
     {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
@@ -158,7 +157,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @dev Accumulates a balance change to a map of currency to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta) internal {
+    function _accountPoolBalanceDelta(PoolKey calldata key, BalanceDelta delta) internal {
         _accountDelta(key.currency0, delta.amount0());
         _accountDelta(key.currency1, delta.amount1());
     }
@@ -169,7 +168,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function modifyLiquidity(
-        PoolKey memory key,
+        PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
     ) external override onlyWhenUnlocked returns (BalanceDelta delta) {
@@ -196,7 +195,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function swap(PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
+    function swap(PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData)
         external
         override
         onlyWhenUnlocked
@@ -236,7 +235,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
+    function donate(PoolKey calldata key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
         override
         onlyWhenUnlocked
@@ -288,7 +287,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _burnFrom(from, id, amount);
     }
 
-    function setProtocolFee(PoolKey memory key) external {
+    function setProtocolFee(PoolKey calldata key) external {
         (bool success, uint24 newProtocolFee) = _fetchProtocolFee(key);
         if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
         PoolId id = key.toId();
@@ -296,7 +295,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         emit ProtocolFeeUpdated(id, newProtocolFee);
     }
 
-    function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external {
+    function updateDynamicSwapFee(PoolKey calldata key, uint24 newDynamicSwapFee) external {
         if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicSwapFeeUpdate();
         newDynamicSwapFee.validate();
         PoolId id = key.toId();

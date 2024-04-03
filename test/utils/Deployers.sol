@@ -136,7 +136,7 @@ contract Deployers {
         bytes memory initData
     ) internal returns (PoolKey memory _key, PoolId id) {
         _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
-        id = _key.toId();
+        id = _key.toIdFromMemory();
         manager.initialize(_key, sqrtPriceX96, initData);
     }
 

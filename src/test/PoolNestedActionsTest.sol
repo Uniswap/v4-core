@@ -22,6 +22,8 @@ enum Action {
 }
 
 contract PoolNestedActionsTest is Test, IUnlockCallback {
+    using PoolIdLibrary for PoolKey;
+
     IPoolManager manager;
     NestedActionExecutor public executor;
     address user;
@@ -81,7 +83,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         user = _user;
     }
 
-    function setKey(PoolKey memory _key) external {
+    function setKey(PoolKey calldata _key) external {
         key = _key;
     }
 
@@ -212,7 +214,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         bool unlocked = manager.isUnlocked();
         assertEq(unlocked, true);
         key.tickSpacing = 50;
-        PoolId id = key.toId();
+        PoolId id = key.toIdFromMemory();
         (uint256 price,,,) = manager.getSlot0(id);
         assertEq(price, 0);
         manager.initialize(key, Constants.SQRT_RATIO_1_2, Constants.ZERO_BYTES);

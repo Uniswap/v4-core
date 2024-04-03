@@ -13,7 +13,7 @@ library AmountHelpers {
     function getMaxAmountInForPool(
         IPoolManager manager,
         IPoolManager.ModifyLiquidityParams memory params,
-        PoolKey memory key
+        PoolKey calldata key
     ) public view returns (uint256 amount0, uint256 amount1) {
         PoolId id = PoolIdLibrary.toId(key);
         uint128 liquidity = manager.getLiquidity(id);
