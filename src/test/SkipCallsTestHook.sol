@@ -48,50 +48,46 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     function beforeAddLiquidity(
         address,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external override returns (bytes4) {
         counter++;
-        _initialize(key, Constants.SQRT_RATIO_1_1, hookData);
+        _addLiquidity(key, params, hookData);
         return IHooks.beforeAddLiquidity.selector;
     }
 
     function afterAddLiquidity(
         address,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4) {
         counter++;
-        _initialize(key, Constants.SQRT_RATIO_1_1, hookData);
+        _addLiquidity(key, params, hookData);
         return IHooks.afterAddLiquidity.selector;
     }
 
     function beforeRemoveLiquidity(
         address,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external override returns (bytes4) {
         counter++;
-        IPoolManager.ModifyLiquidityParams memory newParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 0.1e18});
-        _modifyLiquidity(key, newParams, hookData);
+        _removeLiquidity(key, params, hookData);
         return IHooks.beforeRemoveLiquidity.selector;
     }
 
     function afterRemoveLiquidity(
         address,
         PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
+        IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4) {
         counter++;
-        IPoolManager.ModifyLiquidityParams memory newParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 0.1e18});
-        _modifyLiquidity(key, newParams, hookData);
+        _removeLiquidity(key, params, hookData);
         return IHooks.afterRemoveLiquidity.selector;
     }
 
@@ -138,6 +134,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     }
 
     function _initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData) public {
+        // initialize a new pool with different fee
         key.fee = 2000;
         IPoolManager(manager).initialize(key, sqrtPriceX96, hookData);
     }
@@ -154,7 +151,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         manager.take(key.currency1, payer, uint256(delta1));
     }
 
-    function _modifyLiquidity(
+    function _addLiquidity(
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
@@ -163,13 +160,34 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         address payer = abi.decode(hookData, (address));
         int256 delta0 = IPoolManager(manager).currencyDelta(address(this), key.currency0);
         int256 delta1 = IPoolManager(manager).currencyDelta(address(this), key.currency1);
-        if (params.liquidityDelta < 0) {
-            assert(delta0 > 0 || delta1 > 0);
-            assert(!(delta0 < 0 || delta1 < 0));
-        } else if (params.liquidityDelta > 0) {
-            assert(delta0 < 0 || delta1 < 0);
-            assert(!(delta0 > 0 || delta1 > 0));
-        }
+
+        assert(delta0 < 0 || delta1 < 0);
+        assert(!(delta0 > 0 || delta1 > 0));
+
+        IERC20Minimal(Currency.unwrap(key.currency0)).transferFrom(payer, address(manager), uint256(-delta0));
+        manager.settle(key.currency0);
+        IERC20Minimal(Currency.unwrap(key.currency1)).transferFrom(payer, address(manager), uint256(-delta1));
+        manager.settle(key.currency1);
+    }
+
+    function _removeLiquidity(
+        PoolKey calldata key,
+        IPoolManager.ModifyLiquidityParams memory params,
+        bytes calldata hookData
+    ) public {
+        // first hook needs to add liquidity for itself
+        IPoolManager.ModifyLiquidityParams memory newParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        IPoolManager(manager).modifyLiquidity(key, newParams, hookData);
+        // hook removes liquidity
+        IPoolManager(manager).modifyLiquidity(key, params, hookData);
+        address payer = abi.decode(hookData, (address));
+        int256 delta0 = IPoolManager(manager).currencyDelta(address(this), key.currency0);
+        int256 delta1 = IPoolManager(manager).currencyDelta(address(this), key.currency1);
+
+        assert(delta0 < 0 || delta1 < 0);
+        assert(!(delta0 > 0 || delta1 > 0));
+
         IERC20Minimal(Currency.unwrap(key.currency0)).transferFrom(payer, address(manager), uint256(-delta0));
         manager.settle(key.currency0);
         IERC20Minimal(Currency.unwrap(key.currency1)).transferFrom(payer, address(manager), uint256(-delta1));
