@@ -35,6 +35,9 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         skipCallsTestHook.setManager(IPoolManager(manager));
 
         (currency0, currency1) = deployMintAndApprove2Currencies();
+
+        assertEq(skipCallsTestHook.counter(), 0);
+
         (key,) = initPoolAndAddLiquidity(
             currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_RATIO_1_1, ZERO_BYTES
         );
@@ -127,6 +130,8 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_afterRemoveLiquidity_skipIfCalledByHook() public {
@@ -148,6 +153,8 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_beforeSwap_skipIfCalledByHook() public {
@@ -167,9 +174,10 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         MockERC20(Currency.unwrap(key.currency0)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
 
-        assertEq(skipCallsTestHook.counter(), 0);
         swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
+        assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_afterSwap_skipIfCalledByHook() public {
@@ -189,9 +197,10 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         MockERC20(Currency.unwrap(key.currency0)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
 
-        assertEq(skipCallsTestHook.counter(), 0);
         swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
+        assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_beforeDonate_skipIfCalledByHook() public {
@@ -209,11 +218,12 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         deploy(skipCallsTestHook);
 
-        assertEq(skipCallsTestHook.counter(), 0);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
         MockERC20(Currency.unwrap(key.currency1)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
         donateRouter.donate(key, 100, 200, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        donateRouter.donate(key, 100, 200, abi.encode(address(this)));
+        assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_afterDonate_skipIfCalledByHook() public {
@@ -231,10 +241,11 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         deploy(skipCallsTestHook);
 
-        assertEq(skipCallsTestHook.counter(), 0);
         MockERC20(Currency.unwrap(key.currency0)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
         MockERC20(Currency.unwrap(key.currency1)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
         donateRouter.donate(key, 100, 200, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        donateRouter.donate(key, 100, 200, abi.encode(address(this)));
+        assertEq(skipCallsTestHook.counter(), 2);
     }
 }

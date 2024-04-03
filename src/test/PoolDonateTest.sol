@@ -51,10 +51,8 @@ contract PoolDonateTest is PoolTestBase {
 
         BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, data.hookData);
 
-        (, uint256 poolBalanceAfter0, int256 deltaAfter0) =
-            _fetchBalances(data.key.currency0, data.sender, address(this));
-        (, uint256 poolBalanceAfter1, int256 deltaAfter1) =
-            _fetchBalances(data.key.currency1, data.sender, address(this));
+        (,, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         require(deltaAfter0 == -int256(data.amount0), "deltaAfter0 is not equal to -int256(data.amount0)");
         require(deltaAfter1 == -int256(data.amount1), "deltaAfter1 is not equal to -int256(data.amount1)");
