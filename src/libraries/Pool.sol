@@ -393,7 +393,7 @@ library Pool {
             if (state.liquidity > 0) {
                 unchecked {
                     state.feeGrowthGlobalX128 +=
-                        FullMath.mulDiv(step.totalFeeAmount, FixedPoint128.Q128, state.liquidity);
+                        FullMath.mulDiv((step.totalFeeAmount - feeForProtocol), FixedPoint128.Q128, state.liquidity);
                 }
             }
 
