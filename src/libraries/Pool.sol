@@ -300,11 +300,12 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 feeForProtocol, uint256 totalFeeAmount, SwapState memory state)
+        returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
+        swapFee = slot0Start.swapFee;
         if (params.zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
@@ -368,7 +369,7 @@ library Pool {
                 ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                slot0Start.swapFee,
+                swapFee,
                 cache.protocolFee
             );
 
@@ -383,10 +384,6 @@ library Pool {
                     state.amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
                 state.amountCalculated = state.amountCalculated - (step.amountIn + step.totalFeeAmount).toInt256();
-            }
-
-            unchecked {
-                totalFeeAmount += step.totalFeeAmount;
             }
 
             // update global fee tracker
