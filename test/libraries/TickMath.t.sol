@@ -93,7 +93,7 @@ contract TickMathTestTest is Test, JavascriptFfi {
 
     function test_getTickAtSqrtRatio_throwsForTooHigh() public {
         vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
-        tickMath.getTickAtSqrtRatio(MAX_SQRT_RATIO + 1);
+        tickMath.getTickAtSqrtRatio(MAX_SQRT_RATIO);
     }
 
     function test_getTickAtSqrtRatio_isValidMinSqrtRatio() public {
