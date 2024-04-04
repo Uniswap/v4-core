@@ -1,0 +1,305 @@
+\documentclass[sigconf,nonacm,prologue,table]{acmart}
+\usepackage{ctex}
+
+\usepackage{listings}
+
+%% labels
+%% sections:    "sec"
+%% definitions: "def"
+%% equations:   "eq"
+%% figures:     "fig"
+%% tables:      "tab"
+
+%% packages
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage{subcaption}
+\usepackage{commath}
+\usepackage[utf8]{inputenc}
+\usetikzlibrary{positioning, arrows.meta, shapes, calc}
+%% \usepackage{tikz}
+
+\pagenumbering{arabic}
+
+%% hide ACM reference
+\settopmatter{printacmref=false}
+
+%% hide copyright
+\renewcommand\footnotetextcopyrightpermission[1]{}
+
+%% \pagestyle{plain}
+\settopmatter{printfolios=true}
+
+\numberwithin{equation}{section}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\captionsetup[subfigure]{
+    labelfont=bf,
+    textfont=normalfont,
+}
+\renewcommand{\thesubfigure}{\Roman{subfigure}}
+
+\definecolor{rowA}{gray}{0.9}
+\definecolor{rowB}{gray}{0.8}
+
+\newcommand{\rplus}{\mathbb{R}_{\geq 0}}
+\newcommand{\rpos}{\mathbb{R}_{>0}}
+
+\begin{document}
+\title{Uniswap v4 核心 [草稿]}
+\subtitle{June 2023}
+\date{June 2023}
+
+\author{Hayden Adams}
+\affiliation{}
+\email{hayden@uniswap.org}
+
+\author{Moody Salem}
+\affiliation{}
+\email{moody.salem@gmail.com}
+
+\author{Noah Zinsmeister}
+\affiliation{}
+\email{noah@uniswap.org}
+
+\author{Sara Reynolds}
+\affiliation{}
+\email{sara@uniswap.org}
+
+\author{Austin Adams}
+\affiliation{}
+\email{austin@uniswap.org}
+
+\author{Will Pote}
+\affiliation{}
+\email{pote@uniswap.org}
+
+\author{Mark Toda}
+\affiliation{}
+\email{mark@uniswap.org}
+
+\author{Alice Henshaw}
+\affiliation{}
+\email{alice@uniswap.org}
+
+\author{Emily Williams}
+\affiliation{}
+\email{emily@uniswap.org}
+
+\author{Dan Robinson}
+\affiliation{}
+\email{dan@paradigm.xyz}
+
+\titlenote{Uniswap v4 核心白皮书的中文翻译由 WTF Academy 贡献。}
+
+\begin{teaserfigure}
+\caption*{
+    \hspace{\textwidth}
+    }
+\end{teaserfigure}
+
+\renewcommand{\shortauthors}{Adams et al.}
+
+\begin{abstract}
+
+\textsc{Uniswap v4}是一种实现在以太坊虚拟机上的非托管自动做市商。通过任意代码Hooks，\textsc{Uniswap v4}提供了可自定义性，允许开发人员在\textsc{Uniswap v3}中引入的集中流动性模型中增加新功能。在\textsc{Uniswap v4}中，任何人都可以创建一个带有指定Hooks的新池，该Hooks可以在预定的池操作之前或之后运行。Hooks可用于实现之前内置于协议中的功能，如预言机，以及以前需要在协议层面独立实现的新功能。\textsc{Uniswap v4}还通过单例模式(singleton)、闪电记账(flash accounting)和对原生ETH的支持，提高了gas效率和开发者体验。
+\end{abstract}
+
+\maketitle
+
+\section{介绍} \label{sec:introduction}
+\textsc{Uniswap v4}是一种实现在以太坊虚拟机（EVM）上的自动做市商（AMM），用于实现价值的高效交换。与\textsc{Uniswap Protocol}的先前版本一样，\textsc{Uniswap v4}是非托管、不可升级和无需许可的。 \textsc{Uniswap v4}的重点是通过可定制性和gas效率升级的体系结构变化，在\textsc{Uniswap v1}和\textsc{v2}中构建的AMM模型和\textsc{Uniswap v3}中引入的集中流动性模型的基础上进行改进。
+
+\textsc{Uniswap v1} \cite{Adams18}和\textsc{v2} \cite{Adams20}是\textsc{Uniswap Protocol}的前两个版本，分别实现了ERC-20 <> ETH和ERC-20 <> ERC-20的交易，两者都使用了常量乘积做市商（CPMM）模型。 \textsc{Uniswap v3} \cite{Adams21}通过使用在有限价格范围内提供流动性的仓位，提供了更高资本效率的流动性，并引入了多个费用层级。
+
+尽管集中流动性和费用层级增加了流动性提供者的灵活性，并允许实施新的策略，但\textsc{Uniswap v3}不足以支持随着AMM和市场的发展而出现的新功能。
+
+一些功能，例如最初在\textsc{Uniswap v2}中引入的价格预言机，允许集成者利用去中心化的链上定价数据，但这以增加交易者的gas成本为代价，并且对集成者而言不具有可定制性。其他增强功能的想法，包括通过时间加权平均价格做市商（TWAMM） \cite{White2021} 实现的时间加权平均价格订单（TWAP）、波动率预言机、限价订单或动态费用，需要重新实现核心协议，无法由第三方开发者添加到\textsc{Uniswap v3}中。
+
+此外，在以前的\textsc{Uniswap}版本中，部署新的池需要部署新的合约，其成本随着合约字节码的大小而增加。另外，涉及到与多个\textsc{Uniswap}池的交易涉及到多个合约之间的转账和冗余状态更新。自\textsc{Uniswap v2}以来，\textsc{Uniswap}要求ETH被包装成ERC-20，而不是支持原生ETH。这些都带来了gas成本。
+
+在\textsc{Uniswap v4}中，我们通过一些值得注意的功能改进了这一点：
+\begin{itemize}
+    \item \emph{Hooks}：\textsc{Uniswap v4}允许任何人使用自定义功能部署新的集中流动性池。对于每个池，创建者可以定义一个“Hooks合约”，该合约在调用的生命周期的关键点执行逻辑。这些Hooks也可以管理池的交换费用以及向流动性提供者收取的提款费用。
+    \item \emph{单例模式}：\textsc{Uniswap v4}摒弃了先前版本中使用的工厂模型，而是实现了一个包含所有池的单个合约。单例模式降低了池的创建成本和多跳交易（multi-hop trade）的成本。
+    \item \emph{闪电记账}：单例使用“闪电记账”机制，要求在锁定结束时池或调用者没有代币欠款。在调用过程中，代币可以用于单例内外的任意数量的操作。通过EIP-1153 \cite{Akhunov2018}中提议的瞬态存储操作码，这种功能将变得高效。闪电记账进一步降低了跨多个池的交易的gas成本，并支持与\textsc{Uniswap v4}的更复杂集成。
+    \item \emph{原生ETH}：\textsc{Uniswap v4}恢复了对原生ETH的支持，并支持在\textsc{v4}池中使用原生代币进行配对。ETH交换者和流动性提供者从转账成本更低和去除额外包装成本中受益。
+\end{itemize}
+%% \ref{sec:liquidity-oracle}）。
+
+以下章节详细解释了这些变化，与成就它们的架构变化。
+
+\section{Hooks} 
+\label{sec:Hooks}
+
+\emph{Hooks}是在池的执行过程中在指定点执行一些开发者定义的逻辑的外部部署合约。这些Hooks允许集成者创建具有灵活和可定制执行的集中流动性池。
+
+Hooks可以修改池的参数，或添加新特性和功能。可以使用Hooks实现的示例功能包括：
+\begin{itemize}
+\item 在一段时间通过TWAMM执行大型订单
+\item 按指定价格成交的链上限价订单
+\item 随波动率变化的动态费用
+\item 流动性提供者的内部化MEV分配机制
+\item 实现中位数、截断或其他自定义预言机
+\end{itemize}
+
+我们预计在未来为特定的Hooks设计撰写独立的白皮书，因为许多Hooks的复杂性与协议本身一样。
+
+\begin{figure*}[ht!]
+    \centering
+    \scalebox{.65}{
+    \begin{tikzpicture}[
+            every node/.style = {inner sep = 2ex},
+            flow/.style = {thick, arrows = {-To[scale=2]}},
+            decision/.style = {
+                draw,
+                rectangle split,
+                rectangle split horizontal,
+                rectangle split parts = 2,
+                rectangle split draw splits = false,
+                align = left,
+                rounded corners = 3ex
+            },
+            block/.style = {
+                draw,
+                rectangle split,
+                rectangle split horizontal,
+                rectangle split parts = 2,
+                rectangle split draw splits = false,
+                align = left
+            },
+            universal/.style = {draw, diamond, inner sep = .5ex},
+        ]
+
+        \node (start) [universal] at (0,0) {开始 swap};
+
+        \node [decision, below=3em of start] (S0) {
+            S0.
+            \nodepart{two}
+            检查 beforeSwap flag
+        };
+
+        \node (H1) [block, right=4em of S0] {
+            H1.
+            \nodepart{two}
+            运行 beforeSwap Hook
+        };
+
+        \node [block, below=3em of S0] (S1) {
+            S1.
+            \nodepart{two}
+            执行 swap
+        };
+
+        \node (S2) [decision, below=3em of S1] {
+            S2.
+            \nodepart{two}
+            检查 afterSwap flag
+        };
+
+        \node (H2) [block, right=4em of S2] {
+            H2.
+            \nodepart{two}
+            运行 afterSwap Hook
+        };
+
+        \node (stop) [universal, below=3em of S2] {
+            结束 swap
+        };
+
+        \draw [flow] (start) -- (S0);
+        \draw [flow] (S0) -- node[midway, above] {True} (H1);
+        \draw [flow] (S0) -- node[midway, right] {False} (S1);
+        \draw [flow] (H1) .. controls + (0,-2) .. node[near end, above] {Return} (S1);
+        \draw [flow] (S1) -- (S2);
+        \draw [flow] (S2) -- node[midway, above] {True} (H2);
+        \draw [flow] (S2) -- node[midway, right] {False} (stop);
+        \draw [flow] (H2) .. controls + (0,-2.5) .. node[near end, above] {Return} (stop);
+    \end{tikzpicture}
+    }
+    \caption{Swap Hook 流程图}
+    \label{fig:swapflow}
+\end{figure*}
+
+\subsection{操作Hooks} 
+\label{actionhooks}
+
+当有人在\textsc{Uniswap v4}上创建一个池时，他们可以指定一个Hooks合约。该Hooks合约实现了在池的执行过程中池将调用的自定义逻辑。 \textsc{Uniswap v4}目前支持八个此类Hooks回调：
+
+\begin{itemize}
+\item beforeInitialize/afterInitialize
+\item beforeAddLiquidity/afterAddLiquidity
+\item beforeRemoveLiquidity/afterRemoveLiquidity
+\item beforeSwap/afterSwap
+\item beforeDonate/afterDonate
+\end{itemize}
+
+Hooks合约的地址决定了哪些Hooks回调会被执行。这一方法高效且表达力强，并确保即使是可升级的挂钩也遵守某些不变量。创建有效Hooks时有最低准则需要遵守。在图 \ref{fig:swapflow} 中，我们描述了beforeSwap和afterSwapHooks在交换执行流程部分的工作原理。
+
+\subsection{Hooks管理费用} 
+\label{hookfees}
+
+\textsc{Uniswap v4}允许对交换和提取流动性收取费用。
+
+交换费用可以是静态的，也可以由Hooks合约动态管理。Hooks合约还可以选择将一定比例的交换费用分配给自己。提款费用不能在池中进行本地设置。要设置提款费用，池创建者必须设置一个Hooks合约来管理该费用，并且，收取的提款费用会支付给Hooks合约。支付给Hooks合约的费用可以由Hooks合约的代码任意分配，包括支付给流动性提供者、交换者、Hooks创建者或任何其他方。
+
+Hooks的功能受创建池时选择的不可变标志（flag）的限制。池创建者可以选择的费用设置有：
+\begin{itemize}
+    \item 池收取静态费用（以及该费用是多少）还是动态费用
+    \item Hooks是否具有收取交换费用的权限
+    \item Hooks是否具有收取提款费用的权限
+\end{itemize}
+
+治理可以从交换费用或提款费用中收取一定费用，如下面的治理部分所讨论的。 
+
+\section{单例和闪电记账} 
+\label{flashaccounting}
+
+\textsc{Uniswap Protocol}的先前版本使用工厂/池模式，其中工厂为新的代币对创建单独的合约。 \textsc{Uniswap v4}使用单例设计模式，所有池都由单个合约管理，使得池的部署成本降低约99\%。
+
+单例设计与\textsc{v4}中的另一个体系结构变化\emph{闪电记账}相辅相成。在\textsc{Uniswap Protocol}的先前版本中，每个操作（例如交换或向池中添加流动性）都以代币转移结束。在\textsc{v4}中，每个操作都会更新一个称为\verb|delta|的内部净余额，仅在锁定结束时进行外部转账。新的\newline \verb|take()|和\verb|settle()|函数分别用于从池中借资金和存入资金到池中。通过要求池或调用者没有代币欠款，确保了池的偿付能力。
+
+闪电记账简化了复杂的池操作，例如原子交换和原子添加。与单例模式结合使用时，它还简化了多跳交易。
+
+在当前的执行环境中，闪电记账架构是昂贵的，因为它要在每次余额变化时进行存储更新。尽管合约保证了内部会计数据实际上从未序列化到存储中，但当超过存储退款上限，用户仍然需要支付费用 \cite{Buterin2021}。但是，由于余额必须在事务结束时为0，因此可以使用瞬态存储实现对这些余额的记账，正如EIP-1153 \cite{Akhunov2018}中所描绘的。
+
+单例和闪电记账使得在多个\textsc{v4}池之间更高效地进行路由成为可能，降低了流动性碎片化的成本。引入Hooks将大大增加池的数量，这个特性会非常有用。
+
+\section{原生ETH} 
+\label{nativeeth}
+
+\textsc{Uniswap v4}将原生ETH带回交易对中。虽然\textsc{Uniswap v1}严格将ETH与ERC-20代币配对，但由于实施复杂性和在WETH和ETH配对之间的流动性碎片化的担忧，\textsc{Uniswap v2}中删除了原生ETH配对。单例和闪电记账减轻了这些问题，因此\textsc{Uniswap v4}允许同时支持WETH和ETH配对。
+
+原生ETH转账的gas成本约为ERC-20转账的一半（ETH为21k gas，ERC-20约为40k gas）。目前，\textsc{Uniswap v2}和\textsc{v3}要求绝大多数用户在在Uniswap Protocol上交易之前（之后）将他们的ETH包装（解包装）为WETH，这需要额外的gas。
+
+\section{其他值得注意的功能} 
+\label{other}
+
+\subsection{ERC1155记账} 
+\textsc{Uniswap v4}将支持通过单例实现的ERC-1155代币的铸造/销毁，用于额外的代币记账。用户现在可以将代币保留在单例合约中，避免ERC-20转入或转出合约的。这一点对于频繁交换者或流动性提供者非常有价值，因为它们会在多个区块或交易中连续使用相同的代币。
+
+\subsection{治理更新} 
+\textsc{Uniswap v4}具有两种单独的治理费用机制，交换费用和提款费用，有着不同的机制。首先，与\textsc{Uniswap v3}类似，治理可以选择在特定池上获取特定百分比的交换费用。对于\textsc{v4}，如果Hooks最初选择为池打开提款费用，治理还可以获取特定百分比的提款费用。与\textsc{Uniswap v3}不同，治理不控制可允许的费用层级或价格刻度间距。
+
+\subsection{Gas减少}
+正如上面所讨论的，\textsc{Uniswap v4}通过闪电记账、单例模式和对原生ETH的支持引入了有意义的gas优化。此外，引入了Hooks使得协议内嵌的价格预言机（在\textsc{Uniswap v2}和\textsc{Uniswap v3}中包含）变得不再必要，这也意味着一些池可以完全放弃预言机，并在每个区块中的第一次池交换中节省约15k gas。
+
+\subsection{donate()}
+\verb|donate()|允许用户、集成者和Hooks直接支付给特定范围内的流动性提供者，支付的方式可以是池中的任意一种或两种代币。此功能依赖于费用记账系统以实现高效支付，而费用支付系统仅支持池中的代币。可能的用例包括在TWAMM订单上给范围内的流动性提供者打赏或新类型的费用系统。
+
+\section{总结}
+总之，\textsc{Uniswap v4}是一个非托管、不可升级且无需许可的AMM协议。它基于\textsc{Uniswap v3}中引入的集中流动性模型，通过Hooks实现了可定制的池。与Hooks相辅相成的还有其他体系结构变化，如单例合约，它将所有的池状态保存在一个合约中，以及闪电记账，它有效地确保池的偿付能力。其他改进包括对原生ETH的支持，ERC-1155余额记账，新的费用机制以及向范围内流动性提供者捐赠的能力。
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{main}
+
+\section*{免责声明}
+
+本文仅供一般信息目的。它不构成投资建议或购买或销售任何投资的推荐或招揽，也不应用于评估做出任何投资决策的价值。不应依赖本文提供会计、法律或税务建议或投资建议。本文反映了作者当前的观点，并不代表Uniswap Labs、Paradigm或其关联公司的观点，也不一定反映Uniswap Labs、Paradigm、其关联公司或与之相关的个人的观点。所反映的观点可能会随时更改，而无需进行更新。
+
+\end{document}

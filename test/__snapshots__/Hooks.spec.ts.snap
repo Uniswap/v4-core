@@ -1,5 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`Hooks #shouldCall gas cost of shouldCall 1`] = `7`;
-
-exports[`Hooks #validateHookAddress gas cost of validateHookAddress 1`] = `1443`;

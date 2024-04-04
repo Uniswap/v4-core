@@ -1,4 +1,7 @@
+@ensdomains/=node_modules/@ensdomains/
+@openzeppelin/=lib/openzeppelin-contracts/
 ds-test/=lib/forge-std/lib/ds-test/src/
-forge-std/=lib/forge-std/src/
 forge-gas-snapshot/=lib/forge-gas-snapshot/src/
-@openzeppelin/contracts/=node_modules/@openzeppelin/contracts
+forge-std/=lib/forge-std/src/
+hardhat/=node_modules/hardhat/
+solmate/=lib/solmate/src/
