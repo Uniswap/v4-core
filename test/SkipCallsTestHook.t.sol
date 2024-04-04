@@ -28,6 +28,13 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     PoolSwapTest.TestSettings testSettings =
         PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
+    uint160 clearAllHookPermisssionsMask;
+    uint256 hookPermissionCount = 10;
+
+    function setUp() public {
+        clearAllHookPermisssionsMask = ~uint160(0) >> hookPermissionCount;
+    }
+
     function deploy(SkipCallsTestHook skipCallsTestHook) private {
         SkipCallsTestHook impl = new SkipCallsTestHook();
         vm.etch(address(skipCallsTestHook), address(impl).code);
@@ -48,16 +55,8 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     }
 
     function test_beforeInitialize_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG
-                            & ~Hooks.AFTER_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG
-                    )
-            )
-        );
+        SkipCallsTestHook skipCallsTestHook =
+            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_INITIALIZE_FLAG));
 
         deploy(skipCallsTestHook);
 
@@ -65,16 +64,8 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     }
 
     function test_afterInitialize_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG
-                            & ~Hooks.AFTER_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG
-                    )
-            )
-        );
+        SkipCallsTestHook skipCallsTestHook =
+            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_INITIALIZE_FLAG));
 
         deploy(skipCallsTestHook);
 
@@ -83,14 +74,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_beforeAddLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG
-                            & ~Hooks.AFTER_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG
-                    )
-            )
+            address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_ADD_LIQUIDITY_FLAG)
         );
 
         deploy(skipCallsTestHook);
@@ -103,14 +87,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_afterAddLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG
-                            & ~Hooks.AFTER_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG
-                    )
-            )
+            address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_ADD_LIQUIDITY_FLAG)
         );
 
         deploy(skipCallsTestHook);
@@ -123,14 +100,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_beforeRemoveLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG
-                            & ~Hooks.AFTER_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG
-                    )
-            )
+            address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG)
         );
 
         deploy(skipCallsTestHook);
@@ -145,14 +115,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_afterRemoveLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG
-                            & ~Hooks.AFTER_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG
-                    )
-            )
+            address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)
         );
 
         deploy(skipCallsTestHook);
@@ -166,17 +129,8 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     }
 
     function test_beforeSwap_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.AFTER_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG
-                            & ~Hooks.AFTER_DONATE_FLAG
-                    )
-            )
-        );
+        SkipCallsTestHook skipCallsTestHook =
+            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG));
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
@@ -188,17 +142,8 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     }
 
     function test_afterSwap_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG & ~Hooks.BEFORE_DONATE_FLAG
-                            & ~Hooks.AFTER_DONATE_FLAG
-                    )
-            )
-        );
+        SkipCallsTestHook skipCallsTestHook =
+            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_SWAP_FLAG));
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
@@ -210,17 +155,8 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     }
 
     function test_beforeDonate_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG & ~Hooks.AFTER_SWAP_FLAG
-                            & ~Hooks.AFTER_DONATE_FLAG
-                    )
-            )
-        );
+        SkipCallsTestHook skipCallsTestHook =
+            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_DONATE_FLAG));
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
@@ -232,17 +168,8 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     }
 
     function test_afterDonate_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(
-                uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                    & uint160(
-                        ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
-                            & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG & ~Hooks.AFTER_SWAP_FLAG
-                            & ~Hooks.BEFORE_DONATE_FLAG
-                    )
-            )
-        );
+        SkipCallsTestHook skipCallsTestHook =
+            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_DONATE_FLAG));
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
