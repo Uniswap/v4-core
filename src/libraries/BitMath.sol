@@ -8,7 +8,7 @@ library BitMath {
     ///     where the least significant bit is at index 0 and the most significant bit is at index 255
     /// @dev The function satisfies the property:
     ///     x >= 2**mostSignificantBit(x) and x < 2**(mostSignificantBit(x)+1)
-    /// @dev Modified from [Solady](https://github.com/Vectorized/solady/blob/37b4fd04dd82977eb0161839389187abb7afdb58/src/utils/LibBit.sol#L17)
+    /// @dev Modified from [Solady](https://github.com/Vectorized/solady/blob/a6e41377a77084d6dc3cc54c34eb09e98c9f8204/src/utils/LibBit.sol#L16)
     /// @param x the value for which to compute the most significant bit, must be greater than 0
     /// @return r the index of the most significant bit
     function mostSignificantBit(uint256 x) internal pure returns (uint8 r) {
@@ -22,19 +22,11 @@ library BitMath {
             r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
             // r += (x >> r) >= 2**32 ? 32 : 0
             r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
-
-            // For the remaining 32 bits, use a De Bruijn lookup.
-            // https://graphics.stanford.edu/~seander/bithacks.html#IntegerLogDeBruijn
-            x := shr(r, x)
-            x := or(x, shr(1, x))
-            x := or(x, shr(2, x))
-            x := or(x, shr(4, x))
-            x := or(x, shr(8, x))
-            x := or(x, shr(16, x))
-
+            r := or(r, shl(4, lt(0xffff, shr(r, x))))
+            r := or(r, shl(3, lt(0xff, shr(r, x))))
             // forgefmt: disable-next-item
-            r := or(r, byte(shr(251, mul(x, shl(224, 0x07c4acdd))),
-                0x0009010a0d15021d0b0e10121619031e080c141c0f111807131b17061a05041f))
+            r := or(r, byte(and(0x1f, shr(shr(r, x), 0x8421084210842108cc6318c6db6d54be)),
+                0x0706060506020504060203020504030106050205030304010505030400000000))
         }
     }
 
@@ -42,7 +34,7 @@ library BitMath {
     ///     where the least significant bit is at index 0 and the most significant bit is at index 255
     /// @dev The function satisfies the property:
     ///     (x & 2**leastSignificantBit(x)) != 0 and (x & (2**(leastSignificantBit(x)) - 1)) == 0)
-    /// @dev Modified from [Solady](https://github.com/Vectorized/solady/blob/37b4fd04dd82977eb0161839389187abb7afdb58/src/utils/LibBit.sol#L72)
+    /// @dev Modified from [Solady](https://github.com/Vectorized/solady/blob/a6e41377a77084d6dc3cc54c34eb09e98c9f8204/src/utils/LibBit.sol#L53)
     /// @param x the value for which to compute the least significant bit, must be greater than 0
     /// @return r the index of the least significant bit
     function leastSignificantBit(uint256 x) internal pure returns (uint8 r) {
@@ -52,19 +44,17 @@ library BitMath {
 
             // Isolate the least significant bit, x = x & -x = x & (~x + 1)
             x := and(x, sub(0, x))
-
-            // r = x >= 2**128 ? 128 : 0
-            r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
-            // r += (x >> r) >= 2**64 ? 64 : 0
-            r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
-            // r += (x >> r) >= 2**32 ? 32 : 0
-            r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
-
-            // For the remaining 32 bits, use a De Bruijn lookup.
+            // For the upper 3 bits of the result, use a De Bruijn-like lookup.
+            // Credit to adhusson: https://blog.adhusson.com/cheap-find-first-set-evm/
+            // forgefmt: disable-next-item
+            r := shl(5, shr(252, shl(shl(2, shr(250, mul(x,
+                0xb6db6db6ddddddddd34d34d349249249210842108c6318c639ce739cffffffff))),
+                0x8040405543005266443200005020610674053026020000107506200176117077)))
+            // For the lower 5 bits of the result, use a De Bruijn lookup.
             // https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightMultLookup
             // forgefmt: disable-next-item
-            r := or(r, byte(shr(251, mul(shr(r, x), shl(224, 0x077cb531))),
-                0x00011c021d0e18031e16140f191104081f1b0d17151310071a0c12060b050a09))
+            r := or(r, byte(and(div(0xd76453e0, shr(r, x)), 0x1f),
+                0x001f0d1e100c1d070f090b19131c1706010e11080a1a141802121b1503160405))
         }
     }
 }
