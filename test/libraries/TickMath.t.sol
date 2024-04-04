@@ -1,27 +1,28 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {TickMathTest} from "src/test/TickMathTest.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
 import {JavascriptFfi} from "test/utils/JavascriptFfi.sol";
 
-contract TickMathTestTest is Test, JavascriptFfi {
-    int24 constant MIN_TICK = -887272;
-    int24 constant MAX_TICK = -MIN_TICK;
+contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
+    int24 internal constant MIN_TICK = TickMath.MIN_TICK;
+    int24 internal constant MAX_TICK = TickMath.MAX_TICK;
 
-    uint160 constant MIN_SQRT_RATIO = 4295128739;
-    uint160 constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
+    uint160 internal constant MIN_SQRT_RATIO = TickMath.MIN_SQRT_RATIO;
+    uint160 internal constant MAX_SQRT_RATIO = TickMath.MAX_SQRT_RATIO;
 
-    uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
+    uint160 internal constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
 
-    uint256 constant ONE_PIP = 1e6;
+    uint256 internal constant ONE_PIP = 1e6;
 
-    uint160[] getSqrtRatioAtTickFuzzResults;
-    int24[] getTickAtSqrtRatioFuzzResults;
+    uint160[] internal getSqrtRatioAtTickFuzzResults;
+    int24[] internal getTickAtSqrtRatioFuzzResults;
 
-    TickMathTest tickMath;
+    TickMathTest internal tickMath;
 
     function setUp() public {
         tickMath = new TickMathTest();
@@ -172,5 +173,24 @@ contract TickMathTestTest is Test, JavascriptFfi {
             int24 resultsDiff = gtResult - ltResult;
             assertLt(resultsDiff, 2);
         }
+    }
+
+    /// @notice Benchmark the gas cost of `getSqrtRatioAtTick`
+    function test_getSqrtRatioAtTick_gasCost() public {
+        snapStart("TickMathGetSqrtRatioAtTick");
+        for (int24 tick = -50; tick < 50;) {
+            TickMath.getSqrtRatioAtTick(tick++);
+        }
+        snapEnd();
+    }
+
+    /// @notice Benchmark the gas cost of `getTickAtSqrtRatio`
+    function test_getTickAtSqrtRatio_gasCost() public {
+        snapStart("TickMathGetTickAtSqrtRatio");
+        uint160 sqrtPriceX96 = 1 << 33;
+        for (uint256 i; i++ < 100; sqrtPriceX96 <<= 1) {
+            TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+        }
+        snapEnd();
     }
 }
