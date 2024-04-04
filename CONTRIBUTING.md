@@ -20,7 +20,7 @@ Feel free to tag the issue as a “good first issue” for any clean-up related 
 
 ## Opening a Pull Request
 
-All pull requests should be opened against the `main` branch.  In the pull request, please reference the issue you are fixing.
+All pull requests should be opened against the `main` branch. In the pull request, please reference the issue you are fixing.
 
 Pull requests can be reviewed by community members, but to be merged they will need approval from the repository maintainers. Please understand it will take time to receive a response, although the maintainers will aim to respond and comment as soon as possible.
 
@@ -32,33 +32,23 @@ Finally, before opening a pull request please do the following:
 - Run the tests and snapshots. Commands are outlined in the [tests](#tests) section.
 - Document any new functions, structs, or interfaces following the natspec standard.
 - Add tests! For smaller contributions, they should be tested with unit tests, and fuzz tests where possible. For bigger contributions, they should be tested with integration tests and invariant tests where possible.
-- Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification) 
+- Make sure all commits are [signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification)
 
 ## Standards
 
 All contributions must follow the below standards. Maintainers will close out PRs that do not adhere to these standards.
 
 1. All contracts should be formatted with the default forge fmt config. Run `forge fmt`.
-2. These contracts follow the [solidity style guide](https://docs.soliditylang.org/en/v0.8.17/style-guide.html) with one minor exception of using the _prependUnderscore style naming for internal contract functions, internal top-level parameters, and function parameters with naming collisions.
+2. These contracts follow the [solidity style guide](https://docs.soliditylang.org/en/v0.8.17/style-guide.html) with one minor exception of using the \_prependUnderscore style naming for internal contract functions, internal top-level parameters, and function parameters with naming collisions.
 3. All external facing contracts should inherit from interfaces, which specify and document its functions with natspec.
 4. Picking up stale issues by other authors is fine! Please just communicate with them ahead of time and it is best practice to include co-authors in any commits.
 5. Squash commits where possible to make reviews clean and efficient. PRs that are merged to main will be squashed into 1 commit.
 
-## Tests
+## Setup
 
-This repo currently uses hardhat and forge tests. Please run both test suites before opening a PR.
+`forge build` to get contract artifacts and dependencies for forge
 
-`yarn snapshots` to update the hardhat gas snapshots
-
-`yarn test` to run hardhat tests
-
-`yarn prettier` to run the formatter (runs both typescript and solidity formatting)
-
-`forge snapshot`to update the forge gas snapshots
-
-`forge test` to run forge tests
-
-Any new tests that you add should be written with forge, as the repo is undergoing a full migration to the forge test suite.
+`forge test` to run forge tests and update snapshots
 
 ## Code of Conduct
 
