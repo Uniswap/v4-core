@@ -102,7 +102,10 @@ library FullMath {
     }
 
     /// @notice Calculates x * y / 2^96 with full precision.
-    function mulDiv96(uint256 x, uint256 y) internal pure returns (uint256 result) {
+    /// @param a The multiplicand
+    /// @param b The multiplier
+    /// @return result The 256-bit result
+    function mulDiv96(uint256 a, uint256 b) internal pure returns (uint256 result) {
         /// @solidity memory-safe-assembly
         assembly {
             // 512-bit multiply `[prod1 prod0] = x * y`.
@@ -112,18 +115,13 @@ library FullMath {
             // variables such that `product = prod1 * 2**256 + prod0`.
 
             // Least significant 256 bits of the product.
-            let prod0 := mul(x, y)
-            let mm := mulmod(x, y, not(0))
+            let prod0 := mul(a, b)
+            let mm := mulmod(a, b, not(0))
             // Most significant 256 bits of the product.
             let prod1 := sub(mm, add(prod0, lt(mm, prod0)))
 
             // Make sure the result is less than `2**256`.
-            if iszero(gt(0x1000000000000000000000000, prod1)) {
-                // Store the function selector of `FullMulDivFailed()`.
-                mstore(0x00, 0xae47f702)
-                // Revert with (offset, size).
-                revert(0x1c, 0x04)
-            }
+            if shr(96, prod1) { revert(0, 0) }
 
             // Divide [prod1 prod0] by 2^96.
             result := or(shr(96, prod0), shl(160, prod1))

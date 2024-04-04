@@ -7,8 +7,9 @@ import {FullMath} from "src/libraries/FullMath.sol";
 contract FullMathTest is Test {
     using FullMath for uint256;
 
-    uint256 constant Q128 = 2 ** 128;
-    uint256 constant MAX_UINT256 = type(uint256).max;
+    uint256 internal constant Q96 = 2 ** 96;
+    uint256 internal constant Q128 = 2 ** 128;
+    uint256 internal constant MAX_UINT256 = type(uint256).max;
 
     function test_mulDiv_revertsWith0Denominator(uint256 x, uint256 y) public {
         vm.expectRevert();
@@ -54,6 +55,30 @@ contract FullMathTest is Test {
         vm.assume(y != 0);
         vm.assume(x <= type(uint256).max / y);
         assertEq(FullMath.mulDiv(x, y, d), x * y / d);
+    }
+
+    function test_mulDiv96_revertsIfOutputOverflows() public {
+        vm.expectRevert();
+        FullMath.mulDiv96(1 << 176, 1 << 176);
+    }
+
+    function test_mulDiv96_validWithPhantomOverflow() public {
+        assertEq(FullMath.mulDiv96(MAX_UINT256, Q96), MAX_UINT256);
+    }
+
+    /// @notice Test `mulDiv96` against `mulDiv` with a denominator of `Q96`.
+    function test_mulDiv96_fuzz(uint256 a, uint256 b) public {
+        // Most significant 256 bits of the product.
+        uint256 prod1;
+        assembly {
+            // Least significant 256 bits of the product.
+            let prod0 := mul(a, b)
+            let mm := mulmod(a, b, not(0))
+            prod1 := sub(mm, add(prod0, lt(mm, prod0)))
+        }
+        // assume that the `mulDiv` will not overflow
+        vm.assume(Q96 > prod1);
+        assertEq(FullMath.mulDiv96(a, b), FullMath.mulDiv(a, b, Q96));
     }
 
     function test_mulDivRoundingUp_revertsWith0Denominator(uint256 x, uint256 y) public {
