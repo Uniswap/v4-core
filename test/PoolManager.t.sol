@@ -1015,7 +1015,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), 0);
     }
 
-    function test_collectProtocolFees_ERC20_accumulateFees_gas_exactOutput() public {
+    function test_collectProtocolFees_ERC20_accumulateFees_exactOutput() public {
         uint256 expectedFees = 11;
 
         feeController.setProtocolFeeForPool(key.toId(), MAX_PROTOCOL_FEE_BOTH_TOKENS);

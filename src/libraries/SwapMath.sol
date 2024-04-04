@@ -43,11 +43,11 @@ library SwapMath {
             bool exactIn = amountRemaining < 0;
 
             if (exactIn) {
+                uint256 amountRemainingLessFee = uint256(-amountRemaining);
                 if (protocolFeePips > 0) {
-                    protocolFeeAmount = FullMath.mulDiv(uint256(-amountRemaining), protocolFeePips, 1e6);
+                    amountRemainingLessFee = FullMath.mulDiv(amountRemainingLessFee, 1e6 - protocolFeePips, 1e6);
                 }
-                uint256 amountRemainingLessFee =
-                    FullMath.mulDiv(uint256(-amountRemaining) - protocolFeeAmount, 1e6 - swapFeePips, 1e6);
+                amountRemainingLessFee = FullMath.mulDiv(amountRemainingLessFee, 1e6 - swapFeePips, 1e6);
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, true);
@@ -102,7 +102,8 @@ library SwapMath {
                 if (protocolFeePips > 0) {
                     protocolFeeAmount = FullMath.mulDivRoundingUp(amountIn, protocolFeePips, 1e6 - protocolFeePips);
                 }
-                totalFeeAmount = FullMath.mulDivRoundingUp(amountIn - protocolFeeAmount, swapFeePips, 1e6 - swapFeePips);
+                totalFeeAmount = protocolFeeAmount
+                    + FullMath.mulDivRoundingUp(amountIn - protocolFeeAmount, swapFeePips, 1e6 - swapFeePips);
             }
         }
     }
