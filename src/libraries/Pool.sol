@@ -11,6 +11,7 @@ import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
+import "forge-std/console.sol";
 
 library Pool {
     using SafeCast for *;
@@ -285,8 +286,8 @@ library Pool {
         uint256 amountIn;
         // how much is being swapped out
         uint256 amountOut;
-        // how much fee (swap + protocol) is being paid in
-        uint256 totalFeeAmount;
+        // how much fee is being paid in
+        uint256 feeAmount;
     }
 
     struct SwapParams {
@@ -340,6 +341,9 @@ library Pool {
             liquidity: cache.liquidityStart
         });
 
+        uint24 effectiveFee = (1 - (1- swapFee / 1e6) * (1- cache.protocolFee / 1e6)) * 1e6;
+        console.log("effective rate is %s", effectiveFee);
+
         StepComputations memory step;
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
@@ -359,7 +363,7 @@ library Pool {
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
 
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
-            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.totalFeeAmount, feeForProtocol) = SwapMath
+            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath
                 .computeSwapStep(
                 state.sqrtPriceX96,
                 (
@@ -369,28 +373,31 @@ library Pool {
                 ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                swapFee,
-                cache.protocolFee
+                uint24(effectiveFee)
             );
 
             if (exactInput) {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
-                    state.amountSpecifiedRemaining += (step.amountIn + step.totalFeeAmount).toInt256();
+                    state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
                 }
                 state.amountCalculated = state.amountCalculated + step.amountOut.toInt256();
             } else {
                 unchecked {
                     state.amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
-                state.amountCalculated = state.amountCalculated - (step.amountIn + step.totalFeeAmount).toInt256();
+                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
+
+
+
+
 
             // update global fee tracker
             if (state.liquidity > 0) {
                 unchecked {
                     state.feeGrowthGlobalX128 +=
-                        FullMath.mulDiv((step.totalFeeAmount - feeForProtocol), FixedPoint128.Q128, state.liquidity);
+                        FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
                 }
             }
 

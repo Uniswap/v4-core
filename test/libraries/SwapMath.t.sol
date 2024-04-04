@@ -22,11 +22,10 @@ contract SwapMathTest is Test, GasSnapshot {
         uint128 liquidity = 2 ether;
         int256 amount = 1 ether;
         uint24 swapFee = 600;
-        uint16 protocolFee = 0;
         bool zeroForOne = false;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
-            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee, protocolFee);
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee);
 
         assertEq(amountIn, 9975124224178055);
         assertEq(amountOut, 9925619580021728);
@@ -46,11 +45,10 @@ contract SwapMathTest is Test, GasSnapshot {
         uint128 liquidity = 2 ether;
         int256 amount = (1 ether) * -1;
         uint24 swapFee = 600;
-        uint16 protocolFee = 0;
         bool zeroForOne = false;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
-            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee, protocolFee);
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee);
 
         assertEq(amountIn, 9975124224178055);
         assertEq(amountOut, 9925619580021728);
@@ -70,11 +68,10 @@ contract SwapMathTest is Test, GasSnapshot {
         uint128 liquidity = 2 ether;
         int256 amount = 1 ether * -1;
         uint24 swapFee = 600;
-        uint16 protocolFee = 0;
         bool zeroForOne = false;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
-            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee, protocolFee);
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee);
 
         assertEq(amountIn, 999400000000000000);
         assertEq(amountOut, 666399946655997866);
@@ -94,11 +91,10 @@ contract SwapMathTest is Test, GasSnapshot {
         uint128 liquidity = 2 ether;
         int256 amount = (1 ether);
         uint24 swapFee = 600;
-        uint16 protocolFee = 0;
         bool zeroForOne = false;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
-            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee, protocolFee);
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee);
 
         assertEq(amountIn, 2000000000000000000);
         assertEq(feeAmount, 1200720432259356);
@@ -112,8 +108,8 @@ contract SwapMathTest is Test, GasSnapshot {
     }
 
     function test_amountOut_isCappedAtTheDesiredAmountOut() public {
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) = SwapMath.computeSwapStep(
-            417332158212080721273783715441582, 1452870262520218020823638996, 159344665391607089467575320103, 1, 1, 0
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) = SwapMath.computeSwapStep(
+            417332158212080721273783715441582, 1452870262520218020823638996, 159344665391607089467575320103, 1, 1
         );
 
         assertEq(amountIn, 1);
@@ -123,8 +119,8 @@ contract SwapMathTest is Test, GasSnapshot {
     }
 
     function test_targetPriceOf1UsesPartialInputAmount() public {
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
-            SwapMath.computeSwapStep(2, 1, 1, 3915081100057732413702495386755767, 1, 0);
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(2, 1, 1, 3915081100057732413702495386755767, 1);
         assertEq(amountIn, 39614081257132168796771975168);
         assertEq(feeAmount, 39614120871253040049813);
         assert(amountIn + feeAmount <= 3915081100057732413702495386755767);
@@ -133,8 +129,8 @@ contract SwapMathTest is Test, GasSnapshot {
     }
 
     function test_entireInputAmountTakenAsFee() public {
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
-            SwapMath.computeSwapStep(2413, 79887613182836312, 1985041575832132834610021537970, -10, 1872, 0);
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(2413, 79887613182836312, 1985041575832132834610021537970, -10, 1872);
 
         assertEq(amountIn, 0);
         assertEq(feeAmount, 10);
@@ -151,8 +147,8 @@ contract SwapMathTest is Test, GasSnapshot {
         int256 amountRemaining = 4;
         uint24 feePips = 3000;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
-            SwapMath.computeSwapStep(sqrtP, sqrtPTarget, liquidity, amountRemaining, feePips, 0);
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(sqrtP, sqrtPTarget, liquidity, amountRemaining, feePips);
 
         assertEq(amountOut, 0);
         assertEq(sqrtQ, sqrtPTarget);
@@ -169,8 +165,8 @@ contract SwapMathTest is Test, GasSnapshot {
         int256 amountRemaining = 263000;
         uint24 feePips = 3000;
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
-            SwapMath.computeSwapStep(sqrtP, sqrtPTarget, liquidity, amountRemaining, feePips, 0);
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(sqrtP, sqrtPTarget, liquidity, amountRemaining, feePips);
 
         assertEq(amountOut, 26214);
         assertEq(sqrtQ, sqrtPTarget);
@@ -190,8 +186,8 @@ contract SwapMathTest is Test, GasSnapshot {
         vm.assume(feePips > 0);
         vm.assume(feePips < 1e6);
 
-        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount,) =
-            SwapMath.computeSwapStep(sqrtPriceRaw, sqrtPriceTargetRaw, liquidity, amountRemaining, feePips, 0);
+        (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
+            SwapMath.computeSwapStep(sqrtPriceRaw, sqrtPriceTargetRaw, liquidity, amountRemaining, feePips);
 
         assertLe(amountIn, type(uint256).max - feeAmount);
 
@@ -228,49 +224,49 @@ contract SwapMathTest is Test, GasSnapshot {
 
     function test_swapOneForZero_exactInCapped() public {
         snapStart("SwapMath_oneForZero_exactInCapped");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, (1 ether) * -1, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, (1 ether) * -1, 600);
         snapEnd();
     }
 
     function test_swapZeroForOne_exactInCapped() public {
         snapStart("SwapMath_zeroForOne_exactInCapped");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, (1 ether) * -1, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, (1 ether) * -1, 600);
         snapEnd();
     }
 
     function test_swapOneForZero_exactOutCapped() public {
         snapStart("SwapMath_oneForZero_exactOutCapped");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, 1 ether, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_101_100, 2 ether, 1 ether, 600);
         snapEnd();
     }
 
     function test_swapZeroForOne_exactOutCapped() public {
         snapStart("SwapMath_zeroForOne_exactOutCapped");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, 1 ether, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_100, 2 ether, 1 ether, 600);
         snapEnd();
     }
 
     function test_swapOneForZero_exactInPartial() public {
         snapStart("SwapMath_oneForZero_exactInPartial");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000 * -1, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000 * -1, 600);
         snapEnd();
     }
 
     function test_swapZeroForOne_exactInPartial() public {
         snapStart("SwapMath_zeroForOne_exactInPartial");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000 * -1, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000 * -1, 600);
         snapEnd();
     }
 
     function test_swapOneForZero_exactOutPartial() public {
         snapStart("SwapMath_oneForZero_exactOutPartial");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_1010_100, 2 ether, 1_000, 600);
         snapEnd();
     }
 
     function test_swapZeroForOne_exactOutPartial() public {
         snapStart("SwapMath_zeroForOne_exactOutPartial");
-        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000, 600, 0);
+        SwapMath.computeSwapStep(SQRT_RATIO_1_1, SQRT_RATIO_99_1000, 2 ether, 1_000, 600);
         snapEnd();
     }
 }
