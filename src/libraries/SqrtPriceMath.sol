@@ -53,16 +53,14 @@ library SqrtPriceMath {
             // denominator is checked for overflow
             return uint160(numerator1.divRoundingUp(numerator1.div(sqrtPX96) + amount));
         } else {
-            uint256 denominator;
-            /// @solidity memory-safe-assembly
-            assembly {
+            unchecked {
+                uint256 product = amount * sqrtPX96;
                 // if the product overflows, we know the denominator underflows
                 // in addition, we must check that the denominator does not underflow
-                let product := mul(amount, sqrtPX96)
-                if iszero(and(eq(div(product, amount), sqrtPX96), gt(numerator1, product))) { revert(0, 0) }
-                denominator := sub(numerator1, product)
+                if (!(product.div(amount) == sqrtPX96 && numerator1 > product)) revert PriceOverflow();
+                uint256 denominator = numerator1 - product;
+                return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
             }
-            return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
         }
     }
 
