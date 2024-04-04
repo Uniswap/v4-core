@@ -147,21 +147,14 @@ library TickMath {
             msb := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
             msb := or(msb, shl(6, lt(0xffffffffffffffff, shr(msb, x))))
             msb := or(msb, shl(5, lt(0xffffffff, shr(msb, x))))
-
-            // For the remaining 32 bits, use a De Bruijn lookup.
-            x := shr(msb, x)
-            x := or(x, shr(1, x))
-            x := or(x, shr(2, x))
-            x := or(x, shr(4, x))
-            x := or(x, shr(8, x))
-            x := or(x, shr(16, x))
-
+            msb := or(msb, shl(4, lt(0xffff, shr(msb, x))))
+            msb := or(msb, shl(3, lt(0xff, shr(msb, x))))
             msb :=
                 or(
                     msb,
                     byte(
-                        shr(251, mul(x, shl(224, 0x07c4acdd))),
-                        0x0009010a0d15021d0b0e10121619031e080c141c0f111807131b17061a05041f
+                        and(0x1f, shr(shr(msb, x), 0x8421084210842108cc6318c6db6d54be)),
+                        0x0706060506020504060203020504030106050205030304010505030400000000
                     )
                 )
         }
