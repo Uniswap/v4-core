@@ -4,7 +4,6 @@ pragma solidity ^0.8.20;
 import {Currency} from "../types/Currency.sol";
 
 library Reserves {
-
     /// uint256(keccak256("ReservesOf")) - 1
     uint256 constant RESERVES_OF_SLOT = uint256(0x1e0745a7db1623981f0b2a5d4232364c00787266eb75ad546f190e6cebe9bd95);
 
