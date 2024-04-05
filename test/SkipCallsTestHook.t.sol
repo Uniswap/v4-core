@@ -153,7 +153,6 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 0);
 
         // swaps and increments counter
-
         swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
         // swaps again and increments counter
