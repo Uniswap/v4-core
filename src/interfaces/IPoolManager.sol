@@ -81,8 +81,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
-
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
 
@@ -192,10 +190,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
-
-    /// @notice Sets the protocol's swap fee for the given pool
-    /// Protocol fees are always a portion of the LP swap fee that is owed. If that fee is 0, no protocol fees will accrue even if it is set to > 0.
-    function setProtocolFee(PoolKey memory key) external;
 
     /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
     function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external;
