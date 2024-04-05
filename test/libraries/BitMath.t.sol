@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
-import {BitMath} from "../src/libraries/BitMath.sol";
+import {BitMath} from "src/libraries/BitMath.sol";
 
 contract TestBitMath is Test, GasSnapshot {
     function testMostSignificantBitZero() public {
