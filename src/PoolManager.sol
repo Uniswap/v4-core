@@ -58,14 +58,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         override
         returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee)
     {
-        Pool.Slot0 memory slot0 = _getPool(id).slot0;
+        Pool.Slot0 memory slot0 = pools[id].slot0;
 
         return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee, slot0.swapFee);
     }
 
     /// @inheritdoc IPoolManager
     function getLiquidity(PoolId id) external view override returns (uint128 liquidity) {
-        return _getPool(id).liquidity;
+        return pools[id].liquidity;
     }
 
     /// @inheritdoc IPoolManager
@@ -75,7 +75,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         override
         returns (uint128 liquidity)
     {
-        return _getPool(id).positions.get(_owner, tickLower, tickUpper).liquidity;
+        return pools[id].positions.get(_owner, tickLower, tickUpper).liquidity;
     }
 
     function getPosition(PoolId id, address _owner, int24 tickLower, int24 tickUpper)
@@ -84,7 +84,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         override
         returns (Position.Info memory position)
     {
-        return _getPool(id).positions.get(_owner, tickLower, tickUpper);
+        return pools[id].positions.get(_owner, tickLower, tickUpper);
     }
 
     /// @inheritdoc IPoolManager
@@ -122,7 +122,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolId id = key.toId();
         (, uint24 protocolFee) = _fetchProtocolFee(key);
 
-        tick = _getPool(id).initialize(sqrtPriceX96, protocolFee, swapFee);
+        tick = pools[id].initialize(sqrtPriceX96, protocolFee, swapFee);
 
         key.hooks.afterInitialize(key, sqrtPriceX96, tick, hookData);
 
@@ -167,7 +167,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function _checkPoolInitialized(PoolId id) internal view {
-        if (_getPool(id).isNotInitialized()) revert PoolNotInitialized();
+        if (pools[id].isNotInitialized()) revert PoolNotInitialized();
     }
 
     /// @inheritdoc IPoolManager
@@ -181,7 +181,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
-        delta = _getPool(id).modifyLiquidity(
+        delta = pools[id].modifyLiquidity(
             Pool.ModifyLiquidityParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -214,7 +214,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         uint256 feeForProtocol;
         uint24 swapFee;
         Pool.SwapState memory state;
-        (delta, feeForProtocol, swapFee, state) = _getPool(id).swap(
+        (delta, feeForProtocol, swapFee, state) = pools[id].swap(
             Pool.SwapParams({
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
@@ -250,7 +250,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
-        delta = _getPool(id).donate(amount0, amount1);
+        delta = pools[id].donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta);
 
@@ -302,7 +302,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicSwapFeeUpdate();
         newDynamicSwapFee.validate();
         PoolId id = key.toId();
-        _getPool(id).setSwapFee(newDynamicSwapFee);
+        pools[id].setSwapFee(newDynamicSwapFee);
     }
 
     function extsload(bytes32 slot) external view returns (bytes32 value) {
@@ -330,11 +330,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory) {
-        return _getPool(id).getPoolTickInfo(tick);
+        return pools[id].getPoolTickInfo(tick);
     }
 
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
-        return _getPool(id).getPoolBitmapInfo(word);
+        return pools[id].getPoolBitmapInfo(word);
     }
 
     function getFeeGrowthGlobals(PoolId id)
@@ -342,6 +342,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         view
         returns (uint256 feeGrowthGlobal0x128, uint256 feeGrowthGlobal1x128)
     {
-        return _getPool(id).getFeeGrowthGlobals();
+        return pools[id].getFeeGrowthGlobals();
     }
 }

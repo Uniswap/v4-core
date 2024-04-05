@@ -26,6 +26,33 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
         controllerGasLimit = _controllerGasLimit;
     }
 
+    /// @inheritdoc IProtocolFees
+    function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
+        protocolFeeController = controller;
+        emit ProtocolFeeControllerUpdated(address(controller));
+    }
+
+    /// @inheritdoc IProtocolFees
+    function setProtocolFee(PoolKey memory key) external {
+        (bool success, uint24 newProtocolFee) = _fetchProtocolFee(key);
+        if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
+        PoolId id = key.toId();
+        _getPool(id).setProtocolFee(newProtocolFee);
+        emit ProtocolFeeUpdated(id, newProtocolFee);
+    }
+
+    /// @inheritdoc IProtocolFees
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected)
+    {
+        if (msg.sender != address(protocolFeeController)) revert InvalidCaller();
+
+        amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
+        protocolFeesAccrued[currency] -= amountCollected;
+        currency.transfer(recipient, amountCollected);
+    }
+
     function _getPool(PoolId id) internal virtual returns (Pool.State storage);
 
     /// @notice Fetch the protocol fees for a given pool, returning false if the call fails or the returned fees are invalid.
@@ -60,29 +87,5 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
         unchecked {
             protocolFeesAccrued[currency] += amount;
         }
-    }
-
-    function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
-        protocolFeeController = controller;
-        emit ProtocolFeeControllerUpdated(address(controller));
-    }
-
-    function setProtocolFee(PoolKey memory key) external {
-        (bool success, uint24 newProtocolFee) = _fetchProtocolFee(key);
-        if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
-        PoolId id = key.toId();
-        _getPool(id).setProtocolFee(newProtocolFee);
-        emit ProtocolFeeUpdated(id, newProtocolFee);
-    }
-
-    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
-        external
-        returns (uint256 amountCollected)
-    {
-        if (msg.sender != address(protocolFeeController)) revert InvalidCaller();
-
-        amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
-        protocolFeesAccrued[currency] -= amountCollected;
-        currency.transfer(recipient, amountCollected);
     }
 }
