@@ -24,7 +24,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
-        (, currency2) = deployMintAndApprove2Currencies();
+        currency2 = deployMintAndApproveCurrency();
         badRouter = new BadRouter(manager);
     }
 
@@ -42,7 +42,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         assertEq(manager.getReserves(currency0), uint256(0));
         uint256 balance = manager.sync(currency0);
-        assertEq(balance, currency0Balance);
+        assertEq(balance, currency0Balance, "balance not equal");
     }
 
     function test_settle_withBalance() public {
