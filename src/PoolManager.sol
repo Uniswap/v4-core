@@ -350,4 +350,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
         return pools[id].getPoolBitmapInfo(word);
     }
+
+    function getReserves(Currency currency) external view returns (uint256 balance) {
+        return currency.getReserves();
+    }
 }

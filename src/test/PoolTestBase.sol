@@ -16,7 +16,7 @@ abstract contract PoolTestBase is IUnlockCallback {
         manager = _manager;
     }
 
-    function _take(Currency currency, address recipient, int128 amount, bool withdrawTokens) internal {
+    function _take(Currency currency, address recipient, int128 amount, bool withdrawTokens) internal virtual {
         require(amount > 0, "amount is not greater than zero");
         if (withdrawTokens) {
             manager.take(currency, recipient, uint128(amount));
@@ -25,7 +25,7 @@ abstract contract PoolTestBase is IUnlockCallback {
         }
     }
 
-    function _settle(Currency currency, address payer, int128 amount, bool settleUsingTransfer) internal {
+    function _settle(Currency currency, address payer, int128 amount, bool settleUsingTransfer) internal virtual {
         require(amount < 0, "amount is not less than zero");
         if (settleUsingTransfer) {
             if (currency.isNative()) {
