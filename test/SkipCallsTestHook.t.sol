@@ -40,7 +40,6 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         vm.etch(address(skipCallsTestHook), address(impl).code);
         deployFreshManagerAndRouters();
         skipCallsTestHook.setManager(IPoolManager(manager));
-
         (currency0, currency1) = deployMintAndApprove2Currencies();
 
         assertEq(skipCallsTestHook.counter(), 0);
@@ -55,127 +54,159 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     }
 
     function test_beforeInitialize_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook =
-            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_INITIALIZE_FLAG));
+        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_INITIALIZE_FLAG))
+        );
 
+        // initializes pool and increments counter
         deploy(skipCallsTestHook);
-
         assertEq(skipCallsTestHook.counter(), 1);
     }
 
     function test_afterInitialize_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook =
-            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_INITIALIZE_FLAG));
+        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_INITIALIZE_FLAG))
+        );
 
+        // initializes pool and increments counter
         deploy(skipCallsTestHook);
-
         assertEq(skipCallsTestHook.counter(), 1);
     }
 
     function test_beforeAddLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_ADD_LIQUIDITY_FLAG)
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_ADD_LIQUIDITY_FLAG))
         );
 
         deploy(skipCallsTestHook);
+        assertEq(skipCallsTestHook.counter(), 0);
 
+        // adds liquidity and increments counter
         approveAndAddLiquidity(skipCallsTestHook);
         assertEq(skipCallsTestHook.counter(), 1);
+        // adds liquidity again and increments counter
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_afterAddLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_ADD_LIQUIDITY_FLAG)
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_ADD_LIQUIDITY_FLAG))
         );
 
         deploy(skipCallsTestHook);
+        assertEq(skipCallsTestHook.counter(), 0);
 
+        // adds liquidity and increments counter
         approveAndAddLiquidity(skipCallsTestHook);
         assertEq(skipCallsTestHook.counter(), 1);
+        // adds liquidity and increments counter again
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_beforeRemoveLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG)
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG))
         );
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
+        assertEq(skipCallsTestHook.counter(), 0);
 
+        // removes liquidity and increments counter
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        // adds liquidity again
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        // removes liquidity again and increments counter
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_afterRemoveLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG))
         );
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
+        assertEq(skipCallsTestHook.counter(), 0);
 
+        // removes liquidity and increments counter
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        // adds liquidity again
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        // removes liquidity again and increments counter
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_beforeSwap_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook =
-            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG));
+        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG))
+        );
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
+        assertEq(skipCallsTestHook.counter(), 0);
 
+        // swaps and increments counter
         swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        // swaps again and increments counter
         swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_afterSwap_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook =
-            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_SWAP_FLAG));
+        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_SWAP_FLAG))
+        );
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
+        assertEq(skipCallsTestHook.counter(), 0);
 
+        // swaps and increments counter
         swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        // swaps again and increments counter
         swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_beforeDonate_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook =
-            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_DONATE_FLAG));
+        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_DONATE_FLAG))
+        );
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
+        assertEq(skipCallsTestHook.counter(), 0);
 
+        // donates and increments counter
         donateRouter.donate(key, 100, 200, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        // donates again and increments counter
         donateRouter.donate(key, 100, 200, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
     function test_afterDonate_skipIfCalledByHook() public {
-        SkipCallsTestHook skipCallsTestHook =
-            SkipCallsTestHook(address(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_DONATE_FLAG));
+        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_DONATE_FLAG))
+        );
 
         deploy(skipCallsTestHook);
         approveAndAddLiquidity(skipCallsTestHook);
+        assertEq(skipCallsTestHook.counter(), 0);
 
+        // donates and increments counter
         donateRouter.donate(key, 100, 200, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
+        // donates again and increments counter
         donateRouter.donate(key, 100, 200, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
