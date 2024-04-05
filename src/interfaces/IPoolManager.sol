@@ -34,6 +34,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
 
     /// @notice Thrown when the transient reserves are not in sync with the current balance
     error ReservesMustBeSynced();
+
     /// @notice Thrown when a call to updateDynamicSwapFee is made by an address that is not the hook,
     /// or on a pool that does not have a dynamic swap fee.
     error UnauthorizedDynamicSwapFeeUpdate();

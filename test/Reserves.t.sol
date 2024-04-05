@@ -6,6 +6,8 @@ import {Test} from "forge-std/Test.sol";
 import {Currency} from "../src/types/Currency.sol";
 
 contract ReservesTest is Test {
+    using Reserves for Currency;
+
     Currency currency0;
 
     function setUp() public {
@@ -13,20 +15,20 @@ contract ReservesTest is Test {
     }
 
     function test_get_succeeds_default() public {
-        uint256 value = Reserves.get(currency0);
+        uint256 value = currency0.getReserves();
         assertEq(value, 0);
     }
 
     function test_get_returns_set() public {
-        Reserves.set(currency0, 100);
-        uint256 value = Reserves.get(currency0);
+        currency0.setReserves(100);
+        uint256 value = currency0.getReserves();
         assertEq(value, 100);
     }
 
     function test_set_twice_returns_correct_value() public {
-        Reserves.set(currency0, 100);
-        Reserves.set(currency0, 200);
-        uint256 value = Reserves.get(currency0);
+        currency0.setReserves(100);
+        currency0.setReserves(200);
+        uint256 value = currency0.getReserves();
         assertEq(value, 200);
     }
 
@@ -35,7 +37,7 @@ contract ReservesTest is Test {
     }
 
     function test_fuzz_get_set(Currency currency, uint256 value) public {
-        Reserves.set(currency, value);
-        assertEq(Reserves.get(currency), value);
+        currency.setReserves(value);
+        assertEq(currency.getReserves(), value);
     }
 }

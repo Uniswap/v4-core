@@ -34,6 +34,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using CurrencyLibrary for Currency;
     using SwapFeeLibrary for uint24;
     using PoolGetters for Pool.State;
+    using Reserves for Currency;
 
     /// @inheritdoc IPoolManager
     int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
@@ -144,7 +145,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function sync(Currency currency) public returns (uint256 balance) {
         balance = currency.balanceOfSelf();
         if (balance == 0) balance = ZERO_BALANCE;
-        Reserves.set(currency, balance);
+        currency.setReserves(balance);
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
@@ -282,7 +283,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (currency.isNative()) {
             paid = msg.value;
         } else {
-            uint256 reservesBefore = Reserves.get(currency);
+            uint256 reservesBefore = currency.getReserves();
             if (reservesBefore == 0) revert ReservesMustBeSynced();
             uint256 reservesNow = sync(currency);
             paid = reservesBefore == ZERO_BALANCE ? reservesNow : reservesNow - reservesBefore;
