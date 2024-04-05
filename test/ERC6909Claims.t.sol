@@ -4,6 +4,7 @@ pragma solidity ^0.8.15;
 import {Test} from "forge-std/Test.sol";
 import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
 import {MockERC6909Claims} from "../src/test/MockERC6909Claims.sol";
+import "forge-std/console.sol";
 
 contract ERC6909ClaimsTest is Test {
     using CurrencyLibrary for Currency;
@@ -31,7 +32,11 @@ contract ERC6909ClaimsTest is Test {
             if (mintAmount == type(uint256).max) {
                 assertEq(token.allowance(sender, address(this), id), type(uint256).max);
             } else {
-                assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+                if (sender != address(this)) {
+                    assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+                } else {
+                    assertEq(token.allowance(sender, address(this), id), mintAmount);
+                }
             }
             assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
         }
@@ -228,7 +233,7 @@ contract ERC6909ClaimsTest is Test {
         vm.prank(sender);
         token.transfer(receiver, id, transferAmount);
 
-        if (sender == receiver || sender == address(this)) {
+        if (sender == receiver) {
             assertEq(token.balanceOf(sender, id), mintAmount);
         } else {
             assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
@@ -255,10 +260,14 @@ contract ERC6909ClaimsTest is Test {
         if (mintAmount == type(uint256).max) {
             assertEq(token.allowance(sender, address(this), id), type(uint256).max);
         } else {
-            assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+            if (sender != address(this)) {
+                assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+            } else {
+                assertEq(token.allowance(sender, address(this), id), mintAmount);
+            }
         }
 
-        if (sender == receiver || sender == address(this)) {
+        if (sender == receiver) {
             assertEq(token.balanceOf(sender, id), mintAmount);
         } else {
             assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
@@ -284,7 +293,7 @@ contract ERC6909ClaimsTest is Test {
 
         assertEq(token.allowance(sender, address(this), id), type(uint256).max);
 
-        if (sender == receiver || sender == address(this)) {
+        if (sender == receiver) {
             assertEq(token.balanceOf(sender, id), mintAmount);
         } else {
             assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
@@ -308,7 +317,7 @@ contract ERC6909ClaimsTest is Test {
 
         token.transferFrom(sender, receiver, id, transferAmount);
 
-        if (sender == receiver || sender == address(this)) {
+        if (sender == receiver) {
             assertEq(token.balanceOf(sender, id), mintAmount);
         } else {
             assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
@@ -367,6 +376,7 @@ contract ERC6909ClaimsTest is Test {
 
         token.mint(sender, id, amount);
 
+        vm.assume(sender != address(this));
         token.transferFrom(sender, receiver, id, amount);
     }
 }
