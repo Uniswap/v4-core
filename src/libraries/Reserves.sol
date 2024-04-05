@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
-import {Currency, CurrencyLibrary} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 
 library Reserves {
-    using CurrencyLibrary for Currency;
 
-    uint256 constant RESERVES_OF_SLOT = uint256(keccak256("ReservesOf")) - 1;
+    /// uint256(keccak256("ReservesOf")) - 1
+    uint256 constant RESERVES_OF_SLOT = uint256(0x1e0745a7db1623981f0b2a5d4232364c00787266eb75ad546f190e6cebe9bd95);
 
     function set(Currency currency, uint256 value) internal {
         bytes32 key = _getKey(currency);

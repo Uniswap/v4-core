@@ -30,6 +30,10 @@ contract ReservesTest is Test {
         assertEq(value, 200);
     }
 
+    function test_reservesOfSlot() public {
+        assertEq(uint256(keccak256("ReservesOf")) - 1, Reserves.RESERVES_OF_SLOT);
+    }
+
     function test_fuzz_get_set(Currency currency, uint256 value) public {
         Reserves.set(currency, value);
         assertEq(Reserves.get(currency), value);
