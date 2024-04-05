@@ -151,10 +151,10 @@ library Pool {
     /// @notice Effect changes to a position in a pool
     /// @dev PoolManager checks that the pool is initialized before calling
     /// @param params the position details and the change to the position's liquidity to effect
-    /// @return result the deltas of the token balances of the pool
+    /// @return delta the deltas of the token balances of the pool and the delta from fees
     function modifyLiquidity(State storage self, ModifyLiquidityParams memory params)
         internal
-        returns (BalanceDelta result)
+        returns (BalanceDelta delta, BalanceDelta feeDelta)
     {
         checkTicks(params.tickLower, params.tickUpper);
 
@@ -210,7 +210,7 @@ library Pool {
             if (self.slot0.tick < params.tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
-                result = toBalanceDelta(
+                delta = toBalanceDelta(
                     SqrtPriceMath.getAmount0Delta(
                         TickMath.getSqrtRatioAtTick(params.tickLower),
                         TickMath.getSqrtRatioAtTick(params.tickUpper),
@@ -219,7 +219,7 @@ library Pool {
                     0
                 );
             } else if (self.slot0.tick < params.tickUpper) {
-                result = toBalanceDelta(
+                delta = toBalanceDelta(
                     SqrtPriceMath.getAmount0Delta(
                         self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
                     ).toInt128(),
@@ -234,7 +234,7 @@ library Pool {
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
-                result = toBalanceDelta(
+                delta = toBalanceDelta(
                     0,
                     SqrtPriceMath.getAmount1Delta(
                         TickMath.getSqrtRatioAtTick(params.tickLower),
@@ -246,7 +246,7 @@ library Pool {
         }
 
         // Fees earned from LPing are added to the user's currency delta.
-        result = result + toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
+        feeDelta = toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
     struct SwapCache {
