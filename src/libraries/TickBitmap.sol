@@ -75,33 +75,7 @@ library TickBitmap {
         int24 compressed = compress(tick, tickSpacing);
         uint256 masked;
 
-        if (lte) {
-            (int16 wordPos, uint8 bitPos) = position(compressed);
-            // all the 1s at or to the right of the current bitPos
-            // mask = (1 << (bitPos + 1)) - 1
-            // (bitPos + 1) may be 256 but fine
-            // masked = self[wordPos] & mask
-            assembly ("memory-safe") {
-                mstore(0, wordPos)
-                mstore(0x20, self.slot)
-                let mask := sub(shl(add(bitPos, 1), 1), 1)
-                masked := and(sload(keccak256(0, 0x40)), mask)
-                initialized := gt(masked, 0)
-            }
-
-            // if there are no initialized ticks to the right of or at the current tick, return rightmost in the word
-            // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
-            if (initialized) {
-                uint8 msb = BitMath.mostSignificantBit(masked);
-                assembly {
-                    next := mul(add(sub(compressed, bitPos), msb), tickSpacing)
-                }
-            } else {
-                assembly {
-                    next := mul(sub(compressed, bitPos), tickSpacing)
-                }
-            }
-        } else {
+        if (!lte) {
             // start from the word of the next tick, since the current tick state doesn't matter
             unchecked {
                 ++compressed;
@@ -120,14 +94,40 @@ library TickBitmap {
 
             // if there are no initialized ticks to the left of the current tick, return leftmost in the word
             // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
-            if (initialized) {
+            if (!initialized) {
+                assembly {
+                    next := mul(add(sub(compressed, bitPos), 255), tickSpacing)
+                }
+            } else {
                 uint8 lsb = BitMath.leastSignificantBit(masked);
                 assembly {
                     next := mul(add(sub(compressed, bitPos), lsb), tickSpacing)
                 }
-            } else {
+            }
+        } else {
+            (int16 wordPos, uint8 bitPos) = position(compressed);
+            // all the 1s at or to the right of the current bitPos
+            // mask = (1 << (bitPos + 1)) - 1
+            // (bitPos + 1) may be 256 but fine
+            // masked = self[wordPos] & mask
+            assembly ("memory-safe") {
+                mstore(0, wordPos)
+                mstore(0x20, self.slot)
+                let mask := sub(shl(add(bitPos, 1), 1), 1)
+                masked := and(sload(keccak256(0, 0x40)), mask)
+                initialized := gt(masked, 0)
+            }
+
+            // if there are no initialized ticks to the right of or at the current tick, return rightmost in the word
+            // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
+            if (!initialized) {
                 assembly {
-                    next := mul(add(sub(compressed, bitPos), 255), tickSpacing)
+                    next := mul(sub(compressed, bitPos), tickSpacing)
+                }
+            } else {
+                uint8 msb = BitMath.mostSignificantBit(masked);
+                assembly {
+                    next := mul(add(sub(compressed, bitPos), msb), tickSpacing)
                 }
             }
         }
