@@ -31,7 +31,11 @@ contract ERC6909ClaimsTest is Test {
             if (mintAmount == type(uint256).max) {
                 assertEq(token.allowance(sender, address(this), id), type(uint256).max);
             } else {
-                assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+                if (sender != address(this)) {
+                    assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+                } else {
+                    assertEq(token.allowance(sender, address(this), id), mintAmount);
+                }
             }
             assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
         }
@@ -255,7 +259,11 @@ contract ERC6909ClaimsTest is Test {
         if (mintAmount == type(uint256).max) {
             assertEq(token.allowance(sender, address(this), id), type(uint256).max);
         } else {
-            assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+            if (sender != address(this)) {
+                assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+            } else {
+                assertEq(token.allowance(sender, address(this), id), mintAmount);
+            }
         }
 
         if (sender == receiver) {
@@ -367,6 +375,7 @@ contract ERC6909ClaimsTest is Test {
 
         token.mint(sender, id, amount);
 
+        vm.assume(sender != address(this));
         token.transferFrom(sender, receiver, id, amount);
     }
 }
