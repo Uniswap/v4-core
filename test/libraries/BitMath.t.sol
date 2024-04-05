@@ -7,8 +7,7 @@ import {BitMath} from "src/libraries/BitMath.sol";
 
 contract TestBitMath is Test, GasSnapshot {
     function testMostSignificantBitZero() public {
-        vm.expectRevert();
-        BitMath.mostSignificantBit(0);
+        assertEq(BitMath.mostSignificantBit(0), 0);
     }
 
     function testMostSignificantBitOne() public {
@@ -50,8 +49,7 @@ contract TestBitMath is Test, GasSnapshot {
     }
 
     function testLeastSignificantBitZero() public {
-        vm.expectRevert();
-        BitMath.leastSignificantBit(0);
+        assertEq(BitMath.leastSignificantBit(0), 255);
     }
 
     function testLeastSignificantBitOne() public {
