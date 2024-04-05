@@ -160,6 +160,22 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
+    function test_gas_beforeSwap_skipIfCalledByHook() public {
+        SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
+            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG))
+        );
+
+        deploy(skipCallsTestHook);
+        approveAndAddLiquidity(skipCallsTestHook);
+        assertEq(skipCallsTestHook.counter(), 0);
+
+        // swaps and increments counter
+        snapStart("swap skips hook call if hook is caller");
+        swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
+        snapEnd();
+        assertEq(skipCallsTestHook.counter(), 1);
+    }
+
     function test_afterSwap_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
             address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_SWAP_FLAG))
