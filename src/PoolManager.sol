@@ -311,12 +311,18 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
-        bytes memory value = new bytes(32 * nSlots);
+        // For values of nSlots that cause an overflow, an out-of-gas exception will be thrown.
+        bytes memory value = new bytes(nSlots << 5);
 
         /// @solidity memory-safe-assembly
         assembly {
-            for { let i := 0 } lt(i, nSlots) { i := add(i, 1) } {
-                mstore(add(value, mul(add(i, 1), 32)), sload(add(startSlot, i)))
+            let valuePtr := add(value, 32)
+            let endSlot := add(startSlot, nSlots)
+            for {} 1 {} {
+                mstore(valuePtr, sload(startSlot))
+                valuePtr := add(valuePtr, 32)
+                startSlot := add(startSlot, 1)
+                if eq(startSlot, endSlot) { break }
             }
         }
 
