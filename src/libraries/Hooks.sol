@@ -96,7 +96,6 @@ library Hooks {
 
     /// @notice performs a hook call using the given calldata on the given hook
     function callHook(IHooks self, bytes memory data) internal {
-        if (msg.sender == address(self)) return;
         (bytes4 expectedSelector, bytes4 selector) = _callHook(self, data);
 
         if (selector != expectedSelector) {
