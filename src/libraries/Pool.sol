@@ -409,9 +409,7 @@ library Pool {
                         Pool.crossTick(self, step.tickNext, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
-                    unchecked {
-                        if (zeroForOne) liquidityNet = -liquidityNet;
-                    }
+                    liquidityNet = LiquidityMath.flipLiquidityDelta(liquidityNet, zeroForOne);
 
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
@@ -546,7 +544,15 @@ library Pool {
         }
 
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
-        int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
+        // Equivalent to `liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;`
+        // `int128 liquidityDelta` is passed from `modifyLiquidity` and should be sanitized in `PoolManager`
+        liquidityDelta = LiquidityMath.flipLiquidityDelta(liquidityDelta, upper);
+        // declare an int256 to prevent implicit conversion when calling toInt128
+        int256 liquidityNet;
+        assembly {
+            liquidityNet := add(liquidityNetBefore, liquidityDelta)
+        }
+        liquidityNet.toInt128();
         assembly {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
             // So we can store them with a single sstore by packing them ourselves first
