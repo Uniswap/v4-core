@@ -137,8 +137,7 @@ library FullMath {
         unchecked {
             result = mulDiv(a, b, denominator);
             if (mulmod(a, b, denominator) > 0) {
-                require(result < type(uint256).max);
-                result++;
+                require(++result > 0);
             }
         }
     }
