@@ -525,9 +525,7 @@ library Pool {
             liquidityNetBefore := shr(128, liquidity)
         }
 
-        liquidityGrossAfter = liquidityDelta < 0
-            ? liquidityGrossBefore - uint128(-liquidityDelta)
-            : liquidityGrossBefore + uint128(liquidityDelta);
+        liquidityGrossAfter = addDelta(liquidityGrossBefore, liquidityDelta).toUint128();
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 
