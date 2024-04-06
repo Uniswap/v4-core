@@ -73,11 +73,11 @@ library SqrtPriceMath {
     /// @param liquidity The amount of usable liquidity
     /// @param amount How much of currency1 to add, or remove, from virtual reserves
     /// @param add Whether to add, or remove, the amount of currency1
-    /// @return nextSqrtPrice The price after adding or removing `amount`
+    /// @return The price after adding or removing `amount`
     function getNextSqrtPriceFromAmount1RoundingDown(uint160 sqrtPX96, uint128 liquidity, uint256 amount, bool add)
         internal
         pure
-        returns (uint160 nextSqrtPrice)
+        returns (uint160)
     {
         // if we're adding (subtracting), rounding down requires rounding the quotient down (up)
         // in both cases, avoid a mulDiv for most inputs

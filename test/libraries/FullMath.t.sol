@@ -57,17 +57,17 @@ contract FullMathTest is Test {
         assertEq(FullMath.mulDiv(x, y, d), x * y / d);
     }
 
-    function test_mulDiv96_revertsIfOutputOverflows() public {
+    function test_mulDivQ96_revertsIfOutputOverflows() public {
         vm.expectRevert();
         FullMath.mulDivQ96(1 << 176, 1 << 176);
     }
 
-    function test_mulDiv96_validWithPhantomOverflow() public {
+    function test_mulDivQ96_validWithPhantomOverflow() public {
         assertEq(FullMath.mulDivQ96(MAX_UINT256, Q96), MAX_UINT256);
     }
 
-    /// @notice Test `mulDiv96` against `mulDiv` with a denominator of `Q96`.
-    function test_mulDiv96_fuzz(uint256 a, uint256 b) public {
+    /// @notice Test `mulDivQ96` against `mulDiv` with a denominator of `Q96`.
+    function test_mulDivQ96_fuzz(uint256 a, uint256 b) public {
         // Most significant 256 bits of the product.
         uint256 prod1;
         assembly {
