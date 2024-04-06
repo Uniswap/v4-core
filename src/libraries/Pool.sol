@@ -532,7 +532,10 @@ library Pool {
 
         liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
-        flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
+        // Equivalent to `flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);`
+        assembly {
+            flipped := xor(iszero(liquidityGrossAfter), iszero(liquidityGrossBefore))
+        }
 
         if (liquidityGrossBefore == 0) {
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
