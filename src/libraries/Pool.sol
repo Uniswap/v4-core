@@ -414,9 +414,7 @@ library Pool {
                     );
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
-                    unchecked {
-                        if (params.zeroForOne) liquidityNet = -liquidityNet;
-                    }
+                    liquidityNet = flipLiquidityDelta(liquidityNet, params.zeroForOne);
 
                     state.liquidity = liquidityNet < 0
                         ? state.liquidity - uint128(-liquidityNet)
@@ -525,8 +523,8 @@ library Pool {
             let liquidity := sload(info.slot)
             // slice off top 128 bits of liquidity (liquidityNet) to get just liquidityGross
             liquidityGrossBefore := shr(128, shl(128, liquidity))
-            // shift right 128 bits to get just liquidityNet
-            liquidityNetBefore := shr(128, liquidity)
+            // signed shift right 128 bits to get just liquidityNet
+            liquidityNetBefore := sar(128, liquidity)
         }
 
         liquidityGrossAfter = liquidityDelta < 0
@@ -547,7 +545,14 @@ library Pool {
         }
 
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
-        int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
+        // Equivalent to `liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;`
+        liquidityDelta = flipLiquidityDelta(liquidityDelta, upper);
+        // declare an int256 to prevent implicit conversion when calling toInt128
+        int256 liquidityNet;
+        assembly {
+            liquidityNet := add(liquidityNetBefore, liquidityDelta)
+        }
+        liquidityNet = int256(liquidityNet.toInt128());
         assembly {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
             // So we can store them with a single sstore by packing them ourselves first
@@ -604,6 +609,19 @@ library Pool {
             info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
             info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
             liquidityNet = info.liquidityNet;
+        }
+    }
+
+    /// @notice Flips the sign of a liquidity delta if a condition is true
+    /// @dev More efficient than `liquidityDelta = flip ? -liquidityDelta : liquidityDelta;`
+    /// @param liquidityDelta The liquidity delta to potentially flip
+    /// @param flip Whether to flip the sign of the liquidity delta
+    /// @return res The potentially flipped liquidity delta
+    function flipLiquidityDelta(int128 liquidityDelta, bool flip) internal pure returns (int128 res) {
+        assembly {
+            // if flip = true, res = -liquidityDelta = ~liquidityDelta + 1 = (-1) ^ liquidityDelta + 1
+            // therefore, res = (-flip) ^ liquidityDelta + flip
+            res := add(xor(sub(0, flip), liquidityDelta), flip)
         }
     }
 }
