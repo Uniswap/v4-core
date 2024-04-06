@@ -59,11 +59,11 @@ contract FullMathTest is Test {
 
     function test_mulDiv96_revertsIfOutputOverflows() public {
         vm.expectRevert();
-        FullMath.mulDiv96(1 << 176, 1 << 176);
+        FullMath.mulDivQ96(1 << 176, 1 << 176);
     }
 
     function test_mulDiv96_validWithPhantomOverflow() public {
-        assertEq(FullMath.mulDiv96(MAX_UINT256, Q96), MAX_UINT256);
+        assertEq(FullMath.mulDivQ96(MAX_UINT256, Q96), MAX_UINT256);
     }
 
     /// @notice Test `mulDiv96` against `mulDiv` with a denominator of `Q96`.
@@ -78,7 +78,7 @@ contract FullMathTest is Test {
         }
         // assume that the `mulDiv` will not overflow
         vm.assume(Q96 > prod1);
-        assertEq(FullMath.mulDiv96(a, b), FullMath.mulDiv(a, b, Q96));
+        assertEq(FullMath.mulDivQ96(a, b), FullMath.mulDiv(a, b, Q96));
     }
 
     function test_mulDivRoundingUp_revertsWith0Denominator(uint256 x, uint256 y) public {

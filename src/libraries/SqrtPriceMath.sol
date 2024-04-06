@@ -215,7 +215,7 @@ library SqrtPriceMath {
          *       : FullMath.mulDiv(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96);
          * Cannot overflow because `type(uint128).max * type(uint160).max >> 96 < (1 << 192)`.
          */
-        amount1 = FullMath.mulDiv96(liquidity, numerator);
+        amount1 = FullMath.mulDivQ96(liquidity, numerator);
         assembly {
             amount1 := add(amount1, and(gt(mulmod(liquidity, numerator, denominator), 0), roundUp))
         }

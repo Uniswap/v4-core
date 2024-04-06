@@ -105,7 +105,7 @@ library FullMath {
     /// @param a The multiplicand
     /// @param b The multiplier
     /// @return result The 256-bit result
-    function mulDiv96(uint256 a, uint256 b) internal pure returns (uint256 result) {
+    function mulDivQ96(uint256 a, uint256 b) internal pure returns (uint256 result) {
         /// @solidity memory-safe-assembly
         assembly {
             // 512-bit multiply `[prod1 prod0] = x * y`.
