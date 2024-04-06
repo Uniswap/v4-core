@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Currency} from "../types/Currency.sol";
-import {IProtocolFeeController} from "./IProtocolFeeController.sol";
+import {Currency} from "src/types/Currency.sol";
+import {IProtocolFeeController} from "src/interfaces/IProtocolFeeController.sol";
+import {PoolId} from "src/types/PoolId.sol";
+import {PoolKey} from "src/types/PoolKey.sol";
 
 interface IProtocolFees {
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
@@ -15,8 +17,14 @@ interface IProtocolFees {
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
+    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
+
     /// @notice Given a currency address, returns the protocol fees accrued in that currency
     function protocolFeesAccrued(Currency) external view returns (uint256);
+
+    /// @notice Sets the protocol's swap fee for the given pool
+    /// Protocol fees are always a portion of the LP swap fee that is owed. If that fee is 0, no protocol fees will accrue even if it is set to > 0.
+    function setProtocolFee(PoolKey memory key) external;
 
     /// @notice Sets the protocol fee controller
     function setProtocolFeeController(IProtocolFeeController) external;
