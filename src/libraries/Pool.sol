@@ -422,13 +422,14 @@ library Pool {
                 }
 
                 // Equivalent to `state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;`
-                {
+                unchecked {
                     bool zeroForOne = params.zeroForOne;
-                    int24 tickNext = step.tickNext;
+                    // cannot cast a bool to an int24 in Solidity
+                    int24 _zeroForOne;
                     assembly {
-                        tickNext := sub(tickNext, zeroForOne)
+                        _zeroForOne := zeroForOne
                     }
-                    state.tick = tickNext;
+                    state.tick = step.tickNext - _zeroForOne;
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
