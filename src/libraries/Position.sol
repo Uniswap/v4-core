@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {FullMath} from "./FullMath.sol";
-import {FixedPoint128} from "./FixedPoint128.sol";
 
 /// @title Position
 /// @notice Positions represent an owner address' liquidity between a lower and upper tick boundary
@@ -61,12 +60,8 @@ library Position {
 
         // calculate accumulated fees. overflow in the subtraction of fee growth is expected
         unchecked {
-            feesOwed0 = FullMath.mulDiv(
-                feeGrowthInside0X128 - _self.feeGrowthInside0LastX128, _self.liquidity, FixedPoint128.Q128
-            );
-            feesOwed1 = FullMath.mulDiv(
-                feeGrowthInside1X128 - _self.feeGrowthInside1LastX128, _self.liquidity, FixedPoint128.Q128
-            );
+            feesOwed0 = FullMath.mulDivQ128(feeGrowthInside0X128 - _self.feeGrowthInside0LastX128, _self.liquidity);
+            feesOwed1 = FullMath.mulDivQ128(feeGrowthInside1X128 - _self.feeGrowthInside1LastX128, _self.liquidity);
         }
 
         // update the position

@@ -56,6 +56,30 @@ contract FullMathTest is Test {
         assertEq(FullMath.mulDiv(x, y, d), x * y / d);
     }
 
+    function test_mulDivQ128_revertsIfOutputOverflows() public {
+        vm.expectRevert();
+        FullMath.mulDivQ128(1 << 192, 1 << 192);
+    }
+
+    function test_mulDivQ128_validWithPhantomOverflow() public {
+        assertEq(FullMath.mulDivQ128(MAX_UINT256, Q128), MAX_UINT256);
+    }
+
+    /// @notice Test `mulDivQ128` against `mulDiv` with a denominator of `Q128`.
+    function test_mulDivQ128_fuzz(uint256 a, uint256 b) public {
+        // Most significant 256 bits of the product.
+        uint256 prod1;
+        assembly {
+            // Least significant 256 bits of the product.
+            let prod0 := mul(a, b)
+            let mm := mulmod(a, b, not(0))
+            prod1 := sub(mm, add(prod0, lt(mm, prod0)))
+        }
+        // assume that the `mulDiv` will not overflow
+        vm.assume(Q128 > prod1);
+        assertEq(FullMath.mulDivQ128(a, b), FullMath.mulDiv(a, b, Q128));
+    }
+
     function test_mulDivRoundingUp_revertsWith0Denominator(uint256 x, uint256 y) public {
         vm.expectRevert();
         x.mulDivRoundingUp(y, 0);
