@@ -3,11 +3,15 @@ pragma solidity ^0.8.20;
 
 import {FullMath} from "./FullMath.sol";
 import {FixedPoint128} from "./FixedPoint128.sol";
+import {Pool} from "./Pool.sol";
+import {SafeCast} from "./SafeCast.sol";
 
 /// @title Position
 /// @notice Positions represent an owner address' liquidity between a lower and upper tick boundary
 /// @dev Positions store additional state for tracking fees owed to the position
 library Position {
+    using SafeCast for *;
+
     /// @notice Cannot update a position with no liquidity
     error CannotUpdateEmptyPosition();
 
@@ -54,9 +58,7 @@ library Position {
             if (_self.liquidity == 0) revert CannotUpdateEmptyPosition(); // disallow pokes for 0 liquidity positions
             liquidityNext = _self.liquidity;
         } else {
-            liquidityNext = liquidityDelta < 0
-                ? _self.liquidity - uint128(-liquidityDelta)
-                : _self.liquidity + uint128(liquidityDelta);
+            liquidityNext = Pool.addDelta(_self.liquidity, liquidityDelta).toUint128();
         }
 
         // calculate accumulated fees. overflow in the subtraction of fee growth is expected
