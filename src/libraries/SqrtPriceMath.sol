@@ -83,7 +83,7 @@ library SqrtPriceMath {
         // in both cases, avoid a mulDiv for most inputs
         if (add) {
             uint256 quotient = (
-                amount <= type(uint160).max
+                amount >> 160 == 0
                     ? (amount << FixedPoint96.RESOLUTION).div(liquidity)
                     : FullMath.mulDiv(amount, FixedPoint96.Q96, liquidity)
             );
@@ -91,7 +91,7 @@ library SqrtPriceMath {
             return (uint256(sqrtPX96) + quotient).toUint160();
         } else {
             uint256 quotient = (
-                amount <= type(uint160).max
+                amount >> 160 == 0
                     ? (amount << FixedPoint96.RESOLUTION).divRoundingUp(liquidity)
                     : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity)
             );
