@@ -421,8 +421,14 @@ library Pool {
                         : state.liquidity + uint128(liquidityNet);
                 }
 
-                unchecked {
-                    state.tick = params.zeroForOne ? step.tickNext - 1 : step.tickNext;
+                // Equivalent to `state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;`
+                {
+                    bool zeroForOne = params.zeroForOne;
+                    int24 tickNext = step.tickNext;
+                    assembly {
+                        tickNext := sub(tickNext, zeroForOne)
+                    }
+                    state.tick = tickNext;
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
