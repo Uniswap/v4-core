@@ -101,14 +101,14 @@ library FullMath {
         }
     }
 
-    /// @notice Calculates x * y / 2^96 with full precision.
+    /// @notice Calculates a * b / 2^96 with full precision.
     /// @param a The multiplicand
     /// @param b The multiplier
     /// @return result The 256-bit result
     function mulDivQ96(uint256 a, uint256 b) internal pure returns (uint256 result) {
         /// @solidity memory-safe-assembly
         assembly {
-            // 512-bit multiply `[prod1 prod0] = x * y`.
+            // 512-bit multiply `[prod1 prod0] = a * b`.
             // Compute the product mod `2**256` and mod `2**256 - 1`
             // then use the Chinese Remainder Theorem to reconstruct
             // the 512 bit result. The result is stored in two 256
