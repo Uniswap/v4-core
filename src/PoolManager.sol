@@ -269,6 +269,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (currency.isNative()) {
             paid = msg.value;
         } else {
+            if (msg.value > 0) revert rejectNative();
             uint256 reservesBefore = reservesOf[currency];
             reservesOf[currency] = currency.balanceOfSelf();
             paid = reservesOf[currency] - reservesBefore;
