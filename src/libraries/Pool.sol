@@ -156,6 +156,7 @@ library Pool {
         internal
         returns (BalanceDelta result)
     {
+        int128 liquidityDelta = params.liquidityDelta;
         checkTicks(params.tickLower, params.tickUpper);
 
         uint256 feesOwed0;
@@ -164,13 +165,14 @@ library Pool {
             ModifyLiquidityState memory state;
 
             // if we need to update the ticks, do it
-            if (params.liquidityDelta != 0) {
+            if (liquidityDelta != 0) {
                 (state.flippedLower, state.liquidityGrossAfterLower) =
-                    updateTick(self, params.tickLower, params.liquidityDelta, false);
+                    updateTick(self, params.tickLower, liquidityDelta, false);
                 (state.flippedUpper, state.liquidityGrossAfterUpper) =
-                    updateTick(self, params.tickUpper, params.liquidityDelta, true);
+                    updateTick(self, params.tickUpper, liquidityDelta, true);
 
-                if (params.liquidityDelta > 0) {
+                // `>` and `>=` are logically equivalent here but `>=` is cheaper
+                if (liquidityDelta >= 0) {
                     uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
                     if (state.liquidityGrossAfterLower > maxLiquidityPerTick) {
                         revert TickLiquidityOverflow(params.tickLower);
@@ -192,11 +194,11 @@ library Pool {
                 getFeeGrowthInside(self, params.tickLower, params.tickUpper);
 
             (feesOwed0, feesOwed1) = self.positions.get(params.owner, params.tickLower, params.tickUpper).update(
-                params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128
+                liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128
             );
 
             // clear any tick data that is no longer needed
-            if (params.liquidityDelta < 0) {
+            if (liquidityDelta < 0) {
                 if (state.flippedLower) {
                     clearTick(self, params.tickLower);
                 }
@@ -206,7 +208,7 @@ library Pool {
             }
         }
 
-        if (params.liquidityDelta != 0) {
+        if (liquidityDelta != 0) {
             int24 tick = self.slot0.tick;
             uint160 sqrtPriceX96 = self.slot0.sqrtPriceX96;
             if (tick < params.tickLower) {
@@ -216,23 +218,23 @@ library Pool {
                     SqrtPriceMath.getAmount0Delta(
                         TickMath.getSqrtRatioAtTick(params.tickLower),
                         TickMath.getSqrtRatioAtTick(params.tickUpper),
-                        params.liquidityDelta
+                        liquidityDelta
                     ).toInt128(),
                     0
                 );
             } else if (tick < params.tickUpper) {
                 result = toBalanceDelta(
                     SqrtPriceMath.getAmount0Delta(
-                        sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
+                        sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), liquidityDelta
                     ).toInt128(),
                     SqrtPriceMath.getAmount1Delta(
-                        TickMath.getSqrtRatioAtTick(params.tickLower), sqrtPriceX96, params.liquidityDelta
+                        TickMath.getSqrtRatioAtTick(params.tickLower), sqrtPriceX96, liquidityDelta
                     ).toInt128()
                 );
 
-                self.liquidity = params.liquidityDelta < 0
-                    ? self.liquidity - uint128(-params.liquidityDelta)
-                    : self.liquidity + uint128(params.liquidityDelta);
+                self.liquidity = liquidityDelta < 0
+                    ? self.liquidity - uint128(-liquidityDelta)
+                    : self.liquidity + uint128(liquidityDelta);
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
@@ -241,7 +243,7 @@ library Pool {
                     SqrtPriceMath.getAmount1Delta(
                         TickMath.getSqrtRatioAtTick(params.tickLower),
                         TickMath.getSqrtRatioAtTick(params.tickUpper),
-                        params.liquidityDelta
+                        liquidityDelta
                     ).toInt128()
                 );
             }
