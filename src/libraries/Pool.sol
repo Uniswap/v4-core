@@ -157,7 +157,9 @@ library Pool {
         returns (BalanceDelta result)
     {
         int128 liquidityDelta = params.liquidityDelta;
-        checkTicks(params.tickLower, params.tickUpper);
+        int24 tickLower = params.tickLower;
+        int24 tickUpper = params.tickUpper;
+        checkTicks(tickLower, tickUpper);
 
         uint256 feesOwed0;
         uint256 feesOwed1;
@@ -167,43 +169,41 @@ library Pool {
             // if we need to update the ticks, do it
             if (liquidityDelta != 0) {
                 (state.flippedLower, state.liquidityGrossAfterLower) =
-                    updateTick(self, params.tickLower, liquidityDelta, false);
-                (state.flippedUpper, state.liquidityGrossAfterUpper) =
-                    updateTick(self, params.tickUpper, liquidityDelta, true);
+                    updateTick(self, tickLower, liquidityDelta, false);
+                (state.flippedUpper, state.liquidityGrossAfterUpper) = updateTick(self, tickUpper, liquidityDelta, true);
 
                 // `>` and `>=` are logically equivalent here but `>=` is cheaper
                 if (liquidityDelta >= 0) {
                     uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
                     if (state.liquidityGrossAfterLower > maxLiquidityPerTick) {
-                        revert TickLiquidityOverflow(params.tickLower);
+                        revert TickLiquidityOverflow(tickLower);
                     }
                     if (state.liquidityGrossAfterUpper > maxLiquidityPerTick) {
-                        revert TickLiquidityOverflow(params.tickUpper);
+                        revert TickLiquidityOverflow(tickUpper);
                     }
                 }
 
                 if (state.flippedLower) {
-                    self.tickBitmap.flipTick(params.tickLower, params.tickSpacing);
+                    self.tickBitmap.flipTick(tickLower, params.tickSpacing);
                 }
                 if (state.flippedUpper) {
-                    self.tickBitmap.flipTick(params.tickUpper, params.tickSpacing);
+                    self.tickBitmap.flipTick(tickUpper, params.tickSpacing);
                 }
             }
 
-            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) =
-                getFeeGrowthInside(self, params.tickLower, params.tickUpper);
+            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = getFeeGrowthInside(self, tickLower, tickUpper);
 
-            (feesOwed0, feesOwed1) = self.positions.get(params.owner, params.tickLower, params.tickUpper).update(
-                liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128
-            );
+            Position.Info storage position = self.positions.get(params.owner, tickLower, tickUpper);
+            (feesOwed0, feesOwed1) =
+                position.update(liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
 
             // clear any tick data that is no longer needed
             if (liquidityDelta < 0) {
                 if (state.flippedLower) {
-                    clearTick(self, params.tickLower);
+                    clearTick(self, tickLower);
                 }
                 if (state.flippedUpper) {
-                    clearTick(self, params.tickUpper);
+                    clearTick(self, tickUpper);
                 }
             }
         }
@@ -211,25 +211,21 @@ library Pool {
         if (liquidityDelta != 0) {
             int24 tick = self.slot0.tick;
             uint160 sqrtPriceX96 = self.slot0.sqrtPriceX96;
-            if (tick < params.tickLower) {
+            if (tick < tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
                 result = toBalanceDelta(
                     SqrtPriceMath.getAmount0Delta(
-                        TickMath.getSqrtRatioAtTick(params.tickLower),
-                        TickMath.getSqrtRatioAtTick(params.tickUpper),
-                        liquidityDelta
+                        TickMath.getSqrtRatioAtTick(tickLower), TickMath.getSqrtRatioAtTick(tickUpper), liquidityDelta
                     ).toInt128(),
                     0
                 );
-            } else if (tick < params.tickUpper) {
+            } else if (tick < tickUpper) {
                 result = toBalanceDelta(
-                    SqrtPriceMath.getAmount0Delta(
-                        sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), liquidityDelta
-                    ).toInt128(),
-                    SqrtPriceMath.getAmount1Delta(
-                        TickMath.getSqrtRatioAtTick(params.tickLower), sqrtPriceX96, liquidityDelta
-                    ).toInt128()
+                    SqrtPriceMath.getAmount0Delta(sqrtPriceX96, TickMath.getSqrtRatioAtTick(tickUpper), liquidityDelta)
+                        .toInt128(),
+                    SqrtPriceMath.getAmount1Delta(TickMath.getSqrtRatioAtTick(tickLower), sqrtPriceX96, liquidityDelta)
+                        .toInt128()
                 );
 
                 self.liquidity = liquidityDelta < 0
@@ -241,9 +237,7 @@ library Pool {
                 result = toBalanceDelta(
                     0,
                     SqrtPriceMath.getAmount1Delta(
-                        TickMath.getSqrtRatioAtTick(params.tickLower),
-                        TickMath.getSqrtRatioAtTick(params.tickUpper),
-                        liquidityDelta
+                        TickMath.getSqrtRatioAtTick(tickLower), TickMath.getSqrtRatioAtTick(tickUpper), liquidityDelta
                     ).toInt128()
                 );
             }
