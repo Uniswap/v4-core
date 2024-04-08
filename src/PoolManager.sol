@@ -337,6 +337,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         return pools[id].getPoolBitmapInfo(word);
     }
 
+    /// @notice Temporary view function. Replaceable by EXTSLOAD.
     function getReserves(Currency currency) external view returns (uint256 balance) {
         return currency.getReserves();
     }

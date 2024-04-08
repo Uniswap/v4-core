@@ -12,6 +12,7 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
+/// @notice A Swap router that doesn't call sync.
 contract BadRouter is PoolTestBase {
     using CurrencyLibrary for Currency;
     using Hooks for IHooks;

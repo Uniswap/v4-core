@@ -18,7 +18,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     using CurrencyLibrary for Currency;
 
     // PoolManager has no balance of currency2.
-    // Currency currency2;
     Currency currency2;
     BadRouter badRouter;
 
