@@ -382,14 +382,14 @@ library Pool {
                 state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
 
-            if (cache.protocolFee != 0) {
+            if (cache.protocolFee > 0) {
                 unchecked {
                     feeForProtocol += FullMath.mulDiv(step.feeAmount, cache.protocolFee, swapFee + cache.protocolFee);
                 }
             }
 
             // update global fee tracker
-            if (state.liquidity > 0 && swapFee != 0) {
+            if (state.liquidity > 0 && swapFee > 0) {
                 unchecked {
                     uint256 swapFeeAmount = FullMath.mulDiv(step.feeAmount, swapFee, swapFee + cache.protocolFee);
                     state.feeGrowthGlobalX128 += FullMath.mulDiv(swapFeeAmount, FixedPoint128.Q128, state.liquidity);
