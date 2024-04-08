@@ -9,6 +9,8 @@ import {LiquidityMath} from "./LiquidityMath.sol";
 /// @notice Positions represent an owner address' liquidity between a lower and upper tick boundary
 /// @dev Positions store additional state for tracking fees owed to the position
 library Position {
+    using LiquidityMath for uint128;
+
     /// @notice Cannot update a position with no liquidity
     error CannotUpdateEmptyPosition();
 
@@ -55,7 +57,7 @@ library Position {
             if (_self.liquidity == 0) revert CannotUpdateEmptyPosition(); // disallow pokes for 0 liquidity positions
             liquidityNext = _self.liquidity;
         } else {
-            liquidityNext = LiquidityMath.addDelta(_self.liquidity, liquidityDelta);
+            liquidityNext = _self.liquidity.addDelta(liquidityDelta);
         }
 
         // calculate accumulated fees. overflow in the subtraction of fee growth is expected
