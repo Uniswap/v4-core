@@ -787,8 +787,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, -10000, TickMath.MAX_SQRT_RATIO - 1);
         swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES);
 
-        uint256 expectedTotalSwapFee = uint256(-swapParams.amountSpecified) * key.fee / 1e6;
-        uint256 expectedProtocolFee = expectedTotalSwapFee * protocolFee1 / 1e4;
+        uint256 expectedProtocolFee = uint256(-swapParams.amountSpecified) * protocolFee1 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }
@@ -999,7 +998,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
-        uint256 expectedFees = 7;
+        uint256 expectedFees = 10;
 
         feeController.setProtocolFeeForPool(key.toId(), MAX_PROTOCOL_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);

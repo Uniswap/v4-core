@@ -11,7 +11,6 @@ import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
-import "forge-std/console.sol";
 
 library Pool {
     using SafeCast for *;
@@ -341,8 +340,7 @@ library Pool {
             liquidity: cache.liquidityStart
         });
 
-        uint24 effectiveFee = (1 - (1- swapFee / 1e6) * (1- cache.protocolFee / 1e6)) * 1e6;
-        console.log("effective rate is %s", effectiveFee);
+        uint32 effectiveFee = cache.protocolFee + swapFee - (uint32(cache.protocolFee) * uint32(swapFee)) / 1_000_000;
 
         StepComputations memory step;
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
@@ -363,8 +361,7 @@ library Pool {
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
 
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
-            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath
-                .computeSwapStep(
+            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
                 state.sqrtPriceX96,
                 (
                     params.zeroForOne
@@ -389,15 +386,17 @@ library Pool {
                 state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
 
-
-
-
+            feeForProtocol += swapFee + cache.protocolFee == 0
+                ? 0
+                : FullMath.mulDiv(step.feeAmount, cache.protocolFee, swapFee + cache.protocolFee);
 
             // update global fee tracker
             if (state.liquidity > 0) {
                 unchecked {
-                    state.feeGrowthGlobalX128 +=
-                        FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
+                    uint256 swapFeeAmount = swapFee + cache.protocolFee == 0
+                        ? 0
+                        : FullMath.mulDiv(step.feeAmount, swapFee, swapFee + cache.protocolFee);
+                    state.feeGrowthGlobalX128 += FullMath.mulDiv(swapFeeAmount, FixedPoint128.Q128, state.liquidity);
                 }
             }
 
