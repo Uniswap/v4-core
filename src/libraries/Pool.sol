@@ -11,6 +11,7 @@ import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
+import {LiquidityMath} from "./LiquidityMath.sol";
 
 library Pool {
     using SafeCast for *;
@@ -228,7 +229,7 @@ library Pool {
                     ).toInt128()
                 );
 
-                self.liquidity = addDelta(self.liquidity, params.liquidityDelta).toUint128();
+                self.liquidity = LiquidityMath.addDelta(self.liquidity, params.liquidityDelta);
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
@@ -416,7 +417,7 @@ library Pool {
                         if (params.zeroForOne) liquidityNet = -liquidityNet;
                     }
 
-                    state.liquidity = addDelta(state.liquidity, liquidityNet).toUint128();
+                    state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
 
                 unchecked {
@@ -525,7 +526,7 @@ library Pool {
             liquidityNetBefore := shr(128, liquidity)
         }
 
-        liquidityGrossAfter = addDelta(liquidityGrossBefore, liquidityDelta).toUint128();
+        liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 
@@ -595,17 +596,6 @@ library Pool {
             info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
             info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
             liquidityNet = info.liquidityNet;
-        }
-    }
-
-    /// @notice Add a signed liquidity delta to liquidity
-    /// @dev Must call toUint128 on the result to revert if it overflows or underflows. This is to allow optimizer inlining.
-    /// @param x The liquidity before change
-    /// @param y The delta by which liquidity should be changed
-    /// @return z The liquidity after the change, declared as uint256 to prevent implicit conversion when calling toUint128
-    function addDelta(uint128 x, int128 y) internal pure returns (uint256 z) {
-        assembly {
-            z := add(x, y)
         }
     }
 }
