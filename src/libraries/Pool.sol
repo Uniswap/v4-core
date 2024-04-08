@@ -72,6 +72,8 @@ library Pool {
         uint24 protocolFee;
         // used for the swap fee, either static at initialize or dynamic via hook
         uint24 swapFee;
+
+        bool doesEvents;
     }
 
     // info stored for each initialized individual tick
@@ -112,7 +114,7 @@ library Pool {
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, swapFee: swapFee});
+        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, swapFee: swapFee, doesEvents: true});
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
@@ -268,6 +270,8 @@ library Pool {
         uint256 feeGrowthGlobalX128;
         // the current liquidity in range
         uint128 liquidity;
+
+        bool doesEvents;
     }
 
     struct StepComputations {
@@ -334,7 +338,8 @@ library Pool {
             sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
             feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
-            liquidity: cache.liquidityStart
+            liquidity: cache.liquidityStart,
+            doesEvents: slot0Start.doesEvents
         });
 
         StepComputations memory step;
