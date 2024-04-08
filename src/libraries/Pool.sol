@@ -61,6 +61,9 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
+    // the maximum total fee in hundredths of a bip (100%)
+    uint24 internal constant MAX_EFFECTIVE_FEE = 1_000_000;
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
@@ -366,7 +369,7 @@ library Pool {
                 state.liquidity,
                 state.amountSpecifiedRemaining,
                 // use the effective fee
-                uint24(cache.protocolFee + swapFee - (uint32(cache.protocolFee) * uint32(swapFee)) / 1_000_000)
+                uint24(cache.protocolFee + swapFee - (uint32(cache.protocolFee) * uint32(swapFee)) / MAX_EFFECTIVE_FEE)
             );
 
             if (exactInput) {

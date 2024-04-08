@@ -17,7 +17,7 @@ contract PoolTest is Test {
 
     Pool.State state;
 
-    uint24 constant MAX_PROTOCOL_FEE_BOTH_TOKENS = (1000 << 12) | 1000; // 1000 1000
+    uint24 constant MAX_PROTOCOL_FEE = 1000; // 0.1%
     uint24 constant MAX_SWAP_FEE = 1_000_000; // 100%
 
     function testPoolInitialize(uint160 sqrtPriceX96, uint24 protocolFee, uint24 dynamicFee) public {
@@ -84,11 +84,19 @@ contract PoolTest is Test {
         state.modifyLiquidity(params);
     }
 
-    function testSwap(uint160 sqrtPriceX96, uint24 swapFee, uint24 protocolFee, Pool.SwapParams memory params) public {
+    function testSwap(
+        uint160 sqrtPriceX96,
+        uint24 swapFee,
+        uint16 protocolFee0,
+        uint16 protocolFee1,
+        Pool.SwapParams memory params
+    ) public {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
         swapFee = uint24(bound(swapFee, 0, MAX_SWAP_FEE));
-        protocolFee = uint24(bound(protocolFee, 0, MAX_PROTOCOL_FEE_BOTH_TOKENS));
+        protocolFee0 = uint16(bound(protocolFee0, 0, MAX_PROTOCOL_FEE));
+        protocolFee1 = uint16(bound(protocolFee1, 0, MAX_PROTOCOL_FEE));
+        uint24 protocolFee = protocolFee1 << 12 | protocolFee0;
 
         // initialize and add liquidity
         testModifyLiquidity(
