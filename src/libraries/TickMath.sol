@@ -76,7 +76,7 @@ library TickMath {
             // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
             // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
             // we round up in the division so getTickAtSqrtRatio of the output price is always consistent
-            sqrtPriceX96 = uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1));
+            sqrtPriceX96 = uint160((ratio >> 32) + (ratio & ((1 << 32) - 1) == 0 ? 0 : 1));
         }
     }
 
