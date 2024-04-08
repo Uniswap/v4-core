@@ -365,6 +365,7 @@ library Pool {
                 ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
+                // use the effective fee
                 uint24(cache.protocolFee + swapFee - (uint32(cache.protocolFee) * uint32(swapFee)) / 1_000_000)
             );
 
@@ -381,16 +382,16 @@ library Pool {
                 state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
 
-            feeForProtocol += swapFee + cache.protocolFee == 0
-                ? 0
-                : FullMath.mulDiv(step.feeAmount, cache.protocolFee, swapFee + cache.protocolFee);
+            if (cache.protocolFee != 0) {
+                unchecked {
+                    feeForProtocol += FullMath.mulDiv(step.feeAmount, cache.protocolFee, swapFee + cache.protocolFee);
+                }
+            }
 
             // update global fee tracker
-            if (state.liquidity > 0) {
+            if (state.liquidity > 0 && swapFee != 0) {
                 unchecked {
-                    uint256 swapFeeAmount = swapFee + cache.protocolFee == 0
-                        ? 0
-                        : FullMath.mulDiv(step.feeAmount, swapFee, swapFee + cache.protocolFee);
+                    uint256 swapFeeAmount = FullMath.mulDiv(step.feeAmount, swapFee, swapFee + cache.protocolFee);
                     state.feeGrowthGlobalX128 += FullMath.mulDiv(swapFeeAmount, FixedPoint128.Q128, state.liquidity);
                 }
             }
