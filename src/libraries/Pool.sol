@@ -156,7 +156,10 @@ library Pool {
         internal
         returns (BalanceDelta result)
     {
-        checkTicks(params.tickLower, params.tickUpper);
+        int128 liquidityDelta = params.liquidityDelta;
+        int24 tickLower = params.tickLower;
+        int24 tickUpper = params.tickUpper;
+        checkTicks(tickLower, tickUpper);
 
         uint256 feesOwed0;
         uint256 feesOwed1;
@@ -164,82 +167,77 @@ library Pool {
             ModifyLiquidityState memory state;
 
             // if we need to update the ticks, do it
-            if (params.liquidityDelta != 0) {
+            if (liquidityDelta != 0) {
                 (state.flippedLower, state.liquidityGrossAfterLower) =
-                    updateTick(self, params.tickLower, params.liquidityDelta, false);
-                (state.flippedUpper, state.liquidityGrossAfterUpper) =
-                    updateTick(self, params.tickUpper, params.liquidityDelta, true);
+                    updateTick(self, tickLower, liquidityDelta, false);
+                (state.flippedUpper, state.liquidityGrossAfterUpper) = updateTick(self, tickUpper, liquidityDelta, true);
 
-                if (params.liquidityDelta > 0) {
+                // `>` and `>=` are logically equivalent here but `>=` is cheaper
+                if (liquidityDelta >= 0) {
                     uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
                     if (state.liquidityGrossAfterLower > maxLiquidityPerTick) {
-                        revert TickLiquidityOverflow(params.tickLower);
+                        revert TickLiquidityOverflow(tickLower);
                     }
                     if (state.liquidityGrossAfterUpper > maxLiquidityPerTick) {
-                        revert TickLiquidityOverflow(params.tickUpper);
+                        revert TickLiquidityOverflow(tickUpper);
                     }
                 }
 
                 if (state.flippedLower) {
-                    self.tickBitmap.flipTick(params.tickLower, params.tickSpacing);
+                    self.tickBitmap.flipTick(tickLower, params.tickSpacing);
                 }
                 if (state.flippedUpper) {
-                    self.tickBitmap.flipTick(params.tickUpper, params.tickSpacing);
+                    self.tickBitmap.flipTick(tickUpper, params.tickSpacing);
                 }
             }
 
-            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) =
-                getFeeGrowthInside(self, params.tickLower, params.tickUpper);
+            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = getFeeGrowthInside(self, tickLower, tickUpper);
 
-            (feesOwed0, feesOwed1) = self.positions.get(params.owner, params.tickLower, params.tickUpper).update(
-                params.liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128
-            );
+            Position.Info storage position = self.positions.get(params.owner, tickLower, tickUpper);
+            (feesOwed0, feesOwed1) =
+                position.update(liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
 
             // clear any tick data that is no longer needed
-            if (params.liquidityDelta < 0) {
+            if (liquidityDelta < 0) {
                 if (state.flippedLower) {
-                    clearTick(self, params.tickLower);
+                    clearTick(self, tickLower);
                 }
                 if (state.flippedUpper) {
-                    clearTick(self, params.tickUpper);
+                    clearTick(self, tickUpper);
                 }
             }
         }
 
-        if (params.liquidityDelta != 0) {
-            if (self.slot0.tick < params.tickLower) {
+        if (liquidityDelta != 0) {
+            int24 tick = self.slot0.tick;
+            uint160 sqrtPriceX96 = self.slot0.sqrtPriceX96;
+            if (tick < tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
                 result = toBalanceDelta(
                     SqrtPriceMath.getAmount0Delta(
-                        TickMath.getSqrtRatioAtTick(params.tickLower),
-                        TickMath.getSqrtRatioAtTick(params.tickUpper),
-                        params.liquidityDelta
+                        TickMath.getSqrtRatioAtTick(tickLower), TickMath.getSqrtRatioAtTick(tickUpper), liquidityDelta
                     ).toInt128(),
                     0
                 );
-            } else if (self.slot0.tick < params.tickUpper) {
+            } else if (tick < tickUpper) {
                 result = toBalanceDelta(
-                    SqrtPriceMath.getAmount0Delta(
-                        self.slot0.sqrtPriceX96, TickMath.getSqrtRatioAtTick(params.tickUpper), params.liquidityDelta
-                    ).toInt128(),
-                    SqrtPriceMath.getAmount1Delta(
-                        TickMath.getSqrtRatioAtTick(params.tickLower), self.slot0.sqrtPriceX96, params.liquidityDelta
-                    ).toInt128()
+                    SqrtPriceMath.getAmount0Delta(sqrtPriceX96, TickMath.getSqrtRatioAtTick(tickUpper), liquidityDelta)
+                        .toInt128(),
+                    SqrtPriceMath.getAmount1Delta(TickMath.getSqrtRatioAtTick(tickLower), sqrtPriceX96, liquidityDelta)
+                        .toInt128()
                 );
 
-                self.liquidity = params.liquidityDelta < 0
-                    ? self.liquidity - uint128(-params.liquidityDelta)
-                    : self.liquidity + uint128(params.liquidityDelta);
+                self.liquidity = liquidityDelta < 0
+                    ? self.liquidity - uint128(-liquidityDelta)
+                    : self.liquidity + uint128(liquidityDelta);
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
                 result = toBalanceDelta(
                     0,
                     SqrtPriceMath.getAmount1Delta(
-                        TickMath.getSqrtRatioAtTick(params.tickLower),
-                        TickMath.getSqrtRatioAtTick(params.tickUpper),
-                        params.liquidityDelta
+                        TickMath.getSqrtRatioAtTick(tickLower), TickMath.getSqrtRatioAtTick(tickUpper), liquidityDelta
                     ).toInt128()
                 );
             }
@@ -306,7 +304,8 @@ library Pool {
 
         Slot0 memory slot0Start = self.slot0;
         swapFee = slot0Start.swapFee;
-        if (params.zeroForOne) {
+        bool zeroForOne = params.zeroForOne;
+        if (zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
             }
@@ -324,9 +323,7 @@ library Pool {
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
-            protocolFee: params.zeroForOne
-                ? slot0Start.protocolFee.getZeroForOneFee()
-                : slot0Start.protocolFee.getOneForZeroFee()
+            protocolFee: zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee()
         });
 
         bool exactInput = params.amountSpecified < 0;
@@ -336,7 +333,7 @@ library Pool {
             amountCalculated: 0,
             sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
-            feeGrowthGlobalX128: params.zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
+            feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
             liquidity: cache.liquidityStart
         });
 
@@ -346,7 +343,7 @@ library Pool {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
             (step.tickNext, step.initialized) =
-                self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, params.zeroForOne);
+                self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, zeroForOne);
 
             // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
             if (step.tickNext < TickMath.MIN_TICK) {
@@ -362,7 +359,7 @@ library Pool {
             (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
                 state.sqrtPriceX96,
                 (
-                    params.zeroForOne
+                    zeroForOne
                         ? step.sqrtPriceNextX96 < params.sqrtPriceLimitX96
                         : step.sqrtPriceNextX96 > params.sqrtPriceLimitX96
                 ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
@@ -409,13 +406,13 @@ library Pool {
                     int128 liquidityNet = Pool.crossTick(
                         self,
                         step.tickNext,
-                        (params.zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
-                        (params.zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
+                        (zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
+                        (zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
                     );
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
                     unchecked {
-                        if (params.zeroForOne) liquidityNet = -liquidityNet;
+                        if (zeroForOne) liquidityNet = -liquidityNet;
                     }
 
                     state.liquidity = liquidityNet < 0
@@ -424,7 +421,7 @@ library Pool {
                 }
 
                 unchecked {
-                    state.tick = params.zeroForOne ? step.tickNext - 1 : step.tickNext;
+                    state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
@@ -438,14 +435,14 @@ library Pool {
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
         // update fee growth global
-        if (params.zeroForOne) {
+        if (zeroForOne) {
             self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
         } else {
             self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
         }
 
         unchecked {
-            if (params.zeroForOne == exactInput) {
+            if (zeroForOne == exactInput) {
                 result = toBalanceDelta(
                     (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
                     state.amountCalculated.toInt128()
