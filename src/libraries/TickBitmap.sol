@@ -19,7 +19,7 @@ library TickBitmap {
     function position(int24 tick) internal pure returns (int16 wordPos, uint8 bitPos) {
         unchecked {
             wordPos = int16(tick >> 8);
-            bitPos = uint8(int8(tick % 256));
+            bitPos = uint8(int8(tick & (256 - 1)));
         }
     }
 
