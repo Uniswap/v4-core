@@ -193,6 +193,15 @@ library SqrtPriceMath {
         }
     }
 
+    /// @notice Equivalent to: `a > b ? a - b : b - a`
+    function absDiff(uint160 a, uint160 b) internal pure returns (uint256 res) {
+        assembly {
+            let diff := sub(a, b)
+            let mask := sub(0, slt(diff, 0))
+            res := xor(mask, add(mask, diff))
+        }
+    }
+
     /// @notice Gets the amount1 delta between two prices
     /// @dev Calculates liquidity * (sqrt(upper) - sqrt(lower))
     /// @param sqrtRatioAX96 A sqrt price
@@ -205,8 +214,7 @@ library SqrtPriceMath {
         pure
         returns (uint256 amount1)
     {
-        (sqrtRatioAX96, sqrtRatioBX96) = sort2(sqrtRatioAX96, sqrtRatioBX96);
-        uint256 numerator = sqrtRatioBX96.sub(sqrtRatioAX96);
+        uint256 numerator = absDiff(sqrtRatioAX96, sqrtRatioBX96);
         uint256 denominator = FixedPoint96.Q96;
         /**
          * Equivalent to:
