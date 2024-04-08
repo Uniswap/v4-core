@@ -20,7 +20,6 @@ library Pool {
     using Position for Position.Info;
     using Pool for State;
     using ProtocolFeeLibrary for uint24;
-    using LiquidityMath for uint128;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -230,7 +229,7 @@ library Pool {
                     ).toInt128()
                 );
 
-                self.liquidity = self.liquidity.addDelta(params.liquidityDelta);
+                self.liquidity = LiquidityMath.addDelta(self.liquidity, params.liquidityDelta);
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
@@ -418,7 +417,7 @@ library Pool {
                         if (params.zeroForOne) liquidityNet = -liquidityNet;
                     }
 
-                    state.liquidity = state.liquidity.addDelta(liquidityNet);
+                    state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
 
                 unchecked {
@@ -527,7 +526,7 @@ library Pool {
             liquidityNetBefore := shr(128, liquidity)
         }
 
-        liquidityGrossAfter = liquidityGrossBefore.addDelta(liquidityDelta);
+        liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 
