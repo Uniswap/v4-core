@@ -9,7 +9,7 @@ library ProtocolFeeLibrary {
     uint16 internal constant BIPS_DENOMINATOR = 10_000;
 
     function getZeroForOneFee(uint24 self) internal pure returns (uint16) {
-        return uint16(self % 4096);
+        return uint16(self & (4096 - 1));
     }
 
     function getOneForZeroFee(uint24 self) internal pure returns (uint16) {
