@@ -370,7 +370,7 @@ library Pool {
                 state.liquidity,
                 state.amountSpecifiedRemaining,
                 // use the effective fee
-                uint24(cache.protocolFee + swapFee - (uint32(cache.protocolFee) * uint32(swapFee)) / MAX_EFFECTIVE_FEE)
+                cache.protocolFee == 0 ? swapFee : uint24(cache.protocolFee).calculateEffectiveFee(swapFee)
             );
 
             if (exactInput) {

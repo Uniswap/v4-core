@@ -27,4 +27,10 @@ library ProtocolFeeLibrary {
         }
         return true;
     }
+
+    function calculateEffectiveFee(uint24 self, uint24 swapFee) internal pure returns (uint24) {
+        unchecked {
+            return uint24(self + swapFee - (uint32(self) * uint32(swapFee)) / PIPS_DENOMINATOR);
+        }
+    }
 }
