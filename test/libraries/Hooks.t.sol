@@ -5,7 +5,7 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Hooks} from "src/libraries/Hooks.sol";
-import {SwapFeeLibrary} from "src/libraries/SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "src/libraries/LPFeeLibrary.sol";
 import {MockHooks} from "src/test/MockHooks.sol";
 import {IPoolManager} from "src/interfaces/IPoolManager.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
@@ -146,7 +146,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         swapRouter.swap(key, swapParams, testSettings, new bytes(222));
         assertEq(mockHooks.beforeSwapData(), new bytes(222));
@@ -159,7 +159,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(false, false, false),
+            PoolSwapTest.TestSettings(true, true),
             ZERO_BYTES
         );
     }
@@ -170,7 +170,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(false, false, false),
+            PoolSwapTest.TestSettings(true, true),
             ZERO_BYTES
         );
     }
@@ -809,13 +809,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function test_isValidIfDynamicFee() public {
         assertTrue(
-            Hooks.isValidHookAddress(
-                IHooks(0x0000000000000000000000000000000000000001), SwapFeeLibrary.DYNAMIC_FEE_FLAG
-            )
+            Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), LPFeeLibrary.DYNAMIC_FEE_FLAG)
         );
         assertTrue(
             Hooks.isValidHookAddress(
-                IHooks(0x0000000000000000000000000000000000000001), SwapFeeLibrary.DYNAMIC_FEE_FLAG | uint24(3000)
+                IHooks(0x0000000000000000000000000000000000000001), LPFeeLibrary.DYNAMIC_FEE_FLAG | uint24(3000)
             )
         );
         assertTrue(Hooks.isValidHookAddress(IHooks(0x8000000000000000000000000000000000000000), 3000));
