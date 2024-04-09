@@ -37,7 +37,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     error UnauthorizedDynamicSwapFeeUpdate();
 
     ///@notice Thrown when native currency is passed to a non native settlement
-    error rejectNative();
+    error NonZeroNativeValue();
 
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
