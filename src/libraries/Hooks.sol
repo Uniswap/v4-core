@@ -120,7 +120,7 @@ library Hooks {
     /// @notice performs a hook call using the given calldata on the given hook that doesnt return a delta
     /// @return result The complete data returned by the hook
     function callHook(IHooks self, bytes memory data) internal returns (bytes memory result) {
-        if (msg.sender == address(self)) return '';
+        if (msg.sender == address(self)) return "";
         bool success;
         (success, result) = address(self).call(data);
         if (!success) _revert(result);
