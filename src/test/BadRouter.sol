@@ -121,10 +121,6 @@ contract BadRouter is PoolTestBase {
         return abi.encode(delta);
     }
 
-    // Swap -10, 10
-    // Sync, the balance is 
-    // Settle
-
     function _settle(Currency currency, address payer, int128 amount, bool settleUsingTransfer) internal override {
         require(amount < 0, "amount is not less than zero");
         if (settleUsingTransfer) {
