@@ -12,7 +12,7 @@ interface IProtocolFees {
     /// @notice Thrown when protocol fee is set too high
     error InvalidProtocolFee();
 
-    /// @notice Thrown when collectProtocolFees is not called by the controller.
+    /// @notice Thrown when collectProtocolFees or setProtocolFee is not called by the controller.
     error InvalidCaller();
 
     event ProtocolFeeControllerUpdated(address protocolFeeController);
