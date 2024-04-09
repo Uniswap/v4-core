@@ -32,9 +32,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
     error CurrenciesOutOfOrderOrEqual();
 
-    /// @notice Thrown when the transient reserves are not in sync with the current balance
-    error ReservesMustBeSynced();
-
     /// @notice Thrown when a call to updateDynamicSwapFee is made by an address that is not the hook,
     /// or on a pool that does not have a dynamic swap fee.
     error UnauthorizedDynamicSwapFeeUpdate();
@@ -83,8 +80,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         int24 tick,
         uint24 fee
     );
-
-    function ZERO_BALANCE() external view returns (uint256);
 
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);

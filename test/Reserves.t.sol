@@ -14,7 +14,13 @@ contract ReservesTest is Test {
         currency0 = Currency.wrap(address(0xbeef));
     }
 
-    function test_get_succeeds_default() public {
+    function test_get_reverts_withoutSet() public {
+        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
+        uint256 value = currency0.getReserves();
+    }
+
+    function test_get_returns0AfterSet() public {
+        currency0.setReserves(0);
         uint256 value = currency0.getReserves();
         assertEq(value, 0);
     }
@@ -37,6 +43,7 @@ contract ReservesTest is Test {
     }
 
     function test_fuzz_get_set(Currency currency, uint256 value) public {
+        vm.assume(value != type(uint256).max);
         currency.setReserves(value);
         assertEq(currency.getReserves(), value);
     }

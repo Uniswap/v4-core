@@ -15,6 +15,7 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {BadRouter} from "../src/test/BadRouter.sol";
 import {ActionsRouter, Actions} from "../src/test/ActionsRouter.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
+import {Reserves} from "../src/libraries/Reserves.sol";
 
 contract SyncTest is Test, Deployers, GasSnapshot {
     using CurrencyLibrary for Currency;
@@ -35,15 +36,18 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
         uint256 balance = manager.sync(currency2);
 
-        assertEq(uint256(balance), manager.ZERO_BALANCE()); // return val is ZERO_BALANCE sentinel
-        assertEq(manager.getReserves(currency2), manager.ZERO_BALANCE()); // transient val is ZERO_BALANCE sentinel
+        assertEq(uint256(balance), 0);
+        assertEq(manager.getReserves(currency2), 0);
     }
 
     function test_sync_balanceIsNonZero() public {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
         assertGt(currency0Balance, uint256(0));
 
-        assertEq(manager.getReserves(currency0), uint256(0));
+        // Without calling sync, getReserves should revert.
+        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
+        manager.getReserves(currency0);
+
         uint256 balance = manager.sync(currency0);
         assertEq(balance, currency0Balance, "balance not equal");
     }
@@ -58,7 +62,9 @@ contract SyncTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
         // Sync has not been called.
-        assertEq(manager.getReserves(currency0), uint256(0));
+        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
+        manager.getReserves(currency0);
+
         swapRouter.swap(key, params, testSettings, new bytes(0));
         (uint256 balanceCurrency0) = currency0.balanceOf(address(manager));
         assertEq(manager.getReserves(currency0), balanceCurrency0); // Reserves are up to date since settle was called.
@@ -74,7 +80,8 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         manager.initialize(key2, SQRT_RATIO_1_1, new bytes(0));
 
         // Sync has not been called.
-        assertEq(manager.getReserves(currency2), uint256(0));
+        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
+        manager.getReserves(currency2);
         modifyLiquidityRouter.modifyLiquidity(key2, IPoolManager.ModifyLiquidityParams(-60, 60, 100), new bytes(0));
         (uint256 balanceCurrency2) = currency2.balanceOf(address(manager));
         assertEq(manager.getReserves(currency2), balanceCurrency2);
@@ -89,32 +96,30 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         BadRouter.TestSettings memory testSettings =
             BadRouter.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
 
-        // Sync has not been called.
-        assertEq(manager.getReserves(currency0), uint256(0));
-
-        vm.expectRevert(IPoolManager.ReservesMustBeSynced.selector);
+        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
         badRouter.swap(key, params, testSettings, new bytes(0));
     }
 
-    /// @notice When there is no balance and reserves are set to type(uint256).max, a delta of that value should not be applied.
+    /// @notice When there is no balance and reserves are set to type(uint256).max, no delta should be applied.
     function test_settle_noBalanceInPool_shouldNotApplyDelta() public {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
 
         // Sync has not been called.
-        assertEq(manager.getReserves(currency2), uint256(0));
+        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
+        manager.getReserves(currency2);
 
         manager.sync(currency2);
-        assertEq(manager.getReserves(currency2), manager.ZERO_BALANCE());
+        assertEq(manager.getReserves(currency2), 0);
 
-        Actions[] memory actions = new Actions[](1);
+        Actions[] memory actions = new Actions[](2);
         actions[0] = Actions.SETTLE;
 
-        bytes[] memory params = new bytes[](1);
+        bytes[] memory params = new bytes[](2);
         params[0] = abi.encode(currency2);
 
-        // Calling settle without transferring should not apply the sentinel delta.
-        // It should not even assign a valid number to the `paid` variable and should instead under/overflow on calculation.
-        // vm.expectRevert();
+        actions[1] = Actions.ASSERT_DELTA_EQUALS;
+        params[1] = abi.encode(currency2, address(router), 0);
+
         router.executeActions(actions, params);
     }
 
@@ -127,11 +132,12 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         MockERC20(Currency.unwrap(currency3)).approve(address(router), type(uint256).max);
 
         // Sync has not been called on currency0.
-        assertEq(manager.getReserves(currency3), uint256(0));
+        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
+        manager.getReserves(currency3);
 
         manager.sync(currency3);
         // Sync has been called.
-        assertEq(manager.getReserves(currency3), manager.ZERO_BALANCE());
+        assertEq(manager.getReserves(currency3), 0);
 
         uint256 maxBalanceCurrency3 = uint256(int256(type(int128).max));
 
@@ -168,7 +174,9 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[5] = Actions.ASSERT_DELTA_EQUALS;
         params[5] = abi.encode(currency3, address(router), 0);
 
-        // 3. Take the full balance from the pool, but do not call sync. That was reservesBefore > 0. But the next reserves
+        // 3. Take the full balance from the pool, but do not call sync.
+        // Thus reservesBefore stays > 0. And the next reserves call will be 0 causing a revert.
+
         // Encode a TAKE.
         actions[6] = Actions.TAKE;
         params[6] = abi.encode(currency3, address(this), maxBalanceCurrency3);
@@ -185,7 +193,9 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[9] = Actions.SETTLE;
         params[9] = abi.encode(currency3);
 
-        // vm.expectRevert(); should underflow before any value is applied to `paid` rather than under/overflow on .toUint218()
+        // Expect an underflow/overflow because reservesBefore > reservesNow since sync() had not been called before settle.
+        vm.expectRevert(abi.encodeWithSignature("Panic(uint256)", 0x11));
+
         router.executeActions(actions, params);
     }
 }

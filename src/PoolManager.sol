@@ -42,10 +42,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
-    /// @notice The transient reserves for pools with no balance is set to the max as a sentinel to track that it has been synced.
-    /// Note that this value cannot be less than type(int128).max so as to not
-    uint256 public constant ZERO_BALANCE = type(uint256).max;
-
     mapping(PoolId id => Pool.State) public pools;
 
     constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
@@ -150,7 +146,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function sync(Currency currency) public returns (uint256 balance) {
         balance = currency.balanceOfSelf();
-        if (balance == 0) balance = ZERO_BALANCE;
         currency.setReserves(balance);
     }
 
@@ -279,9 +274,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             paid = msg.value;
         } else {
             uint256 reservesBefore = currency.getReserves();
-            if (reservesBefore == 0) revert ReservesMustBeSynced();
             uint256 reservesNow = sync(currency);
-            paid = reservesBefore == ZERO_BALANCE ? reservesNow : reservesNow - reservesBefore;
+            paid = reservesNow - reservesBefore;
         }
         _accountDelta(currency, paid.toInt128());
     }
