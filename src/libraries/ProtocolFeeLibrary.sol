@@ -6,7 +6,7 @@ library ProtocolFeeLibrary {
     uint16 public constant MAX_PROTOCOL_FEE = 1000;
 
     // the protocol fee is represented in hundredths of a bip
-    uint24 internal constant BIPS_DENOMINATOR = 1_000_000;
+    uint24 internal constant PIPS_DENOMINATOR = 1_000_000;
 
     function getZeroForOneFee(uint24 self) internal pure returns (uint16) {
         return uint16(self & (4096 - 1));
@@ -20,7 +20,7 @@ library ProtocolFeeLibrary {
         if (self != 0) {
             uint16 fee0 = getZeroForOneFee(self);
             uint16 fee1 = getOneForZeroFee(self);
-            // The fee is represented in bips so it cannot be GREATER than the MAX_PROTOCOL_FEE.
+            // The fee is represented in pips so it cannot be GREATER than the MAX_PROTOCOL_FEE.
             if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
                 return false;
             }

@@ -11,14 +11,16 @@ import {TickBitmap} from "src/libraries/TickBitmap.sol";
 import {LiquidityAmounts} from "test/utils/LiquidityAmounts.sol";
 import {Constants} from "test/utils/Constants.sol";
 import {SafeCast} from "src/libraries/SafeCast.sol";
+import {ProtocolFeeLibrary} from "src/libraries/ProtocolFeeLibrary.sol";
+import {SwapFeeLibrary} from "src/libraries/SwapFeeLibrary.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
 
     Pool.State state;
 
-    uint24 constant MAX_PROTOCOL_FEE = 1000; // 0.1%
-    uint24 constant MAX_SWAP_FEE = 1_000_000; // 100%
+    uint24 constant MAX_PROTOCOL_FEE = ProtocolFeeLibrary.MAX_PROTOCOL_FEE; // 0.1%
+    uint24 constant MAX_SWAP_FEE = SwapFeeLibrary.MAX_SWAP_FEE; // 100%
 
     function testPoolInitialize(uint160 sqrtPriceX96, uint24 protocolFee, uint24 dynamicFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {

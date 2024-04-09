@@ -72,6 +72,7 @@ library Pool {
         // protocol fee, expressed in hundredths of a bip
         // upper 12 bits are for 1->0, and the lower 12 are for 0->1
         // the maximum is 1000 - meaning the maximum protocol fee is 0.1%
+        // the protocolFee is taken from the input first, then the swapFee is taken from the remaining input
         uint24 protocolFee;
         // used for the swap fee, either static at initialize or dynamic via hook
         uint24 swapFee;
@@ -385,17 +386,21 @@ library Pool {
                 state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
 
+            // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
             if (cache.protocolFee > 0) {
+                // calculate the amount of the fee that should go to the protocol
+                uint256 delta = FullMath.mulDiv(step.feeAmount, cache.protocolFee, swapFee + cache.protocolFee);
+                // subtract it from the regular fee and add it to the protocol fee
                 unchecked {
-                    feeForProtocol += FullMath.mulDiv(step.feeAmount, cache.protocolFee, swapFee + cache.protocolFee);
+                    step.feeAmount -= delta;
+                    feeForProtocol += delta;
                 }
             }
 
             // update global fee tracker
-            if (state.liquidity > 0 && swapFee > 0) {
+            if (state.liquidity > 0) {
                 unchecked {
-                    uint256 swapFeeAmount = FullMath.mulDiv(step.feeAmount, swapFee, swapFee + cache.protocolFee);
-                    state.feeGrowthGlobalX128 += FullMath.mulDiv(swapFeeAmount, FixedPoint128.Q128, state.liquidity);
+                    state.feeGrowthGlobalX128 += FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
                 }
             }
 
