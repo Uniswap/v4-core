@@ -47,6 +47,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
 
+    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
+        return pools[id];
+    }
+
     /// @inheritdoc IPoolManager
     function getSlot0(PoolId id)
         external
@@ -247,12 +251,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) =
             pools[id].swap(params);
 
-        // the fee is on the input currency
-        unchecked {
-            if (feeForProtocol > 0) {
-                protocolFeesAccrued[inputCurrency] += feeForProtocol;
-            }
-        }
+        // The fee is on the input currency.
+        if (feeForProtocol > 0) _updateProtocolFees(inputCurrency, feeForProtocol);
 
         emit Swap(
             id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
@@ -338,14 +338,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function burn(address from, uint256 id, uint256 amount) external override onlyWhenUnlocked {
         _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128(), msg.sender);
         _burnFrom(from, id, amount);
-    }
-
-    function setProtocolFee(PoolKey memory key) external {
-        (bool success, uint24 newProtocolFee) = _fetchProtocolFee(key);
-        if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
-        PoolId id = key.toId();
-        pools[id].setProtocolFee(newProtocolFee);
-        emit ProtocolFeeUpdated(id, newProtocolFee);
     }
 
     function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external {

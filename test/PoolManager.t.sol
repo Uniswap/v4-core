@@ -34,6 +34,7 @@ import {Constants} from "./utils/Constants.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
+import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -59,7 +60,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         int24 tick,
         uint24 fee
     );
-    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
+
     event Transfer(
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
     );
@@ -1243,7 +1244,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             manager.setProtocolFee(key);
         } else {
             vm.expectEmit(false, false, false, true);
-            emit ProtocolFeeUpdated(key.toId(), protocolFee);
+            emit IProtocolFees.ProtocolFeeUpdated(key.toId(), protocolFee);
             manager.setProtocolFee(key);
 
             (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
