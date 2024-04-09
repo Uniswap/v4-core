@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {console2} from "forge-std/console2.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Pool} from "src/libraries/Pool.sol";
 import {PoolManager} from "src/PoolManager.sol";

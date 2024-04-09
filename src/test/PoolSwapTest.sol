@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import {console2} from "forge-std/console2.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
