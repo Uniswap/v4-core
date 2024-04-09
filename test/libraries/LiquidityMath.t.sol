@@ -3,13 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from "forge-std/Test.sol";
 import {SafeCast} from "src/libraries/SafeCast.sol";
-import {LiquidityMath} from "src/libraries/LiquidityMath.sol";
-
-contract LiquidityMathMock {
-    function addDelta(uint128 x, int128 y) external pure returns (uint128 z) {
-        return LiquidityMath.addDelta(x, y);
-    }
-}
+import {LiquidityMathTest as LiquidityMath} from "src/test/LiquidityMathTest.sol";
 
 contract LiquidityMathRef {
     function addDelta(uint128 x, int128 y) external pure returns (uint128) {
@@ -18,11 +12,11 @@ contract LiquidityMathRef {
 }
 
 contract LiquidityMathTest is Test {
-    LiquidityMathMock internal liquidityMath;
+    LiquidityMath internal liquidityMath;
     LiquidityMathRef internal liquidityMathRef;
 
     function setUp() public {
-        liquidityMath = new LiquidityMathMock();
+        liquidityMath = new LiquidityMath();
         liquidityMathRef = new LiquidityMathRef();
     }
 
