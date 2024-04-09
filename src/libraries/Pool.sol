@@ -11,6 +11,7 @@ import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
+import {LiquidityMath} from "./LiquidityMath.sol";
 
 library Pool {
     using SafeCast for *;
@@ -228,9 +229,7 @@ library Pool {
                         .toInt128()
                 );
 
-                self.liquidity = liquidityDelta < 0
-                    ? self.liquidity - uint128(-liquidityDelta)
-                    : self.liquidity + uint128(liquidityDelta);
+                self.liquidity = LiquidityMath.addDelta(self.liquidity, liquidityDelta);
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ currency1 (it's becoming more valuable) so user must provide it
@@ -415,9 +414,7 @@ library Pool {
                         if (zeroForOne) liquidityNet = -liquidityNet;
                     }
 
-                    state.liquidity = liquidityNet < 0
-                        ? state.liquidity - uint128(-liquidityNet)
-                        : state.liquidity + uint128(liquidityNet);
+                    state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
 
                 unchecked {
@@ -526,9 +523,7 @@ library Pool {
             liquidityNetBefore := shr(128, liquidity)
         }
 
-        liquidityGrossAfter = liquidityDelta < 0
-            ? liquidityGrossBefore - uint128(-liquidityDelta)
-            : liquidityGrossBefore + uint128(liquidityDelta);
+        liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 
