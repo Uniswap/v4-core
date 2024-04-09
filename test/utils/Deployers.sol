@@ -100,12 +100,11 @@ contract Deployers {
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
         MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
 
-        address[7] memory toApprove = [
+        address[6] memory toApprove = [
             address(swapRouter),
             address(modifyLiquidityRouter),
             address(donateRouter),
             address(takeRouter),
-            address(settleRouter),
             address(claimsRouter),
             address(nestedActionRouter.executor())
         ];
