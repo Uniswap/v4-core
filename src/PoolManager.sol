@@ -43,6 +43,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
     /// @notice The transient reserves for pools with no balance is set to the max as a sentinel to track that it has been synced.
+    /// Note that this value cannot be less than type(int128).max so as to not
     uint256 public constant ZERO_BALANCE = type(uint256).max;
 
     mapping(PoolId id => Pool.State) public pools;
