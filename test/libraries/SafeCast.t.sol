@@ -15,6 +15,15 @@ contract SafeCastTest is Test {
         }
     }
 
+    function testToUint128(uint256 x) public {
+        if (x <= type(uint128).max) {
+            assertEq(uint256(SafeCast.toUint128(x)), x);
+        } else {
+            vm.expectRevert(SafeCast.SafeCastOverflow.selector);
+            SafeCast.toUint128(x);
+        }
+    }
+
     function testToInt128(int256 x) public {
         if (x <= type(int128).max && x >= type(int128).min) {
             assertEq(int256(SafeCast.toInt128(x)), x);

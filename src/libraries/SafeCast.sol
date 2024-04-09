@@ -14,6 +14,21 @@ library SafeCast {
         if (z != y) revert SafeCastOverflow();
     }
 
+    /// @notice Cast a uint256 to a uint128, revert on overflow
+    /// @param y The uint256 to be downcasted
+    /// @return z The downcasted integer, now type uint128
+    function toUint128(uint256 y) internal pure returns (uint128 z) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            if iszero(lt(y, shl(128, 1))) {
+                // revert SafeCastOverflow();
+                mstore(0, 0x93dafdf1)
+                revert(0x1c, 0x04)
+            }
+            z := y
+        }
+    }
+
     /// @notice Cast a int256 to a int128, revert on overflow or underflow
     /// @param y The int256 to be downcasted
     /// @return z The downcasted integer, now type int128
