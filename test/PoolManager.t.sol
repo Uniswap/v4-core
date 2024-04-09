@@ -938,7 +938,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_settle_revertsSendingNativeWithToken() public {
         vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
-        settleRouter.settle{value: 1}(key, 1, 1);
+        settleRouter.settle{value: 1}(key);
     }
 
     function test_mint_failsIfLocked() public {
