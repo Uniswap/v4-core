@@ -178,13 +178,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override onlyWhenUnlocked returns (BalanceDelta delta) {
+    ) external override onlyWhenUnlocked returns (BalanceDelta delta, BalanceDelta feeDelta) {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
-        delta = pools[id].modifyLiquidity(
+        (delta, feeDelta) = pools[id].modifyLiquidity(
             Pool.ModifyLiquidityParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -194,7 +194,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             })
         );
 
-        _accountPoolBalanceDelta(key, delta);
+        _accountPoolBalanceDelta(key, delta + feeDelta);
 
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
 

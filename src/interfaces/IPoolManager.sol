@@ -158,10 +158,11 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
     /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
-    /// @return delta The balance delta of the liquidity
+    /// @return delta The balance delta of the liquidity change
+    /// @return feeDelta The balance delta of the fees generated in the liquidity range
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta);
+        returns (BalanceDelta, BalanceDelta);
 
     struct SwapParams {
         bool zeroForOne;
