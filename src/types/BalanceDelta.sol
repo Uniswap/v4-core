@@ -9,8 +9,7 @@ using BalanceDeltaLibrary for BalanceDelta global;
 function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceDelta balanceDelta) {
     /// @solidity memory-safe-assembly
     assembly {
-        balanceDelta :=
-            or(shl(128, _amount0), and(0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff, _amount1))
+        balanceDelta := or(shl(128, _amount0), and(0xffffffffffffffffffffffffffffffff, _amount1))
     }
 }
 

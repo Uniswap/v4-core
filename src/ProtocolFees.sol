@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
-import {Currency, CurrencyLibrary} from "src/types/Currency.sol";
-import {IProtocolFeeController} from "src/interfaces/IProtocolFeeController.sol";
-import {IProtocolFees} from "src/interfaces/IProtocolFees.sol";
-import {PoolKey} from "src/types/PoolKey.sol";
-import {ProtocolFeeLibrary} from "src/libraries/ProtocolFeeLibrary.sol";
+import {Currency, CurrencyLibrary} from "./types/Currency.sol";
+import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
+import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
+import {PoolKey} from "./types/PoolKey.sol";
+import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
 import {Owned} from "solmate/auth/Owned.sol";
-import {PoolId, PoolIdLibrary} from "src/types/PoolId.sol";
-import {Pool} from "src/libraries/Pool.sol";
+import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
+import {Pool} from "./libraries/Pool.sol";
 
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
