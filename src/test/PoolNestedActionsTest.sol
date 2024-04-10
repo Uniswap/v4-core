@@ -10,6 +10,7 @@ import {Test} from "forge-std/Test.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 enum Action {
     NESTED_SELF_UNLOCK,
@@ -58,6 +59,7 @@ contract PoolNestedActionsTest is Test, IUnlockCallback {
 }
 
 contract NestedActionExecutor is Test, PoolTestBase {
+    using CurrencySettleTake for Currency;
     using PoolIdLibrary for PoolKey;
 
     PoolKey internal key;
@@ -129,8 +131,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(delta.amount0(), deltaThisAfter0, "Swap delta 0");
         assertEq(delta.amount1(), deltaThisAfter1, "Swap delta 1");
 
-        _settle(key.currency0, user, int128(deltaThisAfter0), true);
-        _take(key.currency1, user, int128(deltaThisAfter1), true);
+        key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
+        key.currency1.take(manager, user, uint256(deltaThisAfter1), false);
     }
 
     function _addLiquidity(address caller) internal {
@@ -153,8 +155,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaThisBefore0 + delta.amount0(), deltaThisAfter0, "Executor delta 0");
         assertEq(deltaThisBefore1 + delta.amount1(), deltaThisAfter1, "Executor delta 1");
 
-        _settle(key.currency0, user, int128(deltaThisAfter0), true);
-        _settle(key.currency1, user, int128(deltaThisAfter1), true);
+        key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
+        key.currency1.settle(manager, user, uint256(-deltaThisAfter1), false);
     }
 
     // cannot remove non-existent liquidity - need to perform an add before this removal
@@ -178,8 +180,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaThisBefore0 + delta.amount0(), deltaThisAfter0, "Executor delta 0");
         assertEq(deltaThisBefore1 + delta.amount1(), deltaThisAfter1, "Executor delta 1");
 
-        _take(key.currency0, user, int128(deltaThisAfter0), true);
-        _take(key.currency1, user, int128(deltaThisAfter1), true);
+        key.currency0.take(manager, user, uint256(deltaThisAfter0), false);
+        key.currency1.take(manager, user, uint256(deltaThisAfter1), false);
     }
 
     function _donate(address caller) internal {
@@ -204,8 +206,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(-delta.amount0(), int256(DONATE_AMOUNT0), "Donate delta 0");
         assertEq(-delta.amount1(), int256(DONATE_AMOUNT1), "Donate delta 1");
 
-        _settle(key.currency0, user, int128(deltaThisAfter0), true);
-        _settle(key.currency1, user, int128(deltaThisAfter1), true);
+        key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
+        key.currency1.settle(manager, user, uint256(-deltaThisAfter1), false);
     }
 
     function _initialize() internal {

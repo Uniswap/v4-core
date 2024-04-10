@@ -7,9 +7,11 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolClaimsTest is PoolTestBase {
     using CurrencyLibrary for Currency;
+    using CurrencySettleTake for Currency;
     using SafeCast for uint256;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
@@ -39,10 +41,11 @@ contract PoolClaimsTest is PoolTestBase {
 
         if (data.deposit) {
             manager.mint(data.user, data.currency.toId(), uint128(data.amount));
-            _settle(data.currency, data.user, -data.amount.toInt128(), true);
+            data.currency.settle(manager, data.user, data.amount, false);
+
         } else {
             manager.burn(data.user, data.currency.toId(), uint128(data.amount));
-            _take(data.currency, data.user, data.amount.toInt128(), true);
+            data.currency.take(manager, data.user, data.amount, false);
         }
 
         return abi.encode(0);
