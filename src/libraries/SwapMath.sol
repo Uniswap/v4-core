@@ -60,9 +60,7 @@ library SwapMath {
                 amountOut = zeroForOne
                     ? SqrtPriceMath.getAmount1Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, false)
                     : SqrtPriceMath.getAmount0Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, false);
-                assembly {
-                    amountRemainingAbs := amountRemaining
-                }
+                amountRemainingAbs = uint256(amountRemaining);
                 if (amountRemainingAbs >= amountOut) {
                     // `amountOut` is capped by the target price
                     sqrtRatioNextX96 = sqrtRatioTargetX96;
@@ -77,9 +75,7 @@ library SwapMath {
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioNextX96, liquidity, true);
                 feeAmount = FullMath.mulDivRoundingUp(amountIn, feePips, feeComplement);
             } else {
-                assembly {
-                    amountRemainingAbs := sub(0, amountRemaining)
-                }
+                amountRemainingAbs = uint256(-amountRemaining);
                 uint256 amountRemainingLessFee = FullMath.mulDiv(amountRemainingAbs, feeComplement, MAX_FEE_PIPS);
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true)
