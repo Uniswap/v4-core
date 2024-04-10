@@ -32,6 +32,7 @@ import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
+import {PoolStateLibrary} from "../src/libraries/PoolStateLibrary.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -765,7 +766,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         feeController.setProtocolFeeForPool(key.toId(), protocolFee);
         manager.setProtocolFee(key);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, uint24 slot0ProtocolFee,) = PoolStateLibrary.getSlot0(manager, key.toId());
         assertEq(slot0ProtocolFee, protocolFee);
 
         // Add liquidity - Fees dont accrue for positive liquidity delta.
