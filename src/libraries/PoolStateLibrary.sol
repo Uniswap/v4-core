@@ -6,9 +6,9 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 library PoolStateLibrary {
     // forge inspect src/PoolManager.sol:PoolManager storage --pretty
-    // | Name                  | Type                                                                | Slot | Offset | Bytes | Contract                        |
-    // |-----------------------|---------------------------------------------------------------------|------|--------|-------|---------------------------------|
-    // | pools                 | mapping(PoolId => struct Pool.State)                                | 7    | 0      | 32    | src/PoolManager.sol:PoolManager |
+    // | Name                  | Type                                    | Slot | Offset | Bytes | Contract                        |
+    // |-----------------------|-----------------------------------------|------|--------|-------|---------------------------------|
+    // | pools                 | mapping(PoolId => struct Pool.State)    | 7    | 0      | 32    | src/PoolManager.sol:PoolManager |
     uint256 public constant POOLS_SLOT = 7;
 
     // index of feeGrowthGlobal0X128 in Pool.State
