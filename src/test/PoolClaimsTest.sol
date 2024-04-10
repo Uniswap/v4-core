@@ -42,7 +42,6 @@ contract PoolClaimsTest is PoolTestBase {
         if (data.deposit) {
             manager.mint(data.user, data.currency.toId(), uint128(data.amount));
             data.currency.settle(manager, data.user, data.amount, false);
-
         } else {
             manager.burn(data.user, data.currency.toId(), uint128(data.amount));
             data.currency.take(manager, data.user, data.amount, false);
