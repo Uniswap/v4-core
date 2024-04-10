@@ -17,7 +17,10 @@ contract ProtocolFeeLibraryTest is Test {
     }
 
     function test_fuzz_validate_protocolFee(uint24 fee) public {
-        if ((fee >> 12 > ProtocolFeeLibrary.MAX_PROTOCOL_FEE) || (fee & (4096 - 1) > ProtocolFeeLibrary.MAX_PROTOCOL_FEE)) {
+        if (
+            (fee >> 12 > ProtocolFeeLibrary.MAX_PROTOCOL_FEE)
+                || (fee & (4096 - 1) > ProtocolFeeLibrary.MAX_PROTOCOL_FEE)
+        ) {
             assertFalse(ProtocolFeeLibrary.validate(fee));
         } else {
             assertTrue(ProtocolFeeLibrary.validate(fee));
