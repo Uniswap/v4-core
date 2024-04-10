@@ -21,9 +21,11 @@ import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
+import {Extsload} from "./Extsload.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims {
+
+contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -295,26 +297,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         newDynamicSwapFee.validate();
         PoolId id = key.toId();
         pools[id].setSwapFee(newDynamicSwapFee);
-    }
-
-    function extsload(bytes32 slot) external view returns (bytes32 value) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            value := sload(slot)
-        }
-    }
-
-    function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
-        bytes memory value = new bytes(32 * nSlots);
-
-        /// @solidity memory-safe-assembly
-        assembly {
-            for { let i := 0 } lt(i, nSlots) { i := add(i, 1) } {
-                mstore(add(value, mul(add(i, 1), 32)), sload(add(startSlot, i)))
-            }
-        }
-
-        return value;
     }
 
     function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
