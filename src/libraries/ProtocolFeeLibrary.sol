@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 library ProtocolFeeLibrary {
-    // Max protocol fee is 0.1%
+    // Max protocol fee is 0.1% (1000 pips)
     uint16 public constant MAX_PROTOCOL_FEE = 1000;
 
     // the protocol fee is represented in hundredths of a bip
@@ -20,7 +20,7 @@ library ProtocolFeeLibrary {
         if (self != 0) {
             uint16 fee0 = getZeroForOneFee(self);
             uint16 fee1 = getOneForZeroFee(self);
-            // The fee is represented in pips so it cannot be GREATER than the MAX_PROTOCOL_FEE.
+            // The fee is represented in pips and it cannot be greater than the MAX_PROTOCOL_FEE.
             if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
                 return false;
             }

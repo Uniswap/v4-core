@@ -54,5 +54,11 @@ contract ProtocolFeeLibraryTest is Test {
 
         swapFee = 3000;
         assertEq(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), 3997);
+
+        swapFee = 0;
+        assertEq(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), ProtocolFeeLibrary.MAX_PROTOCOL_FEE);
+
+        self = 0;
+        assertEq(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), 0);
     }
 }
