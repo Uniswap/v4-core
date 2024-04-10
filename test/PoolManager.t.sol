@@ -969,11 +969,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, 0);
 
-        manager.setProtocolFeeController(outOfBoundsFeeController);
-        uint24 newProtocolFee = outOfBoundsFeeController.protocolFeeForPool(key);
-        vm.prank(address(outOfBoundsFeeController));
+        vm.prank(address(feeController));
         vm.expectRevert(IProtocolFees.InvalidProtocolFee.selector);
-        manager.setProtocolFee(key, newProtocolFee);
+        manager.setProtocolFee(key, MAX_FEE_BOTH_TOKENS + 1);
     }
 
     function test_setProtocolFee_failsWithInvalidCaller() public {
