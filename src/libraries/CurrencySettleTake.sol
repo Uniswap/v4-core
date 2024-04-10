@@ -9,6 +9,7 @@ library CurrencySettleTake {
     using CurrencyLibrary for Currency;
 
     /// @notice Settle (pay) a currency to the PoolManager
+    /// @dev Burning a native 6909 token takes precedence over a native currency transfer
     /// @param currency Currency to settle
     /// @param manager IPoolManager to settle to
     /// @param payer Address of the payer, the token sender
@@ -16,10 +17,10 @@ library CurrencySettleTake {
     /// @param burn If true, burn the ERC-6909 token, otherwise ERC20-transfer to the PoolManager
     function settle(Currency currency, IPoolManager manager, address payer, uint256 amount, bool burn) internal {
         // for native currencies or burns, calling sync is not required
-        if (currency.isNative()) {
-            manager.settle{value: amount}(currency);
-        } else if (burn) {
+        if (burn) {
             manager.burn(payer, currency.toId(), amount);
+        } else if (currency.isNative()) {
+            manager.settle{value: amount}(currency);
         } else {
             // TODO: call sync when transient reserves is merged
             IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), amount);
