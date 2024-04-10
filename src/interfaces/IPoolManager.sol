@@ -10,8 +10,9 @@ import {IProtocolFees} from "./IProtocolFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
+import {IExtsload} from "./IExtsload.sol";
 
-interface IPoolManager is IProtocolFees, IERC6909Claims {
+interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @notice Thrown when a currency is not netted out after the contract is unlocked
     error CurrencyNotSettled();
 
@@ -157,10 +158,11 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
     /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
-    /// @return delta The balance delta of the liquidity
+    /// @return delta The balance delta of the liquidity change
+    /// @return feeDelta The balance delta of the fees generated in the liquidity range
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta);
+        returns (BalanceDelta, BalanceDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -193,15 +195,4 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
 
     /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
     function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external;
-
-    /// @notice Called by external contracts to access granular pool state
-    /// @param slot Key of slot to sload
-    /// @return value The value of the slot as bytes32
-    function extsload(bytes32 slot) external view returns (bytes32 value);
-
-    /// @notice Called by external contracts to access granular pool state
-    /// @param slot Key of slot to start sloading from
-    /// @param nSlots Number of slots to load into return value
-    /// @return value The value of the sload-ed slots concatenated as dynamic bytes
-    function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
 }
