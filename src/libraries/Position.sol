@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {FullMath} from "./FullMath.sol";
 import {FixedPoint128} from "./FixedPoint128.sol";
+import {LiquidityMath} from "./LiquidityMath.sol";
 
 /// @title Position
 /// @notice Positions represent an owner address' liquidity between a lower and upper tick boundary
@@ -63,8 +64,7 @@ library Position {
             if (liquidity == 0) revert CannotUpdateEmptyPosition(); // disallow pokes for 0 liquidity positions
             liquidityNext = liquidity;
         } else {
-            liquidityNext =
-                liquidityDelta < 0 ? liquidity - uint128(-liquidityDelta) : liquidity + uint128(liquidityDelta);
+            liquidityNext = LiquidityMath.addDelta(liquidity, liquidityDelta);
         }
 
         // calculate accumulated fees. overflow in the subtraction of fee growth is expected
