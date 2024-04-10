@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {FullMath} from "./FullMath.sol";
 import {FixedPoint128} from "./FixedPoint128.sol";
+import {LiquidityMath} from "./LiquidityMath.sol";
 
 /// @title Position
 /// @notice Positions represent an owner address' liquidity between a lower and upper tick boundary
@@ -29,9 +30,18 @@ library Position {
     function get(mapping(bytes32 => Info) storage self, address owner, int24 tickLower, int24 tickUpper)
         internal
         view
-        returns (Position.Info storage position)
+        returns (Info storage position)
     {
-        position = self[keccak256(abi.encodePacked(owner, tickLower, tickUpper))];
+        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper))
+        bytes32 positionKey;
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x06, tickUpper) // [0x23, 0x26)
+            mstore(0x03, tickLower) // [0x20, 0x23)
+            mstore(0, owner) // [0x0c, 0x20)
+            positionKey := keccak256(0x0c, 0x1a)
+        }
+        position = self[positionKey];
     }
 
     /// @notice Credits accumulated fees to a user's position
@@ -47,26 +57,22 @@ library Position {
         uint256 feeGrowthInside0X128,
         uint256 feeGrowthInside1X128
     ) internal returns (uint256 feesOwed0, uint256 feesOwed1) {
-        Info memory _self = self;
+        uint128 liquidity = self.liquidity;
 
         uint128 liquidityNext;
         if (liquidityDelta == 0) {
-            if (_self.liquidity == 0) revert CannotUpdateEmptyPosition(); // disallow pokes for 0 liquidity positions
-            liquidityNext = _self.liquidity;
+            if (liquidity == 0) revert CannotUpdateEmptyPosition(); // disallow pokes for 0 liquidity positions
+            liquidityNext = liquidity;
         } else {
-            liquidityNext = liquidityDelta < 0
-                ? _self.liquidity - uint128(-liquidityDelta)
-                : _self.liquidity + uint128(liquidityDelta);
+            liquidityNext = LiquidityMath.addDelta(liquidity, liquidityDelta);
         }
 
         // calculate accumulated fees. overflow in the subtraction of fee growth is expected
         unchecked {
-            feesOwed0 = FullMath.mulDiv(
-                feeGrowthInside0X128 - _self.feeGrowthInside0LastX128, _self.liquidity, FixedPoint128.Q128
-            );
-            feesOwed1 = FullMath.mulDiv(
-                feeGrowthInside1X128 - _self.feeGrowthInside1LastX128, _self.liquidity, FixedPoint128.Q128
-            );
+            feesOwed0 =
+                FullMath.mulDiv(feeGrowthInside0X128 - self.feeGrowthInside0LastX128, liquidity, FixedPoint128.Q128);
+            feesOwed1 =
+                FullMath.mulDiv(feeGrowthInside1X128 - self.feeGrowthInside1LastX128, liquidity, FixedPoint128.Q128);
         }
 
         // update the position

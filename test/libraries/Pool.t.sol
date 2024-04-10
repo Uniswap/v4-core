@@ -3,14 +3,14 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {Pool} from "../src/libraries/Pool.sol";
-import {PoolManager} from "../src/PoolManager.sol";
-import {Position} from "../src/libraries/Position.sol";
-import {TickMath} from "../src/libraries/TickMath.sol";
-import {TickBitmap} from "../src/libraries/TickBitmap.sol";
-import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
-import {Constants} from "./utils/Constants.sol";
-import {SafeCast} from "../src/libraries/SafeCast.sol";
+import {Pool} from "src/libraries/Pool.sol";
+import {PoolManager} from "src/PoolManager.sol";
+import {Position} from "src/libraries/Position.sol";
+import {TickMath} from "src/libraries/TickMath.sol";
+import {TickBitmap} from "src/libraries/TickBitmap.sol";
+import {LiquidityAmounts} from "test/utils/LiquidityAmounts.sol";
+import {Constants} from "test/utils/Constants.sol";
+import {SafeCast} from "src/libraries/SafeCast.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
@@ -44,7 +44,7 @@ contract PoolTest is Test {
         } else if (params.tickUpper > TickMath.MAX_TICK) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, params.tickUpper));
         } else if (params.liquidityDelta < 0) {
-            vm.expectRevert(abi.encodeWithSignature("Panic(uint256)", 0x11));
+            vm.expectRevert(SafeCast.SafeCastOverflow.selector);
         } else if (params.liquidityDelta == 0) {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) {
@@ -121,9 +121,9 @@ contract PoolTest is Test {
         state.swap(params);
 
         if (params.zeroForOne) {
-            assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
-        } else {
             assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+        } else {
+            assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
         }
     }
 }

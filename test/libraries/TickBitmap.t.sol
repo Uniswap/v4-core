@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
-import {TickBitmap} from "../src/libraries/TickBitmap.sol";
+import {GasSnapshot} from "lib/forge-gas-snapshot/src/GasSnapshot.sol";
+import {TickBitmap} from "src/libraries/TickBitmap.sol";
 
 contract TickBitmapTest is Test, GasSnapshot {
     using TickBitmap for mapping(int16 => uint256);

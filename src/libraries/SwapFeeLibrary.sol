@@ -6,7 +6,7 @@ import {PoolKey} from "../types/PoolKey.sol";
 library SwapFeeLibrary {
     using SwapFeeLibrary for uint24;
 
-    /// @notice Thrown when the static or dynamic fee on a pool is exceeds 100%.
+    /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
     error FeeTooLarge();
 
     uint24 public constant STATIC_FEE_MASK = 0x7FFFFF;
@@ -20,10 +20,10 @@ library SwapFeeLibrary {
     }
 
     function validate(uint24 self) internal pure {
-        if (self >= MAX_SWAP_FEE) revert FeeTooLarge();
+        if (self > MAX_SWAP_FEE) revert FeeTooLarge();
     }
 
-    function getSwapFee(uint24 self) internal pure returns (uint24 swapFee) {
+    function getInitialSwapFee(uint24 self) internal pure returns (uint24 swapFee) {
         // the initial fee for a dynamic fee pool is 0
         if (self.isDynamicFee()) return 0;
         swapFee = self & STATIC_FEE_MASK;
