@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Currency} from "src/types/Currency.sol";
-import {IProtocolFeeController} from "src/interfaces/IProtocolFeeController.sol";
-import {PoolId} from "src/types/PoolId.sol";
-import {PoolKey} from "src/types/PoolKey.sol";
+import {Currency} from "../types/Currency.sol";
+import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
+import {PoolId} from "../types/PoolId.sol";
+import {PoolKey} from "../types/PoolKey.sol";
 
 interface IProtocolFees {
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
