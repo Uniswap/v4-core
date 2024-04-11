@@ -330,8 +330,6 @@ library Pool {
             protocolFee: zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee()
         });
 
-        bool exactInput = params.amountSpecified < 0;
-
         state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,
             amountCalculated: 0,
@@ -341,14 +339,16 @@ library Pool {
             liquidity: cache.liquidityStart
         });
 
-        StepComputations memory step;
         swapFee =
             cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+
+        bool exactInput = params.amountSpecified < 0;
 
         if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
             revert InvalidFeeForExactOut();
         }
 
+        StepComputations memory step;
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
