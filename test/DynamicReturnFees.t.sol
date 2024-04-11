@@ -17,17 +17,14 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicReturnFeeTestHook} from "../src/test/DynamicReturnFeeTestHook.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {FullMath} from "../src/libraries/FullMath.sol";
+import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 
 contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
-    DynamicReturnFeeTestHook dynamicFeesHooks = DynamicReturnFeeTestHook(
-        address(
-            uint160(
-                uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG
-                    | Hooks.AFTER_INITIALIZE_FLAG
-            )
-        )
+    DynamicReturnFeeTestHook dynamicReturnFeesHook = DynamicReturnFeeTestHook(
+        address(uint160(uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG))
     );
 
     event Swap(
@@ -43,26 +40,45 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
     function setUp() public {
         DynamicReturnFeeTestHook impl = new DynamicReturnFeeTestHook();
-        vm.etch(address(dynamicFeesHooks), address(impl).code);
+        vm.etch(address(dynamicReturnFeesHook), address(impl).code);
 
         deployFreshManagerAndRouters();
-        dynamicFeesHooks.setManager(IPoolManager(manager));
+        dynamicReturnFeesHook.setManager(IPoolManager(manager));
 
         (currency0, currency1) = deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(
             currency0,
             currency1,
-            IHooks(address(dynamicFeesHooks)),
+            IHooks(address(dynamicReturnFeesHook)),
             SwapFeeLibrary.DYNAMIC_FEE_FLAG,
             SQRT_RATIO_1_1,
             ZERO_BYTES
         );
     }
 
+    function test_dynamicReturnSwapFee(uint24 fee) public {
+        dynamicReturnFeesHook.setFee(fee);
+
+        int256 amountSpecified = -10000;
+        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
+
+        // after swapping ~1:1, the amount out (amount1) should be approximately 0.30% less than the amount specified
+        assertEq(result.amount0(), amountSpecified);
+
+        if (fee > SwapFeeLibrary.MAX_SWAP_FEE) {
+            // if the fee is too large, the fee is not used
+            assertApproxEqAbs(uint256(int256(result.amount1())), uint256(int256(-result.amount0())), 1 wei);
+        } else {
+            assertApproxEqAbs(
+                uint256(int256(result.amount1())), FullMath.mulDiv(uint256(-amountSpecified), (1e6 - fee), 1e6), 1 wei
+            );
+        }
+    }
+
     function test_returnDynamicSwapFee_beforeSwap_succeeds_gas() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
-        dynamicFeesHooks.setFee(123);
+        dynamicReturnFeesHook.setFee(123);
 
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
@@ -77,6 +93,46 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         snapEnd();
 
         assertEq(_fetchPoolSwapFee(key), 0);
+    }
+
+    function test_dynamicReturnSwapFee_initializeZeroSwapFee() public {
+        key.tickSpacing = 30;
+        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        assertEq(_fetchPoolSwapFee(key), 0);
+    }
+
+    function test_dynamicReturnSwapFee_notUsedIfPoolIsStaticFee() public {
+        key.fee = 3000; // static fee
+        dynamicReturnFeesHook.setFee(1000); // 0.10% fee is NOT used because the pool has a static fee
+
+        initPoolAndAddLiquidity(
+            currency0, currency1, IHooks(address(dynamicReturnFeesHook)), 3000, SQRT_RATIO_1_1, ZERO_BYTES
+        );
+        assertEq(_fetchPoolSwapFee(key), 3000);
+
+        // despite returning a valid swap fee (1000), the static fee is used
+        int256 amountSpecified = -10000;
+        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
+
+        // after swapping ~1:1, the amount out (amount1) should be approximately 0.30% less than the amount specified
+        assertEq(result.amount0(), amountSpecified);
+        assertApproxEqAbs(
+            uint256(int256(result.amount1())), FullMath.mulDiv(uint256(-amountSpecified), (1e6 - 3000), 1e6), 1 wei
+        );
+    }
+
+    function test_dynamicReturnSwapFee_notUsedWithTooLargeFee() public {
+        assertEq(_fetchPoolSwapFee(key), 0);
+
+        dynamicReturnFeesHook.setFee(1000001);
+
+        // a large fee is not used
+        int256 amountSpecified = -10000;
+        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
+
+        // after swapping ~1:1, the amount out (amount1) should be approximately 0.30% less than the amount specified
+        assertEq(result.amount0(), amountSpecified);
+        assertApproxEqAbs(uint256(int256(result.amount1())), uint256(int256(-result.amount0())), 1 wei);
     }
 
     function _fetchPoolSwapFee(PoolKey memory _key) internal view returns (uint256 swapFee) {
