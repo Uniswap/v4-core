@@ -26,7 +26,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
     PoolSwapTest.TestSettings testSettings =
-        PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+        PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false, currencyAlreadySent: false});
 
     uint160 clearAllHookPermisssionsMask;
     uint256 hookPermissionCount = 10;
