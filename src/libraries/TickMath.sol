@@ -79,7 +79,7 @@ library TickMath {
                             // upper 128 bits of 2**256 / sqrt(1.0001) where the 128th bit is 1
                             0xfffcb933bd6fad37aa2d162d1a59400100000000000000000000000000000000
                         ),
-                        0x1ffffffffffffffffffffffffffffffff // mask lower 129 bits
+                        sub(shl(130, 1), 1) // mask lower 129 bits
                     )
             }
             // Iterate through 1th to 19th bit of absTick because MAX_TICK < 2**20
@@ -264,12 +264,14 @@ library TickMath {
         }
 
         // Equivalent: tick = tickLow == tickHi ? tickLow : getSqrtRatioAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
-        if (tickLow == tickHi) {
-            return tickHi;
-        }
-        uint160 sqrtRatioAtTickHi = getSqrtRatioAtTick(tickHi);
-        assembly {
-            tick := sub(tickHi, gt(sqrtRatioAtTickHi, sqrtPriceX96))
+        if (tickLow != tickHi) {
+            uint160 sqrtRatioAtTickHi = getSqrtRatioAtTick(tickHi);
+            assembly {
+                tickLow := sub(tickHi, gt(sqrtRatioAtTickHi, sqrtPriceX96))
+            }
+            return tickLow;
+        } else {
+            return tickLow;
         }
     }
 }
