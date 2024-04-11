@@ -62,6 +62,9 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
+    /// @dev Equals to TickMath.MAX_TICK * 2
+    int24 internal constant MAX_TICK_DOUBLE = 1774544;
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
@@ -558,13 +561,11 @@ library Pool {
     /// @dev Executed within the pool constructor
     /// @param tickSpacing The amount of required tick separation, realized in multiples of `tickSpacing`
     ///     e.g., a tickSpacing of 3 requires ticks to be initialized every 3rd tick i.e., ..., -6, -3, 0, 3, 6, ...
-    /// @return The max liquidity per tick
-    function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
-        unchecked {
-            return uint128(
-                (type(uint128).max * uint256(int256(tickSpacing)))
-                    / uint256(int256(TickMath.MAX_TICK * 2 + tickSpacing))
-            );
+    /// @return maxLiquidityPerTick The max liquidity per tick
+    function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128 maxLiquidityPerTick) {
+        // Equivalent to `(type(uint128).max * tickSpacing) / (TickMath.MAX_TICK * 2 + tickSpacing)`
+        assembly {
+            maxLiquidityPerTick := div(mul(sub(shl(128, 1), 1), tickSpacing), add(MAX_TICK_DOUBLE, tickSpacing))
         }
     }
 
