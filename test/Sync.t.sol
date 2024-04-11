@@ -198,4 +198,51 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         router.executeActions(actions, params);
     }
+
+    // @notice This tests expected behavior if you DO NOT call sync. (ie. Do not interact with the pool manager properly. You can lose funds.)
+    function test_settle_withoutSync_doesNotRevert_takesUserBalance() public {
+        MockERC20(Currency.unwrap(currency0)).approve(address(router), type(uint256).max);
+        uint256 managerCurrency0BalanceBefore = currency0.balanceOf(address(manager));
+        uint256 userCurrency0BalanceBefore = currency0.balanceOf(address(this));
+
+        Actions[] memory actions = new Actions[](8);
+        bytes[] memory params = new bytes[](8);
+
+        manager.sync(currency0);
+        assertEq(manager.getReserves(currency0), managerCurrency0BalanceBefore); // reserves are 100.
+
+        actions[0] = Actions.TAKE;
+        params[0] = abi.encode(currency0, address(this), 10);
+
+        // Assert that the delta open on the router is -10. (The user owes 10 to the pool).
+        actions[1] = Actions.ASSERT_DELTA_EQUALS;
+        params[1] = abi.encode(currency0, address(router), -10);
+
+        actions[2] = Actions.TRANSFER_FROM;
+        params[2] = abi.encode(currency0, address(this), manager, 10);
+
+        actions[3] = Actions.SETTLE;
+        params[3] = abi.encode(currency0); // Since reserves now == reserves, paid = 0 and the delta owed by the user will still be -10 after settle.
+
+        actions[4] = Actions.ASSERT_DELTA_EQUALS;
+        params[4] = abi.encode(currency0, address(router), -10);
+
+        // To now settle the delta, the user owes 10 to the pool.
+        // Because sync is called in settle we can transfer + settle.
+        actions[5] = Actions.TRANSFER_FROM;
+        params[5] = abi.encode(currency0, address(this), manager, 10);
+
+        actions[6] = Actions.SETTLE;
+        params[6] = abi.encode(currency0);
+
+        actions[7] = Actions.ASSERT_DELTA_EQUALS;
+        params[7] = abi.encode(currency0, address(router), 0);
+
+        router.executeActions(actions, params);
+
+        // The manager gained 10 currency0.
+        assertEq(currency0.balanceOf(address(manager)), managerCurrency0BalanceBefore + 10);
+        // The user lost 10 currency0, and can never claim it back.
+        assertEq(currency0.balanceOf(address(this)), userCurrency0BalanceBefore - 10);
+    }
 }
