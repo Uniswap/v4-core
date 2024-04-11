@@ -19,6 +19,7 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
+import {PoolSettleTest} from "../src/test/PoolSettleTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolEmptyUnlockTest} from "../src/test/PoolEmptyUnlockTest.sol";
@@ -30,6 +31,7 @@ import {Constants} from "./utils/Constants.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
+import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -53,7 +55,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         int24 tick,
         uint24 fee
     );
-    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
+
     event Transfer(
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
     );
@@ -934,6 +936,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.settle(key.currency0);
     }
 
+    function test_settle_revertsSendingNativeWithToken() public {
+        vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
+        settleRouter.settle{value: 1}(key);
+    }
+
     function test_mint_failsIfLocked() public {
         vm.expectRevert(IPoolManager.ManagerLocked.selector);
         manager.mint(address(this), key.currency0.toId(), 1);
@@ -956,7 +963,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             manager.setProtocolFee(key);
         } else {
             vm.expectEmit(false, false, false, true);
-            emit ProtocolFeeUpdated(key.toId(), protocolFee);
+            emit IProtocolFees.ProtocolFeeUpdated(key.toId(), protocolFee);
             manager.setProtocolFee(key);
 
             (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
