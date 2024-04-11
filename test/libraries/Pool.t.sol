@@ -121,19 +121,16 @@ contract PoolTest is Test {
                 state.swap(params);
             }
         } else {
-            (BalanceDelta _result, uint256 _feeForProtocol, uint24 _swapFee, Pool.SwapState memory _state) =
-                state.swap(params);
+            uint160 sqrtPriceBefore = state.slot0.sqrtPriceX96;
 
-            assertEq(state.slot0.sqrtPriceX96, _state.sqrtPriceX96);
-            assertEq(state.slot0.tick, _state.tick);
-            assertEq(_swapFee, DEFAULT_SWAP_FEE);
-            assertEq(_feeForProtocol, 0);
+            state.swap(params);
+
             if (params.amountSpecified == 0) {
-                assertEq(BalanceDelta.unwrap(_result), 0);
+                assertEq(sqrtPriceBefore, state.slot0.sqrtPriceX96, "amountSpecified == 0");
             } else if (params.zeroForOne) {
-                assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+                assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96, "zeroForOne");
             } else {
-                assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
+                assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96, "oneForZero");
             }
         }
     }

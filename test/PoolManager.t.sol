@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {console2} from "forge-std/console2.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
@@ -11,7 +10,7 @@ import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.s
 import {PoolManager} from "../src/PoolManager.sol";
 import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
 import {CustomCurveHook} from "../src/test/CustomCurveHook.sol";
-import {Owned} from "../src/Owned.sol";
+import {DeltaReturningHook} from "../src/test/DeltaReturningHook.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {Deployers} from "./utils/Deployers.sol";
@@ -33,12 +32,17 @@ import {Position} from "../src/libraries/Position.sol";
 import {Constants} from "./utils/Constants.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
+import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
+import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
     using SwapFeeLibrary for uint24;
     using CurrencyLibrary for Currency;
+    using SafeCast for uint256;
+    using SafeCast for uint128;
+    using ProtocolFeeLibrary for uint24;
 
     event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);
@@ -55,12 +59,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         int24 tick,
         uint24 fee
     );
-    event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
+
     event Transfer(
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
     );
 
     PoolEmptyUnlockTest emptyUnlockRouter;
+
+    uint24 constant MAX_FEE_BOTH_TOKENS = (2500 << 12) | 2500; // 2500 2500
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
@@ -72,13 +78,23 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapSize("poolManager bytecode size", address(manager));
     }
 
-    function test_feeControllerSet() public {
+    function test_setProtocolFeeController_succeeds() public {
         deployFreshManager();
         assertEq(address(manager.protocolFeeController()), address(0));
         vm.expectEmit(false, false, false, true, address(manager));
         emit ProtocolFeeControllerUpdated(address(feeController));
         manager.setProtocolFeeController(feeController);
         assertEq(address(manager.protocolFeeController()), address(feeController));
+    }
+
+    function test_setProtocolFeeController_failsIfNotOwner() public {
+        deployFreshManager();
+        assertEq(address(manager.protocolFeeController()), address(0));
+
+        vm.prank(address(1)); // not the owner address
+        vm.expectRevert("UNAUTHORIZED");
+        manager.setProtocolFeeController(feeController);
+        assertEq(address(manager.protocolFeeController()), address(0));
     }
 
     function test_addLiquidity_failsIfNotInitialized() public {
@@ -910,17 +926,132 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
     }
 
-    function test_swap_accruesProtocolFees(uint8 protocolFee1, uint8 protocolFee0) public {
-        protocolFee0 = uint8(bound(protocolFee0, 4, type(uint8).max));
-        protocolFee1 = uint8(bound(protocolFee1, 4, type(uint8).max));
+    int128 constant maxPossibleIn = -6018336102428409;
+    int128 constant maxPossibleOut = 5981737760509662;
 
-        uint16 protocolFee = (uint16(protocolFee1) << 8) | (uint16(protocolFee0) & uint16(0xFF));
+    function test_fuzz_swap_beforeSwapReturnsDelta(int128 hookDeltaSpecified, int128 amountSpecified, bool zeroForOne)
+        public
+    {
+        // ------------------------ SETUP ------------------------
+        Currency specifiedCurrency;
+        bool isExactIn;
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
 
-        feeController.setSwapFeeForPool(key.toId(), protocolFee);
+        // stack too deep management
+        {
+            // setup the hook and the pool
+
+            DeltaReturningHook impl = new DeltaReturningHook(manager);
+            vm.etch(hookAddr, address(impl).code);
+
+            // initialize the pool and give the hook tokens to pay into swaps
+            (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_RATIO_1_1, ZERO_BYTES);
+            key.currency0.transfer(hookAddr, type(uint128).max);
+            key.currency1.transfer(hookAddr, type(uint128).max);
+
+            // bound amount specified to be a fair amount less than the amount of liquidity we have
+            amountSpecified = int128(bound(amountSpecified, -3e11, 3e11));
+            isExactIn = amountSpecified < 0;
+            specifiedCurrency = (isExactIn == zeroForOne) ? key.currency0 : key.currency1;
+
+            // bound delta in specified to not take more than the reserves available, nor be the minimum int to
+            // stop the hook reverting on take/settle
+            uint128 reservesOfSpecified = uint128(manager.reservesOf(specifiedCurrency));
+            hookDeltaSpecified = int128(bound(hookDeltaSpecified, type(int128).min + 1, int128(reservesOfSpecified)));
+            DeltaReturningHook(hookAddr).setDeltaSpecified(hookDeltaSpecified);
+        }
+
+        // setup swap variables
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: zeroForOne,
+            amountSpecified: amountSpecified,
+            sqrtPriceLimitX96: (zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT)
+        });
+
+        // ------------------------ FUZZING CASES ------------------------
+        // with an amount specified of 0: the trade reverts
+        if (amountSpecified == 0) {
+            vm.expectRevert(IPoolManager.SwapAmountCannotBeZero.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // trade is exact input of n:, the hook cannot TAKE (+ve hookDeltaSpecified) more than n in input
+            // otherwise the user would have to send more than n in input
+        } else if (isExactIn && (hookDeltaSpecified > -amountSpecified)) {
+            vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // exact output of n: the hook cannot GIVE (-ve hookDeltaSpecified) more than n in output
+            // otherwise the user would receive more than n in output
+        } else if (!isExactIn && (amountSpecified < -hookDeltaSpecified)) {
+            vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // exact in: if the hook's delta is more than whats available in the pool, none of user's input will be swapped
+            // because the hook will have taken them all. Note: both hookDeltaSpecified and maxPossibleIn are negative so we use <
+        } else if (isExactIn && hookDeltaSpecified < maxPossibleIn) {
+            vm.expectRevert(IPoolManager.SwapDeltaHasIncorrectSign.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // exact out: if the hook's delta is more than whats available in the pool, none of user's output will be swapped
+            // because the hook will have taken them all.
+        } else if (!isExactIn && hookDeltaSpecified > maxPossibleOut) {
+            vm.expectRevert(IPoolManager.SwapDeltaHasIncorrectSign.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // successful swaps !
+        } else {
+            uint256 balanceThisBefore = specifiedCurrency.balanceOf(address(this));
+            uint256 balanceHookBefore = specifiedCurrency.balanceOf(hookAddr);
+
+            BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+            int128 deltaSpecified = (zeroForOne == isExactIn) ? delta.amount0() : delta.amount1();
+
+            uint256 balanceThisAfter = specifiedCurrency.balanceOf(address(this));
+            uint256 balanceHookAfter = specifiedCurrency.balanceOf(hookAddr);
+
+            // in all cases the hook gets what they took, and the user gets the swap's output delta (checked more below)
+            assertEq(
+                balanceHookBefore.toInt256() + hookDeltaSpecified,
+                balanceHookAfter.toInt256(),
+                "hook balance change incorrect"
+            );
+            assertEq(
+                balanceThisBefore.toInt256() + deltaSpecified,
+                balanceThisAfter.toInt256(),
+                "swapper balance change incorrect"
+            );
+
+            // exact input, where there arent enough input reserves available to pay swap and hook
+            // note: all 3 values are negative, so we use <
+            if (isExactIn && (hookDeltaSpecified + amountSpecified < maxPossibleIn)) {
+                // the hook will have taken hookDeltaSpecified of the maxPossibleIn
+                assertEq(deltaSpecified, maxPossibleIn - hookDeltaSpecified, "deltaSpecified exact input");
+
+                // exact output, where there isnt enough output reserves available to pay swap and hook
+            } else if (!isExactIn && (hookDeltaSpecified + amountSpecified > maxPossibleOut)) {
+                // the hook will have taken hookDeltaSpecified of the maxPossibleOut
+                assertEq(deltaSpecified, maxPossibleOut - hookDeltaSpecified, "deltaSpecified exact output");
+
+                // enough reserves were available, so the user got what they desired
+            } else {
+                assertEq(deltaSpecified, amountSpecified, "deltaSpecified not amountSpecified");
+            }
+        }
+    }
+
+    function test_swap_accruesProtocolFees(uint16 protocolFee0, uint16 protocolFee1) public {
+        protocolFee0 = uint16(bound(protocolFee0, 1, 2500));
+        protocolFee1 = uint16(bound(protocolFee1, 1, 2500));
+
+        uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
+
+        feeController.setProtocolFeeForPool(key.toId(), protocolFee);
         manager.setProtocolFee(key);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, protocolFee);
 
         // Add liquidity - Fees dont accrue for positive liquidity delta.
         IPoolManager.ModifyLiquidityParams memory params = LIQUIDITY_PARAMS;
@@ -944,13 +1075,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES);
 
         uint256 expectedTotalSwapFee = uint256(-swapParams.amountSpecified) * key.fee / 1e6;
-        uint256 expectedProtocolFee = expectedTotalSwapFee / protocolFee1;
+        uint256 expectedProtocolFee = expectedTotalSwapFee * protocolFee1 / 1e4;
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }
 
     function test_donate_failsIfNotInitialized() public {
-        vm.expectRevert(abi.encodeWithSelector(Pool.PoolNotInitialized.selector));
+        vm.expectRevert(Pool.PoolNotInitialized.selector);
         donateRouter.donate(uninitializedKey, 100, 100, ZERO_BYTES);
     }
 
@@ -964,13 +1095,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         (key,) = initPool(currency0, currency1, IHooks(address(0)), 100, sqrtPriceX96, ZERO_BYTES);
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.NoLiquidityToReceiveFees.selector));
+        vm.expectRevert(Pool.NoLiquidityToReceiveFees.selector);
         donateRouter.donate(key, 100, 100, ZERO_BYTES);
     }
 
     // test successful donation if pool has liquidity
     function test_donate_succeedsWhenPoolHasLiquidity() public {
-        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(key.toId());
+        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(key.toId());
         assertEq(feeGrowthGlobal0X128, 0);
         assertEq(feeGrowthGlobal1X128, 0);
 
@@ -978,19 +1109,19 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         donateRouter.donate(key, 100, 200, ZERO_BYTES);
         snapEnd();
 
-        (, feeGrowthGlobal0X128, feeGrowthGlobal1X128,) = manager.pools(key.toId());
+        (feeGrowthGlobal0X128, feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(key.toId());
         assertEq(feeGrowthGlobal0X128, 34028236692093846346337);
         assertEq(feeGrowthGlobal1X128, 68056473384187692692674);
     }
 
     function test_donate_succeedsForNativeTokensWhenPoolHasLiquidity() public {
-        (, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128,) = manager.pools(nativeKey.toId());
+        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(nativeKey.toId());
         assertEq(feeGrowthGlobal0X128, 0);
         assertEq(feeGrowthGlobal1X128, 0);
 
         donateRouter.donate{value: 100}(nativeKey, 100, 200, ZERO_BYTES);
 
-        (, feeGrowthGlobal0X128, feeGrowthGlobal1X128,) = manager.pools(nativeKey.toId());
+        (feeGrowthGlobal0X128, feeGrowthGlobal1X128) = manager.getFeeGrowthGlobals(nativeKey.toId());
         assertEq(feeGrowthGlobal0X128, 34028236692093846346337);
         assertEq(feeGrowthGlobal1X128, 68056473384187692692674);
     }
@@ -1100,29 +1231,29 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.burn(address(this), key.currency0.toId(), 1);
     }
 
-    function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint16 protocolFee) public {
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, 0);
-        feeController.setSwapFeeForPool(key.toId(), protocolFee);
+    function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint24 protocolFee) public {
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
+        feeController.setProtocolFeeForPool(key.toId(), protocolFee);
 
-        uint8 fee0 = uint8(protocolFee >> 8);
-        uint8 fee1 = uint8(protocolFee % 256);
-        if ((0 < fee0 && fee0 < 4) || (0 < fee1 && fee1 < 4)) {
+        uint16 fee0 = protocolFee.getZeroForOneFee();
+        uint16 fee1 = protocolFee.getOneForZeroFee();
+        if ((fee0 > 2500) || (fee1 > 2500)) {
             vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
             manager.setProtocolFee(key);
         } else {
             vm.expectEmit(false, false, false, true);
-            emit ProtocolFeeUpdated(key.toId(), protocolFee);
+            emit IProtocolFees.ProtocolFeeUpdated(key.toId(), protocolFee);
             manager.setProtocolFee(key);
 
-            (slot0,,,) = manager.pools(key.toId());
-            assertEq(slot0.protocolFee, protocolFee);
+            (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
+            assertEq(slot0ProtocolFee, protocolFee);
         }
     }
 
     function test_setProtocolFee_failsWithInvalidProtocolFeeControllers() public {
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, 0);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
 
         manager.setProtocolFeeController(revertingFeeController);
         vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
@@ -1142,34 +1273,30 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
-        uint16 protocolFee = 1028; // 00000100 00000100
-
-        // sets the upper 12 bits
-        feeController.setSwapFeeForPool(uninitializedKey.toId(), uint16(protocolFee));
+        feeController.setProtocolFeeForPool(uninitializedKey.toId(), MAX_FEE_BOTH_TOKENS);
 
         manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
-        (Pool.Slot0 memory slot0,,,) = manager.pools(uninitializedKey.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
     }
 
     function test_collectProtocolFees_revertsIfCallerIsNotController() public {
-        vm.expectRevert(Owned.InvalidCaller.selector);
+        vm.expectRevert(IProtocolFees.InvalidCaller.selector);
         manager.collectProtocolFees(address(1), currency0, 0);
     }
 
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
-        uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
 
-        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+        feeController.setProtocolFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
+            IPoolManager.SwapParams(true, -10000, SQRT_RATIO_1_2),
             PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
@@ -1186,42 +1313,40 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
 
-        feeController.setSwapFeeForPool(key.toId(), uint16(protocolFee));
+        feeController.setProtocolFeeForPool(key.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(key);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(key.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(true, 10000, SQRT_RATIO_1_2),
+            IPoolManager.SwapParams(false, -10000, TickMath.MAX_SQRT_RATIO - 1),
             PoolSwapTest.TestSettings(true, true, false),
             ZERO_BYTES
         );
 
-        assertEq(manager.protocolFeesAccrued(currency0), expectedFees);
-        assertEq(manager.protocolFeesAccrued(currency1), 0);
-        assertEq(currency0.balanceOf(address(1)), 0);
-        vm.prank(address(feeController));
-        manager.collectProtocolFees(address(1), currency0, 0);
-        assertEq(currency0.balanceOf(address(1)), expectedFees);
         assertEq(manager.protocolFeesAccrued(currency0), 0);
+        assertEq(manager.protocolFeesAccrued(currency1), expectedFees);
+        assertEq(currency1.balanceOf(address(1)), 0);
+        vm.prank(address(feeController));
+        manager.collectProtocolFees(address(1), currency1, 0);
+        assertEq(currency1.balanceOf(address(1)), expectedFees);
+        assertEq(manager.protocolFeesAccrued(currency1), 0);
     }
 
     function test_collectProtocolFees_nativeToken_accumulateFees_gas() public {
-        uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
         // set protocol fee before initializing the pool as it is fetched on initialization
-        feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
+        feeController.setProtocolFeeForPool(nativeKey.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(nativeKey);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
             nativeKey,
@@ -1242,15 +1367,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
-        uint16 protocolFee = 1028; // 00000100 00000100
         uint256 expectedFees = 7;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
-        feeController.setSwapFeeForPool(nativeKey.toId(), uint16(protocolFee));
+        feeController.setProtocolFeeForPool(nativeKey.toId(), MAX_FEE_BOTH_TOKENS);
         manager.setProtocolFee(nativeKey);
 
-        (Pool.Slot0 memory slot0,,,) = manager.pools(nativeKey.toId());
-        assertEq(slot0.protocolFee, protocolFee);
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        assertEq(slot0ProtocolFee, MAX_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
             nativeKey,

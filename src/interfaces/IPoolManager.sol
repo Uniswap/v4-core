@@ -36,6 +36,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// or on a pool that does not have a dynamic swap fee.
     error UnauthorizedDynamicSwapFeeUpdate();
 
+    /// @notice Thrown when trying to swap amount of 0
+    error SwapAmountCannotBeZero();
+
+    /// @notice Thrown when hook deltas and/or lack of liquidity causes swap deltas to flip
+    error SwapDeltaHasIncorrectSign();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
@@ -81,8 +87,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(PoolId indexed id, uint16 protocolFee);
-
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
 
@@ -93,7 +97,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     function getSlot0(PoolId id)
         external
         view
-        returns (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee, uint24 swapFee);
+        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);
@@ -109,6 +113,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
 
     /// @notice Getter for the bitmap given the poolId and word position
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap);
+
+    /// @notice Getter for the fee growth globals for the given poolId
+    function getFeeGrowthGlobals(PoolId id)
+        external
+        view
+        returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1);
 
     /// @notice Get the position struct for a specified pool and position
     function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
@@ -186,10 +196,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
 
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
-
-    /// @notice Sets the protocol's swap fee for the given pool
-    /// Protocol fees are always a portion of the LP swap fee that is owed. If that fee is 0, no protocol fees will accrue even if it is set to > 0.
-    function setProtocolFee(PoolKey memory key) external;
 
     /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
     function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external;

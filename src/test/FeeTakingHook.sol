@@ -9,7 +9,6 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
-import "forge-std/console2.sol";
 
 contract FeeTakingHook is BaseTestHooks {
     using Hooks for IHooks;
