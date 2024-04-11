@@ -149,6 +149,46 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolSwapFee(key), 123);
     }
 
+    function test_updateDynamicSwapFee_100PercentFee_AmountIn() public {
+        assertEq(_fetchPoolSwapFee(key), 0);
+
+        dynamicFeesHooks.setFee(1000000);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), -100, 0, 79228162514264337593543950336, 1e18, -1, 1000000);
+
+        snapStart("update dynamic fee in before swap");
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
+
+        assertEq(_fetchPoolSwapFee(key), 1000000);
+    }
+
+    function test_updateDynamicSwapFee_100PercentFee_AmountOut() public {
+        assertEq(_fetchPoolSwapFee(key), 0);
+
+        dynamicFeesHooks.setFee(1000000);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), -202, 100, 79228162514264329670727698909, 1e18, -1, 1000000);
+
+        snapStart("update dynamic fee in before swap");
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
+
+        assertEq(_fetchPoolSwapFee(key), 1000000);
+    }
+
     function test_swap_withDynamicFee_gas() public {
         (key,) = initPoolAndAddLiquidity(
             currency0, currency1, dynamicFeesNoHooks, SwapFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1, ZERO_BYTES
