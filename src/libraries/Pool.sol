@@ -552,7 +552,7 @@ library Pool {
         assembly {
             liquidityNet := add(liquidityNetBefore, liquidityDelta)
         }
-        liquidityNet = int256(liquidityNet.toInt128());
+        liquidityNet.toInt128();
         assembly {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
             // So we can store them with a single sstore by packing them ourselves first
