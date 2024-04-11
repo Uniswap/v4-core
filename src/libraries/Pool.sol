@@ -326,8 +326,6 @@ library Pool {
             protocolFee: zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee()
         });
 
-        bool exactInput = params.amountSpecified < 0;
-
         state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,
             amountCalculated: 0,
@@ -336,6 +334,8 @@ library Pool {
             feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
             liquidity: cache.liquidityStart
         });
+
+        bool exactInput = params.amountSpecified < 0;
 
         StepComputations memory step;
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
