@@ -40,11 +40,11 @@ contract PoolClaimsTest is PoolTestBase {
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
         if (data.deposit) {
-            manager.mint(data.user, data.currency.toId(), uint128(data.amount));
-            data.currency.settle(manager, data.user, data.amount, false);
+            data.currency.take(manager, data.user, data.amount, true); // mint 6909
+            data.currency.settle(manager, data.user, data.amount, false); // transfer ERC20
         } else {
-            manager.burn(data.user, data.currency.toId(), uint128(data.amount));
-            data.currency.take(manager, data.user, data.amount, false);
+            data.currency.settle(manager, data.user, data.amount, true); // burn 6909
+            data.currency.take(manager, data.user, data.amount, false); // claim ERC20
         }
 
         return abi.encode(0);
