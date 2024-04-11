@@ -90,6 +90,10 @@ contract TickTest is Test, GasSnapshot {
         );
     }
 
+    function test_MAX_TICK_DOUBLE() public {
+        assertEq(Pool.MAX_TICK_DOUBLE, TickMath.MAX_TICK * 2);
+    }
+
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFee() public {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(LOW_TICK_SPACING);
 
