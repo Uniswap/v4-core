@@ -21,9 +21,11 @@ import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
+import {Extsload} from "./Extsload.sol";
 
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims {
+
+contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -46,6 +48,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     mapping(PoolId id => Pool.State) public pools;
 
     constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
+
+    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
+        return pools[id];
+    }
 
     /// @inheritdoc IPoolManager
     function getSlot0(PoolId id)
@@ -172,13 +178,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override onlyWhenUnlocked returns (BalanceDelta delta) {
+    ) external override onlyWhenUnlocked returns (BalanceDelta delta, BalanceDelta feeDelta) {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
-        delta = pools[id].modifyLiquidity(
+        (delta, feeDelta) = pools[id].modifyLiquidity(
             Pool.ModifyLiquidityParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -188,7 +194,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             })
         );
 
-        _accountPoolBalanceDelta(key, delta);
+        _accountPoolBalanceDelta(key, delta + feeDelta);
 
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
 
@@ -221,11 +227,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         _accountPoolBalanceDelta(key, delta);
 
-        // the fee is on the input currency
-        unchecked {
-            if (feeForProtocol > 0) {
-                protocolFeesAccrued[params.zeroForOne ? key.currency0 : key.currency1] += feeForProtocol;
-            }
+        // The fee is on the input currency.
+        if (feeForProtocol > 0) {
+            _updateProtocolFees(params.zeroForOne ? key.currency0 : key.currency1, feeForProtocol);
         }
 
         emit Swap(
@@ -267,6 +271,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (currency.isNative()) {
             paid = msg.value;
         } else {
+            if (msg.value > 0) revert NonZeroNativeValue();
             uint256 reservesBefore = reservesOf[currency];
             reservesOf[currency] = currency.balanceOfSelf();
             paid = reservesOf[currency] - reservesBefore;
@@ -288,39 +293,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _burnFrom(from, id, amount);
     }
 
-    function setProtocolFee(PoolKey memory key) external {
-        (bool success, uint24 newProtocolFee) = _fetchProtocolFee(key);
-        if (!success) revert ProtocolFeeControllerCallFailedOrInvalidResult();
-        PoolId id = key.toId();
-        pools[id].setProtocolFee(newProtocolFee);
-        emit ProtocolFeeUpdated(id, newProtocolFee);
-    }
-
     function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external {
         if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicSwapFeeUpdate();
         newDynamicSwapFee.validate();
         PoolId id = key.toId();
         pools[id].setSwapFee(newDynamicSwapFee);
-    }
-
-    function extsload(bytes32 slot) external view returns (bytes32 value) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            value := sload(slot)
-        }
-    }
-
-    function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
-        bytes memory value = new bytes(32 * nSlots);
-
-        /// @solidity memory-safe-assembly
-        assembly {
-            for { let i := 0 } lt(i, nSlots) { i := add(i, 1) } {
-                mstore(add(value, mul(add(i, 1), 32)), sload(add(startSlot, i)))
-            }
-        }
-
-        return value;
     }
 
     function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
