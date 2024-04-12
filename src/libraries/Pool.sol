@@ -12,6 +12,7 @@ import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
+import {SwapFeeLibrary} from "./SwapFeeLibrary.sol";
 
 library Pool {
     using SafeCast for *;
@@ -62,8 +63,8 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
-    // the maximum total fee in hundredths of a bip (100%)
-    uint24 internal constant MAX_EFFECTIVE_FEE = 1_000_000;
+    /// @notice Thrown when trying to swap with max swap fee and specifying an output amount
+    error CannotSpecifyOutputAmountWithMaxSwapFee();
 
     struct Slot0 {
         // the current price
@@ -331,6 +332,10 @@ library Pool {
         });
 
         bool exactInput = params.amountSpecified < 0;
+
+        if (!exactInput && (swapFee == SwapFeeLibrary.MAX_SWAP_FEE)) {
+            revert CannotSpecifyOutputAmountWithMaxSwapFee();
+        }
 
         state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,

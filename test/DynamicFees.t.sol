@@ -17,6 +17,7 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {Pool} from "../src/libraries/Pool.sol";
 
 contract TestDynamicFees is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
@@ -169,6 +170,46 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolSwapFee(key), 1000000);
     }
 
+    function test_updateDynamicSwapFee_50PercentFee_AmountIn() public {
+        assertEq(_fetchPoolSwapFee(key), 0);
+
+        dynamicFeesHooks.setFee(500000);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), -100, 49, 79228162514264333632135824623, 1e18, -1, 500000);
+
+        snapStart("update dynamic fee in before swap");
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
+
+        assertEq(_fetchPoolSwapFee(key), 500000);
+    }
+
+    function test_updateDynamicSwapFee_50PercentFee_AmountOut() public {
+        assertEq(_fetchPoolSwapFee(key), 0);
+
+        dynamicFeesHooks.setFee(500000);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), -202, 100, 79228162514264329670727698909, 1e18, -1, 500000);
+
+        snapStart("update dynamic fee in before swap");
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
+
+        assertEq(_fetchPoolSwapFee(key), 500000);
+    }
+
     function test_updateDynamicSwapFee_100PercentFee_AmountOut() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
@@ -179,14 +220,31 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
 
+        vm.expectRevert(Pool.CannotSpecifyOutputAmountWithMaxSwapFee.selector);
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+    }
+
+    function test_updateDynamicSwapFee_100PercentFee_AmountOut_WithProtocol() public {
+        assertEq(_fetchPoolSwapFee(key), 0);
+
+        dynamicFeesHooks.setFee(999999);
+
+        vm.prank(address(feeController));
+        manager.setProtocolFee(key, 1000);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -202, 100, 79228162514264329670727698909, 1e18, -1, 1000000);
+        emit Swap(key.toId(), address(swapRouter), -101000000, 100, 79228162514264329670727698909, 1e18, -1, 999999);
 
         snapStart("update dynamic fee in before swap");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        assertEq(_fetchPoolSwapFee(key), 1000000);
+        assertEq(_fetchPoolSwapFee(key), 999999);
     }
 
     function test_swap_withDynamicFee_gas() public {

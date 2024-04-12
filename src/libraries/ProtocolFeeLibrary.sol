@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.20;
+import "./UnsafeMath.sol";
 
 library ProtocolFeeLibrary {
     // Max protocol fee is 0.1% (1000 pips)
@@ -30,7 +31,9 @@ library ProtocolFeeLibrary {
 
     function calculateEffectiveFee(uint24 self, uint24 swapFee) internal pure returns (uint24) {
         unchecked {
-            return uint24(uint256(self) + swapFee - (uint256(self) * swapFee) / PIPS_DENOMINATOR);
+            uint256 numerator = uint256(self) * uint256(swapFee);
+            uint256 divider = PIPS_DENOMINATOR;
+            return uint24(uint256(self) + swapFee - UnsafeMath.divRoundingUp(numerator, divider));
         }
     }
 }

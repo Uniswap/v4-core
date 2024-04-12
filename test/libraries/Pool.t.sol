@@ -137,6 +137,10 @@ contract PoolTest is Test {
             } else if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
             }
+        } else if (params.amountSpecified > 0) {
+            if (swapFee == MAX_SWAP_FEE) {
+                vm.expectRevert(Pool.CannotSpecifyOutputAmountWithMaxSwapFee.selector);
+            }
         }
 
         state.swap(params);
