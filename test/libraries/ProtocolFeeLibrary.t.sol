@@ -48,7 +48,7 @@ contract ProtocolFeeLibraryTest is Test {
     }
 
     function test_fuzz_calculateEffectiveFeeNeverEqualsMax(uint24 self, uint24 swapFee) public {
-        swapFee = uint24(bound(swapFee, 0, SwapFeeLibrary.MAX_SWAP_FEE-1));
+        swapFee = uint24(bound(swapFee, 0, SwapFeeLibrary.MAX_SWAP_FEE - 1));
         self = uint24(bound(self, 0, ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
         assertLt(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), SwapFeeLibrary.MAX_SWAP_FEE);
     }
