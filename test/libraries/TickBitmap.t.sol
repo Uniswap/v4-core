@@ -282,6 +282,54 @@ contract TickBitmapTest is Test, GasSnapshot {
         }
     }
 
+    function test_nextInitializedTick_lteFalse_returnsTickToRightIfAtInitializedTick() public {
+        int24 next = bitmap.nextInitializedTick(78, 1, false);
+        assertEq(next, 84);
+        assertEq(isInitialized(next), true);
+    }
+
+    function test_nextInitializedTick_lteFalse_returnsTheNextWordsInitializedTickIfOnTheRightBoundary() public {
+        int24 next = bitmap.nextInitializedTick(-257, 1, false);
+        assertEq(next, -200);
+        assertEq(isInitialized(next), true);
+    }
+
+    function test_nextInitializedTick_lteFalse_exceedTheWordBoundary() public {
+        int24 next = bitmap.nextInitializedTick(-1, 1, false);
+        assertEq(next, INITIALIZED_TICK);
+        assertEq(isInitialized(next), true);
+    }
+
+    function test_nextInitializedTick_lteFalse_multipleEmptyWords() public {
+        int24 next = bitmap.nextInitializedTick(SOLO_INITIALIZED_TICK_IN_WORD, 1, false);
+        assertEq(next, -200);
+        assertEq(isInitialized(next), true);
+    }
+
+    function test_nextInitializedTick_lteTrue_returnsSameTickIfInitialized() public {
+        int24 next = bitmap.nextInitializedTick(78, 1, true);
+        assertEq(next, 78);
+        assertEq(isInitialized(next), true);
+    }
+
+    function test_nextInitializedTick_lteTrue_returnsTickDirectlyToTheLeftOfInputTickIfNotInitialized() public {
+        int24 next = bitmap.nextInitializedTick(79, 1, true);
+        assertEq(next, 78);
+        assertEq(isInitialized(next), true);
+    }
+
+    function test_nextInitializedTick_lteTrue_exceedTheWordBoundary() public {
+        int24 next = bitmap.nextInitializedTick(258, 1, true);
+        assertEq(next, 240);
+        assertEq(isInitialized(next), true);
+    }
+
+    function test_nextInitializedTick_lteTrue_multipleEmptyWords() public {
+        int24 next = bitmap.nextInitializedTick(-201, 1, true);
+        assertEq(next, SOLO_INITIALIZED_TICK_IN_WORD);
+        assertEq(isInitialized(next), true);
+    }
+
     function isInitialized(int24 tick) internal view returns (bool) {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(tick, 1, true);
         return next == tick ? initialized : false;
