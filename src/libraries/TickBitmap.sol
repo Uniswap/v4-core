@@ -158,26 +158,26 @@ library TickBitmap {
     {
         unchecked {
             int24 compressed = compress(tick, tickSpacing);
-            int16 wordPos;
-            uint8 bitPos;
-            uint256 masked;
-            uint8 sb;
+
             if (!lte) {
                 // start from the word of the next tick, since the current tick state doesn't matter
-                (wordPos, bitPos) = position(++compressed);
+                (int16 wordPos, uint8 bitPos) = position(++compressed);
+                // all the 1s at or to the left of the bitPos
+                uint256 masked;
                 assembly ("memory-safe") {
                     // mask = ~((1 << bitPos) - 1) = -((1 << bitPos) - 1) - 1 = -(1 << bitPos)
                     let mask := sub(0, shl(bitPos, 1))
                     // masked = self[wordPos] & mask
                     mstore(0, wordPos)
                     mstore(0x20, self.slot)
-                    // all the 1s at or to the left of the bitPos
                     masked := and(sload(keccak256(0, 0x40)), mask)
 
                     // the maximum word position corresponding to `MAX_TICK`
                     let maxWordPos := shr(8, div(MAX_TICK, tickSpacing))
 
-                    for {} and(iszero(masked), slt(wordPos, maxWordPos)) {} {
+                    // loop until we find an initialized tick or reach the maximum tick
+                    for {} 1 {} {
+                        if or(masked, eq(wordPos, maxWordPos)) { break }
                         // always query the next word to the right
                         wordPos := add(wordPos, 1)
                         mstore(0, wordPos)
@@ -185,9 +185,16 @@ library TickBitmap {
                         masked := sload(keccak256(0, 0x40))
                     }
                 }
-                sb = BitMath.leastSignificantBit(masked);
+                uint8 lsb = BitMath.leastSignificantBit(masked);
+                // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
+                assembly {
+                    // next = (wordPos * 256 + lsb) * tickSpacing
+                    next := mul(add(shl(8, wordPos), lsb), tickSpacing)
+                }
             } else {
-                (wordPos, bitPos) = position(compressed);
+                (int16 wordPos, uint8 bitPos) = position(compressed);
+                // all the 1s at or to the right of the current bitPos
+                uint256 masked;
                 assembly ("memory-safe") {
                     // mask = (1 << (bitPos + 1)) - 1
                     // (bitPos + 1) may overflow but fine since 1 << 256 = 0
@@ -195,13 +202,14 @@ library TickBitmap {
                     // masked = self[wordPos] & mask
                     mstore(0, wordPos)
                     mstore(0x20, self.slot)
-                    // all the 1s at or to the right of the current bitPos
                     masked := and(sload(keccak256(0, 0x40)), mask)
 
                     // the minimum word position corresponding to `MIN_TICK`
                     let minWordPos := sar(8, sub(sdiv(MIN_TICK, tickSpacing), slt(smod(MIN_TICK, tickSpacing), 0)))
 
-                    for {} and(iszero(masked), sgt(wordPos, minWordPos)) {} {
+                    // loop until we find an initialized tick or reach the minimum tick
+                    for {} 1 {} {
+                        if or(masked, eq(wordPos, minWordPos)) { break }
                         // always query the next word to the left
                         wordPos := sub(wordPos, 1)
                         mstore(0, wordPos)
@@ -209,12 +217,12 @@ library TickBitmap {
                         masked := sload(keccak256(0, 0x40))
                     }
                 }
-                sb = BitMath.mostSignificantBit(masked);
-            }
-            // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
-            assembly {
-                // next = (wordPos * 256 + sb) * tickSpacing
-                next := mul(add(shl(8, wordPos), sb), tickSpacing)
+                uint8 msb = BitMath.mostSignificantBit(masked);
+                // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
+                assembly {
+                    // next = (wordPos * 256 + msb) * tickSpacing
+                    next := mul(add(shl(8, wordPos), msb), tickSpacing)
+                }
             }
         }
     }
