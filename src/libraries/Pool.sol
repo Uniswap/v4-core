@@ -379,17 +379,17 @@ library Pool {
                 swapFee
             );
 
-            if (exactInput) {
+            if (!exactInput) {
+                unchecked {
+                    state.amountSpecifiedRemaining -= step.amountOut.toInt256();
+                }
+                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
+            } else {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
                     state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
                 }
                 state.amountCalculated = state.amountCalculated + step.amountOut.toInt256();
-            } else {
-                unchecked {
-                    state.amountSpecifiedRemaining -= step.amountOut.toInt256();
-                }
-                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
@@ -457,22 +457,22 @@ library Pool {
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
         // update fee growth global
-        if (zeroForOne) {
-            self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
-        } else {
+        if (!zeroForOne) {
             self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
+        } else {
+            self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
         }
 
         unchecked {
-            if (zeroForOne == exactInput) {
-                result = toBalanceDelta(
-                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
-                    state.amountCalculated.toInt128()
-                );
-            } else {
+            if (zeroForOne != exactInput) {
                 result = toBalanceDelta(
                     state.amountCalculated.toInt128(),
                     (params.amountSpecified - state.amountSpecifiedRemaining).toInt128()
+                );
+            } else {
+                result = toBalanceDelta(
+                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
+                    state.amountCalculated.toInt128()
                 );
             }
         }
