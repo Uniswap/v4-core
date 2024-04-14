@@ -7,11 +7,6 @@ import {BitMath} from "./BitMath.sol";
 /// @notice Stores a packed mapping of tick index to its initialized state
 /// @dev The mapping uses int16 for keys since ticks are represented as int24 and there are 256 (2^8) values per word.
 library TickBitmap {
-    /// @dev The minimum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**-128
-    int24 internal constant MIN_TICK = -887272;
-    /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
-    int24 internal constant MAX_TICK = 887272;
-
     /// @notice Thrown when the tick is not enumerated by the tick spacing
     /// @param tick the invalid tick
     /// @param tickSpacing The tick spacing of the pool
@@ -28,6 +23,22 @@ library TickBitmap {
                     // if (tick < 0 && tick % tickSpacing != 0) then tick % tickSpacing < 0, vice versa
                     slt(smod(tick, tickSpacing), 0)
                 )
+        }
+    }
+
+    /// @notice Computes the key in the mapping containing the word in which the bit is stored
+    /// @param tick The tick for which to compute the position
+    /// @param tickSpacing The spacing between usable ticks
+    /// @return wordPos The key in the mapping containing the word in which the bit is stored
+    function wordPosition(int24 tick, int24 tickSpacing) internal pure returns (int16 wordPos) {
+        assembly {
+            let compressed :=
+                sub(
+                    sdiv(tick, tickSpacing),
+                    // if (tick < 0 && tick % tickSpacing != 0) then tick % tickSpacing < 0, vice versa
+                    slt(smod(tick, tickSpacing), 0)
+                )
+            wordPos := sar(8, compressed)
         }
     }
 
@@ -149,13 +160,17 @@ library TickBitmap {
     /// @param self The mapping in which to compute the next initialized tick
     /// @param tick The starting tick
     /// @param tickSpacing The spacing between usable ticks
+    /// @param wordPosLimit The word position limit to search for the next initialized tick
     /// @param lte Whether to search for the next initialized tick to the left (less than or equal to the starting tick)
-    /// @return next The next initialized tick
-    function nextInitializedTick(mapping(int16 => uint256) storage self, int24 tick, int24 tickSpacing, bool lte)
-        internal
-        view
-        returns (int24 next)
-    {
+    /// @return next The next initialized or uninitialized tick up to the word position limit
+    /// @return initialized Whether the next tick is initialized, as the function only searches up to the word position limit
+    function nextInitializedTick(
+        mapping(int16 => uint256) storage self,
+        int24 tick,
+        int24 tickSpacing,
+        int16 wordPosLimit,
+        bool lte
+    ) internal view returns (int24 next, bool initialized) {
         unchecked {
             int24 compressed = compress(tick, tickSpacing);
 
@@ -172,12 +187,9 @@ library TickBitmap {
                     mstore(0x20, self.slot)
                     masked := and(sload(keccak256(0, 0x40)), mask)
 
-                    // the maximum word position corresponding to `MAX_TICK`
-                    let maxWordPos := shr(8, div(MAX_TICK, tickSpacing))
-
-                    // loop until we find an initialized tick or reach the maximum tick
+                    // loop until we find an initialized tick or reach the word position limit
                     for {} 1 {} {
-                        if or(masked, eq(wordPos, maxWordPos)) { break }
+                        if or(masked, eq(wordPos, wordPosLimit)) { break }
                         // always query the next word to the right
                         wordPos := add(wordPos, 1)
                         mstore(0, wordPos)
@@ -185,11 +197,20 @@ library TickBitmap {
                         masked := sload(keccak256(0, 0x40))
                     }
                 }
-                uint8 lsb = BitMath.leastSignificantBit(masked);
+
+                // if there are no initialized ticks to the left of the current tick, return leftmost in wordPosLimit
+                initialized = masked != 0;
                 // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
-                assembly {
-                    // next = (wordPos * 256 + lsb) * tickSpacing
-                    next := mul(add(shl(8, wordPos), lsb), tickSpacing)
+                if (!initialized) {
+                    assembly {
+                        next := mul(add(shl(8, wordPos), 255), tickSpacing)
+                    }
+                } else {
+                    uint8 lsb = BitMath.leastSignificantBit(masked);
+                    assembly {
+                        // next = (wordPos * 256 + lsb) * tickSpacing
+                        next := mul(add(shl(8, wordPos), lsb), tickSpacing)
+                    }
                 }
             } else {
                 (int16 wordPos, uint8 bitPos) = position(compressed);
@@ -204,12 +225,9 @@ library TickBitmap {
                     mstore(0x20, self.slot)
                     masked := and(sload(keccak256(0, 0x40)), mask)
 
-                    // the minimum word position corresponding to `MIN_TICK`
-                    let minWordPos := sar(8, sub(sdiv(MIN_TICK, tickSpacing), slt(smod(MIN_TICK, tickSpacing), 0)))
-
-                    // loop until we find an initialized tick or reach the minimum tick
+                    // loop until we find an initialized tick or reach the word position limit
                     for {} 1 {} {
-                        if or(masked, eq(wordPos, minWordPos)) { break }
+                        if or(masked, eq(wordPos, wordPosLimit)) { break }
                         // always query the next word to the left
                         wordPos := sub(wordPos, 1)
                         mstore(0, wordPos)
@@ -217,11 +235,20 @@ library TickBitmap {
                         masked := sload(keccak256(0, 0x40))
                     }
                 }
-                uint8 msb = BitMath.mostSignificantBit(masked);
+
+                // if there are no initialized ticks to the right of or at the current tick, return rightmost in the word
+                initialized = masked != 0;
                 // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
-                assembly {
-                    // next = (wordPos * 256 + msb) * tickSpacing
-                    next := mul(add(shl(8, wordPos), msb), tickSpacing)
+                if (!initialized) {
+                    assembly {
+                        next := mul(shl(8, wordPos), tickSpacing)
+                    }
+                } else {
+                    uint8 msb = BitMath.mostSignificantBit(masked);
+                    assembly {
+                        // next = (wordPos * 256 + msb) * tickSpacing
+                        next := mul(add(shl(8, wordPos), msb), tickSpacing)
+                    }
                 }
             }
         }

@@ -772,7 +772,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
             zeroForOne: true,
             amountSpecified: -1e19,
-            sqrtPriceLimitX96: TickMath.MIN_SQRT_RATIO + 1
+            sqrtPriceLimitX96: TickMath.getSqrtRatioAtTick(-48000)
         });
 
         PoolSwapTest.TestSettings memory testSettings =

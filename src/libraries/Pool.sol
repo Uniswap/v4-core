@@ -273,6 +273,8 @@ library Pool {
     struct StepComputations {
         // the price at the beginning of the step
         uint160 sqrtPriceStartX96;
+        // the word position in the tick bitmap for the limit price
+        int16 wordPosLimit;
         // the next tick to swap to from the current tick in the swap direction
         int24 tickNext;
         // whether tickNext is initialized or not
@@ -338,12 +340,16 @@ library Pool {
         });
 
         StepComputations memory step;
+        step.wordPosLimit =
+            TickBitmap.wordPosition(TickMath.getTickAtSqrtRatio(params.sqrtPriceLimitX96), params.tickSpacing);
+
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
+            // get the next initialized tick, up to the word containing the price limit
             (step.tickNext, step.initialized) =
-                self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, zeroForOne);
+                self.tickBitmap.nextInitializedTick(state.tick, params.tickSpacing, step.wordPosLimit, zeroForOne);
 
             // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
             if (step.tickNext < TickMath.MIN_TICK) {
