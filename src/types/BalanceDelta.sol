@@ -29,7 +29,7 @@ library BalanceDeltaLibrary {
     function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {
         /// @solidity memory-safe-assembly
         assembly {
-            _amount0 := shr(128, balanceDelta)
+            _amount0 := sar(128, balanceDelta)
         }
     }
 
