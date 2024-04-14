@@ -346,9 +346,9 @@ library Pool {
                 self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, zeroForOne);
 
             // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
-            if (step.tickNext < TickMath.MIN_TICK) {
+            if (step.tickNext <= TickMath.MIN_TICK) {
                 step.tickNext = TickMath.MIN_TICK;
-            } else if (step.tickNext > TickMath.MAX_TICK) {
+            } else if (step.tickNext >= TickMath.MAX_TICK) {
                 step.tickNext = TickMath.MAX_TICK;
             }
 
