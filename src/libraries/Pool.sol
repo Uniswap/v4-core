@@ -275,6 +275,8 @@ library Pool {
         uint160 sqrtPriceStartX96;
         // the next tick to swap to from the current tick in the swap direction
         int24 tickNext;
+        // whether tickNext is initialized or not
+        bool initialized;
         // sqrt(price) for the next tick (1/0)
         uint160 sqrtPriceNextX96;
         // how much is being swapped in in this step
@@ -340,8 +342,8 @@ library Pool {
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
-            // get the next initialized tick, not limited to the same word
-            step.tickNext = self.tickBitmap.nextInitializedTick(state.tick, params.tickSpacing, zeroForOne);
+            (step.tickNext, step.initialized) =
+                self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, zeroForOne);
 
             // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
             if (step.tickNext < TickMath.MIN_TICK) {
@@ -399,20 +401,22 @@ library Pool {
 
             // shift tick if we reached the next price
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
-                // run the tick transition
-                int128 liquidityNet = Pool.crossTick(
-                    self,
-                    step.tickNext,
-                    (zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
-                    (zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
-                );
-                // if we're moving leftward, we interpret liquidityNet as the opposite sign
-                // safe because liquidityNet cannot be type(int128).min
-                unchecked {
-                    if (zeroForOne) liquidityNet = -liquidityNet;
-                }
+                // if the tick is initialized, run the tick transition
+                if (step.initialized) {
+                    int128 liquidityNet = Pool.crossTick(
+                        self,
+                        step.tickNext,
+                        (zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
+                        (zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
+                    );
+                    // if we're moving leftward, we interpret liquidityNet as the opposite sign
+                    // safe because liquidityNet cannot be type(int128).min
+                    unchecked {
+                        if (zeroForOne) liquidityNet = -liquidityNet;
+                    }
 
-                state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
+                    state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
+                }
 
                 unchecked {
                     state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
