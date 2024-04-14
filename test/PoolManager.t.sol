@@ -756,6 +756,33 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
+    function test_swap_againstThinLiq_gas() public {
+        // add constant liquidity to the pool
+        int24 tickSpacing = 60;
+        modifyLiquidityRouter.modifyLiquidity(
+            key,
+            IPoolManager.ModifyLiquidityParams({
+                tickLower: TickMath.MIN_TICK / tickSpacing * tickSpacing,
+                tickUpper: TickMath.MAX_TICK / tickSpacing * tickSpacing,
+                liquidityDelta: 1e18
+            }),
+            ZERO_BYTES
+        );
+
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: true,
+            amountSpecified: -1e19,
+            sqrtPriceLimitX96: TickMath.MIN_SQRT_RATIO + 1
+        });
+
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        snapStart("swap against thin liquidity");
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
+    }
+
     function test_swap_accruesProtocolFees(uint16 protocolFee0, uint16 protocolFee1) public {
         protocolFee0 = uint16(bound(protocolFee0, 1, 2500));
         protocolFee1 = uint16(bound(protocolFee1, 1, 2500));
