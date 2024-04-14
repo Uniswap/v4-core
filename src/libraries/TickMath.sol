@@ -259,8 +259,8 @@ library TickMath {
         int24 tickHi;
         assembly {
             let log_sqrt10001 := mul(log_2X64, 255738958999603826347141) // 128.128 number
-            tickLow := shr(128, sub(log_sqrt10001, 3402992956809132418596140100660247210))
-            tickHi := shr(128, add(log_sqrt10001, 291339464771989622907027621153398088495))
+            tickLow := sar(128, sub(log_sqrt10001, 3402992956809132418596140100660247210))
+            tickHi := sar(128, add(log_sqrt10001, 291339464771989622907027621153398088495))
         }
 
         // Equivalent: tick = tickLow == tickHi ? tickLow : getSqrtRatioAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
