@@ -59,7 +59,7 @@ contract PoolModifyLiquidityTest is PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        BalanceDelta delta = manager.modifyLiquidity(data.key, data.params, data.hookData);
+        (BalanceDelta delta,) = manager.modifyLiquidity(data.key, data.params, data.hookData);
 
         (,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
