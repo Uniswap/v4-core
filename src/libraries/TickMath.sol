@@ -52,8 +52,6 @@ library TickMath {
             uint256 absTick;
             /// @solidity memory-safe-assembly
             assembly {
-                // sign extend to make tick an int256 in twos complement
-                tick := signextend(2, tick)
                 // mask = 0 if tick >= 0 else -1
                 let mask := sub(0, slt(tick, 0))
                 // If tick >= 0, |tick| = tick = 0 ^ tick
