@@ -203,10 +203,10 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         int256 delta0 = IPoolManager(manager).currencyDelta(address(this), key.currency0);
         int256 delta1 = IPoolManager(manager).currencyDelta(address(this), key.currency1);
         manager.sync(key.currency0);
-        manager.sync(key.currency1);
         IERC20Minimal(Currency.unwrap(key.currency0)).transferFrom(payer, address(manager), uint256(-delta0));
-        IERC20Minimal(Currency.unwrap(key.currency1)).transferFrom(payer, address(manager), uint256(-delta1));
         manager.settle(key.currency0);
+        manager.sync(key.currency1);
+        IERC20Minimal(Currency.unwrap(key.currency1)).transferFrom(payer, address(manager), uint256(-delta1));
         manager.settle(key.currency1);
     }
 }

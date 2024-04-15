@@ -14,18 +14,18 @@ contract ReservesTest is Test {
         currency0 = Currency.wrap(address(0xbeef));
     }
 
-    function test_get_reverts_withoutSet() public {
+    function test_getReserves_reverts_withoutSet() public {
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
         uint256 value = currency0.getReserves();
     }
 
-    function test_get_returns0AfterSet() public {
+    function test_getReserves_returns0AfterSet() public {
         currency0.setReserves(0);
         uint256 value = currency0.getReserves();
         assertEq(value, 0);
     }
 
-    function test_get_returns_set() public {
+    function test_getReserves_returns_set() public {
         currency0.setReserves(100);
         uint256 value = currency0.getReserves();
         assertEq(value, 100);

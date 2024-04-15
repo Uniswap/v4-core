@@ -9,7 +9,7 @@ library Reserves {
     /// @notice The transient reserves for pools with no balance is set to the max as a sentinel to track that it has been synced.
     uint256 public constant ZERO_BALANCE = type(uint256).max;
 
-    /// @notice Thrown when the transient reserves are not in sync with the current balance
+    /// @notice Thrown when someone has not called sync before calling settle for the first time.
     error ReservesMustBeSynced();
 
     function setReserves(Currency currency, uint256 value) internal {

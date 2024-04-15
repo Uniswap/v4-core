@@ -12,7 +12,6 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {IUnlockCallback} from "../src/interfaces/callback/IUnlockCallback.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
-import {BadRouter} from "../src/test/BadRouter.sol";
 import {ActionsRouter, Actions} from "../src/test/ActionsRouter.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {Reserves} from "../src/libraries/Reserves.sol";
@@ -22,13 +21,11 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
     // PoolManager has no balance of currency2.
     Currency currency2;
-    BadRouter badRouter;
     ActionsRouter router;
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
         currency2 = deployMintAndApproveCurrency();
-        badRouter = new BadRouter(manager);
         router = new ActionsRouter(manager);
     }
 
@@ -50,9 +47,10 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         uint256 balance = manager.sync(currency0);
         assertEq(balance, currency0Balance, "balance not equal");
+        assertEq(manager.getReserves(currency0), balance);
     }
 
-    function test_settle_withBalance() public {
+    function test_settle_withStartingBalance() public {
         assertGt(currency0.balanceOf(address(manager)), uint256(0));
 
         IPoolManager.SwapParams memory params =
@@ -70,7 +68,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getReserves(currency0), balanceCurrency0); // Reserves are up to date since settle was called.
     }
 
-    function test_settle_withNoBalance() public {
+    function test_settle_withNoStartingBalance() public {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
 
         (Currency cur0, Currency cur1) = currency0 < currency2 ? (currency0, currency2) : (currency2, currency0);
@@ -88,16 +86,14 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     }
 
     function test_settle_revertsIfSyncNotCalled() public {
-        MockERC20(Currency.unwrap(key.currency0)).approve(address(badRouter), type(uint256).max);
+        Actions[] memory actions = new Actions[](1);
+        bytes[] memory params = new bytes[](1);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
-
-        BadRouter.TestSettings memory testSettings =
-            BadRouter.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+        actions[0] = Actions.SETTLE;
+        params[0] = abi.encode(currency0);
 
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        badRouter.swap(key, params, testSettings, new bytes(0));
+        router.executeActions(actions, params);
     }
 
     /// @notice When there is no balance and reserves are set to type(uint256).max, no delta should be applied.
