@@ -43,8 +43,14 @@ library TickBitmap {
     /// @param tick The tick to flip
     /// @param tickSpacing The spacing between usable ticks
     function flipTick(mapping(int16 => uint256) storage self, int24 tick, int24 tickSpacing) internal {
-        if (tick % tickSpacing != 0) revert TickMisaligned(tick, tickSpacing); // ensure that the tick is spaced
         assembly ("memory-safe") {
+            // ensure that the tick is spaced
+            if smod(tick, tickSpacing) {
+                mstore(0, 0xd4d8f3e6)
+                mstore(0x20, tick)
+                mstore(0x40, tickSpacing)
+                revert(0x1c, 0x44)
+            }
             tick := sdiv(tick, tickSpacing)
             // calculate the storage slot corresponding to the tick
             // wordPos = tick >> 8
