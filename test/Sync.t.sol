@@ -108,9 +108,9 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getReserves(currency2), 0);
 
         Actions[] memory actions = new Actions[](2);
-        actions[0] = Actions.SETTLE;
-
         bytes[] memory params = new bytes[](2);
+
+        actions[0] = Actions.SETTLE;
         params[0] = abi.encode(currency2);
 
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
@@ -127,7 +127,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         // Approve the router for a transfer.
         MockERC20(Currency.unwrap(currency3)).approve(address(router), type(uint256).max);
 
-        // Sync has not been called on currency0.
+        // Sync has not been called on currency3.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
         manager.getReserves(currency3);
 
@@ -153,7 +153,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[2] = Actions.SETTLE;
         params[2] = abi.encode(currency3);
 
-        // 2. Second check that the balances (token balances, reserves balace, and delta balance are as expected).
+        // 2. Second check that the balances (token balances, reserves balance, and delta balance) are as expected.
         // The token balance of the pool should be the full balance.
         // The reserves balance should have been updated to the full balance in settle.
         // And the delta balance should be 0, because it has been fully settled.
