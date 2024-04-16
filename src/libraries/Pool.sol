@@ -394,7 +394,7 @@ library Pool {
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
             if (cache.protocolFee > 0) {
                 // calculate the amount of the fee that should go to the protocol
-                uint256 delta = FullMath.mulDiv(step.feeAmount, cache.protocolFee, swapFee + cache.protocolFee);
+                uint256 delta = step.feeAmount * cache.protocolFee / (swapFee + cache.protocolFee);
                 // subtract it from the regular fee and add it to the protocol fee
                 unchecked {
                     step.feeAmount -= delta;

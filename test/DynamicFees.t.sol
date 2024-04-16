@@ -163,7 +163,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 0, 79228162514264337593543950336, 1e18, -1, 1000000);
 
-        snapStart("update dynamic fee in before swap");
+        snapStart("swap with 100 Percent swap fee amountIn");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
@@ -183,7 +183,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 49, 79228162514264333632135824623, 1e18, -1, 500000);
 
-        snapStart("update dynamic fee in before swap");
+        snapStart("swap with 50 Percent swap fee amountIn");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
@@ -203,14 +203,14 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -202, 100, 79228162514264329670727698909, 1e18, -1, 500000);
 
-        snapStart("update dynamic fee in before swap");
+        snapStart("swap with 50 Percent swap fee amountOut");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
         assertEq(_fetchPoolSwapFee(key), 500000);
     }
 
-    function test_updateDynamicSwapFee_100PercentFee_AmountOut() public {
+    function test_updateDynamicSwapFee_100PercentFee_AmountOut_NoProtocol() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
         dynamicFeesHooks.setFee(1000000);
@@ -240,7 +240,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -101000000, 100, 79228162514264329670727698909, 1e18, -1, 999999);
 
-        snapStart("update dynamic fee in before swap");
+        snapStart("swap with dynamic fee and protocol fee");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
