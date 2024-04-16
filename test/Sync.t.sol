@@ -119,6 +119,29 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         router.executeActions(actions, params);
     }
 
+    /// @notice When there is a balance, no delta should be applied.
+    function test_settle_balanceInPool_shouldNotApplyDelta() public {
+        uint256 currency0Balance = currency0.balanceOf(address(manager));
+
+        // Sync has not been called.
+        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
+        manager.getReserves(currency0);
+
+        manager.sync(currency0);
+        assertEq(manager.getReserves(currency0), currency0Balance);
+
+        Actions[] memory actions = new Actions[](2);
+        bytes[] memory params = new bytes[](2);
+
+        actions[0] = Actions.SETTLE;
+        params[0] = abi.encode(currency0);
+
+        actions[1] = Actions.ASSERT_DELTA_EQUALS;
+        params[1] = abi.encode(currency0, address(router), 0);
+
+        router.executeActions(actions, params);
+    }
+
     /// @notice When there is no actual balance in the pool, the ZERO_BALANCE stored in transient reserves should never actually used in calculating the amount paid in settle.
     /// This tests check that the reservesNow value is set to 0 not ZERO_BALANCE, by checking that an underflow happens when
     /// a) the contract balance is 0 and b) the reservesBefore value is out of date (sync isn't called again before settle).
