@@ -38,12 +38,11 @@ contract ActionsRouter is IUnlockCallback, Test {
         manager = _manager;
     }
 
-    function unlockCallback(bytes calldata data) external returns (bytes memory returnData) {
+    function unlockCallback(bytes calldata data) external returns (bytes memory) {
         (Actions[] memory actions, bytes[] memory params) = abi.decode(data, (Actions[], bytes[]));
         for (uint256 i = 0; i < actions.length; i++) {
             Actions action = actions[i];
             bytes memory param = params[i];
-
             if (action == Actions.SETTLE) {
                 _settle(param);
             } else if (action == Actions.TAKE) {

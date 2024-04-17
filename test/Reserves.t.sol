@@ -16,7 +16,7 @@ contract ReservesTest is Test {
 
     function test_getReserves_reverts_withoutSet() public {
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        uint256 value = currency0.getReserves();
+        currency0.getReserves();
     }
 
     function test_getReserves_returns0AfterSet() public {
