@@ -57,7 +57,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true});
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         // Sync has not been called.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);

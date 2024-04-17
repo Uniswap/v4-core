@@ -6,9 +6,11 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolTakeTest is PoolTestBase {
     using CurrencyLibrary for Currency;
+    using CurrencySettleTake for Currency;
     using SafeCast for uint256;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
@@ -40,7 +42,7 @@ contract PoolTakeTest is PoolTestBase {
             _fetchBalances(currency, sender, address(this));
         require(deltaBefore == 0, "deltaBefore is not equal to 0");
 
-        _take(currency, sender, amount.toInt128(), true);
+        currency.take(manager, sender, amount, false);
 
         (uint256 userBalAfter, uint256 pmBalAfter, int256 deltaAfter) = _fetchBalances(currency, sender, address(this));
 
@@ -55,6 +57,6 @@ contract PoolTakeTest is PoolTestBase {
             "the difference between pmBalBefore and pmBalAfter is not equal to amount"
         );
 
-        _settle(currency, sender, -amount.toInt128(), true);
+        currency.settle(manager, sender, amount, false);
     }
 }
