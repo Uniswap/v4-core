@@ -9,6 +9,7 @@ library LiquidityMath {
     /// @param y The delta by which liquidity should be changed
     /// @return z The liquidity after
     function addDelta(uint128 x, int128 y) internal pure returns (uint128 z) {
+        /// @solidity memory-safe-assembly
         assembly {
             z := add(x, y)
             if shr(128, z) {
