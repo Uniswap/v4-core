@@ -22,7 +22,7 @@ library CurrencySettleTake {
         } else if (currency.isNative()) {
             manager.settle{value: amount}(currency);
         } else {
-            // TODO: call sync when transient reserves is merged
+            manager.sync(currency);
             IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), amount);
             manager.settle(currency);
         }

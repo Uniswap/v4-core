@@ -146,7 +146,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false, currencyAlreadySent: false});
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         swapRouter.swap(key, swapParams, testSettings, new bytes(222));
         assertEq(mockHooks.beforeSwapData(), new bytes(222));
@@ -159,7 +159,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(true, true, false),
+            PoolSwapTest.TestSettings(true, true),
             ZERO_BYTES
         );
     }
@@ -170,7 +170,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(
             key,
             IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
-            PoolSwapTest.TestSettings(true, true, false),
+            PoolSwapTest.TestSettings(true, true),
             ZERO_BYTES
         );
     }

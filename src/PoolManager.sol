@@ -21,6 +21,7 @@ import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
+import {Reserves} from "./libraries/Reserves.sol";
 import {Extsload} from "./Extsload.sol";
 
 /// @notice Holds the state for all pools
@@ -35,15 +36,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using CurrencyDelta for Currency;
     using SwapFeeLibrary for uint24;
     using PoolGetters for Pool.State;
+    using Reserves for Currency;
 
     /// @inheritdoc IPoolManager
     int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
     /// @inheritdoc IPoolManager
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
-
-    /// @inheritdoc IPoolManager
-    mapping(Currency currency => uint256) public override reservesOf;
 
     mapping(PoolId id => Pool.State) public pools;
 
@@ -144,6 +143,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
         Lock.lock();
+    }
+
+    /// @inheritdoc IPoolManager
+    function sync(Currency currency) public returns (uint256 balance) {
+        balance = currency.balanceOfSelf();
+        currency.setReserves(balance);
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
@@ -262,7 +267,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function take(Currency currency, address to, uint256 amount) external override onlyWhenUnlocked {
         // subtraction must be safe
         _accountDelta(currency, -(amount.toInt128()));
-        if (!currency.isNative()) reservesOf[currency] -= amount;
         currency.transfer(to, amount);
     }
 
@@ -272,11 +276,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             paid = msg.value;
         } else {
             if (msg.value > 0) revert NonZeroNativeValue();
-            uint256 reservesBefore = reservesOf[currency];
-            reservesOf[currency] = currency.balanceOfSelf();
-            paid = reservesOf[currency] - reservesBefore;
+            uint256 reservesBefore = currency.getReserves();
+            uint256 reservesNow = sync(currency);
+            paid = reservesNow - reservesBefore;
         }
-
         _accountDelta(currency, paid.toInt128());
     }
 
@@ -310,6 +313,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
         return pools[id].getPoolBitmapInfo(word);
+    }
+
+    /// @notice Temporary view function. Replaceable by transient EXTSLOAD.
+    function getReserves(Currency currency) external view returns (uint256 balance) {
+        return currency.getReserves();
     }
 
     function getFeeGrowthGlobals(PoolId id)
