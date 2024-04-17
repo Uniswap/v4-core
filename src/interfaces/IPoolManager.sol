@@ -175,6 +175,10 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     }
 
     /// @notice Swap against the given pool
+    /// @param key The pool to swap in
+    /// @param params The parameters for swapping
+    /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
+    /// @return swapDelta The balance delta of the address swapping
     function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta);

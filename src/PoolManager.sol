@@ -196,7 +196,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0.
         BalanceDelta hookDelta = key.hooks.afterModifyLiquidity(key, params, delta, hookData);
-        if (BalanceDelta.unwrap(hookDelta) != 0) {
+        if (hookDelta != BalanceDelta.ZERO_DELTA) {
             delta = delta - hookDelta;
             _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
         }
@@ -231,7 +231,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             zeroForOne ? key.currency0 : key.currency1
         );
 
-        (int128 hookDeltaUnspecified) = key.hooks.afterSwap(key, params, swapDelta, hookData);
+        int128 hookDeltaUnspecified = key.hooks.afterSwap(key, params, swapDelta, hookData);
 
         // if the hook doesnt have the flag to be able to return deltas, both deltas will always be 0
         if (hookDeltaUnspecified != 0 || hookDeltaSpecified != 0) {
@@ -242,7 +242,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
         }
 
-        // Account the hook's delta to the hook's address, and charge them to the caller's deltas
         _accountPoolBalanceDelta(key, swapDelta, msg.sender);
     }
 

@@ -26,6 +26,8 @@ function eq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
 }
 
 library BalanceDeltaLibrary {
+    BalanceDelta public constant ZERO_DELTA = toBalanceDelta(0, 0);
+
     function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {
         /// @solidity memory-safe-assembly
         assembly {

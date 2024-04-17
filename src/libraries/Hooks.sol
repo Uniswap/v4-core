@@ -98,18 +98,17 @@ library Hooks {
     /// @return bool True if the hook address is valid
     function isValidHookAddress(IHooks self, uint24 fee) internal pure returns (bool) {
         // The hook can only have a flag to return a hook delta on an action if it also has the corresponding action flag
+        if (!self.hasPermission(BEFORE_SWAP_FLAG) && self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)) return false;
+        if (!self.hasPermission(AFTER_SWAP_FLAG) && self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)) return false;
+        if (!self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG) && self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG))
+        {
+            return false;
+        }
         if (
-            (!self.hasPermission(BEFORE_SWAP_FLAG) && self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG))
-                || (!self.hasPermission(AFTER_SWAP_FLAG) && self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG))
-                || (
-                    !self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)
-                        && self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG)
-                )
-                || (
-                    !self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)
-                        && self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
-                )
+            !self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)
+                && self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
         ) return false;
+
         // If there is no hook contract set, then fee cannot be dynamic
         // If a hook contract is set, it must have at least 1 flag set, or have a dynamic fee
         return address(self) == address(0)
