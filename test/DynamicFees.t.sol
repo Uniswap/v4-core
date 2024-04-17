@@ -224,7 +224,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
     }
 
-    function test_updateDynamicSwapFee_100PercentFee_AmountOut_WithProtocol() public {
+    function test_updateDynamicSwapFee_99PercentFee_AmountOut_WithProtocol() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
         dynamicFeesHooks.setFee(999999);
@@ -244,7 +244,34 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
+        uint256 expectedProtocolFee = uint256(-params.amountSpecified) * 1000 / 1e6;
+        assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
+
         assertEq(_fetchPoolSwapFee(key), 999999);
+    }
+
+    function test_updateDynamicSwapFee_100PercentFee_AmountIn_WithProtocol() public {
+        assertEq(_fetchPoolSwapFee(key), 0);
+
+        dynamicFeesHooks.setFee(1000000);
+
+        vm.prank(address(feeController));
+        manager.setProtocolFee(key, 1000);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -1000, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), -1000, 0, 79228162514264337593543950336, 1e18, -1, 1000000);
+
+        snapStart("swap with dynamic fee and protocol fee");
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
+
+        uint256 expectedProtocolFee = uint256(-params.amountSpecified) * 1000 / 1e6;
+        assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
     }
 
     function test_swap_withDynamicFee_gas() public {
