@@ -10,9 +10,11 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolSwapTest is PoolTestBase {
     using CurrencyLibrary for Currency;
+    using CurrencySettleTake for Currency;
     using Hooks for IHooks;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
@@ -28,8 +30,8 @@ contract PoolSwapTest is PoolTestBase {
     }
 
     struct TestSettings {
-        bool withdrawTokens;
-        bool settleUsingTransfer;
+        bool takeClaims;
+        bool settleUsingBurn;
         bool currencyAlreadySent;
     }
 
@@ -101,21 +103,25 @@ contract PoolSwapTest is PoolTestBase {
             if (data.testSettings.currencyAlreadySent) {
                 manager.settle(data.key.currency0);
             } else {
-                _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
+                data.key.currency0.settle(
+                    manager, data.sender, uint256(-deltaAfter0), data.testSettings.settleUsingBurn
+                );
             }
         }
         if (deltaAfter1 < 0) {
             if (data.testSettings.currencyAlreadySent) {
                 manager.settle(data.key.currency1);
             } else {
-                _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
+                data.key.currency1.settle(
+                    manager, data.sender, uint256(-deltaAfter1), data.testSettings.settleUsingBurn
+                );
             }
         }
         if (deltaAfter0 > 0) {
-            _take(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.withdrawTokens);
+            data.key.currency0.take(manager, data.sender, uint256(deltaAfter0), data.testSettings.takeClaims);
         }
         if (deltaAfter1 > 0) {
-            _take(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.withdrawTokens);
+            data.key.currency1.take(manager, data.sender, uint256(deltaAfter1), data.testSettings.takeClaims);
         }
 
         return abi.encode(delta);
