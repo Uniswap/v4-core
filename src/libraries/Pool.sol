@@ -436,22 +436,22 @@ library Pool {
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
         // update fee growth global
-        if (zeroForOne) {
-            self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
-        } else {
+        if (!zeroForOne) {
             self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
+        } else {
+            self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
         }
 
         unchecked {
-            if (zeroForOne == exactInput) {
-                result = toBalanceDelta(
-                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
-                    state.amountCalculated.toInt128()
-                );
-            } else {
+            if (zeroForOne != exactInput) {
                 result = toBalanceDelta(
                     state.amountCalculated.toInt128(),
                     (params.amountSpecified - state.amountSpecifiedRemaining).toInt128()
+                );
+            } else {
+                result = toBalanceDelta(
+                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
+                    state.amountCalculated.toInt128()
                 );
             }
         }
