@@ -8,7 +8,7 @@ library ProtocolFeeLibrary {
     uint16 public constant MAX_PROTOCOL_FEE = 1000;
 
     // the protocol fee is represented in hundredths of a bip
-    uint24 internal constant PIPS_DENOMINATOR = 1_000_000;
+    uint256 internal constant PIPS_DENOMINATOR = 1_000_000;
 
     function getZeroForOneFee(uint24 self) internal pure returns (uint16) {
         return uint16(self & (4096 - 1));
