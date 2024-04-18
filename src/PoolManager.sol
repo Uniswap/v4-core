@@ -157,12 +157,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         int256 current = currency.getDelta(msg.sender);
         int256 next = current + delta;
 
-        unchecked {
-            if (next == 0) {
-                NonZeroDeltaCount.decrement();
-            } else if (current == 0) {
-                NonZeroDeltaCount.increment();
-            }
+        if (next == 0) {
+            NonZeroDeltaCount.decrement();
+        } else if (current == 0) {
+            NonZeroDeltaCount.increment();
         }
 
         currency.setDelta(msg.sender, next);
@@ -265,9 +263,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override onlyWhenUnlocked {
-        // subtraction must be safe
-        _accountDelta(currency, -(amount.toInt128()));
-        currency.transfer(to, amount);
+        unchecked {
+            // subtraction must be safe
+            _accountDelta(currency, -(amount.toInt128()));
+            currency.transfer(to, amount);
+        }
     }
 
     /// @inheritdoc IPoolManager
@@ -285,9 +285,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function mint(address to, uint256 id, uint256 amount) external override onlyWhenUnlocked {
-        // subtraction must be safe
-        _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
-        _mint(to, id, amount);
+        unchecked {
+            // subtraction must be safe
+            _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()));
+            _mint(to, id, amount);
+        }
     }
 
     /// @inheritdoc IPoolManager
