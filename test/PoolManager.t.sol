@@ -784,9 +784,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         params.liquidityDelta = LIQ_PARAMS.liquidityDelta;
         modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES);
 
-        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, amountSpecified, TickMath.MAX_SQRT_RATIO - 1);
+        IPoolManager.SwapParams memory swapParams =
+            IPoolManager.SwapParams(false, amountSpecified, TickMath.MAX_SQRT_RATIO - 1);
         BalanceDelta delta = swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(false, false), ZERO_BYTES);
-        uint256 expectedProtocolFee = uint256(uint128(-delta.amount1())) * protocolFee1 / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+        uint256 expectedProtocolFee =
+            uint256(uint128(-delta.amount1())) * protocolFee1 / ProtocolFeeLibrary.PIPS_DENOMINATOR;
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }
