@@ -303,12 +303,11 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
+        returns (BalanceDelta result, uint256 feeForProtocol, uint24 effectiveFee, SwapState memory state)
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
-        swapFee = slot0Start.swapFee;
         bool zeroForOne = params.zeroForOne;
         if (zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
@@ -333,7 +332,7 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (!exactInput && (swapFee == SwapFeeLibrary.MAX_SWAP_FEE)) {
+        if (!exactInput && (slot0Start.swapFee == SwapFeeLibrary.MAX_SWAP_FEE)) {
             revert CannotSpecifyOutputAmountWithMaxSwapFee();
         }
 
@@ -347,6 +346,7 @@ library Pool {
         });
 
         StepComputations memory step;
+        effectiveFee = cache.protocolFee == 0 ? slot0Start.swapFee : uint24(cache.protocolFee).calculateEffectiveFee(slot0Start.swapFee);
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
@@ -374,8 +374,7 @@ library Pool {
                 ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                // use the effective fee
-                cache.protocolFee == 0 ? swapFee : uint24(cache.protocolFee).calculateEffectiveFee(swapFee)
+                effectiveFee
             );
 
             if (exactInput) {
@@ -395,8 +394,9 @@ library Pool {
             if (cache.protocolFee > 0) {
                 unchecked {
                     // calculate the amount of the fee that should go to the protocol
+                    // fee amount has already been subtracted from the amountIn
                     uint256 delta =
-                        step.feeAmount * cache.protocolFee / uint24(cache.protocolFee).calculateEffectiveFee(swapFee);
+                        (step.amountIn + step.feeAmount) * cache.protocolFee / 1e6;
                     // subtract it from the regular fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     feeForProtocol += delta;
