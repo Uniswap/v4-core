@@ -296,7 +296,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolSwapFee(key), 123);
     }
 
-    function test_fuzz_ProtocolAndSwapFee(uint24 swapFee, uint16 protocolFee0, uint16 protocolFee1, int256 amountSpecified) public {
+    function test_fuzz_ProtocolAndSwapFee(
+        uint24 swapFee,
+        uint16 protocolFee0,
+        uint16 protocolFee1,
+        int256 amountSpecified
+    ) public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
         swapFee = uint16(bound(swapFee, 0, 1000000));
@@ -310,8 +315,11 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.prank(address(feeController));
         manager.setProtocolFee(key, protocolFee);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: amountSpecified, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: true,
+            amountSpecified: amountSpecified,
+            sqrtPriceLimitX96: SQRT_RATIO_1_2
+        });
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
