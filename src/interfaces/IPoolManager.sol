@@ -41,9 +41,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @notice Thrown when trying to swap amount of 0
     error SwapAmountCannotBeZero();
 
-    /// @notice Thrown when hook deltas and/or lack of liquidity causes swap deltas to flip
-    error SwapDeltaHasIncorrectSign();
-
     ///@notice Thrown when native currency is passed to a non native settlement
     error NonZeroNativeValue();
 

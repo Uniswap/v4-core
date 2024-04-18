@@ -989,13 +989,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             // exact in: if the hook's delta is more than whats available in the pool, none of user's input will be swapped
             // because the hook will have taken them all. Note: both hookDeltaSpecified and maxPossibleIn are negative so we use <
         } else if (isExactIn && hookDeltaSpecified < maxPossibleIn) {
-            vm.expectRevert(IPoolManager.SwapDeltaHasIncorrectSign.selector);
+            vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
             // exact out: if the hook's delta is more than whats available in the pool, none of user's output will be swapped
             // because the hook will have taken them all.
         } else if (!isExactIn && hookDeltaSpecified > maxPossibleOut) {
-            vm.expectRevert(IPoolManager.SwapDeltaHasIncorrectSign.selector);
+            vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
             // successful swaps !

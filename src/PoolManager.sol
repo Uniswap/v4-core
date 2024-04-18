@@ -206,7 +206,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         BalanceDelta hookDelta = key.hooks.afterModifyLiquidity(key, params, callerDelta, hookData);
         if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) {
             callerDelta = callerDelta - hookDelta;
-
             _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
         }
 
@@ -224,7 +223,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         PoolId id = key.toId();
         _checkPoolInitialized(id);
-        bool zeroForOne = params.zeroForOne;
 
         (int256 amountToSwap, int128 hookDeltaSpecified) = key.hooks.beforeSwap(key, params, hookData);
 
@@ -233,23 +231,18 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             id,
             Pool.SwapParams({
                 tickSpacing: key.tickSpacing,
-                zeroForOne: zeroForOne,
+                zeroForOne: params.zeroForOne,
                 amountSpecified: amountToSwap,
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96
             }),
-            zeroForOne ? key.currency0 : key.currency1
+            params.zeroForOne ? key.currency0 : key.currency1
         );
 
-        int128 hookDeltaUnspecified = key.hooks.afterSwap(key, params, swapDelta, hookData);
+        BalanceDelta hookDelta;
+        (swapDelta, hookDelta) = key.hooks.afterSwap(key, params, swapDelta, hookData, hookDeltaSpecified);
 
-        // if the hook doesnt have the flag to be able to return deltas, both deltas will always be 0
-        if (hookDeltaUnspecified != 0 || hookDeltaSpecified != 0) {
-            BalanceDelta hookDelta;
-            (hookDelta, swapDelta) = _processHookDeltas(
-                swapDelta, params.amountSpecified < 0, zeroForOne, hookDeltaSpecified, hookDeltaUnspecified
-            );
-            _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
-        }
+        // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0
+        if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
 
         _accountPoolBalanceDelta(key, swapDelta, msg.sender);
     }
@@ -267,32 +260,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         );
 
         return delta;
-    }
-
-    function _processHookDeltas(
-        BalanceDelta swapDelta,
-        bool isExactInput,
-        bool zeroForOne,
-        int128 deltaSpecified,
-        int128 deltaUnspecified
-    ) internal pure returns (BalanceDelta hookDelta, BalanceDelta swapperDelta) {
-        // If it is an exact input swap and is 0 for 1, the currency specified is currency0
-        // If it is an exact output swap and is 1 for 0, the currency specifed is also currency0
-        hookDelta = (isExactInput == zeroForOne)
-            ? toBalanceDelta(deltaSpecified, deltaUnspecified)
-            : toBalanceDelta(deltaUnspecified, deltaSpecified);
-
-        // the caller has to pay for (or receive) to hook's delta
-        swapperDelta = swapDelta - hookDelta;
-
-        // check that the hook's returns haven't flipped the sign of the tokens being swapped
-        if (
-            zeroForOne
-                ? (swapperDelta.amount0() > 0 || swapperDelta.amount1() < 0)
-                : (swapperDelta.amount1() > 0 || swapperDelta.amount0() < 0)
-        ) {
-            revert SwapDeltaHasIncorrectSign();
-        }
     }
 
     /// @inheritdoc IPoolManager

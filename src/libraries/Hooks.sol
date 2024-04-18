@@ -5,7 +5,7 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 import {SwapFeeLibrary} from "./SwapFeeLibrary.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
@@ -254,14 +254,37 @@ library Hooks {
         IHooks self,
         PoolKey memory key,
         IPoolManager.SwapParams memory params,
-        BalanceDelta delta,
-        bytes calldata hookData
-    ) internal noSelfCall(self) returns (int128 hookDeltaUnspecified) {
+        BalanceDelta swapDelta,
+        bytes calldata hookData,
+        int128 hookDeltaSpecified
+    ) internal returns (BalanceDelta swapperDelta, BalanceDelta hookDelta) {
+        if (msg.sender == address(self)) return (swapDelta, BalanceDeltaLibrary.ZERO_DELTA);
+
+        int128 hookDeltaUnspecified;
+        swapperDelta = swapDelta;
         if (self.hasPermission(AFTER_SWAP_FLAG)) {
             hookDeltaUnspecified = self.callHookWithReturnDelta(
-                abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData),
+                abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, swapDelta, hookData),
                 self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)
             ).toInt128();
+        }
+
+        if (hookDeltaUnspecified != 0 || hookDeltaSpecified != 0) {
+            hookDelta = (params.amountSpecified < 0 == params.zeroForOne)
+                ? toBalanceDelta(hookDeltaSpecified, hookDeltaUnspecified)
+                : toBalanceDelta(hookDeltaUnspecified, hookDeltaSpecified);
+
+            // the caller has to pay for (or receive) to hook's delta
+            swapperDelta = swapDelta - hookDelta;
+
+            // check that the hook's returns haven't flipped the sign of the tokens being swapped
+            if (
+                params.zeroForOne
+                    ? (swapperDelta.amount0() > 0 || swapperDelta.amount1() < 0)
+                    : (swapperDelta.amount1() > 0 || swapperDelta.amount0() < 0)
+            ) {
+                revert HookDeltaExceedsSwapAmount();
+            }
         }
     }
 
