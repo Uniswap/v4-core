@@ -216,8 +216,7 @@ library Pool {
         }
 
         if (liquidityDelta != 0) {
-            int24 tick = self.slot0.tick;
-            uint160 sqrtPriceX96 = self.slot0.sqrtPriceX96;
+            (int24 tick, uint160 sqrtPriceX96) = (self.slot0.tick, self.slot0.sqrtPriceX96);
             if (tick < tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
@@ -451,7 +450,7 @@ library Pool {
             }
         }
 
-        (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
+        (self.slot0.tick, self.slot0.sqrtPriceX96) = (state.tick, state.sqrtPriceX96);
 
         // update liquidity if it changed
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
