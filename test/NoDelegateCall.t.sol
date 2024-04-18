@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
-import {NoDelegateCallTest} from "src/test/NoDelegateCallTest.sol";
-import {NoDelegateCall} from "src/NoDelegateCall.sol";
+import {NoDelegateCallTest} from "../src/test/NoDelegateCallTest.sol";
+import {NoDelegateCall} from "../src/NoDelegateCall.sol";
 
 contract TestDelegateCall is Test, GasSnapshot {
     NoDelegateCallTest noDelegateCallTest;
@@ -13,9 +13,9 @@ contract TestDelegateCall is Test, GasSnapshot {
         noDelegateCallTest = new NoDelegateCallTest();
     }
 
-    function test_gas_noDelegateCallOverhead() public {
+    function test_gas_noDelegateCall() public {
         snap(
-            "NoDelegateCallOverhead",
+            "NoDelegateCall",
             noDelegateCallTest.getGasCostOfCannotBeDelegateCalled()
                 - noDelegateCallTest.getGasCostOfCanBeDelegateCalled()
         );
