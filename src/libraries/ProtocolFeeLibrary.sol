@@ -30,6 +30,7 @@ library ProtocolFeeLibrary {
         return true;
     }
 
+    // Effective fee can never exceed 100% (1e6 pips)
     function calculateEffectiveFee(uint24 self, uint24 swapFee) internal pure returns (uint24) {
         unchecked {
             uint256 numerator = uint256(self) * uint256(swapFee);

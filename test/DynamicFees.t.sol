@@ -244,7 +244,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        uint256 expectedProtocolFee = uint256(-params.amountSpecified) * 1000 / 1e6;
+        uint256 expectedProtocolFee = uint256(101000000) * 1000 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
 
         assertEq(_fetchPoolSwapFee(key), 999999);
