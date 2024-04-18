@@ -19,6 +19,7 @@ import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
+import {PoolSettleTest} from "../../src/test/PoolSettleTest.sol";
 import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
 import {
     ProtocolFeeControllerTest,
@@ -57,6 +58,8 @@ contract Deployers {
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
+    PoolSettleTest settleRouter;
+
     PoolClaimsTest claimsRouter;
     PoolNestedActionsTest nestedActionRouter;
     ProtocolFeeControllerTest feeController;
@@ -84,6 +87,7 @@ contract Deployers {
         modifyLiquidityRouter = new PoolModifyLiquidityTest(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
+        settleRouter = new PoolSettleTest(manager);
         claimsRouter = new PoolClaimsTest(manager);
         nestedActionRouter = new PoolNestedActionsTest(manager);
         feeController = new ProtocolFeeControllerTest();
@@ -203,7 +207,7 @@ contract Deployers {
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             }),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false, currencyAlreadySent: false}),
             hookData
         );
     }
@@ -226,7 +230,7 @@ contract Deployers {
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             }),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false, currencyAlreadySent: false}),
             hookData
         );
     }
