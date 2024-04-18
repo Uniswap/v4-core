@@ -200,7 +200,10 @@ library Hooks {
         IPoolManager.ModifyLiquidityParams memory params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) internal noSelfCall(self) returns (BalanceDelta hookDelta) {
+    ) internal returns (BalanceDelta callerDelta, BalanceDelta hookDelta) {
+        if (msg.sender == address(self)) return (delta, BalanceDeltaLibrary.ZERO_DELTA);
+
+        callerDelta = delta;
         if (params.liquidityDelta > 0) {
             if (self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
@@ -211,6 +214,7 @@ library Hooks {
                         self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
+                callerDelta = callerDelta - hookDelta;
             }
         } else {
             if (self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
@@ -222,6 +226,7 @@ library Hooks {
                         self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
+                callerDelta = callerDelta - hookDelta;
             }
         }
     }
