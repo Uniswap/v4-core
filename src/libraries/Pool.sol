@@ -396,7 +396,7 @@ library Pool {
                     // calculate the amount of the fee that should go to the protocol
                     // fee amount has already been subtracted from the amountIn
                     uint256 delta =
-                        (step.amountIn + step.feeAmount) * cache.protocolFee / 1e6;
+                        (step.amountIn + step.feeAmount) * cache.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the regular fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     feeForProtocol += delta;

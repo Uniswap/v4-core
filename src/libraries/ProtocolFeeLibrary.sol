@@ -34,8 +34,7 @@ library ProtocolFeeLibrary {
     function calculateEffectiveFee(uint24 self, uint24 swapFee) internal pure returns (uint24) {
         unchecked {
             uint256 numerator = uint256(self) * uint256(swapFee);
-            uint256 divider = PIPS_DENOMINATOR;
-            return uint24(uint256(self) + swapFee - UnsafeMath.divRoundingUp(numerator, divider));
+            return uint24(uint256(self) + swapFee - UnsafeMath.divRoundingUp(numerator, PIPS_DENOMINATOR));
         }
     }
 }
