@@ -321,9 +321,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // protocol fees should default to 0
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(slot0ProtocolFee, 0);
-        // call to setProtocolFee should also revert
-        vm.expectRevert(IProtocolFees.ProtocolFeeControllerCallFailedOrInvalidResult.selector);
-        manager.setProtocolFee(uninitializedKey);
     }
 
     function test_initialize_succeedsWithRevertingFeeController(uint160 sqrtPriceX96) public {

@@ -19,6 +19,7 @@ import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
+import {PoolSettleTest} from "../../src/test/PoolSettleTest.sol";
 import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
 import {
     ProtocolFeeControllerTest,
@@ -57,6 +58,8 @@ contract Deployers {
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
+    PoolSettleTest settleRouter;
+
     PoolClaimsTest claimsRouter;
     PoolNestedActionsTest nestedActionRouter;
     ProtocolFeeControllerTest feeController;
@@ -80,6 +83,7 @@ contract Deployers {
         modifyLiquidityRouter = new PoolModifyLiquidityTest(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
+        settleRouter = new PoolSettleTest(manager);
         claimsRouter = new PoolClaimsTest(manager);
         nestedActionRouter = new PoolNestedActionsTest(manager);
         feeController = new ProtocolFeeControllerTest();
@@ -94,7 +98,16 @@ contract Deployers {
     // You must have first initialised the routers with deployFreshManagerAndRouters
     // If you only need the currencies (and not approvals) call deployAndMint2Currencies
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
-        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
+        Currency _currencyA = deployMintAndApproveCurrency();
+        Currency _currencyB = deployMintAndApproveCurrency();
+
+        (currency0, currency1) =
+            SortTokens.sort(MockERC20(Currency.unwrap(_currencyA)), MockERC20(Currency.unwrap(_currencyB)));
+        return (currency0, currency1);
+    }
+
+    function deployMintAndApproveCurrency() internal returns (Currency currency) {
+        MockERC20 token = deployTokens(1, 2 ** 255)[0];
 
         address[6] memory toApprove = [
             address(swapRouter),
@@ -106,12 +119,10 @@ contract Deployers {
         ];
 
         for (uint256 i = 0; i < toApprove.length; i++) {
-            tokens[0].approve(toApprove[i], Constants.MAX_UINT256);
-            tokens[1].approve(toApprove[i], Constants.MAX_UINT256);
+            token.approve(toApprove[i], Constants.MAX_UINT256);
         }
 
-        (currency0, currency1) = SortTokens.sort(tokens[0], tokens[1]);
-        return (currency0, currency1);
+        return Currency.wrap(address(token));
     }
 
     function deployAndMint2Currencies() internal returns (Currency, Currency) {
@@ -199,7 +210,7 @@ contract Deployers {
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             }),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
             hookData
         );
     }
@@ -222,7 +233,7 @@ contract Deployers {
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             }),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
             hookData
         );
     }
