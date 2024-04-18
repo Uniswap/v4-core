@@ -18,6 +18,7 @@ import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 
 contract TestDynamicFees is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
@@ -161,7 +162,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -100, 0, 79228162514264337593543950336, 1e18, -1, 1000000);
+        emit Swap(key.toId(), address(swapRouter), -100, 0, SQRT_RATIO_1_1, 1e18, -1, 1000000);
 
         snapStart("swap with 100 Percent swap fee amountIn");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
@@ -264,13 +265,61 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -1000, 0, 79228162514264337593543950336, 1e18, -1, 1000000);
+        emit Swap(key.toId(), address(swapRouter), -1000, 0, SQRT_RATIO_1_1, 1e18, -1, 1000000);
 
         snapStart("swap with dynamic fee and protocol fee");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
         uint256 expectedProtocolFee = uint256(-params.amountSpecified) * 1000 / 1e6;
+        assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
+    }
+
+    function test_emitsEffectiveFee() public {
+        assertEq(_fetchPoolSwapFee(key), 0);
+
+        dynamicFeesHooks.setFee(123);
+
+        vm.prank(address(feeController));
+        manager.setProtocolFee(key, 1000);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 1122);
+
+        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+        assertEq(_fetchPoolSwapFee(key), 123);
+    }
+
+    function test_fuzz_ProtocolAndSwapFee(uint24 swapFee, uint16 protocolFee0, uint16 protocolFee1, int256 amountSpecified) public {
+        assertEq(_fetchPoolSwapFee(key), 0);
+
+        swapFee = uint16(bound(swapFee, 0, 1000000));
+        protocolFee0 = uint16(bound(protocolFee0, 0, 1000));
+        protocolFee1 = uint16(bound(protocolFee1, 0, 1000));
+        vm.assume(amountSpecified != 0);
+
+        uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
+        dynamicFeesHooks.setFee(swapFee);
+
+        vm.prank(address(feeController));
+        manager.setProtocolFee(key, protocolFee);
+
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: amountSpecified, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+
+        snapStart("swap with dynamic fee and protocol fee");
+        BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapEnd();
+
+        uint256 expectedProtocolFee = uint256(uint128(-delta.amount0())) * protocolFee0 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
     }
 
