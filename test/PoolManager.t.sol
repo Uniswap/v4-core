@@ -756,9 +756,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
-    function test_swap_accruesProtocolFees(uint16 protocolFee0, uint16 protocolFee1) public {
+    function test_swap_accruesProtocolFees(uint16 protocolFee0, uint16 protocolFee1, int256 amountSpecified) public {
         protocolFee0 = uint16(bound(protocolFee0, 0, 1000));
         protocolFee1 = uint16(bound(protocolFee1, 0, 1000));
+        vm.assume(amountSpecified != 0);
 
         uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
 
@@ -786,10 +787,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         params.liquidityDelta = LIQ_PARAMS.liquidityDelta;
         modifyLiquidityRouter.modifyLiquidity(key, params, ZERO_BYTES);
 
-        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, -10000, TickMath.MAX_SQRT_RATIO - 1);
-        swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES);
-
-        uint256 expectedProtocolFee = uint256(-swapParams.amountSpecified) * protocolFee1 / 1e6;
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, amountSpecified, TickMath.MAX_SQRT_RATIO - 1);
+        BalanceDelta delta = swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(true, true, false), ZERO_BYTES);
+        uint256 expectedProtocolFee = uint256(uint128(-delta.amount1())) * protocolFee1 / ProtocolFeeLibrary.PIPS_DENOMINATOR;
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }
