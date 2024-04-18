@@ -22,8 +22,12 @@ library CurrencySettleTake {
         } else if (currency.isNative()) {
             manager.settle{value: amount}(currency);
         } else {
-            // TODO: call sync when transient reserves is merged
-            IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), amount);
+            manager.sync(currency);
+            if (payer != address(this)) {
+                IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), amount);
+            } else {
+                IERC20Minimal(Currency.unwrap(currency)).transfer(address(manager), amount);
+            }
             manager.settle(currency);
         }
     }

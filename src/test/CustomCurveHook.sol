@@ -8,6 +8,7 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
@@ -15,6 +16,7 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 contract CustomCurveHook is BaseTestHooks {
     using Hooks for IHooks;
     using CurrencyLibrary for Currency;
+    using CurrencySettleTake for Currency;
 
     error AddLiquidityDirectToHook();
 
@@ -40,7 +42,7 @@ contract CustomCurveHook is BaseTestHooks {
         // this "custom curve" is a line, 1-1
         // take the full input amount, and give the full output amount
         manager.take(inputCurrency, address(this), amount);
-        _settle(outputCurrency, amount);
+        outputCurrency.settle(manager, address(this), amount, false);
 
         // return -amountSpecified to no-op the concentrated liquidity swap
         return (IHooks.beforeSwap.selector, int128(-params.amountSpecified));
@@ -74,14 +76,5 @@ contract CustomCurveHook is BaseTestHooks {
         (input, output) = params.zeroForOne ? (key.currency0, key.currency1) : (key.currency1, key.currency0);
 
         amount = params.amountSpecified < 0 ? uint256(-params.amountSpecified) : uint256(params.amountSpecified);
-    }
-
-    function _settle(Currency currency, uint256 amount) internal {
-        if (currency.isNative()) {
-            manager.settle{value: amount}(currency);
-        } else {
-            IERC20Minimal(Currency.unwrap(currency)).transfer(address(manager), amount);
-            manager.settle(currency);
-        }
     }
 }
