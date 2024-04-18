@@ -16,29 +16,6 @@ abstract contract PoolTestBase is IUnlockCallback {
         manager = _manager;
     }
 
-    function _take(Currency currency, address recipient, int128 amount, bool withdrawTokens) internal {
-        require(amount > 0, "amount is not greater than zero");
-        if (withdrawTokens) {
-            manager.take(currency, recipient, uint128(amount));
-        } else {
-            manager.mint(recipient, currency.toId(), uint128(amount));
-        }
-    }
-
-    function _settle(Currency currency, address payer, int128 amount, bool settleUsingTransfer) internal {
-        require(amount < 0, "amount is not less than zero");
-        if (settleUsingTransfer) {
-            if (currency.isNative()) {
-                manager.settle{value: uint128(-amount)}(currency);
-            } else {
-                IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), uint128(-amount));
-                manager.settle(currency);
-            }
-        } else {
-            manager.burn(payer, currency.toId(), uint128(-amount));
-        }
-    }
-
     function _fetchBalances(Currency currency, address user, address deltaHolder)
         internal
         view
