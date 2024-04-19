@@ -296,12 +296,9 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolLPFee(key), 123);
     }
 
-    function test_fuzz_ProtocolAndLPFee(
-        uint24 lpFee,
-        uint16 protocolFee0,
-        uint16 protocolFee1,
-        int256 amountSpecified
-    ) public {
+    function test_fuzz_ProtocolAndLPFee(uint24 lpFee, uint16 protocolFee0, uint16 protocolFee1, int256 amountSpecified)
+        public
+    {
         assertEq(_fetchPoolLPFee(key), 0);
 
         lpFee = uint16(bound(lpFee, 0, 1000000));

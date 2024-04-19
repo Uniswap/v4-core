@@ -809,9 +809,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function test_isValidIfDynamicFee() public {
         assertTrue(
-            Hooks.isValidHookAddress(
-                IHooks(0x0000000000000000000000000000000000000001), LPFeeLibrary.DYNAMIC_FEE_FLAG
-            )
+            Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000000001), LPFeeLibrary.DYNAMIC_FEE_FLAG)
         );
         assertTrue(
             Hooks.isValidHookAddress(

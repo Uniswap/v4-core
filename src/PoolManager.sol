@@ -235,7 +235,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             _updateProtocolFees(params.zeroForOne ? key.currency0 : key.currency1, feeForProtocol);
         }
 
-        emit Swap(id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee);
+        emit Swap(
+            id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
+        );
 
         key.hooks.afterSwap(key, params, delta, hookData);
     }

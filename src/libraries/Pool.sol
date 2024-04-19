@@ -346,9 +346,8 @@ library Pool {
         });
 
         StepComputations memory step;
-        swapFee = cache.protocolFee == 0
-            ? slot0Start.lpFee
-            : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+        swapFee =
+            cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
