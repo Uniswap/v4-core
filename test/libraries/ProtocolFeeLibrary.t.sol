@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "src/libraries/ProtocolFeeLibrary.sol";
-import "src/libraries/SwapFeeLibrary.sol";
+import "src/libraries/LPFeeLibrary.sol";
 import "forge-std/Test.sol";
 
 contract ProtocolFeeLibraryTest is Test {
@@ -41,33 +41,33 @@ contract ProtocolFeeLibraryTest is Test {
         assertTrue(ProtocolFeeLibrary.validate(fee));
     }
 
-    function test_fuzz_calculateEffectiveFeeDoesNotOverflow(uint24 self, uint24 swapFee) public {
-        swapFee = uint24(bound(swapFee, 0, SwapFeeLibrary.MAX_SWAP_FEE));
+    function test_fuzz_calculateSwapFeeDoesNotOverflow(uint24 self, uint24 lpFee) public {
+        lpFee = uint24(bound(lpFee, 0, LPFeeLibrary.MAX_LP_FEE));
         self = uint24(bound(self, 0, ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
-        assertGe(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), swapFee);
+        assertGe(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), lpFee);
     }
 
-    function test_fuzz_calculateEffectiveFeeNeverEqualsMax(uint24 self, uint24 swapFee) public {
-        swapFee = uint24(bound(swapFee, 0, SwapFeeLibrary.MAX_SWAP_FEE - 1));
+    function test_fuzz_calculateSwapFeeNeverEqualsMax(uint24 self, uint24 lpFee) public {
+        lpFee = uint24(bound(lpFee, 0, LPFeeLibrary.MAX_LP_FEE - 1));
         self = uint24(bound(self, 0, ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
-        assertLt(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), SwapFeeLibrary.MAX_SWAP_FEE);
+        assertLt(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), LPFeeLibrary.MAX_LP_FEE);
     }
 
-    function test_calculateEffectiveFee() public {
+    function test_calculateSwapFee() public {
         uint24 self = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE);
-        uint24 swapFee = SwapFeeLibrary.MAX_SWAP_FEE;
-        assertEq(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), SwapFeeLibrary.MAX_SWAP_FEE);
+        uint24 lpFee = LPFeeLibrary.MAX_LP_FEE;
+        assertEq(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), LPFeeLibrary.MAX_LP_FEE);
 
-        swapFee = 3000;
-        assertEq(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), 3997);
+        lpFee = 3000;
+        assertEq(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), 3997);
 
-        swapFee = 0;
-        assertEq(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), ProtocolFeeLibrary.MAX_PROTOCOL_FEE);
+        lpFee = 0;
+        assertEq(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), ProtocolFeeLibrary.MAX_PROTOCOL_FEE);
 
         self = 0;
-        assertEq(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), 0);
+        assertEq(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), 0);
 
-        swapFee = 1000;
-        assertEq(ProtocolFeeLibrary.calculateEffectiveFee(self, swapFee), 1000);
+        lpFee = 1000;
+        assertEq(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), 1000);
     }
 }

@@ -12,7 +12,7 @@ import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
-import {SwapFeeLibrary} from "./SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 
 library Pool {
     using SafeCast for *;
@@ -63,8 +63,8 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
-    /// @notice Thrown when trying to swap with max swap fee and specifying an output amount
-    error CannotSpecifyOutputAmountWithMaxSwapFee();
+    /// @notice Thrown when trying to swap with max lp fee and specifying an output amount
+    error CannotSpecifyOutputAmountWithMaxLPFee();
 
     struct Slot0 {
         // the current price
@@ -74,10 +74,10 @@ library Pool {
         // protocol fee, expressed in hundredths of a bip
         // upper 12 bits are for 1->0, and the lower 12 are for 0->1
         // the maximum is 1000 - meaning the maximum protocol fee is 0.1%
-        // the protocolFee is taken from the input first, then the swapFee is taken from the remaining input
+        // the protocolFee is taken from the input first, then the lpFee is taken from the remaining input
         uint24 protocolFee;
-        // used for the swap fee, either static at initialize or dynamic via hook
-        uint24 swapFee;
+        // used for the lp fee, either static at initialize or dynamic via hook
+        uint24 lpFee;
     }
 
     // info stored for each initialized individual tick
@@ -110,7 +110,7 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 swapFee)
+    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 lpFee)
         internal
         returns (int24 tick)
     {
@@ -118,7 +118,7 @@ library Pool {
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, swapFee: swapFee});
+        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, lpFee: lpFee});
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
@@ -127,10 +127,10 @@ library Pool {
         self.slot0.protocolFee = protocolFee;
     }
 
-    /// @notice Only dynamic fee pools may update the swap fee.
-    function setSwapFee(State storage self, uint24 swapFee) internal {
+    /// @notice Only dynamic fee pools may update the lp fee.
+    function setLPFee(State storage self, uint24 lpFee) internal {
         if (self.isNotInitialized()) revert PoolNotInitialized();
-        self.slot0.swapFee = swapFee;
+        self.slot0.lpFee = lpFee;
     }
 
     struct ModifyLiquidityParams {
@@ -303,7 +303,7 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 feeForProtocol, uint24 effectiveFee, SwapState memory state)
+        returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
@@ -332,8 +332,8 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (!exactInput && (slot0Start.swapFee == SwapFeeLibrary.MAX_SWAP_FEE)) {
-            revert CannotSpecifyOutputAmountWithMaxSwapFee();
+        if (!exactInput && (slot0Start.lpFee == LPFeeLibrary.MAX_LP_FEE)) {
+            revert CannotSpecifyOutputAmountWithMaxLPFee();
         }
 
         state = SwapState({
@@ -346,9 +346,9 @@ library Pool {
         });
 
         StepComputations memory step;
-        effectiveFee = cache.protocolFee == 0
-            ? slot0Start.swapFee
-            : uint24(cache.protocolFee).calculateEffectiveFee(slot0Start.swapFee);
+        swapFee = cache.protocolFee == 0
+            ? slot0Start.lpFee
+            : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
@@ -376,7 +376,7 @@ library Pool {
                 ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
                 state.liquidity,
                 state.amountSpecifiedRemaining,
-                effectiveFee
+                swapFee
             );
 
             if (exactInput) {

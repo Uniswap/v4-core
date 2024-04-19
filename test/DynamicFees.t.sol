@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
-import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
@@ -71,17 +71,17 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             currency0,
             currency1,
             IHooks(address(dynamicFeesHooks)),
-            SwapFeeLibrary.DYNAMIC_FEE_FLAG,
+            LPFeeLibrary.DYNAMIC_FEE_FLAG,
             SQRT_RATIO_1_1,
             ZERO_BYTES
         );
     }
 
-    function test_updateDynamicSwapFee_afterInitialize_failsWithTooLargeFee() public {
+    function test_updateDynamicLPFee_afterInitialize_failsWithTooLargeFee() public {
         key.tickSpacing = 30;
         dynamicFeesHooks.setFee(1000001);
 
-        vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
+        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
@@ -92,33 +92,33 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesNoHooks.setFee(1000000);
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
-        assertEq(_fetchPoolSwapFee(key), 0);
+        assertEq(_fetchPoolLPFee(key), 0);
     }
 
-    function test_updateDynamicSwapFee_afterInitialize_initializesFee() public {
+    function test_updateDynamicLPFee_afterInitialize_initializesFee() public {
         key.tickSpacing = 30;
         dynamicFeesHooks.setFee(123);
 
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
-        assertEq(_fetchPoolSwapFee(key), 123);
+        assertEq(_fetchPoolLPFee(key), 123);
     }
 
-    function test_updateDynamicSwapFee_revertsIfCallerIsntHook() public {
-        vm.expectRevert(IPoolManager.UnauthorizedDynamicSwapFeeUpdate.selector);
-        manager.updateDynamicSwapFee(key, 123);
+    function test_updateDynamicLPFee_revertsIfCallerIsntHook() public {
+        vm.expectRevert(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector);
+        manager.updateDynamicLPFee(key, 123);
     }
 
-    function test_updateDynamicSwapFee_revertsIfPoolHasStaticFee() public {
+    function test_updateDynamicLPFee_revertsIfPoolHasStaticFee() public {
         key.fee = 3000; // static fee
         dynamicFeesHooks.setFee(123);
 
         // afterInitialize will try to update the fee, and fail
-        vm.expectRevert(IPoolManager.UnauthorizedDynamicSwapFeeUpdate.selector);
+        vm.expectRevert(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector);
         manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
     }
 
-    function test_updateDynamicSwapFee_beforeSwap_failsWithTooLargeFee() public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+    function test_updateDynamicLPFee_beforeSwap_failsWithTooLargeFee() public {
+        assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(1000001);
 
@@ -127,12 +127,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
+        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
     }
 
-    function test_updateDynamicSwapFee_beforeSwap_succeeds_gas() public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+    function test_updateDynamicLPFee_beforeSwap_succeeds_gas() public {
+        assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(123);
 
@@ -148,11 +148,11 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        assertEq(_fetchPoolSwapFee(key), 123);
+        assertEq(_fetchPoolLPFee(key), 123);
     }
 
-    function test_updateDynamicSwapFee_100PercentFee_AmountIn() public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+    function test_updateDynamicLPFee_100PercentFee_AmountIn() public {
+        assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(1000000);
 
@@ -168,11 +168,11 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        assertEq(_fetchPoolSwapFee(key), 1000000);
+        assertEq(_fetchPoolLPFee(key), 1000000);
     }
 
-    function test_updateDynamicSwapFee_50PercentFee_AmountIn() public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+    function test_updateDynamicLPFee_50PercentFee_AmountIn() public {
+        assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(500000);
 
@@ -188,11 +188,11 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        assertEq(_fetchPoolSwapFee(key), 500000);
+        assertEq(_fetchPoolLPFee(key), 500000);
     }
 
-    function test_updateDynamicSwapFee_50PercentFee_AmountOut() public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+    function test_updateDynamicLPFee_50PercentFee_AmountOut() public {
+        assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(500000);
 
@@ -208,11 +208,11 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        assertEq(_fetchPoolSwapFee(key), 500000);
+        assertEq(_fetchPoolLPFee(key), 500000);
     }
 
-    function test_updateDynamicSwapFee_100PercentFee_AmountOut_NoProtocol() public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+    function test_updateDynamicLPFee_100PercentFee_AmountOut_NoProtocol() public {
+        assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(1000000);
 
@@ -221,12 +221,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(Pool.CannotSpecifyOutputAmountWithMaxSwapFee.selector);
+        vm.expectRevert(Pool.CannotSpecifyOutputAmountWithMaxLPFee.selector);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
     }
 
-    function test_updateDynamicSwapFee_99PercentFee_AmountOut_WithProtocol() public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+    function test_updateDynamicLPFee_99PercentFee_AmountOut_WithProtocol() public {
+        assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(999999);
 
@@ -248,11 +248,11 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         uint256 expectedProtocolFee = uint256(101000000) * 1000 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
 
-        assertEq(_fetchPoolSwapFee(key), 999999);
+        assertEq(_fetchPoolLPFee(key), 999999);
     }
 
-    function test_updateDynamicSwapFee_100PercentFee_AmountIn_WithProtocol() public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+    function test_updateDynamicLPFee_100PercentFee_AmountIn_WithProtocol() public {
+        assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(1000000);
 
@@ -275,8 +275,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
     }
 
-    function test_emitsEffectiveFee() public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+    function test_emitsSwapFee() public {
+        assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(123);
 
@@ -293,24 +293,24 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        assertEq(_fetchPoolSwapFee(key), 123);
+        assertEq(_fetchPoolLPFee(key), 123);
     }
 
-    function test_fuzz_ProtocolAndSwapFee(
-        uint24 swapFee,
+    function test_fuzz_ProtocolAndLPFee(
+        uint24 lpFee,
         uint16 protocolFee0,
         uint16 protocolFee1,
         int256 amountSpecified
     ) public {
-        assertEq(_fetchPoolSwapFee(key), 0);
+        assertEq(_fetchPoolLPFee(key), 0);
 
-        swapFee = uint16(bound(swapFee, 0, 1000000));
+        lpFee = uint16(bound(lpFee, 0, 1000000));
         protocolFee0 = uint16(bound(protocolFee0, 0, 1000));
         protocolFee1 = uint16(bound(protocolFee1, 0, 1000));
         vm.assume(amountSpecified != 0);
 
         uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
-        dynamicFeesHooks.setFee(swapFee);
+        dynamicFeesHooks.setFee(lpFee);
 
         vm.prank(address(feeController));
         manager.setProtocolFee(key, protocolFee);
@@ -333,12 +333,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function test_swap_withDynamicFee_gas() public {
         (key,) = initPoolAndAddLiquidity(
-            currency0, currency1, dynamicFeesNoHooks, SwapFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1, ZERO_BYTES
+            currency0, currency1, dynamicFeesNoHooks, LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1, ZERO_BYTES
         );
 
-        assertEq(_fetchPoolSwapFee(key), 0);
+        assertEq(_fetchPoolLPFee(key), 0);
         dynamicFeesNoHooks.forcePoolFeeUpdate(key, 123);
-        assertEq(_fetchPoolSwapFee(key), 123);
+        assertEq(_fetchPoolLPFee(key), 123);
 
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
@@ -353,8 +353,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         snapEnd();
     }
 
-    function _fetchPoolSwapFee(PoolKey memory _key) internal view returns (uint256 swapFee) {
+    function _fetchPoolLPFee(PoolKey memory _key) internal view returns (uint256 lpFee) {
         PoolId id = _key.toId();
-        (,,, swapFee) = manager.getSlot0(id);
+        (,,, lpFee) = manager.getSlot0(id);
     }
 }

@@ -12,7 +12,7 @@ import {LiquidityAmounts} from "test/utils/LiquidityAmounts.sol";
 import {Constants} from "test/utils/Constants.sol";
 import {SafeCast} from "src/libraries/SafeCast.sol";
 import {ProtocolFeeLibrary} from "src/libraries/ProtocolFeeLibrary.sol";
-import {SwapFeeLibrary} from "src/libraries/SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "src/libraries/LPFeeLibrary.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
@@ -20,7 +20,7 @@ contract PoolTest is Test {
     Pool.State state;
 
     uint24 constant MAX_PROTOCOL_FEE = ProtocolFeeLibrary.MAX_PROTOCOL_FEE; // 0.1%
-    uint24 constant MAX_SWAP_FEE = SwapFeeLibrary.MAX_SWAP_FEE; // 100%
+    uint24 constant MAX_LP_FEE = LPFeeLibrary.MAX_LP_FEE; // 100%
 
     function testPoolInitialize(uint160 sqrtPriceX96, uint24 protocolFee, uint24 dynamicFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
@@ -39,13 +39,13 @@ contract PoolTest is Test {
     function testModifyLiquidity(
         uint160 sqrtPriceX96,
         uint24 protocolFee,
-        uint24 swapFee,
+        uint24 lpFee,
         Pool.ModifyLiquidityParams memory params
     ) public {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
-        testPoolInitialize(sqrtPriceX96, protocolFee, swapFee);
+        testPoolInitialize(sqrtPriceX96, protocolFee, lpFee);
 
         if (params.tickLower >= params.tickUpper) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TicksMisordered.selector, params.tickLower, params.tickUpper));
@@ -88,14 +88,14 @@ contract PoolTest is Test {
 
     function testSwap(
         uint160 sqrtPriceX96,
-        uint24 swapFee,
+        uint24 lpFee,
         uint16 protocolFee0,
         uint16 protocolFee1,
         Pool.SwapParams memory params
     ) public {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
-        swapFee = uint24(bound(swapFee, 0, MAX_SWAP_FEE));
+        lpFee = uint24(bound(lpFee, 0, MAX_LP_FEE));
         protocolFee0 = uint16(bound(protocolFee0, 0, MAX_PROTOCOL_FEE));
         protocolFee1 = uint16(bound(protocolFee1, 0, MAX_PROTOCOL_FEE));
         uint24 protocolFee = protocolFee1 << 12 | protocolFee0;
@@ -104,7 +104,7 @@ contract PoolTest is Test {
         testModifyLiquidity(
             sqrtPriceX96,
             protocolFee,
-            swapFee,
+            lpFee,
             Pool.ModifyLiquidityParams({
                 owner: address(this),
                 tickLower: -120,
@@ -138,8 +138,8 @@ contract PoolTest is Test {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
             }
         } else if (params.amountSpecified > 0) {
-            if (swapFee == MAX_SWAP_FEE) {
-                vm.expectRevert(Pool.CannotSpecifyOutputAmountWithMaxSwapFee.selector);
+            if (lpFee == MAX_LP_FEE) {
+                vm.expectRevert(Pool.CannotSpecifyOutputAmountWithMaxLPFee.selector);
             }
         }
 

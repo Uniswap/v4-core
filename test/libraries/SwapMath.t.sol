@@ -21,11 +21,11 @@ contract SwapMathTest is Test, GasSnapshot {
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
         int256 amount = 1 ether;
-        uint24 swapFee = 600;
+        uint24 lpFee = 600;
         bool zeroForOne = false;
 
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
-            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee);
+            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, lpFee);
 
         assertEq(amountIn, 9975124224178055);
         assertEq(amountOut, 9925619580021728);
@@ -44,11 +44,11 @@ contract SwapMathTest is Test, GasSnapshot {
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
         int256 amount = (1 ether) * -1;
-        uint24 swapFee = 600;
+        uint24 lpFee = 600;
         bool zeroForOne = false;
 
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
-            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee);
+            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, lpFee);
 
         assertEq(amountIn, 9975124224178055);
         assertEq(amountOut, 9925619580021728);
@@ -67,11 +67,11 @@ contract SwapMathTest is Test, GasSnapshot {
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
         int256 amount = 1 ether * -1;
-        uint24 swapFee = 600;
+        uint24 lpFee = 600;
         bool zeroForOne = false;
 
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
-            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee);
+            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, lpFee);
 
         assertEq(amountIn, 999400000000000000);
         assertEq(amountOut, 666399946655997866);
@@ -90,11 +90,11 @@ contract SwapMathTest is Test, GasSnapshot {
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
         int256 amount = (1 ether);
-        uint24 swapFee = 600;
+        uint24 lpFee = 600;
         bool zeroForOne = false;
 
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
-            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, swapFee);
+            SwapMath.computeSwapStep(price, priceTarget, liquidity, amount, lpFee);
 
         assertEq(amountIn, 2000000000000000000);
         assertEq(feeAmount, 1200720432259356);

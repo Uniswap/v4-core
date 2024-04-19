@@ -30,11 +30,11 @@ library ProtocolFeeLibrary {
         return true;
     }
 
-    // Effective fee can never exceed 100% (1e6 pips)
-    function calculateEffectiveFee(uint24 self, uint24 swapFee) internal pure returns (uint24) {
+    // Swap fee can never exceed 100% (1e6 pips)
+    function calculateSwapFee(uint24 self, uint24 lpFee) internal pure returns (uint24) {
         unchecked {
-            uint256 numerator = uint256(self) * uint256(swapFee);
-            return uint24(uint256(self) + swapFee - UnsafeMath.divRoundingUp(numerator, PIPS_DENOMINATOR));
+            uint256 numerator = uint256(self) * uint256(lpFee);
+            return uint24(uint256(self) + lpFee - UnsafeMath.divRoundingUp(numerator, PIPS_DENOMINATOR));
         }
     }
 }
