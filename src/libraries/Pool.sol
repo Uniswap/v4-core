@@ -64,7 +64,7 @@ library Pool {
     error NoLiquidityToReceiveFees();
 
     /// @notice Thrown when trying to swap with max lp fee and specifying an output amount
-    error CannotSpecifyOutputAmountWithMaxLPFee();
+    error InvalidFeeForExactOut();
 
     struct Slot0 {
         // the current price
@@ -333,7 +333,7 @@ library Pool {
         bool exactInput = params.amountSpecified < 0;
 
         if (!exactInput && (slot0Start.lpFee == LPFeeLibrary.MAX_LP_FEE)) {
-            revert CannotSpecifyOutputAmountWithMaxLPFee();
+            revert InvalidFeeForExactOut();
         }
 
         state = SwapState({
@@ -394,8 +394,8 @@ library Pool {
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
             if (cache.protocolFee > 0) {
                 unchecked {
-                    // calculate the amount of the fee that should go to the protocol
-                    // fee amount has already been subtracted from the amountIn
+                    // step.amountIn does not include the swap fee, as it's already been taken from it,
+                    // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
                     uint256 delta =
                         (step.amountIn + step.feeAmount) * cache.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the regular fee and add it to the protocol fee

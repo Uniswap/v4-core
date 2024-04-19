@@ -30,7 +30,9 @@ library ProtocolFeeLibrary {
         return true;
     }
 
-    // Swap fee can never exceed 100% (1e6 pips)
+    // The protocol fee is taken from the input amount first and then the LP fee is taken from the remaining
+    // The swap fee is capped at 100%
+    // swapFee = protocolFee * lpFee(1_000_000 - protocolFee) / 1_000_000
     function calculateSwapFee(uint24 self, uint24 lpFee) internal pure returns (uint24) {
         unchecked {
             uint256 numerator = uint256(self) * uint256(lpFee);

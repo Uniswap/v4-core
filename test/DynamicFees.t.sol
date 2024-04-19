@@ -151,7 +151,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolLPFee(key), 123);
     }
 
-    function test_updateDynamicLPFee_100PercentFee_AmountIn() public {
+    function test_updateDynamicLPFee_100PercentLPFee_AmountIn_NoProtocol() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(1000000);
@@ -164,14 +164,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 0, SQRT_RATIO_1_1, 1e18, -1, 1000000);
 
-        snapStart("swap with 100 Percent swap fee amountIn");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapEnd();
 
         assertEq(_fetchPoolLPFee(key), 1000000);
     }
 
-    function test_updateDynamicLPFee_50PercentFee_AmountIn() public {
+    function test_updateDynamicLPFee_50PercentLPFee_AmountIn_NoProtocol() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(500000);
@@ -184,14 +182,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 49, 79228162514264333632135824623, 1e18, -1, 500000);
 
-        snapStart("swap with 50 Percent swap fee amountIn");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapEnd();
 
         assertEq(_fetchPoolLPFee(key), 500000);
     }
 
-    function test_updateDynamicLPFee_50PercentFee_AmountOut() public {
+    function test_updateDynamicLPFee_50PercentLPFee_AmountOut_NoProtocol() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(500000);
@@ -204,14 +200,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -202, 100, 79228162514264329670727698909, 1e18, -1, 500000);
 
-        snapStart("swap with 50 Percent swap fee amountOut");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapEnd();
 
         assertEq(_fetchPoolLPFee(key), 500000);
     }
 
-    function test_updateDynamicLPFee_100PercentFee_AmountOut_NoProtocol() public {
+    function test_swap_revertsWith_InvalidFeeForExactOut_whenFeeIsMax() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(1000000);
@@ -221,7 +215,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(Pool.CannotSpecifyOutputAmountWithMaxLPFee.selector);
+        vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
     }
 
@@ -241,11 +235,11 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -101000000, 100, 79228162514264329670727698909, 1e18, -1, 999999);
 
-        snapStart("swap with dynamic fee and protocol fee");
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapStart("swap with lp fee and protocol fee");
+        BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapEnd();
 
-        uint256 expectedProtocolFee = uint256(101000000) * 1000 / 1e6;
+        uint256 expectedProtocolFee = uint256(uint128(-delta.amount0())) * 1000 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
 
         assertEq(_fetchPoolLPFee(key), 999999);
@@ -267,9 +261,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -1000, 0, SQRT_RATIO_1_1, 1e18, -1, 1000000);
 
-        snapStart("swap with dynamic fee and protocol fee");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapEnd();
 
         uint256 expectedProtocolFee = uint256(-params.amountSpecified) * 1000 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);

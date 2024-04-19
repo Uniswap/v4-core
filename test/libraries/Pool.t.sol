@@ -139,7 +139,7 @@ contract PoolTest is Test {
             }
         } else if (params.amountSpecified > 0) {
             if (lpFee == MAX_LP_FEE) {
-                vm.expectRevert(Pool.CannotSpecifyOutputAmountWithMaxLPFee.selector);
+                vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
             }
         }
 
