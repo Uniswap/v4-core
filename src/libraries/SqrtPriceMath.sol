@@ -36,7 +36,10 @@ library SqrtPriceMath {
     {
         // we short circuit amount == 0 because the result is otherwise not guaranteed to equal the input price
         if (amount == 0) return sqrtPX96;
-        uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
+        uint256 numerator1;
+        assembly {
+            numerator1 := shl(96, liquidity)
+        }
 
         if (add) {
             unchecked {
@@ -79,21 +82,25 @@ library SqrtPriceMath {
         pure
         returns (uint160)
     {
+        uint256 liquidity256;
+        assembly {
+            liquidity256 := liquidity
+        }
         // if we're adding (subtracting), rounding down requires rounding the quotient down (up)
         // in both cases, avoid a mulDiv for most inputs
         if (add) {
             uint256 quotient = (
                 amount >> 160 == 0
-                    ? (amount << FixedPoint96.RESOLUTION).div(liquidity)
-                    : FullMath.mulDiv(amount, FixedPoint96.Q96, liquidity)
+                    ? (amount << FixedPoint96.RESOLUTION).div(liquidity256)
+                    : FullMath.mulDiv(amount, FixedPoint96.Q96, liquidity256)
             );
 
             return (uint256(sqrtPX96) + quotient).toUint160();
         } else {
             uint256 quotient = (
                 amount >> 160 == 0
-                    ? (amount << FixedPoint96.RESOLUTION).divRoundingUp(liquidity)
-                    : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity)
+                    ? (amount << FixedPoint96.RESOLUTION).divRoundingUp(liquidity256)
+                    : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity256)
             );
 
             if (sqrtPX96 <= quotient) revert NotEnoughLiquidity();
@@ -171,8 +178,12 @@ library SqrtPriceMath {
 
         if (sqrtRatioAX96 == 0) revert InvalidPrice();
 
-        uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
-        uint256 numerator2 = sqrtRatioBX96.sub(sqrtRatioAX96);
+        uint256 numerator1;
+        uint256 numerator2;
+        assembly {
+            numerator1 := shl(96, liquidity)
+            numerator2 := sub(sqrtRatioBX96, sqrtRatioAX96)
+        }
         /**
          * Equivalent to:
          *   roundUp
@@ -216,6 +227,10 @@ library SqrtPriceMath {
     {
         uint256 numerator = absDiff(sqrtRatioAX96, sqrtRatioBX96);
         uint256 denominator = FixedPoint96.Q96;
+        uint256 liquidity256;
+        assembly {
+            liquidity256 := liquidity
+        }
         /**
          * Equivalent to:
          *   amount1 = roundUp
@@ -223,9 +238,9 @@ library SqrtPriceMath {
          *       : FullMath.mulDiv(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96);
          * Cannot overflow because `type(uint128).max * type(uint160).max >> 96 < (1 << 192)`.
          */
-        amount1 = FullMath.mulDivQ96(liquidity, numerator);
+        amount1 = FullMath.mulDivQ96(liquidity256, numerator);
         assembly {
-            amount1 := add(amount1, and(gt(mulmod(liquidity, numerator, denominator), 0), roundUp))
+            amount1 := add(amount1, and(gt(mulmod(liquidity256, numerator, denominator), 0), roundUp))
         }
     }
 
@@ -248,8 +263,6 @@ library SqrtPriceMath {
         bool sign;
         uint128 liquidityAbs;
         assembly {
-            // In case the upper bits are not clean.
-            liquidity := signextend(15, liquidity)
             // sign = 1 if liquidity >= 0 else 0
             sign := iszero(slt(liquidity, 0))
             // mask = 0 if liquidity >= 0 else -1
@@ -287,8 +300,6 @@ library SqrtPriceMath {
         bool sign;
         uint128 liquidityAbs;
         assembly {
-            // In case the upper bits are not clean.
-            liquidity := signextend(15, liquidity)
             // sign = 1 if liquidity >= 0 else 0
             sign := iszero(slt(liquidity, 0))
             // mask = 0 if liquidity >= 0 else -1
