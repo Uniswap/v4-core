@@ -312,9 +312,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        snapStart("swap with dynamic fee and protocol fee");
         BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapEnd();
 
         uint256 expectedProtocolFee = uint256(uint128(-delta.amount0())) * protocolFee0 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
