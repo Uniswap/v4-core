@@ -116,6 +116,9 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
     }
 
     function test_gas_modifyLiquidity_newPosition() public {
+        // Create rand position to warm the router. No gas snaps.
+        modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_NO_SALT, ZERO_BYTES, false, false);
+
         snapStart("create new liquidity to a position with salt");
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES, false, false);
         snapEnd();
