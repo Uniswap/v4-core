@@ -141,7 +141,7 @@ library Hooks {
     {
         bytes memory result = callHook(self, data);
 
-        if (!parseReturn || msg.sender == address(self)) return 0;
+        if (!parseReturn) return 0;
         (, delta) = abi.decode(result, (bytes4, int256));
     }
 
