@@ -68,10 +68,10 @@ contract NestedActionExecutor is Test, PoolTestBase {
     error KeyNotSet();
 
     IPoolManager.ModifyLiquidityParams internal ADD_LIQ_PARAMS =
-        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
 
     IPoolManager.ModifyLiquidityParams internal REMOVE_LIQ_PARAMS =
-        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
 
     IPoolManager.SwapParams internal SWAP_PARAMS =
         IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: Constants.SQRT_RATIO_1_2});

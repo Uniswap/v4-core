@@ -80,7 +80,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         // Sync has not been called.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
         manager.getReserves(currency2);
-        modifyLiquidityRouter.modifyLiquidity(key2, IPoolManager.ModifyLiquidityParams(-60, 60, 100), new bytes(0));
+        modifyLiquidityRouter.modifyLiquidity(key2, IPoolManager.ModifyLiquidityParams(-60, 60, 100, 0), new bytes(0));
         (uint256 balanceCurrency2) = currency2.balanceOf(address(manager));
         assertEq(manager.getReserves(currency2), balanceCurrency2);
     }
