@@ -151,7 +151,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolLPFee(key), 123);
     }
 
-    function test_updateDynamicLPFee_100PercentLPFee_AmountIn_NoProtocol() public {
+    function test_swap_100PercentLPFee_AmountIn_NoProtocol() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(1000000);
@@ -169,7 +169,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolLPFee(key), 1000000);
     }
 
-    function test_updateDynamicLPFee_50PercentLPFee_AmountIn_NoProtocol() public {
+    function test_swap_50PercentLPFee_AmountIn_NoProtocol() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(500000);
@@ -187,7 +187,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolLPFee(key), 500000);
     }
 
-    function test_updateDynamicLPFee_50PercentLPFee_AmountOut_NoProtocol() public {
+    function test_swap_50PercentLPFee_AmountOut_NoProtocol() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(500000);
@@ -219,7 +219,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
     }
 
-    function test_updateDynamicLPFee_99PercentFee_AmountOut_WithProtocol() public {
+    function test_swap_99PercentFee_AmountOut_WithProtocol() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(999999);
@@ -245,7 +245,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolLPFee(key), 999999);
     }
 
-    function test_updateDynamicLPFee_100PercentFee_AmountIn_WithProtocol() public {
+    function test_swap_100PercentFee_AmountIn_WithProtocol() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(1000000);

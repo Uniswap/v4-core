@@ -332,10 +332,6 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (!exactInput && (slot0Start.lpFee == LPFeeLibrary.MAX_LP_FEE)) {
-            revert InvalidFeeForExactOut();
-        }
-
         state = SwapState({
             amountSpecifiedRemaining: params.amountSpecified,
             amountCalculated: 0,
@@ -348,6 +344,11 @@ library Pool {
         StepComputations memory step;
         swapFee =
             cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+
+        if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
+            revert InvalidFeeForExactOut();
+        }
+
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
@@ -398,7 +399,7 @@ library Pool {
                     // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
                     uint256 delta =
                         (step.amountIn + step.feeAmount) * cache.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
-                    // subtract it from the regular fee and add it to the protocol fee
+                    // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     feeForProtocol += delta;
                 }
