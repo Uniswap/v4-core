@@ -5,7 +5,7 @@ import {Hooks} from "./libraries/Hooks.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {SafeCast} from "./libraries/SafeCast.sol";
 import {Position} from "./libraries/Position.sol";
-import {SwapFeeLibrary} from "./libraries/SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "./libraries/LPFeeLibrary.sol";
 import {Currency, CurrencyLibrary} from "./types/Currency.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {TickMath} from "./libraries/TickMath.sol";
@@ -34,7 +34,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
     using CurrencyDelta for Currency;
-    using SwapFeeLibrary for uint24;
+    using LPFeeLibrary for uint24;
     using PoolGetters for Pool.State;
     using Reserves for Currency;
 
@@ -57,11 +57,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         view
         override
-        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee)
+        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
     {
         Pool.Slot0 memory slot0 = pools[id].slot0;
 
-        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee, slot0.swapFee);
+        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee, slot0.lpFee);
     }
 
     /// @inheritdoc IPoolManager
@@ -117,14 +117,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
         if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
 
-        uint24 swapFee = key.fee.getInitialSwapFee();
+        uint24 lpFee = key.fee.getInitialLPFee();
 
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
         PoolId id = key.toId();
         (, uint24 protocolFee) = _fetchProtocolFee(key);
 
-        tick = pools[id].initialize(sqrtPriceX96, protocolFee, swapFee);
+        tick = pools[id].initialize(sqrtPriceX96, protocolFee, lpFee);
 
         key.hooks.afterInitialize(key, sqrtPriceX96, tick, hookData);
 
@@ -298,11 +298,11 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _burnFrom(from, id, amount);
     }
 
-    function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external {
-        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicSwapFeeUpdate();
-        newDynamicSwapFee.validate();
+    function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external {
+        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicLPFeeUpdate();
+        newDynamicLPFee.validate();
         PoolId id = key.toId();
-        pools[id].setSwapFee(newDynamicSwapFee);
+        pools[id].setLPFee(newDynamicLPFee);
     }
 
     function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
