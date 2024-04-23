@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
@@ -381,27 +382,27 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_gas() public {
-        snapStart("addLiquidity");
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
-        snapEnd();
+        (Vm.Gas memory gas) = vm.lastCallGas();
+        vm.writeFile(".forge-snapshots/addLiquidity", vm.toString(gas.gasTotalUsed));
     }
 
     function test_removeLiquidity_gas() public {
-        snapStart("removeLiquidity");
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
-        snapEnd();
+        (Vm.Gas memory gas) = vm.lastCallGas();
+        vm.writeFile(".forge-snapshots/removeLiquidity", vm.toString(gas.gasTotalUsed));
     }
 
     function test_addLiquidity_withNative_gas() public {
-        snapStart("addLiquidity with native token");
         modifyLiquidityRouter.modifyLiquidity{value: 1 ether}(nativeKey, LIQ_PARAMS, ZERO_BYTES);
-        snapEnd();
+        (Vm.Gas memory gas) = vm.lastCallGas();
+        vm.writeFile(".forge-snapshots/addLiquidity with native token", vm.toString(gas.gasTotalUsed));
     }
 
     function test_removeLiquidity_withNative_gas() public {
-        snapStart("removeLiquidity with native token");
         modifyLiquidityRouter.modifyLiquidity{value: 1 ether}(nativeKey, REMOVE_LIQ_PARAMS, ZERO_BYTES);
-        snapEnd();
+        (Vm.Gas memory gas) = vm.lastCallGas();
+        vm.writeFile(".forge-snapshots/removeLiquidity with native token", vm.toString(gas.gasTotalUsed));
     }
 
     function test_addLiquidity_withHooks_gas() public {
@@ -414,7 +415,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         snapStart("addLiquidity with empty hook");
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
-        snapEnd();
+        (Vm.Gas memory gas) = vm.lastCallGas();
+        vm.writeFile(".forge-snapshots/addLiquidity with empty hook", vm.toString(gas.gasTotalUsed));
     }
 
     function test_removeLiquidity_withHooks_gas() public {
@@ -426,9 +428,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, ZERO_BYTES);
 
-        snapStart("removeLiquidity with empty hook");
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
-        snapEnd();
+
+        (Vm.Gas memory gas) = vm.lastCallGas();
+        vm.writeFile(".forge-snapshots/removeLiquidity with empty hook", vm.toString(gas.gasTotalUsed));
     }
 
     function test_swap_failsIfNotInitialized(uint160 sqrtPriceX96) public {
