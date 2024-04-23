@@ -36,6 +36,10 @@ contract TestCurrency is Test {
         assertEq(a < b, Currency.wrap(a) < Currency.wrap(b));
     }
 
+    function test_fuzz_greaterThanOrEqualTo(address a, address b) public {
+        assertEq(a >= b, Currency.wrap(a) >= Currency.wrap(b));
+    }
+
     function test_fuzz_balanceOfSelf_native(uint256 amount) public {
         amount = bound(amount, 0, address(currencyTest).balance);
         currencyTest.transfer(nativeCurrency, otherAddress, amount);
