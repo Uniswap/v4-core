@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {console2} from "forge-std/console2.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {CurrencyTest} from "../../src/test/CurrencyTest.sol";
@@ -86,16 +85,10 @@ contract TestCurrency is Test {
     function test_fuzz_transfer_native(uint256 amount) public {
         uint256 balanceBefore = otherAddress.balance;
 
-        console2.log(address(currencyTest).balance);
-        console2.log(amount);
-
         if (amount <= address(currencyTest).balance) {
-            console2.log("if");
             currencyTest.transfer(nativeCurrency, otherAddress, amount);
             assertEq(otherAddress.balance - balanceBefore, amount);
         } else {
-            console2.log("else");
-
             vm.expectRevert(CurrencyLibrary.NativeTransferFailed.selector);
             currencyTest.transfer(nativeCurrency, otherAddress, amount);
             assertEq(otherAddress.balance, balanceBefore);
