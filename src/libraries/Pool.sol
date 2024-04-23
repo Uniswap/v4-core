@@ -252,13 +252,6 @@ library Pool {
         feeDelta = toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
-    struct SwapCache {
-        // liquidity at the beginning of the swap
-        uint128 liquidityStart;
-        // the protocol fee for the input token
-        uint16 protocolFee;
-    }
-
     // the top level state of the swap, the results of which are recorded in storage at the end
     struct SwapState {
         // the amount remaining to be swapped in/out of the input/output asset
@@ -325,10 +318,9 @@ library Pool {
             }
         }
 
-        SwapCache memory cache = SwapCache({
-            liquidityStart: self.liquidity,
-            protocolFee: zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee()
-        });
+        uint128 liquidityStart = self.liquidity;
+        uint256 protocolFee =
+            zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee();
 
         bool exactInput = params.amountSpecified < 0;
 
@@ -338,12 +330,11 @@ library Pool {
             sqrtPriceX96: slot0Start.sqrtPriceX96,
             tick: slot0Start.tick,
             feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
-            liquidity: cache.liquidityStart
+            liquidity: liquidityStart
         });
 
         StepComputations memory step;
-        swapFee =
-            cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+        swapFee = protocolFee == 0 ? slot0Start.lpFee : uint24(protocolFee).calculateSwapFee(slot0Start.lpFee);
 
         if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
             revert InvalidFeeForExactOut();
@@ -393,12 +384,11 @@ library Pool {
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
-            if (cache.protocolFee > 0) {
+            if (protocolFee > 0) {
                 unchecked {
                     // step.amountIn does not include the swap fee, as it's already been taken from it,
                     // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
-                    uint256 delta =
-                        (step.amountIn + step.feeAmount) * cache.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+                    uint256 delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     feeForProtocol += delta;
@@ -448,7 +438,7 @@ library Pool {
         (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
 
         // update liquidity if it changed
-        if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
+        if (liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
         // update fee growth global
         if (zeroForOne) {
