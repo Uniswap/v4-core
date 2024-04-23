@@ -48,7 +48,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     event Initialize(
-        PoolId indexed id,
+        PoolId id,
         Currency indexed currency0,
         Currency indexed currency1,
         uint24 fee,
@@ -76,7 +76,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @param tick The log base 1.0001 of the price of the pool after the swap
     event Swap(
         PoolId indexed id,
-        address indexed sender,
+        address sender,
         int128 amount0,
         int128 amount1,
         uint160 sqrtPriceX96,

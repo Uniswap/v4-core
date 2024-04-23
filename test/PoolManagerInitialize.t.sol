@@ -30,7 +30,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using ProtocolFeeLibrary for uint24;
 
     event Initialize(
-        PoolId indexed poolId,
+        PoolId poolId,
         Currency indexed currency0,
         Currency indexed currency1,
         uint24 fee,
