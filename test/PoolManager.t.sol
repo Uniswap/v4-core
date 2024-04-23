@@ -431,7 +431,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, ZERO_BYTES);
 
         (Vm.Gas memory gas) = vm.lastCallGas();
-        vm.writeFile(".forge-snapshots/removeLiquidity with empty hook", vm.toString(gas.gasTotalUsed));
+        vm.writeFile(".forge-snapshots/removeLiquidity with empty hook.snap", vm.toString(gas.gasTotalUsed));
     }
 
     function test_swap_failsIfNotInitialized(uint160 sqrtPriceX96) public {
