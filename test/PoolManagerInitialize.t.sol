@@ -18,7 +18,7 @@ import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
-import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
@@ -26,7 +26,7 @@ import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
-    using SwapFeeLibrary for uint24;
+    using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for uint24;
 
     event Initialize(
@@ -71,9 +71,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key0.hooks)));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (
-            (key0.fee & SwapFeeLibrary.DYNAMIC_FEE_FLAG == 0) && (key0.fee & SwapFeeLibrary.STATIC_FEE_MASK > 1000000)
+            (key0.fee & LPFeeLibrary.DYNAMIC_FEE_FLAG == 0) && (key0.fee & LPFeeLibrary.STATIC_FEE_MASK > 1000000)
         ) {
-            vm.expectRevert(abi.encodeWithSelector(SwapFeeLibrary.FeeTooLarge.selector));
+            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.FeeTooLarge.selector));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else {
             vm.expectEmit(true, true, true, true);
@@ -209,7 +209,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         (uint160 slot0SqrtPriceX96,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
         assertEq(slot0SqrtPriceX96, SQRT_RATIO_1_1);
-        if ((fee0 > 2500) || (fee1 > 2500)) {
+        if ((fee0 > 1000) || (fee1 > 1000)) {
             assertEq(slot0ProtocolFee, 0);
         } else {
             assertEq(slot0ProtocolFee, protocolFee);
