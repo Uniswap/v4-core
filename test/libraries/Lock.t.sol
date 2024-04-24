@@ -16,4 +16,8 @@ contract LockTest is Test {
 
         assertFalse(Lock.isUnlocked());
     }
+
+    function test_unlockedSlot() public {
+        assertEq(uint256(keccak256("Unlocked")) - 1, Lock.IS_UNLOCKED_SLOT);
+    }
 }

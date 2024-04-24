@@ -10,8 +10,9 @@ import {IProtocolFees} from "./IProtocolFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
+import {IExtsload} from "./IExtsload.sol";
 
-interface IPoolManager is IProtocolFees, IERC6909Claims {
+interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @notice Thrown when a currency is not netted out after the contract is unlocked
     error CurrencyNotSettled();
 
@@ -32,9 +33,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
     error CurrenciesOutOfOrderOrEqual();
 
-    /// @notice Thrown when a call to updateDynamicSwapFee is made by an address that is not the hook,
+    /// @notice Thrown when a call to updateDynamicLPFee is made by an address that is not the hook,
     /// or on a pool that does not have a dynamic swap fee.
-    error UnauthorizedDynamicSwapFeeUpdate();
+    error UnauthorizedDynamicLPFeeUpdate();
+
+    ///@notice Thrown when native currency is passed to a non native settlement
+    error NonZeroNativeValue();
 
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
@@ -70,6 +74,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
     /// @param liquidity The liquidity of the pool after the swap
     /// @param tick The log base 1.0001 of the price of the pool after the swap
+    /// @param fee The swap fee in hundredths of a bip
     event Swap(
         PoolId indexed id,
         address indexed sender,
@@ -81,8 +86,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
-
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
 
@@ -93,7 +96,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     function getSlot0(PoolId id)
         external
         view
-        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee);
+        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);
@@ -122,8 +125,10 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
         view
         returns (Position.Info memory position);
 
-    /// @notice Returns the reserves for a given ERC20 currency
-    function reservesOf(Currency currency) external view returns (uint256);
+    /// @notice Writes the current ERC20 balance of the specified currency to transient storage
+    /// This is used to checkpoint balances for the manager and derive deltas for the caller.
+    /// @dev This MUST be called before any ERC20 tokens are sent into the contract.
+    function sync(Currency currency) external returns (uint256 balance);
 
     /// @notice Returns whether the contract is unlocked or not
     function isUnlocked() external view returns (bool);
@@ -159,10 +164,11 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
     /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
-    /// @return delta The balance delta of the liquidity
+    /// @return delta The balance delta of the liquidity change
+    /// @return feeDelta The balance delta of the fees generated in the liquidity range
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta);
+        returns (BalanceDelta, BalanceDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -193,21 +199,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims {
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
 
-    /// @notice Sets the protocol's swap fee for the given pool
-    /// Protocol fees are always a portion of the LP swap fee that is owed. If that fee is 0, no protocol fees will accrue even if it is set to > 0.
-    function setProtocolFee(PoolKey memory key) external;
+    /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
+    function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external;
 
-    /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
-    function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external;
-
-    /// @notice Called by external contracts to access granular pool state
-    /// @param slot Key of slot to sload
-    /// @return value The value of the slot as bytes32
-    function extsload(bytes32 slot) external view returns (bytes32 value);
-
-    /// @notice Called by external contracts to access granular pool state
-    /// @param slot Key of slot to start sloading from
-    /// @param nSlots Number of slots to load into return value
-    /// @return value The value of the sload-ed slots concatenated as dynamic bytes
-    function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
+    function getReserves(Currency currency) external view returns (uint256 balance);
 }

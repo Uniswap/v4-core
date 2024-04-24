@@ -73,6 +73,7 @@ library SwapMath {
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioNextX96, sqrtRatioCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioNextX96, liquidity, true);
+                // `feePips` cannot be `MAX_FEE_PIPS` for exact out
                 feeAmount = FullMath.mulDivRoundingUp(amountIn, feePips, feeComplement);
             } else {
                 amountRemainingAbs = uint256(-amountRemaining);
@@ -83,7 +84,8 @@ library SwapMath {
                 if (amountRemainingLessFee >= amountIn) {
                     // `amountIn` is capped by the target price
                     sqrtRatioNextX96 = sqrtRatioTargetX96;
-                    feeAmount = FullMath.mulDivRoundingUp(amountIn, feePips, feeComplement);
+                    feeAmount =
+                        feePips == MAX_FEE_PIPS ? amountIn : FullMath.mulDivRoundingUp(amountIn, feePips, feeComplement);
                 } else {
                     // exhaust the remaining amount
                     amountIn = amountRemainingLessFee;
