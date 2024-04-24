@@ -415,15 +415,9 @@ library Pool {
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
-                    uint256 feeGrowthGlobal0X128;
-                    uint256 feeGrowthGlobal1X128;
-                    if (!zeroForOne) {
-                        feeGrowthGlobal0X128 = self.feeGrowthGlobal0X128;
-                        feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
-                    } else {
-                        feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
-                        feeGrowthGlobal1X128 = self.feeGrowthGlobal1X128;
-                    }
+                    (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = zeroForOne
+                        ? (state.feeGrowthGlobalX128, self.feeGrowthGlobal1X128)
+                        : (self.feeGrowthGlobal0X128, state.feeGrowthGlobalX128);
                     int128 liquidityNet =
                         Pool.crossTick(self, step.tickNext, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
