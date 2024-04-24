@@ -51,8 +51,8 @@ library SwapMath {
         uint24 feePips
     ) internal pure returns (uint160 sqrtRatioNextX96, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
         unchecked {
+            uint256 _feePips = feePips; // cast once and cache
             bool zeroForOne = sqrtRatioCurrentX96 >= sqrtRatioTargetX96;
-            uint256 feeComplement = MAX_FEE_PIPS - feePips;
             uint256 amountRemainingAbs;
             bool exactIn = amountRemaining < 0;
 
@@ -74,18 +74,20 @@ library SwapMath {
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioNextX96, sqrtRatioCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioNextX96, liquidity, true);
                 // `feePips` cannot be `MAX_FEE_PIPS` for exact out
-                feeAmount = FullMath.mulDivRoundingUp(amountIn, feePips, feeComplement);
+                feeAmount = FullMath.mulDivRoundingUp(amountIn, _feePips, MAX_FEE_PIPS - _feePips);
             } else {
                 amountRemainingAbs = uint256(-amountRemaining);
-                uint256 amountRemainingLessFee = FullMath.mulDiv(amountRemainingAbs, feeComplement, MAX_FEE_PIPS);
+                uint256 amountRemainingLessFee =
+                    FullMath.mulDiv(amountRemainingAbs, MAX_FEE_PIPS - _feePips, MAX_FEE_PIPS);
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtRatioTargetX96, sqrtRatioCurrentX96, liquidity, true)
                     : SqrtPriceMath.getAmount1Delta(sqrtRatioCurrentX96, sqrtRatioTargetX96, liquidity, true);
                 if (amountRemainingLessFee >= amountIn) {
                     // `amountIn` is capped by the target price
                     sqrtRatioNextX96 = sqrtRatioTargetX96;
-                    feeAmount =
-                        feePips == MAX_FEE_PIPS ? amountIn : FullMath.mulDivRoundingUp(amountIn, feePips, feeComplement);
+                    feeAmount = _feePips == MAX_FEE_PIPS
+                        ? amountIn
+                        : FullMath.mulDivRoundingUp(amountIn, _feePips, MAX_FEE_PIPS - _feePips);
                 } else {
                     // exhaust the remaining amount
                     amountIn = amountRemainingLessFee;
