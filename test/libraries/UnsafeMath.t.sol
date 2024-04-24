@@ -10,7 +10,7 @@ contract UnsafeMathTest is Test {
     uint256 constant Q128 = 2 ** 128;
     uint256 constant MAX_UINT256 = type(uint256).max;
 
-    function test_divRoundingUp_zeroDoesNotRevert(uint256 x) public {
+    function test_divRoundingUp_zeroDoesNotRevert(uint256 x) public pure {
         x.divRoundingUp(0);
     }
 
