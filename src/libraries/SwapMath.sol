@@ -10,7 +10,7 @@ library SwapMath {
     uint256 internal constant MAX_FEE_PIPS = 1e6;
 
     /// @notice Computes the sqrt price target for the next swap step
-    /// @param zeroForOne The direction of the swap, true for token0 to token1, false for token1 to token0
+    /// @param zeroForOne The direction of the swap, true for currency0 to currency1, false for currency1 to currency0
     /// @param sqrtPriceNextX96 The Q64.96 sqrt price for the next initialized tick
     /// @param sqrtPriceLimitX96 The Q64.96 sqrt price limit. If zero for one, the price cannot be less than this
     /// value after the swap. If one for zero, the price cannot be greater than this value after the swap
