@@ -39,4 +39,8 @@ contract NonZeroDeltaCountTest is Test {
             assertEq(NonZeroDeltaCount.read(), expectedCount);
         }
     }
+
+    function test_nonZeroDeltaCountSlot() public {
+        assertEq(uint256(keccak256("NonzeroDeltaCount")) - 1, NonZeroDeltaCount.NONZERO_DELTA_COUNT_SLOT);
+    }
 }
