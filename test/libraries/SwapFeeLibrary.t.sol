@@ -1,81 +1,81 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "src/libraries/SwapFeeLibrary.sol";
+import "src/libraries/LPFeeLibrary.sol";
 import "forge-std/Test.sol";
 
-contract SwapFeeLibraryTest is Test {
+contract LPFeeLibraryTest is Test {
     function test_isDynamicFee_returnsTrue() public {
         uint24 dynamicFee = 0x800000;
-        assertTrue(SwapFeeLibrary.isDynamicFee(dynamicFee));
+        assertTrue(LPFeeLibrary.isDynamicFee(dynamicFee));
     }
 
     function test_isDynamicFee_returnsTrue_forMaxValue() public {
         uint24 dynamicFee = 0xFFFFFF;
-        assertTrue(SwapFeeLibrary.isDynamicFee(dynamicFee));
+        assertTrue(LPFeeLibrary.isDynamicFee(dynamicFee));
     }
 
     function test_isDynamicFee_returnsFalse() public {
         uint24 dynamicFee = 0x7FFFFF;
-        assertFalse(SwapFeeLibrary.isDynamicFee(dynamicFee));
+        assertFalse(LPFeeLibrary.isDynamicFee(dynamicFee));
     }
 
     function test_fuzz_isDynamicFee(uint24 fee) public {
-        assertEq((fee >> 23 == 1), SwapFeeLibrary.isDynamicFee(fee));
+        assertEq((fee >> 23 == 1), LPFeeLibrary.isDynamicFee(fee));
     }
 
     function test_validate_doesNotRevertWithNoFee() public pure {
         uint24 fee = 0;
-        SwapFeeLibrary.validate(fee);
+        LPFeeLibrary.validate(fee);
     }
 
     function test_validate_doesNotRevert() public pure {
         uint24 fee = 500000; // 50%
-        SwapFeeLibrary.validate(fee);
+        LPFeeLibrary.validate(fee);
     }
 
     function test_validate_doesNotRevertWithMaxFee() public pure {
         uint24 maxFee = 1000000; // 100%
-        SwapFeeLibrary.validate(maxFee);
+        LPFeeLibrary.validate(maxFee);
     }
 
     function test_validate_revertsWithFeeTooLarge() public {
         uint24 fee = 1000001;
-        vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
-        SwapFeeLibrary.validate(fee);
+        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        LPFeeLibrary.validate(fee);
     }
 
     function test_fuzz_validate(uint24 fee) public {
         if (fee > 1000000) {
-            vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
+            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
         }
-        SwapFeeLibrary.validate(fee);
+        LPFeeLibrary.validate(fee);
     }
 
-    function test_getInitialSwapFee_forStaticFeeIsCorrect() public {
+    function test_getInitialLPFee_forStaticFeeIsCorrect() public {
         uint24 staticFee = 3000; // 30 bps
-        assertEq(SwapFeeLibrary.getInitialSwapFee(staticFee), staticFee);
+        assertEq(LPFeeLibrary.getInitialLPFee(staticFee), staticFee);
     }
 
-    function test_getInitialSwapFee_revertsWithFeeTooLarge_forStaticFee() public {
+    function test_getInitialLPFee_revertsWithFeeTooLarge_forStaticFee() public {
         uint24 staticFee = 1000001;
-        vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
-        SwapFeeLibrary.getInitialSwapFee(staticFee);
+        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        LPFeeLibrary.getInitialLPFee(staticFee);
     }
 
-    function test_getInitialSwapFee_forDynamicFeeIsZero() public {
+    function test_getInitialLPFee_forDynamicFeeIsZero() public {
         uint24 dynamicFee = 0x800BB8;
-        assertEq(SwapFeeLibrary.getInitialSwapFee(dynamicFee), 0);
+        assertEq(LPFeeLibrary.getInitialLPFee(dynamicFee), 0);
     }
 
-    function test_fuzz_getInitialSwapFee(uint24 fee) public {
+    function test_fuzz_getInitialLPFee(uint24 fee) public {
         if (fee >> 23 == 1) {
-            assertEq(SwapFeeLibrary.getInitialSwapFee(fee), 0);
+            assertEq(LPFeeLibrary.getInitialLPFee(fee), 0);
         } else if (fee > 1000000) {
-            vm.expectRevert(SwapFeeLibrary.FeeTooLarge.selector);
-            SwapFeeLibrary.getInitialSwapFee(fee);
+            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+            LPFeeLibrary.getInitialLPFee(fee);
         } else {
-            assertEq(SwapFeeLibrary.getInitialSwapFee(fee), fee);
+            assertEq(LPFeeLibrary.getInitialLPFee(fee), fee);
         }
     }
 }
