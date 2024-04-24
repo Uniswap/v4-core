@@ -8,8 +8,8 @@ library PoolStateLibrary {
     // forge inspect src/PoolManager.sol:PoolManager storage --pretty
     // | Name                  | Type                                    | Slot | Offset | Bytes | Contract                        |
     // |-----------------------|-----------------------------------------|------|--------|-------|---------------------------------|
-    // | pools                 | mapping(PoolId => struct Pool.State)    | 7    | 0      | 32    | src/PoolManager.sol:PoolManager |
-    uint256 public constant POOLS_SLOT = 7;
+    // | pools                 | mapping(PoolId => struct Pool.State)    | 6    | 0      | 32    | src/PoolManager.sol:PoolManager |
+    uint256 public constant POOLS_SLOT = 6;
 
     // index of feeGrowthGlobal0X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL0_OFFSET = 1;
@@ -44,7 +44,7 @@ library PoolStateLibrary {
         returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee)
     {
         // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         bytes32 data = manager.extsload(stateSlot);
 
@@ -85,7 +85,7 @@ library PoolStateLibrary {
         )
     {
         // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State: `mapping(int24 => TickInfo) ticks`
         bytes32 ticksMapping = bytes32(uint256(stateSlot) + TICK_INFO_OFFSET);
@@ -118,7 +118,7 @@ library PoolStateLibrary {
         returns (uint128 liquidityGross, int128 liquidityNet)
     {
         // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State: `mapping(int24 => TickInfo) ticks`
         bytes32 ticksMapping = bytes32(uint256(stateSlot) + TICK_INFO_OFFSET);
@@ -148,7 +148,7 @@ library PoolStateLibrary {
         returns (uint256 feeGrowthOutside0X128, uint256 feeGrowthOutside1X128)
     {
         // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State: `mapping(int24 => TickInfo) ticks`
         bytes32 ticksMapping = bytes32(uint256(stateSlot) + TICK_INFO_OFFSET);
@@ -156,11 +156,11 @@ library PoolStateLibrary {
         // slot key of the tick key: `pools[poolId].ticks[tick]
         bytes32 slot = keccak256(abi.encodePacked(int256(tick), ticksMapping));
 
-        // TODO: offset to feeGrowth, to avoid 3-word read
-        bytes memory data = manager.extsload(slot, 3);
+        // offset by 1 word, since the first word is liquidityGross + liquidityNet
+        bytes memory data = manager.extsload(bytes32(uint256(slot) + 1), 2);
         assembly {
-            feeGrowthOutside0X128 := mload(add(data, 64))
-            feeGrowthOutside1X128 := mload(add(data, 96))
+            feeGrowthOutside0X128 := mload(add(data, 32))
+            feeGrowthOutside1X128 := mload(add(data, 64))
         }
     }
 
@@ -178,16 +178,10 @@ library PoolStateLibrary {
         returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1)
     {
         // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State, `uint256 feeGrowthGlobal0X128`
         bytes32 slot_feeGrowthGlobal0X128 = bytes32(uint256(stateSlot) + FEE_GROWTH_GLOBAL0_OFFSET);
-
-        // reads 3rd word of Pool.State, `uint256 feeGrowthGlobal1X128`
-        // bytes32 slot_feeGrowthGlobal1X128 = bytes32(uint256(stateSlot) + uint256(FEE_GROWTH_GLOBAL1_OFFSET));
-
-        // feeGrowthGlobal0 = uint256(manager.extsload(slot_feeGrowthGlobal0X128));
-        // feeGrowthGlobal1 = uint256(manager.extsload(slot_feeGrowthGlobal1X128));
 
         // read the 2 words of feeGrowthGlobal
         bytes memory data = manager.extsload(slot_feeGrowthGlobal0X128, 2);
@@ -206,7 +200,7 @@ library PoolStateLibrary {
      */
     function getLiquidity(IPoolManager manager, PoolId poolId) internal view returns (uint128 liquidity) {
         // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State: `uint128 liquidity`
         bytes32 slot = bytes32(uint256(stateSlot) + LIQUIDITY_OFFSET);
@@ -228,7 +222,7 @@ library PoolStateLibrary {
         returns (uint256 tickBitmap)
     {
         // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State: `mapping(int16 => uint256) tickBitmap;`
         bytes32 tickBitmapMapping = bytes32(uint256(stateSlot) + TICK_BITMAP_OFFSET);
@@ -255,7 +249,7 @@ library PoolStateLibrary {
         returns (uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128)
     {
         // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State: `mapping(bytes32 => Position.Info) positions;`
         bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITION_INFO_OFFSET);
@@ -287,7 +281,7 @@ library PoolStateLibrary {
         returns (uint128 liquidity)
     {
         // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State: `mapping(bytes32 => Position.Info) positions;`
         bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITION_INFO_OFFSET);
@@ -332,5 +326,9 @@ library PoolStateLibrary {
                 feeGrowthInside1X128 = feeGrowthGlobal1X128 - lowerFeeGrowthOutside1X128 - upperFeeGrowthOutside1X128;
             }
         }
+    }
+
+    function _getPoolStateSlot(PoolId poolId) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
     }
 }
