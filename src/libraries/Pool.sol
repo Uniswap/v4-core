@@ -12,6 +12,7 @@ import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
+import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 
 library Pool {
     using SafeCast for *;
@@ -62,17 +63,21 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
+    /// @notice Thrown when trying to swap with max lp fee and specifying an output amount
+    error InvalidFeeForExactOut();
+
     struct Slot0 {
         // the current price
         uint160 sqrtPriceX96;
         // the current tick
         int24 tick;
-        // protocol swap fee, taken as a % of the LP swap fee
+        // protocol fee, expressed in hundredths of a bip
         // upper 12 bits are for 1->0, and the lower 12 are for 0->1
-        // the maximum is 2500 - meaning the maximum protocol fee is 25%
+        // the maximum is 1000 - meaning the maximum protocol fee is 0.1%
+        // the protocolFee is taken from the input first, then the lpFee is taken from the remaining input
         uint24 protocolFee;
-        // used for the swap fee, either static at initialize or dynamic via hook
-        uint24 swapFee;
+        // used for the lp fee, either static at initialize or dynamic via hook
+        uint24 lpFee;
     }
 
     // info stored for each initialized individual tick
@@ -105,7 +110,7 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 swapFee)
+    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 lpFee)
         internal
         returns (int24 tick)
     {
@@ -113,7 +118,7 @@ library Pool {
 
         tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, swapFee: swapFee});
+        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, lpFee: lpFee});
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
@@ -122,10 +127,10 @@ library Pool {
         self.slot0.protocolFee = protocolFee;
     }
 
-    /// @notice Only dynamic fee pools may update the swap fee.
-    function setSwapFee(State storage self, uint24 swapFee) internal {
+    /// @notice Only dynamic fee pools may update the lp fee.
+    function setLPFee(State storage self, uint24 lpFee) internal {
         if (self.isNotInitialized()) revert PoolNotInitialized();
-        self.slot0.swapFee = swapFee;
+        self.slot0.lpFee = lpFee;
     }
 
     struct ModifyLiquidityParams {
@@ -303,7 +308,6 @@ library Pool {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
         Slot0 memory slot0Start = self.slot0;
-        swapFee = slot0Start.swapFee;
         bool zeroForOne = params.zeroForOne;
         if (zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
@@ -338,6 +342,13 @@ library Pool {
         });
 
         StepComputations memory step;
+        swapFee =
+            cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+
+        if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
+            revert InvalidFeeForExactOut();
+        }
+
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
@@ -383,10 +394,12 @@ library Pool {
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
             if (cache.protocolFee > 0) {
-                // calculate the amount of the fee that should go to the protocol
-                uint256 delta = step.feeAmount * cache.protocolFee / ProtocolFeeLibrary.BIPS_DENOMINATOR;
-                // subtract it from the regular fee and add it to the protocol fee
                 unchecked {
+                    // step.amountIn does not include the swap fee, as it's already been taken from it,
+                    // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
+                    uint256 delta =
+                        (step.amountIn + step.feeAmount) * cache.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+                    // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     feeForProtocol += delta;
                 }
@@ -403,12 +416,17 @@ library Pool {
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
-                    int128 liquidityNet = Pool.crossTick(
-                        self,
-                        step.tickNext,
-                        (zeroForOne ? state.feeGrowthGlobalX128 : self.feeGrowthGlobal0X128),
-                        (zeroForOne ? self.feeGrowthGlobal1X128 : state.feeGrowthGlobalX128)
-                    );
+                    uint256 feeGrowthGlobal0X128;
+                    uint256 feeGrowthGlobal1X128;
+                    if (!zeroForOne) {
+                        feeGrowthGlobal0X128 = self.feeGrowthGlobal0X128;
+                        feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
+                    } else {
+                        feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
+                        feeGrowthGlobal1X128 = self.feeGrowthGlobal1X128;
+                    }
+                    int128 liquidityNet =
+                        Pool.crossTick(self, step.tickNext, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
                     unchecked {

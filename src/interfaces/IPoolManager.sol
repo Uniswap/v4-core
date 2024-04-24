@@ -33,9 +33,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
     error CurrenciesOutOfOrderOrEqual();
 
-    /// @notice Thrown when a call to updateDynamicSwapFee is made by an address that is not the hook,
+    /// @notice Thrown when a call to updateDynamicLPFee is made by an address that is not the hook,
     /// or on a pool that does not have a dynamic swap fee.
-    error UnauthorizedDynamicSwapFeeUpdate();
+    error UnauthorizedDynamicLPFeeUpdate();
 
     ///@notice Thrown when native currency is passed to a non native settlement
     error NonZeroNativeValue();
@@ -74,6 +74,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @param sqrtPriceX96 The sqrt(price) of the pool after the swap, as a Q64.96
     /// @param liquidity The liquidity of the pool after the swap
     /// @param tick The log base 1.0001 of the price of the pool after the swap
+    /// @param fee The swap fee in hundredths of a bip
     event Swap(
         PoolId indexed id,
         address indexed sender,
@@ -95,7 +96,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     function getSlot0(PoolId id)
         external
         view
-        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee);
+        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee);
 
     /// @notice Get the current value of liquidity of the given pool
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);
@@ -198,8 +199,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @notice Called by the user to pay what is owed
     function settle(Currency token) external payable returns (uint256 paid);
 
-    /// @notice Updates the pools swap fees for the a pool that has enabled dynamic swap fees.
-    function updateDynamicSwapFee(PoolKey memory key, uint24 newDynamicSwapFee) external;
+    /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
+    function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external;
 
     function getReserves(Currency currency) external view returns (uint256 balance);
 }
