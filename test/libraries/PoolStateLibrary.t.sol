@@ -20,8 +20,9 @@ import {FixedPoint128} from "../../src/libraries/FixedPoint128.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
 
 import {PoolStateLibrary} from "../../src/libraries/PoolStateLibrary.sol";
+import {Fuzzers} from "../../src/test/Fuzzers.sol";
 
-contract PoolStateLibraryTest is Test, Deployers {
+contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
     using FixedPointMathLib for uint256;
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -60,10 +61,11 @@ contract PoolStateLibraryTest is Test, Deployers {
 
         (uint160 sqrtPriceX96_, int24 tick_, uint24 protocolFee_, uint24 swapFee_) = manager.getSlot0(poolId);
 
+        assertEq(sqrtPriceX96, 78680104762184586858280382455);
         assertEq(sqrtPriceX96, sqrtPriceX96_);
         assertEq(tick, tick_);
         assertEq(tick, -139);
-        assertEq(protocolFee, 0);
+        assertEq(protocolFee, 0); // tested in protocol fee tests
         assertEq(protocolFee, protocolFee_);
         assertEq(swapFee, 3000);
         assertEq(swapFee, swapFee_);
@@ -113,71 +115,86 @@ contract PoolStateLibraryTest is Test, Deployers {
         assertEq(liquidityNetUpper, -10 ether);
     }
 
-    // function test_getTickLiquidity_fuzz(
-    //     int24 tickLowerA,
-    //     int24 tickUpperA,
-    //     uint128 liquidityDeltaA,
-    //     int24 tickLowerB,
-    //     int24 tickUpperB,
-    //     uint128 liquidityDeltaB
-    // ) public {
-    //     (tickLowerA, tickUpperA, liquidityDeltaA,) =
-    //         createFuzzyLiquidity(modifyLiquidityRouter, key, tickLowerA, tickUpperA, liquidityDeltaA, ZERO_BYTES);
-    //     (tickLowerB, tickUpperB, liquidityDeltaB,) =
-    //         createFuzzyLiquidity(modifyLiquidityRouter, key, tickLowerB, tickUpperB, liquidityDeltaB, ZERO_BYTES);
+    function test_fuzz_getTickLiquidity(IPoolManager.ModifyLiquidityParams memory params) public {
+        (IPoolManager.ModifyLiquidityParams memory _params,) =
+            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
+        uint128 liquidityDelta = uint128(uint256(_params.liquidityDelta));
 
-    //     (uint128 liquidityGrossLowerA, int128 liquidityNetLowerA) =
-    //         PoolStateLibrary.getTickLiquidity(manager, poolId, tickLowerA);
-    //     (uint128 liquidityGrossLowerB, int128 liquidityNetLowerB) =
-    //         PoolStateLibrary.getTickLiquidity(manager, poolId, tickLowerB);
-    //     (uint256 liquidityGrossUpperA, int256 liquidityNetUpperA) =
-    //         PoolStateLibrary.getTickLiquidity(manager, poolId, tickUpperA);
-    //     (uint256 liquidityGrossUpperB, int256 liquidityNetUpperB) =
-    //         PoolStateLibrary.getTickLiquidity(manager, poolId, tickUpperB);
+        (uint128 liquidityGrossLower, int128 liquidityNetLower) =
+            PoolStateLibrary.getTickLiquidity(manager, poolId, _params.tickLower);
+        assertEq(liquidityGrossLower, liquidityDelta);
+        assertEq(liquidityNetLower, int128(_params.liquidityDelta));
 
-    //     // when tick lower is shared between two positions, the gross liquidity is the sum
-    //     if (tickLowerA == tickLowerB || tickLowerA == tickUpperB) {
-    //         assertEq(liquidityGrossLowerA, liquidityDeltaA + liquidityDeltaB);
+        (uint128 liquidityGrossUpper, int128 liquidityNetUpper) =
+            PoolStateLibrary.getTickLiquidity(manager, poolId, _params.tickUpper);
+        assertEq(liquidityGrossUpper, liquidityDelta);
+        assertEq(liquidityNetUpper, -int128(_params.liquidityDelta));
+    }
 
-    //         // when tick lower is shared with an upper tick, the net liquidity is the difference
-    //         (tickLowerA == tickLowerB)
-    //             ? assertEq(liquidityNetLowerA, int128(liquidityDeltaA + liquidityDeltaB), "B")
-    //             : assertApproxEqAbs(liquidityNetLowerA, int128(liquidityDeltaA) - int128(liquidityDeltaB), 1 wei);
-    //     } else {
-    //         assertEq(liquidityGrossLowerA, liquidityDeltaA, "C");
-    //         assertEq(liquidityNetLowerA, int128(liquidityDeltaA), "D");
-    //     }
+    function test_fuzz_getTickLiquidity_two_positions(
+        IPoolManager.ModifyLiquidityParams memory paramsA,
+        IPoolManager.ModifyLiquidityParams memory paramsB
+    ) public {
+        (IPoolManager.ModifyLiquidityParams memory _paramsA,) =
+            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, paramsA, ZERO_BYTES);
+        (IPoolManager.ModifyLiquidityParams memory _paramsB,) =
+            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, paramsB, ZERO_BYTES);
 
-    //     if (tickUpperA == tickLowerB || tickUpperA == tickUpperB) {
-    //         assertEq(liquidityGrossUpperA, liquidityDeltaA + liquidityDeltaB, "C");
-    //         (tickUpperA == tickUpperB)
-    //             ? assertEq(liquidityNetUpperA, -int128(liquidityDeltaA + liquidityDeltaB), "D")
-    //             : assertApproxEqAbs(liquidityNetUpperA, int128(liquidityDeltaB) - int128(liquidityDeltaA), 2 wei);
-    //     } else {
-    //         assertEq(liquidityGrossUpperA, liquidityDeltaA, "E");
-    //         assertEq(liquidityNetUpperA, -int128(liquidityDeltaA), "F");
-    //     }
+        uint128 liquidityDeltaA = uint128(uint256(_paramsA.liquidityDelta));
+        uint128 liquidityDeltaB = uint128(uint256(_paramsB.liquidityDelta));
 
-    //     if (tickLowerB == tickLowerA || tickLowerB == tickUpperA) {
-    //         assertEq(liquidityGrossLowerB, liquidityDeltaA + liquidityDeltaB, "G");
-    //         (tickLowerB == tickLowerA)
-    //             ? assertEq(liquidityNetLowerB, int128(liquidityDeltaA + liquidityDeltaB), "H")
-    //             : assertApproxEqAbs(liquidityNetLowerB, int128(liquidityDeltaB) - int128(liquidityDeltaA), 1 wei);
-    //     } else {
-    //         assertEq(liquidityGrossLowerB, liquidityDeltaB, "I");
-    //         assertEq(liquidityNetLowerB, int128(liquidityDeltaB), "J");
-    //     }
+        (uint128 liquidityGrossLowerA, int128 liquidityNetLowerA) =
+            PoolStateLibrary.getTickLiquidity(manager, poolId, _paramsA.tickLower);
+        (uint128 liquidityGrossLowerB, int128 liquidityNetLowerB) =
+            PoolStateLibrary.getTickLiquidity(manager, poolId, _paramsB.tickLower);
+        (uint256 liquidityGrossUpperA, int256 liquidityNetUpperA) =
+            PoolStateLibrary.getTickLiquidity(manager, poolId, _paramsA.tickUpper);
+        (uint256 liquidityGrossUpperB, int256 liquidityNetUpperB) =
+            PoolStateLibrary.getTickLiquidity(manager, poolId, _paramsB.tickUpper);
 
-    //     if (tickUpperB == tickLowerA || tickUpperB == tickUpperA) {
-    //         assertEq(liquidityGrossUpperB, liquidityDeltaA + liquidityDeltaB, "K");
-    //         (tickUpperB == tickUpperA)
-    //             ? assertEq(liquidityNetUpperB, -int128(liquidityDeltaA + liquidityDeltaB), "L")
-    //             : assertApproxEqAbs(liquidityNetUpperB, int128(liquidityDeltaA) - int128(liquidityDeltaB), 2 wei);
-    //     } else {
-    //         assertEq(liquidityGrossUpperB, liquidityDeltaB, "M");
-    //         assertEq(liquidityNetUpperB, -int128(liquidityDeltaB), "N");
-    //     }
-    // }
+        // when tick lower is shared between two positions, the gross liquidity is the sum
+        if (_paramsA.tickLower == _paramsB.tickLower || _paramsA.tickLower == _paramsB.tickUpper) {
+            assertEq(liquidityGrossLowerA, liquidityDeltaA + liquidityDeltaB);
+
+            // when tick lower is shared with an upper tick, the net liquidity is the difference
+            (_paramsA.tickLower == _paramsB.tickLower)
+                ? assertEq(liquidityNetLowerA, int128(liquidityDeltaA + liquidityDeltaB))
+                : assertApproxEqAbs(liquidityNetLowerA, int128(liquidityDeltaA) - int128(liquidityDeltaB), 1 wei);
+        } else {
+            assertEq(liquidityGrossLowerA, liquidityDeltaA);
+            assertEq(liquidityNetLowerA, int128(liquidityDeltaA));
+        }
+
+        if (_paramsA.tickUpper == _paramsB.tickLower || _paramsA.tickUpper == _paramsB.tickUpper) {
+            assertEq(liquidityGrossUpperA, liquidityDeltaA + liquidityDeltaB);
+            (_paramsA.tickUpper == _paramsB.tickUpper)
+                ? assertEq(liquidityNetUpperA, -int128(liquidityDeltaA + liquidityDeltaB))
+                : assertApproxEqAbs(liquidityNetUpperA, int128(liquidityDeltaB) - int128(liquidityDeltaA), 2 wei);
+        } else {
+            assertEq(liquidityGrossUpperA, liquidityDeltaA);
+            assertEq(liquidityNetUpperA, -int128(liquidityDeltaA));
+        }
+
+        if (_paramsB.tickLower == _paramsA.tickLower || _paramsB.tickLower == _paramsA.tickUpper) {
+            assertEq(liquidityGrossLowerB, liquidityDeltaA + liquidityDeltaB);
+            (_paramsB.tickLower == _paramsA.tickLower)
+                ? assertEq(liquidityNetLowerB, int128(liquidityDeltaA + liquidityDeltaB))
+                : assertApproxEqAbs(liquidityNetLowerB, int128(liquidityDeltaB) - int128(liquidityDeltaA), 1 wei);
+        } else {
+            assertEq(liquidityGrossLowerB, liquidityDeltaB);
+            assertEq(liquidityNetLowerB, int128(liquidityDeltaB));
+        }
+
+        if (_paramsB.tickUpper == _paramsA.tickLower || _paramsB.tickUpper == _paramsA.tickUpper) {
+            assertEq(liquidityGrossUpperB, liquidityDeltaA + liquidityDeltaB);
+            (_paramsB.tickUpper == _paramsA.tickUpper)
+                ? assertEq(liquidityNetUpperB, -int128(liquidityDeltaA + liquidityDeltaB))
+                : assertApproxEqAbs(liquidityNetUpperB, int128(liquidityDeltaA) - int128(liquidityDeltaB), 2 wei);
+        } else {
+            assertEq(liquidityGrossUpperB, liquidityDeltaB);
+            assertEq(liquidityNetUpperB, -int128(liquidityDeltaB));
+        }
+    }
 
     function test_getFeeGrowthGlobal0() public {
         // create liquidity
