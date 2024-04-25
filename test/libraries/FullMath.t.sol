@@ -103,7 +103,7 @@ contract FullMathTest is Test {
         assertTrue(result == numerator / d || result == numerator / d + 1);
     }
 
-    function test_fuzz_mulDivRounding(uint256 x, uint256 y, uint256 d) public {
+    function test_invariant_mulDivRounding(uint256 x, uint256 y, uint256 d) public {
         unchecked {
             vm.assume(d > 0);
             vm.assume(!resultOverflows(x, y, d));
@@ -120,7 +120,7 @@ contract FullMathTest is Test {
         }
     }
 
-    function test_fuzz_mulDiv_recomputed(uint256 x, uint256 y, uint256 d) public {
+    function test_invariant_mulDiv(uint256 x, uint256 y, uint256 d) public {
         unchecked {
             vm.assume(d > 0);
             vm.assume(!resultOverflows(x, y, d));
@@ -141,7 +141,7 @@ contract FullMathTest is Test {
         }
     }
 
-    function test_fuzz_mulDivRoundingUp_recomputed(uint256 x, uint256 y, uint256 d) external {
+    function test_invariant_mulDivRoundingUp(uint256 x, uint256 y, uint256 d) external {
         unchecked {
             vm.assume(d > 0);
             vm.assume(!resultOverflows(x, y, d));
