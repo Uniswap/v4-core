@@ -25,6 +25,12 @@ contract UnsafeMathTest is Test {
 
     function test_fuzz_divRoundingUp(uint256 x, uint256 y) public {
         vm.assume(y != 0);
+        uint256 result = x.divRoundingUp(y);
+        assertTrue(result == x / y || result == x / y + 1);
+    }
+
+    function test_invariant_divRoundingUp(uint256 x, uint256 y) public {
+        vm.assume(y != 0);
         uint256 z = x.divRoundingUp(y);
         uint256 diff = z - (x / y);
         if (x % y == 0) {
