@@ -448,9 +448,7 @@ library Pool {
         (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
 
         // update liquidity if it changed
-        if (cache.liquidityStart != state.liquidity) {
-            self.liquidity = state.liquidity;
-        }
+        if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
         // update fee growth global
         if (zeroForOne) {
