@@ -44,8 +44,11 @@ abstract contract ERC6909 is IERC6909Claims {
 
     function transferFrom(address sender, address receiver, uint256 id, uint256 amount) public virtual returns (bool) {
         if (msg.sender != sender && !isOperator[sender][msg.sender]) {
-            uint256 allowed = allowance[sender][msg.sender][id];
-            if (allowed != type(uint256).max) allowance[sender][msg.sender][id] = allowed - amount;
+            mapping(uint256 => uint256) storage _allowances = allowance[sender][msg.sender];
+            uint256 allowed = _allowances[id];
+            if (allowed != type(uint256).max) {
+                _allowances[id] = allowed - amount;
+            }
         }
 
         balanceOf[sender][id] -= amount;
