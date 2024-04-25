@@ -35,6 +35,13 @@ contract TestBitMath is Test, GasSnapshot {
         assertEq(BitMath.mostSignificantBit(x), mostSignificantBitReference(x));
     }
 
+    function test_invariant_mostSignificantBit(uint256 x) public {
+        vm.assume(x != 0);
+        uint8 msb = BitMath.mostSignificantBit(x);
+        assertGe(x, uint256(2) ** msb);
+        assertTrue(msb == 255 || x < uint256(2) ** (msb + 1));
+    }
+
     function test_mostSignificantBit_gas() public {
         snapStart("BitMathMostSignificantBitSmallNumber");
         BitMath.mostSignificantBit(3568);
@@ -76,6 +83,13 @@ contract TestBitMath is Test, GasSnapshot {
     function test_fuzz_leastSignificantBit(uint256 x) public {
         vm.assume(x != 0);
         assertEq(BitMath.leastSignificantBit(x), leastSignificantBitReference(x));
+    }
+
+    function test_invariant_leastSignificantBit(uint256 x) public {
+        vm.assume(x != 0);
+        uint8 lsb = BitMath.leastSignificantBit(x);
+        assertNotEq(x & (uint256(2) ** lsb), 0);
+        assertEq(x & (uint256(2) ** lsb - 1), 0);
     }
 
     function test_leastSignificantBit_gas() public {
