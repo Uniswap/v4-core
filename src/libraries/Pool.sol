@@ -448,7 +448,9 @@ library Pool {
         (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
 
         // update liquidity if it changed
-        if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
+        if (cache.liquidityStart != state.liquidity) {
+            self.liquidity = state.liquidity;
+        }
 
         // update fee growth global
         if (zeroForOne) {
@@ -474,14 +476,15 @@ library Pool {
 
     /// @notice Donates the given amount of currency0 and currency1 to the pool
     function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
-        if (state.liquidity == 0) revert NoLiquidityToReceiveFees();
+        uint128 liquidity = state.liquidity;
+        if (liquidity == 0) revert NoLiquidityToReceiveFees();
         delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
         unchecked {
             if (amount0 > 0) {
-                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, state.liquidity);
+                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, liquidity);
             }
             if (amount1 > 0) {
-                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, state.liquidity);
+                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, liquidity);
             }
         }
     }
