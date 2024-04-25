@@ -98,7 +98,7 @@ contract PoolTest is Test {
         lpFee = uint24(bound(lpFee, 0, MAX_LP_FEE));
         protocolFee0 = uint16(bound(protocolFee0, 0, MAX_PROTOCOL_FEE));
         protocolFee1 = uint16(bound(protocolFee1, 0, MAX_PROTOCOL_FEE));
-        uint24 protocolFee = protocolFee1 << 12 | protocolFee0;
+        uint24 protocolFee = (protocolFee1 << 12) | protocolFee0;
 
         // initialize and add liquidity
         testModifyLiquidity(
@@ -143,7 +143,8 @@ contract PoolTest is Test {
             }
         }
 
-        state.swap(params);
+        Pool.SwapState memory _swapState;
+        state.swap(params, _swapState);
 
         if (params.zeroForOne) {
             assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);

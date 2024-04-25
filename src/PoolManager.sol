@@ -114,8 +114,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
-        if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
-        if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
+        if (key.currency0 >= key.currency1) {
+            revert CurrenciesOutOfOrderOrEqual();
+        }
+        if (!key.hooks.isValidHookAddress(key.fee)) {
+            revert Hooks.HookAddressNotValid(address(key.hooks));
+        }
 
         uint24 lpFee = key.fee.getInitialLPFee();
 
@@ -219,13 +223,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         uint256 feeForProtocol;
         uint24 swapFee;
         Pool.SwapState memory state;
-        (delta, feeForProtocol, swapFee, state) = pools[id].swap(
+        (delta, feeForProtocol, swapFee) = pools[id].swap(
             Pool.SwapParams({
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96
-            })
+            }),
+            state
         );
 
         _accountPoolBalanceDelta(key, delta);
@@ -299,7 +304,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external {
-        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicLPFeeUpdate();
+        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) {
+            revert UnauthorizedDynamicLPFeeUpdate();
+        }
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         pools[id].setLPFee(newDynamicLPFee);
