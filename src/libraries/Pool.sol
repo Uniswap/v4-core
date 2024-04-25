@@ -105,15 +105,9 @@ library Pool {
 
     /// @dev Common checks for valid tick inputs.
     function checkTicks(int24 tickLower, int24 tickUpper) private pure {
-        if (tickLower >= tickUpper) {
-            revert TicksMisordered(tickLower, tickUpper);
-        }
-        if (tickLower < TickMath.MIN_TICK) {
-            revert TickLowerOutOfBounds(tickLower);
-        }
-        if (tickUpper > TickMath.MAX_TICK) {
-            revert TickUpperOutOfBounds(tickUpper);
-        }
+        if (tickLower >= tickUpper) revert TicksMisordered(tickLower, tickUpper);
+        if (tickLower < TickMath.MIN_TICK) revert TickLowerOutOfBounds(tickLower);
+        if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
     }
 
     function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 lpFee)
@@ -402,7 +396,7 @@ library Pool {
                     // step.amountIn does not include the swap fee, as it's already been taken from it,
                     // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
                     uint256 delta =
-                        ((step.amountIn + step.feeAmount) * cache.protocolFee) / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+						(step.amountIn + step.feeAmount) * cache.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     feeForProtocol += delta;
@@ -452,9 +446,7 @@ library Pool {
         (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
 
         // update liquidity if it changed
-        if (cache.liquidityStart != state.liquidity) {
-            self.liquidity = state.liquidity;
-        }
+        if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
         // update fee growth global
         if (zeroForOne) {

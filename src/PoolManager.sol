@@ -114,13 +114,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
         if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
-        if (key.currency0 >= key.currency1) {
-            revert CurrenciesOutOfOrderOrEqual();
-        }
-        if (!key.hooks.isValidHookAddress(key.fee)) {
-            revert Hooks.HookAddressNotValid(address(key.hooks));
-        }
-
+		if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
+        if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
         uint24 lpFee = key.fee.getInitialLPFee();
 
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
@@ -304,9 +299,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external {
-        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) {
-            revert UnauthorizedDynamicLPFeeUpdate();
-        }
+        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicLPFeeUpdate();
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         pools[id].setLPFee(newDynamicLPFee);
