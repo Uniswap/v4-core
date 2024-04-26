@@ -332,14 +332,12 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        state = SwapState({
-            amountSpecifiedRemaining: params.amountSpecified,
-            amountCalculated: 0,
-            sqrtPriceX96: slot0Start.sqrtPriceX96,
-            tick: slot0Start.tick,
-            feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
-            liquidity: cache.liquidityStart
-        });
+        state.amountSpecifiedRemaining = params.amountSpecified;
+        state.amountCalculated = 0;
+        state.sqrtPriceX96 = slot0Start.sqrtPriceX96;
+        state.tick = slot0Start.tick;
+        state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
+        state.liquidity = cache.liquidityStart;
 
         StepComputations memory step;
         swapFee =
