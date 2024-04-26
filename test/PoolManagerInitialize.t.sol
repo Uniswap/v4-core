@@ -387,8 +387,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     }
 
     function test_initialize_gas() public {
-        snapStart("initialize");
         manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
-        snapEnd();
+        snapLastCall("initialize");
     }
 }
