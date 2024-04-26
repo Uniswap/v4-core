@@ -208,7 +208,7 @@ library SqrtPriceMath {
     function absDiff(uint160 a, uint160 b) internal pure returns (uint256 res) {
         assembly {
             let diff := sub(a, b)
-            let mask := sub(0, slt(diff, 0))
+            let mask := sar(255, diff)
             res := xor(mask, add(mask, diff))
         }
     }
@@ -263,10 +263,10 @@ library SqrtPriceMath {
         bool sign;
         uint128 liquidityAbs;
         assembly {
-            // sign = 1 if liquidity >= 0 else 0
-            sign := iszero(slt(liquidity, 0))
             // mask = 0 if liquidity >= 0 else -1
-            let mask := sub(sign, 1)
+            let mask := sar(255, liquidity)
+            // sign = 1 if liquidity >= 0 else 0
+            sign := iszero(mask)
             liquidityAbs := xor(mask, add(mask, liquidity))
         }
         // amount0Abs = liquidity / sqrt(lower) - liquidity / sqrt(upper) < type(uint224).max
@@ -300,10 +300,10 @@ library SqrtPriceMath {
         bool sign;
         uint128 liquidityAbs;
         assembly {
-            // sign = 1 if liquidity >= 0 else 0
-            sign := iszero(slt(liquidity, 0))
             // mask = 0 if liquidity >= 0 else -1
-            let mask := sub(sign, 1)
+            let mask := sar(255, liquidity)
+            // sign = 1 if liquidity >= 0 else 0
+            sign := iszero(mask)
             liquidityAbs := xor(mask, add(mask, liquidity))
         }
         // amount1Abs = liquidity * (sqrt(upper) - sqrt(lower)) < type(uint192).max
