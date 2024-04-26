@@ -32,6 +32,9 @@ contract ActionsRouter is IUnlockCallback, Test {
 
     error ActionNotSupported();
 
+    // error thrown so that incorrectly formatted tests don't pass silently
+    error CheckParameters();
+
     IPoolManager manager;
 
     constructor(IPoolManager _manager) {
@@ -40,6 +43,7 @@ contract ActionsRouter is IUnlockCallback, Test {
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         (Actions[] memory actions, bytes[] memory params) = abi.decode(data, (Actions[], bytes[]));
+        if (actions.length != params.length || actions.length == 0) revert CheckParameters();
         for (uint256 i = 0; i < actions.length; i++) {
             Actions action = actions[i];
             bytes memory param = params[i];
