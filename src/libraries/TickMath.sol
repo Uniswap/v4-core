@@ -53,7 +53,7 @@ library TickMath {
             /// @solidity memory-safe-assembly
             assembly {
                 // mask = 0 if tick >= 0 else -1
-                let mask := sub(0, slt(tick, 0))
+                let mask := sar(255, tick)
                 // If tick >= 0, |tick| = tick = 0 ^ tick
                 // If tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = -1 ^ (tick - 1)
                 // Either case, |tick| = mask ^ (tick + mask)
