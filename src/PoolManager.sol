@@ -209,24 +209,20 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         override
         onlyWhenUnlocked
-        returns (BalanceDelta delta)
+        returns (BalanceDelta)
     {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
         key.hooks.beforeSwap(key, params, hookData);
 
-        uint256 feeForProtocol;
-        uint24 swapFee;
-        Pool.SwapState memory state;
-        (delta, feeForProtocol, swapFee) = pools[id].swap(
+        (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) = pools[id].swap(
             Pool.SwapParams({
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
                 amountSpecified: params.amountSpecified,
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96
-            }),
-            state
+            })
         );
 
         _accountPoolBalanceDelta(key, delta);
@@ -241,6 +237,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         );
 
         key.hooks.afterSwap(key, params, delta, hookData);
+
+        return delta;
     }
 
     /// @inheritdoc IPoolManager

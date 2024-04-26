@@ -301,9 +301,9 @@ library Pool {
 
     /// @notice Executes a swap against the state, and returns the amount deltas of the pool
     /// @dev PoolManager checks that the pool is initialized before calling
-    function swap(State storage self, SwapParams memory params, SwapState memory state)
+    function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee)
+        returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
