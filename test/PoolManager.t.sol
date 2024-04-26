@@ -572,10 +572,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
-        PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
-
-        swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
+        swapRouterNoChecks.swap(key, swapParams);
         snapLastCall("simple swap");
     }
 
@@ -583,10 +580,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
 
-        PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
-
-        swapRouter.swap{value: 100}(nativeKey, swapParams, testSettings, ZERO_BYTES);
+        swapRouterNoChecks.swap{value: 100}(nativeKey, swapParams);
         snapLastCall("simple swap with native");
     }
 
