@@ -53,9 +53,8 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
     /// ---- Tests copied from solmate ---- ///
 
     function testMint() public {
-        snapStart("ERC6909Claims mint");
         token.mint(address(0xBEEF), 1337, 100);
-        snapEnd();
+        snapLastCall("ERC6909Claims mint");
 
         assertEq(token.balanceOf(address(0xBEEF), 1337), 100);
     }
@@ -63,9 +62,8 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
     function testBurn() public {
         token.mint(address(0xBEEF), 1337, 100);
         vm.prank(address(0xBEEF));
-        snapStart("ERC6909Claims burn");
         token.burn(1337, 70);
-        snapEnd();
+        snapLastCall("ERC6909Claims burn");
 
         assertEq(token.balanceOf(address(0xBEEF), 1337), 30);
     }
@@ -77,9 +75,8 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
     }
 
     function testApprove() public {
-        snapStart("ERC6909Claims approve");
         token.approve(address(0xBEEF), 1337, 100);
-        snapEnd();
+        snapLastCall("ERC6909Claims approve");
 
         assertEq(token.allowance(address(this), address(0xBEEF), 1337), 100);
     }
@@ -91,9 +88,8 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
 
         vm.prank(sender);
 
-        snapStart("ERC6909Claims transfer");
         token.transfer(address(0xBEEF), 1337, 70);
-        snapEnd();
+        snapLastCall("ERC6909Claims transfer");
 
         assertEq(token.balanceOf(sender, 1337), 30);
         assertEq(token.balanceOf(address(0xBEEF), 1337), 70);
@@ -108,9 +104,8 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         vm.prank(sender);
         token.approve(address(this), 1337, 100);
 
-        snapStart("ERC6909Claims transferFrom with approval");
         token.transferFrom(sender, receiver, 1337, 70);
-        snapEnd();
+        snapLastCall("ERC6909Claims transferFrom with approval");
 
         assertEq(token.allowance(sender, address(this), 1337), 30);
         assertEq(token.balanceOf(sender, 1337), 30);
@@ -126,9 +121,8 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         vm.prank(sender);
         token.approve(address(this), 1337, type(uint256).max);
 
-        snapStart("ERC6909Claims transferFrom with infinite approval");
         token.transferFrom(sender, receiver, 1337, 70);
-        snapEnd();
+        snapLastCall("ERC6909Claims transferFrom with infinite approval");
 
         assertEq(token.allowance(sender, address(this), 1337), type(uint256).max);
         assertEq(token.balanceOf(sender, 1337), 30);
@@ -144,9 +138,8 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         vm.prank(sender);
         token.setOperator(address(this), true);
 
-        snapStart("ERC6909Claims transferFrom as operator");
         token.transferFrom(sender, receiver, 1337, 70);
-        snapEnd();
+        snapLastCall("ERC6909Claims transferFrom as operator");
 
         assertEq(token.balanceOf(sender, 1337), 30);
         assertEq(token.balanceOf(receiver, 1337), 70);
