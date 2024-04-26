@@ -4,8 +4,9 @@ pragma solidity ^0.8.15;
 import {Test} from "forge-std/Test.sol";
 import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
 import {MockERC6909Claims} from "../src/test/MockERC6909Claims.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
-contract ERC6909ClaimsTest is Test {
+contract ERC6909ClaimsTest is Test, GasSnapshot {
     using CurrencyLibrary for Currency;
 
     MockERC6909Claims token;
@@ -52,7 +53,9 @@ contract ERC6909ClaimsTest is Test {
     /// ---- Tests copied from solmate ---- ///
 
     function testMint() public {
+        snapStart("ERC6909Claims mint");
         token.mint(address(0xBEEF), 1337, 100);
+        snapEnd();
 
         assertEq(token.balanceOf(address(0xBEEF), 1337), 100);
     }
@@ -60,7 +63,9 @@ contract ERC6909ClaimsTest is Test {
     function testBurn() public {
         token.mint(address(0xBEEF), 1337, 100);
         vm.prank(address(0xBEEF));
+        snapStart("ERC6909Claims burn");
         token.burn(1337, 70);
+        snapEnd();
 
         assertEq(token.balanceOf(address(0xBEEF), 1337), 30);
     }
@@ -72,7 +77,9 @@ contract ERC6909ClaimsTest is Test {
     }
 
     function testApprove() public {
+        snapStart("ERC6909Claims approve");
         token.approve(address(0xBEEF), 1337, 100);
+        snapEnd();
 
         assertEq(token.allowance(address(this), address(0xBEEF), 1337), 100);
     }
@@ -83,7 +90,10 @@ contract ERC6909ClaimsTest is Test {
         token.mint(sender, 1337, 100);
 
         vm.prank(sender);
+
+        snapStart("ERC6909Claims transfer");
         token.transfer(address(0xBEEF), 1337, 70);
+        snapEnd();
 
         assertEq(token.balanceOf(sender, 1337), 30);
         assertEq(token.balanceOf(address(0xBEEF), 1337), 70);
@@ -98,7 +108,9 @@ contract ERC6909ClaimsTest is Test {
         vm.prank(sender);
         token.approve(address(this), 1337, 100);
 
+        snapStart("ERC6909Claims transferFrom with approval");
         token.transferFrom(sender, receiver, 1337, 70);
+        snapEnd();
 
         assertEq(token.allowance(sender, address(this), 1337), 30);
         assertEq(token.balanceOf(sender, 1337), 30);
@@ -114,7 +126,9 @@ contract ERC6909ClaimsTest is Test {
         vm.prank(sender);
         token.approve(address(this), 1337, type(uint256).max);
 
+        snapStart("ERC6909Claims transferFrom with infinite approval");
         token.transferFrom(sender, receiver, 1337, 70);
+        snapEnd();
 
         assertEq(token.allowance(sender, address(this), 1337), type(uint256).max);
         assertEq(token.balanceOf(sender, 1337), 30);
@@ -130,7 +144,9 @@ contract ERC6909ClaimsTest is Test {
         vm.prank(sender);
         token.setOperator(address(this), true);
 
+        snapStart("ERC6909Claims transferFrom as operator");
         token.transferFrom(sender, receiver, 1337, 70);
+        snapEnd();
 
         assertEq(token.balanceOf(sender, 1337), 30);
         assertEq(token.balanceOf(receiver, 1337), 70);
