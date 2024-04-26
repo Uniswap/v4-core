@@ -144,9 +144,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
-        snapStart("update dynamic fee in before swap");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapEnd();
+        snapLastCall("update dynamic fee in before swap");
 
         assertEq(_fetchPoolLPFee(key), 123);
     }
@@ -235,9 +234,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -101000000, 100, 79228162514264329670727698909, 1e18, -1, 999999);
 
-        snapStart("swap with lp fee and protocol fee");
         BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapEnd();
+        snapLastCall("swap with lp fee and protocol fee");
 
         uint256 expectedProtocolFee = uint256(uint128(-delta.amount0())) * 1000 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
@@ -335,9 +333,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
-        snapStart("swap with dynamic fee");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapEnd();
+        snapLastCall("swap with dynamic fee");
     }
 
     function _fetchPoolLPFee(PoolKey memory _key) internal view returns (uint256 lpFee) {
