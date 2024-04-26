@@ -24,7 +24,7 @@ body:
       attributes:
           label: To Reproduce
           description: If you have written tests to showcase the bug, what can we run to reproduce the issue?
-          placeholder: "git checkout <branchname> / forge test --match-test <testName>"
+          placeholder: "git checkout <branchname> / forge test --isolate --mt <testName>"
     - type: textarea
       attributes:
           label: Additional context
