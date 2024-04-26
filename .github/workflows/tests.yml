@@ -39,4 +39,5 @@ jobs:
         run: forge test --isolate -vvv
         env:
           FOUNDRY_PROFILE: ci
+          FORGE_SNAPSHOT_CHECK: true
           
