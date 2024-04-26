@@ -26,7 +26,15 @@ abstract contract ERC6909 is IERC6909Claims {
 
     mapping(address => mapping(uint256 => uint256)) public balanceOf;
 
-    mapping(address => mapping(address => mapping(uint256 => uint256))) public allowance;
+    mapping(bytes32 => uint256) private _allowance;
+
+    /*//////////////////////////////////////////////////////////////
+                              ERC6909 GETTERS
+    //////////////////////////////////////////////////////////////*/
+
+    function allowance(address owner, address spender, uint256 id) external view returns(uint256 allowanceValue) {
+        allowanceValue = _getAllowance(owner, spender, id);
+    }
 
     /*//////////////////////////////////////////////////////////////
                               ERC6909 LOGIC
@@ -44,8 +52,8 @@ abstract contract ERC6909 is IERC6909Claims {
 
     function transferFrom(address sender, address receiver, uint256 id, uint256 amount) public virtual returns (bool) {
         if (msg.sender != sender && !isOperator[sender][msg.sender]) {
-            uint256 allowed = allowance[sender][msg.sender][id];
-            if (allowed != type(uint256).max) allowance[sender][msg.sender][id] = allowed - amount;
+            uint256 allowed = _getAllowance(sender, msg.sender, id);
+            if (allowed != type(uint256).max) _setAllowance(sender, msg.sender, id, allowed - amount);
         }
 
         balanceOf[sender][id] -= amount;
@@ -58,7 +66,7 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function approve(address spender, uint256 id, uint256 amount) public virtual returns (bool) {
-        allowance[msg.sender][spender][id] = amount;
+        _setAllowance(msg.sender, spender, id, amount);
 
         emit Approval(msg.sender, spender, id, amount);
 
@@ -96,5 +104,46 @@ abstract contract ERC6909 is IERC6909Claims {
         balanceOf[sender][id] -= amount;
 
         emit Transfer(msg.sender, sender, address(0), id, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL STORAGE LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function _getAllowance(address owner, address spender, uint256 id)
+        internal
+        view
+        returns (uint256 allowanceValue)
+    {
+        bytes32 allowanceSlot = _getAllowanceSlot(owner, spender, id);
+        /// @solidity memory-safe-assembly
+        assembly {
+            allowanceValue := sload(allowanceSlot)
+        }
+    }
+
+    function _setAllowance(address owner, address spender, uint256 id, uint256 value) internal {
+        bytes32 allowanceSlot = _getAllowanceSlot(owner, spender, id);
+        /// @solidity memory-safe-assembly
+        assembly {
+            sstore(allowanceSlot, value)
+        }
+    }
+
+    function _getAllowanceSlot(address owner, address spender, uint256 id) internal pure returns(bytes32 allowanceSlot) {
+        //allowanceSlot = keccak256(abi.encode(slot, owner, spender, id));
+        /// @solidity memory-safe-assembly
+        assembly {
+            let cache := mload(0x60)
+            mstore(0x60, id)
+            let pointer := mload(0x40)
+            mstore(0x40, spender)
+            mstore(0x20, owner)
+            mstore(0, _allowance.slot)
+            allowanceSlot := keccak256(0x00, 0x80)
+
+            mstore(0x40, pointer)
+            mstore(0x60, cache)
+        }
     }
 }
