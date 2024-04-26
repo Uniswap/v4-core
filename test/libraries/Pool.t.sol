@@ -143,8 +143,7 @@ contract PoolTest is Test {
             }
         }
 
-        Pool.SwapState memory _swapState;
-        state.swap(params, _swapState);
+        state.swap(params);
 
         if (params.zeroForOne) {
             assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96);
