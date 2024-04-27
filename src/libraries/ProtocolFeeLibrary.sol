@@ -7,27 +7,28 @@ library ProtocolFeeLibrary {
     // Max protocol fee is 0.1% (1000 pips)
     uint16 public constant MAX_PROTOCOL_FEE = 1000;
 
+    uint24 public constant FEE_0_THRESHOLD = 1001;
+    uint24 public constant FEE_1_THRESHOLD = 1001 << 12;
+
     // the protocol fee is represented in hundredths of a bip
     uint256 internal constant PIPS_DENOMINATOR = 1_000_000;
 
     function getZeroForOneFee(uint24 self) internal pure returns (uint16) {
-        return uint16(self & (4096 - 1));
+        return uint16(self & 0xfff);
     }
 
     function getOneForZeroFee(uint24 self) internal pure returns (uint16) {
         return uint16(self >> 12);
     }
 
-    function validate(uint24 self) internal pure returns (bool) {
-        if (self != 0) {
-            uint16 fee0 = getZeroForOneFee(self);
-            uint16 fee1 = getOneForZeroFee(self);
-            // The fee is represented in pips and it cannot be greater than the MAX_PROTOCOL_FEE.
-            if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
-                return false;
-            }
+    /// @dev The fee is represented in pips and it cannot be greater than the MAX_PROTOCOL_FEE.
+    function validate(uint24 self) internal pure returns (bool success) {
+        // Equivalent to: self == 0 ? true : (getZeroForOneFee(self) <= MAX_PROTOCOL_FEE && getOneForZeroFee(self) <= MAX_PROTOCOL_FEE)
+        assembly {
+            let isZeroForOneFeeOk := slt(sub(and(self, 0xfff), FEE_0_THRESHOLD), 0)
+            let isOneForZeroFeeOk := slt(sub(self, FEE_1_THRESHOLD), 0)
+            success := or(iszero(self), and(isZeroForOneFeeOk, isOneForZeroFeeOk))
         }
-        return true;
     }
 
     // The protocol fee is taken from the input amount first and then the LP fee is taken from the remaining
