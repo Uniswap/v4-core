@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "src/libraries/ProtocolFeeLibrary.sol";
-import "src/libraries/LPFeeLibrary.sol";
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
+import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
+import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 
 contract ProtocolFeeLibraryTest is Test {
     function test_zeroForOne() public pure {
