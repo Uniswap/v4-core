@@ -3,39 +3,46 @@ pragma solidity ^0.8.20;
 
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
-import {BitMath} from "src/libraries/BitMath.sol";
+import {BitMath} from "../../src/libraries/BitMath.sol";
 
 contract TestBitMath is Test, GasSnapshot {
-    function testMostSignificantBitZero() public {
+    function test_mostSignificantBit_revertsWhenZero() public {
         vm.expectRevert();
         BitMath.mostSignificantBit(0);
     }
 
-    function testMostSignificantBitOne() public {
+    function test_mostSignificantBit_one() public {
         assertEq(BitMath.mostSignificantBit(1), 0);
     }
 
-    function testMostSignificantBitTwo() public {
+    function test_mostSignificantBit_two() public {
         assertEq(BitMath.mostSignificantBit(2), 1);
     }
 
-    function testMostSignificantBitPowersOfTwo() public {
+    function test_mostSignificantBit_powersOfTwo() public {
         for (uint256 i = 0; i < 255; i++) {
             uint256 x = 1 << i;
             assertEq(BitMath.mostSignificantBit(x), i);
         }
     }
 
-    function testMostSignificantBitMaxUint256() public {
+    function test_mostSignificantBit_maxUint256() public {
         assertEq(BitMath.mostSignificantBit(type(uint256).max), 255);
     }
 
-    function testMostSignificantBit(uint256 x) public {
+    function test_fuzz_mostSignificantBit(uint256 x) public {
         vm.assume(x != 0);
         assertEq(BitMath.mostSignificantBit(x), mostSignificantBitReference(x));
     }
 
-    function testMsbGas() public {
+    function test_invariant_mostSignificantBit(uint256 x) public {
+        vm.assume(x != 0);
+        uint8 msb = BitMath.mostSignificantBit(x);
+        assertGe(x, uint256(2) ** msb);
+        assertTrue(msb == 255 || x < uint256(2) ** (msb + 1));
+    }
+
+    function test_mostSignificantBit_gas() public {
         snapStart("BitMathMostSignificantBitSmallNumber");
         BitMath.mostSignificantBit(3568);
         snapEnd();
@@ -49,36 +56,43 @@ contract TestBitMath is Test, GasSnapshot {
         snapEnd();
     }
 
-    function testLeastSignificantBitZero() public {
+    function test_leastSignificantBit_revertsWhenZero() public {
         vm.expectRevert();
         BitMath.leastSignificantBit(0);
     }
 
-    function testLeastSignificantBitOne() public {
+    function test_leastSignificantBit_one() public {
         assertEq(BitMath.leastSignificantBit(1), 0);
     }
 
-    function testLeastSignificantBitTwo() public {
+    function test_leastSignificantBit_two() public {
         assertEq(BitMath.leastSignificantBit(2), 1);
     }
 
-    function testLeastSignificantBitPowersOfTwo() public {
+    function test_leastSignificantBit_powersOfTwo() public {
         for (uint256 i = 0; i < 255; i++) {
             uint256 x = 1 << i;
             assertEq(BitMath.leastSignificantBit(x), i);
         }
     }
 
-    function testLeastSignificantBitMaxUint256() public {
+    function test_leastSignificantBit_maxUint256() public {
         assertEq(BitMath.leastSignificantBit(type(uint256).max), 0);
     }
 
-    function testLeastSignificantBit(uint256 x) public {
+    function test_fuzz_leastSignificantBit(uint256 x) public {
         vm.assume(x != 0);
         assertEq(BitMath.leastSignificantBit(x), leastSignificantBitReference(x));
     }
 
-    function testLsbGas() public {
+    function test_invariant_leastSignificantBit(uint256 x) public {
+        vm.assume(x != 0);
+        uint8 lsb = BitMath.leastSignificantBit(x);
+        assertNotEq(x & (uint256(2) ** lsb), 0);
+        assertEq(x & (uint256(2) ** lsb - 1), 0);
+    }
+
+    function test_leastSignificantBit_gas() public {
         snapStart("BitMathLeastSignificantBitSmallNumber");
         BitMath.leastSignificantBit(3568);
         snapEnd();
