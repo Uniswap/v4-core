@@ -23,7 +23,7 @@ contract DynamicFeesTestHook is BaseTestHooks {
         override
         returns (bytes4)
     {
-        manager.updateDynamicSwapFee(key, fee);
+        manager.updateDynamicLPFee(key, fee);
         return IHooks.afterInitialize.selector;
     }
 
@@ -32,11 +32,11 @@ contract DynamicFeesTestHook is BaseTestHooks {
         override
         returns (bytes4)
     {
-        manager.updateDynamicSwapFee(key, fee);
+        manager.updateDynamicLPFee(key, fee);
         return IHooks.beforeSwap.selector;
     }
 
     function forcePoolFeeUpdate(PoolKey calldata _key, uint24 _fee) external {
-        manager.updateDynamicSwapFee(_key, _fee);
+        manager.updateDynamicLPFee(_key, _fee);
     }
 }

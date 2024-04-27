@@ -25,7 +25,7 @@ contract MockHooks is IHooks {
 
     mapping(bytes4 => bytes4) public returnValues;
 
-    mapping(PoolId => uint16) public swapFees;
+    mapping(PoolId => uint16) public lpFees;
 
     function beforeInitialize(address, PoolKey calldata, uint160, bytes calldata hookData)
         external
@@ -139,7 +139,7 @@ contract MockHooks is IHooks {
         returnValues[key] = value;
     }
 
-    function setSwapFee(PoolKey calldata key, uint16 value) external {
-        swapFees[key.toId()] = value;
+    function setlpFee(PoolKey calldata key, uint16 value) external {
+        lpFees[key.toId()] = value;
     }
 }

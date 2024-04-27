@@ -82,7 +82,7 @@ library SwapMath {
                 // we didn't reach the target, so take the remainder of the maximum input as fee
                 feeAmount = uint256(-amountRemaining) - amountIn;
             } else {
-                feeAmount = FullMath.mulDivRoundingUp(amountIn, feePips, 1e6 - feePips);
+                feeAmount = feePips == 1e6 ? amountIn : FullMath.mulDivRoundingUp(amountIn, feePips, 1e6 - feePips);
             }
         }
     }

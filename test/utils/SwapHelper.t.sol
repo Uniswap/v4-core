@@ -5,7 +5,6 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
-import {SwapFeeLibrary} from "../../src/libraries/SwapFeeLibrary.sol";
 import {MockHooks} from "../../src/test/MockHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
