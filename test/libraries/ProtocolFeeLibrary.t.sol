@@ -2,10 +2,11 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 
-contract ProtocolFeeLibraryTest is Test {
+contract ProtocolFeeLibraryTest is Test, GasSnapshot {
     function test_zeroForOne() public pure {
         uint24 fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE - 1) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
         assertEq(ProtocolFeeLibrary.getZeroForOneFee(fee), uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
@@ -69,5 +70,13 @@ contract ProtocolFeeLibraryTest is Test {
 
         lpFee = 1000;
         assertEq(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), 1000);
+    }
+
+    function test_calculateSwapFee_gas() public {
+        uint24 self = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE);
+        uint24 lpFee = LPFeeLibrary.MAX_LP_FEE;
+        snapStart("calculateSwapFee");
+        ProtocolFeeLibrary.calculateSwapFee(self, lpFee);
+        snapEnd();
     }
 }
