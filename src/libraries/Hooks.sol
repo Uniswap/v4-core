@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
-import {SwapFeeLibrary} from "./SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
@@ -12,7 +12,7 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
 /// has leading bits '1001' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
 library Hooks {
-    using SwapFeeLibrary for uint24;
+    using LPFeeLibrary for uint24;
     using Hooks for IHooks;
 
     uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
