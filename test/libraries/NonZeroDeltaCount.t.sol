@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {NonZeroDeltaCount} from "src/libraries/NonZeroDeltaCount.sol";
+import {NonZeroDeltaCount} from "../../src/libraries/NonZeroDeltaCount.sol";
 
 contract NonZeroDeltaCountTest is Test {
     function test_incrementNonzeroDeltaCount() public {
@@ -38,5 +38,9 @@ contract NonZeroDeltaCountTest is Test {
             }
             assertEq(NonZeroDeltaCount.read(), expectedCount);
         }
+    }
+
+    function test_nonZeroDeltaCountSlot() public {
+        assertEq(uint256(keccak256("NonzeroDeltaCount")) - 1, NonZeroDeltaCount.NONZERO_DELTA_COUNT_SLOT);
     }
 }
