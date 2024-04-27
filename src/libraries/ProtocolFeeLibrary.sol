@@ -34,10 +34,11 @@ library ProtocolFeeLibrary {
     // The protocol fee is taken from the input amount first and then the LP fee is taken from the remaining
     // The swap fee is capped at 100%
     // equivalent to protocolFee + lpFee(1_000_000 - protocolFee) / 1_000_000
-    function calculateSwapFee(uint24 self, uint24 lpFee) internal pure returns (uint24) {
-        unchecked {
-            uint256 numerator = uint256(self) * uint256(lpFee);
-            return uint24(uint256(self) + lpFee - UnsafeMath.divRoundingUp(numerator, PIPS_DENOMINATOR));
+    function calculateSwapFee(uint24 self, uint24 lpFee) internal pure returns (uint24 swapFee) {
+        assembly {
+            let numerator := mul(self, lpFee)
+            let divRoundingUp := add(div(numerator, PIPS_DENOMINATOR), gt(mod(numerator, PIPS_DENOMINATOR), 0))
+            swapFee := sub(add(self, lpFee), divRoundingUp)
         }
     }
 }
