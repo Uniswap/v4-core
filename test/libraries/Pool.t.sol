@@ -86,6 +86,12 @@ contract PoolTest is Test {
         state.modifyLiquidity(params);
     }
 
+    function testSwap_edgeCase() public {
+        // [FAIL. Reason: InvalidFeeForExactOut(); counterexample: calldata=0x0239f80e000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000047380000000000000000000000000000000000000000000000000000000000004002ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8010240000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000feff00000000000000000000000000000000000000000000000000ffffffffffffff
+        // args=[9223372036854775808 [9.223e18], 1000000 [1e6], 18232 [1.823e4], 16386 [1.638e4], SwapParams({ tickSpacing: -8384476 [-8.384e6], zeroForOne: true, amountSpecified: 65279 [6.527e4], sqrtPriceLimitX96: 72057594037927935 [7.205e16] })]] testSwap(uint160,uint24,uint16,uint16,(int24,bool,int256,uint160)) (runs: 94655, μ: 202338, ~: 19168)
+        testSwap(9223372036854775808, 1000000, 18232, 16386, Pool.SwapParams(-8384476, true, 65279, 72057594037927935));
+    }
+
     function testSwap(
         uint160 sqrtPriceX96,
         uint24 lpFee,
@@ -115,32 +121,47 @@ contract PoolTest is Test {
         );
         Pool.Slot0 memory slot0 = state.slot0;
 
-        if (params.amountSpecified == 0) {
-            vm.expectRevert(Pool.SwapAmountCannotBeZero.selector);
-        } else if (params.zeroForOne) {
-            if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96) {
-                vm.expectRevert(
-                    abi.encodeWithSelector(
-                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
-                    )
-                );
-            } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO) {
-                vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
+        while (true) {
+            if (params.amountSpecified == 0) {
+                vm.expectRevert(Pool.SwapAmountCannotBeZero.selector);
+                break;
             }
-        } else if (!params.zeroForOne) {
-            if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96) {
-                vm.expectRevert(
-                    abi.encodeWithSelector(
-                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
-                    )
-                );
-            } else if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
-                vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
+            if (params.zeroForOne) {
+                if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96) {
+                    vm.expectRevert(
+                        abi.encodeWithSelector(
+                            Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                        )
+                    );
+                    break;
+                } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO) {
+                    vm.expectRevert(
+                        abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96)
+                    );
+                    break;
+                }
+            } else {
+                if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96) {
+                    vm.expectRevert(
+                        abi.encodeWithSelector(
+                            Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                        )
+                    );
+                    break;
+                } else if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
+                    vm.expectRevert(
+                        abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96)
+                    );
+                    break;
+                }
             }
-        } else if (params.amountSpecified > 0) {
-            if (lpFee == MAX_LP_FEE) {
-                vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
+            if (params.amountSpecified > 0) {
+                if (lpFee == MAX_LP_FEE) {
+                    vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
+                    break;
+                }
             }
+            break;
         }
 
         state.swap(params);
