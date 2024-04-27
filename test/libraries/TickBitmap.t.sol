@@ -92,8 +92,8 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_flipTick_flippingATickThatResultsInDeletingAWord_gas() public {
-        flipTick(SOLO_INITIALIZED_TICK_IN_WORD);
         snapStart("flipTick_flippingATickThatResultsInDeletingAWord");
+        flipTick(SOLO_INITIALIZED_TICK_IN_WORD);
         snapEnd();
     }
 
@@ -165,8 +165,8 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_nextInitializedTickWithinOneWord_lteFalse_onBoundary_gas() public {
-        bitmap.nextInitializedTickWithinOneWord(255, 1, false);
         snapStart("nextInitializedTickWithinOneWord_lteFalse_onBoundary");
+        bitmap.nextInitializedTickWithinOneWord(255, 1, false);
         snapEnd();
     }
 
