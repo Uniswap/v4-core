@@ -6,7 +6,7 @@ import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
@@ -67,7 +67,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     ) external override returns (bytes4, BalanceDelta) {
         counter++;
         _addLiquidity(key, params, hookData);
-        return (IHooks.afterAddLiquidity.selector, BalanceDelta.wrap(0));
+        return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeRemoveLiquidity(
@@ -90,7 +90,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     ) external override returns (bytes4, BalanceDelta) {
         counter++;
         _removeLiquidity(key, params, hookData);
-        return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
+        return (IHooks.afterRemoveLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData)

@@ -193,7 +193,6 @@ library Hooks {
     }
 
     /// @notice calls afterModifyLiquidity hook if permissioned and validates return value
-    /// @dev if noSelfCall bypasses the call, hookDelta will be 0
     function afterModifyLiquidity(
         IHooks self,
         PoolKey memory key,
@@ -254,7 +253,6 @@ library Hooks {
     }
 
     /// @notice calls afterSwap hook if permissioned and validates return value
-    /// @dev if noSelfCall bypasses the call, hookDeltaUnspecified will be 0
     function afterSwap(
         IHooks self,
         PoolKey memory key,

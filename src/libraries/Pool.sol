@@ -9,7 +9,7 @@ import {FixedPoint128} from "./FixedPoint128.sol";
 import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
-import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
@@ -325,7 +325,7 @@ library Pool {
             revert InvalidFeeForExactOut();
         }
 
-        if (params.amountSpecified == 0) return (BalanceDelta.wrap(0), 0, swapFee, state);
+        if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
 
         if (zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
