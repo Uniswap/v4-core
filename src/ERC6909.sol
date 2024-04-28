@@ -172,7 +172,7 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function _getOperatorSlot(address owner, address spender) internal pure returns (bytes32 operatorSlot) {
-        // balanceSlot = keccak256(abi.encode(owner, spender, _operators.slot));
+        // operatorSlot = keccak256(abi.encode(owner, spender, _operators.slot));
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x20, spender)
