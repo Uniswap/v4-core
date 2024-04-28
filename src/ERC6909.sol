@@ -131,19 +131,19 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function _getAllowanceSlot(address owner, address spender, uint256 id) internal pure returns(bytes32 allowanceSlot) {
-        //allowanceSlot = keccak256(abi.encode(slot, owner, spender, id));
+        // allowanceSlot = keccak256(abi.encode(_allowance.slot, owner, spender, id));
         /// @solidity memory-safe-assembly
         assembly {
-            let cache := mload(0x60)
-            mstore(0x60, id)
             let pointer := mload(0x40)
-            mstore(0x40, spender)
-            mstore(0x20, owner)
-            mstore(0, _allowance.slot)
+            mstore(0x40, id)
+            mstore(0x20, spender)
+            mstore(0x00, owner)
+            let cache := mload(0x60)
+            mstore(0x60, _allowance.slot)
             allowanceSlot := keccak256(0x00, 0x80)
 
-            mstore(0x40, pointer)
             mstore(0x60, cache)
+            mstore(0x40, pointer)
         }
     }
 }
