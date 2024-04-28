@@ -170,7 +170,6 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function _getOperatorSlot(address owner, address spender) internal pure returns (bytes32 operatorSlot) {
-        // operatorSlot = keccak256(abi.encode(owner, spender, _operators.slot));
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x20, spender)
@@ -180,7 +179,6 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function _getBalanceSlot(address owner, uint256 id) internal pure returns (bytes32 balanceSlot) {
-        // balanceSlot = keccak256(abi.encode(owner, id, _balances.slot));
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x20, id)
@@ -194,7 +192,6 @@ abstract contract ERC6909 is IERC6909Claims {
         pure
         returns (bytes32 allowanceSlot)
     {
-        // allowanceSlot = keccak256(abi.encode(owner, spender, id, _allowances.slot));
         /// @solidity memory-safe-assembly
         assembly {
             let pointer := mload(0x40)
