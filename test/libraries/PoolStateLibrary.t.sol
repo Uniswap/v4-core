@@ -71,37 +71,6 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(swapFee, swapFee_);
     }
 
-    // function test_getSlot0_fuzz(
-    //     int24 tickLower,
-    //     int24 tickUpper,
-    //     uint128 liquidityDeltaA,
-    //     uint256 swapAmount,
-    //     bool zeroForOne
-    // ) public {
-    //     BalanceDelta delta;
-    //     (tickLower, tickUpper, liquidityDeltaA, delta) =
-    //         createFuzzyLiquidity(modifyLiquidityRouter, key, tickLower, tickUpper, liquidityDeltaA, ZERO_BYTES);
-
-    //     // assume swap amount is material, and less than 1/5th of the liquidity
-    //     vm.assume(0.0000000001 ether < swapAmount);
-    //     vm.assume(
-    //         swapAmount < uint256(int256(-delta.amount0())) / 5 && swapAmount < uint256(int256(-delta.amount1())) / 5
-    //     );
-    //     swap(key, zeroForOne, -int256(swapAmount), ZERO_BYTES);
-
-    //     (uint160 sqrtPriceX96, int24 tick, uint16 protocolFee, uint24 swapFee) =
-    //         PoolStateLibrary.getSlot0(manager, poolId);
-
-    //     (uint160 sqrtPriceX96_, int24 tick_, uint16 protocolFee_, uint24 _swapFee) = manager.getSlot0(poolId);
-
-    //     assertEq(sqrtPriceX96, sqrtPriceX96_);
-    //     assertEq(tick, tick_);
-    //     assertEq(protocolFee, 0);
-    //     assertEq(protocolFee, protocolFee_);
-    //     assertEq(swapFee, 3000);
-    //     assertEq(swapFee, _swapFee);
-    // }
-
     function test_getTickLiquidity() public {
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether), ZERO_BYTES);
 
@@ -207,7 +176,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(feeGrowthGlobal0, 0);
         assertEq(feeGrowthGlobal1, 0);
 
-        // swap to create fees on the output token (currency1)
+        // swap to create fees on the input token (currency0)
         uint256 swapAmount = 10 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
 
@@ -229,7 +198,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(feeGrowthGlobal0, 0);
         assertEq(feeGrowthGlobal1, 0);
 
-        // swap to create fees on the input token (currency0)
+        // swap to create fees on the input token (currency1)
         uint256 swapAmount = 10 ether;
         swap(key, false, -int256(swapAmount), ZERO_BYTES);
 
@@ -248,20 +217,19 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(liquidity, 20 ether);
     }
 
-    // function test_getLiquidity_fuzz(uint128 liquidityDelta) public {
-    //     vm.assume(liquidityDelta != 0);
-    //     vm.assume(liquidityDelta < Pool.tickSpacingToMaxLiquidityPerTick(key.tickSpacing));
-    //     modifyLiquidityRouter.modifyLiquidity(
-    //         key,
-    //         IPoolManager.ModifyLiquidityParams(
-    //             TickMath.minUsableTick(60), TickMath.maxUsableTick(60), int256(uint256(liquidityDelta))
-    //         ),
-    //         ZERO_BYTES
-    //     );
+    function test_fuzz_getLiquidity(IPoolManager.ModifyLiquidityParams memory params) public {
+        (IPoolManager.ModifyLiquidityParams memory _params,) =
+            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
+        (, int24 tick,,) = PoolStateLibrary.getSlot0(manager, poolId);
+        uint128 liquidity = PoolStateLibrary.getLiquidity(manager, poolId);
 
-    //     uint128 liquidity = PoolStateLibrary.getLiquidity(manager, poolId);
-    //     assertEq(liquidity, liquidityDelta);
-    // }
+        // out of range liquidity is not added to Pool.State.liquidity
+        if (tick < _params.tickLower || tick >= _params.tickUpper) {
+            assertEq(liquidity, 0);
+        } else {
+            assertEq(liquidity, uint128(uint256(_params.liquidityDelta)));
+        }
+    }
 
     function test_getTickBitmap() public {
         int24 tickLower = -300;
@@ -282,24 +250,23 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         assertEq(tickBitmap, 1 << bitPos);
     }
 
-    // function test_getTickBitmap_fuzz(int24 tickLower, int24 tickUpper, uint128 liquidityDelta) public {
-    //     // TODO: if theres neighboring ticks, the bitmap is not a shifted bit
-    //     (tickLower, tickUpper, liquidityDelta,) =
-    //         createFuzzyLiquidity(modifyLiquidityRouter, key, tickLower, tickUpper, liquidityDelta, ZERO_BYTES);
+    function test_fuzz_getTickBitmap(IPoolManager.ModifyLiquidityParams memory params) public {
+        (IPoolManager.ModifyLiquidityParams memory _params,) =
+            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
 
-    //     (int16 wordPos, uint8 bitPos) = TickBitmap.position(tickLower / key.tickSpacing);
-    //     (int16 wordPosUpper, uint8 bitPosUpper) = TickBitmap.position(tickUpper / key.tickSpacing);
+        (int16 wordPos, uint8 bitPos) = TickBitmap.position(_params.tickLower / key.tickSpacing);
+        (int16 wordPosUpper, uint8 bitPosUpper) = TickBitmap.position(_params.tickUpper / key.tickSpacing);
 
-    //     uint256 tickBitmap = PoolStateLibrary.getTickBitmap(manager, poolId, wordPos);
-    //     assertNotEq(tickBitmap, 0);
+        uint256 tickBitmap = PoolStateLibrary.getTickBitmap(manager, poolId, wordPos);
+        assertNotEq(tickBitmap, 0);
 
-    //     // in fuzz tests, the tickLower and tickUpper might exist on the same word
-    //     if (wordPos == wordPosUpper) {
-    //         assertEq(tickBitmap, (1 << bitPos) | (1 << bitPosUpper));
-    //     } else {
-    //         assertEq(tickBitmap, 1 << bitPos);
-    //     }
-    // }
+        // in fuzz tests, the tickLower and tickUpper might exist on the same word
+        if (wordPos == wordPosUpper) {
+            assertEq(tickBitmap, (1 << bitPos) | (1 << bitPosUpper));
+        } else {
+            assertEq(tickBitmap, 1 << bitPos);
+        }
+    }
 
     function test_getPositionInfo() public {
         // create liquidity
