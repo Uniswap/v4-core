@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {NonZeroDeltaCount} from "src/libraries/NonZeroDeltaCount.sol";
+import {NonZeroDeltaCount} from "../../src/libraries/NonZeroDeltaCount.sol";
 
 contract NonZeroDeltaCountTest is Test {
     function test_incrementNonzeroDeltaCount() public {
