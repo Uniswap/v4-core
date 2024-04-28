@@ -9,14 +9,14 @@ import {PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
-import {SwapFeeLibrary} from "../libraries/SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolModifyLiquidityTest is PoolTestBase {
     using CurrencyLibrary for Currency;
     using CurrencySettleTake for Currency;
     using Hooks for IHooks;
-    using SwapFeeLibrary for uint24;
+    using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
