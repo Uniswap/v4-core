@@ -22,9 +22,9 @@ abstract contract ERC6909 is IERC6909Claims {
                              ERC6909 STORAGE SLOTS
     //////////////////////////////////////////////////////////////*/
 
-    bytes1 public constant BALANCES_SLOT = 0x10; // bytes1(bytes32(keccak256("BalanceSlot")))
-    bytes1 public constant ALLOWANCES_SLOT = 0x07; // bytes1(bytes32(keccak256("AllowanceSlot")))
-    bytes1 public constant OPERATORS_SLOT = 0xc2; // bytes1(bytes32(keccak256("OperatorsSlot")))
+    bytes1 private constant BALANCES_SLOT = 0x10; // bytes1(bytes32(keccak256("BalanceSlot")))
+    bytes1 private constant ALLOWANCES_SLOT = 0x07; // bytes1(bytes32(keccak256("AllowanceSlot")))
+    bytes1 private constant OPERATORS_SLOT = 0xc2; // bytes1(bytes32(keccak256("OperatorsSlot")))
 
     /*//////////////////////////////////////////////////////////////
                               ERC6909 GETTERS
