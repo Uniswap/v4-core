@@ -19,14 +19,12 @@ abstract contract ERC6909 is IERC6909Claims {
     event Transfer(address caller, address indexed from, address indexed to, uint256 indexed id, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
-                             ERC6909 STORAGE
+                             ERC6909 STORAGE SLOTS
     //////////////////////////////////////////////////////////////*/
 
-    mapping(bytes32 => uint256) private _operators;
-
-    mapping(bytes32 => uint256) private _balances;
-
-    mapping(bytes32 => uint256) private _allowances;
+    bytes1 public constant BALANCES_SLOT = 0x10; // bytes1(bytes32(keccak256("BalanceSlot")))
+    bytes1 public constant ALLOWANCES_SLOT = 0x07; // bytes1(bytes32(keccak256("AllowanceSlot")))
+    bytes1 public constant OPERATORS_SLOT = 0xc2; // bytes1(bytes32(keccak256("OperatorsSlot")))
 
     /*//////////////////////////////////////////////////////////////
                               ERC6909 GETTERS
@@ -176,13 +174,8 @@ abstract contract ERC6909 is IERC6909Claims {
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x20, spender)
-            mstore(0x00, owner)
-            let pointer := mload(0x40)
-            mstore(0x40, _operators.slot)
-
-            operatorSlot := keccak256(0x00, 0x60)
-
-            mstore(0x40, pointer)
+            mstore(0x00, or(owner, OPERATORS_SLOT))
+            operatorSlot := keccak256(0x00, 0x40)
         }
     }
 
@@ -191,13 +184,8 @@ abstract contract ERC6909 is IERC6909Claims {
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x20, id)
-            mstore(0x00, owner)
-            let pointer := mload(0x40)
-            mstore(0x40, _balances.slot)
-
-            balanceSlot := keccak256(0x00, 0x60)
-
-            mstore(0x40, pointer)
+            mstore(0x00, or(owner, BALANCES_SLOT))
+            balanceSlot := keccak256(0x00, 0x40)
         }
     }
 
@@ -212,13 +200,10 @@ abstract contract ERC6909 is IERC6909Claims {
             let pointer := mload(0x40)
             mstore(0x40, id)
             mstore(0x20, spender)
-            mstore(0x00, owner)
-            let cache := mload(0x60)
-            mstore(0x60, _allowances.slot)
+            mstore(0x00, or(owner, ALLOWANCES_SLOT))
 
-            allowanceSlot := keccak256(0x00, 0x80)
+            allowanceSlot := keccak256(0x00, 0x60)
 
-            mstore(0x60, cache)
             mstore(0x40, pointer)
         }
     }
