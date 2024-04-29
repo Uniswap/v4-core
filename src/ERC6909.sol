@@ -172,9 +172,9 @@ abstract contract ERC6909 is IERC6909Claims {
     function _getOperatorSlot(address owner, address spender) internal pure returns (bytes32 operatorSlot) {
         /// @solidity memory-safe-assembly
         assembly {
-            mstore(0x20, spender)
-            mstore(0x00, or(shl(96, owner), OPERATORS_SLOT))
-            operatorSlot := keccak256(0x00, 0x40)
+            mstore(0x14, spender) // [0x20, 0x34)
+            mstore(0x00, or(shl(96, owner), OPERATORS_SLOT)) // [0x00, 0x20)
+            operatorSlot := keccak256(0x00, 0x34)
         }
     }
 
@@ -195,11 +195,11 @@ abstract contract ERC6909 is IERC6909Claims {
         /// @solidity memory-safe-assembly
         assembly {
             let pointer := mload(0x40)
-            mstore(0x40, id)
-            mstore(0x20, spender)
-            mstore(0x00, or(shl(96, owner), ALLOWANCES_SLOT))
+            mstore(0x34, id) // [0x34, 0x54)
+            mstore(0x14, spender) // [0x20, 0x34)
+            mstore(0x00, or(shl(96, owner), ALLOWANCES_SLOT)) // [0x00, 0x20)
 
-            allowanceSlot := keccak256(0x00, 0x60)
+            allowanceSlot := keccak256(0x00, 0x54)
 
             mstore(0x40, pointer)
         }
