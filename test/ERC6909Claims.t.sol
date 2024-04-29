@@ -15,6 +15,21 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         token = new MockERC6909Claims();
     }
 
+    function test_balance_slot_derivation() public view {
+        bytes32 slot = token.getBalanceSlot(address(this), type(uint256).max);
+        assertEq(slot, keccak256(abi.encodePacked(address(this), token.balanceSlotSalt(), type(uint256).max)));
+    }
+
+    function test_allowance_slot_derivation() public view {
+        bytes32 slot = token.getAllowanceSlot(address(this), address(this), type(uint256).max);
+        assertEq(slot, keccak256(abi.encodePacked(address(this), token.allowanceSlotSalt(), address(this), type(uint256).max)));
+    }
+
+    function test_operator_slot_derivation() public view {
+        bytes32 slot = token.getOperatorSlot(address(this), address(this));
+        assertEq(slot, keccak256(abi.encodePacked(address(this), token.operatorSlotSalt(), address(this))));
+    }
+
     function test_burnFrom_withApproval(address sender, uint256 id, uint256 mintAmount, uint256 transferAmount)
         public
     {
