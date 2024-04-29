@@ -19,7 +19,7 @@ abstract contract ERC6909 is IERC6909Claims {
     event Transfer(address caller, address indexed from, address indexed to, uint256 indexed id, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
-                             ERC6909 STORAGE SLOTS LOGIC
+                             ERC6909 STORAGE SLOTS SALTS
     //////////////////////////////////////////////////////////////*/
 
     uint8 internal constant BALANCES_SLOT_SALT = 0xe1; // uint8(uint256(keccak256("BalanceSlot")))
@@ -137,7 +137,7 @@ abstract contract ERC6909 is IERC6909Claims {
 
     function _spendAllowance(address sender, uint256 id, uint256 amount) internal {
         if (msg.sender == sender || isOperator(sender, msg.sender)) return;
-        
+
         bytes32 allowanceSlot = _getAllowanceSlot(sender, msg.sender, id);
         uint256 allowed;
         /// @solidity memory-safe-assembly
@@ -145,44 +145,45 @@ abstract contract ERC6909 is IERC6909Claims {
             allowed := sload(allowanceSlot)
         }
 
-        if (allowed != type(uint256).max) {
-            allowed -= amount;
-            /// @solidity memory-safe-assembly
-            assembly {
-                sstore(allowanceSlot, allowed)
-            }
-        }      
+        if (allowed == type(uint256).max) return;
+
+        allowed -= amount;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            sstore(allowanceSlot, allowed)
+        }
     }
 
     function _decreaseBalanceOf(address owner, uint256 id, uint256 value) internal {
         bytes32 balanceSlot = _getBalanceSlot(owner, id);
-        uint256 balanceOfValue;
+        uint256 balanceValue;
         /// @solidity memory-safe-assembly
         assembly {
-            balanceOfValue := sload(balanceSlot)
+            balanceValue := sload(balanceSlot)
         }
 
-        balanceOfValue -= value;
+        balanceValue -= value;
 
         /// @solidity memory-safe-assembly
         assembly {
-            sstore(balanceSlot, balanceOfValue)
+            sstore(balanceSlot, balanceValue)
         }
     }
 
     function _increaseBalanceOf(address owner, uint256 id, uint256 value) internal {
         bytes32 balanceSlot = _getBalanceSlot(owner, id);
-        uint256 balanceOfValue;
+        uint256 balanceValue;
         /// @solidity memory-safe-assembly
         assembly {
-            balanceOfValue := sload(balanceSlot)
+            balanceValue := sload(balanceSlot)
         }
 
-        balanceOfValue += value;
+        balanceValue += value;
 
         /// @solidity memory-safe-assembly
         assembly {
-            sstore(balanceSlot, balanceOfValue)
+            sstore(balanceSlot, balanceValue)
         }
     }
 
