@@ -15,19 +15,19 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         token = new MockERC6909Claims();
     }
 
-    function test_balance_slot_derivation() public view {
-        bytes32 slot = token.getBalanceSlot(address(this), type(uint256).max);
-        assertEq(slot, keccak256(abi.encodePacked(address(this), token.balanceSlotSalt(), type(uint256).max)));
+    function test_balance_slot_derivation(address sender, uint256 id) public view {
+        bytes32 slot = token.getBalanceSlot(sender, id);
+        assertEq(slot, keccak256(abi.encodePacked(sender, token.balanceSlotSalt(), id)));
     }
 
-    function test_allowance_slot_derivation() public view {
-        bytes32 slot = token.getAllowanceSlot(address(this), address(this), type(uint256).max);
-        assertEq(slot, keccak256(abi.encodePacked(address(this), token.allowanceSlotSalt(), address(this), type(uint256).max)));
+    function test_allowance_slot_derivation(address sender, address spender, uint256 id) public view {
+        bytes32 slot = token.getAllowanceSlot(sender, spender, id);
+        assertEq(slot, keccak256(abi.encodePacked(sender, token.allowanceSlotSalt(), spender, id)));
     }
 
-    function test_operator_slot_derivation() public view {
-        bytes32 slot = token.getOperatorSlot(address(this), address(this));
-        assertEq(slot, keccak256(abi.encodePacked(address(this), token.operatorSlotSalt(), address(this))));
+    function test_operator_slot_derivation(address sender, address spender) public view {
+        bytes32 slot = token.getOperatorSlot(sender, spender);
+        assertEq(slot, keccak256(abi.encodePacked(sender, token.operatorSlotSalt(), spender)));
     }
 
     function test_burnFrom_withApproval(address sender, uint256 id, uint256 mintAmount, uint256 transferAmount)
