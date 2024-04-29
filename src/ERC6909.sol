@@ -170,20 +170,22 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function _getOperatorSlot(address owner, address spender) internal pure returns (bytes32 operatorSlot) {
+        // operatorSlot = keccak256(abi.encodePacked(owner, OPERATORS_SLOT, spender))
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x14, spender) // [0x20, 0x34)
-            mstore(0x00, or(shl(96, owner), OPERATORS_SLOT)) // [0x00, 0x20)
-            operatorSlot := keccak256(0x00, 0x34)
+            mstore(0x00, or(shl(8, owner), OPERATORS_SLOT)) // [0x0b, 0x20)
+            operatorSlot := keccak256(0x0b, 0x29)
         }
     }
 
     function _getBalanceSlot(address owner, uint256 id) internal pure returns (bytes32 balanceSlot) {
+        // balanceSlot = keccak256(abi.encodePacked(owner, BALANCES_SLOT, id))
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x20, id)
-            mstore(0x00, or(shl(96, owner), BALANCES_SLOT))
-            balanceSlot := keccak256(0x00, 0x40)
+            mstore(0x00, or(shl(8, owner), BALANCES_SLOT))
+            balanceSlot := keccak256(0x0b, 0x35)
         }
     }
 
@@ -192,14 +194,15 @@ abstract contract ERC6909 is IERC6909Claims {
         pure
         returns (bytes32 allowanceSlot)
     {
+        // allowanceSlot = keccak256(abi.encodePacked(owner, ALLOWANCES_SLOT, spender, id))
         /// @solidity memory-safe-assembly
         assembly {
             let pointer := mload(0x40)
             mstore(0x34, id) // [0x34, 0x54)
             mstore(0x14, spender) // [0x20, 0x34)
-            mstore(0x00, or(shl(96, owner), ALLOWANCES_SLOT)) // [0x00, 0x20)
+            mstore(0x00, or(shl(8, owner), ALLOWANCES_SLOT)) // [0x0b, 0x20)
 
-            allowanceSlot := keccak256(0x00, 0x54)
+            allowanceSlot := keccak256(0x0b, 0x49)
 
             mstore(0x40, pointer)
         }
