@@ -3,8 +3,12 @@ pragma solidity ^0.8.20;
 
 import {BitMath} from "./BitMath.sol";
 
+/// @dev Uses int16 for keys since ticks are represented as int24 and there are 256 (2^8) values
+/// per word. On its own the struct is just a storage pointer, the library gives mapping
+/// capabilities.
+/// @notice Stores a packed mapping of tick index to its initialized state
 struct TickBitmap {
-    /// @dev Ensures the struct isn't empty and is assigned a slot by the compiler.
+    // Ensures the struct isn't empty and is assigned a slot by the compiler.
     uint256 __placeholder;
 }
 
@@ -12,7 +16,7 @@ using TickBitmapLibrary for TickBitmap global;
 
 /// @title Packed tick initialized state library
 /// @notice Stores a packed mapping of tick index to its initialized state
-/// @dev The mapping uses int16 for keys since ticks are represented as int24 and there are 256 (2^8) values per word.
+/// @dev Implementation and core utility methods for `TickBitmap`.
 library TickBitmapLibrary {
     /// @notice Thrown when the tick is not enumerated by the tick spacing
     /// @param tick the invalid tick
