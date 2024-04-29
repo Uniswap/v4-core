@@ -5,6 +5,7 @@ import {Pool} from "../libraries/Pool.sol";
 
 contract TickOverflowSafetyEchidnaTest {
     using Pool for Pool.State;
+    using Pool for Pool.TickInfoMap;
 
     int24 private constant MIN_TICK = -16;
     int24 private constant MAX_TICK = 16;
@@ -43,19 +44,19 @@ contract TickOverflowSafetyEchidnaTest {
 
         if (flippedLower) {
             if (liquidityDelta < 0) {
-                assert(pool.ticks[tickLower].liquidityGross == 0);
+                assert(pool.ticks.get(tickLower).inner.liquidityGross == 0);
                 pool.clearTick(tickLower);
             } else {
-                assert(pool.ticks[tickLower].liquidityGross > 0);
+                assert(pool.ticks.get(tickLower).inner.liquidityGross > 0);
             }
         }
 
         if (flippedUpper) {
             if (liquidityDelta < 0) {
-                assert(pool.ticks[tickUpper].liquidityGross == 0);
+                assert(pool.ticks.get(tickUpper).inner.liquidityGross == 0);
                 pool.clearTick(tickUpper);
             } else {
-                assert(pool.ticks[tickUpper].liquidityGross > 0);
+                assert(pool.ticks.get(tickUpper).inner.liquidityGross > 0);
             }
         }
 
@@ -74,12 +75,12 @@ contract TickOverflowSafetyEchidnaTest {
         require(target < MAX_TICK);
         while (tick != target) {
             if (tick < target) {
-                if (pool.ticks[tick + 1].liquidityGross > 0) {
+                if (pool.ticks.get(tick + 1).inner.liquidityGross > 0) {
                     pool.crossTick(tick + 1, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 }
                 tick++;
             } else {
-                if (pool.ticks[tick].liquidityGross > 0) {
+                if (pool.ticks.get(tick).inner.liquidityGross > 0) {
                     pool.crossTick(tick, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                 }
                 tick--;

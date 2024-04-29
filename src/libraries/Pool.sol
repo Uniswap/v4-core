@@ -19,6 +19,7 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Pool for State;
+    using Pool for TickInfoMap;
     using ProtocolFeeLibrary for uint24;
 
     /// @notice Thrown when tickLower is not below tickUpper
@@ -91,13 +92,24 @@ library Pool {
         uint256 feeGrowthOutside1X128;
     }
 
+    // Wrapper ensures that we can use operations like assignment and deletion on structs returned
+    // from the custom mapping.
+    struct TickInfoWrapper {
+        TickInfo inner;
+    }
+
+    /// @dev Storage placeholder for `int24 tick => TickInfo` mapping.
+    struct TickInfoMap {
+        uint256 __placeholder;
+    }
+
     /// @dev The state of a pool
     struct State {
         Slot0 slot0;
         uint256 feeGrowthGlobal0X128;
         uint256 feeGrowthGlobal1X128;
         uint128 liquidity;
-        mapping(int24 => TickInfo) ticks;
+        TickInfoMap ticks;
         TickBitmap tickBitmap;
         mapping(bytes32 => Position.Info) positions;
     }
@@ -495,8 +507,8 @@ library Pool {
         view
         returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128)
     {
-        TickInfo storage lower = self.ticks[tickLower];
-        TickInfo storage upper = self.ticks[tickUpper];
+        TickInfo storage lower = self.ticks.get(tickLower).inner;
+        TickInfo storage upper = self.ticks.get(tickUpper).inner;
         int24 tickCurrent = self.slot0.tick;
 
         unchecked {
@@ -526,7 +538,7 @@ library Pool {
         internal
         returns (bool flipped, uint128 liquidityGrossAfter)
     {
-        TickInfo storage info = self.ticks[tick];
+        TickInfo storage info = self.ticks.get(tick).inner;
 
         uint128 liquidityGrossBefore;
         int128 liquidityNetBefore;
@@ -592,7 +604,7 @@ library Pool {
     /// @param self The mapping containing all initialized tick information for initialized ticks
     /// @param tick The tick that will be cleared
     function clearTick(State storage self, int24 tick) internal {
-        delete self.ticks[tick];
+        delete self.ticks.get(tick).inner;
     }
 
     /// @notice Transitions to next tick as needed by price movement
@@ -606,10 +618,48 @@ library Pool {
         returns (int128 liquidityNet)
     {
         unchecked {
-            TickInfo storage info = self.ticks[tick];
+            TickInfo storage info = self.ticks.get(tick).inner;
             info.feeGrowthOutside0X128 = feeGrowthGlobal0X128 - info.feeGrowthOutside0X128;
             info.feeGrowthOutside1X128 = feeGrowthGlobal1X128 - info.feeGrowthOutside1X128;
             liquidityNet = info.liquidityNet;
+        }
+    }
+
+    struct _SlotMarker {
+        // Do not change dataype, must fill a full word so that the marker's size is 1.
+        uint256 ___placeholder;
+    }
+
+    // Solidity will assign the markers as well the actual `TickInfo` struct a relative storage slot
+    // based on their size, we know the size of the markers is exactly 1.
+    struct _SlotDelimited {
+        _SlotMarker start;
+        TickInfo s;
+        _SlotMarker end;
+    }
+
+    function get(TickInfoMap storage ticks, int24 tick) internal view returns (TickInfoWrapper storage info) {
+        // Determine the struct size of `TickInfo` without hardcoding the value (compiler will
+        // optimize this down to a constant). This removes the footgun of having the code become
+        // vulnerable if you add/remove fields from the struct but forget to update the "magic
+        // constant".
+        _SlotDelimited storage delimiter;
+        assembly {
+            delimiter.slot := 0
+        }
+        _SlotMarker storage start = delimiter.start;
+        _SlotMarker storage end = delimiter.end;
+        uint256 tickInfoStructSize;
+        assembly {
+            tickInfoStructSize := sub(sub(end.slot, start.slot), 1)
+        }
+        // Compute the struct's slot.
+        assembly ("memory-safe") {
+            mstore(0, ticks.slot)
+            let baseSlot := keccak256(0, 32)
+            // Multiplication can't overflow because `tick` is 24-bit, `tickInfoStructSize` at
+            // most 16-bit and an EVM word holds 256 bits.
+            info.slot := add(baseSlot, mul(tick, tickInfoStructSize))
         }
     }
 }
