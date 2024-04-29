@@ -53,42 +53,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function getSlot0(PoolId id)
-        external
-        view
-        override
-        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
-    {
-        Pool.Slot0 memory slot0 = pools[id].slot0;
-
-        return (slot0.sqrtPriceX96, slot0.tick, slot0.protocolFee, slot0.lpFee);
-    }
-
-    /// @inheritdoc IPoolManager
-    function getLiquidity(PoolId id) external view override returns (uint128 liquidity) {
-        return pools[id].liquidity;
-    }
-
-    /// @inheritdoc IPoolManager
-    function getLiquidity(PoolId id, address _owner, int24 tickLower, int24 tickUpper)
-        external
-        view
-        override
-        returns (uint128 liquidity)
-    {
-        return pools[id].positions.get(_owner, tickLower, tickUpper).liquidity;
-    }
-
-    function getPosition(PoolId id, address _owner, int24 tickLower, int24 tickUpper)
-        external
-        view
-        override
-        returns (Position.Info memory position)
-    {
-        return pools[id].positions.get(_owner, tickLower, tickUpper);
-    }
-
-    /// @inheritdoc IPoolManager
     function currencyDelta(address caller, Currency currency) external view returns (int256) {
         return currency.getDelta(caller);
     }

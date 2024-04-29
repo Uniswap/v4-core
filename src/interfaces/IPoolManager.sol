@@ -92,21 +92,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
-    /// @notice Get the current value in slot0 of the given pool
-    function getSlot0(PoolId id)
-        external
-        view
-        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee);
-
-    /// @notice Get the current value of liquidity of the given pool
-    function getLiquidity(PoolId id) external view returns (uint128 liquidity);
-
-    /// @notice Get the current value of liquidity for the specified pool and position
-    function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper)
-        external
-        view
-        returns (uint128 liquidity);
-
     /// @notice Getter for TickInfo for the given poolId and tick
     function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory);
 
@@ -118,12 +103,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
         external
         view
         returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1);
-
-    /// @notice Get the position struct for a specified pool and position
-    function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
-        external
-        view
-        returns (Position.Info memory position);
 
     /// @notice Writes the current ERC20 balance of the specified currency to transient storage
     /// This is used to checkpoint balances for the manager and derive deltas for the caller.

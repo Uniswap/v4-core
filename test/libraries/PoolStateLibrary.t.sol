@@ -53,22 +53,15 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (, int24 currentTick,,) = manager.getSlot0(poolId);
-        assertEq(currentTick, -139);
-
         (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee) =
             PoolStateLibrary.getSlot0(manager, poolId);
+        assertEq(tick, -139);
 
-        (uint160 sqrtPriceX96_, int24 tick_, uint24 protocolFee_, uint24 swapFee_) = manager.getSlot0(poolId);
-
+        // magic number verified against a native getter
         assertEq(sqrtPriceX96, 78680104762184586858280382455);
-        assertEq(sqrtPriceX96, sqrtPriceX96_);
-        assertEq(tick, tick_);
         assertEq(tick, -139);
         assertEq(protocolFee, 0); // tested in protocol fee tests
-        assertEq(protocolFee, protocolFee_);
         assertEq(swapFee, 3000);
-        assertEq(swapFee, swapFee_);
     }
 
     function test_getTickLiquidity() public {
@@ -277,8 +270,8 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 10 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (, int24 currentTick,,) = manager.getSlot0(poolId);
-        assertNotEq(currentTick, 0);
+        (, int24 currentTick,,) = PoolStateLibrary.getSlot0(manager, poolId);
+        assertNotEq(currentTick, -139);
 
         // poke the LP so that fees are updated
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 0), ZERO_BYTES);
@@ -343,7 +336,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (, int24 currentTick,,) = manager.getSlot0(poolId);
+        (, int24 currentTick,,) = PoolStateLibrary.getSlot0(manager, poolId);
         assertEq(currentTick, -139);
 
         int24 tick = -60;
@@ -374,7 +367,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (, int24 currentTick,,) = manager.getSlot0(poolId);
+        (, int24 currentTick,,) = PoolStateLibrary.getSlot0(manager, poolId);
         assertEq(currentTick, -139);
 
         int24 tick = -60;
@@ -408,7 +401,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (, int24 currentTick,,) = manager.getSlot0(poolId);
+        (, int24 currentTick,,) = PoolStateLibrary.getSlot0(manager, poolId);
         assertEq(currentTick, -139);
 
         // calculated live

@@ -40,6 +40,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using LPFeeLibrary for uint24;
     using CurrencyLibrary for Currency;
     using ProtocolFeeLibrary for uint24;
+    using PoolStateLibrary for IPoolManager;
 
     event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);
@@ -1216,10 +1217,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     // }
 
     function test_getPosition() public {
-        Position.Info memory managerPosition =
-            manager.getPosition(key.toId(), address(modifyLiquidityRouter), -120, 120);
+        bytes32 positionId = keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-120), int24(120)));
+        (uint128 liquidity,,) = manager.getPositionInfo(key.toId(), positionId);
+
         assert(LIQ_PARAMS.liquidityDelta > 0);
-        assertEq(managerPosition.liquidity, uint128(uint256(LIQ_PARAMS.liquidityDelta)));
+        assertEq(liquidity, uint128(uint256(LIQ_PARAMS.liquidityDelta)));
     }
 
     function supportsInterface(bytes4) external pure returns (bool) {

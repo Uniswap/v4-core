@@ -29,19 +29,19 @@ library PoolStateLibrary {
     uint256 public constant POSITION_INFO_OFFSET = 6;
 
     /**
-     * @notice Get Slot0 of the pool: sqrtPriceX96, tick, protocolFee, swapFee
+     * @notice Get Slot0 of the pool: sqrtPriceX96, tick, protocolFee, lpFee
      * @dev Corresponds to pools[poolId].slot0
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
      * @return sqrtPriceX96 The square root of the price of the pool, in Q96 precision.
      * @return tick The current tick of the pool.
      * @return protocolFee The protocol fee of the pool.
-     * @return swapFee The swap fee of the pool.
+     * @return lpFee The swap fee of the pool.
      */
     function getSlot0(IPoolManager manager, PoolId poolId)
         internal
         view
-        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee)
+        returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
     {
         // slot key of Pool.State value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
@@ -59,7 +59,7 @@ library PoolStateLibrary {
             // next 24 bits of data
             protocolFee := and(shr(184, data), 0xFFFFFF)
             // last 24 bits of data
-            swapFee := and(shr(208, data), 0xFFFFFF)
+            lpFee := and(shr(208, data), 0xFFFFFF)
         }
     }
 
