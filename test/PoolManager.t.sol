@@ -750,7 +750,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         vm.prank(address(feeController));
         manager.setProtocolFee(key, protocolFee);
 
-        (,, uint24 slot0ProtocolFee,) = PoolStateLibrary.getSlot0(manager, key.toId());
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, protocolFee);
 
         // Add liquidity - Fees dont accrue for positive liquidity delta.
