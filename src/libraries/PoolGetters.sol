@@ -9,7 +9,7 @@ library PoolGetters {
     }
 
     function getPoolBitmapInfo(Pool.State storage pool, int16 word) internal view returns (uint256 tickBitmap) {
-        return pool.tickBitmap[word];
+        return pool.tickBitmap.get(word);
     }
 
     function getFeeGrowthGlobals(Pool.State storage pool)

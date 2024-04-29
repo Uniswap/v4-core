@@ -7,13 +7,11 @@ import {GasSnapshot} from "lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {TickBitmap} from "src/libraries/TickBitmap.sol";
 
 contract TickBitmapTest is Test, GasSnapshot {
-    using TickBitmap for mapping(int16 => uint256);
-
     int24 constant INITIALIZED_TICK = 70;
     int24 constant TICK_IN_UNINITIALZIED_WORD = 10000;
     int24 constant SOLO_INITIALIZED_TICK_IN_WORD = -10000;
 
-    mapping(int16 => uint256) public bitmap;
+    TickBitmap public bitmap;
 
     function setUp() public {
         // set dirty slots beforehand for certain gas tests

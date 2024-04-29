@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
+import {TickBitmap} from "../src/libraries/TickBitmap.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {PoolGetters} from "../src/libraries/PoolGetters.sol";
 
@@ -30,8 +31,14 @@ contract TickTest is Test, GasSnapshot {
         pool.ticks[tick] = info;
     }
 
-    function setTickBitmap(int16 word, uint256 bitmap) internal {
-        pool.tickBitmap[word] = bitmap;
+    function setTickBitmap(int16 wordPos, uint256 word) internal {
+        TickBitmap storage tickBitmap = pool.tickBitmap;
+        assembly ("memory-safe") {
+            // Compute the word's slot.
+            mstore(0, tickBitmap.slot)
+            let slot := add(keccak256(0, 32), wordPos)
+            sstore(slot, word)
+        }
     }
 
     function getFeeGrowthInside(

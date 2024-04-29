@@ -3,10 +3,17 @@ pragma solidity ^0.8.20;
 
 import {BitMath} from "./BitMath.sol";
 
+struct TickBitmap {
+    /// @dev Ensures the struct isn't empty and is assigned a slot by the compiler.
+    uint256 __placeholder;
+}
+
+using TickBitmapLibrary for TickBitmap global;
+
 /// @title Packed tick initialized state library
 /// @notice Stores a packed mapping of tick index to its initialized state
 /// @dev The mapping uses int16 for keys since ticks are represented as int24 and there are 256 (2^8) values per word.
-library TickBitmap {
+library TickBitmapLibrary {
     /// @notice Thrown when the tick is not enumerated by the tick spacing
     /// @param tick the invalid tick
     /// @param tickSpacing The tick spacing of the pool
@@ -23,16 +30,36 @@ library TickBitmap {
         }
     }
 
+    /// @notice Retrieves a word from the bitmap.
+    /// @param self The mapping in which to flip the tick.
+    /// @param wordPos The offset in the mapping from which to retrieve the word.
+    /// @return word The bitmap word.
+    function get(TickBitmap storage self, int16 wordPos) internal view returns (uint256 word) {
+        assembly ("memory-safe") {
+            // Compute the word's slot.
+            mstore(0, self.slot)
+            let slot := add(keccak256(0, 32), wordPos)
+            word := sload(slot)
+        }
+    }
+
     /// @notice Flips the initialized state for a given tick from false to true, or vice versa
     /// @param self The mapping in which to flip the tick
     /// @param tick The tick to flip
     /// @param tickSpacing The spacing between usable ticks
-    function flipTick(mapping(int16 => uint256) storage self, int24 tick, int24 tickSpacing) internal {
+    function flipTick(TickBitmap storage self, int24 tick, int24 tickSpacing) internal {
         unchecked {
             if (tick % tickSpacing != 0) revert TickMisaligned(tick, tickSpacing); // ensure that the tick is spaced
             (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
             uint256 mask = 1 << bitPos;
-            self[wordPos] ^= mask;
+            assembly ("memory-safe") {
+                // Compute the word's slot.
+                mstore(0x00, self.slot)
+                let slot := add(keccak256(0x00, 0x20), wordPos)
+                // Update the word using the mask.
+                let word := sload(slot)
+                sstore(slot, xor(word, mask))
+            }
         }
     }
 
@@ -44,12 +71,11 @@ library TickBitmap {
     /// @param lte Whether to search for the next initialized tick to the left (less than or equal to the starting tick)
     /// @return next The next initialized or uninitialized tick up to 256 ticks away from the current tick
     /// @return initialized Whether the next tick is initialized, as the function only searches within up to 256 ticks
-    function nextInitializedTickWithinOneWord(
-        mapping(int16 => uint256) storage self,
-        int24 tick,
-        int24 tickSpacing,
-        bool lte
-    ) internal view returns (int24 next, bool initialized) {
+    function nextInitializedTickWithinOneWord(TickBitmap storage self, int24 tick, int24 tickSpacing, bool lte)
+        internal
+        view
+        returns (int24 next, bool initialized)
+    {
         unchecked {
             int24 compressed = tick / tickSpacing;
             if (tick < 0 && tick % tickSpacing != 0) compressed--; // round towards negative infinity
@@ -58,7 +84,7 @@ library TickBitmap {
                 (int16 wordPos, uint8 bitPos) = position(compressed);
                 // all the 1s at or to the right of the current bitPos
                 uint256 mask = (1 << bitPos) - 1 + (1 << bitPos);
-                uint256 masked = self[wordPos] & mask;
+                uint256 masked = self.get(wordPos) & mask;
 
                 // if there are no initialized ticks to the right of or at the current tick, return rightmost in the word
                 initialized = masked != 0;
@@ -71,7 +97,7 @@ library TickBitmap {
                 (int16 wordPos, uint8 bitPos) = position(compressed + 1);
                 // all the 1s at or to the left of the bitPos
                 uint256 mask = ~((1 << bitPos) - 1);
-                uint256 masked = self[wordPos] & mask;
+                uint256 masked = self.get(wordPos) & mask;
 
                 // if there are no initialized ticks to the left of the current tick, return leftmost in the word
                 initialized = masked != 0;

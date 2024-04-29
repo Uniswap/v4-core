@@ -16,7 +16,6 @@ import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 
 library Pool {
     using SafeCast for *;
-    using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Pool for State;
@@ -99,7 +98,7 @@ library Pool {
         uint256 feeGrowthGlobal1X128;
         uint128 liquidity;
         mapping(int24 => TickInfo) ticks;
-        mapping(int16 => uint256) tickBitmap;
+        TickBitmap tickBitmap;
         mapping(bytes32 => Position.Info) positions;
     }
 
