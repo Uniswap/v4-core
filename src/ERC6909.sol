@@ -136,22 +136,22 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function _spendAllowance(address sender, uint256 id, uint256 amount) internal {
-        if (msg.sender != sender && !isOperator(sender, msg.sender)) {
-            bytes32 allowanceSlot = _getAllowanceSlot(sender, msg.sender, id);
-            uint256 allowed;
+        if (msg.sender == sender || isOperator(sender, msg.sender)) return;
+        
+        bytes32 allowanceSlot = _getAllowanceSlot(sender, msg.sender, id);
+        uint256 allowed;
+        /// @solidity memory-safe-assembly
+        assembly {
+            allowed := sload(allowanceSlot)
+        }
+
+        if (allowed != type(uint256).max) {
+            allowed -= amount;
             /// @solidity memory-safe-assembly
             assembly {
-                allowed := sload(allowanceSlot)
+                sstore(allowanceSlot, allowed)
             }
-
-            if (allowed != type(uint256).max) {
-                allowed -= amount;
-                /// @solidity memory-safe-assembly
-                assembly {
-                    sstore(allowanceSlot, allowed)
-                }
-            }
-        }        
+        }      
     }
 
     function _decreaseBalanceOf(address owner, uint256 id, uint256 value) internal {
