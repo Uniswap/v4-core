@@ -22,9 +22,9 @@ abstract contract ERC6909 is IERC6909Claims {
                              ERC6909 STORAGE SLOTS
     //////////////////////////////////////////////////////////////*/
 
-    bytes1 private constant BALANCES_SLOT = 0x10; // bytes1(bytes32(keccak256("BalanceSlot")))
-    bytes1 private constant ALLOWANCES_SLOT = 0x07; // bytes1(bytes32(keccak256("AllowanceSlot")))
-    bytes1 private constant OPERATORS_SLOT = 0xc2; // bytes1(bytes32(keccak256("OperatorsSlot")))
+    uint8 private constant BALANCES_SLOT = 0x10; // bytes1(bytes32(keccak256("BalanceSlot")))
+    uint8 private constant ALLOWANCES_SLOT = 0x07; // bytes1(bytes32(keccak256("AllowanceSlot")))
+    uint8 private constant OPERATORS_SLOT = 0xc2; // bytes1(bytes32(keccak256("OperatorsSlot")))
 
     /*//////////////////////////////////////////////////////////////
                               ERC6909 GETTERS
@@ -173,7 +173,7 @@ abstract contract ERC6909 is IERC6909Claims {
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x20, spender)
-            mstore(0x00, or(owner, OPERATORS_SLOT))
+            mstore(0x00, or(shl(96, owner), OPERATORS_SLOT))
             operatorSlot := keccak256(0x00, 0x40)
         }
     }
@@ -182,7 +182,7 @@ abstract contract ERC6909 is IERC6909Claims {
         /// @solidity memory-safe-assembly
         assembly {
             mstore(0x20, id)
-            mstore(0x00, or(owner, BALANCES_SLOT))
+            mstore(0x00, or(shl(96, owner), BALANCES_SLOT))
             balanceSlot := keccak256(0x00, 0x40)
         }
     }
@@ -197,7 +197,7 @@ abstract contract ERC6909 is IERC6909Claims {
             let pointer := mload(0x40)
             mstore(0x40, id)
             mstore(0x20, spender)
-            mstore(0x00, or(owner, ALLOWANCES_SLOT))
+            mstore(0x00, or(shl(96, owner), ALLOWANCES_SLOT))
 
             allowanceSlot := keccak256(0x00, 0x60)
 
