@@ -68,10 +68,7 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function transferFrom(address sender, address receiver, uint256 id, uint256 amount) public virtual returns (bool) {
-        if (msg.sender != sender && !isOperator(sender, msg.sender)) {
-            uint256 allowed = allowance(sender, msg.sender, id);
-            if (allowed != type(uint256).max) _setAllowance(sender, msg.sender, id, allowed - amount);
-        }
+        _spendAllowance(sender, id, amount);
 
         _decreaseBalanceOf(sender, id, amount);
         _increaseBalanceOf(receiver, id, amount);
@@ -129,12 +126,32 @@ abstract contract ERC6909 is IERC6909Claims {
     /*//////////////////////////////////////////////////////////////
                         INTERNAL STORAGE LOGIC
     //////////////////////////////////////////////////////////////*/
+
     function _setAllowance(address owner, address spender, uint256 id, uint256 value) internal {
         bytes32 allowanceSlot = _getAllowanceSlot(owner, spender, id);
         /// @solidity memory-safe-assembly
         assembly {
             sstore(allowanceSlot, value)
         }
+    }
+
+    function _spendAllowance(address sender, uint256 id, uint256 amount) internal {
+        if (msg.sender != sender && !isOperator(sender, msg.sender)) {
+            bytes32 allowanceSlot = _getAllowanceSlot(sender, msg.sender, id);
+            uint256 allowed;
+            /// @solidity memory-safe-assembly
+            assembly {
+                allowed := sload(allowanceSlot)
+            }
+
+            if (allowed != type(uint256).max) {
+                allowed -= amount;
+                /// @solidity memory-safe-assembly
+                assembly {
+                    sstore(allowanceSlot, allowed)
+                }
+            }
+        }        
     }
 
     function _decreaseBalanceOf(address owner, uint256 id, uint256 value) internal {
