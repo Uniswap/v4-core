@@ -42,12 +42,12 @@ The fee values, or callback logic, may be updated by the hooks dependent on thei
 
 ## Repository Structure
 
-All contracts are held within the `v4-core/contracts` folder.
+All contracts are held within the `v4-core/src` folder.
 
-Note that helper contracts used by tests are held in the `v4-core/contracts/test` subfolder within the contracts folder. Any new test helper contracts should be added here, but all foundry tests are in the `v4-core/test/foundry-tests` folder.
+Note that helper contracts used by tests are held in the `v4-core/src/test` subfolder within the `src` folder. Any new test helper contracts should be added here, but all foundry tests are in the `v4-core/test` folder.
 
 ```markdown
-contracts/
+src/
 ----interfaces/
     | IPoolManager.sol
     | ...
@@ -56,10 +56,12 @@ contracts/
     | Pool.sol
     | ...
 ----test
+----PoolManager.sol
 ...
-PoolManager.sol
 test/
-----foundry-tests/
+----libraries/
+    | Position.t.sol
+    | Pool.t.sol
 ```
 
 ## Local deployment and Usage
