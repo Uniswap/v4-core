@@ -12,4 +12,6 @@ interface IExtsload {
     /// @param nSlots Number of slots to load into return value
     /// @return value The value of the sload-ed slots concatenated as dynamic bytes
     function extsload(bytes32 slot, uint256 nSlots) external view returns (bytes memory value);
+
+    function extsload(bytes32[] calldata slots) external view returns (bytes32[] memory value);
 }

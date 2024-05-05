@@ -46,7 +46,10 @@ library PoolStateLibrary {
         // slot key of Pool.State value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
-        bytes32 data = manager.extsload(stateSlot);
+        bytes32[] memory slots = new bytes32[](1);
+        slots[0] = stateSlot;
+        bytes32[] memory result = manager.extsload(slots);
+        bytes32 data = result[0];
 
         //   24 bits  |24bits|24bits      |24 bits|160 bits
         // 0x000000   |000bb8|000000      |ffff75 |0000000000000000fe3aa841ba359daa0ea9eff7
@@ -126,7 +129,11 @@ library PoolStateLibrary {
         // slot key of the tick key: `pools[poolId].ticks[tick]
         bytes32 slot = keccak256(abi.encodePacked(int256(tick), ticksMapping));
 
-        bytes32 value = manager.extsload(slot);
+        // bytes32 value = manager.extsload(slot);
+        bytes32[] memory slots = new bytes32[](1);
+        slots[0] = slot;
+        bytes32[] memory result = manager.extsload(slots);
+        bytes32 value = result[0];
         assembly {
             liquidityNet := shr(128, value)
             liquidityGross := and(value, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
