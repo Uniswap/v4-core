@@ -79,21 +79,21 @@ contract TickBitmapTest is Test, GasSnapshot {
         assertEq(isInitialized(-229), false);
     }
 
-    function test_flipTick_gasCostOfFlippingFirstTickInWordToInitialized() public {
-        snapStart("flipTick_gasCostOfFlippingFirstTickInWordToInitialized");
+    function test_flipTick_flippingFirstTickInWordToInitialized_gas() public {
+        snapStart("flipTick_flippingFirstTickInWordToInitialized");
         flipTick(TICK_IN_UNINITIALZIED_WORD);
         snapEnd();
     }
 
-    function test_flipTick_gasCostOfFlippingSecondTickInWordToInitialized() public {
-        snapStart("flipTick_gasCostOfFlippingSecondTickInWordToInitialized");
+    function test_flipTick_flippingSecondTickInWordToInitialized_gas() public {
+        snapStart("flipTick_flippingSecondTickInWordToInitialized");
         flipTick(INITIALIZED_TICK + 1);
         snapEnd();
     }
 
-    function test_flipTick_gasCostOfFlippingATickThatResultsInDeletingAWord() public {
-        snapStart("flipTick_gasCostOfFlippingATickThatResultsInDeletingAWord");
+    function test_flipTick_flippingATickThatResultsInDeletingAWord_gas() public {
         flipTick(SOLO_INITIALIZED_TICK_IN_WORD);
+        snapStart("flipTick_flippingATickThatResultsInDeletingAWord");
         snapEnd();
     }
 
@@ -164,20 +164,20 @@ contract TickBitmapTest is Test, GasSnapshot {
         assertEq(initialized, false);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_gasCostOnBoundary() public {
-        snapStart("nextInitializedTickWithinOneWord_lteFalse_gasCostOnBoundary");
+    function test_nextInitializedTickWithinOneWord_lteFalse_onBoundary_gas() public {
         bitmap.nextInitializedTickWithinOneWord(255, 1, false);
+        snapStart("nextInitializedTickWithinOneWord_lteFalse_onBoundary");
         snapEnd();
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_gasCostJustBelowBoundary() public {
-        snapStart("nextInitializedTickWithinOneWord_lteFalse_gasCostJustBelowBoundary");
+    function test_nextInitializedTickWithinOneWord_lteFalse_justBelowBoundary_gas() public {
+        snapStart("nextInitializedTickWithinOneWord_lteFalse_justBelowBoundary");
         bitmap.nextInitializedTickWithinOneWord(254, 1, false);
         snapEnd();
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_gasCostForEntireWord() public {
-        snapStart("nextInitializedTickWithinOneWord_lteFalse_gasCostForEntireWord");
+    function test_nextInitializedTickWithinOneWord_lteFalse_forEntireWord_gas() public {
+        snapStart("nextInitializedTickWithinOneWord_lteFalse_forEntireWord");
         bitmap.nextInitializedTickWithinOneWord(768, 1, false);
         snapEnd();
     }
@@ -239,20 +239,20 @@ contract TickBitmapTest is Test, GasSnapshot {
         assertEq(initialized, true);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_gasCostOnBoundary() public {
-        snapStart("nextInitializedTickWithinOneWord_lteTrue_gasCostOnBoundary");
+    function test_nextInitializedTickWithinOneWord_lteTrue_onBoundary_gas() public {
+        snapStart("nextInitializedTickWithinOneWord_lteTrue_onBoundary_gas");
         bitmap.nextInitializedTickWithinOneWord(256, 1, true);
         snapEnd();
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_gasCostJustBelowBoundary() public {
-        snapStart("nextInitializedTickWithinOneWord_lteTrue_gasCostJustBelowBoundary");
+    function test_nextInitializedTickWithinOneWord_lteTrue_justBelowBoundary_gas() public {
+        snapStart("nextInitializedTickWithinOneWord_lteTrue_justBelowBoundary");
         bitmap.nextInitializedTickWithinOneWord(255, 1, true);
         snapEnd();
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_gasCostForEntireWord() public {
-        snapStart("nextInitializedTickWithinOneWord_lteTrue_gasCostForEntireWord");
+    function test_nextInitializedTickWithinOneWord_lteTrue_forEntireWord_gas() public {
+        snapStart("nextInitializedTickWithinOneWord_lteTrue_forEntireWord");
         bitmap.nextInitializedTickWithinOneWord(1024, 1, true);
         snapEnd();
     }
