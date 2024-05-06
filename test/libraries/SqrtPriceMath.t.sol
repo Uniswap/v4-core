@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {GasSnapshot} from "lib/forge-gas-snapshot/src/GasSnapshot.sol";
-import {SqrtPriceMath} from "src/libraries/SqrtPriceMath.sol";
-import {Constants} from "test/utils/Constants.sol";
+import {SqrtPriceMath} from "../../src/libraries/SqrtPriceMath.sol";
+import {Constants} from "../../test/utils/Constants.sol";
 
 contract SqrtPriceMathTestTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromInput_revertsIfPriceIsZero() public {
         vm.expectRevert(SqrtPriceMath.InvalidPriceOrLiquidity.selector);
-        SqrtPriceMath.getNextSqrtPriceFromInput(0, 0, 0.1 ether, false);
+        SqrtPriceMath.getNextSqrtPriceFromInput(0, 1, 0.1 ether, false);
     }
 
     function test_getNextSqrtPriceFromInput_revertsIfLiquidityIsZero() public {
@@ -63,7 +62,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
 
         uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, uint128(1 ether), 0.1 ether, false);
 
-        assertEq(sqrtQ, 87150978765690771352898345369);
+        assertEq(sqrtQ, Constants.SQRT_RATIO_121_100);
     }
 
     function test_getNextSqrtPriceFromInput_inputAmountOf0_1Currency0() public {
@@ -110,7 +109,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
 
     function test_getNextSqrtPriceFromOutput_revertsIfPriceIsZero() public {
         vm.expectRevert(SqrtPriceMath.InvalidPriceOrLiquidity.selector);
-        SqrtPriceMath.getNextSqrtPriceFromOutput(0, 0, 0.1 ether, false);
+        SqrtPriceMath.getNextSqrtPriceFromOutput(0, 1, 0.1 ether, false);
     }
 
     function test_getNextSqrtPriceFromOutput_revertsIfLiquidityIsZero() public {
@@ -191,7 +190,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(sqrtP, sqrtQ);
     }
 
-    function test_getNextSqrtPriceFromOutput_outputAmountOf0_1Currency1() public {
+    function test_getNextSqrtPriceFromOutput_outputAmountOf0_1Currency0() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
         uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, false);
@@ -199,7 +198,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(sqrtQ, 88031291682515930659493278152);
     }
 
-    function test_getNextSqrtPriceFromOutput_outputAmountOf0_1Currency0() public {
+    function test_getNextSqrtPriceFromOutput_outputAmountOf0_1Currency1() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
         uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtP, uint128(1 ether), 0.1 ether, true);

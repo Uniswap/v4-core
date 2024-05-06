@@ -127,7 +127,7 @@ library SqrtPriceMath {
     /// @param sqrtPX96 The starting price before accounting for the output amount
     /// @param liquidity The amount of usable liquidity
     /// @param amountOut How much of currency0, or currency1, is being swapped out
-    /// @param zeroForOne Whether the amount out is currency0 or currency1
+    /// @param zeroForOne Whether the amount out is currency1 or currency0
     /// @return sqrtQX96 The price after removing the output amount of currency0 or currency1
     function getNextSqrtPriceFromOutput(uint160 sqrtPX96, uint128 liquidity, uint256 amountOut, bool zeroForOne)
         internal
