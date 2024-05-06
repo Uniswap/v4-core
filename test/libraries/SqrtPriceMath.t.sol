@@ -27,12 +27,15 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, amountIn, false);
     }
 
+    //
     function test_getNextSqrtPriceFromInput_anyInputAmountCannotUnderflowThePrice() public {
         uint160 price = 1;
         uint128 liquidity = 1;
         uint256 amountIn = 2 ** 255;
 
-        assertEq(SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, amountIn, true), 1);
+        uint160 sqrtQ = SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, amountIn, true);
+
+        assertEq(sqrtQ, 1);
     }
 
     function test_getNextSqrtPriceFromInput_returnsInputPriceIfAmountInIsZeroAndZeroForOneEqualsTrue() public {
@@ -49,6 +52,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(SqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, 0, false), price);
     }
 
+    //
     function test_getNextSqrtPriceFromInput_returnsTheMinimumPriceForMaxInputs() public {
         uint160 sqrtP = Constants.MAX_UINT160 - 1;
         uint128 liquidity = Constants.MAX_UINT128;
@@ -65,6 +69,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(sqrtQ, Constants.SQRT_RATIO_121_100);
     }
 
+    //
     function test_getNextSqrtPriceFromInput_inputAmountOf0_1Currency0() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
@@ -73,6 +78,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(sqrtQ, 72025602285694852357767227579);
     }
 
+    //
     function test_getNextSqrtPriceFromInput_amountInGreaterThanType_uint96_maxAndZeroForOneEqualsTrue() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
@@ -83,6 +89,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(sqrtQ, 624999999995069620);
     }
 
+    //
     function test_getNextSqrtPriceFromInput_canReturn1WithEnoughAmountInAndZeroForOneEqualsTrue() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
@@ -91,6 +98,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(sqrtQ, 1);
     }
 
+    //
     function test_getNextSqrtPriceFromInput_zeroForOneEqualsTrueGas() public {
         uint160 sqrtP = Constants.SQRT_RATIO_1_1;
 
@@ -330,6 +338,7 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         snapEnd();
     }
 
+    //
     function test_swapComputation_sqrtPTimessqrtQOverflows() public {
         // getNextSqrtPriceInvariants(1025574284609383690408304870162715216695788925244,50015962439936049619261659728067971248,406,true)
         uint160 sqrtP = 1025574284609383690408304870162715216695788925244;
