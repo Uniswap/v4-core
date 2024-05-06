@@ -277,17 +277,8 @@ library Hooks {
                 ? toBalanceDelta(hookDeltaSpecified, hookDeltaUnspecified)
                 : toBalanceDelta(hookDeltaUnspecified, hookDeltaSpecified);
 
-            // the caller has to pay for (or receive) to hook's delta
+            // the caller has to pay for (or receive) the hook's delta
             swapperDelta = swapDelta - hookDelta;
-
-            // check that the hook's returns haven't flipped the sign of the tokens being swapped
-            if (
-                params.zeroForOne
-                    ? (swapperDelta.amount0() > 0 || swapperDelta.amount1() < 0)
-                    : (swapperDelta.amount1() > 0 || swapperDelta.amount0() < 0)
-            ) {
-                revert HookDeltaExceedsSwapAmount();
-            }
         }
     }
 
