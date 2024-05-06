@@ -248,6 +248,11 @@ contract SqrtPriceMathTestTest is Test, GasSnapshot {
         assertEq(amount0, 0);
     }
 
+    function test_getAmount0Delta_revertsIfPriceIsZero() public {
+        vm.expectRevert(SqrtPriceMath.InvalidPrice.selector);
+        SqrtPriceMath.getAmount0Delta(0, 1, 1, true);
+    }
+
     function test_getAmount0Delta_1Amount1ForPriceOf1To1_21() public {
         uint256 amount0 = SqrtPriceMath.getAmount0Delta(
             Constants.SQRT_RATIO_1_1, Constants.SQRT_RATIO_121_100, uint128(1 ether), true
