@@ -23,7 +23,7 @@ contract TickBitmapTest is Test, GasSnapshot {
         }
     }
 
-    function test_isInitialized_isFalseAtFirst() public {
+    function test_isInitialized_isFalseAtFirst() public view {
         assertEq(isInitialized(1), false);
     }
 
@@ -97,26 +97,26 @@ contract TickBitmapTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTickToRightIfAtInitializedTick() public {
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTickToRightIfAtInitializedTick() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(78, 1, false);
         assertEq(next, 84);
         assertEq(initialized, true);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTickToRightIfAtInitializedTick2() public {
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTickToRightIfAtInitializedTick2() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(-55, 1, false);
 
         assertEq(next, -4);
         assertEq(initialized, true);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheTickDirectlyToTheRight() public {
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheTickDirectlyToTheRight() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(77, 1, false);
         assertEq(next, 78);
         assertEq(initialized, true);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheTickDirectlyToTheRight2() public {
+    function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheTickDirectlyToTheRight2() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(-56, 1, false);
         assertEq(next, -55);
         assertEq(initialized, true);
@@ -124,6 +124,7 @@ contract TickBitmapTest is Test, GasSnapshot {
 
     function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheNextWordsInitializedTickIfOnTheRightBoundary()
         public
+        view
     {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(255, 1, false);
         assertEq(next, 511);
@@ -132,6 +133,7 @@ contract TickBitmapTest is Test, GasSnapshot {
 
     function test_nextInitializedTickWithinOneWord_lteFalse_returnsTheNextWordsInitializedTickIfOnTheRightBoundary2()
         public
+        view
     {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(-257, 1, false);
         assertEq(next, -200);
@@ -146,19 +148,19 @@ contract TickBitmapTest is Test, GasSnapshot {
         assertEq(initialized, true);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_doesNotExceedBoundary() public {
+    function test_nextInitializedTickWithinOneWord_lteFalse_doesNotExceedBoundary() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(508, 1, false);
         assertEq(next, 511);
         assertEq(initialized, false);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_skipsEntireWord() public {
+    function test_nextInitializedTickWithinOneWord_lteFalse_skipsEntireWord() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(255, 1, false);
         assertEq(next, 511);
         assertEq(initialized, false);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteFalse_skipsHalfWord() public {
+    function test_nextInitializedTickWithinOneWord_lteFalse_skipsHalfWord() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(383, 1, false);
         assertEq(next, 511);
         assertEq(initialized, false);
@@ -182,7 +184,7 @@ contract TickBitmapTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_returnsSameTickIfInitialized() public {
+    function test_nextInitializedTickWithinOneWord_lteTrue_returnsSameTickIfInitialized() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(78, 1, true);
         assertEq(next, 78);
         assertEq(initialized, true);
@@ -190,43 +192,47 @@ contract TickBitmapTest is Test, GasSnapshot {
 
     function test_nextInitializedTickWithinOneWord_lteTrue_returnsTickDirectlyToTheLeftOfInputTickIfNotInitialized()
         public
+        view
     {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(79, 1, true);
         assertEq(next, 78);
         assertEq(initialized, true);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_willNotExceedTheWordBoundary() public {
+    function test_nextInitializedTickWithinOneWord_lteTrue_willNotExceedTheWordBoundary() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(258, 1, true);
         assertEq(next, 256);
         assertEq(initialized, false);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_atTheWordBoundary() public {
+    function test_nextInitializedTickWithinOneWord_lteTrue_atTheWordBoundary() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(256, 1, true);
         assertEq(next, 256);
         assertEq(initialized, false);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_wordBoundaryLess1nextInitializedTickInNextWord() public {
+    function test_nextInitializedTickWithinOneWord_lteTrue_wordBoundaryLess1nextInitializedTickInNextWord()
+        public
+        view
+    {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(72, 1, true);
         assertEq(next, 70);
         assertEq(initialized, true);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_wordBoundary() public {
+    function test_nextInitializedTickWithinOneWord_lteTrue_wordBoundary() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(-257, 1, true);
         assertEq(next, -512);
         assertEq(initialized, false);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_entireEmptyWord() public {
+    function test_nextInitializedTickWithinOneWord_lteTrue_entireEmptyWord() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(1023, 1, true);
         assertEq(next, 768);
         assertEq(initialized, false);
     }
 
-    function test_nextInitializedTickWithinOneWord_lteTrue_halfwayThroughEmptyWord() public {
+    function test_nextInitializedTickWithinOneWord_lteTrue_halfwayThroughEmptyWord() public view {
         (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(900, 1, true);
         assertEq(next, 768);
         assertEq(initialized, false);
@@ -257,7 +263,7 @@ contract TickBitmapTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_nextInitializedTickWithinOneWord_fuzz(int24 tick, bool lte) public {
+    function test_nextInitializedTickWithinOneWord_fuzz(int24 tick, bool lte) public view {
         // assume tick is at least one word inside type(int24).(max | min)
         vm.assume(lte ? tick >= -8388352 : tick < 8388351);
 
