@@ -24,8 +24,6 @@ import {PoolGetters} from "./libraries/PoolGetters.sol";
 import {Reserves} from "./libraries/Reserves.sol";
 import {Extsload} from "./Extsload.sol";
 
-/// @notice Holds the state for all pools
-
 //  4
 //   44
 //     444
@@ -73,6 +71,7 @@ import {Extsload} from "./Extsload.sol";
 //                             444444444           444
 //                                                  44444   444
 //                                                      444
+/// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
