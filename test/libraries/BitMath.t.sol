@@ -6,7 +6,7 @@ import {Test} from "forge-std/Test.sol";
 import {BitMath} from "../../src/libraries/BitMath.sol";
 
 contract TestBitMath is Test, GasSnapshot {
-    function test_mostSignificantBit_zero() public {
+    function test_mostSignificantBit_zero() public pure {
         assertEq(BitMath.mostSignificantBit(0), 0);
     }
 
@@ -55,7 +55,7 @@ contract TestBitMath is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_leastSignificantBit_zero() public {
+    function test_leastSignificantBit_zero() public pure {
         assertEq(BitMath.leastSignificantBit(0), 255);
     }
 
