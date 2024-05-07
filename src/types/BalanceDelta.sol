@@ -36,7 +36,7 @@ library BalanceDeltaLibrary {
     function amount1(BalanceDelta balanceDelta) internal pure returns (int128 _amount1) {
         /// @solidity memory-safe-assembly
         assembly {
-            _amount1 := balanceDelta
+            _amount1 := signextend(15, balanceDelta)
         }
     }
 }
