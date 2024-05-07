@@ -5,22 +5,22 @@ import "../../src/libraries/LPFeeLibrary.sol";
 import "forge-std/Test.sol";
 
 contract LPFeeLibraryTest is Test {
-    function test_isDynamicFee_returnsTrue() public {
+    function test_isDynamicFee_returnsTrue() public pure {
         uint24 dynamicFee = 0x800000;
         assertTrue(LPFeeLibrary.isDynamicFee(dynamicFee));
     }
 
-    function test_isDynamicFee_returnsTrue_forMaxValue() public {
+    function test_isDynamicFee_returnsTrue_forMaxValue() public pure {
         uint24 dynamicFee = 0xFFFFFF;
         assertTrue(LPFeeLibrary.isDynamicFee(dynamicFee));
     }
 
-    function test_isDynamicFee_returnsFalse() public {
+    function test_isDynamicFee_returnsFalse() public pure {
         uint24 dynamicFee = 0x7FFFFF;
         assertFalse(LPFeeLibrary.isDynamicFee(dynamicFee));
     }
 
-    function test_fuzz_isDynamicFee(uint24 fee) public {
+    function test_fuzz_isDynamicFee(uint24 fee) public pure {
         assertEq((fee >> 23 == 1), LPFeeLibrary.isDynamicFee(fee));
     }
 
@@ -52,7 +52,7 @@ contract LPFeeLibraryTest is Test {
         LPFeeLibrary.validate(fee);
     }
 
-    function test_getInitialLPFee_forStaticFeeIsCorrect() public {
+    function test_getInitialLPFee_forStaticFeeIsCorrect() public pure {
         uint24 staticFee = 3000; // 30 bps
         assertEq(LPFeeLibrary.getInitialLPFee(staticFee), staticFee);
     }
@@ -63,7 +63,7 @@ contract LPFeeLibraryTest is Test {
         LPFeeLibrary.getInitialLPFee(staticFee);
     }
 
-    function test_getInitialLPFee_forDynamicFeeIsZero() public {
+    function test_getInitialLPFee_forDynamicFeeIsZero() public pure {
         uint24 dynamicFee = 0x800BB8;
         assertEq(LPFeeLibrary.getInitialLPFee(dynamicFee), 0);
     }
