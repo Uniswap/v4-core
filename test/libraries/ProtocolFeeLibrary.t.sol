@@ -6,17 +6,17 @@ import "src/libraries/LPFeeLibrary.sol";
 import "forge-std/Test.sol";
 
 contract ProtocolFeeLibraryTest is Test {
-    function test_zeroForOne() public {
+    function test_zeroForOne() public pure {
         uint24 fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE - 1) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
         assertEq(ProtocolFeeLibrary.getZeroForOneFee(fee), uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
     }
 
-    function test_oneForZero() public {
+    function test_oneForZero() public pure {
         uint24 fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE - 1) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
         assertEq(ProtocolFeeLibrary.getOneForZeroFee(fee), uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE - 1));
     }
 
-    function test_fuzz_validate_protocolFee(uint24 fee) public {
+    function test_fuzz_validate_protocolFee(uint24 fee) public pure {
         if (
             (fee >> 12 > ProtocolFeeLibrary.MAX_PROTOCOL_FEE)
                 || (fee & (4096 - 1) > ProtocolFeeLibrary.MAX_PROTOCOL_FEE)
@@ -27,7 +27,7 @@ contract ProtocolFeeLibraryTest is Test {
         }
     }
 
-    function test_validate() public {
+    function test_validate() public pure {
         uint24 fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE + 1) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
         assertFalse(ProtocolFeeLibrary.validate(fee));
 
@@ -41,19 +41,19 @@ contract ProtocolFeeLibraryTest is Test {
         assertTrue(ProtocolFeeLibrary.validate(fee));
     }
 
-    function test_fuzz_calculateSwapFeeDoesNotOverflow(uint24 self, uint24 lpFee) public {
+    function test_fuzz_calculateSwapFeeDoesNotOverflow(uint24 self, uint24 lpFee) public pure {
         lpFee = uint24(bound(lpFee, 0, LPFeeLibrary.MAX_LP_FEE));
         self = uint24(bound(self, 0, ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
         assertGe(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), lpFee);
     }
 
-    function test_fuzz_calculateSwapFeeNeverEqualsMax(uint24 self, uint24 lpFee) public {
+    function test_fuzz_calculateSwapFeeNeverEqualsMax(uint24 self, uint24 lpFee) public pure {
         lpFee = uint24(bound(lpFee, 0, LPFeeLibrary.MAX_LP_FEE - 1));
         self = uint24(bound(self, 0, ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
         assertLt(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), LPFeeLibrary.MAX_LP_FEE);
     }
 
-    function test_calculateSwapFee() public {
+    function test_calculateSwapFee() public pure {
         uint24 self = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE);
         uint24 lpFee = LPFeeLibrary.MAX_LP_FEE;
         assertEq(ProtocolFeeLibrary.calculateSwapFee(self, lpFee), LPFeeLibrary.MAX_LP_FEE);

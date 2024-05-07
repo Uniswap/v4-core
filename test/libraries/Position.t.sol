@@ -9,7 +9,7 @@ contract PositionTest is Test {
 
     mapping(bytes32 => Position.Info) internal positions;
 
-    function test_fuzz_get(address owner, int24 tickLower, int24 tickUpper) public {
+    function test_fuzz_get(address owner, int24 tickLower, int24 tickUpper) public view {
         bytes32 positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper));
         Position.Info storage expectedPosition = positions[positionKey];
         Position.Info storage position = positions.get(owner, tickLower, tickUpper);
