@@ -29,14 +29,14 @@ contract TickMathTestTest is Test, JavascriptFfi {
         delete getTickAtSqrtRatioFuzzResults;
     }
 
-    function test_MIN_TICK_equalsNegativeMAX_TICK() public {
+    function test_MIN_TICK_equalsNegativeMAX_TICK() public view {
         // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
         int24 minTick = tickMath.MIN_TICK();
         assertEq(minTick, tickMath.MAX_TICK() * -1);
         assertEq(minTick, MIN_TICK);
     }
 
-    function test_MAX_TICK_equalsNegativeMIN_TICK() public {
+    function test_MAX_TICK_equalsNegativeMIN_TICK() public view {
         // this invariant is required in the Tick#tickSpacingToMaxLiquidityPerTick formula
         // this test is redundant with the above MIN_TICK test
         int24 maxTick = tickMath.MAX_TICK();
@@ -54,32 +54,32 @@ contract TickMathTestTest is Test, JavascriptFfi {
         tickMath.getSqrtRatioAtTick(MAX_TICK + 1);
     }
 
-    function test_getSqrtRatioAtTick_isValidMinTick() public {
+    function test_getSqrtRatioAtTick_isValidMinTick() public view {
         assertEq(tickMath.getSqrtRatioAtTick(MIN_TICK), tickMath.MIN_SQRT_RATIO());
         assertEq(tickMath.getSqrtRatioAtTick(MIN_TICK), 4295128739);
     }
 
-    function test_getSqrtRatioAtTick_isValidMinTickAddOne() public {
+    function test_getSqrtRatioAtTick_isValidMinTickAddOne() public view {
         assertEq(tickMath.getSqrtRatioAtTick(MIN_TICK + 1), 4295343490);
     }
 
-    function test_getSqrtRatioAtTick_isValidMaxTick() public {
+    function test_getSqrtRatioAtTick_isValidMaxTick() public view {
         assertEq(tickMath.getSqrtRatioAtTick(MAX_TICK), tickMath.MAX_SQRT_RATIO());
         assertEq(tickMath.getSqrtRatioAtTick(MAX_TICK), 1461446703485210103287273052203988822378723970342);
     }
 
-    function test_getSqrtRatioAtTick_isValidMaxTickSubOne() public {
+    function test_getSqrtRatioAtTick_isValidMaxTickSubOne() public view {
         assertEq(tickMath.getSqrtRatioAtTick(MAX_TICK - 1), 1461373636630004318706518188784493106690254656249);
     }
 
-    function test_getSqrtRatioAtTick_isLessThanJSImplMinTick() public {
+    function test_getSqrtRatioAtTick_isLessThanJSImplMinTick() public view {
         // sqrt(1 / 2 ** 127) * 2 ** 96
         uint160 jsMinSqrtRatio = 6085630636;
         uint160 solMinSqrtRatio = tickMath.getSqrtRatioAtTick(MIN_TICK);
         assertLt(solMinSqrtRatio, jsMinSqrtRatio);
     }
 
-    function test_getSqrtRatioAtTick_isGreaterThanJSImplMaxTick() public {
+    function test_getSqrtRatioAtTick_isGreaterThanJSImplMaxTick() public view {
         // sqrt(2 ** 127) * 2 ** 96
         uint160 jsMaxSqrtRatio = 1033437718471923706666374484006904511252097097914;
         uint160 solMaxSqrtRatio = tickMath.getSqrtRatioAtTick(MAX_TICK);
@@ -96,19 +96,19 @@ contract TickMathTestTest is Test, JavascriptFfi {
         tickMath.getTickAtSqrtRatio(MAX_SQRT_RATIO + 1);
     }
 
-    function test_getTickAtSqrtRatio_isValidMinSqrtRatio() public {
+    function test_getTickAtSqrtRatio_isValidMinSqrtRatio() public view {
         assertEq(tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO), MIN_TICK);
     }
 
-    function test_getTickAtSqrtRatio_isValidMinSqrtRatioPlusOne() public {
+    function test_getTickAtSqrtRatio_isValidMinSqrtRatioPlusOne() public view {
         assertEq(tickMath.getTickAtSqrtRatio(4295343490), MIN_TICK + 1);
     }
 
-    function test_getTickAtSqrtRatio_isValidRatioClosestToMaxTick() public {
+    function test_getTickAtSqrtRatio_isValidRatioClosestToMaxTick() public view {
         assertEq(tickMath.getTickAtSqrtRatio(MAX_SQRT_RATIO - 1), MAX_TICK - 1);
     }
 
-    function test_getTickAtSqrtRatio_isValidMaxSqrtRatioMinusOne() public {
+    function test_getTickAtSqrtRatio_isValidMaxSqrtRatioMinusOne() public view {
         assertEq(tickMath.getTickAtSqrtRatio(1461373636630004318706518188784493106690254656249), MAX_TICK - 1);
     }
 
