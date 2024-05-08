@@ -73,6 +73,15 @@ contract Deployers {
     PoolKey uninitializedKey;
     PoolKey uninitializedNativeKey;
 
+    modifier noIsolate() {
+        if (msg.sender != address(this)) {
+            (bool success,) = address(this).call(msg.data);
+            require(success);
+        } else {
+            _;
+        }
+    }
+
     function deployFreshManager() internal {
         manager = new PoolManager(500000);
     }

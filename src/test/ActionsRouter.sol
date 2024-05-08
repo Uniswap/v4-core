@@ -32,6 +32,9 @@ contract ActionsRouter is IUnlockCallback, Test {
 
     error ActionNotSupported();
 
+    // error thrown so that incorrectly formatted tests don't pass silently
+    error CheckParameters();
+
     IPoolManager manager;
 
     constructor(IPoolManager _manager) {
@@ -40,6 +43,7 @@ contract ActionsRouter is IUnlockCallback, Test {
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         (Actions[] memory actions, bytes[] memory params) = abi.decode(data, (Actions[], bytes[]));
+        if (actions.length != params.length || actions.length == 0) revert CheckParameters();
         for (uint256 i = 0; i < actions.length; i++) {
             Actions action = actions[i];
             bytes memory param = params[i];
@@ -87,17 +91,17 @@ contract ActionsRouter is IUnlockCallback, Test {
         manager.mint(recipient, currency.toId(), amount);
     }
 
-    function _assertBalanceEquals(bytes memory params) internal {
+    function _assertBalanceEquals(bytes memory params) internal view {
         (Currency currency, address user, uint256 expectedBalance) = abi.decode(params, (Currency, address, uint256));
         assertEq(currency.balanceOf(user), expectedBalance, "usertoken value incorrect");
     }
 
-    function _assertReservesEquals(bytes memory params) internal {
+    function _assertReservesEquals(bytes memory params) internal view {
         (Currency currency, uint256 expectedReserves) = abi.decode(params, (Currency, uint256));
         assertEq(manager.getReserves(currency), expectedReserves, "reserves value incorrect");
     }
 
-    function _assertDeltaEquals(bytes memory params) internal {
+    function _assertDeltaEquals(bytes memory params) internal view {
         (Currency currency, address caller, int256 expectedDelta) = abi.decode(params, (Currency, address, int256));
 
         assertEq(manager.currencyDelta(caller, currency), expectedDelta, "delta value incorrect");
