@@ -11,31 +11,31 @@ contract TestBitMath is Test, GasSnapshot {
         BitMath.mostSignificantBit(0);
     }
 
-    function test_mostSignificantBit_one() public {
+    function test_mostSignificantBit_one() public pure {
         assertEq(BitMath.mostSignificantBit(1), 0);
     }
 
-    function test_mostSignificantBit_two() public {
+    function test_mostSignificantBit_two() public pure {
         assertEq(BitMath.mostSignificantBit(2), 1);
     }
 
-    function test_mostSignificantBit_powersOfTwo() public {
+    function test_mostSignificantBit_powersOfTwo() public pure {
         for (uint256 i = 0; i < 255; i++) {
             uint256 x = 1 << i;
             assertEq(BitMath.mostSignificantBit(x), i);
         }
     }
 
-    function test_mostSignificantBit_maxUint256() public {
+    function test_mostSignificantBit_maxUint256() public pure {
         assertEq(BitMath.mostSignificantBit(type(uint256).max), 255);
     }
 
-    function test_fuzz_mostSignificantBit(uint256 x) public {
+    function test_fuzz_mostSignificantBit(uint256 x) public pure {
         vm.assume(x != 0);
         assertEq(BitMath.mostSignificantBit(x), mostSignificantBitReference(x));
     }
 
-    function test_invariant_mostSignificantBit(uint256 x) public {
+    function test_invariant_mostSignificantBit(uint256 x) public pure {
         vm.assume(x != 0);
         uint8 msb = BitMath.mostSignificantBit(x);
         assertGe(x, uint256(2) ** msb);
@@ -61,31 +61,31 @@ contract TestBitMath is Test, GasSnapshot {
         BitMath.leastSignificantBit(0);
     }
 
-    function test_leastSignificantBit_one() public {
+    function test_leastSignificantBit_one() public pure {
         assertEq(BitMath.leastSignificantBit(1), 0);
     }
 
-    function test_leastSignificantBit_two() public {
+    function test_leastSignificantBit_two() public pure {
         assertEq(BitMath.leastSignificantBit(2), 1);
     }
 
-    function test_leastSignificantBit_powersOfTwo() public {
+    function test_leastSignificantBit_powersOfTwo() public pure {
         for (uint256 i = 0; i < 255; i++) {
             uint256 x = 1 << i;
             assertEq(BitMath.leastSignificantBit(x), i);
         }
     }
 
-    function test_leastSignificantBit_maxUint256() public {
+    function test_leastSignificantBit_maxUint256() public pure {
         assertEq(BitMath.leastSignificantBit(type(uint256).max), 0);
     }
 
-    function test_fuzz_leastSignificantBit(uint256 x) public {
+    function test_fuzz_leastSignificantBit(uint256 x) public pure {
         vm.assume(x != 0);
         assertEq(BitMath.leastSignificantBit(x), leastSignificantBitReference(x));
     }
 
-    function test_invariant_leastSignificantBit(uint256 x) public {
+    function test_invariant_leastSignificantBit(uint256 x) public pure {
         vm.assume(x != 0);
         uint8 lsb = BitMath.leastSignificantBit(x);
         assertNotEq(x & (uint256(2) ** lsb), 0);
