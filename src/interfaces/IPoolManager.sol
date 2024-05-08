@@ -10,9 +10,9 @@ import {IProtocolFees} from "./IProtocolFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
-import {IExtsload} from "./IExtsload.sol";
+import {IExttload} from "./IExttload.sol";
 
-interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
+interface IPoolManager is IProtocolFees, IERC6909Claims, IExttload {
     /// @notice Thrown when a currency is not netted out after the contract is unlocked
     error CurrencyNotSettled();
 
@@ -175,6 +175,4 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
 
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external;
-
-    function getReserves(Currency currency) external view returns (uint256 balance);
 }

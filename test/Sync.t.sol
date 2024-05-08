@@ -15,18 +15,23 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {ActionsRouter, Actions} from "../src/test/ActionsRouter.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {Reserves} from "../src/libraries/Reserves.sol";
+import {PoolStateLibrary} from "../src/libraries/PoolStateLibrary.sol";
+import {PoolStateViewer} from "../src/test/PoolStateViewer.sol";
 
 contract SyncTest is Test, Deployers, GasSnapshot {
     using CurrencyLibrary for Currency;
+    using PoolStateLibrary for IPoolManager;
 
     // PoolManager has no balance of currency2.
     Currency currency2;
     ActionsRouter router;
+    PoolStateViewer poolStateViewer;
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
         currency2 = deployMintAndApproveCurrency();
         router = new ActionsRouter(manager);
+        poolStateViewer = new PoolStateViewer(manager);
     }
 
     function test_sync_balanceIsZero() public noIsolate {
@@ -43,7 +48,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         // Without calling sync, getReserves should revert.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency0);
+        poolStateViewer.getReserves(currency0);
 
         uint256 balance = manager.sync(currency0);
         assertEq(balance, currency0Balance, "balance not equal");
@@ -61,7 +66,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         // Sync has not been called.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency0);
+        poolStateViewer.getReserves(currency0);
 
         swapRouter.swap(key, params, testSettings, new bytes(0));
         (uint256 balanceCurrency0) = currency0.balanceOf(address(manager));
@@ -79,7 +84,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         // Sync has not been called.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency2);
+        poolStateViewer.getReserves(currency2);
         modifyLiquidityRouter.modifyLiquidity(key2, IPoolManager.ModifyLiquidityParams(-60, 60, 100), new bytes(0));
         (uint256 balanceCurrency2) = currency2.balanceOf(address(manager));
         assertEq(manager.getReserves(currency2), balanceCurrency2);
@@ -102,7 +107,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         // Sync has not been called.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency2);
+        poolStateViewer.getReserves(currency2);
 
         manager.sync(currency2);
         assertEq(manager.getReserves(currency2), 0);
@@ -125,7 +130,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         // Sync has not been called.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency0);
+        poolStateViewer.getReserves(currency0);
 
         manager.sync(currency0);
         assertEq(manager.getReserves(currency0), currency0Balance);
@@ -154,7 +159,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         // Sync has not been called on currency3.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency3);
+        poolStateViewer.getReserves(currency3);
 
         manager.sync(currency3);
         // Sync has been called.

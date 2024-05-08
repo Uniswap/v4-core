@@ -22,11 +22,11 @@ import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 import {Reserves} from "./libraries/Reserves.sol";
-import {Extsload} from "./Extsload.sol";
+import {Exttload} from "./Exttload.sol";
 
 /// @notice Holds the state for all pools
 
-contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload {
+contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Exttload {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -278,11 +278,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
         return pools[id].getPoolBitmapInfo(word);
-    }
-
-    /// @notice Temporary view function. Replaceable by transient EXTSLOAD.
-    function getReserves(Currency currency) external view returns (uint256 balance) {
-        return currency.getReserves();
     }
 
     function getFeeGrowthGlobals(PoolId id)

@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 
 import {PoolId} from "../types/PoolId.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {Currency} from "../types/Currency.sol";
 
 library PoolStateLibrary {
     // forge inspect src/PoolManager.sol:PoolManager storage --pretty
@@ -27,6 +28,14 @@ library PoolStateLibrary {
 
     // index of Position.Info mapping in Pool.State
     uint256 public constant POSITION_INFO_OFFSET = 6;
+
+    /// uint256(keccak256("ReservesOf")) - 1
+    uint256 constant RESERVES_OF_SLOT = uint256(0x1e0745a7db1623981f0b2a5d4232364c00787266eb75ad546f190e6cebe9bd95);
+
+    uint256 public constant ZERO_BALANCE = type(uint256).max;
+
+    /// @notice Thrown when someone has not called sync before calling settle for the first time.
+    error ReservesMustBeSynced();
 
     /**
      * @notice Get Slot0 of the pool: sqrtPriceX96, tick, protocolFee, lpFee
@@ -326,6 +335,19 @@ library PoolStateLibrary {
                 feeGrowthInside1X128 = feeGrowthGlobal1X128 - lowerFeeGrowthOutside1X128 - upperFeeGrowthOutside1X128;
             }
         }
+    }
+
+    function getReserves(IPoolManager manager, Currency currency) internal view returns (uint256 value) {
+        uint256 slot = RESERVES_OF_SLOT;
+        bytes32 key;
+        assembly {
+            mstore(0, slot)
+            mstore(32, currency)
+            key := keccak256(0, 64)
+        }
+        value = uint256(manager.exttload(key));
+        if (value == 0) revert ReservesMustBeSynced();
+        if (value == ZERO_BALANCE) value = 0;
     }
 
     function _getPoolStateSlot(PoolId poolId) internal pure returns (bytes32) {
