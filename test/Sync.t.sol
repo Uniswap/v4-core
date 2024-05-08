@@ -29,7 +29,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         router = new ActionsRouter(manager);
     }
 
-    function test_sync_balanceIsZero() public {
+    function test_sync_balanceIsZero() public noIsolate {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
         uint256 balance = manager.sync(currency2);
 
@@ -37,7 +37,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getReserves(currency2), 0);
     }
 
-    function test_sync_balanceIsNonZero() public {
+    function test_sync_balanceIsNonZero() public noIsolate {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
         assertGt(currency0Balance, uint256(0));
 
@@ -50,7 +50,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getReserves(currency0), balance);
     }
 
-    function test_settle_withStartingBalance() public {
+    function test_settle_withStartingBalance() public noIsolate {
         assertGt(currency0.balanceOf(address(manager)), uint256(0));
 
         IPoolManager.SwapParams memory params =
@@ -68,7 +68,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getReserves(currency0), balanceCurrency0); // Reserves are up to date since settle was called.
     }
 
-    function test_settle_withNoStartingBalance() public {
+    function test_settle_withNoStartingBalance() public noIsolate {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
 
         (Currency cur0, Currency cur1) = currency0 < currency2 ? (currency0, currency2) : (currency2, currency0);
@@ -85,7 +85,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getReserves(currency2), balanceCurrency2);
     }
 
-    function test_settle_revertsIfSyncNotCalled() public {
+    function test_settle_revertsIfSyncNotCalled() public noIsolate {
         Actions[] memory actions = new Actions[](1);
         bytes[] memory params = new bytes[](1);
 
@@ -97,7 +97,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     }
 
     /// @notice When there is no balance and reserves are set to type(uint256).max, no delta should be applied.
-    function test_settle_noBalanceInPool_shouldNotApplyDelta() public {
+    function test_settle_noBalanceInPool_shouldNotApplyDelta() public noIsolate {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
 
         // Sync has not been called.
@@ -120,7 +120,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     }
 
     /// @notice When there is a balance, no delta should be applied.
-    function test_settle_balanceInPool_shouldNotApplyDelta() public {
+    function test_settle_balanceInPool_shouldNotApplyDelta() public noIsolate {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
 
         // Sync has not been called.
@@ -146,7 +146,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     /// This tests check that the reservesNow value is set to 0 not ZERO_BALANCE, by checking that an underflow happens when
     /// a) the contract balance is 0 and b) the reservesBefore value is out of date (sync isn't called again before settle).
     /// ie because paid = reservesNow - reservesBefore, and because reservesNow < reservesBefore an underflow should happen.
-    function test_settle_afterTake_doesNotApplyDelta() public {
+    function test_settle_afterTake_doesNotApplyDelta() public noIsolate {
         Currency currency3 = deployMintAndApproveCurrency();
 
         // Approve the router for a transfer.
@@ -221,7 +221,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     }
 
     // @notice This tests expected behavior if you DO NOT call sync. (ie. Do not interact with the pool manager properly. You can lose funds.)
-    function test_settle_withoutSync_doesNotRevert_takesUserBalance() public {
+    function test_settle_withoutSync_doesNotRevert_takesUserBalance() public noIsolate {
         MockERC20(Currency.unwrap(currency0)).approve(address(router), type(uint256).max);
         uint256 managerCurrency0BalanceBefore = currency0.balanceOf(address(manager));
         uint256 userCurrency0BalanceBefore = currency0.balanceOf(address(this));

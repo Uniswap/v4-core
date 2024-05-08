@@ -24,8 +24,54 @@ import {PoolGetters} from "./libraries/PoolGetters.sol";
 import {Reserves} from "./libraries/Reserves.sol";
 import {Extsload} from "./Extsload.sol";
 
+//  4
+//   44
+//     444
+//       444                   4444
+//        4444            4444     4444
+//          4444          4444444    4444                           4
+//            4444        44444444     4444                         4
+//             44444       4444444       4444444444444444       444444
+//           4   44444     44444444       444444444444444444444    4444
+//            4    44444    4444444         4444444444444444444444  44444
+//             4     444444  4444444         44444444444444444444444 44  4
+//              44     44444   444444          444444444444444444444 4     4
+//               44      44444   44444           4444444444444444444 4 44
+//                44       4444     44             444444444444444     444
+//                444     4444                        4444444
+//               4444444444444                     44                      4
+//              44444444444                        444444     444444444    44
+//             444444           4444               4444     4444444444      44
+//             4444           44    44              4      44444444444
+//            44444          444444444                   444444444444    4444
+//            44444          44444444                  4444  44444444    444444
+//            44444                                  4444   444444444    44444444
+//           44444                                 4444     44444444    4444444444
+//          44444                                4444      444444444   444444444444
+//         44444                               4444        44444444    444444444444
+//       4444444                             4444          44444444         4444444
+//      4444444                            44444          44444444          4444444
+//     44444444                           44444444444444444444444444444        4444
+//   4444444444                           44444444444444444444444444444         444
+//  444444444444                         444444444444444444444444444444   444   444
+//  44444444444444                                      444444444         44444
+// 44444  44444444444         444                       44444444         444444
+// 44444  4444444444      4444444444      444444        44444444    444444444444
+//  444444444444444      4444  444444    4444444       44444444     444444444444
+//  444444444444444     444    444444     444444       44444444      44444444444
+//   4444444444444     4444   444444        4444                      4444444444
+//    444444444444      4     44444         4444                       444444444
+//     44444444444           444444         444                        44444444
+//      44444444            444444         4444                         4444444
+//                          44444          444                          44444
+//                          44444         444      4                    4444
+//                          44444        444      44                   444
+//                          44444       444      4444
+//                           444444  44444        444
+//                             444444444           444
+//                                                  44444   444
+//                                                      444
 /// @notice Holds the state for all pools
-
 contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
@@ -210,17 +256,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         override
         onlyWhenUnlocked
-        returns (BalanceDelta delta)
+        returns (BalanceDelta)
     {
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
         key.hooks.beforeSwap(key, params, hookData);
 
-        uint256 feeForProtocol;
-        uint24 swapFee;
-        Pool.SwapState memory state;
-        (delta, feeForProtocol, swapFee, state) = pools[id].swap(
+        (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) = pools[id].swap(
             Pool.SwapParams({
                 tickSpacing: key.tickSpacing,
                 zeroForOne: params.zeroForOne,
@@ -241,6 +284,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         );
 
         key.hooks.afterSwap(key, params, delta, hookData);
+
+        return delta;
     }
 
     /// @inheritdoc IPoolManager
