@@ -38,12 +38,12 @@ library Position {
 
         /// @solidity memory-safe-assembly
         assembly {
-            let freeMemoryPointer := mload(0x40)
-            mstore(add(freeMemoryPointer, 0x26), salt)
-            mstore(add(freeMemoryPointer, 0x06), tickUpper)
-            mstore(add(freeMemoryPointer, 0x03), tickLower)
-            mstore(freeMemoryPointer, owner)
-            positionKey := keccak256(add(freeMemoryPointer, 0x0c), 0x3a) // len is 58 bytes
+            mstore(0x26, salt) // // [0x26, 0x46)
+            mstore(0x06, tickUpper) // [0x23, 0x26)
+            mstore(0x03, tickLower) // [0x20, 0x23)
+            mstore(0, owner) // [0x0c, 0x20)
+            positionKey := keccak256(0x0c, 0x3a) // len is 58 bytes
+            mstore(0x26, 0) // rewrite 0x26 to 0
         }
         position = self[positionKey];
     }
