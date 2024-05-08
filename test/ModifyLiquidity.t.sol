@@ -38,13 +38,13 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
 
-        assertGt(position.liquidity, 0);
+        assertEq(position.liquidity, uint128(uint256(LIQ_PARAM_NO_SALT.liquidityDelta)));
 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_NO_SALT, ZERO_BYTES);
         Position.Info memory updated = manager.getPosition(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
-        assertGt(updated.liquidity, position.liquidity);
+        assertEq(updated.liquidity, position.liquidity + uint128(uint256(LIQ_PARAM_NO_SALT.liquidityDelta)));
     }
 
     function test_modifyLiquidity_samePosition_withSalt_isUpdated() public {
@@ -56,13 +56,13 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
         position = manager.getPosition(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
-        assertGt(position.liquidity, 0);
+        assertEq(position.liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
         Position.Info memory updated = manager.getPosition(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
-        assertGt(updated.liquidity, position.liquidity);
+        assertEq(updated.liquidity, position.liquidity + uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
     }
 
     function test_modifyLiquidity_sameTicks_withDifferentSalt_isNotUpdated() public {
@@ -88,7 +88,7 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
         );
 
         assertEq(positionNoSalt.liquidity, 0); // This position does not have liquidity.
-        assertGt(positionSalt.liquidity, 0); // This position does.
+        assertEq(positionSalt.liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta))); // This position does.
 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_NO_SALT, ZERO_BYTES); // Now the positions should have the same liquidity.
 
@@ -100,6 +100,8 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
 
+        // positionSalt should still only have the original liquidity deposited to it
+        assertEq(positionSalt.liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
         assertEq(positionNoSalt.liquidity, positionSalt.liquidity);
 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
@@ -110,7 +112,7 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
 
-        assertGt(updatedWithSalt.liquidity, positionSalt.liquidity);
+        assertEq(updatedWithSalt.liquidity, positionSalt.liquidity + uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
         assertGt(updatedWithSalt.liquidity, updatedNoSalt.liquidity);
         assertEq(updatedNoSalt.liquidity, positionNoSalt.liquidity);
     }
@@ -119,21 +121,19 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
         // Create rand position to warm the router. No gas snaps.
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_NO_SALT, ZERO_BYTES);
 
-        snapStart("create new liquidity to a position with salt");
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        snapEnd();
+        snapLastCall("create new liquidity to a position with salt");
 
         IPoolManager.ModifyLiquidityParams memory samePositionNewSalt = LIQ_PARAM_SALT;
         samePositionNewSalt.salt = hex"BEEF";
-        snapStart("create new liquidity to same position, different salt");
+
         modifyLiquidityRouter.modifyLiquidity(simpleKey, samePositionNewSalt, ZERO_BYTES);
-        snapEnd();
+        snapLastCall("create new liquidity to same position, different salt");
     }
 
     function test_gas_modifyLiquidity_updateSamePosition_withSalt() public {
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        snapStart("add liquidity to already existing position with salt");
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        snapEnd();
+        snapLastCall("add liquidity to already existing position with salt");
     }
 }
