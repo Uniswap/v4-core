@@ -10,9 +10,10 @@ import {IProtocolFees} from "./IProtocolFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
+import {IExtsload} from "./IExtsload.sol";
 import {IExttload} from "./IExttload.sol";
 
-interface IPoolManager is IProtocolFees, IERC6909Claims, IExttload {
+interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @notice Thrown when a currency is not netted out after the contract is unlocked
     error CurrencyNotSettled();
 

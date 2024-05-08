@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0;
+pragma solidity >=0.8.24;
 
-import {IExtsload} from "./IExtsload.sol";
-
-interface IExttload is IExtsload {
+interface IExttload {
     /// @notice Called by external contracts to access granular pool state
     /// @param slot Key of slot to sload
     /// @return value The value of the slot as bytes32
