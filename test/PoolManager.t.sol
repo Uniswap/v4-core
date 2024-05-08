@@ -1191,7 +1191,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     //     assertEq(feeGrowthGlobal1X128Extsload, 204793365386061595215803889394593);
     // }
 
-    function test_getPosition() public {
+    function test_getPosition() public view {
         Position.Info memory managerPosition =
             manager.getPosition(key.toId(), address(modifyLiquidityRouter), -120, 120);
         assert(LIQ_PARAMS.liquidityDelta > 0);

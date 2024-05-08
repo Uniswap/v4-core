@@ -25,43 +25,43 @@ contract TestCurrency is Test {
         nativeCurrency.transfer(address(1), sentBalance);
     }
 
-    function testCurrency_balanceOfSelf_native() public {
+    function testCurrency_balanceOfSelf_native() public view {
         assertEq(nativeCurrency.balanceOfSelf(), address(this).balance);
     }
 
-    function testCurrency_balanceOfSelf_token() public {
+    function testCurrency_balanceOfSelf_token() public view {
         assertEq(erc20Currency.balanceOfSelf(), initialERC20Balance - sentBalance);
     }
 
-    function testCurrency_balanceOf_native() public {
+    function testCurrency_balanceOf_native() public view {
         assertEq(nativeCurrency.balanceOf(otherAddress), sentBalance);
     }
 
-    function testCurrency_balanceOf_token() public {
+    function testCurrency_balanceOf_token() public view {
         assertEq(erc20Currency.balanceOf(otherAddress), sentBalance);
     }
 
-    function testCurrency_isNative_native_returnsTrue() public {
+    function testCurrency_isNative_native_returnsTrue() public view {
         assertEq(nativeCurrency.isNative(), true);
     }
 
-    function testCurrency_isNative_token_returnsFalse() public {
+    function testCurrency_isNative_token_returnsFalse() public view {
         assertEq(erc20Currency.isNative(), false);
     }
 
-    function testCurrency_toId_native_returns0() public {
+    function testCurrency_toId_native_returns0() public view {
         assertEq(nativeCurrency.toId(), uint256(0));
     }
 
-    function testCurrency_toId_token_returnsAddressAsUint160() public {
+    function testCurrency_toId_token_returnsAddressAsUint160() public view {
         assertEq(erc20Currency.toId(), uint256(uint160(Currency.unwrap(erc20Currency))));
     }
 
-    function testCurrency_fromId_native_returns0() public {
+    function testCurrency_fromId_native_returns0() public view {
         assertEq(Currency.unwrap(uint256(0).fromId()), Currency.unwrap(nativeCurrency));
     }
 
-    function testCurrency_fromId_token_returnsAddressAsUint160() public {
+    function testCurrency_fromId_token_returnsAddressAsUint160() public view {
         assertEq(
             Currency.unwrap(uint256(uint160(Currency.unwrap(erc20Currency))).fromId()), Currency.unwrap(erc20Currency)
         );

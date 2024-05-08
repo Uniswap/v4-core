@@ -16,7 +16,7 @@ contract SwapMathTest is Test, GasSnapshot {
     uint160 private constant SQRT_RATIO_1010_100 = 251791039410471229173201122529;
     uint160 private constant SQRT_RATIO_10000_100 = 792281625142643375935439503360;
 
-    function test_exactAmountOut_oneForZero_thatGetsCappedAtPriceTargetIn() public {
+    function test_exactAmountOut_oneForZero_thatGetsCappedAtPriceTargetIn() public pure {
         uint160 priceTarget = SQRT_RATIO_101_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
@@ -39,7 +39,7 @@ contract SwapMathTest is Test, GasSnapshot {
         assert(sqrtQ < priceAfterWholeInputAmount);
     }
 
-    function test_exactAmountIn_oneForZero_thatGetsCappedAtPriceTargetIn() public {
+    function test_exactAmountIn_oneForZero_thatGetsCappedAtPriceTargetIn() public pure {
         uint160 priceTarget = SQRT_RATIO_101_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
@@ -62,7 +62,7 @@ contract SwapMathTest is Test, GasSnapshot {
         assert(sqrtQ < priceAfterWholeInputAmount);
     }
 
-    function test_exactAmountIn_oneForZero_thatIsFullySpentIn() public {
+    function test_exactAmountIn_oneForZero_thatIsFullySpentIn() public pure {
         uint160 priceTarget = SQRT_RATIO_1000_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
@@ -85,7 +85,7 @@ contract SwapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, priceAfterWholeInputAmountLessFee);
     }
 
-    function test_exactAmountOut_oneForZero_thatIsFullyReceivedIn() public {
+    function test_exactAmountOut_oneForZero_thatIsFullyReceivedIn() public pure {
         uint160 priceTarget = SQRT_RATIO_10000_100;
         uint160 price = SQRT_RATIO_1_1;
         uint128 liquidity = 2 ether;
@@ -107,7 +107,7 @@ contract SwapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, priceAfterWholeOutputAmount);
     }
 
-    function test_amountOut_isCappedAtTheDesiredAmountOut() public {
+    function test_amountOut_isCappedAtTheDesiredAmountOut() public pure {
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) = SwapMath.computeSwapStep(
             417332158212080721273783715441582, 1452870262520218020823638996, 159344665391607089467575320103, 1, 1
         );
@@ -118,7 +118,7 @@ contract SwapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, 417332158212080721273783715441581);
     }
 
-    function test_targetPriceOf1UsesPartialInputAmount() public {
+    function test_targetPriceOf1UsesPartialInputAmount() public pure {
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
             SwapMath.computeSwapStep(2, 1, 1, 3915081100057732413702495386755767, 1);
         assertEq(amountIn, 39614081257132168796771975168);
@@ -128,7 +128,7 @@ contract SwapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, 1);
     }
 
-    function test_entireInputAmountTakenAsFee() public {
+    function test_entireInputAmountTakenAsFee() public pure {
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
             SwapMath.computeSwapStep(2413, 79887613182836312, 1985041575832132834610021537970, -10, 1872);
 
@@ -138,7 +138,7 @@ contract SwapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, 2413);
     }
 
-    function test_zeroForOne_handlesIntermediateInsufficientLiquidityInExactOutputCase() public {
+    function test_zeroForOne_handlesIntermediateInsufficientLiquidityInExactOutputCase() public pure {
         uint160 sqrtP = 20282409603651670423947251286016;
         uint160 sqrtPTarget = (sqrtP * 11) / 10;
         uint128 liquidity = 1024;
@@ -156,7 +156,7 @@ contract SwapMathTest is Test, GasSnapshot {
         assertEq(feeAmount, 79);
     }
 
-    function test_oneForZero_handlesIntermediateInsufficientLiquidityInExactOutputCase() public {
+    function test_oneForZero_handlesIntermediateInsufficientLiquidityInExactOutputCase() public pure {
         uint160 sqrtP = 20282409603651670423947251286016;
         uint160 sqrtPTarget = (sqrtP * 9) / 10;
         uint128 liquidity = 1024;
@@ -180,7 +180,7 @@ contract SwapMathTest is Test, GasSnapshot {
         uint128 liquidity,
         int256 amountRemaining,
         uint24 feePips
-    ) public {
+    ) public pure {
         vm.assume(sqrtPriceRaw > 0);
         vm.assume(sqrtPriceTargetRaw > 0);
         vm.assume(feePips > 0);

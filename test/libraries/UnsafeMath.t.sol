@@ -14,22 +14,22 @@ contract UnsafeMathTest is Test {
         x.divRoundingUp(0);
     }
 
-    function test_divRoundingUp_maxInput() public {
+    function test_divRoundingUp_maxInput() public pure {
         assertEq(MAX_UINT256.divRoundingUp(MAX_UINT256), 1);
     }
 
-    function test_divRoundingUp_RoundsUp() public {
+    function test_divRoundingUp_RoundsUp() public pure {
         uint256 result = Q128 / 3 + 1;
         assertEq(Q128.divRoundingUp(3), result);
     }
 
-    function test_fuzz_divRoundingUp(uint256 x, uint256 y) public {
+    function test_fuzz_divRoundingUp(uint256 x, uint256 y) public pure {
         vm.assume(y != 0);
         uint256 result = x.divRoundingUp(y);
         assertTrue(result == x / y || result == x / y + 1);
     }
 
-    function test_invariant_divRoundingUp(uint256 x, uint256 y) public {
+    function test_invariant_divRoundingUp(uint256 x, uint256 y) public pure {
         vm.assume(y != 0);
         uint256 z = x.divRoundingUp(y);
         uint256 diff = z - (x / y);
