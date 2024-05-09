@@ -90,7 +90,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
-    mapping(PoolId id => Pool.State) public pools;
+    mapping(PoolId id => Pool.State) internal pools;
 
     constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
 
