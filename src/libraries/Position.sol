@@ -38,7 +38,7 @@ library Position {
 
         /// @solidity memory-safe-assembly
         assembly {
-            mstore(0x26, salt) // // [0x26, 0x46)
+            mstore(0x26, salt) // [0x26, 0x46)
             mstore(0x06, tickUpper) // [0x23, 0x26)
             mstore(0x03, tickLower) // [0x20, 0x23)
             mstore(0, owner) // [0x0c, 0x20)

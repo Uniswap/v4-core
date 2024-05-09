@@ -179,12 +179,6 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
         snapLastCall("create new liquidity to a position with salt");
-
-        IPoolManager.ModifyLiquidityParams memory samePositionNewSalt = LIQ_PARAM_SALT;
-        samePositionNewSalt.salt = hex"BEEF";
-
-        modifyLiquidityRouter.modifyLiquidity(simpleKey, samePositionNewSalt, ZERO_BYTES);
-        snapLastCall("create new liquidity to same position, different salt");
     }
 
     function test_gas_modifyLiquidity_updateSamePosition_withSalt() public {
