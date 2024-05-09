@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 
 import {PoolId} from "../types/PoolId.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {Position} from "./Position.sol";
 
 library PoolStateLibrary {
     // forge inspect src/PoolManager.sol:PoolManager storage --pretty
@@ -265,6 +266,35 @@ library PoolStateLibrary {
             feeGrowthInside0LastX128 := mload(add(data, 64))
             feeGrowthInside1LastX128 := mload(add(data, 96))
         }
+    }
+
+    function getPosition(
+        IPoolManager manager,
+        PoolId poolId,
+        address owner,
+        int24 tickLower,
+        int24 tickUpper,
+        bytes32 salt
+    ) internal view returns (Position.Info memory) {
+        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
+        bytes32 positionKey;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x26, salt) // [0x26, 0x46)
+            mstore(0x06, tickUpper) // [0x23, 0x26)
+            mstore(0x03, tickLower) // [0x20, 0x23)
+            mstore(0, owner) // [0x0c, 0x20)
+            positionKey := keccak256(0x0c, 0x3a) // len is 58 bytes
+            mstore(0x26, 0) // rewrite 0x26 to 0
+        }
+        (uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128) =
+            getPositionInfo(manager, poolId, positionKey);
+        return Position.Info({
+            liquidity: liquidity,
+            feeGrowthInside0LastX128: feeGrowthInside0LastX128,
+            feeGrowthInside1LastX128: feeGrowthInside1LastX128
+        });
     }
 
     /**

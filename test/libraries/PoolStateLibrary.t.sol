@@ -41,11 +41,11 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     function test_getSlot0() public {
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
         );
 
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
         );
 
         // swap to create fees, crossing a tick
@@ -64,7 +64,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     }
 
     function test_getTickLiquidity() public {
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether, 0), ZERO_BYTES);
 
         (uint128 liquidityGrossLower, int128 liquidityNetLower) =
             PoolStateLibrary.getTickLiquidity(manager, poolId, -60);
@@ -162,7 +162,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // create liquidity
         uint256 liquidity = 10_000 ether;
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity)), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES
         );
 
         (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = PoolStateLibrary.getFeeGrowthGlobal(manager, poolId);
@@ -185,7 +185,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // create liquidity
         uint256 liquidity = 10_000 ether;
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity)), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES
         );
 
         (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = PoolStateLibrary.getFeeGrowthGlobal(manager, poolId);
@@ -204,8 +204,10 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     }
 
     function test_getLiquidity() public {
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether), ZERO_BYTES);
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 10 ether), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether, 0), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(
+            key, IPoolManager.ModifyLiquidityParams(-120, 120, 10 ether, 0), ZERO_BYTES
+        );
 
         uint128 liquidity = PoolStateLibrary.getLiquidity(manager, poolId);
         snapLastCall("extsload getLiquidity");
@@ -231,7 +233,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         int24 tickUpper = 300;
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(tickLower, tickUpper, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(tickLower, tickUpper, 10_000 ether, 0), ZERO_BYTES
         );
 
         (int16 wordPos, uint8 bitPos) = TickBitmap.position(tickLower / key.tickSpacing);
@@ -267,7 +269,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     function test_getPositionInfo() public {
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
         );
 
         // swap to create fees, crossing a tick
@@ -277,9 +279,10 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertNotEq(currentTick, -139);
 
         // poke the LP so that fees are updated
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 0), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 0, 0), ZERO_BYTES);
 
-        bytes32 positionId = keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60)));
+        bytes32 positionId =
+            keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
 
         (uint128 liquidity, uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
             PoolStateLibrary.getPositionInfo(manager, poolId, positionId);
@@ -308,11 +311,12 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
 
         // poke the LP so that fees are updated
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(_params.tickLower, _params.tickUpper, 0), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(_params.tickLower, _params.tickUpper, 0, 0), ZERO_BYTES
         );
 
-        bytes32 positionId =
-            keccak256(abi.encodePacked(address(modifyLiquidityRouter), _params.tickLower, _params.tickUpper));
+        bytes32 positionId = keccak256(
+            abi.encodePacked(address(modifyLiquidityRouter), _params.tickLower, _params.tickUpper, bytes32(0))
+        );
 
         (uint128 liquidity, uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
             PoolStateLibrary.getPositionInfo(manager, poolId, positionId);
@@ -330,11 +334,11 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     function test_getTickFeeGrowthOutside() public {
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
         );
 
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
         );
 
         // swap to create fees, crossing a tick
@@ -362,11 +366,11 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     function test_getTickInfo() public {
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
         );
 
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
         );
 
         // swap to create fees, crossing a tick
@@ -397,11 +401,11 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     function test_getFeeGrowthInside() public {
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
         );
 
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
         );
 
         // swap to create fees, crossing a tick
@@ -416,9 +420,10 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         snapLastCall("extsload getFeeGrowthInside");
 
         // poke the LP so that fees are updated
-        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 0), ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 0, 0), ZERO_BYTES);
 
-        bytes32 positionId = keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60)));
+        bytes32 positionId =
+            keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
 
         (, uint256 feeGrowthInside0X128_, uint256 feeGrowthInside1X128_) =
             PoolStateLibrary.getPositionInfo(manager, poolId, positionId);
@@ -432,7 +437,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(
             key,
             IPoolManager.ModifyLiquidityParams(
-                TickMath.minUsableTick(key.tickSpacing), TickMath.maxUsableTick(key.tickSpacing), 10_000 ether
+                TickMath.minUsableTick(key.tickSpacing), TickMath.maxUsableTick(key.tickSpacing), 10_000 ether, 0
             ),
             ZERO_BYTES
         );
@@ -448,10 +453,11 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
 
         // poke the LP so that fees are updated
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(_params.tickLower, _params.tickUpper, 0), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(_params.tickLower, _params.tickUpper, 0, 0), ZERO_BYTES
         );
-        bytes32 positionId =
-            keccak256(abi.encodePacked(address(modifyLiquidityRouter), _params.tickLower, _params.tickUpper));
+        bytes32 positionId = keccak256(
+            abi.encodePacked(address(modifyLiquidityRouter), _params.tickLower, _params.tickUpper, bytes32(0))
+        );
 
         (, uint256 feeGrowthInside0X128_, uint256 feeGrowthInside1X128_) =
             PoolStateLibrary.getPositionInfo(manager, poolId, positionId);
@@ -463,10 +469,11 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     function test_getPositionLiquidity() public {
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
-            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether), ZERO_BYTES
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
         );
 
-        bytes32 positionId = keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60)));
+        bytes32 positionId =
+            keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
 
         uint128 liquidity = PoolStateLibrary.getPositionLiquidity(manager, poolId, positionId);
         snapLastCall("extsload getPositionLiquidity");
@@ -485,13 +492,15 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
 
         vm.assume(_paramsA.tickLower != _paramsB.tickLower && _paramsA.tickUpper != _paramsB.tickUpper);
 
-        bytes32 positionIdA =
-            keccak256(abi.encodePacked(address(modifyLiquidityRouter), _paramsA.tickLower, _paramsA.tickUpper));
+        bytes32 positionIdA = keccak256(
+            abi.encodePacked(address(modifyLiquidityRouter), _paramsA.tickLower, _paramsA.tickUpper, bytes32(0))
+        );
         uint128 liquidityA = PoolStateLibrary.getPositionLiquidity(manager, poolId, positionIdA);
         assertEq(liquidityA, uint128(uint256(_paramsA.liquidityDelta)));
 
-        bytes32 positionIdB =
-            keccak256(abi.encodePacked(address(modifyLiquidityRouter), _paramsB.tickLower, _paramsB.tickUpper));
+        bytes32 positionIdB = keccak256(
+            abi.encodePacked(address(modifyLiquidityRouter), _paramsB.tickLower, _paramsB.tickUpper, bytes32(0))
+        );
         uint128 liquidityB = PoolStateLibrary.getPositionLiquidity(manager, poolId, positionIdB);
         assertEq(liquidityB, uint128(uint256(_paramsB.liquidityDelta)));
     }
