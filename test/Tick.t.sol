@@ -5,12 +5,14 @@ import {Test} from "forge-std/Test.sol";
 import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
+import {TickBitmap} from "../src/libraries/TickBitmap.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {PoolGetters} from "../src/libraries/PoolGetters.sol";
 
 contract TickTest is Test, GasSnapshot {
     using PoolGetters for Pool.State;
     using Pool for Pool.State;
+    using Pool for Pool.TickInfoMap;
 
     int24 constant LOW_TICK_SPACING = 10;
     int24 constant MEDIUM_TICK_SPACING = 60;
@@ -19,7 +21,7 @@ contract TickTest is Test, GasSnapshot {
     Pool.State public pool;
 
     function ticks(int24 tick) internal view returns (Pool.TickInfo memory) {
-        return pool.ticks[tick];
+        return pool.ticks.get(tick).inner;
     }
 
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
@@ -27,11 +29,17 @@ contract TickTest is Test, GasSnapshot {
     }
 
     function setTick(int24 tick, Pool.TickInfo memory info) internal {
-        pool.ticks[tick] = info;
+        pool.ticks.get(tick).inner = info;
     }
 
-    function setTickBitmap(int16 word, uint256 bitmap) internal {
-        pool.tickBitmap[word] = bitmap;
+    function setTickBitmap(int16 wordPos, uint256 word) internal {
+        TickBitmap storage tickBitmap = pool.tickBitmap;
+        assembly ("memory-safe") {
+            // Compute the word's slot.
+            mstore(0, tickBitmap.slot)
+            let slot := add(keccak256(0, 32), wordPos)
+            sstore(slot, word)
+        }
     }
 
     function getFeeGrowthInside(

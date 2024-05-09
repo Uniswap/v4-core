@@ -7,7 +7,7 @@ import {Pool} from "src/libraries/Pool.sol";
 import {PoolManager} from "src/PoolManager.sol";
 import {Position} from "src/libraries/Position.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
-import {TickBitmap} from "src/libraries/TickBitmap.sol";
+import {TickBitmapLibrary} from "src/libraries/TickBitmap.sol";
 import {LiquidityAmounts} from "test/utils/LiquidityAmounts.sol";
 import {Constants} from "test/utils/Constants.sol";
 import {SafeCast} from "src/libraries/SafeCast.sol";
@@ -61,11 +61,11 @@ contract PoolTest is Test {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, params.tickLower));
         } else if (params.tickLower % params.tickSpacing != 0) {
             vm.expectRevert(
-                abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickLower, params.tickSpacing)
+                abi.encodeWithSelector(TickBitmapLibrary.TickMisaligned.selector, params.tickLower, params.tickSpacing)
             );
         } else if (params.tickUpper % params.tickSpacing != 0) {
             vm.expectRevert(
-                abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickUpper, params.tickSpacing)
+                abi.encodeWithSelector(TickBitmapLibrary.TickMisaligned.selector, params.tickUpper, params.tickSpacing)
             );
         } else {
             // We need the assumptions above to calculate this
