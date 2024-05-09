@@ -280,7 +280,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
                 amountSpecified: amountToSwap,
                 sqrtPriceLimitX96: params.sqrtPriceLimitX96
             }),
-            params.zeroForOne ? key.currency0 : key.currency1
+            params.zeroForOne ? key.currency0 : key.currency1 // input token
         );
 
         BalanceDelta hookDelta;
@@ -292,7 +292,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _accountPoolBalanceDelta(key, swapDelta, msg.sender);
     }
 
-    // Internal swap function to execute a swap, account protocol fees, and emit the swap event
+    // Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
     function _swap(PoolId id, Pool.SwapParams memory params, Currency inputCurrency) internal returns (BalanceDelta) {
         (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) =
             pools[id].swap(params);
