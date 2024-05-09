@@ -53,16 +53,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         return pools[id];
     }
 
-    /// @inheritdoc IPoolManager
-    function currencyDelta(address caller, Currency currency) external view returns (int256) {
-        return currency.getDelta(caller);
-    }
-
-    /// @inheritdoc IPoolManager
-    function isUnlocked() external view override returns (bool) {
-        return Lock.isUnlocked();
-    }
-
     /// @notice This will revert if the contract is locked
     modifier onlyWhenUnlocked() {
         if (!Lock.isUnlocked()) revert ManagerLocked();
@@ -267,10 +257,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         pools[id].setLPFee(newDynamicLPFee);
-    }
-
-    function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
-        return NonZeroDeltaCount.read();
     }
 
     function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory) {

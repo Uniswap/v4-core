@@ -91,4 +91,16 @@ contract PoolStateViewer {
     function getReserves(Currency currency) external view returns (uint256 value) {
         return poolManager.getReserves(currency);
     }
+
+    function getNonzeroDeltaCount() external view returns (uint256) {
+        return poolManager.getNonzeroDeltaCount();
+    }
+
+    function currencyDelta(address caller, Currency currency) external view returns (int256) {
+        return poolManager.currencyDelta(caller, currency);
+    }
+
+    function isUnlocked() external view returns (bool) {
+        return poolManager.isUnlocked();
+    }
 }

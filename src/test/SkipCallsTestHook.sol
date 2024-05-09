@@ -14,11 +14,13 @@ import {PoolTestBase} from "./PoolTestBase.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {PoolStateLibrary} from "../libraries/PoolStateLibrary.sol";
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
     using CurrencySettleTake for Currency;
     using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
+    using PoolStateLibrary for IPoolManager;
 
     uint256 public counter;
     IPoolManager manager;

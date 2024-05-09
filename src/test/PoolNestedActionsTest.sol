@@ -24,6 +24,8 @@ enum Action {
 }
 
 contract PoolNestedActionsTest is Test, IUnlockCallback {
+    using PoolStateLibrary for IPoolManager;
+
     IPoolManager manager;
     NestedActionExecutor public executor;
     address user;
