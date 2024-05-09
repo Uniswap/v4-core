@@ -116,22 +116,22 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function getLiquidity(PoolId id, address _owner, int24 tickLower, int24 tickUpper)
+    function getLiquidity(PoolId id, address _owner, int24 tickLower, int24 tickUpper, bytes32 salt)
         external
         view
         override
         returns (uint128 liquidity)
     {
-        return pools[id].positions.get(_owner, tickLower, tickUpper).liquidity;
+        return pools[id].positions.get(_owner, tickLower, tickUpper, salt).liquidity;
     }
 
-    function getPosition(PoolId id, address _owner, int24 tickLower, int24 tickUpper)
+    function getPosition(PoolId id, address _owner, int24 tickLower, int24 tickUpper, bytes32 salt)
         external
         view
         override
         returns (Position.Info memory position)
     {
-        return pools[id].positions.get(_owner, tickLower, tickUpper);
+        return pools[id].positions.get(_owner, tickLower, tickUpper, salt);
     }
 
     /// @inheritdoc IPoolManager
@@ -239,7 +239,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
                 tickLower: params.tickLower,
                 tickUpper: params.tickUpper,
                 liquidityDelta: params.liquidityDelta.toInt128(),
-                tickSpacing: key.tickSpacing
+                tickSpacing: key.tickSpacing,
+                salt: params.salt
             })
         );
 

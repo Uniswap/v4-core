@@ -97,7 +97,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);
 
     /// @notice Get the current value of liquidity for the specified pool and position
-    function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper)
+    function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper, bytes32 salt)
         external
         view
         returns (uint128 liquidity);
@@ -115,7 +115,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
         returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1);
 
     /// @notice Get the position struct for a specified pool and position
-    function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
+    function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper, bytes32 salt)
         external
         view
         returns (Position.Info memory position);
@@ -152,6 +152,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
         int24 tickUpper;
         // how to modify the liquidity
         int256 liquidityDelta;
+        // a value to set if you want unique liquidity positions at the same range
+        bytes32 salt;
     }
 
     /// @notice Modify the liquidity for the given pool

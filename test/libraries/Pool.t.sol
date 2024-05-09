@@ -110,7 +110,8 @@ contract PoolTest is Test {
                 tickLower: -120,
                 tickUpper: 120,
                 liquidityDelta: 1e18,
-                tickSpacing: 60
+                tickSpacing: 60,
+                salt: 0
             })
         );
         Pool.Slot0 memory slot0 = state.slot0;

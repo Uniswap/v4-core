@@ -143,6 +143,8 @@ library Pool {
         int128 liquidityDelta;
         // the spacing between ticks
         int24 tickSpacing;
+        // used to distinguish positions of the same owner, at the same tick range
+        bytes32 salt;
     }
 
     struct ModifyLiquidityState {
@@ -200,7 +202,7 @@ library Pool {
 
             (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = getFeeGrowthInside(self, tickLower, tickUpper);
 
-            Position.Info storage position = self.positions.get(params.owner, tickLower, tickUpper);
+            Position.Info storage position = self.positions.get(params.owner, tickLower, tickUpper, params.salt);
             (feesOwed0, feesOwed1) =
                 position.update(liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
 
