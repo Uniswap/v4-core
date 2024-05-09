@@ -183,8 +183,8 @@ contract SwapMathTest is Test, GasSnapshot {
     ) public pure {
         vm.assume(sqrtPriceRaw > 0);
         vm.assume(sqrtPriceTargetRaw > 0);
-        vm.assume(feePips > 0);
-        vm.assume(feePips < 1e6);
+        vm.assume(feePips >= 0);
+        vm.assume(feePips <= 1e6);
 
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
             SwapMath.computeSwapStep(sqrtPriceRaw, sqrtPriceTargetRaw, liquidity, amountRemaining, feePips);
@@ -208,8 +208,14 @@ contract SwapMathTest is Test, GasSnapshot {
 
         // didn't reach price target, entire amount must be consumed
         if (sqrtQ != sqrtPriceTargetRaw) {
+            uint256 absAmtRemaining;
+            if (amountRemaining == type(int256).min) {
+                absAmtRemaining = uint256(type(int256).max) + 1;
+            } else if (amountRemaining < 0) {
+                absAmtRemaining = uint256(-amountRemaining);
+            }
             if (amountRemaining > 0) assertEq(amountOut, uint256(amountRemaining));
-            else assertEq(amountIn + feeAmount, uint256(-amountRemaining));
+            else assertEq(amountIn + feeAmount, absAmtRemaining);
         }
 
         // next price is between price and price target
