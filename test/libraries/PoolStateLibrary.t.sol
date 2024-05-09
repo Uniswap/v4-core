@@ -295,11 +295,22 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
         (IPoolManager.ModifyLiquidityParams memory _params, BalanceDelta delta) =
             createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
 
+        uint256 minSwapAmount = 1;
+
         // assume swap amount is material, and less than 1/5th of the liquidity
-        vm.assume(0.0000000001 ether < swapAmount);
-        vm.assume(
-            swapAmount < uint256(int256(-delta.amount0())) / 5 && swapAmount < uint256(int256(-delta.amount1())) / 5
-        );
+        uint256 delta0 = uint256(int256(-delta.amount0()));
+        uint256 delta1 = uint256(int256(-delta.amount1()));
+        uint256 maxAmountToSwap = (delta0 < delta1 ? delta0 : delta1) / 5;
+        // if one of the deltas is zero, ensure to swap in the right direction
+        if (delta0 == 0) {
+            maxAmountToSwap = delta1 / 5;
+            zeroForOne = true;
+        } else if (delta1 == 0) {
+            maxAmountToSwap = delta0 / 5;
+            zeroForOne = false;
+        }
+        vm.assume(maxAmountToSwap > minSwapAmount);
+        swapAmount = bound(swapAmount, minSwapAmount, maxAmountToSwap);
         swap(key, zeroForOne, -int256(swapAmount), ZERO_BYTES);
 
         // poke the LP so that fees are updated
@@ -430,7 +441,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers {
             ZERO_BYTES
         );
 
-        (IPoolManager.ModifyLiquidityParams memory _params, BalanceDelta delta) =
+        (IPoolManager.ModifyLiquidityParams memory _params,) =
             createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
 
         swap(key, zeroForOne, -int256(100e18), ZERO_BYTES);
