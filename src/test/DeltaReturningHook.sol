@@ -79,7 +79,7 @@ contract DeltaReturningHook is BaseTestHooks {
         // positive amount means positive delta for the hook, so it can take
         // negative it should settle
         if (delta > 0) {
-            manager.take(currency, address(this), uint128(delta));
+            currency.take(manager, address(this), uint128(delta), false);
         } else {
             uint256 amount = uint256(-int256(delta));
             if (currency.isNative()) {

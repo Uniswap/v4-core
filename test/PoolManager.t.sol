@@ -160,6 +160,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 balanceBefore1 = currency1.balanceOf(address(this));
         uint256 hookBalanceBefore0 = currency0.balanceOf(hookAddr);
         uint256 hookBalanceBefore1 = currency1.balanceOf(hookAddr);
+        uint256 managerBalanceBefore0 = currency0.balanceOf(address(manager));
+        uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
 
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
 
@@ -167,10 +169,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 hookGain1 = currency1.balanceOf(hookAddr) - hookBalanceBefore1;
         uint256 thisLoss0 = balanceBefore0 - currency0.balanceOf(address(this));
         uint256 thisLoss1 = balanceBefore1 - currency1.balanceOf(address(this));
+        uint256 managerGain0 = currency0.balanceOf(address(manager)) - managerBalanceBefore0;
+        uint256 managerGain1 = currency1.balanceOf(address(manager)) - managerBalanceBefore1;
 
         // Assert that the hook got 5.43% of the withdrawn liquidity
-        assertEq(hookGain0, (thisLoss0 - hookGain0) * 543 / 10000, "hook amount 0");
-        assertEq(hookGain1, (thisLoss1 - hookGain1) * 543 / 10000, "hook amount 1");
+        assertEq(hookGain0, managerGain0 * 543 / 10000, "hook amount 0");
+        assertEq(hookGain1, managerGain1 * 543 / 10000, "hook amount 1");
+        assertEq(thisLoss0 - hookGain0, managerGain0, "manager amount 0");
+        assertEq(thisLoss1 - hookGain1, managerGain1, "manager amount 1");
     }
 
     function test_removeLiquidity_withFeeTakingHook() public {
@@ -185,6 +191,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 balanceBefore1 = currency1.balanceOf(address(this));
         uint256 hookBalanceBefore0 = currency0.balanceOf(hookAddr);
         uint256 hookBalanceBefore1 = currency1.balanceOf(hookAddr);
+        uint256 managerBalanceBefore0 = currency0.balanceOf(address(manager));
+        uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
 
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
 
@@ -192,10 +200,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 hookGain1 = currency1.balanceOf(hookAddr) - hookBalanceBefore1;
         uint256 thisGain0 = currency0.balanceOf(address(this)) - balanceBefore0;
         uint256 thisGain1 = currency1.balanceOf(address(this)) - balanceBefore1;
+        uint256 managerLoss0 = managerBalanceBefore0 - currency0.balanceOf(address(manager));
+        uint256 managerLoss1 = managerBalanceBefore1 - currency1.balanceOf(address(manager));
 
         // Assert that the hook got 5.43% of the withdrawn liquidity
-        assertEq(hookGain0, (hookGain0 + thisGain0) * 543 / 10000, "hook amount 0");
-        assertEq(hookGain1, (hookGain1 + thisGain1) * 543 / 10000, "hook amount 1");
+        assertEq(hookGain0, managerLoss0 * 543 / 10000, "hook amount 0");
+        assertEq(hookGain1, managerLoss1 * 543 / 10000, "hook amount 1");
+        assertEq(thisGain0 + hookGain0, managerLoss0, "manager amount 0");
+        assertEq(thisGain1 + hookGain1, managerLoss1, "thimanagers amount 1");
     }
 
     function test_addLiquidity_succeedsForNativeTokensIfInitialized(uint160 sqrtPriceX96) public {
@@ -814,6 +826,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         });
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
+        // input is 1000 for output of 998 with this much liquidity available
+        // plus a fee of 1.23% on unspecified (output) => (998*123)/10000 = 12
         assertEq(currency0.balanceOf(address(this)), balanceBefore0 - amountToSwap, "amount 0");
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + (998 - 12), "amount 1");
     }
@@ -838,7 +852,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         });
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        // input is 1002 plus a fee of 12 (1002*123)/10000
+        // input is 1002 for output of 1000 with this much liquidity available
+        // plus a fee of 1.23% on unspecified (input) => (1002*123)/10000 = 12
         assertEq(currency0.balanceOf(address(this)), balanceBefore0 - 1002 - 12, "amount 0");
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
     }
@@ -909,8 +924,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
     }
 
-    int128 constant maxPossibleIn = -6018336102428409;
-    int128 constant maxPossibleOut = 5981737760509662;
+    // maximum available liquidity in each direction for the pool in fuzz_swap_beforeSwapReturnsDelta
+    int128 maxPossibleIn_fuzz_test = -6018336102428409;
+    int128 maxPossibleOut_fuzz_test = 5981737760509662;
 
     function test_fuzz_swap_beforeSwapReturnsDelta(int128 hookDeltaSpecified, int256 amountSpecified, bool zeroForOne)
         public
@@ -975,39 +991,54 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         } else {
             uint256 balanceThisBefore = specifiedCurrency.balanceOf(address(this));
             uint256 balanceHookBefore = specifiedCurrency.balanceOf(hookAddr);
+            uint256 balanceManagerBefore = specifiedCurrency.balanceOf(address(manager));
 
             BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
             int128 deltaSpecified = (zeroForOne == isExactIn) ? delta.amount0() : delta.amount1();
 
-            uint256 balanceThisAfter = specifiedCurrency.balanceOf(address(this));
-            uint256 balanceHookAfter = specifiedCurrency.balanceOf(hookAddr);
-
             // in all cases the hook gets what they took, and the user gets the swap's output delta (checked more below)
             assertEq(
                 balanceHookBefore.toInt256() + hookDeltaSpecified,
-                balanceHookAfter.toInt256(),
+                specifiedCurrency.balanceOf(hookAddr).toInt256(),
                 "hook balance change incorrect"
             );
             assertEq(
                 balanceThisBefore.toInt256() + deltaSpecified,
-                balanceThisAfter.toInt256(),
+                specifiedCurrency.balanceOf(address(this)).toInt256(),
                 "swapper balance change incorrect"
             );
 
             // exact input, where there arent enough input reserves available to pay swap and hook
             // note: all 3 values are negative, so we use <
-            if (isExactIn && (hookDeltaSpecified + amountSpecified < maxPossibleIn)) {
+            if (isExactIn && (hookDeltaSpecified + amountSpecified < maxPossibleIn_fuzz_test)) {
                 // the hook will have taken hookDeltaSpecified of the maxPossibleIn
-                assertEq(deltaSpecified, maxPossibleIn - hookDeltaSpecified, "deltaSpecified exact input");
+                assertEq(deltaSpecified, maxPossibleIn_fuzz_test - hookDeltaSpecified, "deltaSpecified exact input");
+                // the manager received all possible input tokens
+                assertEq(
+                    balanceManagerBefore.toInt256() - maxPossibleIn_fuzz_test,
+                    specifiedCurrency.balanceOf(address(manager)).toInt256(),
+                    "manager balance change exact input"
+                );
 
                 // exact output, where there isnt enough output reserves available to pay swap and hook
-            } else if (!isExactIn && (hookDeltaSpecified + amountSpecified > maxPossibleOut)) {
+            } else if (!isExactIn && (hookDeltaSpecified + amountSpecified > maxPossibleOut_fuzz_test)) {
                 // the hook will have taken hookDeltaSpecified of the maxPossibleOut
-                assertEq(deltaSpecified, maxPossibleOut - hookDeltaSpecified, "deltaSpecified exact output");
+                assertEq(deltaSpecified, maxPossibleOut_fuzz_test - hookDeltaSpecified, "deltaSpecified exact output");
+                // the manager sent out all possible output tokens
+                assertEq(
+                    balanceManagerBefore.toInt256() - maxPossibleOut_fuzz_test,
+                    specifiedCurrency.balanceOf(address(manager)).toInt256(),
+                    "manager balance change exact output"
+                );
 
                 // enough reserves were available, so the user got what they desired
             } else {
                 assertEq(deltaSpecified, amountSpecified, "deltaSpecified not amountSpecified");
+                assertEq(
+                    balanceManagerBefore.toInt256() - amountSpecified - hookDeltaSpecified,
+                    specifiedCurrency.balanceOf(address(manager)).toInt256(),
+                    "manager balance change not"
+                );
             }
         }
     }
