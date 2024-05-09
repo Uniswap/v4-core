@@ -176,7 +176,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     ) public {
         // first hook needs to add liquidity for itself
         IPoolManager.ModifyLiquidityParams memory newParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
         IPoolManager(manager).modifyLiquidity(key, newParams, hookData);
         // hook removes liquidity
         IPoolManager(manager).modifyLiquidity(key, params, hookData);

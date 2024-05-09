@@ -1469,7 +1469,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     //     manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
     //     // populate feeGrowthGlobalX128 struct w/ modify + swap
-    //     modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 5 ether));
+    //     modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 5 ether, 0));
     //     swapRouter.swap(
     //         key,
     //         IPoolManager.SwapParams(false, 1 ether, TickMath.MAX_SQRT_RATIO - 1),
@@ -1498,7 +1498,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_getPosition() public view {
         Position.Info memory managerPosition =
-            manager.getPosition(key.toId(), address(modifyLiquidityRouter), -120, 120);
+            manager.getPosition(key.toId(), address(modifyLiquidityRouter), -120, 120, 0);
         assert(LIQUIDITY_PARAMS.liquidityDelta > 0);
         assertEq(managerPosition.liquidity, uint128(uint256(LIQUIDITY_PARAMS.liquidityDelta)));
     }
