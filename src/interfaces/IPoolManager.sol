@@ -121,6 +121,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         int24 tickUpper;
         // how to modify the liquidity
         int256 liquidityDelta;
+        // a value to set if you want unique liquidity positions at the same range
+        bytes32 salt;
     }
 
     /// @notice Modify the liquidity for the given pool

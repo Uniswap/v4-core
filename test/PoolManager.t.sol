@@ -1166,7 +1166,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     //     manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
 
     //     // populate feeGrowthGlobalX128 struct w/ modify + swap
-    //     modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 5 ether));
+    //     modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-120, 120, 5 ether, 0));
     //     swapRouter.swap(
     //         key,
     //         IPoolManager.SwapParams(false, 1 ether, TickMath.MAX_SQRT_RATIO - 1),
@@ -1194,7 +1194,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     // }
 
     function test_getPosition() public {
-        bytes32 positionId = keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-120), int24(120)));
+        bytes32 positionId =
+            keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-120), int24(120), bytes32(0)));
         (uint128 liquidity,,) = manager.getPositionInfo(key.toId(), positionId);
 
         assert(LIQ_PARAMS.liquidityDelta > 0);
