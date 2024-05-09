@@ -164,6 +164,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
 
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        snapLastCall("addLiquidity CA fee");
 
         uint256 hookGain0 = currency0.balanceOf(hookAddr) - hookBalanceBefore0;
         uint256 hookGain1 = currency1.balanceOf(hookAddr) - hookBalanceBefore1;
@@ -172,7 +173,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 managerGain0 = currency0.balanceOf(address(manager)) - managerBalanceBefore0;
         uint256 managerGain1 = currency1.balanceOf(address(manager)) - managerBalanceBefore1;
 
-        // Assert that the hook got 5.43% of the withdrawn liquidity
+        // Assert that the hook got 5.43% of the added liquidity
         assertEq(hookGain0, managerGain0 * 543 / 10000, "hook amount 0");
         assertEq(hookGain1, managerGain1 * 543 / 10000, "hook amount 1");
         assertEq(thisLoss0 - hookGain0, managerGain0, "manager amount 0");
@@ -195,6 +196,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
 
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
+        snapLastCall("removeLiquidity CA fee");
 
         uint256 hookGain0 = currency0.balanceOf(hookAddr) - hookBalanceBefore0;
         uint256 hookGain1 = currency1.balanceOf(hookAddr) - hookBalanceBefore1;
@@ -207,7 +209,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(hookGain0, managerLoss0 * 543 / 10000, "hook amount 0");
         assertEq(hookGain1, managerLoss1 * 543 / 10000, "hook amount 1");
         assertEq(thisGain0 + hookGain0, managerLoss0, "manager amount 0");
-        assertEq(thisGain1 + hookGain1, managerLoss1, "thimanagers amount 1");
+        assertEq(thisGain1 + hookGain1, managerLoss1, "manager amount 1");
     }
 
     function test_addLiquidity_succeedsForNativeTokensIfInitialized(uint160 sqrtPriceX96) public {
@@ -806,7 +808,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapLastCall("swap against liquidity with native token");
     }
 
-    function test_swap_afterSwapCustomAccounting_exactInput() public {
+    function test_swap_afterSwapFeeOnUnspecified_exactInput() public {
         address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
         FeeTakingHook impl = new FeeTakingHook(manager);
         vm.etch(hookAddr, address(impl).code);
@@ -825,6 +827,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             sqrtPriceLimitX96: SQRT_RATIO_1_2
         });
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapLastCall("swap CA fee on unspecified");
 
         // input is 1000 for output of 998 with this much liquidity available
         // plus a fee of 1.23% on unspecified (output) => (998*123)/10000 = 12
@@ -832,7 +835,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + (998 - 12), "amount 1");
     }
 
-    function test_swap_afterSwapCustomAccounting_exactOutput() public {
+    function test_swap_afterSwapFeeOnUnspecified_exactOutput() public {
         address hookAddr = address(uint160(Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
         FeeTakingHook impl = new FeeTakingHook(manager);
         vm.etch(hookAddr, address(impl).code);
@@ -885,6 +888,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             sqrtPriceLimitX96: SQRT_RATIO_1_2
         });
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        snapLastCall("swap CA custom curve + swap noop");
 
         // the custom curve hook is 1-1 linear
         assertEq(currency0.balanceOf(address(this)), balanceBefore0 - amountToSwap, "amount 0");
