@@ -9,7 +9,7 @@ import {FixedPoint128} from "./FixedPoint128.sol";
 import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
-import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
@@ -47,9 +47,6 @@ library Pool {
 
     /// @notice Thrown when trying to interact with a non-initialized pool
     error PoolNotInitialized();
-
-    /// @notice Thrown when trying to swap amount of 0
-    error SwapAmountCannotBeZero();
 
     /// @notice Thrown when sqrtPriceLimitX96 on a swap has already exceeded its limit
     /// @param sqrtPriceCurrentX96 The invalid, already surpassed sqrtPriceLimitX96
@@ -307,10 +304,31 @@ library Pool {
         internal
         returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
     {
-        if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
-
         Slot0 memory slot0Start = self.slot0;
         bool zeroForOne = params.zeroForOne;
+        bool exactInput = params.amountSpecified < 0;
+
+        SwapCache memory cache = SwapCache({
+            liquidityStart: self.liquidity,
+            protocolFee: zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee()
+        });
+
+        state.amountSpecifiedRemaining = params.amountSpecified;
+        state.amountCalculated = 0;
+        state.sqrtPriceX96 = slot0Start.sqrtPriceX96;
+        state.tick = slot0Start.tick;
+        state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
+        state.liquidity = cache.liquidityStart;
+
+        swapFee =
+            cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+
+        if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
+            revert InvalidFeeForExactOut();
+        }
+
+        if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
+
         if (zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
@@ -327,27 +345,7 @@ library Pool {
             }
         }
 
-        SwapCache memory cache = SwapCache({
-            liquidityStart: self.liquidity,
-            protocolFee: zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee()
-        });
-
-        bool exactInput = params.amountSpecified < 0;
-
-        state.amountSpecifiedRemaining = params.amountSpecified;
-        state.amountCalculated = 0;
-        state.sqrtPriceX96 = slot0Start.sqrtPriceX96;
-        state.tick = slot0Start.tick;
-        state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
-        state.liquidity = cache.liquidityStart;
-
         StepComputations memory step;
-        swapFee =
-            cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
-
-        if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
-            revert InvalidFeeForExactOut();
-        }
 
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
