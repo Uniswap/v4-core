@@ -29,7 +29,7 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
     function setUp() public {
         deployFreshManagerAndRouters();
         deployMintAndApprove2Currencies();
-        (simpleKey, simplePoolId) = initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        (simpleKey, simplePoolId) = initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_modifyLiquidity_samePosition_zeroSalt_isUpdated() public {

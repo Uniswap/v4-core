@@ -54,7 +54,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertGt(currency0.balanceOf(address(manager)), uint256(0));
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
@@ -75,7 +75,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         PoolKey memory key2 =
             PoolKey({currency0: cur0, currency1: cur1, fee: 3000, tickSpacing: 60, hooks: IHooks(address(0))});
 
-        manager.initialize(key2, SQRT_RATIO_1_1, new bytes(0));
+        manager.initialize(key2, SQRT_PRICE_1_1, new bytes(0));
 
         // Sync has not been called.
         vm.expectRevert(Reserves.ReservesMustBeSynced.selector);

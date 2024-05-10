@@ -38,10 +38,10 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_initialize_succeedsWithHook() public {
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, new bytes(123));
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, new bytes(123));
 
         (uint160 sqrtPriceX96,,,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(sqrtPriceX96, SQRT_RATIO_1_1);
+        assertEq(sqrtPriceX96, SQRT_PRICE_1_1);
         assertEq(mockHooks.beforeInitializeData(), new bytes(123));
         assertEq(mockHooks.afterInitializeData(), new bytes(123));
     }
@@ -49,13 +49,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function test_beforeInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_afterInitialize_invalidReturn() public {
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, bytes4(0xdeadbeef));
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_beforeAfterAddLiquidity_beforeAfterRemoveLiquidity_succeedsWithHook() public {
@@ -137,7 +137,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
     function test_swap_succeedsWithHook() public {
         IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
@@ -152,7 +152,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            IPoolManager.SwapParams(false, 100, SQRT_PRICE_1_1 + 60),
             PoolSwapTest.TestSettings(true, true),
             ZERO_BYTES
         );
@@ -163,7 +163,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
         swapRouter.swap(
             key,
-            IPoolManager.SwapParams(false, 100, SQRT_RATIO_1_1 + 60),
+            IPoolManager.SwapParams(false, 100, SQRT_PRICE_1_1 + 60),
             PoolSwapTest.TestSettings(true, true),
             ZERO_BYTES
         );

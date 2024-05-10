@@ -113,7 +113,7 @@ library Pool {
     {
         if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
 
-        tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+        tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
         self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, lpFee: lpFee});
     }
@@ -222,15 +222,15 @@ library Pool {
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
                 delta = toBalanceDelta(
                     SqrtPriceMath.getAmount0Delta(
-                        TickMath.getSqrtRatioAtTick(tickLower), TickMath.getSqrtRatioAtTick(tickUpper), liquidityDelta
+                        TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
                     ).toInt128(),
                     0
                 );
             } else if (tick < tickUpper) {
                 delta = toBalanceDelta(
-                    SqrtPriceMath.getAmount0Delta(sqrtPriceX96, TickMath.getSqrtRatioAtTick(tickUpper), liquidityDelta)
+                    SqrtPriceMath.getAmount0Delta(sqrtPriceX96, TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta)
                         .toInt128(),
-                    SqrtPriceMath.getAmount1Delta(TickMath.getSqrtRatioAtTick(tickLower), sqrtPriceX96, liquidityDelta)
+                    SqrtPriceMath.getAmount1Delta(TickMath.getSqrtPriceAtTick(tickLower), sqrtPriceX96, liquidityDelta)
                         .toInt128()
                 );
 
@@ -241,7 +241,7 @@ library Pool {
                 delta = toBalanceDelta(
                     0,
                     SqrtPriceMath.getAmount1Delta(
-                        TickMath.getSqrtRatioAtTick(tickLower), TickMath.getSqrtRatioAtTick(tickUpper), liquidityDelta
+                        TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
                     ).toInt128()
                 );
             }
@@ -333,14 +333,14 @@ library Pool {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
             }
-            if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO) {
+            if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
             }
         } else {
             if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
             }
-            if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
+            if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_PRICE) {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
             }
         }
@@ -362,7 +362,7 @@ library Pool {
             }
 
             // get the price for the next tick
-            step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
+            step.sqrtPriceNextX96 = TickMath.getSqrtPriceAtTick(step.tickNext);
 
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
             (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
@@ -439,7 +439,7 @@ library Pool {
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
-                state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
+                state.tick = TickMath.getTickAtSqrtPrice(state.sqrtPriceX96);
             }
         }
 

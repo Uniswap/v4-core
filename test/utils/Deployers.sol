@@ -36,14 +36,14 @@ contract Deployers {
 
     // Helpful test constants
     bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
-    uint160 constant SQRT_RATIO_1_1 = Constants.SQRT_RATIO_1_1;
-    uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
-    uint160 constant SQRT_RATIO_2_1 = Constants.SQRT_RATIO_2_1;
-    uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
-    uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
+    uint160 constant SQRT_PRICE_1_1 = Constants.SQRT_PRICE_1_1;
+    uint160 constant SQRT_PRICE_1_2 = Constants.SQRT_PRICE_1_2;
+    uint160 constant SQRT_PRICE_2_1 = Constants.SQRT_PRICE_2_1;
+    uint160 constant SQRT_PRICE_1_4 = Constants.SQRT_PRICE_1_4;
+    uint160 constant SQRT_PRICE_4_1 = Constants.SQRT_PRICE_4_1;
 
-    uint160 public constant MIN_PRICE_LIMIT = TickMath.MIN_SQRT_RATIO + 1;
-    uint160 public constant MAX_PRICE_LIMIT = TickMath.MAX_SQRT_RATIO - 1;
+    uint160 public constant MIN_PRICE_LIMIT = TickMath.MIN_SQRT_PRICE + 1;
+    uint160 public constant MAX_PRICE_LIMIT = TickMath.MAX_SQRT_PRICE - 1;
 
     IPoolManager.ModifyLiquidityParams public LIQUIDITY_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
@@ -194,10 +194,10 @@ contract Deployers {
         deployFreshManagerAndRouters();
         // sets the global currencyies and key
         deployMintAndApprove2Currencies();
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
         nestedActionRouter.executor().setKey(key);
         (nativeKey,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
+            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
         );
         uninitializedKey = key;
         uninitializedNativeKey = nativeKey;
