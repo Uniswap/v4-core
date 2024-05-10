@@ -26,13 +26,6 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     PoolSwapTest.TestSettings testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-    uint160 clearAllHookPermisssionsMask;
-    uint256 hookPermissionCount = 10;
-
-    function setUp() public {
-        clearAllHookPermisssionsMask = ~uint160(0) >> hookPermissionCount;
-    }
-
     function deploy(SkipCallsTestHook skipCallsTestHook) private {
         SkipCallsTestHook impl = new SkipCallsTestHook();
         vm.etch(address(skipCallsTestHook), address(impl).code);
@@ -48,7 +41,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     function approveAndAddLiquidity(SkipCallsTestHook skipCallsTestHook) private {
         MockERC20(Currency.unwrap(key.currency0)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
         MockERC20(Currency.unwrap(key.currency1)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
     }
 
     function test_beforeInitialize_skipIfCalledByHook() public {
@@ -83,7 +76,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         approveAndAddLiquidity(skipCallsTestHook);
         assertEq(skipCallsTestHook.counter(), 1);
         // adds liquidity again and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
@@ -99,7 +92,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         approveAndAddLiquidity(skipCallsTestHook);
         assertEq(skipCallsTestHook.counter(), 1);
         // adds liquidity and increments counter again
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
@@ -113,12 +106,12 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 0);
 
         // removes liquidity and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
         // adds liquidity again
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
         // removes liquidity again and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
@@ -132,12 +125,12 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 0);
 
         // removes liquidity and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
         // adds liquidity again
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
         // removes liquidity again and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 

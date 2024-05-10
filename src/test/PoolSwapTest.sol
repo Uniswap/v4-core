@@ -71,10 +71,12 @@ contract PoolSwapTest is PoolTestBase {
                     deltaAfter0 >= data.params.amountSpecified,
                     "deltaAfter0 is not greater than or equal to data.params.amountSpecified"
                 );
+                require(delta.amount0() == deltaAfter0, "delta.amount0() is not equal to deltaAfter0");
                 require(deltaAfter1 >= 0, "deltaAfter1 is not greater than or equal to 0");
             } else {
                 // exact output, 0 for 1
-                require(deltaAfter0 < 0, "deltaAfter0 is not less than zero");
+                require(deltaAfter0 <= 0, "deltaAfter0 is not less than zero");
+                require(delta.amount1() == deltaAfter1, "delta.amount1() is not equal to deltaAfter1");
                 require(
                     deltaAfter1 <= data.params.amountSpecified,
                     "deltaAfter1 is not less than or equal to data.params.amountSpecified"
@@ -87,10 +89,12 @@ contract PoolSwapTest is PoolTestBase {
                     deltaAfter1 >= data.params.amountSpecified,
                     "deltaAfter1 is not greater than or equal to data.params.amountSpecified"
                 );
+                require(delta.amount1() == deltaAfter1, "delta.amount1() is not equal to deltaAfter1");
                 require(deltaAfter0 >= 0, "deltaAfter0 is not greater than or equal to 0");
             } else {
                 // exact output, 1 for 0
-                require(deltaAfter1 < 0, "deltaAfter1 is not less than 0");
+                require(deltaAfter1 <= 0, "deltaAfter1 is not less than 0");
+                require(delta.amount0() == deltaAfter0, "delta.amount0() is not equal to deltaAfter0");
                 require(
                     deltaAfter0 <= data.params.amountSpecified,
                     "deltaAfter0 is not less than or equal to data.params.amountSpecified"
