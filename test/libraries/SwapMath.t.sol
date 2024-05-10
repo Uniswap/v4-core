@@ -184,7 +184,12 @@ contract SwapMathTest is Test, GasSnapshot {
         vm.assume(sqrtPriceRaw > 0);
         vm.assume(sqrtPriceTargetRaw > 0);
         vm.assume(feePips >= 0);
-        vm.assume(feePips <= 1e6);
+
+        if (amountRemaining >= 0) {
+            vm.assume(feePips < 1e6);
+        } else {
+            vm.assume(feePips <= 1e6);
+        }
 
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
             SwapMath.computeSwapStep(sqrtPriceRaw, sqrtPriceTargetRaw, liquidity, amountRemaining, feePips);
