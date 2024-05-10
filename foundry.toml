@@ -10,6 +10,9 @@ evm_version = "cancun"
 runs = 1000
 seed = "0x4444"
 
+[profile.pr.fuzz]
+runs = 10000
+
 [profile.ci.fuzz]
 runs = 100000
 
