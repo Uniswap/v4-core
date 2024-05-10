@@ -88,9 +88,8 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
-        snapStart("return dynamic fee in before swap");
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-        snapEnd();
+        snapLastCall("swap with return dynamic fee");
 
         assertEq(_fetchPoolSwapFee(key), 0);
     }
