@@ -267,22 +267,28 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     {
         if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
 
-        _checkPoolInitialized(key.toId());
+        PoolId id = key.toId();
+        _checkPoolInitialized(id);
 
-        (int256 amountToSwap, int128 hookDeltaSpecified, uint24 fee) = key.hooks.beforeSwap(key, params, hookData);
+        int128 hookDeltaSpecified;
+        {
+            int256 amountToSwap;
+            uint24 fee;
+            (amountToSwap, hookDeltaSpecified, fee) = key.hooks.beforeSwap(key, params, hookData);
 
-        // execute swap, account protocol fees, and emit swap event
-        swapDelta = _swap(
-            key.toId(),
-            Pool.SwapParams({
-                tickSpacing: key.tickSpacing,
-                zeroForOne: params.zeroForOne,
-                amountSpecified: amountToSwap,
-                sqrtPriceLimitX96: params.sqrtPriceLimitX96,
-                fee: fee
-            }),
-            params.zeroForOne ? key.currency0 : key.currency1 // input token
-        );
+            // execute swap, account protocol fees, and emit swap event
+            swapDelta = _swap(
+                id,
+                Pool.SwapParams({
+                    tickSpacing: key.tickSpacing,
+                    zeroForOne: params.zeroForOne,
+                    amountSpecified: amountToSwap,
+                    sqrtPriceLimitX96: params.sqrtPriceLimitX96,
+                    fee: fee
+                }),
+                params.zeroForOne ? key.currency0 : key.currency1 // input token
+            );
+        }
 
         BalanceDelta hookDelta;
         (swapDelta, hookDelta) = key.hooks.afterSwap(key, params, swapDelta, hookData, hookDeltaSpecified);
