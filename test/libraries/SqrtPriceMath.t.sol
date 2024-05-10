@@ -7,7 +7,7 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {SqrtPriceMath} from "../../src/libraries/SqrtPriceMath.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 
-contract SqrtPriceMathTestTest is Test, GasSnapshot {
+contract SqrtPriceMathTest is Test, GasSnapshot {
     function test_getNextSqrtPriceFromInput_revertsIfPriceIsZero() public {
         vm.expectRevert(SqrtPriceMath.InvalidPriceOrLiquidity.selector);
         SqrtPriceMath.getNextSqrtPriceFromInput(0, 1, 0.1 ether, false);
