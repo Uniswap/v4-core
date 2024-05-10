@@ -39,4 +39,12 @@ contract TickMathTest {
     function MAX_TICK() external pure returns (int24) {
         return TickMath.MAX_TICK;
     }
+
+    function maxUsableTick(int24 tickSpacing) external pure returns (int24) {
+        return TickMath.maxUsableTick(tickSpacing);
+    }
+
+    function minUsableTick(int24 tickSpacing) external pure returns (int24) {
+        return TickMath.minUsableTick(tickSpacing);
+    }
 }
