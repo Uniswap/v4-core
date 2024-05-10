@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
-import {SwapFeeLibrary} from "./SwapFeeLibrary.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {LPFeeLibrary} from "./LPFeeLibrary.sol";
+import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
@@ -13,7 +13,7 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 /// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
 /// has leading bits '1001' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
 library Hooks {
-    using SwapFeeLibrary for uint24;
+    using LPFeeLibrary for uint24;
     using Hooks for IHooks;
     using SafeCast for int256;
 
@@ -98,18 +98,17 @@ library Hooks {
     /// @return bool True if the hook address is valid
     function isValidHookAddress(IHooks self, uint24 fee) internal pure returns (bool) {
         // The hook can only have a flag to return a hook delta on an action if it also has the corresponding action flag
+        if (!self.hasPermission(BEFORE_SWAP_FLAG) && self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)) return false;
+        if (!self.hasPermission(AFTER_SWAP_FLAG) && self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)) return false;
+        if (!self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG) && self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG))
+        {
+            return false;
+        }
         if (
-            (!self.hasPermission(BEFORE_SWAP_FLAG) && self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG))
-                || (!self.hasPermission(AFTER_SWAP_FLAG) && self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG))
-                || (
-                    !self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)
-                        && self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG)
-                )
-                || (
-                    !self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)
-                        && self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
-                )
+            !self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)
+                && self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
         ) return false;
+
         // If there is no hook contract set, then fee cannot be dynamic
         // If a hook contract is set, it must have at least 1 flag set, or have a dynamic fee
         return address(self) == address(0)
@@ -120,7 +119,6 @@ library Hooks {
     /// @notice performs a hook call using the given calldata on the given hook that doesnt return a delta
     /// @return result The complete data returned by the hook
     function callHook(IHooks self, bytes memory data) internal returns (bytes memory result) {
-        if (msg.sender == address(self)) return "";
         bool success;
         (success, result) = address(self).call(data);
         if (!success) _revert(result);
@@ -143,7 +141,7 @@ library Hooks {
     {
         bytes memory result = callHook(self, data);
 
-        if (!parseReturn || msg.sender == address(self)) return 0;
+        if (!parseReturn) return 0;
         (, delta) = abi.decode(result, (bytes4, int256));
     }
 
@@ -216,7 +214,10 @@ library Hooks {
         IPoolManager.ModifyLiquidityParams memory params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) internal noSelfCall(self) returns (BalanceDelta hookDelta) {
+    ) internal returns (BalanceDelta callerDelta, BalanceDelta hookDelta) {
+        if (msg.sender == address(self)) return (delta, BalanceDeltaLibrary.ZERO_DELTA);
+
+        callerDelta = delta;
         if (params.liquidityDelta > 0) {
             if (self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
@@ -227,6 +228,7 @@ library Hooks {
                         self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
+                callerDelta = callerDelta - hookDelta;
             }
         } else {
             if (self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
@@ -238,6 +240,7 @@ library Hooks {
                         self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
+                callerDelta = callerDelta - hookDelta;
             }
         }
     }
@@ -249,13 +252,13 @@ library Hooks {
     {
         amountToSwap = params.amountSpecified;
         swapFee = type(uint24).max;
+        uint24 _swapFee;
         if (msg.sender == address(self)) return (amountToSwap, hookDeltaSpecified, swapFee);
-        if (key.hooks.hasPermission(BEFORE_SWAP_FLAG)) {
-            (int128 hookDelta, uint24 _swapFee) = self.callHookWithReturnDeltaAndFee(
+        if (self.hasPermission(BEFORE_SWAP_FLAG)) {
+            (hookDeltaSpecified, _swapFee) = self.callHookWithReturnDeltaAndFee(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
-                key.hooks.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)
+                self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)
             );
-            hookDeltaSpecified = hookDelta;
 
             if (key.fee.isDynamicFee()) swapFee = _swapFee;
 
@@ -274,14 +277,28 @@ library Hooks {
         IHooks self,
         PoolKey memory key,
         IPoolManager.SwapParams memory params,
-        BalanceDelta delta,
-        bytes calldata hookData
-    ) internal noSelfCall(self) returns (int128 hookDeltaUnspecified) {
+        BalanceDelta swapDelta,
+        bytes calldata hookData,
+        int128 hookDeltaSpecified
+    ) internal returns (BalanceDelta swapperDelta, BalanceDelta hookDelta) {
+        if (msg.sender == address(self)) return (swapDelta, BalanceDeltaLibrary.ZERO_DELTA);
+
+        int128 hookDeltaUnspecified;
+        swapperDelta = swapDelta;
         if (self.hasPermission(AFTER_SWAP_FLAG)) {
             hookDeltaUnspecified = self.callHookWithReturnDelta(
-                abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, delta, hookData),
+                abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, swapDelta, hookData),
                 self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)
             ).toInt128();
+        }
+
+        if (hookDeltaUnspecified != 0 || hookDeltaSpecified != 0) {
+            hookDelta = (params.amountSpecified < 0 == params.zeroForOne)
+                ? toBalanceDelta(hookDeltaSpecified, hookDeltaUnspecified)
+                : toBalanceDelta(hookDeltaUnspecified, hookDeltaSpecified);
+
+            // the caller has to pay for (or receive) the hook's delta
+            swapperDelta = swapDelta - hookDelta;
         }
     }
 

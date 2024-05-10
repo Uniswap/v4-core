@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
-import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
@@ -29,7 +29,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
     event Swap(
         PoolId indexed poolId,
-        address indexed sender,
+        address sender,
         int128 amount0,
         int128 amount1,
         uint160 sqrtPriceX96,
@@ -50,7 +50,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
             currency0,
             currency1,
             IHooks(address(dynamicReturnFeesHook)),
-            SwapFeeLibrary.DYNAMIC_FEE_FLAG,
+            LPFeeLibrary.DYNAMIC_FEE_FLAG,
             SQRT_RATIO_1_1,
             ZERO_BYTES
         );
@@ -65,7 +65,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         // after swapping ~1:1, the amount out (amount1) should be approximately 0.30% less than the amount specified
         assertEq(result.amount0(), amountSpecified);
 
-        if (fee > SwapFeeLibrary.MAX_SWAP_FEE) {
+        if (fee > LPFeeLibrary.MAX_LP_FEE) {
             // if the fee is too large, the fee is not used
             assertApproxEqAbs(uint256(int256(result.amount1())), uint256(int256(-result.amount0())), 1 wei);
         } else {
@@ -83,7 +83,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory params =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
         PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);

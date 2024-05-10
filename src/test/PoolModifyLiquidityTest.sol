@@ -9,12 +9,14 @@ import {PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
-import {SwapFeeLibrary} from "../libraries/SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolModifyLiquidityTest is PoolTestBase {
     using CurrencyLibrary for Currency;
+    using CurrencySettleTake for Currency;
     using Hooks for IHooks;
-    using SwapFeeLibrary for uint24;
+    using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
@@ -24,8 +26,8 @@ contract PoolModifyLiquidityTest is PoolTestBase {
         PoolKey key;
         IPoolManager.ModifyLiquidityParams params;
         bytes hookData;
-        bool settleUsingTransfer;
-        bool withdrawTokens;
+        bool settleUsingBurn;
+        bool takeClaims;
     }
 
     function modifyLiquidity(
@@ -33,20 +35,18 @@ contract PoolModifyLiquidityTest is PoolTestBase {
         IPoolManager.ModifyLiquidityParams memory params,
         bytes memory hookData
     ) external payable returns (BalanceDelta delta) {
-        delta = modifyLiquidity(key, params, hookData, true, true);
+        delta = modifyLiquidity(key, params, hookData, false, false);
     }
 
     function modifyLiquidity(
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes memory hookData,
-        bool settleUsingTransfer,
-        bool withdrawTokens
+        bool settleUsingBurn,
+        bool takeClaims
     ) public payable returns (BalanceDelta delta) {
         delta = abi.decode(
-            manager.unlock(
-                abi.encode(CallbackData(msg.sender, key, params, hookData, settleUsingTransfer, withdrawTokens))
-            ),
+            manager.unlock(abi.encode(CallbackData(msg.sender, key, params, hookData, settleUsingBurn, takeClaims))),
             (BalanceDelta)
         );
 
@@ -61,13 +61,15 @@ contract PoolModifyLiquidityTest is PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        uint128 liquidityBefore =
-            manager.getPosition(data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper).liquidity;
+        uint128 liquidityBefore = manager.getPosition(
+            data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper, data.params.salt
+        ).liquidity;
 
-        BalanceDelta delta = manager.modifyLiquidity(data.key, data.params, data.hookData);
+        (BalanceDelta delta,) = manager.modifyLiquidity(data.key, data.params, data.hookData);
 
-        uint128 liquidityAfter =
-            manager.getPosition(data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper).liquidity;
+        uint128 liquidityAfter = manager.getPosition(
+            data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper, data.params.salt
+        ).liquidity;
 
         (,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
@@ -84,10 +86,10 @@ contract PoolModifyLiquidityTest is PoolTestBase {
             assert(!(delta0 > 0 || delta1 > 0));
         }
 
-        if (delta0 < 0) _settle(data.key.currency0, data.sender, int128(delta0), data.settleUsingTransfer);
-        if (delta1 < 0) _settle(data.key.currency1, data.sender, int128(delta1), data.settleUsingTransfer);
-        if (delta0 > 0) _take(data.key.currency0, data.sender, int128(delta0), data.withdrawTokens);
-        if (delta1 > 0) _take(data.key.currency1, data.sender, int128(delta1), data.withdrawTokens);
+        if (delta0 < 0) data.key.currency0.settle(manager, data.sender, uint256(-delta0), data.settleUsingBurn);
+        if (delta1 < 0) data.key.currency1.settle(manager, data.sender, uint256(-delta1), data.settleUsingBurn);
+        if (delta0 > 0) data.key.currency0.take(manager, data.sender, uint256(delta0), data.takeClaims);
+        if (delta1 > 0) data.key.currency1.take(manager, data.sender, uint256(delta1), data.takeClaims);
 
         return abi.encode(delta);
     }

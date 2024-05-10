@@ -5,6 +5,7 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
@@ -15,6 +16,7 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 contract DeltaReturningHook is BaseTestHooks {
     using Hooks for IHooks;
     using CurrencyLibrary for Currency;
+    using CurrencySettleTake for Currency;
 
     IPoolManager immutable manager;
 
@@ -77,14 +79,13 @@ contract DeltaReturningHook is BaseTestHooks {
         // positive amount means positive delta for the hook, so it can take
         // negative it should settle
         if (delta > 0) {
-            manager.take(currency, address(this), uint128(delta));
+            currency.take(manager, address(this), uint128(delta), false);
         } else {
             uint256 amount = uint256(-int256(delta));
             if (currency.isNative()) {
                 manager.settle{value: amount}(currency);
             } else {
-                IERC20Minimal(Currency.unwrap(currency)).transfer(address(manager), amount);
-                manager.settle(currency);
+                currency.settle(manager, address(this), amount, false);
             }
         }
     }

@@ -6,15 +6,17 @@ import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
+    using CurrencySettleTake for Currency;
     using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
 
@@ -65,7 +67,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     ) external override returns (bytes4, BalanceDelta) {
         counter++;
         _addLiquidity(key, params, hookData);
-        return (IHooks.afterAddLiquidity.selector, BalanceDelta.wrap(0));
+        return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeRemoveLiquidity(
@@ -88,7 +90,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     ) external override returns (bytes4, BalanceDelta) {
         counter++;
         _removeLiquidity(key, params, hookData);
-        return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
+        return (IHooks.afterRemoveLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData)
@@ -146,9 +148,8 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         assertEq(delta0, params.amountSpecified);
         int256 delta1 = IPoolManager(manager).currencyDelta(address(this), key.currency1);
         assert(delta1 > 0);
-        IERC20Minimal(Currency.unwrap(key.currency0)).transferFrom(payer, address(manager), uint256(-delta0));
-        manager.settle(key.currency0);
-        manager.take(key.currency1, payer, uint256(delta1));
+        key.currency0.settle(manager, payer, uint256(-delta0), false);
+        key.currency1.take(manager, payer, uint256(delta1), false);
     }
 
     function _addLiquidity(
@@ -164,10 +165,8 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         assert(delta0 < 0 || delta1 < 0);
         assert(!(delta0 > 0 || delta1 > 0));
 
-        IERC20Minimal(Currency.unwrap(key.currency0)).transferFrom(payer, address(manager), uint256(-delta0));
-        manager.settle(key.currency0);
-        IERC20Minimal(Currency.unwrap(key.currency1)).transferFrom(payer, address(manager), uint256(-delta1));
-        manager.settle(key.currency1);
+        key.currency0.settle(manager, payer, uint256(-delta0), false);
+        key.currency1.settle(manager, payer, uint256(-delta1), false);
     }
 
     function _removeLiquidity(
@@ -177,7 +176,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     ) public {
         // first hook needs to add liquidity for itself
         IPoolManager.ModifyLiquidityParams memory newParams =
-            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
         IPoolManager(manager).modifyLiquidity(key, newParams, hookData);
         // hook removes liquidity
         IPoolManager(manager).modifyLiquidity(key, params, hookData);
@@ -188,10 +187,8 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         assert(delta0 < 0 || delta1 < 0);
         assert(!(delta0 > 0 || delta1 > 0));
 
-        IERC20Minimal(Currency.unwrap(key.currency0)).transferFrom(payer, address(manager), uint256(-delta0));
-        manager.settle(key.currency0);
-        IERC20Minimal(Currency.unwrap(key.currency1)).transferFrom(payer, address(manager), uint256(-delta1));
-        manager.settle(key.currency1);
+        key.currency0.settle(manager, payer, uint256(-delta0), false);
+        key.currency1.settle(manager, payer, uint256(-delta1), false);
     }
 
     function _donate(PoolKey calldata key, uint256 amt0, uint256 amt1, bytes calldata hookData) public {
@@ -199,9 +196,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         address payer = abi.decode(hookData, (address));
         int256 delta0 = IPoolManager(manager).currencyDelta(address(this), key.currency0);
         int256 delta1 = IPoolManager(manager).currencyDelta(address(this), key.currency1);
-        IERC20Minimal(Currency.unwrap(key.currency0)).transferFrom(payer, address(manager), uint256(-delta0));
-        IERC20Minimal(Currency.unwrap(key.currency1)).transferFrom(payer, address(manager), uint256(-delta1));
-        manager.settle(key.currency0);
-        manager.settle(key.currency1);
+        key.currency0.settle(manager, payer, uint256(-delta0), false);
+        key.currency1.settle(manager, payer, uint256(-delta1), false);
     }
 }
