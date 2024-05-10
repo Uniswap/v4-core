@@ -376,7 +376,13 @@ library PoolStateLibrary {
         }
     }
 
-    function getReserves(IPoolManager manager, Currency currency) internal view returns (uint256 value) {
+    /// @notice returns the reserves of a currency
+    /// @param manager The pool manager contract.
+    /// @param currency The currency to get the reserves for.
+    /// @return value The reserves of the currency.
+    /// @dev returns 0 if the reserves are not synced
+    /// @dev returns type(uint256).max if the reserves are synced but the value is 0
+    function getReserves(IPoolManager manager, Currency currency) internal view returns (uint256) {
         uint256 slot = RESERVES_OF_SLOT;
         bytes32 key;
         assembly {
@@ -384,9 +390,7 @@ library PoolStateLibrary {
             mstore(32, currency)
             key := keccak256(0, 64)
         }
-        value = uint256(manager.exttload(key));
-        if (value == 0) revert ReservesMustBeSynced();
-        if (value == ZERO_BALANCE) value = 0;
+        return uint256(manager.exttload(key));
     }
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod out before the contract is locked
