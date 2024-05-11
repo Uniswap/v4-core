@@ -136,7 +136,7 @@ library SqrtPriceMath {
     /// @param sqrtPX96 The starting price before accounting for the output amount
     /// @param liquidity The amount of usable liquidity
     /// @param amountOut How much of currency0, or currency1, is being swapped out
-    /// @param zeroForOne Whether the amount out is currency0 or currency1
+    /// @param zeroForOne Whether the amount out is currency1 or currency0
     /// @return sqrtQX96 The price after removing the output amount of currency0 or currency1
     function getNextSqrtPriceFromOutput(uint160 sqrtPX96, uint128 liquidity, uint256 amountOut, bool zeroForOne)
         internal
@@ -164,42 +164,42 @@ library SqrtPriceMath {
     /// @notice Gets the amount0 delta between two prices
     /// @dev Calculates liquidity / sqrt(lower) - liquidity / sqrt(upper),
     /// i.e. liquidity * (sqrt(upper) - sqrt(lower)) / (sqrt(upper) * sqrt(lower))
-    /// @param sqrtRatioAX96 A sqrt price
-    /// @param sqrtRatioBX96 Another sqrt price
+    /// @param sqrtPriceAX96 A sqrt price
+    /// @param sqrtPriceBX96 Another sqrt price
     /// @param liquidity The amount of usable liquidity
     /// @param roundUp Whether to round the amount up or down
     /// @return amount0 Amount of currency0 required to cover a position of size liquidity between the two passed prices
-    function getAmount0Delta(uint160 sqrtRatioAX96, uint160 sqrtRatioBX96, uint128 liquidity, bool roundUp)
+    function getAmount0Delta(uint160 sqrtPriceAX96, uint160 sqrtPriceBX96, uint128 liquidity, bool roundUp)
         internal
         pure
         returns (uint256 amount0)
     {
-        (sqrtRatioAX96, sqrtRatioBX96) = sort2(sqrtRatioAX96, sqrtRatioBX96);
+        (sqrtPriceAX96, sqrtPriceBX96) = sort2(sqrtPriceAX96, sqrtPriceBX96);
 
-        if (sqrtRatioAX96 == 0) revert InvalidPrice();
+        if (sqrtPriceAX96 == 0) revert InvalidPrice();
 
         uint256 numerator1;
         uint256 numerator2;
         assembly {
             numerator1 := shl(96, liquidity)
-            numerator2 := sub(sqrtRatioBX96, sqrtRatioAX96)
+            numerator2 := sub(sqrtPriceBX96, sqrtPriceAX96)
         }
         /**
          * Equivalent to:
          *   roundUp
-         *       ? FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtRatioBX96).divRoundingUp(sqrtRatioAX96)
-         *       : FullMath.mulDiv(numerator1, numerator2, sqrtRatioBX96) / sqrtRatioAX96;
+         *       ? FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtPriceBX96).divRoundingUp(sqrtPriceAX96)
+         *       : FullMath.mulDiv(numerator1, numerator2, sqrtPriceBX96) / sqrtPriceAX96;
          * If `md = mulDiv(n1, n2, srb) == mulDivRoundingUp(n1, n2, srb)`, then `mulmod(n1, n2, srb) == 0`.
          * Add `roundUp && md % sra > 0` to `div(md, sra)`.
          * If `md = mulDiv(n1, n2, srb)` and `mulDivRoundingUp(n1, n2, srb)` differs by 1 and `sra > 0`,
          * then `(md + 1).divRoundingUp(sra) == md.div(sra) + 1` whether `sra` fully divides `md` or not.
          */
-        uint256 mulDivResult = FullMath.mulDiv(numerator1, numerator2, sqrtRatioBX96);
+        uint256 mulDivResult = FullMath.mulDiv(numerator1, numerator2, sqrtPriceBX96);
         assembly {
             amount0 :=
                 add(
-                    div(mulDivResult, sqrtRatioAX96),
-                    and(gt(or(mod(mulDivResult, sqrtRatioAX96), mulmod(numerator1, numerator2, sqrtRatioBX96)), 0), roundUp)
+                    div(mulDivResult, sqrtPriceAX96),
+                    and(gt(or(mod(mulDivResult, sqrtPriceAX96), mulmod(numerator1, numerator2, sqrtPriceBX96)), 0), roundUp)
                 )
         }
     }
@@ -215,17 +215,17 @@ library SqrtPriceMath {
 
     /// @notice Gets the amount1 delta between two prices
     /// @dev Calculates liquidity * (sqrt(upper) - sqrt(lower))
-    /// @param sqrtRatioAX96 A sqrt price
-    /// @param sqrtRatioBX96 Another sqrt price
+    /// @param sqrtPriceAX96 A sqrt price
+    /// @param sqrtPriceBX96 Another sqrt price
     /// @param liquidity The amount of usable liquidity
     /// @param roundUp Whether to round the amount up, or down
     /// @return amount1 Amount of currency1 required to cover a position of size liquidity between the two passed prices
-    function getAmount1Delta(uint160 sqrtRatioAX96, uint160 sqrtRatioBX96, uint128 liquidity, bool roundUp)
+    function getAmount1Delta(uint160 sqrtPriceAX96, uint160 sqrtPriceBX96, uint128 liquidity, bool roundUp)
         internal
         pure
         returns (uint256 amount1)
     {
-        uint256 numerator = absDiff(sqrtRatioAX96, sqrtRatioBX96);
+        uint256 numerator = absDiff(sqrtPriceAX96, sqrtPriceBX96);
         uint256 denominator = FixedPoint96.Q96;
         uint256 liquidity256;
         assembly {
@@ -234,8 +234,8 @@ library SqrtPriceMath {
         /**
          * Equivalent to:
          *   amount1 = roundUp
-         *       ? FullMath.mulDivRoundingUp(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96)
-         *       : FullMath.mulDiv(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96);
+         *       ? FullMath.mulDivRoundingUp(liquidity, sqrtPriceBX96 - sqrtPriceAX96, FixedPoint96.Q96)
+         *       : FullMath.mulDiv(liquidity, sqrtPriceBX96 - sqrtPriceAX96, FixedPoint96.Q96);
          * Cannot overflow because `type(uint128).max * type(uint160).max >> 96 < (1 << 192)`.
          */
         amount1 = FullMath.mulDivQ96(liquidity256, numerator);
@@ -245,11 +245,11 @@ library SqrtPriceMath {
     }
 
     /// @notice Helper that gets signed currency0 delta
-    /// @param sqrtRatioAX96 A sqrt price
-    /// @param sqrtRatioBX96 Another sqrt price
+    /// @param sqrtPriceAX96 A sqrt price
+    /// @param sqrtPriceBX96 Another sqrt price
     /// @param liquidity The change in liquidity for which to compute the amount0 delta
     /// @return amount0 Amount of currency0 corresponding to the passed liquidityDelta between the two prices
-    function getAmount0Delta(uint160 sqrtRatioAX96, uint160 sqrtRatioBX96, int128 liquidity)
+    function getAmount0Delta(uint160 sqrtPriceAX96, uint160 sqrtPriceBX96, int128 liquidity)
         internal
         pure
         returns (int256 amount0)
@@ -257,8 +257,8 @@ library SqrtPriceMath {
         /**
          * Equivalent to:
          *   amount0 = liquidity < 0
-         *       ? getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(-liquidity), false).toInt256()
-         *       : -getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(liquidity), true).toInt256();
+         *       ? getAmount0Delta(sqrtPriceAX96, sqrtPriceBX96, uint128(-liquidity), false).toInt256()
+         *       : -getAmount0Delta(sqrtPriceAX96, sqrtPriceBX96, uint128(liquidity), true).toInt256();
          */
         bool sign;
         uint128 liquidityAbs;
@@ -271,7 +271,7 @@ library SqrtPriceMath {
         }
         // amount0Abs = liquidity / sqrt(lower) - liquidity / sqrt(upper) < type(uint224).max
         // always fits in 224 bits, no need for toInt256()
-        uint256 amount0Abs = getAmount0Delta(sqrtRatioAX96, sqrtRatioBX96, liquidityAbs, sign);
+        uint256 amount0Abs = getAmount0Delta(sqrtPriceAX96, sqrtPriceBX96, liquidityAbs, sign);
         assembly {
             // mask = -1 if liquidity >= 0 else 0
             let mask := sub(0, sign)
@@ -282,11 +282,11 @@ library SqrtPriceMath {
     }
 
     /// @notice Helper that gets signed currency1 delta
-    /// @param sqrtRatioAX96 A sqrt price
-    /// @param sqrtRatioBX96 Another sqrt price
+    /// @param sqrtPriceAX96 A sqrt price
+    /// @param sqrtPriceBX96 Another sqrt price
     /// @param liquidity The change in liquidity for which to compute the amount1 delta
     /// @return amount1 Amount of currency1 corresponding to the passed liquidityDelta between the two prices
-    function getAmount1Delta(uint160 sqrtRatioAX96, uint160 sqrtRatioBX96, int128 liquidity)
+    function getAmount1Delta(uint160 sqrtPriceAX96, uint160 sqrtPriceBX96, int128 liquidity)
         internal
         pure
         returns (int256 amount1)
@@ -294,8 +294,8 @@ library SqrtPriceMath {
         /**
          * Equivalent to:
          *   amount1 = liquidity < 0
-         *       ? getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(-liquidity), false).toInt256()
-         *       : -getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, uint128(liquidity), true).toInt256();
+         *       ? getAmount1Delta(sqrtPriceAX96, sqrtPriceBX96, uint128(-liquidity), false).toInt256()
+         *       : -getAmount1Delta(sqrtPriceAX96, sqrtPriceBX96, uint128(liquidity), true).toInt256();
          */
         bool sign;
         uint128 liquidityAbs;
@@ -308,7 +308,7 @@ library SqrtPriceMath {
         }
         // amount1Abs = liquidity * (sqrt(upper) - sqrt(lower)) < type(uint192).max
         // always fits in 192 bits, no need for toInt256()
-        uint256 amount1Abs = getAmount1Delta(sqrtRatioAX96, sqrtRatioBX96, liquidityAbs, sign);
+        uint256 amount1Abs = getAmount1Delta(sqrtPriceAX96, sqrtPriceBX96, liquidityAbs, sign);
         assembly {
             // mask = -1 if liquidity >= 0 else 0
             let mask := sub(0, sign)

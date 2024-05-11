@@ -30,10 +30,10 @@ contract DynamicFeesTestHook is BaseTestHooks {
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata, bytes calldata)
         external
         override
-        returns (bytes4)
+        returns (bytes4, int128)
     {
         manager.updateDynamicLPFee(key, fee);
-        return IHooks.beforeSwap.selector;
+        return (IHooks.beforeSwap.selector, 0);
     }
 
     function forcePoolFeeUpdate(PoolKey calldata _key, uint24 _fee) external {

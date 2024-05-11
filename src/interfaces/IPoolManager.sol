@@ -27,6 +27,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
     error TickSpacingTooLarge();
+
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
     error TickSpacingTooSmall();
 
@@ -36,6 +37,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @notice Thrown when a call to updateDynamicLPFee is made by an address that is not the hook,
     /// or on a pool that does not have a dynamic swap fee.
     error UnauthorizedDynamicLPFeeUpdate();
+
+    /// @notice Thrown when trying to swap amount of 0
+    error SwapAmountCannotBeZero();
 
     ///@notice Thrown when native currency is passed to a non native settlement
     error NonZeroNativeValue();
@@ -48,12 +52,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     event Initialize(
-        PoolId indexed id,
-        Currency indexed currency0,
-        Currency indexed currency1,
-        uint24 fee,
-        int24 tickSpacing,
-        IHooks hooks
+        PoolId id, Currency indexed currency0, Currency indexed currency1, uint24 fee, int24 tickSpacing, IHooks hooks
     );
 
     /// @notice Emitted when a liquidity position is modified
@@ -77,7 +76,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @param fee The swap fee in hundredths of a bip
     event Swap(
         PoolId indexed id,
-        address indexed sender,
+        address sender,
         int128 amount0,
         int128 amount1,
         uint160 sqrtPriceX96,
@@ -102,7 +101,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     function getLiquidity(PoolId id) external view returns (uint128 liquidity);
 
     /// @notice Get the current value of liquidity for the specified pool and position
-    function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper)
+    function getLiquidity(PoolId id, address owner, int24 tickLower, int24 tickUpper, bytes32 salt)
         external
         view
         returns (uint128 liquidity);
@@ -120,7 +119,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
         returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1);
 
     /// @notice Get the position struct for a specified pool and position
-    function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper)
+    function getPosition(PoolId id, address owner, int24 tickLower, int24 tickUpper, bytes32 salt)
         external
         view
         returns (Position.Info memory position);
@@ -157,6 +156,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
         int24 tickUpper;
         // how to modify the liquidity
         int256 liquidityDelta;
+        // a value to set if you want unique liquidity positions at the same range
+        bytes32 salt;
     }
 
     /// @notice Modify the liquidity for the given pool
@@ -164,8 +165,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
     /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
-    /// @return delta The balance delta of the liquidity change
-    /// @return feeDelta The balance delta of the fees generated in the liquidity range
+    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal and fee deltas.
+    /// @return feeDelta The balance delta of the fees generated in the liquidity range. Returned for informational purposes.
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta, BalanceDelta);
@@ -177,6 +178,13 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     }
 
     /// @notice Swap against the given pool
+    /// @param key The pool to swap in
+    /// @param params The parameters for swapping
+    /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
+    /// @return swapDelta The balance delta of the address swapping
+    /// @dev Swapping on low liquidity pools may cause unexpected swap amounts when liquidity available is less than amountSpecified.
+    /// Additionally note that if interacting with hooks that have the BEFORE_SWAP_RETURNS_DELTA_FLAG or AFTER_SWAP_RETURNS_DELTA_FLAG
+    /// the hook may alter the swap input/output. Integrators should perform checks on the returned swapDelta.
     function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta);
