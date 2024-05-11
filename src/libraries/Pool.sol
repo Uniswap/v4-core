@@ -149,8 +149,6 @@ library Pool {
         uint128 liquidityGrossAfterLower;
         bool flippedUpper;
         uint128 liquidityGrossAfterUpper;
-        uint256 feeGrowthInside0X128;
-        uint256 feeGrowthInside1X128;
     }
 
     /// @notice Effect changes to a position in a pool
@@ -167,8 +165,6 @@ library Pool {
         int24 tickUpper = params.tickUpper;
         checkTicks(tickLower, tickUpper);
 
-        uint256 feesOwed0;
-        uint256 feesOwed1;
         {
             ModifyLiquidityState memory state;
 
@@ -197,11 +193,17 @@ library Pool {
                 }
             }
 
-            (state.feeGrowthInside0X128, state.feeGrowthInside1X128) = getFeeGrowthInside(self, tickLower, tickUpper);
+            {
+                (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
+                    getFeeGrowthInside(self, tickLower, tickUpper);
 
-            Position.Info storage position = self.positions.get(params.owner, tickLower, tickUpper, params.salt);
-            (feesOwed0, feesOwed1) =
-                position.update(liquidityDelta, state.feeGrowthInside0X128, state.feeGrowthInside1X128);
+                Position.Info storage position = self.positions.get(params.owner, tickLower, tickUpper, params.salt);
+                (uint256 feesOwed0, uint256 feesOwed1) =
+                    position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
+
+                // Fees earned from LPing are added to the user's currency delta.
+                feeDelta = toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
+            }
 
             // clear any tick data that is no longer needed
             if (liquidityDelta < 0) {
@@ -246,9 +248,6 @@ library Pool {
                 );
             }
         }
-
-        // Fees earned from LPing are added to the user's currency delta.
-        feeDelta = toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
     }
 
     struct SwapCache {

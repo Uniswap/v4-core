@@ -63,12 +63,10 @@ library Position {
     ) internal returns (uint256 feesOwed0, uint256 feesOwed1) {
         uint128 liquidity = self.liquidity;
 
-        uint128 liquidityNext;
         if (liquidityDelta == 0) {
             if (liquidity == 0) revert CannotUpdateEmptyPosition(); // disallow pokes for 0 liquidity positions
-            liquidityNext = liquidity;
         } else {
-            liquidityNext = LiquidityMath.addDelta(liquidity, liquidityDelta);
+            self.liquidity = LiquidityMath.addDelta(liquidity, liquidityDelta);
         }
 
         // calculate accumulated fees. overflow in the subtraction of fee growth is expected
@@ -80,7 +78,6 @@ library Position {
         }
 
         // update the position
-        if (liquidityDelta != 0) self.liquidity = liquidityNext;
         self.feeGrowthInside0LastX128 = feeGrowthInside0X128;
         self.feeGrowthInside1LastX128 = feeGrowthInside1X128;
     }
