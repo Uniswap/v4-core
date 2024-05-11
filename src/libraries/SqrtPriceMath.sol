@@ -41,7 +41,16 @@ library SqrtPriceMath {
             numerator1 := shl(96, liquidity)
         }
 
-        if (add) {
+        if (!add) {
+            unchecked {
+                uint256 product = amount * sqrtPX96;
+                // if the product overflows, we know the denominator underflows
+                // in addition, we must check that the denominator does not underflow
+                if (!(product.div(amount) == sqrtPX96 && numerator1 > product)) revert PriceOverflow();
+                uint256 denominator = numerator1 - product;
+                return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
+            }
+        } else {
             unchecked {
                 uint256 product = amount * sqrtPX96;
                 // checks for overflow
@@ -55,15 +64,6 @@ library SqrtPriceMath {
             }
             // denominator is checked for overflow
             return uint160(numerator1.divRoundingUp(numerator1.div(sqrtPX96) + amount));
-        } else {
-            unchecked {
-                uint256 product = amount * sqrtPX96;
-                // if the product overflows, we know the denominator underflows
-                // in addition, we must check that the denominator does not underflow
-                if (!(product.div(amount) == sqrtPX96 && numerator1 > product)) revert PriceOverflow();
-                uint256 denominator = numerator1 - product;
-                return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
-            }
         }
     }
 
@@ -88,15 +88,7 @@ library SqrtPriceMath {
         }
         // if we're adding (subtracting), rounding down requires rounding the quotient down (up)
         // in both cases, avoid a mulDiv for most inputs
-        if (add) {
-            uint256 quotient = (
-                amount >> 160 == 0
-                    ? (amount << FixedPoint96.RESOLUTION).div(liquidity256)
-                    : FullMath.mulDiv(amount, FixedPoint96.Q96, liquidity256)
-            );
-
-            return (uint256(sqrtPX96) + quotient).toUint160();
-        } else {
+        if (!add) {
             uint256 quotient = (
                 amount >> 160 == 0
                     ? (amount << FixedPoint96.RESOLUTION).divRoundingUp(liquidity256)
@@ -108,6 +100,14 @@ library SqrtPriceMath {
             unchecked {
                 return uint160(sqrtPX96 - quotient);
             }
+        } else {
+            uint256 quotient = (
+                amount >> 160 == 0
+                    ? (amount << FixedPoint96.RESOLUTION).div(liquidity256)
+                    : FullMath.mulDiv(amount, FixedPoint96.Q96, liquidity256)
+            );
+
+            return (uint256(sqrtPX96) + quotient).toUint160();
         }
     }
 
