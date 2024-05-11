@@ -91,17 +91,17 @@ contract ActionsRouter is IUnlockCallback, Test {
         manager.mint(recipient, currency.toId(), amount);
     }
 
-    function _assertBalanceEquals(bytes memory params) internal {
+    function _assertBalanceEquals(bytes memory params) internal view {
         (Currency currency, address user, uint256 expectedBalance) = abi.decode(params, (Currency, address, uint256));
         assertEq(currency.balanceOf(user), expectedBalance, "usertoken value incorrect");
     }
 
-    function _assertReservesEquals(bytes memory params) internal {
+    function _assertReservesEquals(bytes memory params) internal view {
         (Currency currency, uint256 expectedReserves) = abi.decode(params, (Currency, uint256));
         assertEq(manager.getReserves(currency), expectedReserves, "reserves value incorrect");
     }
 
-    function _assertDeltaEquals(bytes memory params) internal {
+    function _assertDeltaEquals(bytes memory params) internal view {
         (Currency currency, address caller, int256 expectedDelta) = abi.decode(params, (Currency, address, int256));
 
         assertEq(manager.currencyDelta(caller, currency), expectedDelta, "delta value incorrect");

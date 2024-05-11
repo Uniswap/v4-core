@@ -26,20 +26,24 @@ library Position {
     /// @param owner The address of the position owner
     /// @param tickLower The lower tick boundary of the position
     /// @param tickUpper The upper tick boundary of the position
+    /// @param salt A unique value to differentiate between multiple positions in the same range
     /// @return position The position info struct of the given owners' position
-    function get(mapping(bytes32 => Info) storage self, address owner, int24 tickLower, int24 tickUpper)
+    function get(mapping(bytes32 => Info) storage self, address owner, int24 tickLower, int24 tickUpper, bytes32 salt)
         internal
         view
         returns (Info storage position)
     {
-        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper))
+        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
         bytes32 positionKey;
+
         /// @solidity memory-safe-assembly
         assembly {
+            mstore(0x26, salt) // [0x26, 0x46)
             mstore(0x06, tickUpper) // [0x23, 0x26)
             mstore(0x03, tickLower) // [0x20, 0x23)
             mstore(0, owner) // [0x0c, 0x20)
-            positionKey := keccak256(0x0c, 0x1a)
+            positionKey := keccak256(0x0c, 0x3a) // len is 58 bytes
+            mstore(0x26, 0) // rewrite 0x26 to 0
         }
         position = self[positionKey];
     }

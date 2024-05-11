@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {BalanceDelta, toBalanceDelta} from "../../src/types/BalanceDelta.sol";
 
 contract TestBalanceDelta is Test {
-    function test_toBalanceDelta() public {
+    function test_toBalanceDelta() public pure {
         BalanceDelta balanceDelta = toBalanceDelta(0, 0);
         assertEq(balanceDelta.amount0(), 0);
         assertEq(balanceDelta.amount1(), 0);
@@ -27,19 +27,19 @@ contract TestBalanceDelta is Test {
         assertEq(balanceDelta.amount1(), type(int128).min);
     }
 
-    function test_fuzz_toBalanceDelta(int128 x, int128 y) public {
+    function test_fuzz_toBalanceDelta(int128 x, int128 y) public pure {
         BalanceDelta balanceDelta = toBalanceDelta(x, y);
         int256 expectedBD = int256(uint256(bytes32(abi.encodePacked(x, y))));
         assertEq(BalanceDelta.unwrap(balanceDelta), expectedBD);
     }
 
-    function test_fuzz_amount0_amount1(int128 x, int128 y) public {
+    function test_fuzz_amount0_amount1(int128 x, int128 y) public pure {
         BalanceDelta balanceDelta = toBalanceDelta(x, y);
         assertEq(balanceDelta.amount0(), x);
         assertEq(balanceDelta.amount1(), y);
     }
 
-    function test_add() public {
+    function test_add() public pure {
         BalanceDelta balanceDelta = toBalanceDelta(0, 0) + toBalanceDelta(0, 0);
         assertEq(balanceDelta.amount0(), 0);
         assertEq(balanceDelta.amount1(), 0);
@@ -82,7 +82,7 @@ contract TestBalanceDelta is Test {
         assertEq(balanceDelta.amount1(), bd);
     }
 
-    function test_sub() public {
+    function test_sub() public pure {
         BalanceDelta balanceDelta = toBalanceDelta(0, 0) - toBalanceDelta(0, 0);
         assertEq(balanceDelta.amount0(), 0);
         assertEq(balanceDelta.amount1(), 0);
@@ -125,7 +125,7 @@ contract TestBalanceDelta is Test {
         assertEq(balanceDelta.amount1(), bd);
     }
 
-    function test_fuzz_eq(int128 a, int128 b, int128 c, int128 d) public {
+    function test_fuzz_eq(int128 a, int128 b, int128 c, int128 d) public pure {
         bool isEqual = (toBalanceDelta(a, b) == toBalanceDelta(c, d));
         if (a == c && b == d) assertTrue(isEqual);
         else assertFalse(isEqual);
