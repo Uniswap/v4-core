@@ -536,8 +536,8 @@ library Pool {
             let liquidity := sload(info.slot)
             // slice off top 128 bits of liquidity (liquidityNet) to get just liquidityGross
             liquidityGrossBefore := shr(128, shl(128, liquidity))
-            // shift right 128 bits to get just liquidityNet
-            liquidityNetBefore := shr(128, liquidity)
+            // signed shift right 128 bits to get just liquidityNet
+            liquidityNetBefore := sar(128, liquidity)
         }
 
         liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
