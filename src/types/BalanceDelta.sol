@@ -31,7 +31,18 @@ function add(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
 }
 
 function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
-    return toBalanceDelta(a.amount0() - b.amount0(), a.amount1() - b.amount1());
+    int256 res0;
+    int256 res1;
+    /// @solidity memory-safe-assembly
+    assembly {
+        let a0 := sar(128, a)
+        let a1 := signextend(15, a)
+        let b0 := sar(128, b)
+        let b1 := signextend(15, b)
+        res0 := sub(a0, b0)
+        res1 := sub(a1, b1)
+    }
+    return toBalanceDelta(SafeCast.toInt128(res0), SafeCast.toInt128(res1));
 }
 
 function eq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
