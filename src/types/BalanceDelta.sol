@@ -9,7 +9,7 @@ using BalanceDeltaLibrary for BalanceDelta global;
 function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceDelta balanceDelta) {
     /// @solidity memory-safe-assembly
     assembly {
-        balanceDelta := or(shl(128, _amount0), and(0xffffffffffffffffffffffffffffffff, _amount1))
+        balanceDelta := or(shl(128, _amount0), and(sub(shl(128, 1), 1), _amount1))
     }
 }
 
@@ -22,11 +22,11 @@ function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
 }
 
 function eq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
-    return a.amount0() == b.amount0() && a.amount1() == b.amount1();
+    return BalanceDelta.unwrap(a) == BalanceDelta.unwrap(b);
 }
 
 function neq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
-    return a.amount0() != b.amount0() || a.amount1() != b.amount1();
+    return BalanceDelta.unwrap(a) != BalanceDelta.unwrap(b);
 }
 
 library BalanceDeltaLibrary {
