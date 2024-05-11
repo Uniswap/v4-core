@@ -44,18 +44,10 @@ library SafeCast {
 
     /// @notice Cast a uint256 to a int256, revert on overflow
     /// @param x The uint256 to be casted
-    /// @return y The casted integer, now type int256
-    function toInt256(uint256 x) internal pure returns (int256 y) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            if slt(x, 0) {
-                // Store the function selector of `SafeCastOverflow()`.
-                mstore(0x00, 0x93dafdf1)
-                // Revert with (offset, size).
-                revert(0x1c, 0x04)
-            }
-            y := x
-        }
+    /// @return The casted integer, now type int256
+    function toInt256(uint256 x) internal pure returns (int256) {
+        if (int256(x) >= 0) return int256(x);
+        _revertOverflow();
     }
 
     /// @notice Cast a uint256 to a int128, revert on overflow
