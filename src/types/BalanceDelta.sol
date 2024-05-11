@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {SafeCast} from "../libraries/SafeCast.sol";
+
 type BalanceDelta is int256;
 
 using {add as +, sub as -, eq as ==, neq as !=} for BalanceDelta global;
@@ -14,7 +16,18 @@ function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceD
 }
 
 function add(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
-    return toBalanceDelta(a.amount0() + b.amount0(), a.amount1() + b.amount1());
+    int256 res0;
+    int256 res1;
+    /// @solidity memory-safe-assembly
+    assembly {
+        let a0 := sar(128, a)
+        let a1 := signextend(15, a)
+        let b0 := sar(128, b)
+        let b1 := signextend(15, b)
+        res0 := add(a0, b0)
+        res1 := add(a1, b1)
+    }
+    return toBalanceDelta(SafeCast.toInt128(res0), SafeCast.toInt128(res1));
 }
 
 function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
