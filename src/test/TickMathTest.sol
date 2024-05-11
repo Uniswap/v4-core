@@ -4,32 +4,32 @@ pragma solidity ^0.8.20;
 import {TickMath} from "../libraries/TickMath.sol";
 
 contract TickMathTest {
-    function getSqrtRatioAtTick(int24 tick) external pure returns (uint160) {
-        return TickMath.getSqrtRatioAtTick(tick);
+    function getSqrtPriceAtTick(int24 tick) external pure returns (uint160) {
+        return TickMath.getSqrtPriceAtTick(tick);
     }
 
-    function getGasCostOfGetSqrtRatioAtTick(int24 tick) external view returns (uint256) {
+    function getGasCostOfGetSqrtPriceAtTick(int24 tick) external view returns (uint256) {
         uint256 gasBefore = gasleft();
-        TickMath.getSqrtRatioAtTick(tick);
+        TickMath.getSqrtPriceAtTick(tick);
         return gasBefore - gasleft();
     }
 
-    function getTickAtSqrtRatio(uint160 sqrtPriceX96) external pure returns (int24) {
-        return TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+    function getTickAtSqrtPrice(uint160 sqrtPriceX96) external pure returns (int24) {
+        return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
-    function getGasCostOfGetTickAtSqrtRatio(uint160 sqrtPriceX96) external view returns (uint256) {
+    function getGasCostOfGetTickAtSqrtPrice(uint160 sqrtPriceX96) external view returns (uint256) {
         uint256 gasBefore = gasleft();
-        TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+        TickMath.getTickAtSqrtPrice(sqrtPriceX96);
         return gasBefore - gasleft();
     }
 
-    function MIN_SQRT_RATIO() external pure returns (uint160) {
-        return TickMath.MIN_SQRT_RATIO;
+    function MIN_SQRT_PRICE() external pure returns (uint160) {
+        return TickMath.MIN_SQRT_PRICE;
     }
 
-    function MAX_SQRT_RATIO() external pure returns (uint160) {
-        return TickMath.MAX_SQRT_RATIO;
+    function MAX_SQRT_PRICE() external pure returns (uint160) {
+        return TickMath.MAX_SQRT_PRICE;
     }
 
     function MIN_TICK() external pure returns (int24) {
