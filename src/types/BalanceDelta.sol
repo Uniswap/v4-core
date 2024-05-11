@@ -55,13 +55,13 @@ library BalanceDeltaLibrary {
 
     function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {
         assembly {
-            _amount0 := shr(128, balanceDelta)
+            _amount0 := sar(128, balanceDelta)
         }
     }
 
     function amount1(BalanceDelta balanceDelta) internal pure returns (int128 _amount1) {
         assembly {
-            _amount1 := balanceDelta
+            _amount1 := signextend(15, balanceDelta)
         }
     }
 }
