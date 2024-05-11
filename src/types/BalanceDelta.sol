@@ -3,10 +3,13 @@ pragma solidity ^0.8.20;
 
 import {SafeCast} from "../libraries/SafeCast.sol";
 
+/// @dev Two `int128` values packed into a single `int256` where the upper 128 bits represent the amount0
+/// and the lower 128 bits represent the amount1.
 type BalanceDelta is int256;
 
 using {add as +, sub as -, eq as ==, neq as !=} for BalanceDelta global;
 using BalanceDeltaLibrary for BalanceDelta global;
+using SafeCast for int256;
 
 function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceDelta balanceDelta) {
     assembly {
@@ -25,7 +28,7 @@ function add(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
         res0 := add(a0, b0)
         res1 := add(a1, b1)
     }
-    return toBalanceDelta(SafeCast.toInt128(res0), SafeCast.toInt128(res1));
+    return toBalanceDelta(res0.toInt128(), res1.toInt128());
 }
 
 function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
@@ -39,7 +42,7 @@ function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
         res0 := sub(a0, b0)
         res1 := sub(a1, b1)
     }
-    return toBalanceDelta(SafeCast.toInt128(res0), SafeCast.toInt128(res1));
+    return toBalanceDelta(res0.toInt128(), res1.toInt128());
 }
 
 function eq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
