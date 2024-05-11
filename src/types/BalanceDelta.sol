@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 type BalanceDelta is int256;
 
-using {add as +, sub as -, eq as ==} for BalanceDelta global;
+using {add as +, sub as -, eq as ==, neq as !=} for BalanceDelta global;
 using BalanceDeltaLibrary for BalanceDelta global;
 
 function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceDelta balanceDelta) {
@@ -25,7 +25,13 @@ function eq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
     return a.amount0() == b.amount0() && a.amount1() == b.amount1();
 }
 
+function neq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
+    return a.amount0() != b.amount0() || a.amount1() != b.amount1();
+}
+
 library BalanceDeltaLibrary {
+    BalanceDelta public constant ZERO_DELTA = BalanceDelta.wrap(0);
+
     function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {
         /// @solidity memory-safe-assembly
         assembly {
