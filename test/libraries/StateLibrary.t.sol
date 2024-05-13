@@ -20,7 +20,7 @@ import {FixedPoint128} from "../../src/libraries/FixedPoint128.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Fuzzers} from "../../src/test/Fuzzers.sol";
 
-contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
+contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     using FixedPointMathLib for uint256;
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -51,8 +51,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee) =
-            StateLibrary.getSlot0(manager, poolId);
+        (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee) = StateLibrary.getSlot0(manager, poolId);
         snapLastCall("extsload getSlot0");
         assertEq(tick, -139);
 
@@ -66,8 +65,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     function test_getTickLiquidity() public {
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether, 0), ZERO_BYTES);
 
-        (uint128 liquidityGrossLower, int128 liquidityNetLower) =
-            StateLibrary.getTickLiquidity(manager, poolId, -60);
+        (uint128 liquidityGrossLower, int128 liquidityNetLower) = StateLibrary.getTickLiquidity(manager, poolId, -60);
         snapLastCall("extsload getTickLiquidity");
         assertEq(liquidityGrossLower, 10 ether);
         assertEq(liquidityNetLower, 10 ether);
