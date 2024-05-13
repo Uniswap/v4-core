@@ -16,6 +16,7 @@ import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
 import {PoolModifyLiquidityTest} from "../../src/test/PoolModifyLiquidityTest.sol";
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
+import {SwapRouterNoChecks} from "../../src/test/SwapRouterNoChecks.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
@@ -55,6 +56,7 @@ contract Deployers {
     Currency internal currency1;
     IPoolManager manager;
     PoolModifyLiquidityTest modifyLiquidityRouter;
+    SwapRouterNoChecks swapRouterNoChecks;
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
@@ -93,6 +95,7 @@ contract Deployers {
     function deployFreshManagerAndRouters() internal {
         deployFreshManager();
         swapRouter = new PoolSwapTest(manager);
+        swapRouterNoChecks = new SwapRouterNoChecks(manager);
         modifyLiquidityRouter = new PoolModifyLiquidityTest(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
@@ -122,8 +125,9 @@ contract Deployers {
     function deployMintAndApproveCurrency() internal returns (Currency currency) {
         MockERC20 token = deployTokens(1, 2 ** 255)[0];
 
-        address[6] memory toApprove = [
+        address[7] memory toApprove = [
             address(swapRouter),
+            address(swapRouterNoChecks),
             address(modifyLiquidityRouter),
             address(donateRouter),
             address(takeRouter),

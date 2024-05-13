@@ -8,8 +8,6 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
-import {Hooks} from "../libraries/Hooks.sol";
-import {IHooks} from "../interfaces/IHooks.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolSwapTest is PoolTestBase {
