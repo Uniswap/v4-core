@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "./IPoolManager.sol";
+import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 /// @notice The PoolManager contract decides whether to invoke specific hooks by inspecting the leading bits
 /// of the hooks contract address. For example, a 1 bit in the first bit of the address will
@@ -97,13 +98,13 @@ interface IHooks {
     /// @param params The parameters for the swap
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    /// @return int128 The hook's delta in specified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
+    /// @return BeforeSwapDelta The hook's delta in specified and unspecified currencies. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function beforeSwap(
         address sender,
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata hookData
-    ) external returns (bytes4, int128);
+    ) external returns (bytes4, BeforeSwapDelta);
 
     /// @notice The hook called after a swap
     /// @param sender The initial msg.sender for the swap call

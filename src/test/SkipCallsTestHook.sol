@@ -14,6 +14,7 @@ import {PoolTestBase} from "./PoolTestBase.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
     using CurrencySettleTake for Currency;
@@ -96,11 +97,11 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData)
         external
         override
-        returns (bytes4, int128)
+        returns (bytes4, BeforeSwapDelta)
     {
         counter++;
         _swap(key, params, hookData);
-        return (IHooks.beforeSwap.selector, 0);
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA);
     }
 
     function afterSwap(
