@@ -98,7 +98,7 @@ interface IHooks {
     /// @param params The parameters for the swap
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
-    /// @return int128 The hook's delta in specified currency. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
+    /// @return BeforeSwapDelta The hook's delta in specified and unspecified currencies. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function beforeSwap(
         address sender,
         PoolKey calldata key,

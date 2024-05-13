@@ -14,7 +14,7 @@ function toBeforeSwapDelta(int128 deltaSpecified, int128 deltaUnspecified)
 {
     /// @solidity memory-safe-assembly
     assembly {
-        beforeSwapDelta := or(shl(128, deltaSpecified), and(0xffffffffffffffffffffffffffffffff, deltaUnspecified))
+        beforeSwapDelta := or(shl(128, deltaSpecified), and(sub(shl(128, 1), 1), deltaUnspecified))
     }
 }
 
@@ -25,7 +25,7 @@ library BeforeSwapDeltaLibrary {
     /// returned by beforeSwap
     function getSpecifiedDelta(BeforeSwapDelta delta) internal pure returns (int128 deltaSpecified) {
         assembly {
-            deltaSpecified := shr(128, delta)
+            deltaSpecified := sar(128, delta)
         }
     }
 
@@ -34,7 +34,7 @@ library BeforeSwapDeltaLibrary {
     function getUnspecifiedDelta(BeforeSwapDelta delta) internal pure returns (int128 deltaUnspecified) {
         /// @solidity memory-safe-assembly
         assembly {
-            deltaUnspecified := delta
+            deltaUnspecified := signextend(15, delta)
         }
     }
 }
