@@ -17,6 +17,7 @@ import {ProtocolFees} from "./ProtocolFees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "./types/BalanceDelta.sol";
+import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
@@ -270,7 +271,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        (int256 amountToSwap, int128 hookDeltaSpecified) = key.hooks.beforeSwap(key, params, hookData);
+        (int256 amountToSwap, BeforeSwapDelta beforeSwapDelta) = key.hooks.beforeSwap(key, params, hookData);
 
         // execute swap, account protocol fees, and emit swap event
         swapDelta = _swap(
@@ -285,7 +286,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         );
 
         BalanceDelta hookDelta;
-        (swapDelta, hookDelta) = key.hooks.afterSwap(key, params, swapDelta, hookData, hookDeltaSpecified);
+        (swapDelta, hookDelta) = key.hooks.afterSwap(key, params, swapDelta, hookData, beforeSwapDelta);
 
         // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0
         if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));

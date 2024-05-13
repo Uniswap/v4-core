@@ -876,12 +876,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_beforeSwapNoOpsSwap_exactInput() public {
-        address hookAddr = address(
-            uint160(
-                Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG | Hooks.BEFORE_SWAP_FLAG
-                    | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG
-            )
-        );
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         CustomCurveHook impl = new CustomCurveHook(manager);
         vm.etch(hookAddr, address(impl).code);
 
@@ -910,12 +905,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_beforeSwapNoOpsSwap_exactOutput() public {
-        address hookAddr = address(
-            uint160(
-                Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG | Hooks.BEFORE_SWAP_FLAG
-                    | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG
-            )
-        );
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         CustomCurveHook impl = new CustomCurveHook(manager);
         vm.etch(hookAddr, address(impl).code);
 
