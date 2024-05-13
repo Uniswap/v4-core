@@ -19,8 +19,8 @@ library AmountHelpers {
         uint128 liquidity = manager.getLiquidity(id);
         (uint160 sqrtPriceX96,,,) = manager.getSlot0(id);
 
-        uint160 sqrtPriceX96Lower = TickMath.getSqrtRatioAtTick(params.tickLower);
-        uint160 sqrtPriceX96Upper = TickMath.getSqrtRatioAtTick(params.tickUpper);
+        uint160 sqrtPriceX96Lower = TickMath.getSqrtPriceAtTick(params.tickLower);
+        uint160 sqrtPriceX96Upper = TickMath.getSqrtPriceAtTick(params.tickUpper);
 
         amount0 = LiquidityAmounts.getAmount0ForLiquidity(sqrtPriceX96Lower, sqrtPriceX96, liquidity);
         amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceX96Upper, sqrtPriceX96, liquidity);

@@ -53,7 +53,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_fuzz_initialize(PoolKey memory key0, uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         // tested in Hooks.t.sol
         key0.hooks = IHooks(Constants.ADDRESS_ZERO);
@@ -88,7 +88,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_forNativeTokens(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
         uninitializedKey.currency0 = CurrencyLibrary.NATIVE;
 
         vm.expectEmit(true, true, true, true);
@@ -106,12 +106,12 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             manager.getSlot0(uninitializedKey.toId());
         assertEq(slot0SqrtPriceX96, sqrtPriceX96);
         assertEq(slot0ProtocolFee, 0);
-        assertEq(slot0Tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
+        assertEq(slot0Tick, TickMath.getTickAtSqrtPrice(sqrtPriceX96));
     }
 
     function test_initialize_succeedsWithHooks(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         address payable mockAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
         address payable hookAddr = payable(Constants.MOCK_HOOKS);
@@ -142,7 +142,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_succeedsWithMaxTickSpacing(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         uninitializedKey.tickSpacing = manager.MAX_TICK_SPACING();
 
@@ -161,7 +161,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_succeedsWithEmptyHooks(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         address hookEmptyAddr = Constants.EMPTY_HOOKS;
 
@@ -178,7 +178,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_revertsWithIdenticalTokens(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         // Both currencies are currency0
         uninitializedKey.currency1 = currency0;
@@ -189,7 +189,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_revertsWithSameTokenCombo(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         uninitializedKey.currency1 = currency0;
         uninitializedKey.currency0 = currency1;
@@ -205,10 +205,10 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         uint16 fee0 = protocolFee.getZeroForOneFee();
         uint16 fee1 = protocolFee.getOneForZeroFee();
 
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
 
         (uint160 slot0SqrtPriceX96,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0SqrtPriceX96, SQRT_RATIO_1_1);
+        assertEq(slot0SqrtPriceX96, SQRT_PRICE_1_1);
         if ((fee0 > 1000) || (fee1 > 1000)) {
             assertEq(slot0ProtocolFee, 0);
         } else {
@@ -218,7 +218,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_revertsWhenPoolAlreadyInitialized(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         vm.expectRevert(Pool.PoolAlreadyInitialized.selector);
@@ -239,12 +239,12 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         // Fails at beforeInitialize hook.
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
 
         // Fail at afterInitialize hook.
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, mockHooks.beforeInitialize.selector);
         vm.expectRevert(Hooks.InvalidHookResponse.selector);
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_initialize_succeedsWithCorrectSelectors() public {
@@ -269,12 +269,12 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.hooks
         );
 
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_initialize_failsIfTickSpaceTooLarge(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         uninitializedKey.tickSpacing = manager.MAX_TICK_SPACING() + 1;
 
@@ -284,7 +284,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_failsIfTickSpaceZero(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         uninitializedKey.tickSpacing = 0;
 
@@ -294,7 +294,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_failsIfTickSpaceNeg(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         uninitializedKey.tickSpacing = -1;
 
@@ -304,7 +304,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_succeedsWithOutOfBoundsFeeController(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         manager.setProtocolFeeController(outOfBoundsFeeController);
         // expect initialize to succeed even though the controller reverts
@@ -325,7 +325,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_succeedsWithRevertingFeeController(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         manager.setProtocolFeeController(revertingFeeController);
         // expect initialize to succeed even though the controller reverts
@@ -346,7 +346,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_succeedsWithOverflowFeeController(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         manager.setProtocolFeeController(overflowFeeController);
         // expect initialize to succeed
@@ -367,7 +367,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function test_initialize_succeedsWithWrongReturnSizeFeeController(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_RATIO, TickMath.MAX_SQRT_RATIO - 1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         manager.setProtocolFeeController(invalidReturnSizeFeeController);
         // expect initialize to succeed
@@ -387,7 +387,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     }
 
     function test_initialize_gas() public {
-        manager.initialize(uninitializedKey, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
         snapLastCall("initialize");
     }
 }
