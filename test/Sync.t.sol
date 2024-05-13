@@ -43,7 +43,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
         assertGt(currency0Balance, uint256(0));
 
-        // Without calling sync, getReserves should revert.
+        // Without calling sync, getReserves should return 0.
         assertEq(manager.getReserves(currency0), 0);
 
         uint256 balance = manager.sync(currency0);
