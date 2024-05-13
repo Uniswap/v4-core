@@ -474,6 +474,7 @@ library Pool {
         uint128 liquidity = state.liquidity;
         if (liquidity == 0) revert NoLiquidityToReceiveFees();
         unchecked {
+            // negation safe as amount0 and amount1 are always positive
             delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
             if (amount0 > 0) {
                 state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, liquidity);
