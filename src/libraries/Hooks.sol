@@ -148,6 +148,25 @@ library Hooks {
         (, delta) = abi.decode(result, (bytes4, int256));
     }
 
+    /// @notice performs a hook call using the given calldata on the given hook
+    /// @return delta The delta returned by the hook
+    /// @return fee The fee returned by the hook
+    function callHookWithReturnDeltaAndFee(IHooks self, bytes memory data, bool parseReturn, bool parseFee)
+        internal
+        returns (int256 delta, uint24 fee)
+    {
+        bytes memory result = callHook(self, data);
+        (, delta, fee) = abi.decode(result, (bytes4, int256, uint24));
+
+        if (!parseReturn) {
+            delta = 0;
+        }
+
+        if (!parseFee) {
+            fee = type(uint24).max;
+        }
+    }
+
     /// @notice modifier to prevent calling a hook if they initiated the action
     modifier noSelfCall(IHooks self) {
         if (msg.sender != address(self)) {
@@ -236,19 +255,21 @@ library Hooks {
     /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
-        returns (int256 amountToSwap, BeforeSwapDelta hookReturn)
+        returns (int256 amountToSwap, BeforeSwapDelta hookReturn, uint24 lpFee)
     {
         amountToSwap = params.amountSpecified;
-        if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA);
+        if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, type(uint24).max);
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
             bool canReturnDelta = self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG);
-            hookReturn = BeforeSwapDelta.wrap(
-                self.callHookWithReturnDelta(
-                    abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
-                    canReturnDelta
-                )
+            int256 result;
+            (result, lpFee) = self.callHookWithReturnDeltaAndFee(
+                abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
+                canReturnDelta,
+                key.fee.isDynamicFee()
             );
+
+            hookReturn = BeforeSwapDelta.wrap(result);
 
             // skip this logic for the case where the hook return is 0
             if (canReturnDelta) {

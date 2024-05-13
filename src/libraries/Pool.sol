@@ -295,6 +295,7 @@ library Pool {
         bool zeroForOne;
         int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
+        uint24 fee;
     }
 
     /// @notice Executes a swap against the state, and returns the amount deltas of the pool
@@ -319,8 +320,8 @@ library Pool {
         state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
         state.liquidity = cache.liquidityStart;
 
-        swapFee =
-            cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+        uint24 _lpFee = params.fee <= LPFeeLibrary.MAX_LP_FEE ? params.fee : slot0Start.lpFee;
+        swapFee = cache.protocolFee == 0 ? _lpFee : uint24(cache.protocolFee).calculateSwapFee(_lpFee);
 
         if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
             revert InvalidFeeForExactOut();
