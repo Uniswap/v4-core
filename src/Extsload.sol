@@ -46,7 +46,7 @@ abstract contract Extsload is IExtsload {
             }
             // Directly returning avoids Solidity doing it which would trigger a re-encode, almost
             // doubling the total cost of the method.
-            return(free, add(len, 0x40))
+            return(free, add(len, 64))
         }
     }
 }
