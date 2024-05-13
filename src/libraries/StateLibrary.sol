@@ -6,7 +6,7 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Currency} from "../types/Currency.sol";
 import {Position} from "./Position.sol";
 
-library PoolStateLibrary {
+library StateLibrary {
     // forge inspect src/PoolManager.sol:PoolManager storage --pretty
     // | Name                  | Type                                    | Slot | Offset | Bytes | Contract                        |
     // |-----------------------|-----------------------------------------|------|--------|-------|---------------------------------|

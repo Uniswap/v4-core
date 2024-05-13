@@ -7,11 +7,11 @@ import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
-import {PoolStateLibrary} from "../libraries/PoolStateLibrary.sol";
+import {StateLibrary} from "../libraries/StateLibrary.sol";
 
 abstract contract PoolTestBase is IUnlockCallback {
     using CurrencyLibrary for Currency;
-    using PoolStateLibrary for IPoolManager;
+    using StateLibrary for IPoolManager;
 
     IPoolManager public immutable manager;
 

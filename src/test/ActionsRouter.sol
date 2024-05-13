@@ -7,7 +7,7 @@ import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-import {PoolStateLibrary} from "../libraries/PoolStateLibrary.sol";
+import {StateLibrary} from "../libraries/StateLibrary.sol";
 
 // Supported Actions.
 enum Actions {
@@ -30,7 +30,7 @@ enum Actions {
 /// TODO: Can continue to add functions per action.
 contract ActionsRouter is IUnlockCallback, Test {
     using CurrencyLibrary for Currency;
-    using PoolStateLibrary for IPoolManager;
+    using StateLibrary for IPoolManager;
 
     error ActionNotSupported();
 
