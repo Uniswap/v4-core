@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
   forge-tests:
@@ -36,7 +35,8 @@ jobs:
           FOUNDRY_PROFILE: ci
 
       - name: Run tests
-        run: forge test -vvv
+        run: forge test --isolate -vvv
         env:
           FOUNDRY_PROFILE: ci
-          
+          FORGE_SNAPSHOT_CHECK: true
+
