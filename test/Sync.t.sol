@@ -226,8 +226,10 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         bytes[] memory params = new bytes[](8);
 
         manager.sync(currency0);
-        assertEq(manager.getReserves(currency0), managerCurrency0BalanceBefore); // reserves are 100.
-        snapLastCall("getReserves");
+        snapStart("getReserves");
+        uint256 reserves = manager.getReserves(currency0);
+        snapEnd();
+        assertEq(reserves, managerCurrency0BalanceBefore); // reserves are 100.
 
         actions[0] = Actions.TAKE;
         params[0] = abi.encode(currency0, address(this), 10);
