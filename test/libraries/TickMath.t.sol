@@ -11,22 +11,22 @@ contract TickMathTestTest is Test, JavascriptFfi {
     int24 constant MIN_TICK = -887272;
     int24 constant MAX_TICK = -MIN_TICK;
 
-    uint160 constant MIN_SQRT_RATIO = 4295128739;
-    uint160 constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
+    uint160 constant MIN_SQRT_PRICE = 4295128739;
+    uint160 constant MAX_SQRT_PRICE = 1461446703485210103287273052203988822378723970342;
 
-    uint160 constant SQRT_RATIO_1_1 = 79228162514264337593543950336;
+    uint160 constant SQRT_PRICE_1_1 = 79228162514264337593543950336;
 
     uint256 constant ONE_PIP = 1e6;
 
-    uint160[] getSqrtRatioAtTickFuzzResults;
-    int24[] getTickAtSqrtRatioFuzzResults;
+    uint160[] getSqrtPriceAtTickFuzzResults;
+    int24[] getTickAtSqrtPriceFuzzResults;
 
     TickMathTest tickMath;
 
     function setUp() public {
         tickMath = new TickMathTest();
-        delete getSqrtRatioAtTickFuzzResults;
-        delete getTickAtSqrtRatioFuzzResults;
+        delete getSqrtPriceAtTickFuzzResults;
+        delete getTickAtSqrtPriceFuzzResults;
     }
 
     function test_MIN_TICK_equalsNegativeMAX_TICK() public view {
@@ -44,75 +44,75 @@ contract TickMathTestTest is Test, JavascriptFfi {
         assertEq(maxTick, MAX_TICK);
     }
 
-    function test_getSqrtRatioAtTick_throwsForTooLow() public {
+    function test_getSqrtPriceAtTick_throwsForTooLow() public {
         vm.expectRevert(TickMath.InvalidTick.selector);
-        tickMath.getSqrtRatioAtTick(MIN_TICK - 1);
+        tickMath.getSqrtPriceAtTick(MIN_TICK - 1);
     }
 
-    function test_getSqrtRatioAtTick_throwsForTooHigh() public {
+    function test_getSqrtPriceAtTick_throwsForTooHigh() public {
         vm.expectRevert(TickMath.InvalidTick.selector);
-        tickMath.getSqrtRatioAtTick(MAX_TICK + 1);
+        tickMath.getSqrtPriceAtTick(MAX_TICK + 1);
     }
 
-    function test_getSqrtRatioAtTick_isValidMinTick() public view {
-        assertEq(tickMath.getSqrtRatioAtTick(MIN_TICK), tickMath.MIN_SQRT_RATIO());
-        assertEq(tickMath.getSqrtRatioAtTick(MIN_TICK), 4295128739);
+    function test_getSqrtPriceAtTick_isValidMinTick() public view {
+        assertEq(tickMath.getSqrtPriceAtTick(MIN_TICK), tickMath.MIN_SQRT_PRICE());
+        assertEq(tickMath.getSqrtPriceAtTick(MIN_TICK), 4295128739);
     }
 
-    function test_getSqrtRatioAtTick_isValidMinTickAddOne() public view {
-        assertEq(tickMath.getSqrtRatioAtTick(MIN_TICK + 1), 4295343490);
+    function test_getSqrtPriceAtTick_isValidMinTickAddOne() public view {
+        assertEq(tickMath.getSqrtPriceAtTick(MIN_TICK + 1), 4295343490);
     }
 
-    function test_getSqrtRatioAtTick_isValidMaxTick() public view {
-        assertEq(tickMath.getSqrtRatioAtTick(MAX_TICK), tickMath.MAX_SQRT_RATIO());
-        assertEq(tickMath.getSqrtRatioAtTick(MAX_TICK), 1461446703485210103287273052203988822378723970342);
+    function test_getSqrtPriceAtTick_isValidMaxTick() public view {
+        assertEq(tickMath.getSqrtPriceAtTick(MAX_TICK), tickMath.MAX_SQRT_PRICE());
+        assertEq(tickMath.getSqrtPriceAtTick(MAX_TICK), 1461446703485210103287273052203988822378723970342);
     }
 
-    function test_getSqrtRatioAtTick_isValidMaxTickSubOne() public view {
-        assertEq(tickMath.getSqrtRatioAtTick(MAX_TICK - 1), 1461373636630004318706518188784493106690254656249);
+    function test_getSqrtPriceAtTick_isValidMaxTickSubOne() public view {
+        assertEq(tickMath.getSqrtPriceAtTick(MAX_TICK - 1), 1461373636630004318706518188784493106690254656249);
     }
 
-    function test_getSqrtRatioAtTick_isLessThanJSImplMinTick() public view {
+    function test_getSqrtPriceAtTick_isLessThanJSImplMinTick() public view {
         // sqrt(1 / 2 ** 127) * 2 ** 96
-        uint160 jsMinSqrtRatio = 6085630636;
-        uint160 solMinSqrtRatio = tickMath.getSqrtRatioAtTick(MIN_TICK);
-        assertLt(solMinSqrtRatio, jsMinSqrtRatio);
+        uint160 jsMinSqrtPrice = 6085630636;
+        uint160 solMinSqrtPrice = tickMath.getSqrtPriceAtTick(MIN_TICK);
+        assertLt(solMinSqrtPrice, jsMinSqrtPrice);
     }
 
-    function test_getSqrtRatioAtTick_isGreaterThanJSImplMaxTick() public view {
+    function test_getSqrtPriceAtTick_isGreaterThanJSImplMaxTick() public view {
         // sqrt(2 ** 127) * 2 ** 96
-        uint160 jsMaxSqrtRatio = 1033437718471923706666374484006904511252097097914;
-        uint160 solMaxSqrtRatio = tickMath.getSqrtRatioAtTick(MAX_TICK);
-        assertGt(solMaxSqrtRatio, jsMaxSqrtRatio);
+        uint160 jsMaxSqrtPrice = 1033437718471923706666374484006904511252097097914;
+        uint160 solMaxSqrtPrice = tickMath.getSqrtPriceAtTick(MAX_TICK);
+        assertGt(solMaxSqrtPrice, jsMaxSqrtPrice);
     }
 
-    function test_getTickAtSqrtRatio_throwsForTooLow() public {
-        vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
-        tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO - 1);
+    function test_getTickAtSqrtPrice_throwsForTooLow() public {
+        vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
+        tickMath.getTickAtSqrtPrice(MIN_SQRT_PRICE - 1);
     }
 
-    function test_getTickAtSqrtRatio_throwsForTooHigh() public {
-        vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
-        tickMath.getTickAtSqrtRatio(MAX_SQRT_RATIO + 1);
+    function test_getTickAtSqrtPrice_throwsForTooHigh() public {
+        vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
+        tickMath.getTickAtSqrtPrice(MAX_SQRT_PRICE + 1);
     }
 
-    function test_getTickAtSqrtRatio_isValidMinSqrtRatio() public view {
-        assertEq(tickMath.getTickAtSqrtRatio(MIN_SQRT_RATIO), MIN_TICK);
+    function test_getTickAtSqrtPrice_isValidMinSqrtPrice() public view {
+        assertEq(tickMath.getTickAtSqrtPrice(MIN_SQRT_PRICE), MIN_TICK);
     }
 
-    function test_getTickAtSqrtRatio_isValidMinSqrtRatioPlusOne() public view {
-        assertEq(tickMath.getTickAtSqrtRatio(4295343490), MIN_TICK + 1);
+    function test_getTickAtSqrtPrice_isValidMinSqrtPricePlusOne() public view {
+        assertEq(tickMath.getTickAtSqrtPrice(4295343490), MIN_TICK + 1);
     }
 
-    function test_getTickAtSqrtRatio_isValidRatioClosestToMaxTick() public view {
-        assertEq(tickMath.getTickAtSqrtRatio(MAX_SQRT_RATIO - 1), MAX_TICK - 1);
+    function test_getTickAtSqrtPrice_isValidPriceClosestToMaxTick() public view {
+        assertEq(tickMath.getTickAtSqrtPrice(MAX_SQRT_PRICE - 1), MAX_TICK - 1);
     }
 
-    function test_getTickAtSqrtRatio_isValidMaxSqrtRatioMinusOne() public view {
-        assertEq(tickMath.getTickAtSqrtRatio(1461373636630004318706518188784493106690254656249), MAX_TICK - 1);
+    function test_getTickAtSqrtPrice_isValidMaxSqrtPriceMinusOne() public view {
+        assertEq(tickMath.getTickAtSqrtPrice(1461373636630004318706518188784493106690254656249), MAX_TICK - 1);
     }
 
-    function test_getSqrtRatioAtTick_matchesJavaScriptImplByOneHundrethOfABip() public {
+    function test_getSqrtPriceAtTick_matchesJavaScriptImplByOneHundrethOfABip() public {
         string memory jsParameters = "";
 
         int24 tick = 50;
@@ -126,47 +126,47 @@ contract TickMathTestTest is Test, JavascriptFfi {
                 // add tick to javascript parameters to be calculated inside script
                 jsParameters = string(abi.encodePacked(jsParameters, vm.toString(int256(tick))));
                 // track solidity result for tick
-                getSqrtRatioAtTickFuzzResults.push(tickMath.getSqrtRatioAtTick(tick));
+                getSqrtPriceAtTickFuzzResults.push(tickMath.getSqrtPriceAtTick(tick));
             }
             tick = tick * 2;
         }
 
-        bytes memory jsResult = runScript("forge-test-getSqrtRatioAtTick", jsParameters);
-        uint160[] memory jsSqrtRatios = abi.decode(jsResult, (uint160[]));
+        bytes memory jsResult = runScript("forge-test-getSqrtPriceAtTick", jsParameters);
+        uint160[] memory jsSqrtPrices = abi.decode(jsResult, (uint160[]));
 
-        for (uint256 i = 0; i < jsSqrtRatios.length; i++) {
-            uint160 jsSqrtRatio = jsSqrtRatios[i];
-            uint160 solResult = getSqrtRatioAtTickFuzzResults[i];
+        for (uint256 i = 0; i < jsSqrtPrices.length; i++) {
+            uint160 jsSqrtPrice = jsSqrtPrices[i];
+            uint160 solResult = getSqrtPriceAtTickFuzzResults[i];
             (uint160 gtResult, uint160 ltResult) =
-                jsSqrtRatio > solResult ? (jsSqrtRatio, solResult) : (solResult, jsSqrtRatio);
+                jsSqrtPrice > solResult ? (jsSqrtPrice, solResult) : (solResult, jsSqrtPrice);
             uint160 resultsDiff = gtResult - ltResult;
 
             // assert solc/js result is at most off by 1/100th of a bip (aka one pip)
-            assertEq(resultsDiff * ONE_PIP / jsSqrtRatio, 0);
+            assertEq(resultsDiff * ONE_PIP / jsSqrtPrice, 0);
         }
     }
 
-    function test_getTickAtSqrtRatio_matchesJavascriptImplWithin1() public {
+    function test_getTickAtSqrtPrice_matchesJavascriptImplWithin1() public {
         string memory jsParameters = "";
 
-        uint160 sqrtRatio = MIN_SQRT_RATIO;
+        uint160 sqrtPrice = MIN_SQRT_PRICE;
         unchecked {
-            while (sqrtRatio < sqrtRatio * 16) {
-                if (sqrtRatio != MIN_SQRT_RATIO) jsParameters = string(abi.encodePacked(jsParameters, ",")); // do not leave comma in front of first number
+            while (sqrtPrice < sqrtPrice * 16) {
+                if (sqrtPrice != MIN_SQRT_PRICE) jsParameters = string(abi.encodePacked(jsParameters, ",")); // do not leave comma in front of first number
                 // add tick to javascript parameters to be calculated inside script
-                jsParameters = string(abi.encodePacked(jsParameters, vm.toString(sqrtRatio)));
-                // track solidity result for sqrtRatio
-                getTickAtSqrtRatioFuzzResults.push(tickMath.getTickAtSqrtRatio(sqrtRatio));
-                sqrtRatio = sqrtRatio * 16;
+                jsParameters = string(abi.encodePacked(jsParameters, vm.toString(sqrtPrice)));
+                // track solidity result for sqrtPrice
+                getTickAtSqrtPriceFuzzResults.push(tickMath.getTickAtSqrtPrice(sqrtPrice));
+                sqrtPrice = sqrtPrice * 16;
             }
         }
 
-        bytes memory jsResult = runScript("forge-test-getTickAtSqrtRatio", jsParameters);
+        bytes memory jsResult = runScript("forge-test-getTickAtSqrtPrice", jsParameters);
         int24[] memory jsTicks = abi.decode(jsResult, (int24[]));
 
         for (uint256 i = 0; i < jsTicks.length; i++) {
             int24 jsTick = jsTicks[i];
-            int24 solTick = getTickAtSqrtRatioFuzzResults[i];
+            int24 solTick = getTickAtSqrtPriceFuzzResults[i];
 
             (int24 gtResult, int24 ltResult) = jsTick > solTick ? (jsTick, solTick) : (solTick, jsTick);
             int24 resultsDiff = gtResult - ltResult;

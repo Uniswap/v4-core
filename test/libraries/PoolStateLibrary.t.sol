@@ -35,7 +35,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // Create the pool
         key = PoolKey(currency0, currency1, 3000, 60, IHooks(address(0x0)));
         poolId = key.toId();
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_getSlot0() public {

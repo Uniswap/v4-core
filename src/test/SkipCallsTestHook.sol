@@ -6,7 +6,7 @@ import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
@@ -64,10 +64,10 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta,
         bytes calldata hookData
-    ) external override returns (bytes4) {
+    ) external override returns (bytes4, BalanceDelta) {
         counter++;
         _addLiquidity(key, params, hookData);
-        return IHooks.afterAddLiquidity.selector;
+        return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeRemoveLiquidity(
@@ -87,20 +87,20 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta,
         bytes calldata hookData
-    ) external override returns (bytes4) {
+    ) external override returns (bytes4, BalanceDelta) {
         counter++;
         _removeLiquidity(key, params, hookData);
-        return IHooks.afterRemoveLiquidity.selector;
+        return (IHooks.afterRemoveLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData)
         external
         override
-        returns (bytes4)
+        returns (bytes4, int128)
     {
         counter++;
         _swap(key, params, hookData);
-        return IHooks.beforeSwap.selector;
+        return (IHooks.beforeSwap.selector, 0);
     }
 
     function afterSwap(
@@ -109,10 +109,10 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         IPoolManager.SwapParams calldata params,
         BalanceDelta,
         bytes calldata hookData
-    ) external override returns (bytes4) {
+    ) external override returns (bytes4, int128) {
         counter++;
         _swap(key, params, hookData);
-        return IHooks.afterSwap.selector;
+        return (IHooks.afterSwap.selector, 0);
     }
 
     function beforeDonate(address, PoolKey calldata key, uint256 amt0, uint256 amt1, bytes calldata hookData)
