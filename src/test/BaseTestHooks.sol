@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {IHooks} from "../interfaces/IHooks.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
-import {BeforeSwapDelta} from "../types/HookReturnDelta.sol";
+import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 contract BaseTestHooks is IHooks {

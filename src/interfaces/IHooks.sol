@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "./IPoolManager.sol";
-import {BeforeSwapDelta} from "../types/HookReturnDelta.sol";
+import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 /// @notice The PoolManager contract decides whether to invoke specific hooks by inspecting the leading bits
 /// of the hooks contract address. For example, a 1 bit in the first bit of the address will

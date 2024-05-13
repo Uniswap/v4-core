@@ -6,7 +6,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
-import {BeforeSwapDelta} from "../types/HookReturnDelta.sol";
+import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 contract EmptyTestHooks is IHooks {
     using Hooks for IHooks;

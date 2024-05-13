@@ -14,7 +14,7 @@ import {PoolTestBase} from "./PoolTestBase.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
-import {BeforeSwapDelta} from "../types/HookReturnDelta.sol";
+import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
     using CurrencySettleTake for Currency;

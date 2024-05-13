@@ -6,7 +6,7 @@ import {SafeCast} from "../libraries/SafeCast.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/HookReturnDelta.sol";
+import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
