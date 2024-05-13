@@ -101,7 +101,8 @@ contract MockHooks is IHooks {
     {
         beforeSwapData = hookData;
         bytes4 selector = MockHooks.beforeSwap.selector;
-        return (returnValues[selector] == bytes4(0) ? selector : returnValues[selector], BeforeSwapDeltaLibrary.ZERO_DELTA);
+        return
+            (returnValues[selector] == bytes4(0) ? selector : returnValues[selector], BeforeSwapDeltaLibrary.ZERO_DELTA);
     }
 
     function afterSwap(
