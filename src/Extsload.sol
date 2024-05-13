@@ -27,26 +27,20 @@ abstract contract Extsload is IExtsload {
     }
 
     function extsload(bytes32[] calldata slots) external view returns (bytes32[] memory) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            let free := mload(64)
-            // The offset of our array in the returndata is 32.
-            mstore(free, 32)
-            mstore(add(free, 32), slots.length)
-            // Return values will start at `free + 64`. We compute the difference between the memory
-            // and calldata offset so we don't have to track and update a separate memory offset.
-            let relativeOffset := sub(add(free, 64), slots.offset)
-            // A left bit-shift of 5 is equivalent to multiplying by 32 but costs less gas.
-            let len := shl(5, slots.length)
-            let srcEndOffset := add(slots.offset, len)
-            // Iterate through the calldata array.
-            for { let srcOffset := slots.offset } lt(srcOffset, srcEndOffset) { srcOffset := add(srcOffset, 32) } {
-                // Compute memory offset using the computed relative offset and store loaded value.
-                mstore(add(srcOffset, relativeOffset), sload(calldataload(srcOffset)))
+        assembly ("memory-safe") {
+            // abi offset for dynamic array
+            mstore(0, 0x20)
+            mstore(0x20, slots.length)
+            let end := add(0x40, shl(5, slots.length))
+            let memptr := 0x40
+            let calldataptr := slots.offset
+            for {} 1 {} {
+                mstore(memptr, sload(calldataload(calldataptr)))
+                memptr := add(memptr, 0x20)
+                calldataptr := add(calldataptr, 0x20)
+                if iszero(lt(memptr, end)) { break }
             }
-            // Directly returning avoids Solidity doing it which would trigger a re-encode, almost
-            // doubling the total cost of the method.
-            return(free, add(len, 64))
+            return(0, end)
         }
     }
 }
