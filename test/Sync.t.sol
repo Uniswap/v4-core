@@ -227,6 +227,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         manager.sync(currency0);
         assertEq(manager.getReserves(currency0), managerCurrency0BalanceBefore); // reserves are 100.
+        snapLastCall("getReserves");
 
         actions[0] = Actions.TAKE;
         params[0] = abi.encode(currency0, address(this), 10);
