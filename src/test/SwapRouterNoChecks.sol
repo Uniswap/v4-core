@@ -25,10 +25,7 @@ contract SwapRouterNoChecks is PoolTestBase {
         IPoolManager.SwapParams params;
     }
 
-    function swap(
-        PoolKey memory key,
-        IPoolManager.SwapParams memory params
-    ) external payable {
+    function swap(PoolKey memory key, IPoolManager.SwapParams memory params) external payable {
         manager.unlock(abi.encode(CallbackData(msg.sender, key, params)));
     }
 
@@ -39,7 +36,7 @@ contract SwapRouterNoChecks is PoolTestBase {
 
         BalanceDelta delta = manager.swap(data.key, data.params, new bytes(0));
 
-        if(data.params.zeroForOne) {
+        if (data.params.zeroForOne) {
             data.key.currency0.settle(manager, data.sender, uint256(int256(-delta.amount0())), false);
             data.key.currency1.take(manager, data.sender, uint256(int256(delta.amount1())), false);
         } else {
