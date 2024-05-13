@@ -35,11 +35,11 @@ contract TestDelegateCall is Test, GasSnapshot {
         assertTrue(success);
     }
 
-    function test_callPrivateMethodWithModifer_succeeds() public view {
+    function test_externalCallToPrivateMethodWithModifer_succeeds() public view {
         noDelegateCallTest.callsIntoNoDelegateCallFunction();
     }
 
-    function test_delegateCallPrivateMethodWithModifier_revertsWithDelegateCallNotAllowed() public {
+    function test_delegateCallFromExternalToPrivateMethodWithModifier_revertsWithDelegateCallNotAllowed() public {
         vm.expectRevert(NoDelegateCall.DelegateCallNotAllowed.selector);
         (bool success,) = address(noDelegateCallTest).delegatecall(
             abi.encode(noDelegateCallTest.callsIntoNoDelegateCallFunction.selector)
