@@ -16,10 +16,12 @@ import {ActionsRouter, Actions} from "../src/test/ActionsRouter.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {Reserves} from "../src/libraries/Reserves.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
 
 contract SyncTest is Test, Deployers, GasSnapshot {
     using CurrencyLibrary for Currency;
     using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
 
     // PoolManager has no balance of currency2.
     Currency currency2;
