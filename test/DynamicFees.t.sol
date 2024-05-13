@@ -27,26 +27,15 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     DynamicFeesTestHook dynamicFeesHooks = DynamicFeesTestHook(
         address(
-            uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                & uint160(
-                    ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG
-                        & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.AFTER_SWAP_FLAG
-                        & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG
-                )
+            uint160(
+                uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG
+                    | Hooks.AFTER_INITIALIZE_FLAG
+            )
         )
     );
 
-    DynamicFeesTestHook dynamicFeesNoHooks = DynamicFeesTestHook(
-        address(
-            uint160(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF)
-                & uint160(
-                    ~Hooks.BEFORE_INITIALIZE_FLAG & ~Hooks.AFTER_INITIALIZE_FLAG & ~Hooks.BEFORE_ADD_LIQUIDITY_FLAG
-                        & ~Hooks.AFTER_ADD_LIQUIDITY_FLAG & ~Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
-                        & ~Hooks.AFTER_REMOVE_LIQUIDITY_FLAG & ~Hooks.BEFORE_SWAP_FLAG & ~Hooks.AFTER_SWAP_FLAG
-                        & ~Hooks.BEFORE_DONATE_FLAG & ~Hooks.AFTER_DONATE_FLAG
-                )
-        )
-    );
+    DynamicFeesTestHook dynamicFeesNoHooks =
+        DynamicFeesTestHook(address(uint160(uint256(type(uint160).max) & clearAllHookPermisssionsMask)));
 
     event Swap(
         PoolId indexed poolId,
@@ -74,7 +63,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             currency1,
             IHooks(address(dynamicFeesHooks)),
             LPFeeLibrary.DYNAMIC_FEE_FLAG,
-            SQRT_RATIO_1_1,
+            SQRT_PRICE_1_1,
             ZERO_BYTES
         );
     }
@@ -84,7 +73,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(1000001);
 
         vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_initialize_initializesFeeTo0() public {
@@ -93,7 +82,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         // this fee is not fetched as theres no afterInitialize hook
         dynamicFeesNoHooks.setFee(1000000);
 
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
         assertEq(_fetchPoolLPFee(key), 0);
     }
 
@@ -101,7 +90,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         key.tickSpacing = 30;
         dynamicFeesHooks.setFee(123);
 
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
         assertEq(_fetchPoolLPFee(key), 123);
     }
 
@@ -116,7 +105,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         // afterInitialize will try to update the fee, and fail
         vm.expectRevert(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector);
-        manager.initialize(key, SQRT_RATIO_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_updateDynamicLPFee_beforeSwap_failsWithTooLargeFee() public {
@@ -125,7 +114,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(1000001);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -139,7 +128,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(123);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -158,12 +147,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(1000000);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -100, 0, SQRT_RATIO_1_1, 1e18, -1, 1000000);
+        emit Swap(key.toId(), address(swapRouter), -100, 0, SQRT_PRICE_1_1, 1e18, -1, 1000000);
 
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
@@ -176,7 +165,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(500000);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -194,7 +183,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(500000);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -212,7 +201,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(1000000);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -229,7 +218,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         manager.setProtocolFee(key, 1000);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: 100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -254,12 +243,12 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         manager.setProtocolFee(key, 1000);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -1000, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -1000, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
-        emit Swap(key.toId(), address(swapRouter), -1000, 0, SQRT_RATIO_1_1, 1e18, -1, 1000000);
+        emit Swap(key.toId(), address(swapRouter), -1000, 0, SQRT_PRICE_1_1, 1e18, -1, 1000000);
 
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
@@ -276,7 +265,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         manager.setProtocolFee(key, 1000);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -307,7 +296,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
             zeroForOne: true,
             amountSpecified: amountSpecified,
-            sqrtPriceLimitX96: SQRT_RATIO_1_2
+            sqrtPriceLimitX96: SQRT_PRICE_1_2
         });
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
@@ -320,7 +309,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function test_swap_withDynamicFee_gas() public {
         (key,) = initPoolAndAddLiquidity(
-            currency0, currency1, dynamicFeesNoHooks, LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_RATIO_1_1, ZERO_BYTES
+            currency0, currency1, dynamicFeesNoHooks, LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1, ZERO_BYTES
         );
 
         assertEq(_fetchPoolLPFee(key), 0);
@@ -328,7 +317,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolLPFee(key), 123);
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 

@@ -36,18 +36,18 @@ contract Deployers {
 
     // Helpful test constants
     bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
-    uint160 constant SQRT_RATIO_1_1 = Constants.SQRT_RATIO_1_1;
-    uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
-    uint160 constant SQRT_RATIO_2_1 = Constants.SQRT_RATIO_2_1;
-    uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
-    uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
+    uint160 constant SQRT_PRICE_1_1 = Constants.SQRT_PRICE_1_1;
+    uint160 constant SQRT_PRICE_1_2 = Constants.SQRT_PRICE_1_2;
+    uint160 constant SQRT_PRICE_2_1 = Constants.SQRT_PRICE_2_1;
+    uint160 constant SQRT_PRICE_1_4 = Constants.SQRT_PRICE_1_4;
+    uint160 constant SQRT_PRICE_4_1 = Constants.SQRT_PRICE_4_1;
 
-    uint160 public constant MIN_PRICE_LIMIT = TickMath.MIN_SQRT_RATIO + 1;
-    uint160 public constant MAX_PRICE_LIMIT = TickMath.MAX_SQRT_RATIO - 1;
+    uint160 public constant MIN_PRICE_LIMIT = TickMath.MIN_SQRT_PRICE + 1;
+    uint160 public constant MAX_PRICE_LIMIT = TickMath.MAX_SQRT_PRICE - 1;
 
-    IPoolManager.ModifyLiquidityParams public LIQ_PARAMS =
+    IPoolManager.ModifyLiquidityParams public LIQUIDITY_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
-    IPoolManager.ModifyLiquidityParams public REMOVE_LIQ_PARAMS =
+    IPoolManager.ModifyLiquidityParams public REMOVE_LIQUIDITY_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
 
     // Global variables
@@ -72,6 +72,10 @@ contract Deployers {
     PoolKey nativeKey;
     PoolKey uninitializedKey;
     PoolKey uninitializedNativeKey;
+
+    // Update this value when you add a new hook flag.
+    uint256 hookPermissionCount = 14;
+    uint256 clearAllHookPermisssionsMask = uint256(~uint160(0) >> (hookPermissionCount));
 
     modifier noIsolate() {
         if (msg.sender != address(this)) {
@@ -169,7 +173,7 @@ contract Deployers {
         bytes memory initData
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyLiquidityRouter.modifyLiquidity{value: msg.value}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity{value: msg.value}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     function initPoolAndAddLiquidityETH(
@@ -182,7 +186,7 @@ contract Deployers {
         uint256 msgValue
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyLiquidityRouter.modifyLiquidity{value: msgValue}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity{value: msgValue}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     // Deploys the manager, all test routers, and sets up 2 pools: with and without native
@@ -190,10 +194,10 @@ contract Deployers {
         deployFreshManagerAndRouters();
         // sets the global currencyies and key
         deployMintAndApprove2Currencies();
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
         nestedActionRouter.executor().setKey(key);
         (nativeKey,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
+            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
         );
         uninitializedKey = key;
         uninitializedNativeKey = nativeKey;

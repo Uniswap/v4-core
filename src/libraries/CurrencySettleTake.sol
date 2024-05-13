@@ -23,7 +23,11 @@ library CurrencySettleTake {
             manager.settle{value: amount}(currency);
         } else {
             manager.sync(currency);
-            IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), amount);
+            if (payer != address(this)) {
+                IERC20Minimal(Currency.unwrap(currency)).transferFrom(payer, address(manager), amount);
+            } else {
+                IERC20Minimal(Currency.unwrap(currency)).transfer(address(manager), amount);
+            }
             manager.settle(currency);
         }
     }
