@@ -39,11 +39,11 @@ contract Fuzzers is StdUtils {
         // round down ticks
         tickLower = (tickLower / key.tickSpacing) * key.tickSpacing;
         tickUpper = (tickUpper / key.tickSpacing) * key.tickSpacing;
-        
+
         (tickLower, tickUpper) = tickLower < tickUpper ? (tickLower, tickUpper) : (tickUpper, tickLower);
-        
+
         _vm.assume(tickLower != tickUpper);
-        
+
         return (tickLower, tickUpper);
     }
 

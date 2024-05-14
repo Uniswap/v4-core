@@ -85,14 +85,7 @@ library PoolStateLibrary {
             uint256 feeGrowthOutside1X128
         )
     {
-        // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = _getPoolStateSlot(poolId);
-
-        // Pool.State: `mapping(int24 => TickInfo) ticks`
-        bytes32 ticksMapping = bytes32(uint256(stateSlot) + TICK_INFO_OFFSET);
-
-        // slot key of the tick key: `pools[poolId].ticks[tick]
-        bytes32 slot = keccak256(abi.encodePacked(int256(tick), ticksMapping));
+        bytes32 slot = _getTickInfoSlot(poolId, tick);
 
         // read all 3 words of the TickInfo struct
         bytes memory data = manager.extsload(slot, 3);
@@ -118,14 +111,7 @@ library PoolStateLibrary {
         view
         returns (uint128 liquidityGross, int128 liquidityNet)
     {
-        // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = _getPoolStateSlot(poolId);
-
-        // Pool.State: `mapping(int24 => TickInfo) ticks`
-        bytes32 ticksMapping = bytes32(uint256(stateSlot) + TICK_INFO_OFFSET);
-
-        // slot key of the tick key: `pools[poolId].ticks[tick]
-        bytes32 slot = keccak256(abi.encodePacked(int256(tick), ticksMapping));
+        bytes32 slot = _getTickInfoSlot(poolId, tick);
 
         bytes32 value = manager.extsload(slot);
         assembly {
@@ -148,14 +134,7 @@ library PoolStateLibrary {
         view
         returns (uint256 feeGrowthOutside0X128, uint256 feeGrowthOutside1X128)
     {
-        // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = _getPoolStateSlot(poolId);
-
-        // Pool.State: `mapping(int24 => TickInfo) ticks`
-        bytes32 ticksMapping = bytes32(uint256(stateSlot) + TICK_INFO_OFFSET);
-
-        // slot key of the tick key: `pools[poolId].ticks[tick]
-        bytes32 slot = keccak256(abi.encodePacked(int256(tick), ticksMapping));
+        bytes32 slot = _getTickInfoSlot(poolId, tick);
 
         // offset by 1 word, since the first word is liquidityGross + liquidityNet
         bytes memory data = manager.extsload(bytes32(uint256(slot) + 1), 2);
@@ -249,14 +228,7 @@ library PoolStateLibrary {
         view
         returns (uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128)
     {
-        // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = _getPoolStateSlot(poolId);
-
-        // Pool.State: `mapping(bytes32 => Position.Info) positions;`
-        bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITION_INFO_OFFSET);
-
-        // first value slot of the mapping key: `pools[poolId].positions[positionId] (liquidity)
-        bytes32 slot = keccak256(abi.encodePacked(positionId, positionMapping));
+        bytes32 slot = _getPositionInfoSlot(poolId, positionId);
 
         // read all 3 words of the Position.Info struct
         bytes memory data = manager.extsload(slot, 3);
@@ -310,15 +282,7 @@ library PoolStateLibrary {
         view
         returns (uint128 liquidity)
     {
-        // slot key of Pool.State value: `pools[poolId]`
-        bytes32 stateSlot = _getPoolStateSlot(poolId);
-
-        // Pool.State: `mapping(bytes32 => Position.Info) positions;`
-        bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITION_INFO_OFFSET);
-
-        // first value slot of the mapping key: `pools[poolId].positions[positionId] (liquidity)
-        bytes32 slot = keccak256(abi.encodePacked(positionId, positionMapping));
-
+        bytes32 slot = _getPositionInfoSlot(poolId, positionId);
         liquidity = uint128(uint256(manager.extsload(slot)));
     }
 
@@ -360,5 +324,27 @@ library PoolStateLibrary {
 
     function _getPoolStateSlot(PoolId poolId) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+    }
+
+    function _getTickInfoSlot(PoolId poolId, int24 tick) internal pure returns (bytes32) {
+        // slot key of Pool.State value: `pools[poolId]`
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
+
+        // Pool.State: `mapping(int24 => TickInfo) ticks`
+        bytes32 ticksMapping = bytes32(uint256(stateSlot) + TICK_INFO_OFFSET);
+
+        // slot key of the tick key: `pools[poolId].ticks[tick]
+        return keccak256(abi.encodePacked(int256(tick), ticksMapping));
+    }
+
+    function _getPositionInfoSlot(PoolId poolId, bytes32 positionId) internal pure returns (bytes32 slot) {
+        // slot key of Pool.State value: `pools[poolId]`
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
+
+        // Pool.State: `mapping(bytes32 => Position.Info) positions;`
+        bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITION_INFO_OFFSET);
+
+        // slot of the mapping key: `pools[poolId].positions[positionId]
+        return keccak256(abi.encodePacked(positionId, positionMapping));
     }
 }
