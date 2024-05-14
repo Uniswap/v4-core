@@ -102,7 +102,14 @@ library Pool {
 
         tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, lpFee: lpFee});
+        Slot0Packed _slot0;
+        self.slot0.storePacked(
+            _slot0
+                .setSqrtPriceX96(sqrtPriceX96)
+                .setTick(tick)
+                .setProtocolFee(protocolFee)
+                .setLpFee(lpFee)
+        );
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
