@@ -6,6 +6,7 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
+import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 
 contract DynamicFeesTestHook is BaseTestHooks {
     uint24 internal fee;
@@ -34,7 +35,7 @@ contract DynamicFeesTestHook is BaseTestHooks {
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         manager.updateDynamicLPFee(key, fee);
-        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, type(uint24).max);
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, LPFeeLibrary.MAX_UINT24);
     }
 
     function forcePoolFeeUpdate(PoolKey calldata _key, uint24 _fee) external {

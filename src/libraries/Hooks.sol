@@ -163,7 +163,7 @@ library Hooks {
         }
 
         if (!parseFee) {
-            fee = type(uint24).max;
+            fee = LPFeeLibrary.MAX_UINT24;
         }
     }
 
@@ -258,8 +258,8 @@ library Hooks {
         returns (int256 amountToSwap, BeforeSwapDelta hookReturn, uint24 lpFee)
     {
         amountToSwap = params.amountSpecified;
-        lpFee = type(uint24).max;
-        if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, type(uint24).max);
+        lpFee = LPFeeLibrary.MAX_UINT24;
+        if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, lpFee);
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
             bool canReturnDelta = self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG);

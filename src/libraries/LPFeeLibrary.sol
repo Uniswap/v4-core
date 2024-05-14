@@ -14,6 +14,7 @@ library LPFeeLibrary {
 
     // the lp fee is represented in hundredths of a bip, so the max is 100%
     uint24 public constant MAX_LP_FEE = 1000000;
+    uint24 public constant MAX_UINT24 = type(uint24).max;
 
     function isDynamicFee(uint24 self) internal pure returns (bool) {
         return self & DYNAMIC_FEE_FLAG != 0;
