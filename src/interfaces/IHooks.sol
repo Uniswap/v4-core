@@ -99,7 +99,7 @@ interface IHooks {
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     /// @return BeforeSwapDelta The hook's delta in specified and unspecified currencies. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
-    /// @return uint24 An optional swap fee, only used if the Pool has a dynamic fee and the value is less than of equal to LPFeeLibrary.MAX_LP_FEE
+    /// @return uint24 An optional swap fee, only used if the Pool has a dynamic fee and the value is less than or equal to LPFeeLibrary.MAX_LP_FEE
     function beforeSwap(
         address sender,
         PoolKey calldata key,
