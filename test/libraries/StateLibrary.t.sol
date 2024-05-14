@@ -300,7 +300,6 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         (IPoolManager.ModifyLiquidityParams memory _params, BalanceDelta delta) =
             createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
 
-        // assume swap amount is material, and less than 1/5th of the liquidity
         uint256 delta0 = uint256(int256(-delta.amount0()));
         uint256 delta1 = uint256(int256(-delta.amount1()));
         // if one of the deltas is zero, ensure to swap in the right direction

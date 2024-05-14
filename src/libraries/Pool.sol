@@ -217,8 +217,7 @@ library Pool {
         }
 
         if (liquidityDelta != 0) {
-            int24 tick = self.slot0.tick;
-            uint160 sqrtPriceX96 = self.slot0.sqrtPriceX96;
+            (int24 tick, uint160 sqrtPriceX96) = (self.slot0.tick, self.slot0.sqrtPriceX96);
             if (tick < tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
@@ -305,7 +304,6 @@ library Pool {
     {
         Slot0 memory slot0Start = self.slot0;
         bool zeroForOne = params.zeroForOne;
-        bool exactInput = params.amountSpecified < 0;
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
@@ -321,6 +319,8 @@ library Pool {
 
         swapFee =
             cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+
+        bool exactInput = params.amountSpecified < 0;
 
         if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
             revert InvalidFeeForExactOut();
@@ -347,16 +347,17 @@ library Pool {
         StepComputations memory step;
 
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
-        while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != params.sqrtPriceLimitX96) {
+        while (!(state.amountSpecifiedRemaining == 0 || state.sqrtPriceX96 == params.sqrtPriceLimitX96)) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
             (step.tickNext, step.initialized) =
                 self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, zeroForOne);
 
             // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
-            if (step.tickNext < TickMath.MIN_TICK) {
+            if (step.tickNext <= TickMath.MIN_TICK) {
                 step.tickNext = TickMath.MIN_TICK;
-            } else if (step.tickNext > TickMath.MAX_TICK) {
+            }
+            if (step.tickNext >= TickMath.MAX_TICK) {
                 step.tickNext = TickMath.MAX_TICK;
             }
 
@@ -376,17 +377,17 @@ library Pool {
                 swapFee
             );
 
-            if (exactInput) {
+            if (!exactInput) {
+                unchecked {
+                    state.amountSpecifiedRemaining -= step.amountOut.toInt256();
+                }
+                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
+            } else {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
                     state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
                 }
                 state.amountCalculated = state.amountCalculated + step.amountOut.toInt256();
-            } else {
-                unchecked {
-                    state.amountSpecifiedRemaining -= step.amountOut.toInt256();
-                }
-                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
@@ -413,15 +414,9 @@ library Pool {
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
-                    uint256 feeGrowthGlobal0X128;
-                    uint256 feeGrowthGlobal1X128;
-                    if (!zeroForOne) {
-                        feeGrowthGlobal0X128 = self.feeGrowthGlobal0X128;
-                        feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
-                    } else {
-                        feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
-                        feeGrowthGlobal1X128 = self.feeGrowthGlobal1X128;
-                    }
+                    (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = zeroForOne
+                        ? (state.feeGrowthGlobalX128, self.feeGrowthGlobal1X128)
+                        : (self.feeGrowthGlobal0X128, state.feeGrowthGlobalX128);
                     int128 liquidityNet =
                         Pool.crossTick(self, step.tickNext, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
@@ -433,8 +428,14 @@ library Pool {
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
 
+                // Equivalent to `state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;`
                 unchecked {
-                    state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
+                    // cannot cast a bool to an int24 in Solidity
+                    int24 _zeroForOne;
+                    assembly {
+                        _zeroForOne := zeroForOne
+                    }
+                    state.tick = step.tickNext - _zeroForOne;
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
@@ -442,28 +443,28 @@ library Pool {
             }
         }
 
-        (self.slot0.sqrtPriceX96, self.slot0.tick) = (state.sqrtPriceX96, state.tick);
+        (self.slot0.tick, self.slot0.sqrtPriceX96) = (state.tick, state.sqrtPriceX96);
 
         // update liquidity if it changed
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
         // update fee growth global
-        if (zeroForOne) {
-            self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
-        } else {
+        if (!zeroForOne) {
             self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
+        } else {
+            self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
         }
 
         unchecked {
-            if (zeroForOne == exactInput) {
-                result = toBalanceDelta(
-                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
-                    state.amountCalculated.toInt128()
-                );
-            } else {
+            if (zeroForOne != exactInput) {
                 result = toBalanceDelta(
                     state.amountCalculated.toInt128(),
                     (params.amountSpecified - state.amountSpecifiedRemaining).toInt128()
+                );
+            } else {
+                result = toBalanceDelta(
+                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
+                    state.amountCalculated.toInt128()
                 );
             }
         }

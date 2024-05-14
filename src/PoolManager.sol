@@ -93,7 +93,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
-    mapping(PoolId id => Pool.State) public pools;
+    mapping(PoolId id => Pool.State) internal pools;
 
     constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
 
@@ -327,21 +327,5 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         pools[id].setLPFee(newDynamicLPFee);
-    }
-
-    function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory) {
-        return pools[id].getPoolTickInfo(tick);
-    }
-
-    function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
-        return pools[id].getPoolBitmapInfo(word);
-    }
-
-    function getFeeGrowthGlobals(PoolId id)
-        external
-        view
-        returns (uint256 feeGrowthGlobal0x128, uint256 feeGrowthGlobal1x128)
-    {
-        return pools[id].getFeeGrowthGlobals();
     }
 }
