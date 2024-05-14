@@ -26,9 +26,9 @@ library Slot0Library {
     uint256 private constant INT24_MASK = 0xFFFFFF;
     uint256 private constant UINT24_MASK = 0xFFFFFF;
 
-    uint256 private constant TICK_OFFSET = 160;
-    uint256 private constant PROTOCOL_FEE_OFFSET = 184;
-    uint256 private constant LP_FEE_OFFSET = 208;
+    uint8 private constant TICK_OFFSET = 160;
+    uint8 private constant PROTOCOL_FEE_OFFSET = 184;
+    uint8 private constant LP_FEE_OFFSET = 208;
 
     // #### GETTERS ####
     function sqrtPriceX96(Slot0 _packed) internal pure returns (uint160 _sqrtPriceX96) {
