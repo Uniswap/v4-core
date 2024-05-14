@@ -154,7 +154,7 @@ library StateLibrary {
      * @return feeGrowthGlobal0 The global fee growth for token0.
      * @return feeGrowthGlobal1 The global fee growth for token1.
      */
-    function getFeeGrowthGlobal(IPoolManager manager, PoolId poolId)
+    function getFeeGrowthGlobals(IPoolManager manager, PoolId poolId)
         internal
         view
         returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1)
@@ -303,7 +303,7 @@ library StateLibrary {
         view
         returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128)
     {
-        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = getFeeGrowthGlobal(manager, poolId);
+        (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = getFeeGrowthGlobals(manager, poolId);
 
         (uint256 lowerFeeGrowthOutside0X128, uint256 lowerFeeGrowthOutside1X128) =
             getTickFeeGrowthOutside(manager, poolId, tickLower);

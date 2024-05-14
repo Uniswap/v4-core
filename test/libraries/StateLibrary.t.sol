@@ -91,11 +91,13 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertEq(liquidityNetUpper, -int128(_params.liquidityDelta));
 
         // confirm agreement with getTickInfo()
-        (uint128 _liquidityGrossLower, int128 _liquidityNetLower,,) = StateLibrary.getTickInfo(manager, poolId, _params.tickLower);
+        (uint128 _liquidityGrossLower, int128 _liquidityNetLower,,) =
+            StateLibrary.getTickInfo(manager, poolId, _params.tickLower);
         assertEq(_liquidityGrossLower, liquidityGrossLower);
         assertEq(_liquidityNetLower, liquidityNetLower);
 
-        (uint128 _liquidityGrossUpper, int128 _liquidityNetUpper,,) = StateLibrary.getTickInfo(manager, poolId, _params.tickUpper);
+        (uint128 _liquidityGrossUpper, int128 _liquidityNetUpper,,) =
+            StateLibrary.getTickInfo(manager, poolId, _params.tickUpper);
         assertEq(_liquidityGrossUpper, liquidityGrossUpper);
         assertEq(_liquidityNetUpper, liquidityNetUpper);
     }
@@ -165,14 +167,14 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         }
     }
 
-    function test_getFeeGrowthGlobal0() public {
+    function test_getFeeGrowthGlobals0() public {
         // create liquidity
         uint256 liquidity = 10_000 ether;
         modifyLiquidityRouter.modifyLiquidity(
             key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES
         );
 
-        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobal(manager, poolId);
+        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobals(manager, poolId);
         assertEq(feeGrowthGlobal0, 0);
         assertEq(feeGrowthGlobal1, 0);
 
@@ -180,22 +182,22 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         uint256 swapAmount = 10 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
 
-        (feeGrowthGlobal0, feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobal(manager, poolId);
-        snapLastCall("extsload getFeeGrowthGlobal");
+        (feeGrowthGlobal0, feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobals(manager, poolId);
+        snapLastCall("extsload getFeeGrowthGlobals");
 
         uint256 feeGrowthGlobalCalc = swapAmount.mulWadDown(0.003e18).mulDivDown(FixedPoint128.Q128, liquidity);
         assertEq(feeGrowthGlobal0, feeGrowthGlobalCalc);
         assertEq(feeGrowthGlobal1, 0);
     }
 
-    function test_getFeeGrowthGlobal1() public {
+    function test_getFeeGrowthGlobals1() public {
         // create liquidity
         uint256 liquidity = 10_000 ether;
         modifyLiquidityRouter.modifyLiquidity(
             key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES
         );
 
-        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobal(manager, poolId);
+        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobals(manager, poolId);
         assertEq(feeGrowthGlobal0, 0);
         assertEq(feeGrowthGlobal1, 0);
 
@@ -203,7 +205,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         uint256 swapAmount = 10 ether;
         swap(key, false, -int256(swapAmount), ZERO_BYTES);
 
-        (feeGrowthGlobal0, feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobal(manager, poolId);
+        (feeGrowthGlobal0, feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobals(manager, poolId);
 
         assertEq(feeGrowthGlobal0, 0);
         uint256 feeGrowthGlobalCalc = swapAmount.mulWadDown(0.003e18).mulDivDown(FixedPoint128.Q128, liquidity);
