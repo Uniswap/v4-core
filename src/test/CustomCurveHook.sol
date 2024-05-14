@@ -6,7 +6,8 @@ import {SafeCast} from "../libraries/SafeCast.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
@@ -36,7 +37,7 @@ contract CustomCurveHook is BaseTestHooks {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata /* hookData **/
-    ) external override onlyPoolManager returns (bytes4, int128) {
+    ) external override onlyPoolManager returns (bytes4, BeforeSwapDelta) {
         (Currency inputCurrency, Currency outputCurrency, uint256 amount) = _getInputOutputAndAmount(key, params);
 
         // this "custom curve" is a line, 1-1
@@ -44,18 +45,9 @@ contract CustomCurveHook is BaseTestHooks {
         manager.take(inputCurrency, address(this), amount);
         outputCurrency.settle(manager, address(this), amount, false);
 
-        // return -amountSpecified to no-op the concentrated liquidity swap
-        return (IHooks.beforeSwap.selector, int128(-params.amountSpecified));
-    }
-
-    function afterSwap(
-        address, /* sender **/
-        PoolKey calldata, /* key **/
-        IPoolManager.SwapParams calldata params,
-        BalanceDelta, /* delta **/
-        bytes calldata /* hookData **/
-    ) external view override onlyPoolManager returns (bytes4, int128) {
-        return (IHooks.afterSwap.selector, int128(params.amountSpecified));
+        // return -amountSpecified as specified to no-op the concentrated liquidity swap
+        BeforeSwapDelta hookDelta = toBeforeSwapDelta(int128(-params.amountSpecified), int128(params.amountSpecified));
+        return (IHooks.beforeSwap.selector, hookDelta);
     }
 
     function afterAddLiquidity(
