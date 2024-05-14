@@ -341,24 +341,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         return NonZeroDeltaCount.read();
     }
 
-    function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory) {
-        return pools[id].getPoolTickInfo(tick);
-    }
-
-    function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap) {
-        return pools[id].getPoolBitmapInfo(word);
-    }
-
     /// @notice Temporary view function. Replaceable by transient EXTSLOAD.
     function getReserves(Currency currency) external view returns (uint256 balance) {
         return currency.getReserves();
-    }
-
-    function getFeeGrowthGlobals(PoolId id)
-        external
-        view
-        returns (uint256 feeGrowthGlobal0x128, uint256 feeGrowthGlobal1x128)
-    {
-        return pools[id].getFeeGrowthGlobals();
     }
 }

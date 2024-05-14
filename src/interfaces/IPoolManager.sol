@@ -91,18 +91,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
-    /// @notice Getter for TickInfo for the given poolId and tick
-    function getPoolTickInfo(PoolId id, int24 tick) external view returns (Pool.TickInfo memory);
-
-    /// @notice Getter for the bitmap given the poolId and word position
-    function getPoolBitmapInfo(PoolId id, int16 word) external view returns (uint256 tickBitmap);
-
-    /// @notice Getter for the fee growth globals for the given poolId
-    function getFeeGrowthGlobals(PoolId id)
-        external
-        view
-        returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1);
-
     /// @notice Writes the current ERC20 balance of the specified currency to transient storage
     /// This is used to checkpoint balances for the manager and derive deltas for the caller.
     /// @dev This MUST be called before any ERC20 tokens are sent into the contract.
