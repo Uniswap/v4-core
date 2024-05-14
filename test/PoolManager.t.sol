@@ -450,14 +450,30 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(currency1.balanceOf(address(manager)), currency1PMBalanceBefore);
     }
 
+    function setupNoChecksRouter() internal {
+        PoolKey memory _key =
+            modifyLiquidityNoChecks.initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        modifyLiquidityNoChecks.modifyLiquidity(_key, LIQUIDITY_PARAMS, ZERO_BYTES, false, false);
+    }
+
     function test_addLiquidity_gas() public {
-        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        setupNoChecksRouter();
+        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
         snapLastCall("addLiquidity");
     }
 
     function test_removeLiquidity_gas() public {
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
+        setupNoChecksRouter();
+        modifyLiquidityNoChecks.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
         snapLastCall("removeLiquidity");
+    }
+
+    function test_addLiquidity() public {
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+    }
+
+    function test_removeLiquidity() public {
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     function test_addLiquidity_withNative_gas() public {
