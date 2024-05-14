@@ -89,6 +89,15 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
             StateLibrary.getTickLiquidity(manager, poolId, _params.tickUpper);
         assertEq(liquidityGrossUpper, liquidityDelta);
         assertEq(liquidityNetUpper, -int128(_params.liquidityDelta));
+
+        // confirm agreement with getTickInfo()
+        (uint128 _liquidityGrossLower, int128 _liquidityNetLower,,) = StateLibrary.getTickInfo(manager, poolId, _params.tickLower);
+        assertEq(_liquidityGrossLower, liquidityGrossLower);
+        assertEq(_liquidityNetLower, liquidityNetLower);
+
+        (uint128 _liquidityGrossUpper, int128 _liquidityNetUpper,,) = StateLibrary.getTickInfo(manager, poolId, _params.tickUpper);
+        assertEq(_liquidityGrossUpper, liquidityGrossUpper);
+        assertEq(_liquidityNetUpper, liquidityNetUpper);
     }
 
     function test_fuzz_getTickLiquidity_two_positions(

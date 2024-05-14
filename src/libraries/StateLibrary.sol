@@ -91,8 +91,9 @@ library StateLibrary {
         // read all 3 words of the TickInfo struct
         bytes memory data = manager.extsload(slot, 3);
         assembly {
-            liquidityGross := shr(128, mload(add(data, 32)))
-            liquidityNet := and(mload(add(data, 32)), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+            let firstWord := mload(add(data, 32))
+            liquidityNet := sar(128, firstWord)
+            liquidityGross := and(firstWord, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
             feeGrowthOutside0X128 := mload(add(data, 64))
             feeGrowthOutside1X128 := mload(add(data, 96))
         }
@@ -116,7 +117,7 @@ library StateLibrary {
 
         bytes32 value = manager.extsload(slot);
         assembly {
-            liquidityNet := shr(128, value)
+            liquidityNet := sar(128, value)
             liquidityGross := and(value, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
         }
     }
