@@ -21,16 +21,14 @@ library StateLibrary {
     // index of liquidity in Pool.State
     uint256 public constant LIQUIDITY_OFFSET = 3;
 
-    // index of TicksInfo mapping in Pool.State
-    uint256 public constant TICK_INFO_OFFSET = 4;
+    // index of TicksInfo mapping in Pool.State: mapping(int24 => TickInfo) ticks;
+    uint256 public constant TICKS_OFFSET = 4;
 
     // index of tickBitmap mapping in Pool.State
     uint256 public constant TICK_BITMAP_OFFSET = 5;
 
-    // index of Position.Info mapping in Pool.State
-    uint256 public constant POSITION_INFO_OFFSET = 6;
-
-    uint256 public constant ZERO_BALANCE = type(uint256).max;
+    // index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
+    uint256 public constant POSITIONS_OFFSET = 6;
 
     /**
      * @notice Get Slot0 of the pool: sqrtPriceX96, tick, protocolFee, lpFee
@@ -59,7 +57,7 @@ library StateLibrary {
             // bottom 160 bits of data
             sqrtPriceX96 := and(data, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
             // next 24 bits of data
-            tick := and(shr(160, data), 0xFFFFFF)
+            tick := signextend(2, shr(160, data))
             // next 24 bits of data
             protocolFee := and(shr(184, data), 0xFFFFFF)
             // last 24 bits of data
@@ -334,10 +332,10 @@ library StateLibrary {
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State: `mapping(int24 => TickInfo) ticks`
-        bytes32 ticksMapping = bytes32(uint256(stateSlot) + TICK_INFO_OFFSET);
+        bytes32 ticksMappingSlot = bytes32(uint256(stateSlot) + TICKS_OFFSET);
 
         // slot key of the tick key: `pools[poolId].ticks[tick]
-        return keccak256(abi.encodePacked(int256(tick), ticksMapping));
+        return keccak256(abi.encodePacked(int256(tick), ticksMappingSlot));
     }
 
     function _getPositionInfoSlot(PoolId poolId, bytes32 positionId) internal pure returns (bytes32 slot) {
@@ -345,7 +343,7 @@ library StateLibrary {
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         // Pool.State: `mapping(bytes32 => Position.Info) positions;`
-        bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITION_INFO_OFFSET);
+        bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITIONS_OFFSET);
 
         // slot of the mapping key: `pools[poolId].positions[positionId]
         return keccak256(abi.encodePacked(positionId, positionMapping));
