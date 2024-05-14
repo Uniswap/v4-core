@@ -8,6 +8,7 @@ import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {ParseReturn} from "../libraries/ParseReturn.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -18,6 +19,7 @@ library Hooks {
     using Hooks for IHooks;
     using SafeCast for int256;
     using BeforeSwapDeltaLibrary for BeforeSwapDelta;
+    using ParseReturn for bytes;
 
     uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
     uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
@@ -145,7 +147,7 @@ library Hooks {
 
         // If this hook wasnt meant to return something, default to 0 delta
         if (!parseReturn) return 0;
-        (, delta) = abi.decode(result, (bytes4, int256));
+        return result.parseReturnDelta();
     }
 
     /// @notice modifier to prevent calling a hook if they initiated the action
@@ -246,19 +248,12 @@ library Hooks {
             bytes memory result =
                 callHook(self, abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
 
-            if (key.fee.isDynamicFee()) {
-                // equivalent: (,, lpFee) = abi.decode(result, (bytes4, int256, uint24));
-                assembly {
-                    lpFee := mload(add(result, 0x60))
-                }
-            }
+            if (key.fee.isDynamicFee()) lpFee = result.parseFee();
 
             // skip this logic for the case where the hook return is 0
             if (self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)) {
-                // equivalent: (, hookReturn, ) = abi.decode(result, (bytes4, int256, uint24));
-                assembly {
-                    hookReturn := mload(add(result, 0x40))
-                }
+                hookReturn = BeforeSwapDelta.wrap(result.parseReturnDelta());
+
                 // any return in unspecified is passed to the afterSwap hook for handling
                 int128 hookDeltaSpecified = hookReturn.getSpecifiedDelta();
 
