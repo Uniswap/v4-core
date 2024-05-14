@@ -30,11 +30,11 @@ contract PoolTest is Test {
             state.initialize(sqrtPriceX96, protocolFee, swapFee);
         } else {
             state.initialize(sqrtPriceX96, protocolFee, swapFee);
-            assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(state.slot0.protocolFee, protocolFee);
-            assertEq(state.slot0.tick, TickMath.getTickAtSqrtPrice(sqrtPriceX96));
-            assertLt(state.slot0.tick, TickMath.MAX_TICK);
-            assertGt(state.slot0.tick, TickMath.MIN_TICK - 1);
+            assertEq(state.slot0.sqrtPriceX96(), sqrtPriceX96);
+            assertEq(state.slot0.protocolFee(), protocolFee);
+            assertEq(state.slot0.tick(), TickMath.getTickAtSqrtPrice(sqrtPriceX96));
+            assertLt(state.slot0.tick(), TickMath.MAX_TICK);
+            assertGt(state.slot0.tick(), TickMath.MIN_TICK - 1);
         }
     }
 
@@ -116,16 +116,16 @@ contract PoolTest is Test {
                 salt: 0
             })
         );
-        Slot0 memory slot0 = state.slot0;
+        Slot0 slot0 = state.slot0;
 
         if (params.amountSpecified > 0 && lpFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
             state.swap(params);
         } else if (params.zeroForOne && params.amountSpecified != 0) {
-            if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96) {
+            if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96()) {
                 vm.expectRevert(
                     abi.encodeWithSelector(
-                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96(), params.sqrtPriceLimitX96
                     )
                 );
                 state.swap(params);
@@ -134,10 +134,10 @@ contract PoolTest is Test {
                 state.swap(params);
             }
         } else if (!params.zeroForOne && params.amountSpecified != 0) {
-            if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96) {
+            if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96()) {
                 vm.expectRevert(
                     abi.encodeWithSelector(
-                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96(), params.sqrtPriceLimitX96
                     )
                 );
                 state.swap(params);
@@ -146,15 +146,15 @@ contract PoolTest is Test {
                 state.swap(params);
             }
         } else {
-            uint160 sqrtPriceBefore = state.slot0.sqrtPriceX96;
+            uint160 sqrtPriceBefore = state.slot0.sqrtPriceX96();
             state.swap(params);
 
             if (params.amountSpecified == 0) {
-                assertEq(sqrtPriceBefore, state.slot0.sqrtPriceX96, "amountSpecified == 0");
+                assertEq(sqrtPriceBefore, state.slot0.sqrtPriceX96(), "amountSpecified == 0");
             } else if (params.zeroForOne) {
-                assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96, "zeroForOne");
+                assertGe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "zeroForOne");
             } else {
-                assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96, "oneForZero");
+                assertLe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "oneForZero");
             }
         }
     }
