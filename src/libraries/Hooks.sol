@@ -247,6 +247,7 @@ library Hooks {
                 callHook(self, abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
 
             if (key.fee.isDynamicFee()) {
+                // equivalent: (,, lpFee) = abi.decode(result, (bytes4, int256, uint24));
                 assembly {
                     lpFee := mload(add(result, 0x60))
                 }
@@ -254,6 +255,7 @@ library Hooks {
 
             // skip this logic for the case where the hook return is 0
             if (self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)) {
+                // equivalent: (, hookReturn, ) = abi.decode(result, (bytes4, int256, uint24));
                 assembly {
                     hookReturn := mload(add(result, 0x40))
                 }
