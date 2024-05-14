@@ -302,11 +302,15 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         (IPoolManager.ModifyLiquidityParams memory _params, BalanceDelta delta) =
             createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
 
-        // assume swap amount is material, and less than 1/5th of the liquidity
-        vm.assume(
-            0 < swapAmount && swapAmount < uint256(int256(-delta.amount0())) / 5
-                && swapAmount < uint256(int256(-delta.amount1())) / 5
-        );
+        uint256 delta0 = uint256(int256(-delta.amount0()));
+        uint256 delta1 = uint256(int256(-delta.amount1()));
+        // if one of the deltas is zero, ensure to swap in the right direction
+        if (delta0 == 0) {
+            zeroForOne = true;
+        } else if (delta1 == 0) {
+            zeroForOne = false;
+        }
+        swapAmount = bound(swapAmount, 1, uint256(int256(type(int128).max)));
         swap(key, zeroForOne, -int256(swapAmount), ZERO_BYTES);
 
         // poke the LP so that fees are updated
