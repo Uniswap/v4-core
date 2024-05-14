@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+struct Slot0 {
+    // the current price
+    uint160 sqrtPriceX96;
+    // the current tick
+    int24 tick;
+    // protocol fee, expressed in hundredths of a bip
+    // upper 12 bits are for 1->0, and the lower 12 are for 0->1
+    // the maximum is 1000 - meaning the maximum protocol fee is 0.1%
+    // the protocolFee is taken from the input first, then the lpFee is taken from the remaining input
+    uint24 protocolFee;
+    // used for the lp fee, either static at initialize or dynamic via hook
+    uint24 lpFee;
+}
+
+type Slot0Packed is bytes32;
+
+using Slot0Library for Slot0 global;
+using Slot0PackedLibrary for Slot0Packed global;
+
+library Slot0Library {
+    function storePacked(Slot0 storage pointer, Slot0Packed _packed) internal {
+        /// @solidity memory-safe-assembly
+        assembly {
+            sstore(pointer.slot, _packed)
+        }
+    }
+
+    function loadPacked(Slot0 storage pointer) internal view returns (Slot0Packed _packed) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _packed := sload(pointer.slot)
+        }
+    }
+}
+
+library Slot0PackedLibrary {
+    uint256 private constant UINT160_MASK = 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    uint256 private constant INT24_MASK = 0xFFFFFF;
+    uint256 private constant UINT24_MASK = 0xFFFFFF;
+
+    uint256 private constant TICK_OFFSET = 160;
+    uint256 private constant PROTOCOL_FEE_OFFSET = 184;
+    uint256 private constant LP_FEE_OFFSET = 208;
+
+    // #### GETTERS ####
+    function sqrtPriceX96(Slot0Packed _packed) internal pure returns (uint160 _sqrtPriceX96) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _sqrtPriceX96 := and(UINT160_MASK, _packed)
+        }
+    }
+
+    function tick(Slot0Packed _packed) internal pure returns (int24 _tick) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _tick := and(INT24_MASK, shr(TICK_OFFSET, _packed))
+        }
+    }
+
+    function protocolFee(Slot0Packed _packed) internal pure returns (uint24 _protocolFee) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _protocolFee := and(UINT24_MASK, shr(PROTOCOL_FEE_OFFSET, _packed))
+        }
+    }
+
+    function lpFee(Slot0Packed _packed) internal pure returns (uint24 _lpFee) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _lpFee := and(UINT24_MASK, shr(LP_FEE_OFFSET, _packed))
+        }
+    }
+
+    // #### SETTERS ####
+    function setSqrtPriceX96(Slot0Packed _packed, uint160 _sqrtPriceX96) internal pure returns (Slot0Packed _result) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _result := or(and(not(UINT160_MASK), _packed), and(UINT160_MASK, _sqrtPriceX96))
+        }
+    }
+
+    function setTick(Slot0Packed _packed, int24 _tick) internal pure returns (Slot0Packed _result) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _result := or(and(not(shl(TICK_OFFSET, INT24_MASK)), _packed), shl(TICK_OFFSET, and(INT24_MASK, _tick)))
+        }
+    }
+
+    function setProtocolFee(Slot0Packed _packed, uint24 _protocolFee) internal pure returns (Slot0Packed _result) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _result :=
+                or(
+                    and(not(shl(PROTOCOL_FEE_OFFSET, UINT24_MASK)), _packed),
+                    shl(PROTOCOL_FEE_OFFSET, and(UINT24_MASK, _protocolFee))
+                )
+        }
+    }
+
+    function setLpFee(Slot0Packed _packed, uint24 _lpFee) internal pure returns (Slot0Packed _result) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            _result :=
+                or(and(not(shl(LP_FEE_OFFSET, UINT24_MASK)), _packed), shl(LP_FEE_OFFSET, and(UINT24_MASK, _lpFee)))
+        }
+    }
+}

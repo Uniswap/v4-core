@@ -11,6 +11,7 @@ import {TickBitmap} from "src/libraries/TickBitmap.sol";
 import {LiquidityAmounts} from "test/utils/LiquidityAmounts.sol";
 import {Constants} from "test/utils/Constants.sol";
 import {BalanceDelta} from "src/types/BalanceDelta.sol";
+import {Slot0} from "src/types/Slot0.sol";
 import {SafeCast} from "src/libraries/SafeCast.sol";
 import {ProtocolFeeLibrary} from "src/libraries/ProtocolFeeLibrary.sol";
 import {LPFeeLibrary} from "src/libraries/LPFeeLibrary.sol";
@@ -115,7 +116,7 @@ contract PoolTest is Test {
                 salt: 0
             })
         );
-        Pool.Slot0 memory slot0 = state.slot0;
+        Slot0 memory slot0 = state.slot0;
 
         if (params.amountSpecified > 0 && lpFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);

@@ -10,6 +10,7 @@ import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {Slot0, Slot0Packed} from "../types/Slot0.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
@@ -62,20 +63,6 @@ library Pool {
 
     /// @notice Thrown when trying to swap with max lp fee and specifying an output amount
     error InvalidFeeForExactOut();
-
-    struct Slot0 {
-        // the current price
-        uint160 sqrtPriceX96;
-        // the current tick
-        int24 tick;
-        // protocol fee, expressed in hundredths of a bip
-        // upper 12 bits are for 1->0, and the lower 12 are for 0->1
-        // the maximum is 1000 - meaning the maximum protocol fee is 0.1%
-        // the protocolFee is taken from the input first, then the lpFee is taken from the remaining input
-        uint24 protocolFee;
-        // used for the lp fee, either static at initialize or dynamic via hook
-        uint24 lpFee;
-    }
 
     // info stored for each initialized individual tick
     struct TickInfo {
@@ -302,23 +289,23 @@ library Pool {
         internal
         returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
     {
-        Slot0 memory slot0Start = self.slot0;
+        Slot0Packed slot0Start = self.slot0.loadPacked();
         bool zeroForOne = params.zeroForOne;
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
-            protocolFee: zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee()
+            protocolFee: zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee()
         });
 
         state.amountSpecifiedRemaining = params.amountSpecified;
         state.amountCalculated = 0;
-        state.sqrtPriceX96 = slot0Start.sqrtPriceX96;
-        state.tick = slot0Start.tick;
+        state.sqrtPriceX96 = slot0Start.sqrtPriceX96();
+        state.tick = slot0Start.tick();
         state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
         state.liquidity = cache.liquidityStart;
 
         swapFee =
-            cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+            cache.protocolFee == 0 ? slot0Start.lpFee() : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee());
 
         bool exactInput = params.amountSpecified < 0;
 
@@ -329,15 +316,15 @@ library Pool {
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
 
         if (zeroForOne) {
-            if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
+            if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96()) {
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
             }
         } else {
-            if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
+            if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96()) {
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_PRICE) {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
@@ -443,7 +430,7 @@ library Pool {
             }
         }
 
-        (self.slot0.tick, self.slot0.sqrtPriceX96) = (state.tick, state.sqrtPriceX96);
+        self.slot0.storePacked(slot0Start.setTick(state.tick).setSqrtPriceX96(state.sqrtPriceX96));
 
         // update liquidity if it changed
         if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
