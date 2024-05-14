@@ -148,21 +148,6 @@ library Hooks {
         (, delta) = abi.decode(result, (bytes4, int256));
     }
 
-    /// @notice performs a hook call using the given calldata on the given hook
-    /// @return delta The delta returned by the hook
-    /// @return fee The fee returned by the hook
-    function callHookWithReturnDeltaAndFee(IHooks self, bytes memory data, bool parseReturn)
-        internal
-        returns (int256 delta, uint24 fee)
-    {
-        bytes memory result = callHook(self, data);
-        (, delta, fee) = abi.decode(result, (bytes4, int256, uint24));
-
-        if (!parseReturn) {
-            delta = 0;
-        }
-    }
-
     /// @notice modifier to prevent calling a hook if they initiated the action
     modifier noSelfCall(IHooks self) {
         if (msg.sender != address(self)) {
@@ -258,17 +243,20 @@ library Hooks {
         if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, lpFee);
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
-            bool canReturnDelta = self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG);
-            (int256 result, uint24 _lpFee) = self.callHookWithReturnDeltaAndFee(
-                abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
-                canReturnDelta
-            );
-            if (key.fee.isDynamicFee()) lpFee = _lpFee;
+            bytes memory result =
+                callHook(self, abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
 
-            hookReturn = BeforeSwapDelta.wrap(result);
+            if (key.fee.isDynamicFee()) {
+                assembly {
+                    lpFee := mload(add(result, 0x60))
+                }
+            }
 
             // skip this logic for the case where the hook return is 0
-            if (canReturnDelta) {
+            if (self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)) {
+                assembly {
+                    hookReturn := mload(add(result, 0x40))
+                }
                 // any return in unspecified is passed to the afterSwap hook for handling
                 int128 hookDeltaSpecified = hookReturn.getSpecifiedDelta();
 
