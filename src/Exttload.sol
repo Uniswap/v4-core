@@ -15,8 +15,10 @@ abstract contract Exttload is IExttload {
     }
 
     /// @inheritdoc IExttload
-    /// @dev since the function is external and enters a new call context and exits right after execution, Solidity's memory management convention can be disregarded and a direct slice of memory can be returned
     function exttload(bytes32[] calldata slots) external view returns (bytes32[] memory) {
+        // since the function is external and enters a new call context and exits right
+        // after execution, Solidity's memory management convention can be disregarded
+        // and a direct slice of memory can be returned
         assembly ("memory-safe") {
             // abi offset for dynamic array
             mstore(0, 0x20)
