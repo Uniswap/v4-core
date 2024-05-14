@@ -127,12 +127,8 @@ library Hooks {
         (success, result) = address(self).call(data);
         if (!success) _revert(result);
 
-        bytes4 expectedSelector;
-        bytes4 selector;
-        assembly {
-            expectedSelector := mload(add(data, 0x20))
-            selector := mload(add(result, 0x20))
-        }
+        bytes4 expectedSelector = data.parseSelector();
+        bytes4 selector = result.parseSelector();
 
         if (selector != expectedSelector) revert InvalidHookResponse();
     }
