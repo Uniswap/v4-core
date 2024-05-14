@@ -8,7 +8,7 @@ import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {ParseReturn} from "../libraries/ParseReturn.sol";
+import {ParseBytes} from "../libraries/ParseBytes.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -19,7 +19,7 @@ library Hooks {
     using Hooks for IHooks;
     using SafeCast for int256;
     using BeforeSwapDeltaLibrary for BeforeSwapDelta;
-    using ParseReturn for bytes;
+    using ParseBytes for bytes;
 
     uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
     uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
@@ -127,10 +127,8 @@ library Hooks {
         (success, result) = address(self).call(data);
         if (!success) _revert(result);
 
-        bytes4 expectedSelector = data.parseSelector();
-        bytes4 selector = result.parseSelector();
-
-        if (selector != expectedSelector) revert InvalidHookResponse();
+        // Check expected selector and returned selector match.
+        if (result.parseSelector() != data.parseSelector()) revert InvalidHookResponse();
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
