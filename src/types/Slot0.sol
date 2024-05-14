@@ -22,9 +22,9 @@ type Slot0 is bytes32;
 using Slot0Library for Slot0 global;
 
 library Slot0Library {
-    uint256 private constant UINT160_MASK = 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-    uint256 private constant INT24_MASK = 0xFFFFFF;
-    uint256 private constant UINT24_MASK = 0xFFFFFF;
+    uint160 private constant UINT160_MASK = 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    uint24 private constant INT24_MASK = 0xFFFFFF;
+    uint24 private constant UINT24_MASK = 0xFFFFFF;
 
     uint8 private constant TICK_OFFSET = 160;
     uint8 private constant PROTOCOL_FEE_OFFSET = 184;
