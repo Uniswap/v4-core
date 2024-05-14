@@ -6,6 +6,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
@@ -16,6 +17,7 @@ library Hooks {
     using LPFeeLibrary for uint24;
     using Hooks for IHooks;
     using SafeCast for int256;
+    using BeforeSwapDeltaLibrary for BeforeSwapDelta;
 
     uint256 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
     uint256 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
@@ -141,6 +143,7 @@ library Hooks {
     {
         bytes memory result = callHook(self, data);
 
+        // If this hook wasnt meant to return something, default to 0 delta
         if (!parseReturn) return 0;
         (, delta) = abi.decode(result, (bytes4, int256));
     }
@@ -233,21 +236,31 @@ library Hooks {
     /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
-        returns (int256 amountToSwap, int128 hookDeltaSpecified)
+        returns (int256 amountToSwap, BeforeSwapDelta hookReturn)
     {
         amountToSwap = params.amountSpecified;
-        if (msg.sender == address(self)) return (amountToSwap, hookDeltaSpecified);
-        if (self.hasPermission(BEFORE_SWAP_FLAG)) {
-            hookDeltaSpecified = self.callHookWithReturnDelta(
-                abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
-                self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)
-            ).toInt128();
+        if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA);
 
-            // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
-            if (hookDeltaSpecified != 0) {
-                bool exactInput = amountToSwap < 0;
-                amountToSwap += hookDeltaSpecified;
-                if (exactInput ? amountToSwap > 0 : amountToSwap < 0) revert HookDeltaExceedsSwapAmount();
+        if (self.hasPermission(BEFORE_SWAP_FLAG)) {
+            bool canReturnDelta = self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG);
+            hookReturn = BeforeSwapDelta.wrap(
+                self.callHookWithReturnDelta(
+                    abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
+                    canReturnDelta
+                )
+            );
+
+            // skip this logic for the case where the hook return is 0
+            if (canReturnDelta) {
+                // any return in unspecified is passed to the afterSwap hook for handling
+                int128 hookDeltaSpecified = hookReturn.getSpecifiedDelta();
+
+                // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
+                if (hookDeltaSpecified != 0) {
+                    bool exactInput = amountToSwap < 0;
+                    amountToSwap += hookDeltaSpecified;
+                    if (exactInput ? amountToSwap > 0 : amountToSwap < 0) revert HookDeltaExceedsSwapAmount();
+                }
             }
         }
     }
@@ -259,27 +272,30 @@ library Hooks {
         IPoolManager.SwapParams memory params,
         BalanceDelta swapDelta,
         bytes calldata hookData,
-        int128 hookDeltaSpecified
-    ) internal returns (BalanceDelta swapperDelta, BalanceDelta hookDelta) {
+        BeforeSwapDelta beforeSwapHookReturn
+    ) internal returns (BalanceDelta, BalanceDelta) {
         if (msg.sender == address(self)) return (swapDelta, BalanceDeltaLibrary.ZERO_DELTA);
 
-        int128 hookDeltaUnspecified;
-        swapperDelta = swapDelta;
+        int128 hookDeltaSpecified = beforeSwapHookReturn.getSpecifiedDelta();
+        int128 hookDeltaUnspecified = beforeSwapHookReturn.getUnspecifiedDelta();
+
         if (self.hasPermission(AFTER_SWAP_FLAG)) {
-            hookDeltaUnspecified = self.callHookWithReturnDelta(
+            hookDeltaUnspecified += self.callHookWithReturnDelta(
                 abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, swapDelta, hookData),
                 self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)
             ).toInt128();
         }
 
+        BalanceDelta hookDelta;
         if (hookDeltaUnspecified != 0 || hookDeltaSpecified != 0) {
             hookDelta = (params.amountSpecified < 0 == params.zeroForOne)
                 ? toBalanceDelta(hookDeltaSpecified, hookDeltaUnspecified)
                 : toBalanceDelta(hookDeltaUnspecified, hookDeltaSpecified);
 
             // the caller has to pay for (or receive) the hook's delta
-            swapperDelta = swapDelta - hookDelta;
+            swapDelta = swapDelta - hookDelta;
         }
+        return (swapDelta, hookDelta);
     }
 
     /// @notice calls beforeDonate hook if permissioned and validates return value

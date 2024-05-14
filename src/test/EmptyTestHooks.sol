@@ -6,6 +6,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 
 contract EmptyTestHooks is IHooks {
     using Hooks for IHooks;
@@ -91,9 +92,9 @@ contract EmptyTestHooks is IHooks {
         external
         pure
         override
-        returns (bytes4, int128)
+        returns (bytes4, BeforeSwapDelta)
     {
-        return (IHooks.beforeSwap.selector, 0);
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA);
     }
 
     function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta, bytes calldata)
