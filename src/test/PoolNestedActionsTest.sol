@@ -11,7 +11,8 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
-import {PoolStateLibrary} from "../libraries/PoolStateLibrary.sol";
+import {StateLibrary} from "../libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 
 enum Action {
     NESTED_SELF_UNLOCK,
@@ -24,6 +25,9 @@ enum Action {
 }
 
 contract PoolNestedActionsTest is Test, IUnlockCallback {
+    using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
+
     IPoolManager manager;
     NestedActionExecutor public executor;
     address user;
@@ -60,7 +64,8 @@ contract PoolNestedActionsTest is Test, IUnlockCallback {
 }
 
 contract NestedActionExecutor is Test, PoolTestBase {
-    using PoolStateLibrary for IPoolManager;
+    using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
     using CurrencySettleTake for Currency;
     using PoolIdLibrary for PoolKey;
 

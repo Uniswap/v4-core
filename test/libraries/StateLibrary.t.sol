@@ -17,10 +17,10 @@ import {Pool} from "../../src/libraries/Pool.sol";
 import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
 import {FixedPoint128} from "../../src/libraries/FixedPoint128.sol";
 
-import {PoolStateLibrary} from "../../src/libraries/PoolStateLibrary.sol";
+import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Fuzzers} from "../../src/test/Fuzzers.sol";
 
-contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
+contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     using FixedPointMathLib for uint256;
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -51,8 +51,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee) =
-            PoolStateLibrary.getSlot0(manager, poolId);
+        (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee) = StateLibrary.getSlot0(manager, poolId);
         snapLastCall("extsload getSlot0");
         assertEq(tick, -139);
 
@@ -66,13 +65,12 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     function test_getTickLiquidity() public {
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 10 ether, 0), ZERO_BYTES);
 
-        (uint128 liquidityGrossLower, int128 liquidityNetLower) =
-            PoolStateLibrary.getTickLiquidity(manager, poolId, -60);
+        (uint128 liquidityGrossLower, int128 liquidityNetLower) = StateLibrary.getTickLiquidity(manager, poolId, -60);
         snapLastCall("extsload getTickLiquidity");
         assertEq(liquidityGrossLower, 10 ether);
         assertEq(liquidityNetLower, 10 ether);
 
-        (uint128 liquidityGrossUpper, int128 liquidityNetUpper) = PoolStateLibrary.getTickLiquidity(manager, poolId, 60);
+        (uint128 liquidityGrossUpper, int128 liquidityNetUpper) = StateLibrary.getTickLiquidity(manager, poolId, 60);
         assertEq(liquidityGrossUpper, 10 ether);
         assertEq(liquidityNetUpper, -10 ether);
     }
@@ -83,12 +81,12 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         uint128 liquidityDelta = uint128(uint256(_params.liquidityDelta));
 
         (uint128 liquidityGrossLower, int128 liquidityNetLower) =
-            PoolStateLibrary.getTickLiquidity(manager, poolId, _params.tickLower);
+            StateLibrary.getTickLiquidity(manager, poolId, _params.tickLower);
         assertEq(liquidityGrossLower, liquidityDelta);
         assertEq(liquidityNetLower, int128(_params.liquidityDelta));
 
         (uint128 liquidityGrossUpper, int128 liquidityNetUpper) =
-            PoolStateLibrary.getTickLiquidity(manager, poolId, _params.tickUpper);
+            StateLibrary.getTickLiquidity(manager, poolId, _params.tickUpper);
         assertEq(liquidityGrossUpper, liquidityDelta);
         assertEq(liquidityNetUpper, -int128(_params.liquidityDelta));
     }
@@ -106,13 +104,13 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         uint128 liquidityDeltaB = uint128(uint256(_paramsB.liquidityDelta));
 
         (uint128 liquidityGrossLowerA, int128 liquidityNetLowerA) =
-            PoolStateLibrary.getTickLiquidity(manager, poolId, _paramsA.tickLower);
+            StateLibrary.getTickLiquidity(manager, poolId, _paramsA.tickLower);
         (uint128 liquidityGrossLowerB, int128 liquidityNetLowerB) =
-            PoolStateLibrary.getTickLiquidity(manager, poolId, _paramsB.tickLower);
+            StateLibrary.getTickLiquidity(manager, poolId, _paramsB.tickLower);
         (uint256 liquidityGrossUpperA, int256 liquidityNetUpperA) =
-            PoolStateLibrary.getTickLiquidity(manager, poolId, _paramsA.tickUpper);
+            StateLibrary.getTickLiquidity(manager, poolId, _paramsA.tickUpper);
         (uint256 liquidityGrossUpperB, int256 liquidityNetUpperB) =
-            PoolStateLibrary.getTickLiquidity(manager, poolId, _paramsB.tickUpper);
+            StateLibrary.getTickLiquidity(manager, poolId, _paramsB.tickUpper);
 
         // when tick lower is shared between two positions, the gross liquidity is the sum
         if (_paramsA.tickLower == _paramsB.tickLower || _paramsA.tickLower == _paramsB.tickUpper) {
@@ -165,7 +163,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
             key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES
         );
 
-        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = PoolStateLibrary.getFeeGrowthGlobal(manager, poolId);
+        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobal(manager, poolId);
         assertEq(feeGrowthGlobal0, 0);
         assertEq(feeGrowthGlobal1, 0);
 
@@ -173,7 +171,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         uint256 swapAmount = 10 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
 
-        (feeGrowthGlobal0, feeGrowthGlobal1) = PoolStateLibrary.getFeeGrowthGlobal(manager, poolId);
+        (feeGrowthGlobal0, feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobal(manager, poolId);
         snapLastCall("extsload getFeeGrowthGlobal");
 
         uint256 feeGrowthGlobalCalc = swapAmount.mulWadDown(0.003e18).mulDivDown(FixedPoint128.Q128, liquidity);
@@ -188,7 +186,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
             key, IPoolManager.ModifyLiquidityParams(-60, 60, int256(liquidity), 0), ZERO_BYTES
         );
 
-        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = PoolStateLibrary.getFeeGrowthGlobal(manager, poolId);
+        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobal(manager, poolId);
         assertEq(feeGrowthGlobal0, 0);
         assertEq(feeGrowthGlobal1, 0);
 
@@ -196,7 +194,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         uint256 swapAmount = 10 ether;
         swap(key, false, -int256(swapAmount), ZERO_BYTES);
 
-        (feeGrowthGlobal0, feeGrowthGlobal1) = PoolStateLibrary.getFeeGrowthGlobal(manager, poolId);
+        (feeGrowthGlobal0, feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobal(manager, poolId);
 
         assertEq(feeGrowthGlobal0, 0);
         uint256 feeGrowthGlobalCalc = swapAmount.mulWadDown(0.003e18).mulDivDown(FixedPoint128.Q128, liquidity);
@@ -209,7 +207,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
             key, IPoolManager.ModifyLiquidityParams(-120, 120, 10 ether, 0), ZERO_BYTES
         );
 
-        uint128 liquidity = PoolStateLibrary.getLiquidity(manager, poolId);
+        uint128 liquidity = StateLibrary.getLiquidity(manager, poolId);
         snapLastCall("extsload getLiquidity");
         assertEq(liquidity, 20 ether);
     }
@@ -217,8 +215,8 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     function test_fuzz_getLiquidity(IPoolManager.ModifyLiquidityParams memory params) public {
         (IPoolManager.ModifyLiquidityParams memory _params,) =
             Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
-        (, int24 tick,,) = PoolStateLibrary.getSlot0(manager, poolId);
-        uint128 liquidity = PoolStateLibrary.getLiquidity(manager, poolId);
+        (, int24 tick,,) = StateLibrary.getSlot0(manager, poolId);
+        uint128 liquidity = StateLibrary.getLiquidity(manager, poolId);
 
         // out of range liquidity is not added to Pool.State.liquidity
         if (tick < _params.tickLower || tick >= _params.tickUpper) {
@@ -237,13 +235,13 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         );
 
         (int16 wordPos, uint8 bitPos) = TickBitmap.position(tickLower / key.tickSpacing);
-        uint256 tickBitmap = PoolStateLibrary.getTickBitmap(manager, poolId, wordPos);
+        uint256 tickBitmap = StateLibrary.getTickBitmap(manager, poolId, wordPos);
         snapLastCall("extsload getTickBitmap");
         assertNotEq(tickBitmap, 0);
         assertEq(tickBitmap, 1 << bitPos);
 
         (wordPos, bitPos) = TickBitmap.position(tickUpper / key.tickSpacing);
-        tickBitmap = PoolStateLibrary.getTickBitmap(manager, poolId, wordPos);
+        tickBitmap = StateLibrary.getTickBitmap(manager, poolId, wordPos);
         assertNotEq(tickBitmap, 0);
         assertEq(tickBitmap, 1 << bitPos);
     }
@@ -255,7 +253,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         (int16 wordPos, uint8 bitPos) = TickBitmap.position(_params.tickLower / key.tickSpacing);
         (int16 wordPosUpper, uint8 bitPosUpper) = TickBitmap.position(_params.tickUpper / key.tickSpacing);
 
-        uint256 tickBitmap = PoolStateLibrary.getTickBitmap(manager, poolId, wordPos);
+        uint256 tickBitmap = StateLibrary.getTickBitmap(manager, poolId, wordPos);
         assertNotEq(tickBitmap, 0);
 
         // in fuzz tests, the tickLower and tickUpper might exist on the same word
@@ -275,7 +273,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 10 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (, int24 currentTick,,) = PoolStateLibrary.getSlot0(manager, poolId);
+        (, int24 currentTick,,) = StateLibrary.getSlot0(manager, poolId);
         assertNotEq(currentTick, -139);
 
         // poke the LP so that fees are updated
@@ -285,7 +283,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
             keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
 
         (uint128 liquidity, uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
-            PoolStateLibrary.getPositionInfo(manager, poolId, positionId);
+            StateLibrary.getPositionInfo(manager, poolId, positionId);
         snapLastCall("extsload getPositionInfo");
 
         assertEq(liquidity, 10_000 ether);
@@ -323,7 +321,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         );
 
         (uint128 liquidity, uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
-            PoolStateLibrary.getPositionInfo(manager, poolId, positionId);
+            StateLibrary.getPositionInfo(manager, poolId, positionId);
 
         assertEq(liquidity, uint128(uint256(_params.liquidityDelta)));
         if (zeroForOne) {
@@ -348,12 +346,12 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (, int24 currentTick,,) = PoolStateLibrary.getSlot0(manager, poolId);
+        (, int24 currentTick,,) = StateLibrary.getSlot0(manager, poolId);
         assertEq(currentTick, -139);
 
         int24 tick = -60;
         (uint256 feeGrowthOutside0X128, uint256 feeGrowthOutside1X128) =
-            PoolStateLibrary.getTickFeeGrowthOutside(manager, poolId, tick);
+            StateLibrary.getTickFeeGrowthOutside(manager, poolId, tick);
         snapLastCall("extsload getTickFeeGrowthOutside");
 
         // magic number verified against a native getter on PoolManager
@@ -361,7 +359,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertEq(feeGrowthOutside1X128, 0);
 
         tick = 60;
-        (feeGrowthOutside0X128, feeGrowthOutside1X128) = PoolStateLibrary.getTickFeeGrowthOutside(manager, poolId, tick);
+        (feeGrowthOutside0X128, feeGrowthOutside1X128) = StateLibrary.getTickFeeGrowthOutside(manager, poolId, tick);
         assertEq(feeGrowthOutside0X128, 0);
         assertEq(feeGrowthOutside1X128, 0);
     }
@@ -380,17 +378,17 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (, int24 currentTick,,) = PoolStateLibrary.getSlot0(manager, poolId);
+        (, int24 currentTick,,) = StateLibrary.getSlot0(manager, poolId);
         assertEq(currentTick, -139);
 
         int24 tick = -60;
         (uint128 liquidityGross, int128 liquidityNet, uint256 feeGrowthOutside0X128, uint256 feeGrowthOutside1X128) =
-            PoolStateLibrary.getTickInfo(manager, poolId, tick);
+            StateLibrary.getTickInfo(manager, poolId, tick);
         snapLastCall("extsload getTickInfo");
 
-        (uint128 liquidityGross_, int128 liquidityNet_) = PoolStateLibrary.getTickLiquidity(manager, poolId, tick);
+        (uint128 liquidityGross_, int128 liquidityNet_) = StateLibrary.getTickLiquidity(manager, poolId, tick);
         (uint256 feeGrowthOutside0X128_, uint256 feeGrowthOutside1X128_) =
-            PoolStateLibrary.getTickFeeGrowthOutside(manager, poolId, tick);
+            StateLibrary.getTickFeeGrowthOutside(manager, poolId, tick);
 
         assertEq(liquidityGross, 10_000 ether);
         assertEq(liquidityGross, liquidityGross_);
@@ -415,12 +413,12 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (, int24 currentTick,,) = PoolStateLibrary.getSlot0(manager, poolId);
+        (, int24 currentTick,,) = StateLibrary.getSlot0(manager, poolId);
         assertEq(currentTick, -139);
 
         // calculated live
         (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
-            PoolStateLibrary.getFeeGrowthInside(manager, poolId, -60, 60);
+            StateLibrary.getFeeGrowthInside(manager, poolId, -60, 60);
         snapLastCall("extsload getFeeGrowthInside");
 
         // poke the LP so that fees are updated
@@ -430,7 +428,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
             keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
 
         (, uint256 feeGrowthInside0X128_, uint256 feeGrowthInside1X128_) =
-            PoolStateLibrary.getPositionInfo(manager, poolId, positionId);
+            StateLibrary.getPositionInfo(manager, poolId, positionId);
 
         assertNotEq(feeGrowthInside0X128, 0);
         assertEq(feeGrowthInside0X128, feeGrowthInside0X128_);
@@ -446,14 +444,14 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
             ZERO_BYTES
         );
 
-        (IPoolManager.ModifyLiquidityParams memory _params, BalanceDelta delta) =
+        (IPoolManager.ModifyLiquidityParams memory _params,) =
             createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
 
         swap(key, zeroForOne, -int256(100e18), ZERO_BYTES);
 
         // calculated live
         (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
-            PoolStateLibrary.getFeeGrowthInside(manager, poolId, _params.tickLower, _params.tickUpper);
+            StateLibrary.getFeeGrowthInside(manager, poolId, _params.tickLower, _params.tickUpper);
 
         // poke the LP so that fees are updated
         modifyLiquidityRouter.modifyLiquidity(
@@ -464,7 +462,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         );
 
         (, uint256 feeGrowthInside0X128_, uint256 feeGrowthInside1X128_) =
-            PoolStateLibrary.getPositionInfo(manager, poolId, positionId);
+            StateLibrary.getPositionInfo(manager, poolId, positionId);
 
         assertEq(feeGrowthInside0X128, feeGrowthInside0X128_);
         assertEq(feeGrowthInside1X128, feeGrowthInside1X128_);
@@ -479,7 +477,7 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         bytes32 positionId =
             keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
 
-        uint128 liquidity = PoolStateLibrary.getPositionLiquidity(manager, poolId, positionId);
+        uint128 liquidity = StateLibrary.getPositionLiquidity(manager, poolId, positionId);
         snapLastCall("extsload getPositionLiquidity");
 
         assertEq(liquidity, 10_000 ether);
@@ -499,13 +497,13 @@ contract PoolStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         bytes32 positionIdA = keccak256(
             abi.encodePacked(address(modifyLiquidityRouter), _paramsA.tickLower, _paramsA.tickUpper, bytes32(0))
         );
-        uint128 liquidityA = PoolStateLibrary.getPositionLiquidity(manager, poolId, positionIdA);
+        uint128 liquidityA = StateLibrary.getPositionLiquidity(manager, poolId, positionIdA);
         assertEq(liquidityA, uint128(uint256(_paramsA.liquidityDelta)));
 
         bytes32 positionIdB = keccak256(
             abi.encodePacked(address(modifyLiquidityRouter), _paramsB.tickLower, _paramsB.tickUpper, bytes32(0))
         );
-        uint128 liquidityB = PoolStateLibrary.getPositionLiquidity(manager, poolId, positionIdB);
+        uint128 liquidityB = StateLibrary.getPositionLiquidity(manager, poolId, positionIdB);
         assertEq(liquidityB, uint128(uint256(_paramsB.liquidityDelta)));
     }
 }

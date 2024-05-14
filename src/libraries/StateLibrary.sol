@@ -3,9 +3,10 @@ pragma solidity ^0.8.21;
 
 import {PoolId} from "../types/PoolId.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {Currency} from "../types/Currency.sol";
 import {Position} from "./Position.sol";
 
-library PoolStateLibrary {
+library StateLibrary {
     // forge inspect src/PoolManager.sol:PoolManager storage --pretty
     // | Name                  | Type                                    | Slot | Offset | Bytes | Contract                        |
     // |-----------------------|-----------------------------------------|------|--------|-------|---------------------------------|
@@ -28,6 +29,8 @@ library PoolStateLibrary {
 
     // index of Position.Info mapping in Pool.State
     uint256 public constant POSITION_INFO_OFFSET = 6;
+
+    uint256 public constant ZERO_BALANCE = type(uint256).max;
 
     /**
      * @notice Get Slot0 of the pool: sqrtPriceX96, tick, protocolFee, lpFee

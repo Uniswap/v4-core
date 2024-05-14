@@ -13,10 +13,10 @@ import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Currency} from "src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-import {PoolStateLibrary} from "src/libraries/PoolStateLibrary.sol";
+import {StateLibrary} from "src/libraries/StateLibrary.sol";
 
 contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
-    using PoolStateLibrary for IPoolManager;
+    using StateLibrary for IPoolManager;
 
     PoolKey simpleKey; // vanilla pool key
     PoolId simplePoolId; // id for vanilla pool key

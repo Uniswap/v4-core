@@ -20,12 +20,12 @@ import {PoolId, PoolIdLibrary} from "src/types/PoolId.sol";
 import {PoolKey} from "src/types/PoolKey.sol";
 import {IERC20Minimal} from "src/interfaces/external/IERC20Minimal.sol";
 import {BalanceDelta} from "src/types/BalanceDelta.sol";
-import {PoolStateLibrary} from "src/libraries/PoolStateLibrary.sol";
+import {StateLibrary} from "src/libraries/StateLibrary.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
-    using PoolStateLibrary for IPoolManager;
+    using StateLibrary for IPoolManager;
 
     /// 1111 1111 1111 1100
     address payable ALL_HOOKS_ADDRESS = payable(0xFffC000000000000000000000000000000000000);

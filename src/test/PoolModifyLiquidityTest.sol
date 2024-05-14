@@ -11,7 +11,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
-import {PoolStateLibrary} from "../libraries/PoolStateLibrary.sol";
+import {StateLibrary} from "../libraries/StateLibrary.sol";
 
 contract PoolModifyLiquidityTest is PoolTestBase {
     using CurrencyLibrary for Currency;
@@ -19,7 +19,7 @@ contract PoolModifyLiquidityTest is PoolTestBase {
     using Hooks for IHooks;
     using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
-    using PoolStateLibrary for IPoolManager;
+    using StateLibrary for IPoolManager;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 

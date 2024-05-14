@@ -24,6 +24,7 @@ import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {PoolGetters} from "./libraries/PoolGetters.sol";
 import {Reserves} from "./libraries/Reserves.sol";
 import {Extsload} from "./Extsload.sol";
+import {Exttload} from "./Exttload.sol";
 
 //  4
 //   44
@@ -73,7 +74,8 @@ import {Extsload} from "./Extsload.sol";
 //                                                  44444   444
 //                                                      444
 /// @notice Holds the state for all pools
-contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload {
+
+contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload, Exttload {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
@@ -97,16 +99,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
         return pools[id];
-    }
-
-    /// @inheritdoc IPoolManager
-    function currencyDelta(address caller, Currency currency) external view returns (int256) {
-        return currency.getDelta(caller);
-    }
-
-    /// @inheritdoc IPoolManager
-    function isUnlocked() external view override returns (bool) {
-        return Lock.isUnlocked();
     }
 
     /// @notice This will revert if the contract is locked
@@ -335,14 +327,5 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         pools[id].setLPFee(newDynamicLPFee);
-    }
-
-    function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount) {
-        return NonZeroDeltaCount.read();
-    }
-
-    /// @notice Temporary view function. Replaceable by transient EXTSLOAD.
-    function getReserves(Currency currency) external view returns (uint256 balance) {
-        return currency.getReserves();
     }
 }

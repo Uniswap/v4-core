@@ -11,8 +11,9 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 import {IExtsload} from "./IExtsload.sol";
+import {IExttload} from "./IExttload.sol";
 
-interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
+interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @notice Thrown when a currency is not netted out after the contract is unlocked
     error CurrencyNotSettled();
 
@@ -96,21 +97,10 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
     /// @dev This MUST be called before any ERC20 tokens are sent into the contract.
     function sync(Currency currency) external returns (uint256 balance);
 
-    /// @notice Returns whether the contract is unlocked or not
-    function isUnlocked() external view returns (bool);
-
-    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod out before the contract is locked
-    function getNonzeroDeltaCount() external view returns (uint256 _nonzeroDeltaCount);
-
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         returns (int24 tick);
-
-    /// @notice Get the current delta for a caller in the given currency
-    /// @param caller The address of the caller
-    /// @param currency The currency for which to lookup the delta
-    function currencyDelta(address caller, Currency currency) external view returns (int256);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
@@ -176,6 +166,4 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload {
 
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external;
-
-    function getReserves(Currency currency) external view returns (uint256 balance);
 }
