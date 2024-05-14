@@ -151,7 +151,7 @@ library Hooks {
     /// @notice performs a hook call using the given calldata on the given hook
     /// @return delta The delta returned by the hook
     /// @return fee The fee returned by the hook
-    function callHookWithReturnDeltaAndFee(IHooks self, bytes memory data, bool parseReturn, bool parseFee)
+    function callHookWithReturnDeltaAndFee(IHooks self, bytes memory data, bool parseReturn)
         internal
         returns (int256 delta, uint24 fee)
     {
@@ -160,10 +160,6 @@ library Hooks {
 
         if (!parseReturn) {
             delta = 0;
-        }
-
-        if (!parseFee) {
-            fee = type(uint24).max;
         }
     }
 
@@ -263,14 +259,12 @@ library Hooks {
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
             bool canReturnDelta = self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG);
-            int256 result;
-            (result, lpFee) = self.callHookWithReturnDeltaAndFee(
+            (int256 result, uint24 _lpFee) = self.callHookWithReturnDeltaAndFee(
                 abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData),
-                canReturnDelta,
-                key.fee.isDynamicFee()
+                canReturnDelta
             );
-
             hookReturn = BeforeSwapDelta.wrap(result);
+            if (key.fee.isDynamicFee()) lpFee = _lpFee;
 
             // skip this logic for the case where the hook return is 0
             if (canReturnDelta) {
