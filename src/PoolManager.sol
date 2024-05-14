@@ -17,6 +17,7 @@ import {ProtocolFees} from "./ProtocolFees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "./types/BalanceDelta.sol";
+import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
@@ -174,7 +175,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         key.hooks.afterInitialize(key, sqrtPriceX96, tick, hookData);
 
-        // On intitalize we emit the key's fee, which tells us all fee settings a pool can have: either a static swap fee or dynamic swap fee and if the hook has enabled swap or withdraw fees.
+        // On initialize we emit the key's fee, which tells us all fee settings a pool can have: either a static swap fee or dynamic swap fee and if the hook has enabled swap or withdraw fees.
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
     }
 
@@ -270,7 +271,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolId id = key.toId();
         _checkPoolInitialized(id);
 
-        (int256 amountToSwap, int128 hookDeltaSpecified) = key.hooks.beforeSwap(key, params, hookData);
+        (int256 amountToSwap, BeforeSwapDelta beforeSwapDelta) = key.hooks.beforeSwap(key, params, hookData);
 
         // execute swap, account protocol fees, and emit swap event
         swapDelta = _swap(
@@ -285,7 +286,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         );
 
         BalanceDelta hookDelta;
-        (swapDelta, hookDelta) = key.hooks.afterSwap(key, params, swapDelta, hookData, hookDeltaSpecified);
+        (swapDelta, hookDelta) = key.hooks.afterSwap(key, params, swapDelta, hookData, beforeSwapDelta);
 
         // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0
         if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
