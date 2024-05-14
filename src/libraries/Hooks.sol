@@ -125,7 +125,7 @@ library Hooks {
         (success, result) = address(self).call(data);
         if (!success) _revert(result);
 
-        // (selector, ) = abi.decode(x, (bytes4, int256))
+        // equivalent: (selector, ) = abi.decode(x, (bytes4, int256))
         bytes4 expectedSelector;
         bytes4 selector;
         assembly {
