@@ -125,6 +125,7 @@ library Hooks {
         (success, result) = address(self).call(data);
         if (!success) _revert(result);
 
+        // (selector, ) = abi.decode(x, (bytes4, int256))
         bytes4 expectedSelector;
         bytes4 selector;
         assembly {
@@ -145,6 +146,8 @@ library Hooks {
 
         // If this hook wasnt meant to return something, default to 0 delta
         if (!parseReturn) return 0;
+
+        // equivalent: (, delta) = abi.decode(result, (bytes4, int256))
         assembly {
             delta := mload(add(result, 0x40))
         }
