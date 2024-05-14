@@ -41,7 +41,7 @@ library Slot0Library {
     function tick(Slot0 _packed) internal pure returns (int24 _tick) {
         /// @solidity memory-safe-assembly
         assembly {
-            _tick := and(INT24_MASK, shr(TICK_OFFSET, _packed))
+            _tick := signextend(2, shr(TICK_OFFSET, _packed))
         }
     }
 
