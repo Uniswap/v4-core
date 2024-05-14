@@ -102,9 +102,8 @@ library Pool {
 
         tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
-        Slot0 _slot0;
         self.slot0 = 
-            _slot0
+            Slot0.wrap(bytes32(0))
                 .setSqrtPriceX96(sqrtPriceX96)
                 .setTick(tick)
                 .setProtocolFee(protocolFee)
