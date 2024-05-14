@@ -318,8 +318,8 @@ library Pool {
         state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
         state.liquidity = cache.liquidityStart;
 
-        uint24 _lpFee = params.fee <= LPFeeLibrary.MAX_LP_FEE ? params.fee : slot0Start.lpFee;
-        swapFee = cache.protocolFee == 0 ? _lpFee : uint24(cache.protocolFee).calculateSwapFee(_lpFee);
+        uint24 lpFee = params.fee <= LPFeeLibrary.MAX_LP_FEE ? params.fee : slot0Start.lpFee;
+        swapFee = cache.protocolFee == 0 ? lpFee : uint24(cache.protocolFee).calculateSwapFee(lpFee);
 
         bool exactInput = params.amountSpecified < 0;
 
