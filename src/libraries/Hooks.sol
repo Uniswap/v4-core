@@ -145,7 +145,9 @@ library Hooks {
 
         // If this hook wasnt meant to return something, default to 0 delta
         if (!parseReturn) return 0;
-        (, delta) = abi.decode(result, (bytes4, int256));
+        assembly {
+            delta := mload(add(result, 0x40))
+        }
     }
 
     /// @notice modifier to prevent calling a hook if they initiated the action
