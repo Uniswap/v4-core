@@ -81,8 +81,8 @@ contract PoolModifyLiquidityTestNoChecks is PoolTestBase {
 
         (BalanceDelta delta,) = manager.modifyLiquidity(data.key, data.params, data.hookData);
 
-        (,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
-        (,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));
+        int256 delta0 = delta.amount0();
+        int256 delta1 = delta.amount1();
 
         if (delta0 < 0) data.key.currency0.settle(manager, data.sender, uint256(-delta0), data.settleUsingBurn);
         if (delta1 < 0) data.key.currency1.settle(manager, data.sender, uint256(-delta1), data.settleUsingBurn);
