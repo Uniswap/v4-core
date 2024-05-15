@@ -26,4 +26,8 @@ contract DynamicReturnFeeTestHook is BaseTestHooks {
     {
         return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, fee);
     }
+
+    function forcePoolFeeUpdate(PoolKey calldata _key, uint24 _fee) external {
+        manager.updateDynamicLPFee(_key, _fee);
+    }
 }

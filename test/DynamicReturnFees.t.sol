@@ -58,17 +58,16 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         );
     }
 
-    function test_dynamicReturnSwapFee(uint24 fee) public {
+    function test_fuzz_dynamicReturnSwapFee(uint24 fee) public {
         dynamicReturnFeesHook.setFee(fee);
 
         int256 amountSpecified = -10000;
         BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
 
-        // after swapping ~1:1, the amount out (amount1) should be approximately 0.30% less than the amount specified
         assertEq(result.amount0(), amountSpecified);
 
         if (fee > LPFeeLibrary.MAX_LP_FEE) {
-            // if the fee is too large, the fee is not used
+            // if the fee is too large, the fee from beforeSwap is not used (and remains at 0 -- the default value)
             assertApproxEqAbs(uint256(int256(result.amount1())), uint256(int256(-result.amount0())), 1 wei);
         } else {
             assertApproxEqAbs(
@@ -122,6 +121,31 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         );
     }
 
+    function test_dynamicReturnSwapFee_notStored() public {
+        // fees returned by beforeSwap are not written to storage
+
+        // create a new pool with an initial fee of 123
+        key.tickSpacing = 30;
+        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        uint24 initialFee = 123;
+        dynamicReturnFeesHook.forcePoolFeeUpdate(key, initialFee);
+        assertEq(_fetchPoolSwapFee(key), initialFee);
+
+        // swap with a different fee
+        uint24 newFee = 3000;
+        dynamicReturnFeesHook.setFee(newFee);
+
+        int256 amountSpecified = -10000;
+        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
+        assertApproxEqAbs(
+            uint256(int256(result.amount1())), FullMath.mulDiv(uint256(-amountSpecified), (1e6 - newFee), 1e6), 1 wei
+        );
+
+        // the fee from beforeSwap is not stored
+        assertEq(_fetchPoolSwapFee(key), initialFee);
+    }
+
     function test_dynamicReturnSwapFee_notUsedWithTooLargeFee() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
@@ -131,7 +155,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         int256 amountSpecified = -10000;
         BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
 
-        // after swapping ~1:1, the amount out (amount1) should be approximately 0.30% less than the amount specified
+        // after swapping ~1:1 on 0% fee, the amount out (amount1) should be equal to amount specified
         assertEq(result.amount0(), amountSpecified);
         assertApproxEqAbs(uint256(int256(result.amount1())), uint256(int256(-result.amount0())), 1 wei);
     }

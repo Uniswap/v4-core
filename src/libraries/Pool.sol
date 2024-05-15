@@ -21,6 +21,7 @@ library Pool {
     using Position for Position.Info;
     using Pool for State;
     using ProtocolFeeLibrary for uint24;
+    using LPFeeLibrary for uint24;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -318,7 +319,8 @@ library Pool {
         state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
         state.liquidity = cache.liquidityStart;
 
-        uint24 lpFee = params.fee <= LPFeeLibrary.MAX_LP_FEE ? params.fee : slot0Start.lpFee;
+        // if the beforeSwap hook returned a valid fee, use that as the LP fee, otherwise load from storage
+        uint24 lpFee = params.fee.isValid() ? params.fee : slot0Start.lpFee;
         swapFee = cache.protocolFee == 0 ? lpFee : uint24(cache.protocolFee).calculateSwapFee(lpFee);
 
         bool exactInput = params.amountSpecified < 0;

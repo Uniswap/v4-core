@@ -235,7 +235,7 @@ library Hooks {
         returns (int256 amountToSwap, BeforeSwapDelta hookReturn, uint24 lpFee)
     {
         amountToSwap = params.amountSpecified;
-        lpFee = LPFeeLibrary.MAX_UINT24;
+        lpFee = LPFeeLibrary.NO_FEE_UPDATE_FLAG;
         if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, lpFee);
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
