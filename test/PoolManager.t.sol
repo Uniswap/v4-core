@@ -450,29 +450,39 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(currency1.balanceOf(address(manager)), currency1PMBalanceBefore);
     }
 
-    function setupNoChecksRouter() internal {
-        PoolKey memory _key =
-            modifyLiquidityNoChecks.initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
-        modifyLiquidityNoChecks.modifyLiquidity(_key, LIQUIDITY_PARAMS, ZERO_BYTES, false, false);
+    function test_addLiquidity_gas() public {
+        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        snapLastCall("simple addLiquidity");
     }
 
-    function test_addLiquidity_gas() public {
-        setupNoChecksRouter();
+    function test_addLiquidity_secondAdditionSameRange_gas() public {
         modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
-        snapLastCall("addLiquidity");
+        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        snapLastCall("simple addLiquidity second addition same range");
     }
 
     function test_removeLiquidity_gas() public {
-        setupNoChecksRouter();
+        // add some liquidity to remove
+        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+
         modifyLiquidityNoChecks.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
-        snapLastCall("removeLiquidity");
+        snapLastCall("simple removeLiquidity");
     }
 
-    function test_addLiquidity() public {
+    function test_removeLiquidity_someLiquidityRemains_gas() public {
+        // add double the liquidity to remove
+        LIQUIDITY_PARAMS.liquidityDelta *= 2;
+        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+
+        modifyLiquidityNoChecks.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
+        snapLastCall("simple removeLiquidity some liquidity remains");
+    }
+
+    function test_addLiquidity_succeeds() public {
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
-    function test_removeLiquidity() public {
+    function test_removeLiquidity_succeeds() public {
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 

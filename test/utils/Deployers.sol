@@ -99,8 +99,7 @@ contract Deployers {
         swapRouter = new PoolSwapTest(manager);
         swapRouterNoChecks = new SwapRouterNoChecks(manager);
         modifyLiquidityRouter = new PoolModifyLiquidityTest(manager);
-        PoolManager tmpManager = new PoolManager(500000);
-        modifyLiquidityNoChecks = new PoolModifyLiquidityTestNoChecks(tmpManager);
+        modifyLiquidityNoChecks = new PoolModifyLiquidityTestNoChecks(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
         settleRouter = new PoolSettleTest(manager);
