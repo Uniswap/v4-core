@@ -12,6 +12,20 @@ library TickBitmap {
     /// @param tickSpacing The tick spacing of the pool
     error TickMisaligned(int24 tick, int24 tickSpacing);
 
+    /// @dev round towards negative infinity
+    function compress(int24 tick, int24 tickSpacing) internal pure returns (int24 compressed) {
+        // compressed = tick / tickSpacing;
+        // if (tick < 0 && tick % tickSpacing != 0) compressed--;
+        assembly {
+            compressed :=
+                sub(
+                    sdiv(tick, tickSpacing),
+                    // if (tick < 0 && tick % tickSpacing != 0) then tick % tickSpacing < 0, vice versa
+                    slt(smod(tick, tickSpacing), 0)
+                )
+        }
+    }
+
     /// @notice Computes the position in the mapping where the initialized bit for a tick lives
     /// @param tick The tick for which to compute the position
     /// @return wordPos The key in the mapping containing the word in which the bit is stored
@@ -52,8 +66,7 @@ library TickBitmap {
         bool lte
     ) internal view returns (int24 next, bool initialized) {
         unchecked {
-            int24 compressed = tick / tickSpacing;
-            if (tick < 0 && tick % tickSpacing != 0) compressed--; // round towards negative infinity
+            int24 compressed = compress(tick, tickSpacing);
 
             if (lte) {
                 (int16 wordPos, uint8 bitPos) = position(compressed);
