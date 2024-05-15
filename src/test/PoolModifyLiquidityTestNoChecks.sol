@@ -20,11 +20,6 @@ contract PoolModifyLiquidityTestNoChecks is PoolTestBase {
     using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
 
-    bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
-
-    IPoolManager.ModifyLiquidityParams public LIQUIDITY_PARAMS =
-        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
-
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 
     struct CallbackData {
@@ -34,18 +29,6 @@ contract PoolModifyLiquidityTestNoChecks is PoolTestBase {
         bytes hookData;
         bool settleUsingBurn;
         bool takeClaims;
-    }
-
-    function initPool(
-        Currency _currency0,
-        Currency _currency1,
-        IHooks hooks,
-        uint24 fee,
-        uint160 sqrtPriceX96,
-        bytes memory initData
-    ) external returns (PoolKey memory _key) {
-        _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
-        manager.initialize(_key, sqrtPriceX96, initData);
     }
 
     function modifyLiquidity(
