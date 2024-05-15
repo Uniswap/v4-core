@@ -39,13 +39,13 @@ library TickMath {
         }
     }
 
+    /// @dev sqrt(1.0001) * 2**96
     uint256 internal constant ONE_TICK_NOMINATOR = 79232123823359799118286999567;
 
-    function inSameTick(int24 tick, uint160 sqrtPriceX96) internal pure returns (bool) {
+    function inSameTick(int24 tick, uint160 sqrtPriceX96, bool zeroForOne) internal pure returns (bool) {
         uint160 sqrtPriceX96AtTick = getSqrtPriceAtTick(tick);
-        if (sqrtPriceX96 < sqrtPriceX96AtTick) return true;
-        if (sqrtPriceX96 < uint256(sqrtPriceX96AtTick) * ONE_TICK_NOMINATOR / 2**96) return true;
-        return false;
+        if (zeroForOne) return sqrtPriceX96 >= sqrtPriceX96AtTick;
+        return sqrtPriceX96 < uint256(sqrtPriceX96AtTick) * ONE_TICK_NOMINATOR / 2**96;
     }
 
     /// @notice Calculates sqrt(1.0001^tick) * 2^96

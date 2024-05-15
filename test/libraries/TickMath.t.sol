@@ -173,4 +173,40 @@ contract TickMathTestTest is Test, JavascriptFfi {
             assertLt(resultsDiff, 2);
         }
     }
+
+    function test_inSameTick_fuzz_for_zeroForOne(int24 tick, uint160 sqrtPriceX96Delta) public view {
+        vm.assume(sqrtPriceX96Delta <= tickMath.MAX_SQRT_PRICE() - tickMath.MIN_SQRT_PRICE());
+
+        vm.assume(tick >= tickMath.MIN_TICK());
+        vm.assume(tick <= tickMath.MAX_TICK() - 1);
+
+        uint160 sqrtPrice0 = tickMath.getSqrtPriceAtTick(tick);
+        uint160 sqrtPrice0NextTick = tickMath.getSqrtPriceAtTick(tick + 1);
+        uint160 sqrtPrice1;
+        if (sqrtPriceX96Delta >= sqrtPrice0NextTick || sqrtPrice0NextTick - sqrtPriceX96Delta < tickMath.MIN_SQRT_PRICE()) {
+            sqrtPrice1 = tickMath.MIN_SQRT_PRICE();
+        } else {
+            sqrtPrice1 = sqrtPrice0NextTick - sqrtPriceX96Delta;
+        }
+
+        assertEq(tickMath.inSameTick(tick, sqrtPrice1, true), sqrtPrice1 >= sqrtPrice0);
+    }
+
+    function test_inSameTick_fuzz_for_oneForZero(int24 tick, uint160 sqrtPriceX96Delta) public view {
+        vm.assume(sqrtPriceX96Delta <= tickMath.MAX_SQRT_PRICE() - tickMath.MIN_SQRT_PRICE());
+
+        vm.assume(tick >= tickMath.MIN_TICK());
+        vm.assume(tick <= tickMath.MAX_TICK());
+
+        uint160 sqrtPrice0 = tickMath.getSqrtPriceAtTick(tick);
+        uint160 sqrtPrice1;
+        if (uint256(sqrtPrice0) + uint256(sqrtPriceX96Delta) > tickMath.MAX_SQRT_PRICE()) {
+            sqrtPrice1 = tickMath.MAX_SQRT_PRICE();
+        } else {
+            sqrtPrice1 = sqrtPrice0 + sqrtPriceX96Delta;
+        }
+
+        int24 tick1 = tickMath.getTickAtSqrtPrice(sqrtPrice1);
+        assertEq(tickMath.inSameTick(tick, sqrtPrice1, false), tick1 == tick);
+    }
 }
