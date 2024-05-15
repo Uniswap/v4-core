@@ -17,6 +17,8 @@ import {LPFeeLibrary} from "src/libraries/LPFeeLibrary.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
+    using LPFeeLibrary for uint24;
+    using ProtocolFeeLibrary for uint24;
 
     Pool.State state;
 
@@ -117,7 +119,9 @@ contract PoolTest is Test {
         );
         Pool.Slot0 memory slot0 = state.slot0;
 
-        if (params.amountSpecified > 0 && lpFee == MAX_LP_FEE) {
+        uint24 _lpFee = params.fee.isValid() ? params.fee : lpFee;
+        uint24 swapFee = protocolFee == 0 ? _lpFee : uint24(protocolFee).calculateSwapFee(_lpFee);
+        if (params.amountSpecified > 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
             state.swap(params);
         } else if (params.zeroForOne && params.amountSpecified != 0) {
