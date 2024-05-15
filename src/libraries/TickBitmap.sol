@@ -82,7 +82,7 @@ library TickBitmap {
                     : (compressed - int24(uint24(bitPos))) * tickSpacing;
             } else {
                 // start from the word of the next tick, since the current tick state doesn't matter
-                (int16 wordPos, uint8 bitPos) = position(compressed + 1);
+                (int16 wordPos, uint8 bitPos) = position(++compressed);
                 // all the 1s at or to the left of the bitPos
                 uint256 mask = ~((1 << bitPos) - 1);
                 uint256 masked = self[wordPos] & mask;
@@ -91,8 +91,8 @@ library TickBitmap {
                 initialized = masked != 0;
                 // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
                 next = initialized
-                    ? (compressed + 1 + int24(uint24(BitMath.leastSignificantBit(masked) - bitPos))) * tickSpacing
-                    : (compressed + 1 + int24(uint24(type(uint8).max - bitPos))) * tickSpacing;
+                    ? (compressed + int24(uint24(BitMath.leastSignificantBit(masked) - bitPos))) * tickSpacing
+                    : (compressed + int24(uint24(type(uint8).max - bitPos))) * tickSpacing;
             }
         }
     }
