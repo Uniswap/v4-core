@@ -18,12 +18,16 @@ library ProtocolFeeLibrary {
         return uint16(self >> 12);
     }
 
+    function isValid(uint16 self) internal pure returns (bool) {
+        return self <= MAX_PROTOCOL_FEE;
+    }
+
     function validate(uint24 self) internal pure returns (bool) {
         if (self != 0) {
             uint16 fee0 = getZeroForOneFee(self);
             uint16 fee1 = getOneForZeroFee(self);
             // The fee is represented in pips and it cannot be greater than the MAX_PROTOCOL_FEE.
-            if ((fee0 > MAX_PROTOCOL_FEE) || (fee1 > MAX_PROTOCOL_FEE)) {
+            if ((!isValid(fee0)) || (!isValid(fee1))) {
                 return false;
             }
         }
