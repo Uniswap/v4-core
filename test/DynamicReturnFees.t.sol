@@ -19,9 +19,11 @@ import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {FullMath} from "../src/libraries/FullMath.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
+    using StateLibrary for IPoolManager;
 
     DynamicReturnFeeTestHook dynamicReturnFeesHook = DynamicReturnFeeTestHook(
         address(uint160(uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG))
