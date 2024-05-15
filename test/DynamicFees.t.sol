@@ -19,8 +19,10 @@ import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract TestDynamicFees is Test, Deployers, GasSnapshot {
+    using StateLibrary for IPoolManager;
     using PoolIdLibrary for PoolKey;
 
     DynamicFeesTestHook dynamicFeesHooks = DynamicFeesTestHook(

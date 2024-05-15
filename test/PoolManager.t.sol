@@ -35,6 +35,7 @@ import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -44,6 +45,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using SafeCast for uint256;
     using SafeCast for uint128;
     using ProtocolFeeLibrary for uint24;
+    using StateLibrary for IPoolManager;
 
     event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);

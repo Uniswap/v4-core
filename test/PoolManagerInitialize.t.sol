@@ -22,12 +22,14 @@ import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for uint24;
+    using StateLibrary for IPoolManager;
 
     event Initialize(
         PoolId poolId,
