@@ -189,7 +189,7 @@ contract TickMathTestTest is Test, JavascriptFfi {
             sqrtPrice1 = sqrtPrice0NextTick - sqrtPriceX96Delta;
         }
 
-        assertEq(tickMath.inSameTick(tick, tickMath.MIN_TICK(), sqrtPrice1, true), sqrtPrice1 >= sqrtPrice0);
+        assertEq(tickMath.isSqrtPriceInTick(sqrtPrice1, tick, tickMath.MIN_TICK(), true), sqrtPrice1 >= sqrtPrice0);
     }
 
     function test_inSameTick_fuzz_for_oneForZero(int24 tick, uint160 sqrtPriceX96Delta) public view {
@@ -207,6 +207,6 @@ contract TickMathTestTest is Test, JavascriptFfi {
         }
 
         int24 tick1 = tickMath.getTickAtSqrtPrice(sqrtPrice1);
-        assertEq(tickMath.inSameTick(tick, tickMath.MAX_TICK(), sqrtPrice1, false), tick1 == tick);
+        assertEq(tickMath.isSqrtPriceInTick(sqrtPrice1, tick, tickMath.MAX_TICK(), false), tick1 == tick);
     }
 }

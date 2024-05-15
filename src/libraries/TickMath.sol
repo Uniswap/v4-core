@@ -39,12 +39,15 @@ library TickMath {
         }
     }
 
-    /// @dev sqrt(1.0001) * 2**96
-    uint256 internal constant ONE_TICK_NOMINATOR = 79232123823359799118286999567;
-
-    function inSameTick(int24 tick, int24 tickNext, uint160 sqrtPriceX96, bool zeroForOne) internal pure returns (bool) {
-        if (zeroForOne) return tick == tickNext || sqrtPriceX96 >= getSqrtPriceAtTick(tick);
-        return tickNext == tick + 1 || sqrtPriceX96 < uint256(getSqrtPriceAtTick(tick)) * ONE_TICK_NOMINATOR / 2**96;
+    /// @notice Check if sqrtPriceX96 still in `tick` after price movement
+    /// @dev Used to prevent costly `getTickAtSqrtPrice` calculation for small swaps
+    /// @param sqrtPriceX96 The fixed point Q64.96 value of the sqrt price after price movement
+    /// @param tick Tick ​​for which the check is carried out
+    /// @param nextNotCrossedTick The next active tick that is not crossed
+    /// @param zeroForOne The direction of price movement
+    function isSqrtPriceInTick(uint160 sqrtPriceX96, int24 tick, int24 nextNotCrossedTick, bool zeroForOne) internal pure returns (bool) {
+        if (zeroForOne) return nextNotCrossedTick == tick || sqrtPriceX96 >= getSqrtPriceAtTick(tick);
+        return nextNotCrossedTick == tick + 1 || sqrtPriceX96 < getSqrtPriceAtTick(tick + 1);
     }
 
     /// @notice Calculates sqrt(1.0001^tick) * 2^96
