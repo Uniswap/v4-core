@@ -18,8 +18,8 @@ contract TickMathTest {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
-    function inSameTick(int24 tick, uint160 sqrtPriceX96, bool zeroForOne) external pure returns (bool) {
-        return TickMath.inSameTick(tick, sqrtPriceX96, zeroForOne);
+    function inSameTick(int24 tick, int24 nextTick, uint160 sqrtPriceX96, bool zeroForOne) external pure returns (bool) {
+        return TickMath.inSameTick(tick, nextTick, sqrtPriceX96, zeroForOne);
     }
 
     function getGasCostOfGetTickAtSqrtPrice(uint160 sqrtPriceX96) external view returns (uint256) {
