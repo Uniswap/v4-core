@@ -68,7 +68,7 @@ contract LiquidityMathTest is Test {
     }
 
     /// @notice Test `flipLiquidityDelta` against the ternary expression
-    function test_flipLiquidityDelta_fuzz(int128 liquidityDelta, bool flip) public {
+    function test_flipLiquidityDelta_fuzz(int128 liquidityDelta, bool flip) public pure {
         // `liquidityDelta` should never be `type(int128).min`
         vm.assume(liquidityDelta != type(int128).min);
         assertEq(LiquidityMath.flipLiquidityDelta(liquidityDelta, flip), flip ? -liquidityDelta : liquidityDelta);
