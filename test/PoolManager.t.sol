@@ -451,30 +451,39 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_gas() public {
-        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        IPoolManager.ModifyLiquidityParams memory uniqueParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
         snapLastCall("simple addLiquidity");
     }
 
     function test_addLiquidity_secondAdditionSameRange_gas() public {
-        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
-        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        IPoolManager.ModifyLiquidityParams memory uniqueParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
         snapLastCall("simple addLiquidity second addition same range");
     }
 
     function test_removeLiquidity_gas() public {
+        IPoolManager.ModifyLiquidityParams memory uniqueParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
         // add some liquidity to remove
-        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
 
-        modifyLiquidityNoChecks.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
+        uniqueParams.liquidityDelta *= -1;
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
         snapLastCall("simple removeLiquidity");
     }
 
     function test_removeLiquidity_someLiquidityRemains_gas() public {
         // add double the liquidity to remove
-        LIQUIDITY_PARAMS.liquidityDelta *= 2;
-        modifyLiquidityNoChecks.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        IPoolManager.ModifyLiquidityParams memory uniqueParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
 
-        modifyLiquidityNoChecks.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
+        uniqueParams.liquidityDelta /= -2;
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
         snapLastCall("simple removeLiquidity some liquidity remains");
     }
 
