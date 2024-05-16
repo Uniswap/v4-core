@@ -32,7 +32,7 @@ jobs:
       run: |
         {
         echo 'COVERAGE<<EOF'
-        forge coverage | grep -v 'test/' | tail -n +6
+        forge coverage | grep '^|' | grep -v 'test/'
         echo EOF
         } >> "$GITHUB_OUTPUT"
       env:
@@ -52,7 +52,7 @@ jobs:
           const currentCoverage = fs.readFileSync(file, "utf8").trim();
           const newCoverage = (`${{ steps.coverage.outputs.COVERAGE }}`).trim();
           if (newCoverage != currentCoverage) {
-            core.setFailed(`Code coverage not updated. Run : forge coverage | grep -v 'test/' | tail -n +6  > coverage.txt`);
+            core.setFailed(`Code coverage not updated. Run : forge coverage | grep '^|' | grep -v 'test/'  > coverage.txt`);
           }
 
     - name: Comment on PR

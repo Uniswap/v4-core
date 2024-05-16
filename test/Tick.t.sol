@@ -2,11 +2,26 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {stdError} from "forge-std/StdError.sol";
 import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {PoolGetters} from "../src/libraries/PoolGetters.sol";
+
+contract LiquidityMathRef {
+    function addDelta(uint128 x, int128 y) external pure returns (uint128) {
+        return y < 0 ? x - uint128(-y) : x + uint128(y);
+    }
+
+    function addDelta(bool upper, int128 liquidityNetBefore, int128 liquidityDelta)
+        external
+        pure
+        returns (int128 liquidityNet)
+    {
+        liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
+    }
+}
 
 contract TickTest is Test, GasSnapshot {
     using PoolGetters for Pool.State;
@@ -17,6 +32,12 @@ contract TickTest is Test, GasSnapshot {
     int24 constant HIGH_TICK_SPACING = 200;
 
     Pool.State public pool;
+
+    LiquidityMathRef internal liquidityMath;
+
+    function setUp() public {
+        liquidityMath = new LiquidityMathRef();
+    }
 
     function ticks(int24 tick) internal view returns (Pool.TickInfo memory) {
         return pool.ticks[tick];
@@ -80,7 +101,7 @@ contract TickTest is Test, GasSnapshot {
         return (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
     }
 
-    function checkCantOverflow(int24 tickSpacing, uint128 maxLiquidityPerTick) internal {
+    function checkCantOverflow(int24 tickSpacing, uint128 maxLiquidityPerTick) internal pure {
         assertLe(
             uint256(
                 uint256(maxLiquidityPerTick)
@@ -90,49 +111,49 @@ contract TickTest is Test, GasSnapshot {
         );
     }
 
-    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFee() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(LOW_TICK_SPACING);
 
         assertEq(maxLiquidityPerTick, 1917565579412846627735051215301243);
         checkCantOverflow(LOW_TICK_SPACING, maxLiquidityPerTick);
     }
 
-    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMediumFee() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMediumFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(MEDIUM_TICK_SPACING);
 
         assertEq(maxLiquidityPerTick, 11505069308564788430434325881101413); // 113.1 bits
         checkCantOverflow(MEDIUM_TICK_SPACING, maxLiquidityPerTick);
     }
 
-    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForHighFee() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForHighFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(HIGH_TICK_SPACING);
 
         assertEq(maxLiquidityPerTick, 38347205785278154309959589375342946); // 114.7 bits
         checkCantOverflow(HIGH_TICK_SPACING, maxLiquidityPerTick);
     }
 
-    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMinTickSpacing() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMinTickSpacing() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(TickMath.MIN_TICK_SPACING);
 
         assertEq(maxLiquidityPerTick, 191757530477355301479181766273477); // 126 bits
         checkCantOverflow(TickMath.MIN_TICK_SPACING, maxLiquidityPerTick);
     }
 
-    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMaxTickSpacing() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMaxTickSpacing() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(TickMath.MAX_TICK_SPACING);
 
         assertEq(maxLiquidityPerTick, 6169404334338910476561253576012511949);
         checkCantOverflow(TickMath.MAX_TICK_SPACING, maxLiquidityPerTick);
     }
 
-    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForEntireRange() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForEntireRange() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(TickMath.MAX_TICK);
 
         assertEq(maxLiquidityPerTick, type(uint128).max / 3);
         checkCantOverflow(TickMath.MAX_TICK, maxLiquidityPerTick);
     }
 
-    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor2302() public {
+    function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor2302() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(2302);
 
         assertEq(maxLiquidityPerTick, 440854192570431170114173285871668350); // 118 bits
@@ -408,6 +429,40 @@ contract TickTest is Test, GasSnapshot {
         assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2));
     }
 
+    function testTick_update_fuzz(uint128 liquidityGross, int128 liquidityNet, int128 liquidityDelta, bool upper)
+        public
+    {
+        try liquidityMath.addDelta(liquidityGross, liquidityDelta) returns (uint128 liquidityGrossAfter) {
+            try liquidityMath.addDelta(upper, liquidityNet, liquidityDelta) returns (int128 liquidityNetAfter) {
+                Pool.TickInfo memory info = Pool.TickInfo({
+                    liquidityGross: liquidityGross,
+                    liquidityNet: liquidityNet,
+                    feeGrowthOutside0X128: 0,
+                    feeGrowthOutside1X128: 0
+                });
+
+                setTick(2, info);
+                update({
+                    tick: 2,
+                    tickCurrent: 1,
+                    liquidityDelta: liquidityDelta,
+                    feeGrowthGlobal0X128: 0,
+                    feeGrowthGlobal1X128: 0,
+                    upper: upper
+                });
+
+                info = ticks(2);
+
+                assertEq(info.liquidityGross, liquidityGrossAfter);
+                assertEq(info.liquidityNet, liquidityNetAfter);
+            } catch (bytes memory reason) {
+                assertEq(reason, stdError.arithmeticError);
+            }
+        } catch (bytes memory reason) {
+            assertEq(reason, stdError.arithmeticError);
+        }
+    }
+
     function testTick_clear_deletesAllTheDataInTheTick() public {
         Pool.TickInfo memory info;
 
@@ -479,7 +534,7 @@ contract TickTest is Test, GasSnapshot {
         assertEq(pool.getPoolBitmapInfo(word), bitmap);
     }
 
-    function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public {
+    function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public pure {
         tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
@@ -495,7 +550,8 @@ contract TickTest is Test, GasSnapshot {
         assertEq((maxTick - minTick) % tickSpacing, 0);
 
         uint256 numTicks = uint256(int256((maxTick - minTick) / tickSpacing)) + 1;
-        // max liquidity at every tick is less than the cap
-        assertGt(type(uint128).max, uint256(maxLiquidityPerTick) * numTicks);
+
+        // sum of max liquidity on each tick is at most the cap
+        assertGe(type(uint128).max, uint256(maxLiquidityPerTick) * numTicks);
     }
 }

@@ -7,10 +7,14 @@ import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
 import {Owned} from "solmate/auth/Owned.sol";
+import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
+import {Pool} from "./libraries/Pool.sol";
 
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
     using ProtocolFeeLibrary for uint24;
+    using PoolIdLibrary for PoolKey;
+    using Pool for Pool.State;
 
     mapping(Currency currency => uint256) public protocolFeesAccrued;
 
@@ -21,6 +25,35 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     constructor(uint256 _controllerGasLimit) Owned(msg.sender) {
         controllerGasLimit = _controllerGasLimit;
     }
+
+    /// @inheritdoc IProtocolFees
+    function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
+        protocolFeeController = controller;
+        emit ProtocolFeeControllerUpdated(address(controller));
+    }
+
+    /// @inheritdoc IProtocolFees
+    function setProtocolFee(PoolKey memory key, uint24 newProtocolFee) external {
+        if (msg.sender != address(protocolFeeController)) revert InvalidCaller();
+        if (!newProtocolFee.validate()) revert InvalidProtocolFee();
+        PoolId id = key.toId();
+        _getPool(id).setProtocolFee(newProtocolFee);
+        emit ProtocolFeeUpdated(id, newProtocolFee);
+    }
+
+    /// @inheritdoc IProtocolFees
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected)
+    {
+        if (msg.sender != address(protocolFeeController)) revert InvalidCaller();
+
+        amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
+        protocolFeesAccrued[currency] -= amountCollected;
+        currency.transfer(recipient, amountCollected);
+    }
+
+    function _getPool(PoolId id) internal virtual returns (Pool.State storage);
 
     /// @notice Fetch the protocol fees for a given pool, returning false if the call fails or the returned fees are invalid.
     /// @dev to prevent an invalid protocol fee controller from blocking pools from being initialized
@@ -50,19 +83,9 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
         }
     }
 
-    function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
-        protocolFeeController = controller;
-        emit ProtocolFeeControllerUpdated(address(controller));
-    }
-
-    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
-        external
-        returns (uint256 amountCollected)
-    {
-        if (msg.sender != address(protocolFeeController)) revert InvalidCaller();
-
-        amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
-        protocolFeesAccrued[currency] -= amountCollected;
-        currency.transfer(recipient, amountCollected);
+    function _updateProtocolFees(Currency currency, uint256 amount) internal {
+        unchecked {
+            protocolFeesAccrued[currency] += amount;
+        }
     }
 }

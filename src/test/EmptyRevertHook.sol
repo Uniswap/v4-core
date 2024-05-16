@@ -5,6 +5,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 contract EmptyRevertHook is IHooks {
     function beforeInitialize(
@@ -41,7 +42,7 @@ contract EmptyRevertHook is IHooks {
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4) {
+    ) external virtual returns (bytes4, BalanceDelta) {
         revert();
     }
 
@@ -60,7 +61,7 @@ contract EmptyRevertHook is IHooks {
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4) {
+    ) external virtual returns (bytes4, BalanceDelta) {
         revert();
     }
 
@@ -69,7 +70,7 @@ contract EmptyRevertHook is IHooks {
         PoolKey calldata, /* key **/
         IPoolManager.SwapParams calldata, /* params **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4) {
+    ) external virtual returns (bytes4, BeforeSwapDelta) {
         revert();
     }
 
@@ -79,7 +80,7 @@ contract EmptyRevertHook is IHooks {
         IPoolManager.SwapParams calldata, /* params **/
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4) {
+    ) external virtual returns (bytes4, int128) {
         revert();
     }
 

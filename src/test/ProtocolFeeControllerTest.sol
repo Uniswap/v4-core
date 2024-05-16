@@ -31,8 +31,8 @@ contract RevertingProtocolFeeControllerTest is IProtocolFeeController {
 /// @notice Returns an out of bounds protocol fee
 contract OutOfBoundsProtocolFeeControllerTest is IProtocolFeeController {
     function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint24) {
-        // set both swap fees to 2501, which is greater than MAX_PROTOCOL_FEE
-        return 0x9C59C5;
+        // set both protocol fees to 1001, which is greater than MAX_PROTOCOL_FEE
+        return (1001 << 12) | 1001;
     }
 }
 

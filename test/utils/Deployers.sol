@@ -8,17 +8,20 @@ import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
-import {SwapFeeLibrary} from "../../src/libraries/SwapFeeLibrary.sol";
+import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
 import {PoolModifyLiquidityTest} from "../../src/test/PoolModifyLiquidityTest.sol";
+import {PoolModifyLiquidityTestNoChecks} from "../../src/test/PoolModifyLiquidityTestNoChecks.sol";
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
+import {SwapRouterNoChecks} from "../../src/test/SwapRouterNoChecks.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
+import {PoolSettleTest} from "../../src/test/PoolSettleTest.sol";
 import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
 import {
     ProtocolFeeControllerTest,
@@ -29,34 +32,38 @@ import {
 } from "../../src/test/ProtocolFeeControllerTest.sol";
 
 contract Deployers {
-    using SwapFeeLibrary for uint24;
+    using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
     // Helpful test constants
     bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
-    uint160 constant SQRT_RATIO_1_1 = Constants.SQRT_RATIO_1_1;
-    uint160 constant SQRT_RATIO_1_2 = Constants.SQRT_RATIO_1_2;
-    uint160 constant SQRT_RATIO_2_1 = Constants.SQRT_RATIO_2_1;
-    uint160 constant SQRT_RATIO_1_4 = Constants.SQRT_RATIO_1_4;
-    uint160 constant SQRT_RATIO_4_1 = Constants.SQRT_RATIO_4_1;
+    uint160 constant SQRT_PRICE_1_1 = Constants.SQRT_PRICE_1_1;
+    uint160 constant SQRT_PRICE_1_2 = Constants.SQRT_PRICE_1_2;
+    uint160 constant SQRT_PRICE_2_1 = Constants.SQRT_PRICE_2_1;
+    uint160 constant SQRT_PRICE_1_4 = Constants.SQRT_PRICE_1_4;
+    uint160 constant SQRT_PRICE_4_1 = Constants.SQRT_PRICE_4_1;
 
-    uint160 public constant MIN_PRICE_LIMIT = TickMath.MIN_SQRT_RATIO + 1;
-    uint160 public constant MAX_PRICE_LIMIT = TickMath.MAX_SQRT_RATIO - 1;
+    uint160 public constant MIN_PRICE_LIMIT = TickMath.MIN_SQRT_PRICE + 1;
+    uint160 public constant MAX_PRICE_LIMIT = TickMath.MAX_SQRT_PRICE - 1;
 
-    IPoolManager.ModifyLiquidityParams public LIQ_PARAMS =
-        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
-    IPoolManager.ModifyLiquidityParams public REMOVE_LIQ_PARAMS =
-        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
+    IPoolManager.ModifyLiquidityParams public LIQUIDITY_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
+    IPoolManager.ModifyLiquidityParams public REMOVE_LIQUIDITY_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
 
     // Global variables
     Currency internal currency0;
     Currency internal currency1;
     IPoolManager manager;
     PoolModifyLiquidityTest modifyLiquidityRouter;
+    PoolModifyLiquidityTestNoChecks modifyLiquidityNoChecks;
+    SwapRouterNoChecks swapRouterNoChecks;
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
+    PoolSettleTest settleRouter;
+
     PoolClaimsTest claimsRouter;
     PoolNestedActionsTest nestedActionRouter;
     ProtocolFeeControllerTest feeController;
@@ -70,6 +77,19 @@ contract Deployers {
     PoolKey uninitializedKey;
     PoolKey uninitializedNativeKey;
 
+    // Update this value when you add a new hook flag.
+    uint256 hookPermissionCount = 14;
+    uint256 clearAllHookPermisssionsMask = uint256(~uint160(0) >> (hookPermissionCount));
+
+    modifier noIsolate() {
+        if (msg.sender != address(this)) {
+            (bool success,) = address(this).call(msg.data);
+            require(success);
+        } else {
+            _;
+        }
+    }
+
     function deployFreshManager() internal {
         manager = new PoolManager(500000);
     }
@@ -77,9 +97,12 @@ contract Deployers {
     function deployFreshManagerAndRouters() internal {
         deployFreshManager();
         swapRouter = new PoolSwapTest(manager);
+        swapRouterNoChecks = new SwapRouterNoChecks(manager);
         modifyLiquidityRouter = new PoolModifyLiquidityTest(manager);
+        modifyLiquidityNoChecks = new PoolModifyLiquidityTestNoChecks(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
+        settleRouter = new PoolSettleTest(manager);
         claimsRouter = new PoolClaimsTest(manager);
         nestedActionRouter = new PoolNestedActionsTest(manager);
         feeController = new ProtocolFeeControllerTest();
@@ -94,11 +117,22 @@ contract Deployers {
     // You must have first initialised the routers with deployFreshManagerAndRouters
     // If you only need the currencies (and not approvals) call deployAndMint2Currencies
     function deployMintAndApprove2Currencies() internal returns (Currency, Currency) {
-        MockERC20[] memory tokens = deployTokens(2, 2 ** 255);
+        Currency _currencyA = deployMintAndApproveCurrency();
+        Currency _currencyB = deployMintAndApproveCurrency();
 
-        address[6] memory toApprove = [
+        (currency0, currency1) =
+            SortTokens.sort(MockERC20(Currency.unwrap(_currencyA)), MockERC20(Currency.unwrap(_currencyB)));
+        return (currency0, currency1);
+    }
+
+    function deployMintAndApproveCurrency() internal returns (Currency currency) {
+        MockERC20 token = deployTokens(1, 2 ** 255)[0];
+
+        address[8] memory toApprove = [
             address(swapRouter),
+            address(swapRouterNoChecks),
             address(modifyLiquidityRouter),
+            address(modifyLiquidityNoChecks),
             address(donateRouter),
             address(takeRouter),
             address(claimsRouter),
@@ -106,12 +140,10 @@ contract Deployers {
         ];
 
         for (uint256 i = 0; i < toApprove.length; i++) {
-            tokens[0].approve(toApprove[i], Constants.MAX_UINT256);
-            tokens[1].approve(toApprove[i], Constants.MAX_UINT256);
+            token.approve(toApprove[i], Constants.MAX_UINT256);
         }
 
-        (currency0, currency1) = SortTokens.sort(tokens[0], tokens[1]);
-        return (currency0, currency1);
+        return Currency.wrap(address(token));
     }
 
     function deployAndMint2Currencies() internal returns (Currency, Currency) {
@@ -149,7 +181,7 @@ contract Deployers {
         bytes memory initData
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyLiquidityRouter.modifyLiquidity{value: msg.value}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity{value: msg.value}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     function initPoolAndAddLiquidityETH(
@@ -162,7 +194,7 @@ contract Deployers {
         uint256 msgValue
     ) internal returns (PoolKey memory _key, PoolId id) {
         (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
-        modifyLiquidityRouter.modifyLiquidity{value: msgValue}(_key, LIQ_PARAMS, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity{value: msgValue}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
     // Deploys the manager, all test routers, and sets up 2 pools: with and without native
@@ -170,10 +202,10 @@ contract Deployers {
         deployFreshManagerAndRouters();
         // sets the global currencyies and key
         deployMintAndApprove2Currencies();
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
         nestedActionRouter.executor().setKey(key);
         (nativeKey,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_RATIO_1_1, ZERO_BYTES, 1 ether
+            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
         );
         uninitializedKey = key;
         uninitializedNativeKey = nativeKey;
@@ -199,7 +231,7 @@ contract Deployers {
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             }),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
             hookData
         );
     }
@@ -222,7 +254,7 @@ contract Deployers {
                 amountSpecified: amountSpecified,
                 sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
             }),
-            PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false}),
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
             hookData
         );
     }
