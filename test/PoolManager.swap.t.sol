@@ -65,7 +65,7 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
             ""
         );
 
-        modifyLiquidityRouter.modifyLiquidity{value: msg.value}(key_, v4LiquidityParams, "");
+        modifyLiquidityRouter.modifyLiquidity(key_, v4LiquidityParams, "");
     }
 
     function swap(IUniswapV3Pool pool, PoolKey memory key_, bool zeroForOne, int256 amountSpecified)
