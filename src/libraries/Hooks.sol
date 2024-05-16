@@ -235,7 +235,7 @@ library Hooks {
         returns (int256 amountToSwap, BeforeSwapDelta hookReturn, uint24 lpFee)
     {
         amountToSwap = params.amountSpecified;
-        lpFee = LPFeeLibrary.NO_FEE_UPDATE_FLAG;
+        lpFee = LPFeeLibrary.FEE_OVERRIDE_FLAG; // this default is higher than the max allowable fee, so it will not be used
         if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, lpFee);
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {

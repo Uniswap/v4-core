@@ -35,7 +35,7 @@ contract DynamicFeesTestHook is BaseTestHooks {
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         manager.updateDynamicLPFee(key, fee);
-        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, LPFeeLibrary.NO_FEE_UPDATE_FLAG);
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
     function forcePoolFeeUpdate(PoolKey calldata _key, uint24 _fee) external {

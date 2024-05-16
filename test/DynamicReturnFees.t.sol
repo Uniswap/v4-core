@@ -24,6 +24,7 @@ import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
+    using LPFeeLibrary for uint24;
 
     DynamicReturnFeeTestHook dynamicReturnFeesHook = DynamicReturnFeeTestHook(
         address(uint160(uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG))
@@ -66,12 +67,13 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
         assertEq(result.amount0(), amountSpecified);
 
-        if (fee > LPFeeLibrary.MAX_LP_FEE) {
+        uint24 actualFee = fee.asOverrideFee().getOverride();
+        if (actualFee > LPFeeLibrary.MAX_LP_FEE) {
             // if the fee is too large, the fee from beforeSwap is not used (and remains at 0 -- the default value)
             assertApproxEqAbs(uint256(int256(result.amount1())), uint256(int256(-result.amount0())), 1 wei);
         } else {
             assertApproxEqAbs(
-                uint256(int256(result.amount1())), FullMath.mulDiv(uint256(-amountSpecified), (1e6 - fee), 1e6), 1 wei
+                uint256(int256(result.amount1())), FullMath.mulDiv(uint256(-amountSpecified), (1e6 - actualFee), 1e6), 1 wei
             );
         }
     }

@@ -6,8 +6,10 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
+import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 
 contract DynamicReturnFeeTestHook is BaseTestHooks {
+    using LPFeeLibrary for uint24;
     uint24 internal fee;
     IPoolManager manager;
 
@@ -24,7 +26,7 @@ contract DynamicReturnFeeTestHook is BaseTestHooks {
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
-        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, fee);
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, fee.asOverrideFee());
     }
 
     function forcePoolFeeUpdate(PoolKey calldata _key, uint24 _fee) external {
