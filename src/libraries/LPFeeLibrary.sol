@@ -16,7 +16,7 @@ library LPFeeLibrary {
     uint24 public constant DYNAMIC_FEE_FLAG = 0x800000;
 
     // the second bit of the fee (returned by beforeSwap) is used to signal if the stored fee should be overridden
-    uint24 public constant OVERRIDE_FLAG = 0x400000;
+    uint24 public constant OVERRIDE_FEE_FLAG = 0x400000;
 
     // the lp fee is represented in hundredths of a bip, so the max is 100%
     uint24 public constant MAX_LP_FEE = 1000000;
@@ -42,7 +42,7 @@ library LPFeeLibrary {
 
     /// @notice returns true if the fee has the override flag set (top bit of the uint24)
     function isOverride(uint24 self) internal pure returns (bool) {
-        return self & OVERRIDE_FLAG != 0;
+        return self & OVERRIDE_FEE_FLAG != 0;
     }
 
     /// @notice returns a fee with the override flag removed
