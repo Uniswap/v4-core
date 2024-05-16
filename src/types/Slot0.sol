@@ -29,7 +29,6 @@ using Slot0Library for Slot0 global;
 
 library Slot0Library {
     uint160 internal constant UINT160_MASK = 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-    uint24 internal constant INT24_MASK = 0xFFFFFF;
     uint24 internal constant UINT24_MASK = 0xFFFFFF;
 
     uint8 internal constant TICK_OFFSET = 160;
@@ -76,7 +75,7 @@ library Slot0Library {
     function setTick(Slot0 _packed, int24 _tick) internal pure returns (Slot0 _result) {
         /// @solidity memory-safe-assembly
         assembly {
-            _result := or(and(not(shl(TICK_OFFSET, INT24_MASK)), _packed), shl(TICK_OFFSET, and(INT24_MASK, _tick)))
+            _result := or(and(not(shl(TICK_OFFSET, UINT24_MASK)), _packed), shl(TICK_OFFSET, and(UINT24_MASK, _tick)))
         }
     }
 
