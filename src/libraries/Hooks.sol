@@ -241,7 +241,7 @@ library Hooks {
             bytes memory result =
                 callHook(self, abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
 
-            // for non-dynamic fee pools the first bit of lpFeeOverride remains as 0 which will not override the lp fee
+            // dynamic fee pools that do not want to override the cache fee, return 0 otherwise they return a valid fee with the override flag
             if (key.fee.isDynamicFee()) lpFeeOverride = result.parseFee();
 
             // skip this logic for the case where the hook return is 0

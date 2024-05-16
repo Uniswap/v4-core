@@ -27,7 +27,8 @@ contract DynamicReturnFeeTestHook is BaseTestHooks {
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
-        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, fee.asOverrideFee());
+        // attach the fee flag to `fee` to enable overriding the pool's stored fee
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, fee | LPFeeLibrary.DYNAMIC_FEE_FLAG);
     }
 
     function forcePoolFeeUpdate(PoolKey calldata _key, uint24 _fee) external {
