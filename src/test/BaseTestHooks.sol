@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {IHooks} from "../interfaces/IHooks.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 contract BaseTestHooks is IHooks {
@@ -71,7 +72,7 @@ contract BaseTestHooks is IHooks {
         PoolKey calldata, /* key **/
         IPoolManager.SwapParams calldata, /* params **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4, int128) {
+    ) external virtual returns (bytes4, BeforeSwapDelta) {
         revert HookNotImplemented();
     }
 

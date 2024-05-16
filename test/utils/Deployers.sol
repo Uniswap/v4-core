@@ -15,6 +15,7 @@ import {TickMath} from "../../src/libraries/TickMath.sol";
 import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
 import {PoolModifyLiquidityTest} from "../../src/test/PoolModifyLiquidityTest.sol";
+import {PoolModifyLiquidityTestNoChecks} from "../../src/test/PoolModifyLiquidityTestNoChecks.sol";
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {SwapRouterNoChecks} from "../../src/test/SwapRouterNoChecks.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
@@ -56,6 +57,7 @@ contract Deployers {
     Currency internal currency1;
     IPoolManager manager;
     PoolModifyLiquidityTest modifyLiquidityRouter;
+    PoolModifyLiquidityTestNoChecks modifyLiquidityNoChecks;
     SwapRouterNoChecks swapRouterNoChecks;
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
@@ -97,6 +99,7 @@ contract Deployers {
         swapRouter = new PoolSwapTest(manager);
         swapRouterNoChecks = new SwapRouterNoChecks(manager);
         modifyLiquidityRouter = new PoolModifyLiquidityTest(manager);
+        modifyLiquidityNoChecks = new PoolModifyLiquidityTestNoChecks(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
         settleRouter = new PoolSettleTest(manager);
@@ -125,10 +128,11 @@ contract Deployers {
     function deployMintAndApproveCurrency() internal returns (Currency currency) {
         MockERC20 token = deployTokens(1, 2 ** 255)[0];
 
-        address[7] memory toApprove = [
+        address[8] memory toApprove = [
             address(swapRouter),
             address(swapRouterNoChecks),
             address(modifyLiquidityRouter),
+            address(modifyLiquidityNoChecks),
             address(donateRouter),
             address(takeRouter),
             address(claimsRouter),

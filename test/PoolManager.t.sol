@@ -35,6 +35,7 @@ import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {AmountHelpers} from "./utils/AmountHelpers.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -44,6 +45,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using SafeCast for uint256;
     using SafeCast for uint128;
     using ProtocolFeeLibrary for uint24;
+    using StateLibrary for IPoolManager;
 
     event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);
@@ -451,13 +453,48 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_gas() public {
-        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
-        snapLastCall("addLiquidity");
+        IPoolManager.ModifyLiquidityParams memory uniqueParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
+        snapLastCall("simple addLiquidity");
+    }
+
+    function test_addLiquidity_secondAdditionSameRange_gas() public {
+        IPoolManager.ModifyLiquidityParams memory uniqueParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
+        snapLastCall("simple addLiquidity second addition same range");
     }
 
     function test_removeLiquidity_gas() public {
+        IPoolManager.ModifyLiquidityParams memory uniqueParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        // add some liquidity to remove
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
+
+        uniqueParams.liquidityDelta *= -1;
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
+        snapLastCall("simple removeLiquidity");
+    }
+
+    function test_removeLiquidity_someLiquidityRemains_gas() public {
+        // add double the liquidity to remove
+        IPoolManager.ModifyLiquidityParams memory uniqueParams =
+            IPoolManager.ModifyLiquidityParams({tickLower: -300, tickUpper: -180, liquidityDelta: 1e18, salt: 0});
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
+
+        uniqueParams.liquidityDelta /= -2;
+        modifyLiquidityNoChecks.modifyLiquidity(key, uniqueParams, ZERO_BYTES);
+        snapLastCall("simple removeLiquidity some liquidity remains");
+    }
+
+    function test_addLiquidity_succeeds() public {
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+    }
+
+    function test_removeLiquidity_succeeds() public {
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
-        snapLastCall("removeLiquidity");
     }
 
     function test_addLiquidity_withNative_gas() public {
@@ -876,12 +913,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_beforeSwapNoOpsSwap_exactInput() public {
-        address hookAddr = address(
-            uint160(
-                Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG | Hooks.BEFORE_SWAP_FLAG
-                    | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG
-            )
-        );
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         CustomCurveHook impl = new CustomCurveHook(manager);
         vm.etch(hookAddr, address(impl).code);
 
@@ -910,12 +942,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_beforeSwapNoOpsSwap_exactOutput() public {
-        address hookAddr = address(
-            uint160(
-                Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG | Hooks.BEFORE_SWAP_FLAG
-                    | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG
-            )
-        );
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         CustomCurveHook impl = new CustomCurveHook(manager);
         vm.etch(hookAddr, address(impl).code);
 
