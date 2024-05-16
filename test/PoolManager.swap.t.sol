@@ -31,7 +31,7 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
 
     function addLiquidity(
         FeeTiers fee,
-        uint256 sqrtPriceX96seed,
+        int256 sqrtPriceX96seed,
         int24 lowerTick,
         int24 upperTick,
         int128 liquidityDelta
@@ -102,7 +102,7 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
 }
 
 contract V3SwapTests is V3Fuzzer {
-    function test_shouldSwapEqual(int24 lowerTick, int24 upperTick, int128 liquidityDelta, uint256 sqrtPriceX96seed)
+    function test_shouldSwapEqual(int24 lowerTick, int24 upperTick, int128 liquidityDelta, int256 sqrtPriceX96seed)
         public
     {
         (IUniswapV3Pool pool, PoolKey memory key_) =
