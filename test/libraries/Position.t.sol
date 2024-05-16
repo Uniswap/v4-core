@@ -24,16 +24,13 @@ contract PositionTest is Test {
     }
 
     function test_fuzz_update(
-        address owner,
-        int24 tickLower,
-        int24 tickUpper,
-        bytes32 salt,
         int128 liquidityDelta,
         uint256 feeGrowthInside0X128,
         uint256 feeGrowthInside1X128,
         uint128 liquidity
     ) public {
-        Position.Info storage position = positions.get(owner, tickLower, tickUpper, salt);
+        // grab a position and set its values
+        Position.Info storage position = positions[0];
         position.liquidity = liquidity;
         position.feeGrowthInside0LastX128 = feeGrowthInside0X128;
         position.feeGrowthInside1LastX128 = feeGrowthInside1X128;
@@ -45,6 +42,7 @@ contract PositionTest is Test {
         uint256 oldFeeGrowthInside0X128 = position.feeGrowthInside0LastX128;
         uint256 oldFeeGrowthInside1X128 = position.feeGrowthInside1LastX128;
 
+        // new liquidity cannot overflow uint128
         uint256 newLiquidity = uint256(int256(uint256(oldLiquidity)) + int256(liquidityDelta));
         if (newLiquidity > type(uint128).max) {
             vm.expectRevert(SafeCast.SafeCastOverflow.selector);
@@ -53,8 +51,10 @@ contract PositionTest is Test {
         Position.update(position, liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
         if (liquidityDelta == 0) {
             assertEq(position.liquidity, oldLiquidity);
+        } else if (liquidityDelta > 0) {
+            assertGt(position.liquidity, oldLiquidity);
         } else {
-            assertNotEq(position.liquidity, oldLiquidity);
+            assertLt(position.liquidity, oldLiquidity);
         }
 
         assertEq(position.feeGrowthInside0LastX128, oldFeeGrowthInside0X128);
