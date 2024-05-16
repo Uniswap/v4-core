@@ -10,7 +10,7 @@ contract TestSlot0 is Test {
         assertEq(Slot0Library.UINT24_MASK, type(uint24).max);
     }
 
-    function test_slot0_fuzz_pack_unpack(uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
+    function test_fuzz_slot0_pack_unpack(uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
         public
         pure
     {
