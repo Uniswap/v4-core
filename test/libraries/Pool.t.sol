@@ -119,7 +119,7 @@ contract PoolTest is Test {
         );
         Pool.Slot0 memory slot0 = state.slot0;
 
-        uint24 _lpFee = params.fee.isValid() ? params.fee : lpFee;
+        uint24 _lpFee = params.lpFeeOverride.isValid() ? params.lpFeeOverride : lpFee;
         uint24 swapFee = protocolFee == 0 ? _lpFee : uint24(protocolFee).calculateSwapFee(_lpFee);
         if (params.amountSpecified > 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);

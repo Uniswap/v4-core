@@ -230,8 +230,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         BeforeSwapDelta beforeSwapDelta;
         {
             int256 amountToSwap;
-            uint24 fee;
-            (amountToSwap, beforeSwapDelta, fee) = key.hooks.beforeSwap(key, params, hookData);
+            uint24 lpFeeOverride;
+            (amountToSwap, beforeSwapDelta, lpFeeOverride) = key.hooks.beforeSwap(key, params, hookData);
 
             // execute swap, account protocol fees, and emit swap event
             swapDelta = _swap(
@@ -241,7 +241,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
                     zeroForOne: params.zeroForOne,
                     amountSpecified: amountToSwap,
                     sqrtPriceLimitX96: params.sqrtPriceLimitX96,
-                    fee: fee
+                    lpFeeOverride: lpFeeOverride
                 }),
                 params.zeroForOne ? key.currency0 : key.currency1 // input token
             );

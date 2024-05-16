@@ -232,17 +232,17 @@ library Hooks {
     /// @notice calls beforeSwap hook if permissioned and validates return value
     function beforeSwap(IHooks self, PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         internal
-        returns (int256 amountToSwap, BeforeSwapDelta hookReturn, uint24 lpFee)
+        returns (int256 amountToSwap, BeforeSwapDelta hookReturn, uint24 lpFeeOverride)
     {
         amountToSwap = params.amountSpecified;
-        lpFee = LPFeeLibrary.FEE_OVERRIDE_FLAG; // this default is higher than the max allowable fee, so it will not be used
-        if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, lpFee);
+        if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, lpFeeOverride);
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
             bytes memory result =
                 callHook(self, abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
 
-            if (key.fee.isDynamicFee()) lpFee = result.parseFee();
+            // for non-dynamic fee pools the first bit of lpFeeOverride remains as 0 which will not override the lp fee
+            if (key.fee.isDynamicFee()) lpFeeOverride = result.parseFee();
 
             // skip this logic for the case where the hook return is 0
             if (self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)) {

@@ -295,7 +295,7 @@ library Pool {
         bool zeroForOne;
         int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
-        uint24 fee;
+        uint24 lpFeeOverride;
     }
 
     /// @notice Executes a swap against the state, and returns the amount deltas of the pool
@@ -319,8 +319,15 @@ library Pool {
         state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
         state.liquidity = cache.liquidityStart;
 
-        // if the beforeSwap hook returned a valid fee, use that as the LP fee, otherwise load from storage
-        uint24 lpFee = params.fee.isValid() ? params.fee : slot0Start.lpFee;
+        // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
+        uint24 lpFee;
+        if (!params.lpFeeOverride.isOverride()) {
+            lpFee = slot0Start.lpFee;
+        } else {
+            lpFee = params.lpFeeOverride.removeOverrideFlag();
+            if (!lpFee.isValid()) lpFee = slot0Start.lpFee;
+        }
+
         swapFee = cache.protocolFee == 0 ? lpFee : uint24(cache.protocolFee).calculateSwapFee(lpFee);
 
         bool exactInput = params.amountSpecified < 0;

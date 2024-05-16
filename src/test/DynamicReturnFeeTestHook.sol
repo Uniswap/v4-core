@@ -10,6 +10,7 @@ import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 
 contract DynamicReturnFeeTestHook is BaseTestHooks {
     using LPFeeLibrary for uint24;
+
     uint24 internal fee;
     IPoolManager manager;
 

@@ -67,13 +67,15 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
         assertEq(result.amount0(), amountSpecified);
 
-        uint24 actualFee = fee.asOverrideFee().getOverride();
+        uint24 actualFee = fee.removeOverrideFlag();
         if (actualFee > LPFeeLibrary.MAX_LP_FEE) {
             // if the fee is too large, the fee from beforeSwap is not used (and remains at 0 -- the default value)
             assertApproxEqAbs(uint256(int256(result.amount1())), uint256(int256(-result.amount0())), 1 wei);
         } else {
             assertApproxEqAbs(
-                uint256(int256(result.amount1())), FullMath.mulDiv(uint256(-amountSpecified), (1e6 - actualFee), 1e6), 1 wei
+                uint256(int256(result.amount1())),
+                FullMath.mulDiv(uint256(-amountSpecified), (1e6 - actualFee), 1e6),
+                1 wei
             );
         }
     }
