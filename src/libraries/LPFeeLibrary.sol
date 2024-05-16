@@ -49,4 +49,11 @@ library LPFeeLibrary {
     function removeOverrideFlag(uint24 self) internal pure returns (uint24) {
         return self & FEE_MASK;
     }
+
+    /// @notice Removes the override flag and validates the fee (reverts if the fee is too large)
+    function removeOverrideAndValidate(uint24 self) internal pure returns (uint24) {
+        uint24 fee = self.removeOverrideFlag();
+        fee.validate();
+        return fee;
+    }
 }

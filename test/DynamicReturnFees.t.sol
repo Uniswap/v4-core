@@ -60,14 +60,23 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
     }
 
     function test_fuzz_dynamicReturnSwapFee(uint24 fee) public {
+        // hook will handle adding the override flag
         dynamicReturnFeesHook.setFee(fee);
 
-        int256 amountSpecified = -10000;
-        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
+        uint24 actualFee = fee.removeOverrideFlag();
 
+        int256 amountSpecified = -10000;
+        BalanceDelta result;
+        if (actualFee > LPFeeLibrary.MAX_LP_FEE) {
+            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+            result = swap(key, true, amountSpecified, ZERO_BYTES);
+            return;
+        } else {
+            result = swap(key, true, amountSpecified, ZERO_BYTES);
+        }
+        // BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
         assertEq(result.amount0(), amountSpecified);
 
-        uint24 actualFee = fee.removeOverrideFlag();
         if (actualFee > LPFeeLibrary.MAX_LP_FEE) {
             // if the fee is too large, the fee from beforeSwap is not used (and remains at 0 -- the default value)
             assertApproxEqAbs(uint256(int256(result.amount1())), uint256(int256(-result.amount0())), 1 wei);
@@ -150,18 +159,16 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolSwapFee(key), initialFee);
     }
 
-    function test_dynamicReturnSwapFee_notUsedWithTooLargeFee() public {
+    function test_dynamicReturnSwapFee_revertIfFeeTooLarge() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
+        // hook adds the override flag
         dynamicReturnFeesHook.setFee(1000001);
 
         // a large fee is not used
         int256 amountSpecified = -10000;
-        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
-
-        // after swapping ~1:1 on 0% fee, the amount out (amount1) should be equal to amount specified
-        assertEq(result.amount0(), amountSpecified);
-        assertApproxEqAbs(uint256(int256(result.amount1())), uint256(int256(-result.amount0())), 1 wei);
+        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        swap(key, true, amountSpecified, ZERO_BYTES);
     }
 
     function _fetchPoolSwapFee(PoolKey memory _key) internal view returns (uint256 swapFee) {

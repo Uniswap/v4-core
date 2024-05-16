@@ -320,13 +320,8 @@ library Pool {
         state.liquidity = cache.liquidityStart;
 
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
-        uint24 lpFee;
-        if (!params.lpFeeOverride.isOverride()) {
-            lpFee = slot0Start.lpFee;
-        } else {
-            lpFee = params.lpFeeOverride.removeOverrideFlag();
-            if (!lpFee.isValid()) lpFee = slot0Start.lpFee;
-        }
+        uint24 lpFee =
+            params.lpFeeOverride.isOverride() ? params.lpFeeOverride.removeOverrideAndValidate() : slot0Start.lpFee;
 
         swapFee = cache.protocolFee == 0 ? lpFee : uint24(cache.protocolFee).calculateSwapFee(lpFee);
 
