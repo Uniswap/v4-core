@@ -27,7 +27,7 @@
     "typescript": "^3.7.3"
   },
   "scripts": {
-    "forge-test-getSqrtRatioAtTick": "npx ts-node src/getSqrtRatioAtTick.ts",
-    "forge-test-getTickAtSqrtRatio": "npx ts-node src/getTickAtSqrtRatio.ts"
+    "forge-test-getSqrtPriceAtTick": "npx ts-node src/getSqrtPriceAtTick.ts",
+    "forge-test-getTickAtSqrtPrice": "npx ts-node src/getTickAtSqrtPrice.ts"
   }
 }

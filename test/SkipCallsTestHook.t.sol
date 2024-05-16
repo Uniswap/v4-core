@@ -22,7 +22,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
     IPoolManager.SwapParams swapParams =
-        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
     PoolSwapTest.TestSettings testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -35,7 +35,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         assertEq(skipCallsTestHook.counter(), 0);
 
-        (key,) = initPool(currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function approveAndAddLiquidity(SkipCallsTestHook skipCallsTestHook) private {

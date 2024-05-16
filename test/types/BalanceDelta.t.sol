@@ -130,4 +130,10 @@ contract TestBalanceDelta is Test {
         if (a == c && b == d) assertTrue(isEqual);
         else assertFalse(isEqual);
     }
+
+    function test_fuzz_neq(int128 a, int128 b, int128 c, int128 d) public pure {
+        bool isNotEqual = (toBalanceDelta(a, b) != toBalanceDelta(c, d));
+        if (a != c || b != d) assertTrue(isNotEqual);
+        else assertFalse(isNotEqual);
+    }
 }
