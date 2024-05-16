@@ -23,10 +23,10 @@ library LPFeeLibrary {
         if (self > MAX_LP_FEE) revert FeeTooLarge();
     }
 
-    function getInitialLPFee(uint24 self) internal pure returns (uint24 lpFee) {
+    function getInitialLPFee(uint24 self) internal pure returns (uint24) {
         // the initial fee for a dynamic fee pool is 0
         if (self.isDynamicFee()) return 0;
-        lpFee = self & STATIC_FEE_MASK;
-        lpFee.validate();
+        self.validate();
+        return self;
     }
 }
