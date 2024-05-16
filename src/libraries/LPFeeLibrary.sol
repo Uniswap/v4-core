@@ -35,15 +35,17 @@ library LPFeeLibrary {
         lpFee.validate();
     }
 
-    /// @dev converts a fee (returned from beforeSwap) to an override fee by setting the top bit of the uint24
+    /// @notice converts a fee to an override fee (to be returned by beforeSwap) by setting the top bit of the uint24
     function asOverrideFee(uint24 self) internal pure returns (uint24) {
         return self | BEFORE_SWAP_FEE_OVERRIDE_FLAG;
     }
 
+    /// @notice returns true if the fee has the override flag set (top bit of the uint24)
     function isOverride(uint24 self) internal pure returns (bool) {
         return self & BEFORE_SWAP_FEE_OVERRIDE_FLAG != 0;
     }
 
+    /// @notice returns a fee with the override flag removed
     function removeOverrideFlag(uint24 self) internal pure returns (uint24) {
         return self & FEE_MASK;
     }
