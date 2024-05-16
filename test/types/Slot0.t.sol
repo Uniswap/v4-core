@@ -10,9 +10,13 @@ contract TestSlot0 is Test {
         assertEq(Slot0Library.UINT24_MASK, type(uint24).max);
     }
 
-    function test_slot0_fuzz_pack_unpack(uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee) public pure {
+    function test_slot0_fuzz_pack_unpack(uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
+        public
+        pure
+    {
         // pack starting from "lowest" field
-        Slot0 _slot0 = Slot0.wrap(bytes32(0)).setSqrtPriceX96(sqrtPriceX96).setTick(tick).setProtocolFee(protocolFee).setLpFee(lpFee);
+        Slot0 _slot0 = Slot0.wrap(bytes32(0)).setSqrtPriceX96(sqrtPriceX96).setTick(tick).setProtocolFee(protocolFee)
+            .setLpFee(lpFee);
 
         assertEq(_slot0.sqrtPriceX96(), sqrtPriceX96);
         assertEq(_slot0.tick(), tick);
@@ -20,7 +24,9 @@ contract TestSlot0 is Test {
         assertEq(_slot0.lpFee(), lpFee);
 
         // pack starting from "highest" field
-        _slot0 = Slot0.wrap(bytes32(0)).setLpFee(lpFee).setProtocolFee(protocolFee).setTick(tick).setSqrtPriceX96(sqrtPriceX96);
+        _slot0 = Slot0.wrap(bytes32(0)).setLpFee(lpFee).setProtocolFee(protocolFee).setTick(tick).setSqrtPriceX96(
+            sqrtPriceX96
+        );
 
         assertEq(_slot0.sqrtPriceX96(), sqrtPriceX96);
         assertEq(_slot0.tick(), tick);

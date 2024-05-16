@@ -102,12 +102,8 @@ library Pool {
 
         tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
-        self.slot0 = 
-            Slot0.wrap(bytes32(0))
-                .setSqrtPriceX96(sqrtPriceX96)
-                .setTick(tick)
-                .setProtocolFee(protocolFee)
-                .setLpFee(lpFee);
+        self.slot0 = Slot0.wrap(bytes32(0)).setSqrtPriceX96(sqrtPriceX96).setTick(tick).setProtocolFee(protocolFee)
+            .setLpFee(lpFee);
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
@@ -300,7 +296,9 @@ library Pool {
 
         SwapCache memory cache = SwapCache({
             liquidityStart: self.liquidity,
-            protocolFee: zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee()
+            protocolFee: zeroForOne
+                ? slot0Start.protocolFee().getZeroForOneFee()
+                : slot0Start.protocolFee().getOneForZeroFee()
         });
 
         state.amountSpecifiedRemaining = params.amountSpecified;

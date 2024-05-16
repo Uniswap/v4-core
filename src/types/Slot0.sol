@@ -1,25 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/** @dev Slot0 is a packed version of solidity structure. 
+/**
+ * @dev Slot0 is a packed version of solidity structure.
  * Using the packaged version saves gas by not storing the structure fields in memory slots.
- * 
+ *
  * Layout:
  * 24 bits empty | 24 bits lpFee | 24 bits protocolFee | 24 bits tick | 160 bits sqrtPriceX96
- * 
+ *
  * Fields in the direction from the least significant bit:
- * 
+ *
  * The current price
  * uint160 sqrtPriceX96;
- * 
+ *
  * The current tick
  * int24 tick;
- * 
+ *
  * Protocol fee, expressed in hundredths of a bip, upper 12 bits are for 1->0, and the lower 12 are for 0->1
  * the maximum is 1000 - meaning the maximum protocol fee is 0.1%
  * the protocolFee is taken from the input first, then the lpFee is taken from the remaining input
  * uint24 protocolFee;
- * 
+ *
  * Used for the lp fee, either static at initialize or dynamic via hook
  * uint24 lpFee;
  */
