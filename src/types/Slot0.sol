@@ -4,6 +4,9 @@ pragma solidity ^0.8.20;
 /** @dev Slot0 is a packed version of solidity structure. 
  * Using the packaged version saves gas by not storing the structure fields in memory slots.
  * 
+ * Layout:
+ * 24 bits empty | 24 bits lpFee | 24 bits protocolFee | 24 bits tick | 160 bits sqrtPriceX96
+ * 
  * Fields in the direction from the least significant bit:
  * 
  * The current price
@@ -19,8 +22,6 @@ pragma solidity ^0.8.20;
  * 
  * Used for the lp fee, either static at initialize or dynamic via hook
  * uint24 lpFee;
- * 
- * Leftmost 24 bits - free space.
  */
 type Slot0 is bytes32;
 
