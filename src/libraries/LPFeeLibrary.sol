@@ -36,10 +36,8 @@ library LPFeeLibrary {
     }
 
     /// @dev converts a fee (returned from beforeSwap) to an override fee by setting the top bit of the uint24
-    function asOverrideFee(uint24 self) internal pure returns (uint24 lpFeeOverride) {
-        assembly {
-            lpFeeOverride := or(self, BEFORE_SWAP_FEE_OVERRIDE_FLAG)
-        }
+    function asOverrideFee(uint24 self) internal pure returns (uint24) {
+        return self | BEFORE_SWAP_FEE_OVERRIDE_FLAG;
     }
 
     function isOverride(uint24 self) internal pure returns (bool) {
