@@ -58,10 +58,12 @@ contract TestCurrency is Test {
     }
 
     function test_fuzz_balanceOf_native(uint256 amount) public {
+        uint256 currencyBalanceBefore = address(currencyTest).balance;
         amount = bound(amount, 0, address(currencyTest).balance);
         currencyTest.transfer(nativeCurrency, otherAddress, amount);
 
         assertEq(otherAddress.balance, amount);
+        assertEq(address(currencyTest).balance, currencyBalanceBefore - amount);
         assertEq(otherAddress.balance, currencyTest.balanceOf(nativeCurrency, otherAddress));
     }
 
@@ -69,6 +71,7 @@ contract TestCurrency is Test {
         amount = bound(amount, 0, initialERC20Balance);
         currencyTest.transfer(erc20Currency, otherAddress, amount);
         assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), amount);
+        assertEq(currencyTest.balanceOfSelf(erc20Currency), initialERC20Balance - amount);
         assertEq(
             MockERC20(Currency.unwrap(erc20Currency)).balanceOf(otherAddress),
             currencyTest.balanceOf(erc20Currency, otherAddress)
@@ -110,10 +113,12 @@ contract TestCurrency is Test {
 
     function test_fuzz_transfer_native(uint256 amount) public {
         uint256 balanceBefore = otherAddress.balance;
+        uint256 contractBalanceBefore = address(currencyTest).balance;
 
-        if (amount <= address(currencyTest).balance) {
+        if (amount <= contractBalanceBefore) {
             currencyTest.transfer(nativeCurrency, otherAddress, amount);
-            assertEq(otherAddress.balance - balanceBefore, amount);
+            assertEq(otherAddress.balance, balanceBefore + amount);
+            assertEq(address(currencyTest).balance, contractBalanceBefore - amount);
         } else {
             vm.expectRevert(CurrencyLibrary.NativeTransferFailed.selector);
             currencyTest.transfer(nativeCurrency, otherAddress, amount);
@@ -126,7 +131,10 @@ contract TestCurrency is Test {
 
         if (amount <= initialERC20Balance) {
             currencyTest.transfer(erc20Currency, otherAddress, amount);
-            assertEq(currencyTest.balanceOf(erc20Currency, otherAddress) - balanceBefore, amount);
+            assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), balanceBefore + amount);
+            assertEq(
+                MockERC20(Currency.unwrap(erc20Currency)).balanceOf(address(currencyTest)), initialERC20Balance - amount
+            );
         } else {
             vm.expectRevert(CurrencyLibrary.ERC20TransferFailed.selector);
             currencyTest.transfer(erc20Currency, otherAddress, amount);
