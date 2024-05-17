@@ -29,8 +29,8 @@ type Slot0 is bytes32;
 using Slot0Library for Slot0 global;
 
 library Slot0Library {
-    uint160 internal constant UINT160_MASK = 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-    uint24 internal constant UINT24_MASK = 0xFFFFFF;
+    uint160 internal constant MASK_160_BITS = 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    uint24 internal constant MASK_24_BITS = 0xFFFFFF;
 
     uint8 internal constant TICK_OFFSET = 160;
     uint8 internal constant PROTOCOL_FEE_OFFSET = 184;
@@ -40,7 +40,7 @@ library Slot0Library {
     function sqrtPriceX96(Slot0 _packed) internal pure returns (uint160 _sqrtPriceX96) {
         /// @solidity memory-safe-assembly
         assembly {
-            _sqrtPriceX96 := and(UINT160_MASK, _packed)
+            _sqrtPriceX96 := and(MASK_160_BITS, _packed)
         }
     }
 
@@ -54,14 +54,14 @@ library Slot0Library {
     function protocolFee(Slot0 _packed) internal pure returns (uint24 _protocolFee) {
         /// @solidity memory-safe-assembly
         assembly {
-            _protocolFee := and(UINT24_MASK, shr(PROTOCOL_FEE_OFFSET, _packed))
+            _protocolFee := and(MASK_24_BITS, shr(PROTOCOL_FEE_OFFSET, _packed))
         }
     }
 
     function lpFee(Slot0 _packed) internal pure returns (uint24 _lpFee) {
         /// @solidity memory-safe-assembly
         assembly {
-            _lpFee := and(UINT24_MASK, shr(LP_FEE_OFFSET, _packed))
+            _lpFee := and(MASK_24_BITS, shr(LP_FEE_OFFSET, _packed))
         }
     }
 
@@ -69,14 +69,14 @@ library Slot0Library {
     function setSqrtPriceX96(Slot0 _packed, uint160 _sqrtPriceX96) internal pure returns (Slot0 _result) {
         /// @solidity memory-safe-assembly
         assembly {
-            _result := or(and(not(UINT160_MASK), _packed), and(UINT160_MASK, _sqrtPriceX96))
+            _result := or(and(not(MASK_160_BITS), _packed), and(MASK_160_BITS, _sqrtPriceX96))
         }
     }
 
     function setTick(Slot0 _packed, int24 _tick) internal pure returns (Slot0 _result) {
         /// @solidity memory-safe-assembly
         assembly {
-            _result := or(and(not(shl(TICK_OFFSET, UINT24_MASK)), _packed), shl(TICK_OFFSET, and(UINT24_MASK, _tick)))
+            _result := or(and(not(shl(TICK_OFFSET, MASK_24_BITS)), _packed), shl(TICK_OFFSET, and(MASK_24_BITS, _tick)))
         }
     }
 
@@ -85,8 +85,8 @@ library Slot0Library {
         assembly {
             _result :=
                 or(
-                    and(not(shl(PROTOCOL_FEE_OFFSET, UINT24_MASK)), _packed),
-                    shl(PROTOCOL_FEE_OFFSET, and(UINT24_MASK, _protocolFee))
+                    and(not(shl(PROTOCOL_FEE_OFFSET, MASK_24_BITS)), _packed),
+                    shl(PROTOCOL_FEE_OFFSET, and(MASK_24_BITS, _protocolFee))
                 )
         }
     }
@@ -95,7 +95,7 @@ library Slot0Library {
         /// @solidity memory-safe-assembly
         assembly {
             _result :=
-                or(and(not(shl(LP_FEE_OFFSET, UINT24_MASK)), _packed), shl(LP_FEE_OFFSET, and(UINT24_MASK, _lpFee)))
+                or(and(not(shl(LP_FEE_OFFSET, MASK_24_BITS)), _packed), shl(LP_FEE_OFFSET, and(MASK_24_BITS, _lpFee)))
         }
     }
 }

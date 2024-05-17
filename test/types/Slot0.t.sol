@@ -6,8 +6,8 @@ import {Slot0, Slot0Library} from "../../src/types/Slot0.sol";
 
 contract TestSlot0 is Test {
     function test_slot0_constants_masks() public pure {
-        assertEq(Slot0Library.UINT160_MASK, type(uint160).max);
-        assertEq(Slot0Library.UINT24_MASK, type(uint24).max);
+        assertEq(Slot0Library.MASK_160_BITS, type(uint160).max);
+        assertEq(Slot0Library.MASK_24_BITS, type(uint24).max);
     }
 
     function test_fuzz_slot0_pack_unpack(uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
