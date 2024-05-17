@@ -25,29 +25,28 @@ contract PositionTest is Test {
 
     function test_fuzz_update(
         int128 liquidityDelta,
-        uint256 feeGrowthInside0X128,
-        uint256 feeGrowthInside1X128,
-        uint128 liquidity
+        Position.Info memory pos,
+        uint256 newFeeGrowthInside0X128,
+        uint256 newFeeGrowthInside1X128
     ) public {
-        // grab a position and set its values
         Position.Info storage position = positions[0];
-        position.liquidity = liquidity;
-        position.feeGrowthInside0LastX128 = feeGrowthInside0X128;
-        position.feeGrowthInside1LastX128 = feeGrowthInside1X128;
+        position.liquidity = pos.liquidity;
+        position.feeGrowthInside0LastX128 = pos.feeGrowthInside0LastX128;
+        position.feeGrowthInside1LastX128 = pos.feeGrowthInside1LastX128;
+
+        uint128 oldLiquidity = position.liquidity;
+    
         if (position.liquidity == 0 && liquidityDelta == 0) {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         }
-        uint128 oldLiquidity = position.liquidity;
-        uint256 oldFeeGrowthInside0X128 = position.feeGrowthInside0LastX128;
-        uint256 oldFeeGrowthInside1X128 = position.feeGrowthInside1LastX128;
 
         // new liquidity cannot overflow uint128
-        uint256 newLiquidity = uint256(int256(uint256(oldLiquidity)) + int256(liquidityDelta));
+        uint256 newLiquidity = uint256(int256(uint256(position.liquidity)) + int256(liquidityDelta));
         if (newLiquidity > type(uint128).max) {
             vm.expectRevert(SafeCast.SafeCastOverflow.selector);
         }
 
-        Position.update(position, liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
+        Position.update(position, liquidityDelta, newFeeGrowthInside0X128, newFeeGrowthInside1X128);
         if (liquidityDelta == 0) {
             assertEq(position.liquidity, oldLiquidity);
         } else if (liquidityDelta > 0) {
@@ -56,7 +55,7 @@ contract PositionTest is Test {
             assertLt(position.liquidity, oldLiquidity);
         }
 
-        assertEq(position.feeGrowthInside0LastX128, oldFeeGrowthInside0X128);
-        assertEq(position.feeGrowthInside1LastX128, oldFeeGrowthInside1X128);
+        assertEq(position.feeGrowthInside0LastX128, newFeeGrowthInside0X128);
+        assertEq(position.feeGrowthInside1LastX128, newFeeGrowthInside1X128);
     }
 }
