@@ -250,13 +250,6 @@ library Pool {
         }
     }
 
-    struct SwapCache {
-        // liquidity at the beginning of the swap
-        uint128 liquidityStart;
-        // the protocol fee for the input token
-        uint16 protocolFee;
-    }
-
     // the top level state of the swap, the results of which are recorded in storage at the end
     struct SwapState {
         // the amount remaining to be swapped in/out of the input/output asset
@@ -307,27 +300,24 @@ library Pool {
         Slot0 memory slot0Start = self.slot0;
         bool zeroForOne = params.zeroForOne;
 
-        SwapCache memory cache = SwapCache({
-            liquidityStart: self.liquidity,
-            protocolFee: zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee()
-        });
-
         uint128 liquidityStart = self.liquidity;
         uint256 protocolFee =
             zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee();
 
-        state.amountSpecifiedRemaining = params.amountSpecified;
-        state.amountCalculated = 0;
-        state.sqrtPriceX96 = slot0Start.sqrtPriceX96;
-        state.tick = slot0Start.tick;
-        state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
-        state.liquidity = cache.liquidityStart;
+        state = SwapState({
+            amountSpecifiedRemaining: params.amountSpecified,
+            amountCalculated: 0,
+            sqrtPriceX96: slot0Start.sqrtPriceX96,
+            tick: slot0Start.tick,
+            feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
+            liquidity: liquidityStart
+        });
 
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
-        uint24 lpFee =
+        slot0Start.lpFee =
             params.lpFeeOverride.isOverride() ? params.lpFeeOverride.removeOverrideAndValidate() : slot0Start.lpFee;
 
-        swapFee = cache.protocolFee == 0 ? lpFee : uint24(cache.protocolFee).calculateSwapFee(lpFee);
+        swapFee = protocolFee == 0 ? slot0Start.lpFee : uint24(protocolFee).calculateSwapFee(slot0Start.lpFee);
 
         bool exactInput = params.amountSpecified < 0;
 
