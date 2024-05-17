@@ -18,7 +18,7 @@ library ProtocolFeeLibrary {
         return uint16(self >> 12);
     }
 
-    function validate(uint24 self) internal pure returns (bool) {
+    function isValidProtocolFee(uint24 self) internal pure returns (bool) {
         if (self != 0) {
             uint16 fee0 = getZeroForOneFee(self);
             uint16 fee1 = getOneForZeroFee(self);
