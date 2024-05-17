@@ -55,7 +55,7 @@ library TickMath {
                 // mask = 0 if tick >= 0 else -1
                 let mask := sar(255, tick)
                 // If tick >= 0, |tick| = tick = 0 ^ tick
-                // If tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = -1 ^ (tick - 1)
+                // If tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
                 // Either case, |tick| = mask ^ (tick + mask)
                 absTick := xor(mask, add(mask, tick))
                 // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
@@ -66,19 +66,12 @@ library TickMath {
                 }
             }
 
-            // Equivalent: price = 2**128 / sqrt(1.0001) if absTick & 0x1 else 1 << 128
+            // Equivalent to:
+            //     price = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
+            //     or price = int(2**128 / sqrt(1.0001)) if (absTick & 0x1) else 1 << 128
             uint256 price;
             assembly {
-                price :=
-                    and(
-                        shr(
-                            // 128 if absTick & 0x1 else 0
-                            shl(7, and(absTick, 0x1)),
-                            // upper 128 bits of 2**256 / sqrt(1.0001) where the 128th bit is 1
-                            0xfffcb933bd6fad37aa2d162d1a59400100000000000000000000000000000000
-                        ),
-                        sub(shl(130, 1), 1) // mask lower 129 bits
-                    )
+                price := xor(shl(128, 1), mul(xor(shl(128, 1), 0xfffcb933bd6fad37aa2d162d1a594001), and(absTick, 0x1)))
             }
             // Iterate through 1th to 19th bit of absTick because MAX_TICK < 2**20
             // Equivalent to:
@@ -114,7 +107,7 @@ library TickMath {
             // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
             // we round up in the division so getTickAtSqrtPrice of the output price is always consistent
             assembly {
-                sqrtPriceX96 := shr(32, add(price, 0xffffffff))
+                sqrtPriceX96 := shr(32, add(price, sub(shl(32, 1), 1)))
             }
         }
     }
@@ -126,7 +119,7 @@ library TickMath {
     /// @return tick The greatest tick for which the price is less than or equal to the input price
     function getTickAtSqrtPrice(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
         // Equivalent: if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
-        // second inequality must be >= because the price can never reach the price at the max tick
+        // second inequality must be < because the price can never reach the price at the max tick
         /// @solidity memory-safe-assembly
         assembly {
             // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
