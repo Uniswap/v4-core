@@ -200,7 +200,7 @@ contract Deployers {
     // Deploys the manager, all test routers, and sets up 2 pools: with and without native
     function initializeManagerRoutersAndPoolsWithLiq(IHooks hooks) internal {
         deployFreshManagerAndRouters();
-        // sets the global currencyies and key
+        // sets the global currencies and key
         deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
         nestedActionRouter.executor().setKey(key);

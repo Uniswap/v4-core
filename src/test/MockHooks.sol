@@ -97,12 +97,15 @@ contract MockHooks is IHooks {
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata hookData)
         external
         override
-        returns (bytes4, BeforeSwapDelta)
+        returns (bytes4, BeforeSwapDelta, uint24)
     {
         beforeSwapData = hookData;
         bytes4 selector = MockHooks.beforeSwap.selector;
-        return
-            (returnValues[selector] == bytes4(0) ? selector : returnValues[selector], BeforeSwapDeltaLibrary.ZERO_DELTA);
+        return (
+            returnValues[selector] == bytes4(0) ? selector : returnValues[selector],
+            BeforeSwapDeltaLibrary.ZERO_DELTA,
+            0
+        );
     }
 
     function afterSwap(
