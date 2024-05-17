@@ -152,9 +152,9 @@ library TickMath {
 
         // 2**(msb - 95) > sqrtPrice >= 2**(msb - 96)
         // the integer part of log_2(sqrtPrice) * 2**64 = (msb - 96) << 64, 8.64 number
-        int256 log_2X64;
+        int256 log_2;
         assembly {
-            log_2X64 := shl(64, sub(msb, 96))
+            log_2 := shl(64, sub(msb, 96))
 
             // Get the first 128 significant figures of `sqrtPriceX96`.
             // r = sqrtPriceX96 / 2**(msb - 127), where 2**128 > r >= 2**127
@@ -162,85 +162,77 @@ library TickMath {
             // Shift left first because 160 > msb >= 32. If we shift right first, we'll lose precision.
             let r := shr(sub(msb, 31), shl(96, sqrtPriceX96))
 
-            // Check whether x >= sqrt(2) * 2**127 for 2**128 > x >= 2**127
-            // This Yul function is declared but not used. Instead, it is inlined 14 times below.
-            // However, due to solc's quirkiness, removing it results in higher gas.
-            function ge_sqrt2X127(x) -> y, f {
-                // 2**256 > x**2 >= 2**254
-                let square := mul(x, x)
-                // f = (x**2 >= 2**255)
-                f := slt(square, 0)
-                // y = x**2 >> 128 if x**2 >= 2**255 else x**2 >> 127
-                y := shr(add(127, f), square)
-            }
-
-            // Approximate `log_2X64` to 14 binary digits after decimal
+            // Approximate `log_2` to 14 binary digits after decimal
+            // Check whether r >= sqrt(2) * 2**127 for 2**128 > r >= 2**127
+            // 2**256 > square >= 2**254
             let square := mul(r, r)
+            // f := square >= 2**255
             let f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(63, f), log_2X64)
+            // r := square >> 128 if square >= 2**255 else square >> 127
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(63, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(62, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(62, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(61, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(61, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(60, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(60, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(59, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(59, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(58, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(58, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(57, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(57, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(56, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(56, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(55, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(55, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(54, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(54, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(53, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(53, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(52, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(52, f), log_2)
 
             square := mul(r, r)
             f := slt(square, 0)
-            r := shr(add(127, f), square)
-            log_2X64 := or(shl(51, f), log_2X64)
+            r := shr(127, shr(f, square))
+            log_2 := or(shl(51, f), log_2)
 
-            log_2X64 := or(shl(50, slt(mul(r, r), 0)), log_2X64)
+            log_2 := or(shl(50, slt(mul(r, r), 0)), log_2)
         }
 
         // sqrtPrice = sqrt(1.0001^tick)
@@ -249,7 +241,7 @@ library TickMath {
         int24 tickLow;
         int24 tickHi;
         assembly {
-            let log_sqrt10001 := mul(log_2X64, 255738958999603826347141) // 128.128 number
+            let log_sqrt10001 := mul(log_2, 255738958999603826347141) // 128.128 number
             tickLow := sar(128, sub(log_sqrt10001, 3402992956809132418596140100660247210))
             tickHi := sar(128, add(log_sqrt10001, 291339464771989622907027621153398088495))
         }
