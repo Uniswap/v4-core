@@ -12,7 +12,7 @@ library LPFeeLibrary {
     uint24 public constant FEE_MASK = 0x7FFFFF;
     uint24 public constant OVERRIDE_MASK = 0xBFFFFF;
 
-    // the top bit of the fee is used to signal if a Pool's is dynamic
+    // the top bit of the fee in a PoolKey is used to signal if a Pool's LP fee is dynamic
     uint24 public constant DYNAMIC_FEE_FLAG = 0x800000;
 
     // the second bit of the fee (returned by beforeSwap) is used to signal if the stored fee should be overridden
