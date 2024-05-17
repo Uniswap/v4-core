@@ -24,31 +24,31 @@ contract ProtocolFeeLibraryTest is Test {
         assertEq(ProtocolFeeLibrary.getOneForZeroFee(fee), fee >> 12);
     }
 
-    function test_validate_fee() public pure {
+    function test_isValidProtocolFee_fee() public pure {
         uint24 fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE + 1) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
-        assertFalse(ProtocolFeeLibrary.validate(fee));
+        assertFalse(ProtocolFeeLibrary.isValidProtocolFee(fee));
 
         fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE) << 12 | (ProtocolFeeLibrary.MAX_PROTOCOL_FEE + 1);
-        assertFalse(ProtocolFeeLibrary.validate(fee));
+        assertFalse(ProtocolFeeLibrary.isValidProtocolFee(fee));
 
         fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE + 1) << 12 | (ProtocolFeeLibrary.MAX_PROTOCOL_FEE + 1);
-        assertFalse(ProtocolFeeLibrary.validate(fee));
+        assertFalse(ProtocolFeeLibrary.isValidProtocolFee(fee));
 
         fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
-        assertTrue(ProtocolFeeLibrary.validate(fee));
+        assertTrue(ProtocolFeeLibrary.isValidProtocolFee(fee));
 
         fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE - 1) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE - 1;
-        assertTrue(ProtocolFeeLibrary.validate(fee));
+        assertTrue(ProtocolFeeLibrary.isValidProtocolFee(fee));
 
         fee = uint24(0) << 12 | uint24(0);
-        assertTrue(ProtocolFeeLibrary.validate(fee));
+        assertTrue(ProtocolFeeLibrary.isValidProtocolFee(fee));
     }
 
-    function test_fuzz_validate(uint24 fee) public pure {
+    function test_fuzz_isValidProtocolFee(uint24 fee) public pure {
         if ((fee >> 12 > ProtocolFeeLibrary.MAX_PROTOCOL_FEE) || (fee % 4096 > ProtocolFeeLibrary.MAX_PROTOCOL_FEE)) {
-            assertFalse(ProtocolFeeLibrary.validate(fee));
+            assertFalse(ProtocolFeeLibrary.isValidProtocolFee(fee));
         } else {
-            assertTrue(ProtocolFeeLibrary.validate(fee));
+            assertTrue(ProtocolFeeLibrary.isValidProtocolFee(fee));
         }
     }
 
