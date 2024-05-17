@@ -218,8 +218,10 @@ contract SwapMathTest is Test, GasSnapshot {
                 absAmtRemaining = uint256(type(int256).max) + 1;
             } else if (amountRemaining < 0) {
                 absAmtRemaining = uint256(-amountRemaining);
+            } else {
+                absAmtRemaining = uint256(amountRemaining);
             }
-            if (amountRemaining > 0) assertEq(amountOut, uint256(amountRemaining));
+            if (amountRemaining > 0) assertEq(amountOut, absAmtRemaining);
             else assertEq(amountIn + feeAmount, absAmtRemaining);
         }
 
