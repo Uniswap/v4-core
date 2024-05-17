@@ -21,24 +21,24 @@ contract ProtocolFeeLibraryTest is Test {
             (fee >> 12 > ProtocolFeeLibrary.MAX_PROTOCOL_FEE)
                 || (fee & (4096 - 1) > ProtocolFeeLibrary.MAX_PROTOCOL_FEE)
         ) {
-            assertFalse(ProtocolFeeLibrary.validate(fee));
+            assertFalse(ProtocolFeeLibrary.isValidProtocolFee(fee));
         } else {
-            assertTrue(ProtocolFeeLibrary.validate(fee));
+            assertTrue(ProtocolFeeLibrary.isValidProtocolFee(fee));
         }
     }
 
     function test_validate() public pure {
         uint24 fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE + 1) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
-        assertFalse(ProtocolFeeLibrary.validate(fee));
+        assertFalse(ProtocolFeeLibrary.isValidProtocolFee(fee));
 
         fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE) << 12 | (ProtocolFeeLibrary.MAX_PROTOCOL_FEE + 1);
-        assertFalse(ProtocolFeeLibrary.validate(fee));
+        assertFalse(ProtocolFeeLibrary.isValidProtocolFee(fee));
 
         fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE + 1) << 12 | (ProtocolFeeLibrary.MAX_PROTOCOL_FEE + 1);
-        assertFalse(ProtocolFeeLibrary.validate(fee));
+        assertFalse(ProtocolFeeLibrary.isValidProtocolFee(fee));
 
         fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
-        assertTrue(ProtocolFeeLibrary.validate(fee));
+        assertTrue(ProtocolFeeLibrary.isValidProtocolFee(fee));
     }
 
     function test_fuzz_calculateSwapFeeDoesNotOverflow(uint24 self, uint24 lpFee) public pure {
