@@ -169,10 +169,12 @@ contract PoolTest is Test {
 
     function test_fuzz_tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) public {
         vm.assume(tickSpacing > 0);
-        // assert v3 math is the same
+        // v3 math
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
         int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
         uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
-        assertEq(type(uint128).max / numTicks, Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing));
+        // the liquidity in v3 is always greater than or equal to the liquidity in v4
+        // should be the same
+        assertGe(type(uint128).max / numTicks, Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing));
     }
 }
