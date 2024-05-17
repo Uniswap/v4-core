@@ -23,8 +23,8 @@ library ProtocolFeeLibrary {
     function isValidProtocolFee(uint24 self) internal pure returns (bool success) {
         // Equivalent to: self == 0 ? true : (getZeroForOneFee(self) <= MAX_PROTOCOL_FEE && getOneForZeroFee(self) <= MAX_PROTOCOL_FEE)
         assembly {
-            let isZeroForOneFeeOk := slt(sub(and(self, 0xfff), FEE_0_THRESHOLD), 0)
-            let isOneForZeroFeeOk := slt(sub(self, FEE_1_THRESHOLD), 0)
+            let isZeroForOneFeeOk := lt(and(self, 0xfff), FEE_0_THRESHOLD)
+            let isOneForZeroFeeOk := lt(self, FEE_1_THRESHOLD)
             success := or(iszero(self), and(isZeroForOneFeeOk, isOneForZeroFeeOk))
         }
     }
