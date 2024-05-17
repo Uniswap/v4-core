@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  forge-tests:
+    name: Forge Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache-dependency-path: './test/js-scripts'
+          cache: 'yarn'
+
+      - run: yarn
+        working-directory: ./test/js-scripts
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Build
+        run: forge build
+        env:
+          FOUNDRY_PROFILE: ci
+
+      - name: Run tests
+        run: forge test --isolate -vvv
+        env:
+          FOUNDRY_PROFILE: ci
+          FORGE_SNAPSHOT_CHECK: true
+

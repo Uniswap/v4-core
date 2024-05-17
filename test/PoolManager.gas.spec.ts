@@ -19,7 +19,7 @@
 //   getMaxTick,
 //   MaxUint128,
 //   SwapToPriceFunction,
-//   MIN_SQRT_RATIO,
+//   MIN_SQRT_PRICE,
 //   getPoolId,
 // } from './shared/utilities'
 //
@@ -85,7 +85,7 @@
 //           {
 //             zeroForOne: true,
 //             amountSpecified: amount,
-//             sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
+//             sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_PRICE.add(1),
 //           },
 //           {
 //             withdrawTokens: true,
@@ -374,7 +374,7 @@
 //           {
 //             zeroForOne: true,
 //             amountSpecified: amount,
-//             sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_RATIO.add(1),
+//             sqrtPriceLimitX96: sqrtPriceLimitX96 ?? MIN_SQRT_PRICE.add(1),
 //           },
 //           {
 //             withdrawTokens: true,

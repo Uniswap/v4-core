@@ -24,19 +24,19 @@ contract TestCurrency is Test {
         erc20Currency = Currency.wrap(address(token));
     }
 
-    function test_fuzz_equals(address a, address b) public {
+    function test_fuzz_equals(address a, address b) public pure {
         assertEq(a == b, Currency.wrap(a) == Currency.wrap(b));
     }
 
-    function test_fuzz_greaterThan(address a, address b) public {
+    function test_fuzz_greaterThan(address a, address b) public pure {
         assertEq(a > b, Currency.wrap(a) > Currency.wrap(b));
     }
 
-    function test_fuzz_lessThan(address a, address b) public {
+    function test_fuzz_lessThan(address a, address b) public pure {
         assertEq(a < b, Currency.wrap(a) < Currency.wrap(b));
     }
 
-    function test_fuzz_greaterThanOrEqualTo(address a, address b) public {
+    function test_fuzz_greaterThanOrEqualTo(address a, address b) public pure {
         assertEq(a >= b, Currency.wrap(a) >= Currency.wrap(b));
     }
 
@@ -65,36 +65,36 @@ contract TestCurrency is Test {
         assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), amount);
     }
 
-    function test_isNative_native_returnsTrue() public {
+    function test_isNative_native_returnsTrue() public view {
         assertEq(currencyTest.isNative(nativeCurrency), true);
     }
 
-    function test_isNative_token_returnsFalse() public {
+    function test_isNative_token_returnsFalse() public view {
         assertEq(currencyTest.isNative(erc20Currency), false);
     }
 
-    function test_fuzz_isNative(Currency currency) public {
+    function test_fuzz_isNative(Currency currency) public view {
         assertEq(currencyTest.isNative(currency), (Currency.unwrap(currency) == address(0)));
     }
 
-    function test_toId_nativeReturns0() public {
+    function test_toId_nativeReturns0() public view {
         assertEq(currencyTest.toId(nativeCurrency), uint256(0));
     }
 
-    function test_fuzz_toId_returnsCurrencyAsUint256(Currency currency) public {
+    function test_fuzz_toId_returnsCurrencyAsUint256(Currency currency) public view {
         assertEq(currencyTest.toId(currency), uint256(uint160(Currency.unwrap(currency))));
     }
 
-    function test_fromId_0ReturnsNative() public {
+    function test_fromId_0ReturnsNative() public view {
         assertEq(Currency.unwrap(currencyTest.fromId(0)), Currency.unwrap(nativeCurrency));
     }
 
-    function test_fuzz_fromId_returnsUint256AsCurrency(uint256 id) public {
+    function test_fuzz_fromId_returnsUint256AsCurrency(uint256 id) public view {
         uint160 expectedCurrency = uint160(uint256(type(uint160).max) & id);
         assertEq(Currency.unwrap(currencyTest.fromId(id)), address(expectedCurrency));
     }
 
-    function test_fuzz_fromId_toId_opposites(Currency currency) public {
+    function test_fuzz_fromId_toId_opposites(Currency currency) public view {
         assertEq(Currency.unwrap(currency), Currency.unwrap(currencyTest.fromId(currencyTest.toId(currency))));
     }
 
