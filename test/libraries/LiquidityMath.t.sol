@@ -40,7 +40,7 @@ contract LiquidityMathTest is Test {
         liquidityMathRef.addDelta(uint128(type(int128).min), type(int128).min);
     }
 
-    function test_addDelta_sub_int128min_fuzz(uint128 x) public {
+    function test_addDelta_sub_int128min_fuzz(uint128 x) public view {
         x = uint128(bound(x, uint128(type(int128).min), type(uint128).max));
         assertEq(liquidityMath.addDelta(x, type(int128).min), x - uint128(type(int128).min));
     }

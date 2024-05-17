@@ -15,9 +15,13 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {ActionsRouter, Actions} from "../src/test/ActionsRouter.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {Reserves} from "../src/libraries/Reserves.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
 
 contract SyncTest is Test, Deployers, GasSnapshot {
     using CurrencyLibrary for Currency;
+    using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
 
     // PoolManager has no balance of currency2.
     Currency currency2;
@@ -29,63 +33,60 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         router = new ActionsRouter(manager);
     }
 
-    function test_sync_balanceIsZero() public {
+    function test_sync_balanceIsZero() public noIsolate {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
         uint256 balance = manager.sync(currency2);
 
         assertEq(uint256(balance), 0);
-        assertEq(manager.getReserves(currency2), 0);
+        assertEq(manager.getReserves(currency2), type(uint256).max);
     }
 
-    function test_sync_balanceIsNonZero() public {
+    function test_sync_balanceIsNonZero() public noIsolate {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
         assertGt(currency0Balance, uint256(0));
 
-        // Without calling sync, getReserves should revert.
-        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency0);
+        // Without calling sync, getReserves should return 0.
+        assertEq(manager.getReserves(currency0), 0);
 
         uint256 balance = manager.sync(currency0);
         assertEq(balance, currency0Balance, "balance not equal");
         assertEq(manager.getReserves(currency0), balance);
     }
 
-    function test_settle_withStartingBalance() public {
+    function test_settle_withStartingBalance() public noIsolate {
         assertGt(currency0.balanceOf(address(manager)), uint256(0));
 
         IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         // Sync has not been called.
-        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency0);
+        assertEq(manager.getReserves(currency0), 0);
 
         swapRouter.swap(key, params, testSettings, new bytes(0));
         (uint256 balanceCurrency0) = currency0.balanceOf(address(manager));
         assertEq(manager.getReserves(currency0), balanceCurrency0); // Reserves are up to date since settle was called.
     }
 
-    function test_settle_withNoStartingBalance() public {
+    function test_settle_withNoStartingBalance() public noIsolate {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
 
         (Currency cur0, Currency cur1) = currency0 < currency2 ? (currency0, currency2) : (currency2, currency0);
         PoolKey memory key2 =
             PoolKey({currency0: cur0, currency1: cur1, fee: 3000, tickSpacing: 60, hooks: IHooks(address(0))});
 
-        manager.initialize(key2, SQRT_RATIO_1_1, new bytes(0));
+        manager.initialize(key2, SQRT_PRICE_1_1, new bytes(0));
 
         // Sync has not been called.
-        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency2);
-        modifyLiquidityRouter.modifyLiquidity(key2, IPoolManager.ModifyLiquidityParams(-60, 60, 100), new bytes(0));
+        assertEq(manager.getReserves(currency2), 0);
+        modifyLiquidityRouter.modifyLiquidity(key2, IPoolManager.ModifyLiquidityParams(-60, 60, 100, 0), new bytes(0));
         (uint256 balanceCurrency2) = currency2.balanceOf(address(manager));
         assertEq(manager.getReserves(currency2), balanceCurrency2);
     }
 
-    function test_settle_revertsIfSyncNotCalled() public {
+    function test_settle_revertsIfSyncNotCalled() public noIsolate {
         Actions[] memory actions = new Actions[](1);
         bytes[] memory params = new bytes[](1);
 
@@ -97,15 +98,14 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     }
 
     /// @notice When there is no balance and reserves are set to type(uint256).max, no delta should be applied.
-    function test_settle_noBalanceInPool_shouldNotApplyDelta() public {
+    function test_settle_noBalanceInPool_shouldNotApplyDelta() public noIsolate {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
 
         // Sync has not been called.
-        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency2);
+        assertEq(manager.getReserves(currency2), 0);
 
         manager.sync(currency2);
-        assertEq(manager.getReserves(currency2), 0);
+        assertEq(manager.getReserves(currency2), type(uint256).max);
 
         Actions[] memory actions = new Actions[](2);
         bytes[] memory params = new bytes[](2);
@@ -120,12 +120,11 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     }
 
     /// @notice When there is a balance, no delta should be applied.
-    function test_settle_balanceInPool_shouldNotApplyDelta() public {
+    function test_settle_balanceInPool_shouldNotApplyDelta() public noIsolate {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
 
         // Sync has not been called.
-        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency0);
+        assertEq(manager.getReserves(currency0), 0);
 
         manager.sync(currency0);
         assertEq(manager.getReserves(currency0), currency0Balance);
@@ -146,19 +145,18 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     /// This tests check that the reservesNow value is set to 0 not ZERO_BALANCE, by checking that an underflow happens when
     /// a) the contract balance is 0 and b) the reservesBefore value is out of date (sync isn't called again before settle).
     /// ie because paid = reservesNow - reservesBefore, and because reservesNow < reservesBefore an underflow should happen.
-    function test_settle_afterTake_doesNotApplyDelta() public {
+    function test_settle_afterTake_doesNotApplyDelta() public noIsolate {
         Currency currency3 = deployMintAndApproveCurrency();
 
         // Approve the router for a transfer.
         MockERC20(Currency.unwrap(currency3)).approve(address(router), type(uint256).max);
 
         // Sync has not been called on currency3.
-        vm.expectRevert(Reserves.ReservesMustBeSynced.selector);
-        manager.getReserves(currency3);
+        assertEq(manager.getReserves(currency3), 0);
 
         manager.sync(currency3);
         // Sync has been called.
-        assertEq(manager.getReserves(currency3), 0);
+        assertEq(manager.getReserves(currency3), type(uint256).max);
 
         uint256 maxBalanceCurrency3 = uint256(int256(type(int128).max));
 
@@ -221,7 +219,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     }
 
     // @notice This tests expected behavior if you DO NOT call sync. (ie. Do not interact with the pool manager properly. You can lose funds.)
-    function test_settle_withoutSync_doesNotRevert_takesUserBalance() public {
+    function test_settle_withoutSync_doesNotRevert_takesUserBalance() public noIsolate {
         MockERC20(Currency.unwrap(currency0)).approve(address(router), type(uint256).max);
         uint256 managerCurrency0BalanceBefore = currency0.balanceOf(address(manager));
         uint256 userCurrency0BalanceBefore = currency0.balanceOf(address(this));
@@ -230,7 +228,10 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         bytes[] memory params = new bytes[](8);
 
         manager.sync(currency0);
-        assertEq(manager.getReserves(currency0), managerCurrency0BalanceBefore); // reserves are 100.
+        snapStart("getReserves");
+        uint256 reserves = manager.getReserves(currency0);
+        snapEnd();
+        assertEq(reserves, managerCurrency0BalanceBefore); // reserves are 100.
 
         actions[0] = Actions.TAKE;
         params[0] = abi.encode(currency0, address(this), 10);
