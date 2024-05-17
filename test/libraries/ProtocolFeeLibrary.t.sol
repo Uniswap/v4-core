@@ -69,14 +69,15 @@ contract ProtocolFeeLibraryTest is Test {
     function test_fuzz_calculateSwapFee(uint24 protocolFee, uint24 lpFee) public pure {
         protocolFee = uint24(bound(protocolFee, 0, ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
         lpFee = uint24(bound(lpFee, 0, LPFeeLibrary.MAX_LP_FEE));
+        uint24 swapFee = ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee);
         // if lp fee is not the max, the swap fee should never be the max since the protocol fee is taken off first and then the lp fee is taken from the remaining amount
         if (lpFee < LPFeeLibrary.MAX_LP_FEE) {
-            assertLt(ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee), LPFeeLibrary.MAX_LP_FEE);
+            assertLt(swapFee, LPFeeLibrary.MAX_LP_FEE);
         }
-        assertGe(ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee), lpFee);
+        assertGe(swapFee, lpFee);
 
         uint256 expectedSwapFee =
             protocolFee + lpFee * uint256(LPFeeLibrary.MAX_LP_FEE - protocolFee) / LPFeeLibrary.MAX_LP_FEE;
-        assertEq(ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee), uint24(expectedSwapFee));
+        assertEq(swapFee, uint24(expectedSwapFee));
     }
 }
