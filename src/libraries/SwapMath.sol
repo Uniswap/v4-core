@@ -33,7 +33,7 @@ library SwapMath {
     }
 
     /// @notice Computes the result of swapping some amount in, or amount out, given the parameters of the swap
-    /// @dev The fee, plus the amount in, will never exceed the amount remaining if the swap's `amountSpecified` is positive
+    /// @dev If the swap's amountSpecified is negative, the combined fee and input amount will never exceed the absolute value of the remaining amount.
     /// @param sqrtPriceCurrentX96 The current sqrt price of the pool
     /// @param sqrtPriceTargetX96 The price that cannot be exceeded, from which the direction of the swap is inferred
     /// @param liquidity The usable liquidity

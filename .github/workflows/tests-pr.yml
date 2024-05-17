@@ -1,10 +1,10 @@
 name: Tests
 
 on:
-  push:
+  pull_request:
     branches:
       - main
-  pull_request:
+      - dev
 
 jobs:
   forge-tests:
@@ -33,10 +33,11 @@ jobs:
       - name: Build
         run: forge build
         env:
-          FOUNDRY_PROFILE: ci
+          FOUNDRY_PROFILE: pr
 
       - name: Run tests
-        run: forge test -vvv
+        run: forge test --isolate -vvv
         env:
-          FOUNDRY_PROFILE: ci
-          
+          FOUNDRY_PROFILE: pr
+          FORGE_SNAPSHOT_CHECK: true
+
