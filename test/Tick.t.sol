@@ -2,11 +2,26 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {stdError} from "forge-std/StdError.sol";
 import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {PoolGetters} from "../src/libraries/PoolGetters.sol";
+
+contract LiquidityMathRef {
+    function addDelta(uint128 x, int128 y) external pure returns (uint128) {
+        return y < 0 ? x - uint128(-y) : x + uint128(y);
+    }
+
+    function addDelta(bool upper, int128 liquidityNetBefore, int128 liquidityDelta)
+        external
+        pure
+        returns (int128 liquidityNet)
+    {
+        liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
+    }
+}
 
 contract TickTest is Test, GasSnapshot {
     using PoolGetters for Pool.State;
@@ -17,6 +32,12 @@ contract TickTest is Test, GasSnapshot {
     int24 constant HIGH_TICK_SPACING = 200;
 
     Pool.State public pool;
+
+    LiquidityMathRef internal liquidityMath;
+
+    function setUp() public {
+        liquidityMath = new LiquidityMathRef();
+    }
 
     function ticks(int24 tick) internal view returns (Pool.TickInfo memory) {
         return pool.ticks[tick];
@@ -406,6 +427,40 @@ contract TickTest is Test, GasSnapshot {
 
         assertEq(info.liquidityGross, 1);
         assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2));
+    }
+
+    function testTick_update_fuzz(uint128 liquidityGross, int128 liquidityNet, int128 liquidityDelta, bool upper)
+        public
+    {
+        try liquidityMath.addDelta(liquidityGross, liquidityDelta) returns (uint128 liquidityGrossAfter) {
+            try liquidityMath.addDelta(upper, liquidityNet, liquidityDelta) returns (int128 liquidityNetAfter) {
+                Pool.TickInfo memory info = Pool.TickInfo({
+                    liquidityGross: liquidityGross,
+                    liquidityNet: liquidityNet,
+                    feeGrowthOutside0X128: 0,
+                    feeGrowthOutside1X128: 0
+                });
+
+                setTick(2, info);
+                update({
+                    tick: 2,
+                    tickCurrent: 1,
+                    liquidityDelta: liquidityDelta,
+                    feeGrowthGlobal0X128: 0,
+                    feeGrowthGlobal1X128: 0,
+                    upper: upper
+                });
+
+                info = ticks(2);
+
+                assertEq(info.liquidityGross, liquidityGrossAfter);
+                assertEq(info.liquidityNet, liquidityNetAfter);
+            } catch (bytes memory reason) {
+                assertEq(reason, stdError.arithmeticError);
+            }
+        } catch (bytes memory reason) {
+            assertEq(reason, stdError.arithmeticError);
+        }
     }
 
     function testTick_clear_deletesAllTheDataInTheTick() public {

@@ -11,6 +11,8 @@ import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {StateLibrary} from "../libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 
 enum Action {
     NESTED_SELF_UNLOCK,
@@ -23,6 +25,9 @@ enum Action {
 }
 
 contract PoolNestedActionsTest is Test, IUnlockCallback {
+    using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
+
     IPoolManager manager;
     NestedActionExecutor public executor;
     address user;
@@ -59,6 +64,8 @@ contract PoolNestedActionsTest is Test, IUnlockCallback {
 }
 
 contract NestedActionExecutor is Test, PoolTestBase {
+    using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
     using CurrencySettleTake for Currency;
     using PoolIdLibrary for PoolKey;
 
@@ -74,7 +81,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
 
     IPoolManager.SwapParams internal SWAP_PARAMS =
-        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: Constants.SQRT_RATIO_1_2});
+        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: Constants.SQRT_PRICE_1_2});
 
     uint256 internal DONATE_AMOUNT0 = 12345e6;
     uint256 internal DONATE_AMOUNT1 = 98765e4;
@@ -217,9 +224,9 @@ contract NestedActionExecutor is Test, PoolTestBase {
         PoolId id = key.toId();
         (uint256 price,,,) = manager.getSlot0(id);
         assertEq(price, 0);
-        manager.initialize(key, Constants.SQRT_RATIO_1_2, Constants.ZERO_BYTES);
+        manager.initialize(key, Constants.SQRT_PRICE_1_2, Constants.ZERO_BYTES);
         (price,,,) = manager.getSlot0(id);
-        assertEq(price, Constants.SQRT_RATIO_1_2);
+        assertEq(price, Constants.SQRT_PRICE_1_2);
     }
 
     // This will never actually be used - its just to allow us to use the PoolTestBase helper contact

@@ -17,6 +17,8 @@ import {LPFeeLibrary} from "src/libraries/LPFeeLibrary.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
+    using LPFeeLibrary for uint24;
+    using ProtocolFeeLibrary for uint24;
 
     Pool.State state;
 
@@ -24,14 +26,14 @@ contract PoolTest is Test {
     uint24 constant MAX_LP_FEE = LPFeeLibrary.MAX_LP_FEE; // 100%
 
     function testPoolInitialize(uint160 sqrtPriceX96, uint24 protocolFee, uint24 swapFee) public {
-        if (sqrtPriceX96 < TickMath.MIN_SQRT_RATIO || sqrtPriceX96 >= TickMath.MAX_SQRT_RATIO) {
-            vm.expectRevert(TickMath.InvalidSqrtRatio.selector);
+        if (sqrtPriceX96 < TickMath.MIN_SQRT_PRICE || sqrtPriceX96 >= TickMath.MAX_SQRT_PRICE) {
+            vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
             state.initialize(sqrtPriceX96, protocolFee, swapFee);
         } else {
             state.initialize(sqrtPriceX96, protocolFee, swapFee);
             assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
             assertEq(state.slot0.protocolFee, protocolFee);
-            assertEq(state.slot0.tick, TickMath.getTickAtSqrtRatio(sqrtPriceX96));
+            assertEq(state.slot0.tick, TickMath.getTickAtSqrtPrice(sqrtPriceX96));
             assertLt(state.slot0.tick, TickMath.MAX_TICK);
             assertGt(state.slot0.tick, TickMath.MIN_TICK - 1);
         }
@@ -73,8 +75,8 @@ contract PoolTest is Test {
             uint256 maxInt128InTypeU256 = uint256(uint128(Constants.MAX_UINT128));
             (uint256 amount0, uint256 amount1) = LiquidityAmounts.getAmountsForLiquidity(
                 sqrtPriceX96,
-                TickMath.getSqrtRatioAtTick(params.tickLower),
-                TickMath.getSqrtRatioAtTick(params.tickUpper),
+                TickMath.getSqrtPriceAtTick(params.tickLower),
+                TickMath.getSqrtPriceAtTick(params.tickUpper),
                 uint128(params.liquidityDelta)
             );
 
@@ -117,8 +119,14 @@ contract PoolTest is Test {
         );
         Pool.Slot0 memory slot0 = state.slot0;
 
-        if (params.amountSpecified > 0 && lpFee == MAX_LP_FEE) {
+        uint24 _lpFee = params.lpFeeOverride.isOverride() ? params.lpFeeOverride.removeOverrideFlag() : lpFee;
+        uint24 swapFee = protocolFee == 0 ? _lpFee : uint24(protocolFee).calculateSwapFee(_lpFee);
+
+        if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
+            state.swap(params);
+        } else if (!swapFee.isValid()) {
+            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
             state.swap(params);
         } else if (params.zeroForOne && params.amountSpecified != 0) {
             if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96) {
@@ -128,7 +136,7 @@ contract PoolTest is Test {
                     )
                 );
                 state.swap(params);
-            } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_RATIO) {
+            } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
                 state.swap(params);
             }
@@ -140,7 +148,7 @@ contract PoolTest is Test {
                     )
                 );
                 state.swap(params);
-            } else if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_RATIO) {
+            } else if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_PRICE) {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
                 state.swap(params);
             }

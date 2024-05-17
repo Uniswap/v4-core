@@ -13,8 +13,11 @@ import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Currency} from "src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {StateLibrary} from "src/libraries/StateLibrary.sol";
 
 contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
+    using StateLibrary for IPoolManager;
+
     PoolKey simpleKey; // vanilla pool key
     PoolId simplePoolId; // id for vanilla pool key
 
@@ -29,7 +32,7 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
     function setUp() public {
         deployFreshManagerAndRouters();
         deployMintAndApprove2Currencies();
-        (simpleKey, simplePoolId) = initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        (simpleKey, simplePoolId) = initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_modifyLiquidity_samePosition_zeroSalt_isUpdated() public {
