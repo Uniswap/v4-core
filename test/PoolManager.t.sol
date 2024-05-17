@@ -1282,6 +1282,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.burn(address(this), key.currency0.toId(), 1);
     }
 
+    function test_setProtocolFee_gas() public {
+        vm.prank(address(feeController));
+        manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
+        snapLastCall("set protocol fee");
+    }
+
     function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint24 protocolFee) public {
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, 0);
