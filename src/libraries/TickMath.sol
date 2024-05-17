@@ -46,7 +46,15 @@ library TickMath {
     /// at the given tick
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
         unchecked {
-            uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
+            uint256 absTick;
+            assembly {
+                // mask = 0 if tick >= 0 else -1
+                let mask := sar(255, tick)
+                // If tick >= 0, |tick| = tick = 0 ^ tick
+                // If tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
+                // Either case, |tick| = mask ^ (tick + mask)
+                absTick := xor(mask, add(mask, tick))
+            }
             if (absTick > uint256(int256(MAX_TICK))) revert InvalidTick();
 
             uint256 price =
