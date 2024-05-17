@@ -20,12 +20,12 @@ library ProtocolFeeLibrary {
         return uint16(self >> 12);
     }
 
-    function isValidProtocolFee(uint24 self) internal pure returns (bool success) {
-        // Equivalent to: self == 0 ? true : (getZeroForOneFee(self) <= MAX_PROTOCOL_FEE && getOneForZeroFee(self) <= MAX_PROTOCOL_FEE)
+    function isValidProtocolFee(uint24 self) internal pure returns (bool valid) {
+        // Equivalent to: getZeroForOneFee(self) <= MAX_PROTOCOL_FEE && getOneForZeroFee(self) <= MAX_PROTOCOL_FEE
         assembly {
             let isZeroForOneFeeOk := lt(and(self, 0xfff), FEE_0_THRESHOLD)
             let isOneForZeroFeeOk := lt(self, FEE_1_THRESHOLD)
-            success := or(iszero(self), and(isZeroForOneFeeOk, isOneForZeroFeeOk))
+            valid := and(isZeroForOneFeeOk, isOneForZeroFeeOk)
         }
     }
 
@@ -33,6 +33,7 @@ library ProtocolFeeLibrary {
     // The swap fee is capped at 100%
     // Equivalent to protocolFee + lpFee(1_000_000 - protocolFee) / 1_000_000
     function calculateSwapFee(uint24 self, uint24 lpFee) internal pure returns (uint24 swapFee) {
+        // protocolFee + lpFee - (protocolFee * lpFee / 1_000_000). Div rounds up to favor LPs over the protocol.
         assembly {
             let numerator := mul(self, lpFee)
             let divRoundingUp := add(div(numerator, PIPS_DENOMINATOR), gt(mod(numerator, PIPS_DENOMINATOR), 0))
