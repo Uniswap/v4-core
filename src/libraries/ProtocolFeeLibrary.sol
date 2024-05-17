@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.20;
 
-import "./UnsafeMath.sol";
-
 library ProtocolFeeLibrary {
     // Max protocol fee is 0.1% (1000 pips)
     uint16 public constant MAX_PROTOCOL_FEE = 1000;
@@ -21,8 +19,7 @@ library ProtocolFeeLibrary {
         return uint16(self >> 12);
     }
 
-    /// @dev The fee is represented in pips and it cannot be greater than the MAX_PROTOCOL_FEE.
-    function validate(uint24 self) internal pure returns (bool success) {
+    function isValidProtocolFee(uint24 self) internal pure returns (bool success) {
         // Equivalent to: self == 0 ? true : (getZeroForOneFee(self) <= MAX_PROTOCOL_FEE && getOneForZeroFee(self) <= MAX_PROTOCOL_FEE)
         assembly {
             let isZeroForOneFeeOk := slt(sub(and(self, 0xfff), FEE_0_THRESHOLD), 0)
@@ -33,7 +30,7 @@ library ProtocolFeeLibrary {
 
     // The protocol fee is taken from the input amount first and then the LP fee is taken from the remaining
     // The swap fee is capped at 100%
-    // equivalent to protocolFee + lpFee(1_000_000 - protocolFee) / 1_000_000
+    // Equivalent to protocolFee + lpFee(1_000_000 - protocolFee) / 1_000_000
     function calculateSwapFee(uint24 self, uint24 lpFee) internal pure returns (uint24 swapFee) {
         assembly {
             let numerator := mul(self, lpFee)
