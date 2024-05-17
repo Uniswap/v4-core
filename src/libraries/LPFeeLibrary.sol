@@ -15,7 +15,7 @@ library LPFeeLibrary {
     // the top bit of the fee in a PoolKey is used to signal if a Pool's LP fee is dynamic
     uint24 public constant DYNAMIC_FEE_FLAG = 0x800000;
 
-    // the second bit of the fee (returned by beforeSwap) is used to signal if the stored fee should be overridden
+    // the second bit of the fee returned by beforeSwap is used to signal if the stored LP fee should be overridden in this swap
     uint24 public constant OVERRIDE_FEE_FLAG = 0x400000;
 
     // the lp fee is represented in hundredths of a bip, so the max is 100%
