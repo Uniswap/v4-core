@@ -128,7 +128,7 @@ contract SwapMathTest is Test, GasSnapshot {
         assertEq(sqrtQ, 1);
     }
 
-    function test_notEntireInputAmountTakenAsFee() public {
+    function test_notEntireInputAmountTakenAsFee() public pure {
         (uint160 sqrtQ, uint256 amountIn, uint256 amountOut, uint256 feeAmount) =
             SwapMath.computeSwapStep(2413, 79887613182836312, 1985041575832132834610021537970, -10, 1872);
 
