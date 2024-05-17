@@ -18,7 +18,6 @@ import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "./types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
-import {Slot0} from "./types/Slot0.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
