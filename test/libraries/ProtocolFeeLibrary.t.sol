@@ -75,10 +75,8 @@ contract ProtocolFeeLibraryTest is Test {
         }
         assertGe(ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee), lpFee);
 
-        uint256 expectedSwapFee = protocolFee + lpFee * uint256(LPFeeLibrary.MAX_LP_FEE - protocolFee) / LPFeeLibrary.MAX_LP_FEE;
-        assertEq(
-            ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee),
-            uint24(expectedSwapFee)
-        );
+        uint256 expectedSwapFee =
+            protocolFee + lpFee * uint256(LPFeeLibrary.MAX_LP_FEE - protocolFee) / LPFeeLibrary.MAX_LP_FEE;
+        assertEq(ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee), uint24(expectedSwapFee));
     }
 }
