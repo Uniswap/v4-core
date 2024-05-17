@@ -22,12 +22,14 @@ import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for uint24;
+    using StateLibrary for IPoolManager;
 
     event Initialize(
         PoolId poolId,
@@ -70,9 +72,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         } else if (!key0.hooks.isValidHookAddress(key0.fee)) {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key0.hooks)));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
-        } else if (
-            (key0.fee & LPFeeLibrary.DYNAMIC_FEE_FLAG == 0) && (key0.fee & LPFeeLibrary.STATIC_FEE_MASK > 1000000)
-        ) {
+        } else if ((key0.fee & LPFeeLibrary.DYNAMIC_FEE_FLAG == 0) && (key0.fee & LPFeeLibrary.FEE_MASK > 1000000)) {
             vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.FeeTooLarge.selector));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else {

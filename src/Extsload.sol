@@ -6,6 +6,7 @@ import {IExtsload} from "./interfaces/IExtsload.sol";
 /// @notice Enables public storage access for efficient state retrieval by external contracts.
 /// https://eips.ethereum.org/EIPS/eip-2330#rationale
 abstract contract Extsload is IExtsload {
+    /// @inheritdoc IExtsload
     function extsload(bytes32 slot) external view returns (bytes32 value) {
         /// @solidity memory-safe-assembly
         assembly {
@@ -13,6 +14,7 @@ abstract contract Extsload is IExtsload {
         }
     }
 
+    /// @inheritdoc IExtsload
     function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
         bytes memory value = new bytes(32 * nSlots);
 
@@ -26,8 +28,11 @@ abstract contract Extsload is IExtsload {
         return value;
     }
 
-    /// @dev since the function is external and enters a new call context and exits right after execution, Solidity's memory management convention can be disregarded and a direct slice of memory can be returned
+    /// @inheritdoc IExtsload
     function extsload(bytes32[] calldata slots) external view returns (bytes32[] memory) {
+        // since the function is external and enters a new call context and exits right
+        // after execution, Solidity's memory management convention can be disregarded
+        // and a direct slice of memory can be returned
         assembly ("memory-safe") {
             // abi offset for dynamic array
             mstore(0, 0x20)
