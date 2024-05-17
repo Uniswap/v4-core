@@ -5,7 +5,8 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 
 contract EmptyTestHooks is IHooks {
     using Hooks for IHooks;
@@ -22,7 +23,11 @@ contract EmptyTestHooks is IHooks {
                 beforeSwap: true,
                 afterSwap: true,
                 beforeDonate: true,
-                afterDonate: true
+                afterDonate: true,
+                beforeSwapReturnDelta: true,
+                afterSwapReturnDelta: true,
+                afterAddLiquidityReturnDelta: true,
+                afterRemoveLiquidityReturnDelta: true
             })
         );
     }
@@ -60,8 +65,8 @@ contract EmptyTestHooks is IHooks {
         IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata
-    ) external pure override returns (bytes4) {
-        return IHooks.afterAddLiquidity.selector;
+    ) external pure override returns (bytes4, BalanceDelta) {
+        return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeRemoveLiquidity(
@@ -79,26 +84,26 @@ contract EmptyTestHooks is IHooks {
         IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
         bytes calldata
-    ) external pure override returns (bytes4) {
-        return IHooks.afterRemoveLiquidity.selector;
+    ) external pure override returns (bytes4, BalanceDelta) {
+        return (IHooks.afterRemoveLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
         external
         pure
         override
-        returns (bytes4)
+        returns (bytes4, BeforeSwapDelta)
     {
-        return IHooks.beforeSwap.selector;
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA);
     }
 
     function afterSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, BalanceDelta, bytes calldata)
         external
         pure
         override
-        returns (bytes4)
+        returns (bytes4, int128)
     {
-        return IHooks.afterSwap.selector;
+        return (IHooks.afterSwap.selector, 0);
     }
 
     function beforeDonate(address, PoolKey calldata, uint256, uint256, bytes calldata)

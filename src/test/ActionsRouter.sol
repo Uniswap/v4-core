@@ -7,6 +7,8 @@ import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {StateLibrary} from "../libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 
 // Supported Actions.
 enum Actions {
@@ -29,8 +31,13 @@ enum Actions {
 /// TODO: Can continue to add functions per action.
 contract ActionsRouter is IUnlockCallback, Test {
     using CurrencyLibrary for Currency;
+    using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
 
     error ActionNotSupported();
+
+    // error thrown so that incorrectly formatted tests don't pass silently
+    error CheckParameters();
 
     IPoolManager manager;
 
@@ -40,6 +47,7 @@ contract ActionsRouter is IUnlockCallback, Test {
 
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         (Actions[] memory actions, bytes[] memory params) = abi.decode(data, (Actions[], bytes[]));
+        if (actions.length != params.length || actions.length == 0) revert CheckParameters();
         for (uint256 i = 0; i < actions.length; i++) {
             Actions action = actions[i];
             bytes memory param = params[i];
@@ -87,17 +95,17 @@ contract ActionsRouter is IUnlockCallback, Test {
         manager.mint(recipient, currency.toId(), amount);
     }
 
-    function _assertBalanceEquals(bytes memory params) internal {
+    function _assertBalanceEquals(bytes memory params) internal view {
         (Currency currency, address user, uint256 expectedBalance) = abi.decode(params, (Currency, address, uint256));
         assertEq(currency.balanceOf(user), expectedBalance, "usertoken value incorrect");
     }
 
-    function _assertReservesEquals(bytes memory params) internal {
+    function _assertReservesEquals(bytes memory params) internal view {
         (Currency currency, uint256 expectedReserves) = abi.decode(params, (Currency, uint256));
         assertEq(manager.getReserves(currency), expectedReserves, "reserves value incorrect");
     }
 
-    function _assertDeltaEquals(bytes memory params) internal {
+    function _assertDeltaEquals(bytes memory params) internal view {
         (Currency currency, address caller, int256 expectedDelta) = abi.decode(params, (Currency, address, int256));
 
         assertEq(manager.currencyDelta(caller, currency), expectedDelta, "delta value incorrect");
