@@ -916,7 +916,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_fuzz_validateHookAddress_failsNoHooks(uint160 addr, uint16 mask) public {
-        // we only want hookPermissionCount of  ask
+        // we only want hookPermissionCount of mask
         mask = mask >> (16 - hookPermissionCount);
         uint160 preAddr = addr & clearAllHookPermisssionsMask;
         // We want any combination except no hooks.
