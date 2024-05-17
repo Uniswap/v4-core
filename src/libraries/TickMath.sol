@@ -49,8 +49,22 @@ library TickMath {
             uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
             if (absTick > uint256(int256(MAX_TICK))) revert InvalidTick();
 
-            uint256 price =
-                absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
+            // Equivalent to:
+            //     price = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
+            //     or price = int(2**128 / sqrt(1.0001)) if (absTick & 0x1) else 1 << 128
+            uint256 price;
+            assembly {
+                price :=
+                    and(
+                        shr(
+                            // 128 if absTick & 0x1 else 0
+                            shl(7, and(absTick, 0x1)),
+                            // upper 128 bits of 2**256 / sqrt(1.0001) where the 128th bit is 1
+                            0xfffcb933bd6fad37aa2d162d1a59400100000000000000000000000000000000
+                        ),
+                        sub(shl(130, 1), 1) // mask lower 129 bits
+                    )
+            }
             if (absTick & 0x2 != 0) price = (price * 0xfff97272373d413259a46990580e213a) >> 128;
             if (absTick & 0x4 != 0) price = (price * 0xfff2e50f5f656932ef12357cf3c7fdcc) >> 128;
             if (absTick & 0x8 != 0) price = (price * 0xffe5caca7e10e4e61c3624eaa0941cd0) >> 128;
