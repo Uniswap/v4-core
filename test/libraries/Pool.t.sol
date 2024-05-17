@@ -166,4 +166,13 @@ contract PoolTest is Test {
             }
         }
     }
+
+    function test_fuzz_tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) public {
+        vm.assume(tickSpacing > 0);
+        // assert v3 math is the same
+        int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
+        int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
+        uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
+        assertEq(type(uint128).max / numTicks, Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing));
+    }
 }
