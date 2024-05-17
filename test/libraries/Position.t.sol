@@ -35,7 +35,7 @@ contract PositionTest is Test {
         position.feeGrowthInside1LastX128 = pos.feeGrowthInside1LastX128;
 
         uint128 oldLiquidity = position.liquidity;
-    
+
         if (position.liquidity == 0 && liquidityDelta == 0) {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         }
