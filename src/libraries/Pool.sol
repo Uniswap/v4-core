@@ -304,14 +304,12 @@ library Pool {
         uint256 protocolFee =
             zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee();
 
-        state = SwapState({
-            amountSpecifiedRemaining: params.amountSpecified,
-            amountCalculated: 0,
-            sqrtPriceX96: slot0Start.sqrtPriceX96,
-            tick: slot0Start.tick,
-            feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
-            liquidity: liquidityStart
-        });
+        state.amountSpecifiedRemaining = params.amountSpecified;
+        state.amountCalculated = 0;
+        state.sqrtPriceX96 = slot0Start.sqrtPriceX96;
+        state.tick = slot0Start.tick;
+        state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
+        state.liquidity = liquidityStart;
 
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
         slot0Start.lpFee =
