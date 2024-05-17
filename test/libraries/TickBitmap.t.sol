@@ -120,6 +120,9 @@ contract TickBitmapTest is Test, GasSnapshot {
             bool initialized = isInitialized(tick, tickSpacing);
             bitmap.flipTick(tick, tickSpacing);
             assertEq(isInitialized(tick, tickSpacing), !initialized);
+            // flip again
+            bitmap.flipTick(tick, tickSpacing);
+            assertEq(isInitialized(tick, tickSpacing), initialized);
         }
     }
 
