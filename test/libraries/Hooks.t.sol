@@ -916,9 +916,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     function test_fuzz_validateHookAddress_failsNoHooks(uint160 addr, uint16 mask) public {
+        // we only want hookPermissionCount of  ask
+        mask = mask >> (16 - hookPermissionCount);
         uint160 preAddr = addr & clearAllHookPermisssionsMask;
         // We want any combination except no hooks.
-        vm.assume(mask >> (16 - hookPermissionCount) != 0);
+        vm.assume(mask != 0);
         IHooks hookAddr = IHooks(address(preAddr | uint160(mask) << uint160(160 - hookPermissionCount)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
         Hooks.validateHookPermissions(
