@@ -8,7 +8,6 @@ import {CurrencyTest} from "../../src/test/CurrencyTest.sol";
 
 contract TestCurrency is Test {
     uint256 constant initialERC20Balance = 1000 ether;
-    uint256 constant sentBalance = 2 ether;
     address constant otherAddress = address(1);
 
     Currency nativeCurrency;
@@ -41,8 +40,10 @@ contract TestCurrency is Test {
     }
 
     function test_fuzz_balanceOfSelf_native(uint256 amount) public {
-        amount = bound(amount, 0, address(currencyTest).balance);
+        uint256 balanceBefore = address(currencyTest).balance;
+        amount = bound(amount, 0, balanceBefore);
         currencyTest.transfer(nativeCurrency, otherAddress, amount);
+        assertEq(balanceBefore - amount, address(currencyTest).balance);
         assertEq(currencyTest.balanceOfSelf(nativeCurrency), address(currencyTest).balance);
     }
 
@@ -50,6 +51,10 @@ contract TestCurrency is Test {
         amount = bound(amount, 0, initialERC20Balance);
         currencyTest.transfer(erc20Currency, otherAddress, amount);
         assertEq(currencyTest.balanceOfSelf(erc20Currency), initialERC20Balance - amount);
+        assertEq(
+            currencyTest.balanceOfSelf(erc20Currency),
+            MockERC20(Currency.unwrap(erc20Currency)).balanceOf(address(currencyTest))
+        );
     }
 
     function test_fuzz_balanceOf_native(uint256 amount) public {
@@ -57,12 +62,17 @@ contract TestCurrency is Test {
         currencyTest.transfer(nativeCurrency, otherAddress, amount);
 
         assertEq(otherAddress.balance, amount);
+        assertEq(otherAddress.balance, currencyTest.balanceOf(nativeCurrency, otherAddress));
     }
 
     function test_fuzz_balanceOf_token(uint256 amount) public {
         amount = bound(amount, 0, initialERC20Balance);
         currencyTest.transfer(erc20Currency, otherAddress, amount);
         assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), amount);
+        assertEq(
+            MockERC20(Currency.unwrap(erc20Currency)).balanceOf(otherAddress),
+            currencyTest.balanceOf(erc20Currency, otherAddress)
+        );
     }
 
     function test_isNative_native_returnsTrue() public view {
