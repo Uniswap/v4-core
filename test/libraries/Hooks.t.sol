@@ -889,9 +889,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     function test_fuzz_validateHookAddress_failsAllHooks(uint160 addr, uint16 mask) public {
         uint160 preAddr = addr & clearAllHookPermisssionsMask;
         // Set the upper `hooksPermissionCount` number of bits to get the full mask in uint16.
-        uint16 allHooksMask = (~uint16(0) << uint16(16 - hookPermissionCount));
+        uint16 allHooksMask = uint16(~uint16(0));
         // We want any combination except all hooks.
-        vm.assume(mask < allHooksMask);
+        vm.assume(mask < (allHooksMask >> (16 - hookPermissionCount)));
         IHooks hookAddr = IHooks(address(uint160(preAddr) | uint160(mask) << uint160(160 - hookPermissionCount)));
         vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, (address(hookAddr))));
         Hooks.validateHookPermissions(
