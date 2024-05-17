@@ -92,46 +92,24 @@ library TickMath {
             uint256 price = uint256(sqrtPriceX96) << 32;
 
             uint256 r = price;
-            uint256 msb = 0;
 
+            // Find the most significant bit of `price`
+            uint256 msb;
             assembly {
-                let f := shl(7, gt(r, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(6, gt(r, 0xFFFFFFFFFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(5, gt(r, 0xFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(4, gt(r, 0xFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(3, gt(r, 0xFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(2, gt(r, 0xF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(1, gt(r, 0x3))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := gt(r, 0x1)
-                msb := or(msb, f)
+                let x := price
+                msb := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+                msb := or(msb, shl(6, lt(0xffffffffffffffff, shr(msb, x))))
+                msb := or(msb, shl(5, lt(0xffffffff, shr(msb, x))))
+                msb := or(msb, shl(4, lt(0xffff, shr(msb, x))))
+                msb := or(msb, shl(3, lt(0xff, shr(msb, x))))
+                msb :=
+                    or(
+                        msb,
+                        byte(
+                            and(0x1f, shr(shr(msb, x), 0x8421084210842108cc6318c6db6d54be)),
+                            0x0706060506020504060203020504030106050205030304010505030400000000
+                        )
+                    )
             }
 
             if (msb >= 128) r = price >> (msb - 127);
