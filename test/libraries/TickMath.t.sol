@@ -178,8 +178,10 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
     /// @notice Benchmark the gas cost of `getSqrtPriceAtTick`
     function test_getSqrtPriceAtTick_gasCost() public {
         snapStart("TickMathGetSqrtPriceAtTick");
-        for (int24 tick = -50; tick < 50;) {
-            TickMath.getSqrtPriceAtTick(tick++);
+        unchecked {
+            for (int24 tick = -50; tick < 50;) {
+                TickMath.getSqrtPriceAtTick(tick++);
+            }
         }
         snapEnd();
     }
@@ -187,9 +189,11 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
     /// @notice Benchmark the gas cost of `getTickAtSqrtPrice`
     function test_getTickAtSqrtPrice_gasCost() public {
         snapStart("TickMathGetTickAtSqrtPrice");
-        uint160 sqrtPriceX96 = 1 << 33;
-        for (uint256 i; i++ < 100; sqrtPriceX96 <<= 1) {
-            TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+        unchecked {
+            uint160 sqrtPriceX96 = 1 << 33;
+            for (uint256 i; i++ < 100; sqrtPriceX96 <<= 1) {
+                TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+            }
         }
         snapEnd();
     }
