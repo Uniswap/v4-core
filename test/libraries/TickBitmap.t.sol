@@ -23,6 +23,19 @@ contract TickBitmapTest is Test, GasSnapshot {
         }
     }
 
+    function test_fuzz_compress(int24 tick, int24 tickSpacing) public pure {
+        tickSpacing = int24(bound(tickSpacing, 1, type(int24).max));
+        int24 compressed = tick / tickSpacing;
+        if (tick < 0 && tick % tickSpacing != 0) compressed--;
+        assertEq(TickBitmap.compress(tick, tickSpacing), compressed);
+    }
+
+    function test_fuzz_position(int24 tick) public pure {
+        (int16 wordPos, uint8 bitPos) = TickBitmap.position(tick);
+        assertEq(wordPos, tick >> 8);
+        assertEq(bitPos, uint8(int8(tick % 256)));
+    }
+
     function test_isInitialized_isFalseAtFirst() public view {
         assertEq(isInitialized(1), false);
     }

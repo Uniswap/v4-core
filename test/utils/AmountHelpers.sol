@@ -6,6 +6,7 @@ import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
+import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 
 /// @title Calculate token<>liquidity
 /// @notice Helps calculate amounts for bounding fuzz tests
@@ -16,8 +17,8 @@ library AmountHelpers {
         PoolKey memory key
     ) public view returns (uint256 amount0, uint256 amount1) {
         PoolId id = PoolIdLibrary.toId(key);
-        uint128 liquidity = manager.getLiquidity(id);
-        (uint160 sqrtPriceX96,,,) = manager.getSlot0(id);
+        uint128 liquidity = StateLibrary.getLiquidity(manager, id);
+        (uint160 sqrtPriceX96,,,) = StateLibrary.getSlot0(manager, id);
 
         uint160 sqrtPriceX96Lower = TickMath.getSqrtPriceAtTick(params.tickLower);
         uint160 sqrtPriceX96Upper = TickMath.getSqrtPriceAtTick(params.tickUpper);

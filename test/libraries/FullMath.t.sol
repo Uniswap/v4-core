@@ -62,12 +62,12 @@ contract FullMathTest is Test {
         FullMath.mulDivQ96(1 << 176, 1 << 176);
     }
 
-    function test_mulDivQ96_validWithPhantomOverflow() public {
+    function test_mulDivQ96_validWithPhantomOverflow() public pure {
         assertEq(FullMath.mulDivQ96(MAX_UINT256, Q96), MAX_UINT256);
     }
 
     /// @notice Test `mulDivQ96` against `mulDiv` with a denominator of `Q96`.
-    function test_fuzz_mulDivQ96(uint256 a, uint256 b) public {
+    function test_fuzz_mulDivQ96(uint256 a, uint256 b) public pure {
         // Most significant 256 bits of the product.
         uint256 prod1;
         assembly {

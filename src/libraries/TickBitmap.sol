@@ -12,14 +12,29 @@ library TickBitmap {
     /// @param tickSpacing The tick spacing of the pool
     error TickMisaligned(int24 tick, int24 tickSpacing);
 
+    /// @dev round towards negative infinity
+    function compress(int24 tick, int24 tickSpacing) internal pure returns (int24 compressed) {
+        // compressed = tick / tickSpacing;
+        // if (tick < 0 && tick % tickSpacing != 0) compressed--;
+        assembly {
+            compressed :=
+                sub(
+                    sdiv(tick, tickSpacing),
+                    // if (tick < 0 && tick % tickSpacing != 0) then tick % tickSpacing < 0, vice versa
+                    slt(smod(tick, tickSpacing), 0)
+                )
+        }
+    }
+
     /// @notice Computes the position in the mapping where the initialized bit for a tick lives
     /// @param tick The tick for which to compute the position
     /// @return wordPos The key in the mapping containing the word in which the bit is stored
     /// @return bitPos The bit position in the word where the flag is stored
     function position(int24 tick) internal pure returns (int16 wordPos, uint8 bitPos) {
-        unchecked {
-            wordPos = int16(tick >> 8);
-            bitPos = uint8(int8(tick & (256 - 1)));
+        assembly {
+            // signed arithmetic shift right
+            wordPos := sar(8, tick)
+            bitPos := and(tick, 0xff)
         }
     }
 
@@ -51,8 +66,7 @@ library TickBitmap {
         bool lte
     ) internal view returns (int24 next, bool initialized) {
         unchecked {
-            int24 compressed = tick / tickSpacing;
-            if (tick < 0 && tick % tickSpacing != 0) compressed--; // round towards negative infinity
+            int24 compressed = compress(tick, tickSpacing);
 
             if (lte) {
                 (int16 wordPos, uint8 bitPos) = position(compressed);
@@ -68,7 +82,7 @@ library TickBitmap {
                     : (compressed - int24(uint24(bitPos))) * tickSpacing;
             } else {
                 // start from the word of the next tick, since the current tick state doesn't matter
-                (int16 wordPos, uint8 bitPos) = position(compressed + 1);
+                (int16 wordPos, uint8 bitPos) = position(++compressed);
                 // all the 1s at or to the left of the bitPos
                 uint256 mask = ~((1 << bitPos) - 1);
                 uint256 masked = self[wordPos] & mask;
@@ -77,8 +91,8 @@ library TickBitmap {
                 initialized = masked != 0;
                 // overflow/underflow is possible, but prevented externally by limiting both tickSpacing and tick
                 next = initialized
-                    ? (compressed + 1 + int24(uint24(BitMath.leastSignificantBit(masked) - bitPos))) * tickSpacing
-                    : (compressed + 1 + int24(uint24(type(uint8).max - bitPos))) * tickSpacing;
+                    ? (compressed + int24(uint24(BitMath.leastSignificantBit(masked) - bitPos))) * tickSpacing
+                    : (compressed + int24(uint24(type(uint8).max - bitPos))) * tickSpacing;
             }
         }
     }
