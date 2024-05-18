@@ -228,7 +228,16 @@ library TickMath {
             int24 tickLow = int24((log_sqrt10001 - 3402992956809132418596140100660247210) >> 128);
             int24 tickHi = int24((log_sqrt10001 + 291339464771989622907027621153398088495) >> 128);
 
-            tick = tickLow == tickHi ? tickLow : getSqrtPriceAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
+            // Equivalent: tick = tickLow == tickHi ? tickLow : getSqrtPriceAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
+            if (tickLow != tickHi) {
+                uint160 sqrtPriceAtTickHi = getSqrtPriceAtTick(tickHi);
+                assembly {
+                    tickLow := sub(tickHi, gt(sqrtPriceAtTickHi, sqrtPriceX96))
+                }
+                return tickLow;
+            } else {
+                return tickLow;
+            }
         }
     }
 }
