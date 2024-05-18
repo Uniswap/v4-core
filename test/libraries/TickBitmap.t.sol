@@ -326,7 +326,7 @@ contract TickBitmapTest is Test, GasSnapshot {
         bool lte
     ) public {
         tick = int24(bound(tick, TickMath.MIN_TICK, TickMath.MAX_TICK));
-        tickSpacing = int24(bound(tickSpacing, 1, type(int16).max));
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
         int24 compressed = TickBitmap.compress(tick, tickSpacing);
         if (!lte) ++compressed;
         (int16 wordPos, uint8 bitPos) = TickBitmap.position(compressed);
