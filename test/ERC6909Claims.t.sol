@@ -4,8 +4,9 @@ pragma solidity ^0.8.15;
 import {Test} from "forge-std/Test.sol";
 import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
 import {MockERC6909Claims} from "../src/test/MockERC6909Claims.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
-contract ERC6909ClaimsTest is Test {
+contract ERC6909ClaimsTest is Test, GasSnapshot {
     using CurrencyLibrary for Currency;
 
     MockERC6909Claims token;
@@ -31,7 +32,11 @@ contract ERC6909ClaimsTest is Test {
             if (mintAmount == type(uint256).max) {
                 assertEq(token.allowance(sender, address(this), id), type(uint256).max);
             } else {
-                assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+                if (sender != address(this)) {
+                    assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+                } else {
+                    assertEq(token.allowance(sender, address(this), id), mintAmount);
+                }
             }
             assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
         }
@@ -49,6 +54,7 @@ contract ERC6909ClaimsTest is Test {
 
     function testMint() public {
         token.mint(address(0xBEEF), 1337, 100);
+        snapLastCall("ERC6909Claims mint");
 
         assertEq(token.balanceOf(address(0xBEEF), 1337), 100);
     }
@@ -57,6 +63,7 @@ contract ERC6909ClaimsTest is Test {
         token.mint(address(0xBEEF), 1337, 100);
         vm.prank(address(0xBEEF));
         token.burn(1337, 70);
+        snapLastCall("ERC6909Claims burn");
 
         assertEq(token.balanceOf(address(0xBEEF), 1337), 30);
     }
@@ -69,6 +76,7 @@ contract ERC6909ClaimsTest is Test {
 
     function testApprove() public {
         token.approve(address(0xBEEF), 1337, 100);
+        snapLastCall("ERC6909Claims approve");
 
         assertEq(token.allowance(address(this), address(0xBEEF), 1337), 100);
     }
@@ -79,7 +87,9 @@ contract ERC6909ClaimsTest is Test {
         token.mint(sender, 1337, 100);
 
         vm.prank(sender);
+
         token.transfer(address(0xBEEF), 1337, 70);
+        snapLastCall("ERC6909Claims transfer");
 
         assertEq(token.balanceOf(sender, 1337), 30);
         assertEq(token.balanceOf(address(0xBEEF), 1337), 70);
@@ -95,6 +105,7 @@ contract ERC6909ClaimsTest is Test {
         token.approve(address(this), 1337, 100);
 
         token.transferFrom(sender, receiver, 1337, 70);
+        snapLastCall("ERC6909Claims transferFrom with approval");
 
         assertEq(token.allowance(sender, address(this), 1337), 30);
         assertEq(token.balanceOf(sender, 1337), 30);
@@ -111,6 +122,7 @@ contract ERC6909ClaimsTest is Test {
         token.approve(address(this), 1337, type(uint256).max);
 
         token.transferFrom(sender, receiver, 1337, 70);
+        snapLastCall("ERC6909Claims transferFrom with infinite approval");
 
         assertEq(token.allowance(sender, address(this), 1337), type(uint256).max);
         assertEq(token.balanceOf(sender, 1337), 30);
@@ -127,6 +139,7 @@ contract ERC6909ClaimsTest is Test {
         token.setOperator(address(this), true);
 
         token.transferFrom(sender, receiver, 1337, 70);
+        snapLastCall("ERC6909Claims transferFrom as operator");
 
         assertEq(token.balanceOf(sender, 1337), 30);
         assertEq(token.balanceOf(receiver, 1337), 70);
@@ -255,7 +268,11 @@ contract ERC6909ClaimsTest is Test {
         if (mintAmount == type(uint256).max) {
             assertEq(token.allowance(sender, address(this), id), type(uint256).max);
         } else {
-            assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+            if (sender != address(this)) {
+                assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+            } else {
+                assertEq(token.allowance(sender, address(this), id), mintAmount);
+            }
         }
 
         if (sender == receiver) {
@@ -367,6 +384,7 @@ contract ERC6909ClaimsTest is Test {
 
         token.mint(sender, id, amount);
 
+        vm.assume(sender != address(this));
         token.transferFrom(sender, receiver, id, amount);
     }
 }

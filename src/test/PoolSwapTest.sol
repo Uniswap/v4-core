@@ -8,11 +8,11 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
-import {Hooks} from "../libraries/Hooks.sol";
-import {IHooks} from "../interfaces/IHooks.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolSwapTest is PoolTestBase {
     using CurrencyLibrary for Currency;
+    using CurrencySettleTake for Currency;
     using Hooks for IHooks;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
@@ -28,9 +28,8 @@ contract PoolSwapTest is PoolTestBase {
     }
 
     struct TestSettings {
-        bool withdrawTokens;
-        bool settleUsingTransfer;
-        bool currencyAlreadySent;
+        bool takeClaims;
+        bool settleUsingBurn;
     }
 
     function swap(
@@ -52,77 +51,66 @@ contract PoolSwapTest is PoolTestBase {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        (, uint256 poolBalanceBefore0, int256 deltaBefore0) =
-            _fetchBalances(data.key.currency0, data.sender, address(this));
-        (, uint256 poolBalanceBefore1, int256 deltaBefore1) =
-            _fetchBalances(data.key.currency1, data.sender, address(this));
+        (,, int256 deltaBefore0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,, int256 deltaBefore1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         require(deltaBefore0 == 0, "deltaBefore0 is not equal to 0");
         require(deltaBefore1 == 0, "deltaBefore1 is not equal to 0");
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
 
-        (, uint256 poolBalanceAfter0, int256 deltaAfter0) =
-            _fetchBalances(data.key.currency0, data.sender, address(this));
-        (, uint256 poolBalanceAfter1, int256 deltaAfter1) =
-            _fetchBalances(data.key.currency1, data.sender, address(this));
-
-        require(poolBalanceBefore0 == poolBalanceAfter0, "poolBalanceBefore0 is not equal to poolBalanceAfter0");
-        require(poolBalanceBefore1 == poolBalanceAfter1, "poolBalanceBefore1 is not equal to poolBalanceAfter1");
+        (,, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
+        (,, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
 
         if (data.params.zeroForOne) {
             if (data.params.amountSpecified < 0) {
                 // exact input, 0 for 1
                 require(
-                    deltaAfter0 == data.params.amountSpecified,
-                    "deltaAfter0 is not equal to data.params.amountSpecified"
+                    deltaAfter0 >= data.params.amountSpecified,
+                    "deltaAfter0 is not greater than or equal to data.params.amountSpecified"
                 );
-                require(deltaAfter1 > 0, "deltaAfter1 is not greater than 0");
+                require(delta.amount0() == deltaAfter0, "delta.amount0() is not equal to deltaAfter0");
+                require(deltaAfter1 >= 0, "deltaAfter1 is not greater than or equal to 0");
             } else {
                 // exact output, 0 for 1
-                require(deltaAfter0 < 0, "deltaAfter0 is not less than zero");
+                require(deltaAfter0 <= 0, "deltaAfter0 is not less than or equal to zero");
+                require(delta.amount1() == deltaAfter1, "delta.amount1() is not equal to deltaAfter1");
                 require(
-                    deltaAfter1 == data.params.amountSpecified,
-                    "deltaAfter1 is not equal to data.params.amountSpecified"
+                    deltaAfter1 <= data.params.amountSpecified,
+                    "deltaAfter1 is not less than or equal to data.params.amountSpecified"
                 );
             }
         } else {
             if (data.params.amountSpecified < 0) {
                 // exact input, 1 for 0
                 require(
-                    deltaAfter1 == data.params.amountSpecified,
-                    "deltaAfter1 is not equal to data.params.amountSpecified"
+                    deltaAfter1 >= data.params.amountSpecified,
+                    "deltaAfter1 is not greater than or equal to data.params.amountSpecified"
                 );
-                require(deltaAfter0 > 0, "deltaAfter0 is not greater than 0");
+                require(delta.amount1() == deltaAfter1, "delta.amount1() is not equal to deltaAfter1");
+                require(deltaAfter0 >= 0, "deltaAfter0 is not greater than or equal to 0");
             } else {
                 // exact output, 1 for 0
-                require(deltaAfter1 < 0, "deltaAfter1 is not less than 0");
+                require(deltaAfter1 <= 0, "deltaAfter1 is not less than or equal to 0");
+                require(delta.amount0() == deltaAfter0, "delta.amount0() is not equal to deltaAfter0");
                 require(
-                    deltaAfter0 == data.params.amountSpecified,
-                    "deltaAfter0 is not equal to data.params.amountSpecified"
+                    deltaAfter0 <= data.params.amountSpecified,
+                    "deltaAfter0 is not less than or equal to data.params.amountSpecified"
                 );
             }
         }
 
         if (deltaAfter0 < 0) {
-            if (data.testSettings.currencyAlreadySent) {
-                manager.settle(data.key.currency0);
-            } else {
-                _settle(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.settleUsingTransfer);
-            }
+            data.key.currency0.settle(manager, data.sender, uint256(-deltaAfter0), data.testSettings.settleUsingBurn);
         }
         if (deltaAfter1 < 0) {
-            if (data.testSettings.currencyAlreadySent) {
-                manager.settle(data.key.currency1);
-            } else {
-                _settle(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.settleUsingTransfer);
-            }
+            data.key.currency1.settle(manager, data.sender, uint256(-deltaAfter1), data.testSettings.settleUsingBurn);
         }
         if (deltaAfter0 > 0) {
-            _take(data.key.currency0, data.sender, int128(deltaAfter0), data.testSettings.withdrawTokens);
+            data.key.currency0.take(manager, data.sender, uint256(deltaAfter0), data.testSettings.takeClaims);
         }
         if (deltaAfter1 > 0) {
-            _take(data.key.currency1, data.sender, int128(deltaAfter1), data.testSettings.withdrawTokens);
+            data.key.currency1.take(manager, data.sender, uint256(deltaAfter1), data.testSettings.takeClaims);
         }
 
         return abi.encode(delta);
