@@ -13,7 +13,7 @@ library TickMath {
     /// @dev The minimum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**-128
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**128
-    int24 internal constant MAX_TICK = -MIN_TICK;
+    int24 internal constant MAX_TICK = 887272;
 
     /// @dev The minimum tick spacing value drawn from the range of type int16 that is greater than 0, i.e. min from the range [1, 32767]
     int24 internal constant MIN_TICK_SPACING = 1;
@@ -50,7 +50,15 @@ library TickMath {
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
         unchecked {
             uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
-            if (absTick > uint256(int256(MAX_TICK))) revert InvalidTick();
+            /// @solidity memory-safe-assembly
+            assembly {
+                // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
+                if gt(absTick, MAX_TICK) {
+                    // store 4-byte selector of "InvalidTick()" at memory [0x1c, 0x20)
+                    mstore(0, 0xce8ef7fc)
+                    revert(0x1c, 0x04)
+                }
+            }
 
             uint256 price =
                 absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
