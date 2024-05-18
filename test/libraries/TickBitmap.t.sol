@@ -4,7 +4,8 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {GasSnapshot} from "lib/forge-gas-snapshot/src/GasSnapshot.sol";
-import {TickBitmap} from "src/libraries/TickBitmap.sol";
+import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
+import {TickMath} from "../../src/libraries/TickMath.sol";
 
 contract TickBitmapTest is Test, GasSnapshot {
     using TickBitmap for mapping(int16 => uint256);
@@ -14,6 +15,7 @@ contract TickBitmapTest is Test, GasSnapshot {
     int24 constant SOLO_INITIALIZED_TICK_IN_WORD = -10000;
 
     mapping(int16 => uint256) public bitmap;
+    mapping(int16 => uint256) internal emptyBitmap;
 
     function setUp() public {
         // set dirty slots beforehand for certain gas tests
@@ -105,9 +107,25 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_flipTick_flippingATickThatResultsInDeletingAWord_gas() public {
-        flipTick(SOLO_INITIALIZED_TICK_IN_WORD);
         snapStart("flipTick_flippingATickThatResultsInDeletingAWord");
+        flipTick(SOLO_INITIALIZED_TICK_IN_WORD);
         snapEnd();
+    }
+
+    function test_fuzz_flipTick(int24 tick, int24 tickSpacing) public {
+        tickSpacing = int24(bound(tickSpacing, 1, type(int24).max));
+
+        if (tick % tickSpacing != 0) {
+            vm.expectRevert(abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, tick, tickSpacing));
+            bitmap.flipTick(tick, tickSpacing);
+        } else {
+            bool initialized = isInitialized(tick, tickSpacing);
+            bitmap.flipTick(tick, tickSpacing);
+            assertEq(isInitialized(tick, tickSpacing), !initialized);
+            // flip again
+            bitmap.flipTick(tick, tickSpacing);
+            assertEq(isInitialized(tick, tickSpacing), initialized);
+        }
     }
 
     function test_nextInitializedTickWithinOneWord_lteFalse_returnsTickToRightIfAtInitializedTick() public view {
@@ -180,8 +198,8 @@ contract TickBitmapTest is Test, GasSnapshot {
     }
 
     function test_nextInitializedTickWithinOneWord_lteFalse_onBoundary_gas() public {
-        bitmap.nextInitializedTickWithinOneWord(255, 1, false);
         snapStart("nextInitializedTickWithinOneWord_lteFalse_onBoundary");
+        bitmap.nextInitializedTickWithinOneWord(255, 1, false);
         snapEnd();
     }
 
@@ -276,7 +294,7 @@ contract TickBitmapTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_nextInitializedTickWithinOneWord_fuzz(int24 tick, bool lte) public view {
+    function test_fuzz_nextInitializedTickWithinOneWord(int24 tick, bool lte) public view {
         // assume tick is at least one word inside type(int24).(max | min)
         vm.assume(lte ? tick >= -8388352 : tick < 8388351);
 
@@ -301,9 +319,41 @@ contract TickBitmapTest is Test, GasSnapshot {
         }
     }
 
+    function test_fuzz_nextInitializedTickWithinOneWord_onEmptyBitmap(
+        int24 tick,
+        int24 tickSpacing,
+        uint8 nextBitPos,
+        bool lte
+    ) public {
+        tick = int24(bound(tick, TickMath.MIN_TICK, TickMath.MAX_TICK));
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        int24 compressed = TickBitmap.compress(tick, tickSpacing);
+        if (!lte) ++compressed;
+        (int16 wordPos, uint8 bitPos) = TickBitmap.position(compressed);
+
+        if (lte) {
+            nextBitPos = uint8(bound(nextBitPos, 0, bitPos));
+        } else {
+            nextBitPos = uint8(bound(nextBitPos, bitPos, 255));
+        }
+        // Choose the next initialized tick within one word at random and flip it.
+        int24 nextInitializedTick = ((int24(wordPos) << 8) + int24(uint24(nextBitPos))) * tickSpacing;
+        emptyBitmap.flipTick(nextInitializedTick, tickSpacing);
+        (int24 next, bool initialized) = emptyBitmap.nextInitializedTickWithinOneWord(tick, tickSpacing, lte);
+        assertEq(initialized, true);
+        assertEq(next, nextInitializedTick);
+    }
+
+    function isInitialized(int24 tick, int24 tickSpacing) internal view returns (bool) {
+        unchecked {
+            if (tick % tickSpacing != 0) return false;
+            (int16 wordPos, uint8 bitPos) = TickBitmap.position(tick / tickSpacing);
+            return bitmap[wordPos] & (1 << bitPos) != 0;
+        }
+    }
+
     function isInitialized(int24 tick) internal view returns (bool) {
-        (int24 next, bool initialized) = bitmap.nextInitializedTickWithinOneWord(tick, 1, true);
-        return next == tick ? initialized : false;
+        return isInitialized(tick, 1);
     }
 
     function flipTick(int24 tick) internal {
