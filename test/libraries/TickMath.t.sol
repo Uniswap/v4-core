@@ -94,7 +94,7 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
 
     function test_getTickAtSqrtPrice_throwsForTooHigh() public {
         vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
-        tickMath.getTickAtSqrtPrice(MAX_SQRT_PRICE + 1);
+        tickMath.getTickAtSqrtPrice(MAX_SQRT_PRICE);
     }
 
     function test_getTickAtSqrtPrice_isValidMinSqrtPrice() public view {
