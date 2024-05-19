@@ -56,16 +56,13 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     function test_settle_withStartingBalance() public noIsolate {
         assertGt(currency0.balanceOf(address(manager)), uint256(0));
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         // Sync has not been called.
         assertEq(manager.getReserves(currency0), 0);
 
-        swapRouter.swap(key, params, testSettings, new bytes(0));
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, new bytes(0));
         (uint256 balanceCurrency0) = currency0.balanceOf(address(manager));
         assertEq(manager.getReserves(currency0), balanceCurrency0); // Reserves are up to date since settle was called.
     }
