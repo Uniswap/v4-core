@@ -14,12 +14,16 @@ import {PoolTestBase} from "./PoolTestBase.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {StateLibrary} from "../libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
     using CurrencySettleTake for Currency;
     using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
+    using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
 
     uint256 public counter;
     IPoolManager manager;
@@ -97,11 +101,11 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData)
         external
         override
-        returns (bytes4, BeforeSwapDelta)
+        returns (bytes4, BeforeSwapDelta, uint24)
     {
         counter++;
         _swap(key, params, hookData);
-        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA);
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
     function afterSwap(
