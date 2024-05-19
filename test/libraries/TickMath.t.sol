@@ -203,8 +203,8 @@ contract TickMathTestTest is Test, JavascriptFfi {
 
         uint160 sqrtPrice0 = tickMath.getSqrtPriceAtTick(tick);
         uint160 sqrtPrice1;
-        if (uint256(sqrtPrice0) + uint256(sqrtPriceX96Delta) > tickMath.MAX_SQRT_PRICE()) {
-            sqrtPrice1 = tickMath.MAX_SQRT_PRICE();
+        if (uint256(sqrtPrice0) + uint256(sqrtPriceX96Delta) >= tickMath.MAX_SQRT_PRICE()) {
+            sqrtPrice1 = tickMath.MAX_SQRT_PRICE() - 1;
         } else {
             sqrtPrice1 = sqrtPrice0 + sqrtPriceX96Delta;
         }
