@@ -11,7 +11,6 @@ import {FixedPoint96} from "./FixedPoint96.sol";
 /// @notice Contains the math that uses square root of price as a Q64.96 and liquidity to compute deltas
 library SqrtPriceMath {
     using SafeCast for uint256;
-    using UnsafeMath for *;
 
     error InvalidPriceOrLiquidity();
     error InvalidPrice();
