@@ -10,18 +10,24 @@ import {Test} from "forge-std/Test.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {StateLibrary} from "../libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 
 enum Action {
     NESTED_SELF_UNLOCK,
     NESTED_EXECUTOR_UNLOCK,
     SWAP_AND_SETTLE,
     DONATE_AND_SETTLE,
-    ADD_LIQ_AND_SETTLE,
-    REMOVE_LIQ_AND_SETTLE,
+    ADD_LIQUIDITY_AND_SETTLE,
+    REMOVE_LIQUIDITY_AND_SETTLE,
     INITIALIZE
 }
 
 contract PoolNestedActionsTest is Test, IUnlockCallback {
+    using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
+
     IPoolManager manager;
     NestedActionExecutor public executor;
     address user;
@@ -58,6 +64,9 @@ contract PoolNestedActionsTest is Test, IUnlockCallback {
 }
 
 contract NestedActionExecutor is Test, PoolTestBase {
+    using StateLibrary for IPoolManager;
+    using TransientStateLibrary for IPoolManager;
+    using CurrencySettleTake for Currency;
     using PoolIdLibrary for PoolKey;
 
     PoolKey internal key;
@@ -65,14 +74,14 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
     error KeyNotSet();
 
-    IPoolManager.ModifyLiquidityParams internal ADD_LIQ_PARAMS =
-        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18});
+    IPoolManager.ModifyLiquidityParams internal ADD_LIQUIDITY_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
 
-    IPoolManager.ModifyLiquidityParams internal REMOVE_LIQ_PARAMS =
-        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18});
+    IPoolManager.ModifyLiquidityParams internal REMOVE_LIQUIDITY_PARAMS =
+        IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
 
     IPoolManager.SwapParams internal SWAP_PARAMS =
-        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: Constants.SQRT_RATIO_1_2});
+        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: Constants.SQRT_PRICE_1_2});
 
     uint256 internal DONATE_AMOUNT0 = 12345e6;
     uint256 internal DONATE_AMOUNT1 = 98765e4;
@@ -91,8 +100,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
             Action action = actions[i];
             if (action == Action.NESTED_EXECUTOR_UNLOCK) _nestedUnlock();
             else if (action == Action.SWAP_AND_SETTLE) _swap(msg.sender);
-            else if (action == Action.ADD_LIQ_AND_SETTLE) _addLiquidity(msg.sender);
-            else if (action == Action.REMOVE_LIQ_AND_SETTLE) _removeLiquidity(msg.sender);
+            else if (action == Action.ADD_LIQUIDITY_AND_SETTLE) _addLiquidity(msg.sender);
+            else if (action == Action.REMOVE_LIQUIDITY_AND_SETTLE) _removeLiquidity(msg.sender);
             else if (action == Action.DONATE_AND_SETTLE) _donate(msg.sender);
             else if (action == Action.INITIALIZE) _initialize();
         }
@@ -129,8 +138,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(delta.amount0(), deltaThisAfter0, "Swap delta 0");
         assertEq(delta.amount1(), deltaThisAfter1, "Swap delta 1");
 
-        _settle(key.currency0, user, int128(deltaThisAfter0), true);
-        _take(key.currency1, user, int128(deltaThisAfter1), true);
+        key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
+        key.currency1.take(manager, user, uint256(deltaThisAfter1), false);
     }
 
     function _addLiquidity(address caller) internal {
@@ -141,7 +150,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        (BalanceDelta delta,) = manager.modifyLiquidity(key, ADD_LIQ_PARAMS, "");
+        (BalanceDelta delta,) = manager.modifyLiquidity(key, ADD_LIQUIDITY_PARAMS, "");
 
         (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
         (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
@@ -153,8 +162,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaThisBefore0 + delta.amount0(), deltaThisAfter0, "Executor delta 0");
         assertEq(deltaThisBefore1 + delta.amount1(), deltaThisAfter1, "Executor delta 1");
 
-        _settle(key.currency0, user, int128(deltaThisAfter0), true);
-        _settle(key.currency1, user, int128(deltaThisAfter1), true);
+        key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
+        key.currency1.settle(manager, user, uint256(-deltaThisAfter1), false);
     }
 
     // cannot remove non-existent liquidity - need to perform an add before this removal
@@ -166,7 +175,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        (BalanceDelta delta,) = manager.modifyLiquidity(key, REMOVE_LIQ_PARAMS, "");
+        (BalanceDelta delta,) = manager.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, "");
 
         (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
         (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
@@ -178,8 +187,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaThisBefore0 + delta.amount0(), deltaThisAfter0, "Executor delta 0");
         assertEq(deltaThisBefore1 + delta.amount1(), deltaThisAfter1, "Executor delta 1");
 
-        _take(key.currency0, user, int128(deltaThisAfter0), true);
-        _take(key.currency1, user, int128(deltaThisAfter1), true);
+        key.currency0.take(manager, user, uint256(deltaThisAfter0), false);
+        key.currency1.take(manager, user, uint256(deltaThisAfter1), false);
     }
 
     function _donate(address caller) internal {
@@ -204,8 +213,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(-delta.amount0(), int256(DONATE_AMOUNT0), "Donate delta 0");
         assertEq(-delta.amount1(), int256(DONATE_AMOUNT1), "Donate delta 1");
 
-        _settle(key.currency0, user, int128(deltaThisAfter0), true);
-        _settle(key.currency1, user, int128(deltaThisAfter1), true);
+        key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
+        key.currency1.settle(manager, user, uint256(-deltaThisAfter1), false);
     }
 
     function _initialize() internal {
@@ -215,9 +224,9 @@ contract NestedActionExecutor is Test, PoolTestBase {
         PoolId id = key.toId();
         (uint256 price,,,) = manager.getSlot0(id);
         assertEq(price, 0);
-        manager.initialize(key, Constants.SQRT_RATIO_1_2, Constants.ZERO_BYTES);
+        manager.initialize(key, Constants.SQRT_PRICE_1_2, Constants.ZERO_BYTES);
         (price,,,) = manager.getSlot0(id);
-        assertEq(price, Constants.SQRT_RATIO_1_2);
+        assertEq(price, Constants.SQRT_PRICE_1_2);
     }
 
     // This will never actually be used - its just to allow us to use the PoolTestBase helper contact

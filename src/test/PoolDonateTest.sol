@@ -8,9 +8,11 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolDonateTest is PoolTestBase {
     using CurrencyLibrary for Currency;
+    using CurrencySettleTake for Currency;
     using Hooks for IHooks;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
@@ -57,10 +59,10 @@ contract PoolDonateTest is PoolTestBase {
         require(deltaAfter0 == -int256(data.amount0), "deltaAfter0 is not equal to -int256(data.amount0)");
         require(deltaAfter1 == -int256(data.amount1), "deltaAfter1 is not equal to -int256(data.amount1)");
 
-        if (deltaAfter0 < 0) _settle(data.key.currency0, data.sender, int128(deltaAfter0), true);
-        if (deltaAfter1 < 0) _settle(data.key.currency1, data.sender, int128(deltaAfter1), true);
-        if (deltaAfter0 > 0) _take(data.key.currency0, data.sender, int128(deltaAfter0), true);
-        if (deltaAfter1 > 0) _take(data.key.currency1, data.sender, int128(deltaAfter1), true);
+        if (deltaAfter0 < 0) data.key.currency0.settle(manager, data.sender, uint256(-deltaAfter0), false);
+        if (deltaAfter1 < 0) data.key.currency1.settle(manager, data.sender, uint256(-deltaAfter1), false);
+        if (deltaAfter0 > 0) data.key.currency0.take(manager, data.sender, uint256(deltaAfter0), false);
+        if (deltaAfter1 > 0) data.key.currency1.take(manager, data.sender, uint256(deltaAfter1), false);
 
         return abi.encode(delta);
     }

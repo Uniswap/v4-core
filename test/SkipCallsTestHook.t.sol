@@ -5,7 +5,6 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
-import {SwapFeeLibrary} from "../src/libraries/SwapFeeLibrary.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
@@ -23,17 +22,9 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
     IPoolManager.SwapParams swapParams =
-        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_RATIO_1_2});
+        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
-    PoolSwapTest.TestSettings testSettings =
-        PoolSwapTest.TestSettings({withdrawTokens: true, settleUsingTransfer: true, currencyAlreadySent: false});
-
-    uint160 clearAllHookPermisssionsMask;
-    uint256 hookPermissionCount = 10;
-
-    function setUp() public {
-        clearAllHookPermisssionsMask = ~uint160(0) >> hookPermissionCount;
-    }
+    PoolSwapTest.TestSettings testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
     function deploy(SkipCallsTestHook skipCallsTestHook) private {
         SkipCallsTestHook impl = new SkipCallsTestHook();
@@ -44,13 +35,13 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
         assertEq(skipCallsTestHook.counter(), 0);
 
-        (key,) = initPool(currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_RATIO_1_1, ZERO_BYTES);
+        (key,) = initPool(currency0, currency1, IHooks(address(skipCallsTestHook)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function approveAndAddLiquidity(SkipCallsTestHook skipCallsTestHook) private {
         MockERC20(Currency.unwrap(key.currency0)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
         MockERC20(Currency.unwrap(key.currency1)).approve(address(skipCallsTestHook), Constants.MAX_UINT256);
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
     }
 
     function test_beforeInitialize_skipIfCalledByHook() public {
@@ -85,7 +76,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         approveAndAddLiquidity(skipCallsTestHook);
         assertEq(skipCallsTestHook.counter(), 1);
         // adds liquidity again and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
@@ -101,7 +92,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         approveAndAddLiquidity(skipCallsTestHook);
         assertEq(skipCallsTestHook.counter(), 1);
         // adds liquidity and increments counter again
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
@@ -115,12 +106,12 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 0);
 
         // removes liquidity and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
         // adds liquidity again
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
         // removes liquidity again and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
@@ -134,12 +125,12 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 0);
 
         // removes liquidity and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
         // adds liquidity again
-        modifyLiquidityRouter.modifyLiquidity(key, LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, abi.encode(address(this)));
         // removes liquidity again and increments counter
-        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQ_PARAMS, abi.encode(address(this)));
+        modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
@@ -170,9 +161,8 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 0);
 
         // swaps and increments counter
-        snapStart("swap skips hook call if hook is caller");
         swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
-        snapEnd();
+        snapLastCall("swap skips hook call if hook is caller");
         assertEq(skipCallsTestHook.counter(), 1);
     }
 
