@@ -169,6 +169,15 @@ library SqrtPriceMath {
         }
     }
 
+    /// @notice Equivalent to: `a > b ? a - b : b - a`
+    function absDiff(uint160 a, uint160 b) internal pure returns (uint256 res) {
+        assembly {
+            let diff := sub(a, b)
+            let mask := sar(255, diff)
+            res := xor(mask, add(mask, diff))
+        }
+    }
+
     /// @notice Gets the amount1 delta between two prices
     /// @dev Calculates liquidity * (sqrt(upper) - sqrt(lower))
     /// @param sqrtPriceAX96 A sqrt price
@@ -181,11 +190,24 @@ library SqrtPriceMath {
         pure
         returns (uint256 amount1)
     {
-        if (sqrtPriceAX96 > sqrtPriceBX96) (sqrtPriceAX96, sqrtPriceBX96) = (sqrtPriceBX96, sqrtPriceAX96);
-
-        return roundUp
-            ? FullMath.mulDivRoundingUp(liquidity, sqrtPriceBX96 - sqrtPriceAX96, FixedPoint96.Q96)
-            : FullMath.mulDiv(liquidity, sqrtPriceBX96 - sqrtPriceAX96, FixedPoint96.Q96);
+        uint256 numerator = absDiff(sqrtPriceAX96, sqrtPriceBX96);
+        uint256 denominator = FixedPoint96.Q96;
+        uint256 _liquidity;
+        assembly {
+            // avoid implicit upcasting
+            _liquidity := liquidity
+        }
+        /**
+         * Equivalent to:
+         *   amount1 = roundUp
+         *       ? FullMath.mulDivRoundingUp(liquidity, sqrtPriceBX96 - sqrtPriceAX96, FixedPoint96.Q96)
+         *       : FullMath.mulDiv(liquidity, sqrtPriceBX96 - sqrtPriceAX96, FixedPoint96.Q96);
+         * Cannot overflow because `type(uint128).max * type(uint160).max >> 96 < (1 << 192)`.
+         */
+        amount1 = FullMath.mulDiv(_liquidity, numerator, denominator);
+        assembly {
+            amount1 := add(amount1, and(gt(mulmod(_liquidity, numerator, denominator), 0), roundUp))
+        }
     }
 
     /// @notice Helper that gets signed currency0 delta
