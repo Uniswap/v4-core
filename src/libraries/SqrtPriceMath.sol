@@ -11,6 +11,7 @@ import {FixedPoint96} from "./FixedPoint96.sol";
 /// @notice Contains the math that uses square root of price as a Q64.96 and liquidity to compute deltas
 library SqrtPriceMath {
     using SafeCast for uint256;
+    using UnsafeMath for *;
 
     error InvalidPriceOrLiquidity();
     error InvalidPrice();
@@ -142,6 +143,16 @@ library SqrtPriceMath {
             : getNextSqrtPriceFromAmount0RoundingUp(sqrtPX96, liquidity, amountOut, false);
     }
 
+    /// @notice Sorts two `uint160`s and returns them in ascending order
+    function sort2(uint160 a, uint160 b) internal pure returns (uint160, uint160) {
+        assembly {
+            let diff := mul(xor(a, b), lt(b, a))
+            a := xor(a, diff)
+            b := xor(b, diff)
+        }
+        return (a, b);
+    }
+
     /// @notice Gets the amount0 delta between two prices
     /// @dev Calculates liquidity / sqrt(lower) - liquidity / sqrt(upper),
     /// i.e. liquidity * (sqrt(upper) - sqrt(lower)) / (sqrt(upper) * sqrt(lower))
@@ -156,16 +167,35 @@ library SqrtPriceMath {
         returns (uint256 amount0)
     {
         unchecked {
-            if (sqrtPriceAX96 > sqrtPriceBX96) (sqrtPriceAX96, sqrtPriceBX96) = (sqrtPriceBX96, sqrtPriceAX96);
+            (sqrtPriceAX96, sqrtPriceBX96) = sort2(sqrtPriceAX96, sqrtPriceBX96);
 
-            uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
-            uint256 numerator2 = sqrtPriceBX96 - sqrtPriceAX96;
+            /// @solidity memory-safe-assembly
+            assembly {
+                if iszero(sqrtPriceAX96) {
+                    mstore(0, 0x00bfc921) // selector for InvalidPrice()
+                    revert(0x1c, 0x04)
+                }
+            }
 
-            if (sqrtPriceAX96 == 0) revert InvalidPrice();
+            uint256 _sqrtPriceAX96;
+            uint256 _sqrtPriceBX96;
+            assembly {
+                // avoid implicit upcast
+                _sqrtPriceAX96 := sqrtPriceAX96
+                _sqrtPriceBX96 := sqrtPriceBX96
+            }
+
+            uint256 numerator1;
+            assembly {
+                numerator1 := shl(96, liquidity)
+            }
+            uint256 numerator2 = _sqrtPriceBX96 - _sqrtPriceAX96;
 
             return roundUp
-                ? UnsafeMath.divRoundingUp(FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtPriceBX96), sqrtPriceAX96)
-                : FullMath.mulDiv(numerator1, numerator2, sqrtPriceBX96) / sqrtPriceAX96;
+                ? UnsafeMath.divRoundingUp(
+                    FullMath.mulDivRoundingUp(numerator1, numerator2, _sqrtPriceBX96), _sqrtPriceAX96
+                )
+                : UnsafeMath.div(FullMath.mulDiv(numerator1, numerator2, _sqrtPriceBX96), _sqrtPriceAX96);
         }
     }
 
