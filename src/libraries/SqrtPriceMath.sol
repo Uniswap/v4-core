@@ -153,6 +153,14 @@ library SqrtPriceMath {
         return (a, b);
     }
 
+    /// @notice Directly returns two `uint256`s from two `uint160`s without implicit upcasting
+    function assign(uint160 a, uint160 b) internal pure returns (uint256 _a, uint256 _b) {
+        assembly {
+            _a := a
+            _b := b
+        }
+    }
+
     /// @notice Gets the amount0 delta between two prices
     /// @dev Calculates liquidity / sqrt(lower) - liquidity / sqrt(upper),
     /// i.e. liquidity * (sqrt(upper) - sqrt(lower)) / (sqrt(upper) * sqrt(lower))
@@ -177,13 +185,7 @@ library SqrtPriceMath {
                 }
             }
 
-            uint256 _sqrtPriceAX96;
-            uint256 _sqrtPriceBX96;
-            assembly {
-                // avoid implicit upcast
-                _sqrtPriceAX96 := sqrtPriceAX96
-                _sqrtPriceBX96 := sqrtPriceBX96
-            }
+            (uint256 _sqrtPriceAX96, uint256 _sqrtPriceBX96) = assign(sqrtPriceAX96, sqrtPriceBX96);
 
             uint256 numerator1;
             assembly {
