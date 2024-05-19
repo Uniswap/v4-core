@@ -407,9 +407,11 @@ library Pool {
                         : (self.feeGrowthGlobal0X128, state.feeGrowthGlobalX128);
                     int128 liquidityNet =
                         Pool.crossTick(self, step.tickNext, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
-                    // if we're moving leftward, we interpret liquidityNet as the opposite sign
-                    // safe because liquidityNet cannot be type(int128).min
-                    liquidityNet = LiquidityMath.flipLiquidityDelta(liquidityNet, zeroForOne);
+                    // if we're moving leftward, we interpret `liquidityNet` as the opposite sign
+                    // `flipLiquidityDelta` can handle `type(int128).min` and return `1 << 127` as a valid `int256`
+                    // the soft wrap to `int128` is safe because `liquidityNet` is immediately consumed by `addDelta`
+                    // written in inline assembly
+                    liquidityNet = int128(LiquidityMath.flipLiquidityDelta(liquidityNet, zeroForOne));
 
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
@@ -545,13 +547,15 @@ library Pool {
 
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
         // Equivalent to `liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;`
-        // `int128 liquidityDelta` is passed from `modifyLiquidity` and should be sanitized in `PoolManager`
-        liquidityDelta = LiquidityMath.flipLiquidityDelta(liquidityDelta, upper);
+        // `int128 liquidityDelta` is passed from `modifyLiquidity` and is sanitized in `PoolManager`
+        // `flipLiquidityDelta` can handle `type(int128).min` and return `1 << 127` as a valid `int256`
+        int256 _liquidityDelta = LiquidityMath.flipLiquidityDelta(liquidityDelta, upper);
         // declare an int256 to prevent implicit conversion when calling toInt128
         int256 liquidityNet;
         assembly {
-            liquidityNet := add(liquidityNetBefore, liquidityDelta)
+            liquidityNet := add(liquidityNetBefore, _liquidityDelta)
         }
+        // ensure the sum is a valid `int128`
         liquidityNet.toInt128();
         assembly {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`

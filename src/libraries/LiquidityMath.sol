@@ -22,11 +22,11 @@ library LiquidityMath {
 
     /// @notice Flips the sign of a liquidity delta if a condition is true
     /// @dev Equivalent to `res = flip ? -liquidityDelta : liquidityDelta;`
-    /// @dev `liquidityDelta` should never be `type(int128).min`
+    /// @dev If flipping `type(int128).min`, `1 << 127` is returned which is a valid `int256`
     /// @param liquidityDelta The liquidity delta to potentially flip
     /// @param flip Whether to flip the sign of the liquidity delta
     /// @return res The potentially flipped liquidity delta
-    function flipLiquidityDelta(int128 liquidityDelta, bool flip) internal pure returns (int128 res) {
+    function flipLiquidityDelta(int128 liquidityDelta, bool flip) internal pure returns (int256 res) {
         assembly {
             // if flip = true, res = -liquidityDelta = ~liquidityDelta + 1 = (-1) ^ liquidityDelta + 1
             // if flip = false, res = liquidityDelta = 0 ^ liquidityDelta + 0
