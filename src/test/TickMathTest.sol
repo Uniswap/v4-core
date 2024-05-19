@@ -18,6 +18,14 @@ contract TickMathTest {
         return TickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
+    function isSqrtPriceInTick(uint160 sqrtPriceX96, int24 tick, int24 nextNotCrossedTick, bool zeroForOne)
+        external
+        pure
+        returns (bool)
+    {
+        return TickMath.isSqrtPriceInTick(sqrtPriceX96, tick, nextNotCrossedTick, zeroForOne);
+    }
+
     function getGasCostOfGetTickAtSqrtPrice(uint160 sqrtPriceX96) external view returns (uint256) {
         uint256 gasBefore = gasleft();
         TickMath.getTickAtSqrtPrice(sqrtPriceX96);

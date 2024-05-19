@@ -427,7 +427,10 @@ library Pool {
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
-                state.tick = TickMath.getTickAtSqrtPrice(state.sqrtPriceX96);
+                if (!TickMath.isSqrtPriceInTick(state.sqrtPriceX96, state.tick, step.tickNext, zeroForOne)) {
+                    // recomputing does not occur if we obviously did not change the tick
+                    state.tick = TickMath.getTickAtSqrtPrice(state.sqrtPriceX96);
+                }
             }
         }
 
