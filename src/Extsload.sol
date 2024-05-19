@@ -33,19 +33,21 @@ abstract contract Extsload is IExtsload {
         // since the function is external and enters a new call context and exits right
         // after execution, Solidity's memory management convention can be disregarded
         // and a direct slice of memory can be returned
-        assembly ("memory-safe") {
-            // abi offset for dynamic array
+        /// @solidity memory-safe-assembly
+        assembly {
+            // The abi offset of dynamic array in the returndata is 32.
             mstore(0, 0x20)
             mstore(0x20, slots.length)
+            // A left bit-shift of 5 is equivalent to multiplying by 32 but costs less gas.
             let end := add(0x40, shl(5, slots.length))
-            let memptr := 0x40
-            let calldataptr := slots.offset
-            for {} 1 {} {
-                mstore(memptr, sload(calldataload(calldataptr)))
+            // Return values will start at 64 while calldata offset is 68.
+            for { let memptr := 0x40 } 1 {} {
+                // Compute calldata offset using the memory offset and store loaded value.
+                mstore(memptr, sload(calldataload(add(memptr, 0x04))))
                 memptr := add(memptr, 0x20)
-                calldataptr := add(calldataptr, 0x20)
                 if iszero(lt(memptr, end)) { break }
             }
+            // The end offset is also the length of the returndata.
             return(0, end)
         }
     }

@@ -25,4 +25,17 @@ contract ExtsloadTest is Test, GasSnapshot {
             assertEq(values[i], bytes32(i));
         }
     }
+
+    function test_fuzz_extsload(uint256 length, uint256 seed) public {
+        length = bound(length, 0, 1000);
+        bytes32[] memory slots = new bytes32[](length);
+        bytes32[] memory expected = new bytes32[](length);
+        for (uint256 i; i < length; ++i) {
+            slots[i] = keccak256(abi.encode(i, seed));
+            expected[i] = keccak256(abi.encode(slots[i]));
+            vm.store(address(loadable), slots[i], expected[i]);
+        }
+        bytes32[] memory values = loadable.extsload(slots);
+        assertEq(values, expected);
+    }
 }
