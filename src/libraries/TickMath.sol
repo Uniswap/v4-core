@@ -45,7 +45,11 @@ library TickMath {
     /// @param tick Tick ​​for which the check is carried out
     /// @param nextNotCrossedTick The next active tick that is not crossed
     /// @param zeroForOne The direction of price movement
-    function isSqrtPriceInTick(uint160 sqrtPriceX96, int24 tick, int24 nextNotCrossedTick, bool zeroForOne) internal pure returns (bool) {
+    function isSqrtPriceInTick(uint160 sqrtPriceX96, int24 tick, int24 nextNotCrossedTick, bool zeroForOne)
+        internal
+        pure
+        returns (bool)
+    {
         if (zeroForOne) return nextNotCrossedTick == tick || sqrtPriceX96 >= getSqrtPriceAtTick(tick);
         return nextNotCrossedTick == tick + 1 || sqrtPriceX96 < getSqrtPriceAtTick(tick + 1);
     }

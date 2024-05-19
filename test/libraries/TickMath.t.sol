@@ -183,7 +183,10 @@ contract TickMathTestTest is Test, JavascriptFfi {
         uint160 sqrtPrice0 = tickMath.getSqrtPriceAtTick(tick);
         uint160 sqrtPrice0NextTick = tickMath.getSqrtPriceAtTick(tick + 1);
         uint160 sqrtPrice1;
-        if (sqrtPriceX96Delta >= sqrtPrice0NextTick || sqrtPrice0NextTick - sqrtPriceX96Delta < tickMath.MIN_SQRT_PRICE()) {
+        if (
+            sqrtPriceX96Delta >= sqrtPrice0NextTick
+                || sqrtPrice0NextTick - sqrtPriceX96Delta < tickMath.MIN_SQRT_PRICE()
+        ) {
             sqrtPrice1 = tickMath.MIN_SQRT_PRICE();
         } else {
             sqrtPrice1 = sqrtPrice0NextTick - sqrtPriceX96Delta;
