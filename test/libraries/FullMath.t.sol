@@ -3,8 +3,10 @@ pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
 import {FullMath} from "../../src/libraries/FullMath.sol";
+import {JavascriptFfi} from "test/utils/JavascriptFfi.sol";
+import "forge-std/console2.sol";
 
-contract FullMathTest is Test {
+contract FullMathTest is Test, JavascriptFfi {
     using FullMath for uint256;
 
     uint256 constant Q128 = 2 ** 128;
@@ -204,5 +206,19 @@ contract FullMathTest is Test {
         }
 
         return mulDivResultOverflows || mulDivRoundingUpResultOverflows;
+    }
+
+    function test_mulDiv_matchesJavaScriptImpl() public {
+
+        // Run script and get the result
+        bytes memory jsResult = runScript("forge-test-mulDiv", '3 2 3');
+        uint256 jsMulDivResult = abi.decode(jsResult, (uint256));
+
+        console2.log("jsMulDivResult", jsMulDivResult);
+
+        // Get the result from Solidity
+        uint256 solMulDivResult = FullMath.mulDiv(3, 2, 3);
+
+        assertEq(jsMulDivResult, solMulDivResult);
     }
 }
