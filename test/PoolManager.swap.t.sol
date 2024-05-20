@@ -32,23 +32,25 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
     function addLiquidity(
         FeeTiers fee,
         int256 sqrtPriceX96seed,
-        int24 lowerTick,
-        int24 upperTick,
-        int128 liquidityDelta
+        int24 lowerTickUnsanitized,
+        int24 upperTickUnsanitized,
+        uint128 amount0Unbound,
+        uint128 amount1Unbound
     ) internal returns (IUniswapV3Pool v3Pool, PoolKey memory key_) {
         // init pools
         key_ = PoolKey(currency0, currency1, fee.amount(), fee.tickSpacing(), IHooks(address(0)));
 
+        uint160 sqrtPriceX96 = createRandomSqrtPriceX96(key_, sqrtPriceX96seed);
+
         IPoolManager.ModifyLiquidityParams memory v4LiquidityParams = IPoolManager.ModifyLiquidityParams({
-            tickLower: lowerTick,
-            tickUpper: upperTick,
-            liquidityDelta: liquidityDelta,
+            tickLower: lowerTickUnsanitized,
+            tickUpper: upperTickUnsanitized,
+            liquidityDelta: 0,
             salt: 0
         });
 
-        v4LiquidityParams = createFuzzyLiquidityParams(key_, v4LiquidityParams);
-
-        uint160 sqrtPriceX96 = createRandomSqrtPriceX96(key_, sqrtPriceX96seed);
+        v4LiquidityParams =
+            createFuzzyLiquidityParamsFromAmounts(key_, v4LiquidityParams, amount0Unbound, amount1Unbound, sqrtPriceX96);
 
         v3Pool =
             IUniswapV3Pool(v3Factory.createPool(Currency.unwrap(currency0), Currency.unwrap(currency1), fee.amount()));
@@ -57,6 +59,7 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         manager.initialize(key_, sqrtPriceX96, "");
 
         // add liquidity
+        modifyLiquidityRouter.modifyLiquidity(key_, v4LiquidityParams, "");
         v3Pool.mint(
             address(this),
             v4LiquidityParams.tickLower,
@@ -64,8 +67,6 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
             uint128(int128(v4LiquidityParams.liquidityDelta)),
             ""
         );
-
-        modifyLiquidityRouter.modifyLiquidity(key_, v4LiquidityParams, "");
     }
 
     function swap(IUniswapV3Pool pool, PoolKey memory key_, bool zeroForOne, int256 amountSpecified)
@@ -102,11 +103,21 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
 }
 
 contract V3SwapTests is V3Fuzzer {
-    function test_shouldSwapEqual(int24 lowerTick, int24 upperTick, int128 liquidityDelta, int256 sqrtPriceX96seed)
-        public
-    {
-        (IUniswapV3Pool pool, PoolKey memory key_) =
-            addLiquidity(FeeTiers.FEE_3000, sqrtPriceX96seed, lowerTick, upperTick, liquidityDelta);
+    function test_shouldSwapEqual(
+        int24 lowerTickUnsanitized,
+        int24 upperTickUnsanitized,
+        uint128 amount0Unbound,
+        uint128 amount1Unbound,
+        int256 sqrtPriceX96seed
+    ) public {
+        (IUniswapV3Pool pool, PoolKey memory key_) = addLiquidity(
+            FeeTiers.FEE_3000,
+            sqrtPriceX96seed,
+            lowerTickUnsanitized,
+            upperTickUnsanitized,
+            amount0Unbound,
+            amount1Unbound
+        );
         (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, true, 100);
         assertEq(amount0Diff, 0);
         assertEq(amount1Diff, 0);
