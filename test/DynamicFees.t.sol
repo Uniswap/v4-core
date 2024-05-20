@@ -28,14 +28,14 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     DynamicFeesTestHook dynamicFeesHooks = DynamicFeesTestHook(
         address(
             uint160(
-                uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG
+                uint256(type(uint160).max) & clearAllHookPermissionsMask | Hooks.BEFORE_SWAP_FLAG
                     | Hooks.AFTER_INITIALIZE_FLAG
             )
         )
     );
 
     DynamicFeesTestHook dynamicFeesNoHooks =
-        DynamicFeesTestHook(address(uint160(uint256(type(uint160).max) & clearAllHookPermisssionsMask)));
+        DynamicFeesTestHook(address(uint160(uint256(type(uint160).max) & clearAllHookPermissionsMask)));
 
     event Swap(
         PoolId indexed poolId,

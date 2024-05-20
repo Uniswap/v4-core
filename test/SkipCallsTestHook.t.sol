@@ -46,7 +46,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_beforeInitialize_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_INITIALIZE_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.BEFORE_INITIALIZE_FLAG))
         );
 
         // initializes pool and increments counter
@@ -56,7 +56,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_afterInitialize_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_INITIALIZE_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.AFTER_INITIALIZE_FLAG))
         );
 
         // initializes pool and increments counter
@@ -66,7 +66,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_beforeAddLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_ADD_LIQUIDITY_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.BEFORE_ADD_LIQUIDITY_FLAG))
         );
 
         deploy(skipCallsTestHook);
@@ -82,7 +82,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_afterAddLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_ADD_LIQUIDITY_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.AFTER_ADD_LIQUIDITY_FLAG))
         );
 
         deploy(skipCallsTestHook);
@@ -98,7 +98,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_beforeRemoveLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG))
         );
 
         deploy(skipCallsTestHook);
@@ -117,7 +117,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_afterRemoveLiquidity_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG))
         );
 
         deploy(skipCallsTestHook);
@@ -136,7 +136,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_beforeSwap_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.BEFORE_SWAP_FLAG))
         );
 
         deploy(skipCallsTestHook);
@@ -153,7 +153,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_gas_beforeSwap_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.BEFORE_SWAP_FLAG))
         );
 
         deploy(skipCallsTestHook);
@@ -168,7 +168,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_afterSwap_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_SWAP_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.AFTER_SWAP_FLAG))
         );
 
         deploy(skipCallsTestHook);
@@ -185,7 +185,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_beforeDonate_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.BEFORE_DONATE_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.BEFORE_DONATE_FLAG))
         );
 
         deploy(skipCallsTestHook);
@@ -202,7 +202,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
 
     function test_afterDonate_skipIfCalledByHook() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
-            address(uint160(type(uint160).max & clearAllHookPermisssionsMask | Hooks.AFTER_DONATE_FLAG))
+            address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.AFTER_DONATE_FLAG))
         );
 
         deploy(skipCallsTestHook);
