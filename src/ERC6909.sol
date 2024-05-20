@@ -19,23 +19,48 @@ abstract contract ERC6909 is IERC6909Claims {
     event Transfer(address caller, address indexed from, address indexed to, uint256 indexed id, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
-                             ERC6909 STORAGE
+                             ERC6909 STORAGE SLOTS SALTS
     //////////////////////////////////////////////////////////////*/
 
-    mapping(address => mapping(address => bool)) public isOperator;
+    uint8 internal constant BALANCES_SLOT_SALT = 0xe1; // uint8(uint256(keccak256("BalanceSlot")))
+    uint8 internal constant ALLOWANCES_SLOT_SALT = 0xbe; // uint8(uint256(keccak256("AllowanceSlot")))
+    uint8 internal constant OPERATORS_SLOT_SALT = 0xae; // uint8(uint256(keccak256("OperatorsSlot")))
 
-    mapping(address => mapping(uint256 => uint256)) public balanceOf;
+    /*//////////////////////////////////////////////////////////////
+                              ERC6909 GETTERS
+    //////////////////////////////////////////////////////////////*/
 
-    mapping(address => mapping(address => mapping(uint256 => uint256))) public allowance;
+    function isOperator(address owner, address spender) public view returns (bool approved) {
+        bytes32 _slot = _getOperatorSlot(owner, spender);
+        /// @solidity memory-safe-assembly
+        assembly {
+            approved := sload(_slot)
+        }
+    }
+
+    function balanceOf(address owner, uint256 id) public view returns (uint256 balanceValue) {
+        bytes32 balanceSlot = _getBalanceSlot(owner, id);
+        /// @solidity memory-safe-assembly
+        assembly {
+            balanceValue := sload(balanceSlot)
+        }
+    }
+
+    function allowance(address owner, address spender, uint256 id) public view returns (uint256 allowanceValue) {
+        bytes32 allowanceSlot = _getAllowanceSlot(owner, spender, id);
+        /// @solidity memory-safe-assembly
+        assembly {
+            allowanceValue := sload(allowanceSlot)
+        }
+    }
 
     /*//////////////////////////////////////////////////////////////
                               ERC6909 LOGIC
     //////////////////////////////////////////////////////////////*/
 
     function transfer(address receiver, uint256 id, uint256 amount) public virtual returns (bool) {
-        balanceOf[msg.sender][id] -= amount;
-
-        balanceOf[receiver][id] += amount;
+        _decreaseBalanceOf(msg.sender, id, amount);
+        _increaseBalanceOf(receiver, id, amount);
 
         emit Transfer(msg.sender, msg.sender, receiver, id, amount);
 
@@ -43,14 +68,10 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function transferFrom(address sender, address receiver, uint256 id, uint256 amount) public virtual returns (bool) {
-        if (msg.sender != sender && !isOperator[sender][msg.sender]) {
-            uint256 allowed = allowance[sender][msg.sender][id];
-            if (allowed != type(uint256).max) allowance[sender][msg.sender][id] = allowed - amount;
-        }
+        _spendAllowance(sender, id, amount);
 
-        balanceOf[sender][id] -= amount;
-
-        balanceOf[receiver][id] += amount;
+        _decreaseBalanceOf(sender, id, amount);
+        _increaseBalanceOf(receiver, id, amount);
 
         emit Transfer(msg.sender, sender, receiver, id, amount);
 
@@ -58,7 +79,7 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function approve(address spender, uint256 id, uint256 amount) public virtual returns (bool) {
-        allowance[msg.sender][spender][id] = amount;
+        _setAllowance(msg.sender, spender, id, amount);
 
         emit Approval(msg.sender, spender, id, amount);
 
@@ -66,7 +87,11 @@ abstract contract ERC6909 is IERC6909Claims {
     }
 
     function setOperator(address operator, bool approved) public virtual returns (bool) {
-        isOperator[msg.sender][operator] = approved;
+        bytes32 _slot = _getOperatorSlot(msg.sender, operator);
+        /// @solidity memory-safe-assembly
+        assembly {
+            sstore(_slot, approved)
+        }
 
         emit OperatorSet(msg.sender, operator, approved);
 
@@ -87,14 +112,117 @@ abstract contract ERC6909 is IERC6909Claims {
     //////////////////////////////////////////////////////////////*/
 
     function _mint(address receiver, uint256 id, uint256 amount) internal virtual {
-        balanceOf[receiver][id] += amount;
+        _increaseBalanceOf(receiver, id, amount);
 
         emit Transfer(msg.sender, address(0), receiver, id, amount);
     }
 
     function _burn(address sender, uint256 id, uint256 amount) internal virtual {
-        balanceOf[sender][id] -= amount;
+        _decreaseBalanceOf(sender, id, amount);
 
         emit Transfer(msg.sender, sender, address(0), id, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL STORAGE LOGIC
+    //////////////////////////////////////////////////////////////*/
+
+    function _setAllowance(address owner, address spender, uint256 id, uint256 value) internal {
+        bytes32 allowanceSlot = _getAllowanceSlot(owner, spender, id);
+        /// @solidity memory-safe-assembly
+        assembly {
+            sstore(allowanceSlot, value)
+        }
+    }
+
+    function _spendAllowance(address sender, uint256 id, uint256 amount) internal {
+        if (msg.sender == sender || isOperator(sender, msg.sender)) return;
+
+        bytes32 allowanceSlot = _getAllowanceSlot(sender, msg.sender, id);
+        uint256 allowed;
+        /// @solidity memory-safe-assembly
+        assembly {
+            allowed := sload(allowanceSlot)
+        }
+
+        if (allowed == type(uint256).max) return;
+
+        allowed -= amount;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            sstore(allowanceSlot, allowed)
+        }
+    }
+
+    function _decreaseBalanceOf(address owner, uint256 id, uint256 value) internal {
+        bytes32 balanceSlot = _getBalanceSlot(owner, id);
+        uint256 balanceValue;
+        /// @solidity memory-safe-assembly
+        assembly {
+            balanceValue := sload(balanceSlot)
+        }
+
+        balanceValue -= value;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            sstore(balanceSlot, balanceValue)
+        }
+    }
+
+    function _increaseBalanceOf(address owner, uint256 id, uint256 value) internal {
+        bytes32 balanceSlot = _getBalanceSlot(owner, id);
+        uint256 balanceValue;
+        /// @solidity memory-safe-assembly
+        assembly {
+            balanceValue := sload(balanceSlot)
+        }
+
+        balanceValue += value;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            sstore(balanceSlot, balanceValue)
+        }
+    }
+
+    function _getOperatorSlot(address owner, address spender) internal pure returns (bytes32 operatorSlot) {
+        // operatorSlot = keccak256(abi.encodePacked(owner, OPERATORS_SLOT_SALT, spender))
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x14, spender) // [0x20, 0x34)
+            mstore(0x00, or(shl(8, owner), OPERATORS_SLOT_SALT)) // [0x0b, 0x20)
+            operatorSlot := keccak256(0x0b, 0x29)
+        }
+    }
+
+    function _getBalanceSlot(address owner, uint256 id) internal pure returns (bytes32 balanceSlot) {
+        // balanceSlot = keccak256(abi.encodePacked(owner, BALANCES_SLOT_SALT, id))
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x20, id)
+            mstore(0x00, or(shl(8, owner), BALANCES_SLOT_SALT))
+            balanceSlot := keccak256(0x0b, 0x35)
+        }
+    }
+
+    function _getAllowanceSlot(address owner, address spender, uint256 id)
+        internal
+        pure
+        returns (bytes32 allowanceSlot)
+    {
+        // allowanceSlot = keccak256(abi.encodePacked(owner, ALLOWANCES_SLOT_SALT, spender, id))
+        /// @solidity memory-safe-assembly
+        assembly {
+            let pointer := mload(0x40)
+            mstore(0x34, id) // [0x34, 0x54)
+            mstore(0x14, spender) // [0x20, 0x34)
+            mstore(0x00, or(shl(8, owner), ALLOWANCES_SLOT_SALT)) // [0x0b, 0x20)
+
+            allowanceSlot := keccak256(0x0b, 0x49)
+
+            mstore(0x40, pointer)
+        }
     }
 }

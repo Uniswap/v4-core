@@ -10,8 +10,8 @@ library StateLibrary {
     // forge inspect src/PoolManager.sol:PoolManager storage --pretty
     // | Name                  | Type                                    | Slot | Offset | Bytes | Contract                        |
     // |-----------------------|-----------------------------------------|------|--------|-------|---------------------------------|
-    // | pools                 | mapping(PoolId => struct Pool.State)    | 6    | 0      | 32    | src/PoolManager.sol:PoolManager |
-    uint256 public constant POOLS_SLOT = 6;
+    // | pools                 | mapping(PoolId => struct Pool.State)    | 3    | 0      | 32    | src/PoolManager.sol:PoolManager |
+    uint256 public constant POOLS_SLOT = 3;
 
     // index of feeGrowthGlobal0X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL0_OFFSET = 1;
