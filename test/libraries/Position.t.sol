@@ -50,9 +50,9 @@ contract PositionTest is Test {
         if (liquidityDelta == 0) {
             assertEq(position.liquidity, oldLiquidity);
         } else if (liquidityDelta > 0) {
-            assertGt(position.liquidity, oldLiquidity);
+            assertEq(position.liquidity, oldLiquidity + uint128(liquidityDelta));
         } else {
-            assertLt(position.liquidity, oldLiquidity);
+            assertEq(position.liquidity, oldLiquidity - uint128(-liquidityDelta));
         }
 
         assertEq(position.feeGrowthInside0LastX128, newFeeGrowthInside0X128);
