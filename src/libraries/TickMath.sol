@@ -232,6 +232,8 @@ library TickMath {
             if (tickLow != tickHi) {
                 uint160 sqrtPriceAtTickHi = getSqrtPriceAtTick(tickHi);
                 assembly {
+                    // tickLow and tickHi differs by 1 at most
+                    // because 3402992956809132418596140100660247210 + 291339464771989622907027621153398088495 < 2**128
                     tickLow := sub(tickHi, gt(sqrtPriceAtTickHi, sqrtPriceX96))
                 }
                 return tickLow;
