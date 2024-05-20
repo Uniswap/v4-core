@@ -4,19 +4,17 @@ pragma solidity ^0.8.24;
 import {IHooks} from "../interfaces/IHooks.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
-import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
-contract BaseTestHooks is IHooks {
-    error HookNotImplemented();
-
+contract EmptyRevertHook is IHooks {
     function beforeInitialize(
         address, /* sender **/
         PoolKey calldata, /* key **/
         uint160, /* sqrtPriceX96 **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
-        revert HookNotImplemented();
+        revert();
     }
 
     function afterInitialize(
@@ -26,7 +24,7 @@ contract BaseTestHooks is IHooks {
         int24, /* tick **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
-        revert HookNotImplemented();
+        revert();
     }
 
     function beforeAddLiquidity(
@@ -35,7 +33,7 @@ contract BaseTestHooks is IHooks {
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
-        revert HookNotImplemented();
+        revert();
     }
 
     function afterAddLiquidity(
@@ -45,7 +43,7 @@ contract BaseTestHooks is IHooks {
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4, BalanceDelta) {
-        revert HookNotImplemented();
+        revert();
     }
 
     function beforeRemoveLiquidity(
@@ -54,7 +52,7 @@ contract BaseTestHooks is IHooks {
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
-        revert HookNotImplemented();
+        revert();
     }
 
     function afterRemoveLiquidity(
@@ -64,7 +62,7 @@ contract BaseTestHooks is IHooks {
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4, BalanceDelta) {
-        revert HookNotImplemented();
+        revert();
     }
 
     function beforeSwap(
@@ -73,7 +71,7 @@ contract BaseTestHooks is IHooks {
         IPoolManager.SwapParams calldata, /* params **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4, BeforeSwapDelta, uint24) {
-        revert HookNotImplemented();
+        revert();
     }
 
     function afterSwap(
@@ -83,7 +81,7 @@ contract BaseTestHooks is IHooks {
         BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4, int128) {
-        revert HookNotImplemented();
+        revert();
     }
 
     function beforeDonate(
@@ -93,7 +91,7 @@ contract BaseTestHooks is IHooks {
         uint256, /* amount1 **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
-        revert HookNotImplemented();
+        revert();
     }
 
     function afterDonate(
@@ -103,6 +101,6 @@ contract BaseTestHooks is IHooks {
         uint256, /* amount1 **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4) {
-        revert HookNotImplemented();
+        revert();
     }
 }
