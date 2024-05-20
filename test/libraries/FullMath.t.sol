@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
 import {FullMath} from "../../src/libraries/FullMath.sol";
-import {JavascriptFfi} from "test/utils/JavascriptFfi.sol";
+import {JavascriptFfi} from "../utils/JavascriptFfi.sol";
 import "forge-std/console2.sol";
 
 contract FullMathTest is Test, JavascriptFfi {
@@ -208,17 +208,21 @@ contract FullMathTest is Test, JavascriptFfi {
         return mulDivResultOverflows || mulDivRoundingUpResultOverflows;
     }
 
-    function test_mulDiv_matchesJavaScriptImpl() public {
+    function test_mulDiv_matchesJavaScriptImpl(uint256 a, uint256 b, uint256 denominator) public {
+        vm.assume(denominator != 0);
+        // Encode parameters for JavaScript script
+        string memory jsParameters = string(abi.encodePacked(vm.toString(a), " ", vm.toString(b), " ", vm.toString(denominator)));
 
-        // Run script and get the result
-        bytes memory jsResult = runScript("forge-test-mulDiv", '3 2 3');
-        uint256 jsMulDivResult = abi.decode(jsResult, (uint256));
+        // Run JavaScript script and get the result
+        bytes memory jsResult = runScript("forge-test-mulDiv", jsParameters);
+        uint256 jsMulDivResult;
+        bool success;
+        (success, jsMulDivResult) = abi.decode(jsResult, (bool, uint256));
 
-        console2.log("jsMulDivResult", jsMulDivResult);
-
-        // Get the result from Solidity
-        uint256 solMulDivResult = FullMath.mulDiv(3, 2, 3);
-
-        assertEq(jsMulDivResult, solMulDivResult);
+        if (success) {
+            // Get the result from Solidity
+            uint256 solMulDivResult = FullMath.mulDiv(a, b, denominator);
+            assertEq(jsMulDivResult, solMulDivResult);
+        }
     }
 }

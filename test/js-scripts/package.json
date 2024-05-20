@@ -32,6 +32,7 @@
     "forge-test-mulDiv": "npx ts-node src/mulDiv.ts"
   },
   "dependencies": {
-    "@uniswap/v3-sdk": "^3.11.2"
+    "@uniswap/v3-sdk": "^3.11.2",
+    "jsbi": "^4.3.0"
   }
 }

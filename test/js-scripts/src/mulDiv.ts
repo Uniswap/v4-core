@@ -1,15 +1,22 @@
-import Decimal from 'decimal.js'
+import JSBI from 'jsbi'
 import { ethers } from 'ethers'
 
 // Run this script solo by: npm run forge-test-mulDiv "a b denominator" 
 // Read command line arguments
 const args = process.argv[2].split(' ');
-const a = args[0];
-const b = args[1];
-const denominator = args[2];
+const a = JSBI.BigInt(args[0])
+const b = JSBI.BigInt(args[1])
+const denominator = JSBI.BigInt(args[2])
 
-// Perform mulDiv operation using JSBI
-const result = new Decimal(a).mul(b).div(denominator).toFixed(0)
+// Perform mulDiv operation
+const product = JSBI.multiply(a, b)
+let result = JSBI.divide(product, denominator)
 
-// Optionally, you can encode the result using ethers.js if needed
-process.stdout.write(ethers.utils.defaultAbiCoder.encode(['uint256'], [result.toString()]))
+// Check if result is greater than uint256Max
+const uint256Max = JSBI.BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
+if (JSBI.greaterThan(result, uint256Max)) {
+    process.stdout.write(ethers.utils.defaultAbiCoder.encode(['bool', 'uint256'], [false, 0]));
+} else {
+    process.stdout.write(ethers.utils.defaultAbiCoder.encode(['bool', 'uint256'], [true, result.toString()]))
+}
+
