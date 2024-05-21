@@ -5,8 +5,6 @@ import {Test} from "forge-std/Test.sol";
 import {Position} from "../../src/libraries/Position.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 
-import "forge-std/console2.sol";
-
 contract PositionTest is Test {
     using Position for mapping(bytes32 => Position.Info);
 
