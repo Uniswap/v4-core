@@ -49,10 +49,18 @@ library TickMath {
     /// at the given tick
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
         unchecked {
-            uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
+            uint256 absTick;
+            assembly {
+                // mask = 0 if tick >= 0 else -1
+                let mask := sar(255, tick)
+                // If tick >= 0, |tick| = tick = 0 ^ tick
+                // If tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
+                // Either case, |tick| = mask ^ (tick + mask)
+                absTick := xor(mask, add(mask, tick))
+            }
+            // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
             /// @solidity memory-safe-assembly
             assembly {
-                // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
                 if gt(absTick, MAX_TICK) {
                     // store 4-byte selector of "InvalidTick()" at memory [0x1c, 0x20)
                     mstore(0, 0xce8ef7fc)
@@ -82,12 +90,17 @@ library TickMath {
             if (absTick & 0x40000 != 0) price = (price * 0x2216e584f5fa1ea926041bedfe98) >> 128;
             if (absTick & 0x80000 != 0) price = (price * 0x48a170391f7dc42444e8fa2) >> 128;
 
-            if (tick > 0) price = type(uint256).max / price;
+            assembly {
+                // if (tick > 0) price = type(uint256).max / price;
+                if sgt(tick, 0) { price := div(not(0), price) }
 
-            // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
-            // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
-            // we round up in the division so getTickAtSqrtPrice of the output price is always consistent
-            sqrtPriceX96 = uint160((price >> 32) + (price & ((1 << 32) - 1) == 0 ? 0 : 1));
+                // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
+                // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
+                // we round up in the division so getTickAtSqrtPrice of the output price is always consistent
+                // `sub(shl(32, 1), 1)` is `type(uint32).max`
+                // `price + type(uint32).max` will not overflow because `price` fits in 192 bits
+                sqrtPriceX96 := shr(32, add(price, sub(shl(32, 1), 1)))
+            }
         }
     }
 

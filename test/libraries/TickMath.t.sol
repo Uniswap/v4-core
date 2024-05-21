@@ -45,6 +45,11 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
         assertEq(maxTick, MAX_TICK);
     }
 
+    function test_getSqrtPriceAtTick_throwsForInt24Min() public {
+        vm.expectRevert(TickMath.InvalidTick.selector);
+        tickMath.getSqrtPriceAtTick(type(int24).min);
+    }
+
     function test_getSqrtPriceAtTick_throwsForTooLow() public {
         vm.expectRevert(TickMath.InvalidTick.selector);
         tickMath.getSqrtPriceAtTick(MIN_TICK - 1);
