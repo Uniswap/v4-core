@@ -12,11 +12,22 @@ import {Pool} from "../libraries/Pool.sol";
 import {PoolModifyLiquidityTest} from "./PoolModifyLiquidityTest.sol";
 import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
 
+import "forge-std/console2.sol";
+
 contract Fuzzers is StdUtils {
     Vm internal constant _vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
-    function boundLiquidityDelta(PoolKey memory key, int256 liquidityDelta) internal pure returns (int256) {
-        return bound(liquidityDelta, 1, int256(uint256(Pool.tickSpacingToMaxLiquidityPerTick(key.tickSpacing)) / 2));
+    function boundLiquidityDelta(PoolKey memory key, int256 maxLiquidityBoundedByAmount)
+        internal
+        pure
+        returns (int256)
+    {
+        int256 maxLiquidityPerTick = int256(uint256(Pool.tickSpacingToMaxLiquidityPerTick(key.tickSpacing)));
+        int256 maxLiquidityDelta =
+            maxLiquidityPerTick < maxLiquidityBoundedByAmount ? maxLiquidityPerTick : maxLiquidityBoundedByAmount;
+        console2.log(maxLiquidityBoundedByAmount);
+        console2.log(maxLiquidityDelta);
+        return bound(maxLiquidityBoundedByAmount, 1, maxLiquidityDelta);
     }
 
     function getLiquidityDeltaFromAmounts(
@@ -28,6 +39,7 @@ contract Fuzzers is StdUtils {
     ) internal pure returns (int256) {
         uint256 amount0 = bound(amount0Unbound, 0, uint256(type(uint128).max / 2));
         uint256 amount1 = bound(amount1Unbound, 0, uint256(type(uint128).max / 2));
+        console2.log("error here?");
         return int128(
             LiquidityAmounts.getLiquidityForAmounts(
                 sqrtPriceX96,
@@ -91,6 +103,7 @@ contract Fuzzers is StdUtils {
         (result.tickLower, result.tickUpper) = boundTicks(key, params.tickLower, params.tickUpper);
         result.liquidityDelta =
             getLiquidityDeltaFromAmounts(amount0, amount1, result.tickLower, result.tickUpper, sqrtPriceX96);
+        _vm.assume(result.liquidityDelta > 0);
         result.liquidityDelta = boundLiquidityDelta(key, result.liquidityDelta);
     }
 
