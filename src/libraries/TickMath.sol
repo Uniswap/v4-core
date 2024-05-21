@@ -51,11 +51,11 @@ library TickMath {
         unchecked {
             uint256 absTick;
             assembly {
-                // mask = 0 if tick >= 0 else -1
+                // mask = 0 if tick >= 0 else -1 (all 1s)
                 let mask := sar(255, tick)
-                // If tick >= 0, |tick| = tick = 0 ^ tick
-                // If tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
-                // Either case, |tick| = mask ^ (tick + mask)
+                // if tick >= 0, |tick| = tick = 0 ^ tick
+                // if tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
+                // either way, |tick| = mask ^ (tick + mask)
                 absTick := xor(mask, add(mask, tick))
             }
             // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
