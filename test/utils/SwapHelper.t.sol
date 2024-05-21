@@ -25,7 +25,7 @@ contract SwapHelperTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
 
-    address payable ALL_HOOKS_ADDRESS = payable(0xfFf0000000000000000000000000000000000000);
+    address payable ALL_HOOKS_ADDRESS = payable(0x0000000000000000000000000000000000003fFF);
     MockHooks mockHooks;
 
     function setUp() public {
