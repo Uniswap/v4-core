@@ -10,6 +10,8 @@ import {Owned} from "solmate/auth/Owned.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {Pool} from "./libraries/Pool.sol";
 
+import "forge-std/console2.sol";
+
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
     using ProtocolFeeLibrary for uint24;
@@ -59,7 +61,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// @dev to prevent an invalid protocol fee controller from blocking pools from being initialized
     ///      the success of this function is NOT checked on initialize and if the call fails, the protocol fees are set to 0.
     /// @dev the success of this function must be checked when called in setProtocolFee
-    function _fetchProtocolFee(PoolKey memory key) internal returns (bool success, uint24 protocolFees) {
+    function _fetchProtocolFee(PoolKey memory key) internal returns (bool success, uint24 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
@@ -77,7 +79,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
                 returnData := mload(add(_data, 0x20))
             }
             // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
-            (success, protocolFees) = (returnData == uint24(returnData)) && uint24(returnData).validate()
+            (success, protocolFee) = (returnData == uint24(returnData)) && uint24(returnData).validate()
                 ? (true, uint24(returnData))
                 : (false, 0);
         }
