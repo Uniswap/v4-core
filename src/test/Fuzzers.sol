@@ -39,31 +39,35 @@ contract Fuzzers is StdUtils {
         );
     }
 
-    function boundTicks(PoolKey memory key, int24 tickLower, int24 tickUpper) internal pure returns (int24, int24) {
+    function boundTicks(int24 tickLower, int24 tickUpper, int24 tickSpacing) internal pure returns (int24, int24) {
         tickLower = int24(
             bound(
                 int256(tickLower),
-                int256(TickMath.minUsableTick(key.tickSpacing)),
-                int256(TickMath.maxUsableTick(key.tickSpacing))
+                int256(TickMath.minUsableTick(tickSpacing)),
+                int256(TickMath.maxUsableTick(tickSpacing))
             )
         );
         tickUpper = int24(
             bound(
                 int256(tickUpper),
-                int256(TickMath.minUsableTick(key.tickSpacing)),
-                int256(TickMath.maxUsableTick(key.tickSpacing))
+                int256(TickMath.minUsableTick(tickSpacing)),
+                int256(TickMath.maxUsableTick(tickSpacing))
             )
         );
 
         // round down ticks
-        tickLower = (tickLower / key.tickSpacing) * key.tickSpacing;
-        tickUpper = (tickUpper / key.tickSpacing) * key.tickSpacing;
+        tickLower = (tickLower / tickSpacing) * tickSpacing;
+        tickUpper = (tickUpper / tickSpacing) * tickSpacing;
 
         (tickLower, tickUpper) = tickLower < tickUpper ? (tickLower, tickUpper) : (tickUpper, tickLower);
 
         _vm.assume(tickLower != tickUpper);
 
         return (tickLower, tickUpper);
+    }
+
+    function boundTicks(PoolKey memory key, int24 tickLower, int24 tickUpper) internal pure returns (int24, int24) {
+        return boundTicks(tickLower, tickUpper, key.tickSpacing);
     }
 
     function createRandomSqrtPriceX96(PoolKey memory key, int256 seed) internal pure returns (uint160) {

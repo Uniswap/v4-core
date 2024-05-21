@@ -11,7 +11,7 @@ library LiquidityAmounts {
     /// @param x The uint258 to be downcasted
     /// @return y The passed value, downcasted to uint128
     function toUint128(uint256 x) private pure returns (uint128 y) {
-        require((y = uint128(x)) == x);
+        require((y = uint128(x)) == x, "liquidity overflow");
     }
 
     /// @notice Computes the amount of liquidity received for a given amount of token0 and price range
