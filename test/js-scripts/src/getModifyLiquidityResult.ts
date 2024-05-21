@@ -4,7 +4,6 @@ import JSBI from 'jsbi'
 import {getSqrtPriceAtTick, getAmount0Delta, getAmount1Delta, JSBI_ZERO} from "./utils/shared";
 
 
-
 const params = process.argv[2].split(',');
 
 const tickLower = params[0];

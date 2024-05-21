@@ -30,6 +30,8 @@ contract ModifyLiquidityTest is Test, Deployers, JavascriptFfi, Fuzzers, GasSnap
 
     bytes32 SALT = hex"CAFF";
 
+    int128 constant ONE_PIP = 1e6;
+
     IPoolManager.ModifyLiquidityParams public LIQ_PARAM_NO_SALT =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
 
@@ -51,24 +53,80 @@ contract ModifyLiquidityTest is Test, Deployers, JavascriptFfi, Fuzzers, GasSnap
     // TODO Do multiple addLiquidity/removeLiquidity calls
     // tickLower: any, tickUpper: any, liquidity: any, slot0Tick: any, slot0Price: any
     // IPoolManager.ModifyLiquidityParams memory paramSeed
-    function test_fuzz_ffi_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta() public {
-        IPoolManager.ModifyLiquidityParams memory boundedParams; // = createFuzzyLiquidityParams(simpleKey, paramSeed);
-        boundedParams.tickLower = -120;
-        boundedParams.tickUpper = 120;
-        boundedParams.liquidityDelta = 1e18;
+    function test_ffi_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta() public {
+        IPoolManager.ModifyLiquidityParams memory params =
+            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
 
         // TODO: Support fees accrued checks.
-        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, boundedParams, ZERO_BYTES);
+        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, params, ZERO_BYTES);
 
-        (uint256 price, int24 tick,,) = manager.getSlot0(simplePoolId);
+        (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(simplePoolId, params);
+
+        _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
+        _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
+    }
+
+    function test_ffi_addLiqudity_weirdPool_0_returnsCorrectLiquidityDelta() public {
+        // Use a pool with TickSpacing of MAX_TICK_SPACING
+        (PoolKey memory wp0, PoolId wpId0) = initPool(
+            currency0, currency1, IHooks(address(0)), 500, TickMath.MAX_TICK_SPACING, SQRT_PRICE_1_1, ZERO_BYTES
+        );
+
+        // Set the params to add random amount of liquidity to random tick boundary.
+        int24 tickUpper = TickMath.MAX_TICK_SPACING * 4;
+        int24 tickLower = TickMath.MAX_TICK_SPACING * -9;
+        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            liquidityDelta: 16787899214600939458,
+            salt: 0
+        });
+
+        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
+
+        (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(wpId0, params);
+
+        _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
+        _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
+    }
+
+    function test_ffi_addLiqudity_weirdPool_1_returnsCorrectLiquidityDelta() public {
+        // Use a pool with TickSpacing of MIN_TICK_SPACING
+        (PoolKey memory wp0, PoolId wpId0) = initPool(
+            currency0, currency1, IHooks(address(0)), 551, TickMath.MIN_TICK_SPACING, SQRT_PRICE_1_1, ZERO_BYTES
+        );
+
+        // Set the params to add random amount of liquidity to random tick boundary.
+        int24 tickUpper = TickMath.MIN_TICK_SPACING * 17;
+        int24 tickLower = TickMath.MIN_TICK_SPACING * 9;
+        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            liquidityDelta: 922871614499955267459963,
+            salt: 0
+        });
+
+        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
+
+        (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(wpId0, params);
+
+        _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
+        _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
+    }
+
+    function _modifyLiquidityJS(PoolId poolId, IPoolManager.ModifyLiquidityParams memory params)
+        public
+        returns (int128, int128)
+    {
+        (uint256 price, int24 tick,,) = manager.getSlot0(poolId);
 
         string memory jsParameters = string(
             abi.encodePacked(
-                vm.toString(boundedParams.tickLower),
+                vm.toString(params.tickLower),
                 ",",
-                vm.toString(boundedParams.tickUpper),
+                vm.toString(params.tickUpper),
                 ",",
-                vm.toString(boundedParams.liquidityDelta),
+                vm.toString(params.liquidityDelta),
                 ",",
                 vm.toString(tick),
                 ",",
@@ -77,14 +135,22 @@ contract ModifyLiquidityTest is Test, Deployers, JavascriptFfi, Fuzzers, GasSnap
         );
 
         string memory scriptName = "forge-test-getModifyLiquidityResult";
-        bytes memory jsResult = runScript("forge-test-getModifyLiquidityResult", jsParameters);
+        bytes memory jsResult = runScript(scriptName, jsParameters);
 
         int128[] memory result = abi.decode(jsResult, (int128[]));
         int128 jsDelta0 = result[0];
         int128 jsDelta1 = result[1];
+        return (jsDelta0, jsDelta1);
+    }
 
-        assertEq(delta.amount0(), jsDelta0, "amount0 does not equal expected amount");
-        assertEq(delta.amount1(), jsDelta1, "amount1 does not equal expected amount");
+    // assert solc/js result is at most off by 1/100th of a bip (aka one pip)
+    function _checkError(int128 solc, int128 js, string memory errMsg) public pure returns (int128) {
+        if (solc != js) {
+            // Ensures no div by 0 in the case of one-sided liquidity adds.
+            (int128 gtResult, int128 ltResult) = js > solc ? (js, solc) : (solc, js);
+            int128 resultsDiff = gtResult - ltResult;
+            assertEq(resultsDiff * ONE_PIP / js, 0, errMsg);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
