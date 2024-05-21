@@ -71,12 +71,15 @@ library TickMath {
             if (absTick & 0x40000 != 0) price = (price * 0x2216e584f5fa1ea926041bedfe98) >> 128;
             if (absTick & 0x80000 != 0) price = (price * 0x48a170391f7dc42444e8fa2) >> 128;
 
-            if (tick > 0) price = type(uint256).max / price;
+            assembly {
+                // if (tick > 0) price = type(uint256).max / price;
+                if sgt(tick, 0) { price := div(not(0), price) }
 
-            // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
-            // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
-            // we round up in the division so getTickAtSqrtPrice of the output price is always consistent
-            sqrtPriceX96 = uint160((price >> 32) + (price & ((1 << 32) - 1) == 0 ? 0 : 1));
+                // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
+                // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
+                // we round up in the division so getTickAtSqrtPrice of the output price is always consistent
+                sqrtPriceX96 := shr(32, add(price, sub(shl(32, 1), 1)))
+            }
         }
     }
 
