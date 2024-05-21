@@ -7,10 +7,11 @@ import {IExtsload} from "./interfaces/IExtsload.sol";
 /// https://eips.ethereum.org/EIPS/eip-2330#rationale
 abstract contract Extsload is IExtsload {
     /// @inheritdoc IExtsload
-    function extsload(bytes32 slot) external view returns (bytes32 value) {
+    function extsload(bytes32 slot) external view returns (bytes32) {
         /// @solidity memory-safe-assembly
         assembly {
-            value := sload(slot)
+            mstore(0, sload(slot))
+            return(0, 0x20)
         }
     }
 
