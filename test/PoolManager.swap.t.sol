@@ -151,7 +151,7 @@ contract V3SwapTests is V3Fuzzer {
             ).toInt128();
         } else if (tick < tickUpper) {
             amount0Delta = SqrtPriceMath.getAmount0Delta(
-                TickMath.getSqrtPriceAtTick(tickLower), sqrtPriceX96, liquidityDelta
+                sqrtPriceX96, TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
             ).toInt128();
             amount1Delta = SqrtPriceMath.getAmount1Delta(
                 TickMath.getSqrtPriceAtTick(tickLower), sqrtPriceX96, liquidityDelta
