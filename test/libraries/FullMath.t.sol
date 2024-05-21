@@ -4,7 +4,6 @@ pragma solidity ^0.8.19;
 import {Test} from "forge-std/Test.sol";
 import {FullMath} from "../../src/libraries/FullMath.sol";
 import {JavascriptFfi} from "../utils/JavascriptFfi.sol";
-import "forge-std/console2.sol";
 
 contract FullMathTest is Test, JavascriptFfi {
     using FullMath for uint256;
@@ -211,7 +210,7 @@ contract FullMathTest is Test, JavascriptFfi {
     function test_mulDiv_matchesJavaScriptImpl(uint256 a, uint256 b, uint256 denominator) public {
         vm.assume(denominator != 0);
         // Encode parameters for JavaScript script
-        string memory jsParameters = string(abi.encodePacked(vm.toString(a), " ", vm.toString(b), " ", vm.toString(denominator)));
+        string memory jsParameters = string(abi.encodePacked(vm.toString(a), ",", vm.toString(b), ",", vm.toString(denominator)));
 
         // Run JavaScript script and get the result
         bytes memory jsResult = runScript("forge-test-mulDiv", jsParameters);
@@ -222,6 +221,24 @@ contract FullMathTest is Test, JavascriptFfi {
         if (success) {
             // Get the result from Solidity
             uint256 solMulDivResult = FullMath.mulDiv(a, b, denominator);
+            assertEq(jsMulDivResult, solMulDivResult);
+        }
+    }
+
+    function test_mulDivRoundingUp_matchesJavaScriptImpl(uint256 a, uint256 b, uint256 denominator) public {
+        vm.assume(denominator != 0);
+        // Encode parameters for JavaScript script
+        string memory jsParameters = string(abi.encodePacked(vm.toString(a), ",", vm.toString(b), ",", vm.toString(denominator)));
+
+        // Run JavaScript script and get the result
+        bytes memory jsResult = runScript("forge-test-mulDivRoundingUp", jsParameters);
+        uint256 jsMulDivResult;
+        bool success;
+        (success, jsMulDivResult) = abi.decode(jsResult, (bool, uint256));
+
+        if (success) {
+            // Get the result from Solidity
+            uint256 solMulDivResult = FullMath.mulDivRoundingUp(a, b, denominator);
             assertEq(jsMulDivResult, solMulDivResult);
         }
     }
