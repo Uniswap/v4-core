@@ -59,17 +59,6 @@ contract ModifyLiquidityTest is Test, Deployers, JavascriptFfi, Fuzzers, GasSnap
 
         // TODO: Support fees accrued checks.
         (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, boundedParams, ZERO_BYTES);
-        console2.log(delta.amount0());
-        console2.log(delta.amount1());
-        console2.log(BalanceDelta.unwrap(delta));
-
-        console2.log("top delta");
-        console2.log(BalanceDelta.unwrap(toBalanceDelta(delta.amount0(), 0)));
-
-        console2.log("hereeeee");
-
-        uint256 priceee = TickMath.getSqrtPriceAtTick(-120);
-        console2.log(priceee);
 
         (uint256 price, int24 tick,,) = manager.getSlot0(simplePoolId);
 
@@ -87,16 +76,15 @@ contract ModifyLiquidityTest is Test, Deployers, JavascriptFfi, Fuzzers, GasSnap
             )
         );
 
-        console2.log(jsParameters);
-
         string memory scriptName = "forge-test-getModifyLiquidityResult";
         bytes memory jsResult = runScript("forge-test-getModifyLiquidityResult", jsParameters);
-        console2.log("successful ffi");
-        console2.logBytes(jsResult);
+
         int128[] memory result = abi.decode(jsResult, (int128[]));
-        console2.log(result[0]);
-        console2.log(result[1]);
-        console2.log("successful decode");
+        int128 jsDelta0 = result[0];
+        int128 jsDelta1 = result[1];
+
+        assertEq(delta.amount0(), jsDelta0, "amount0 does not equal expected amount");
+        assertEq(delta.amount1(), jsDelta1, "amount1 does not equal expected amount");
     }
 
     /*//////////////////////////////////////////////////////////////

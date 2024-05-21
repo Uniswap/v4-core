@@ -6,7 +6,6 @@ import {getSqrtPriceAtTick, getAmount0Delta, getAmount1Delta, JSBI_ZERO} from ".
 
 
 const params = process.argv[2].split(',');
-console.log(params);
 
 const tickLower = params[0];
 const tickUpper = params[1];
@@ -15,7 +14,6 @@ const slot0Tick = params[3];
 const slot0Price = params[4];
 
 const result = modifyLiquidity(tickLower, tickUpper, liquidity, slot0Tick, slot0Price);
-console.log(result);
 process.stdout.write(ethers.utils.defaultAbiCoder.encode(['int128[]'], [result]))
 
 
@@ -53,8 +51,6 @@ function modifyLiquidity(_tickLower: string, _tickUpper: string, _liquidity: str
         let priceUpper = JSBI.BigInt(getSqrtPriceAtTick(_tickUpper)); 
         let priceLower = JSBI.BigInt(getSqrtPriceAtTick(_tickLower)); 
 
-        console.log(priceUpper.toString());
-        console.log(priceLower.toString());
         
         let amount0 = getAmount0Delta(sqrtPriceX96, priceUpper, liquidity);
         let amount1 = getAmount1Delta(priceLower, sqrtPriceX96, liquidity);
