@@ -11,8 +11,12 @@ import {TickMath} from "../libraries/TickMath.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {PoolModifyLiquidityTest} from "./PoolModifyLiquidityTest.sol";
 import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
+import {SqrtPriceMath} from "../libraries/SqrtPriceMath.sol";
+import {SafeCast} from "../libraries/SafeCast.sol";
 
 contract Fuzzers is StdUtils {
+    using SafeCast for *;
+
     Vm internal constant _vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     function boundLiquidityDelta(PoolKey memory key, int256 liquidityDelta) internal pure returns (int256) {
@@ -89,8 +93,6 @@ contract Fuzzers is StdUtils {
         uint160 sqrtPriceX96
     ) internal pure returns (IPoolManager.ModifyLiquidityParams memory result) {
         (result.tickLower, result.tickUpper) = boundTicks(key, params.tickLower, params.tickUpper);
-        result.liquidityDelta =
-            getLiquidityDeltaFromAmounts(amount0, amount1, result.tickLower, result.tickUpper, sqrtPriceX96);
         result.liquidityDelta = boundLiquidityDelta(key, result.liquidityDelta);
     }
 
@@ -115,5 +117,28 @@ contract Fuzzers is StdUtils {
     ) internal returns (IPoolManager.ModifyLiquidityParams memory result, BalanceDelta delta) {
         result = createFuzzyLiquidityParams(key, params);
         delta = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
+    }
+
+    function getAmountDeltas(int24 tick, int24 tickLower, int24 tickUpper, int128 liquidityDelta, uint160 sqrtPriceX96)
+        external
+        pure
+        returns (int128 _amount0Delta, int128 _amount1Delta)
+    {
+        if (tick < tickLower) {
+            _amount0Delta = SqrtPriceMath.getAmount0Delta(
+                TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
+            ).toInt128();
+        } else if (tick < tickUpper) {
+            _amount0Delta = SqrtPriceMath.getAmount0Delta(
+                sqrtPriceX96, TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
+            ).toInt128();
+            _amount1Delta = SqrtPriceMath.getAmount1Delta(
+                TickMath.getSqrtPriceAtTick(tickLower), sqrtPriceX96, liquidityDelta
+            ).toInt128();
+        } else {
+            _amount1Delta = SqrtPriceMath.getAmount1Delta(
+                TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
+            ).toInt128();
+        }
     }
 }

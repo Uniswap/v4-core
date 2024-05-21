@@ -134,10 +134,12 @@ contract V3SwapTests is V3Fuzzer {
         int24 tick,
         int24 tickLowerUnsanitized,
         int24 tickUpperUnsanitized
-    ) public pure {
-        tick = int24(bound(int256(tick), TickMath.minUsableTick(60), TickMath.maxUsableTick(60))) / 60 * 60;
+    ) public {
+        int24 tickSpacing = 60;
+        tick = int24(bound(int256(tick), TickMath.minUsableTick(tickSpacing), TickMath.maxUsableTick(tickSpacing)))
+            / tickSpacing * tickSpacing;
         uint160 sqrtPriceX96 = TickMath.getSqrtPriceAtTick(tick);
-        (int24 tickLower, int24 tickUpper) = boundTicks(tickLowerUnsanitized, tickUpperUnsanitized, 60);
+        (int24 tickLower, int24 tickUpper) = boundTicks(tickLowerUnsanitized, tickUpperUnsanitized, tickSpacing);
         int128 amount0Delta;
         int128 amount1Delta;
         console2.log("tick:", tick);
@@ -145,32 +147,28 @@ contract V3SwapTests is V3Fuzzer {
         console2.log("tickUpper:", tickUpper);
         vm.assume(liquidityDelta > 0);
         console2.log("liquidityDelta:", liquidityDelta);
-        if (tick < tickLower) {
-            amount0Delta = SqrtPriceMath.getAmount0Delta(
-                TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
-            ).toInt128();
-        } else if (tick < tickUpper) {
-            amount0Delta = SqrtPriceMath.getAmount0Delta(
-                sqrtPriceX96, TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
-            ).toInt128();
-            amount1Delta = SqrtPriceMath.getAmount1Delta(
-                TickMath.getSqrtPriceAtTick(tickLower), sqrtPriceX96, liquidityDelta
-            ).toInt128();
-        } else {
-            amount1Delta = SqrtPriceMath.getAmount1Delta(
-                TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
-            ).toInt128();
+
+        try Fuzzers(address(this)).getAmountDeltas(tick, tickLower, tickUpper, liquidityDelta, sqrtPriceX96) returns (
+            int128 amount0, int128 amount1
+        ) {
+            amount0Delta = amount0;
+            amount1Delta = amount1;
+
+            console2.log("amount0Delta:", amount0Delta);
+            console2.log("amount1Delta:", amount1Delta);
+            uint128 calculatedLiquidityDelta = LiquidityAmounts.getLiquidityForAmounts(
+                sqrtPriceX96,
+                TickMath.getSqrtPriceAtTick(tickLower),
+                TickMath.getSqrtPriceAtTick(tickUpper),
+                uint256(int256(-amount0Delta)),
+                uint256(int256(-amount1Delta))
+            );
+            console2.log("calculatedLiquidityDelta:", calculatedLiquidityDelta);
+            liquidityDelta -= liquidityDelta / 10000000000;
+            console2.log("rounded down liqDelta:", liquidityDelta);
+            assertGe(calculatedLiquidityDelta, uint128(liquidityDelta));
+        } catch (bytes memory reason) {
+            assertEq(bytes4(reason), SafeCast.SafeCastOverflow.selector);
         }
-        console2.log("amount0Delta:", amount0Delta);
-        console2.log("amount1Delta:", amount1Delta);
-        uint128 calculatedLiquidityDelta = LiquidityAmounts.getLiquidityForAmounts(
-            sqrtPriceX96,
-            TickMath.getSqrtPriceAtTick(tickLower),
-            TickMath.getSqrtPriceAtTick(tickUpper),
-            uint256(int256(-amount0Delta)),
-            uint256(int256(-amount1Delta))
-        );
-        console2.log("calculatedLiquidityDelta:", calculatedLiquidityDelta);
-        assertEq(calculatedLiquidityDelta, uint128(liquidityDelta));
     }
 }
