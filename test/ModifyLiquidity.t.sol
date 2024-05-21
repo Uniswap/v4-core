@@ -14,8 +14,15 @@ import {Constants} from "./utils/Constants.sol";
 import {Currency} from "src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {StateLibrary} from "src/libraries/StateLibrary.sol";
+import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
+import {BalanceDelta} from "../src/types/BalanceDelta.sol";
+import {Fuzzers} from "../src/test/Fuzzers.sol";
+import {TickMath} from "src/libraries/TickMath.sol";
+import {toBalanceDelta} from "src/types/BalanceDelta.sol";
 
-contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
+import "forge-std/console2.sol";
+
+contract ModifyLiquidityTest is Test, Deployers, JavascriptFfi, Fuzzers, GasSnapshot {
     using StateLibrary for IPoolManager;
 
     PoolKey simpleKey; // vanilla pool key
@@ -34,6 +41,67 @@ contract ModifyLiquidityTest is Test, Deployers, GasSnapshot {
         deployMintAndApprove2Currencies();
         (simpleKey, simplePoolId) = initPool(currency0, currency1, IHooks(address(0)), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                            Fuzz Add Liquidity
+    //////////////////////////////////////////////////////////////*/
+
+    // TODO Add fuzz
+    // TODO Add array of values
+    // TODO Do multiple addLiquidity/removeLiquidity calls
+    // tickLower: any, tickUpper: any, liquidity: any, slot0Tick: any, slot0Price: any
+    // IPoolManager.ModifyLiquidityParams memory paramSeed
+    function test_fuzz_ffi_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta() public {
+        IPoolManager.ModifyLiquidityParams memory boundedParams; // = createFuzzyLiquidityParams(simpleKey, paramSeed);
+        boundedParams.tickLower = -120;
+        boundedParams.tickUpper = 120;
+        boundedParams.liquidityDelta = 1e18;
+
+        // TODO: Support fees accrued checks.
+        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, boundedParams, ZERO_BYTES);
+        console2.log(delta.amount0());
+        console2.log(delta.amount1());
+        console2.log(BalanceDelta.unwrap(delta));
+
+        console2.log("top delta");
+        console2.log(BalanceDelta.unwrap(toBalanceDelta(delta.amount0(), 0)));
+
+        console2.log("hereeeee");
+
+        uint256 priceee = TickMath.getSqrtPriceAtTick(-120);
+        console2.log(priceee);
+
+        (uint256 price, int24 tick,,) = manager.getSlot0(simplePoolId);
+
+        string memory jsParameters = string(
+            abi.encodePacked(
+                vm.toString(boundedParams.tickLower),
+                ",",
+                vm.toString(boundedParams.tickUpper),
+                ",",
+                vm.toString(boundedParams.liquidityDelta),
+                ",",
+                vm.toString(tick),
+                ",",
+                vm.toString(price)
+            )
+        );
+
+        console2.log(jsParameters);
+
+        string memory scriptName = "forge-test-getModifyLiquidityResult";
+        bytes memory jsResult = runScript("forge-test-getModifyLiquidityResult", jsParameters);
+        console2.log("successful ffi");
+        console2.logBytes(jsResult);
+        int128[] memory result = abi.decode(jsResult, (int128[]));
+        console2.log(result[0]);
+        console2.log(result[1]);
+        console2.log("successful decode");
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            Salt
+    //////////////////////////////////////////////////////////////*/
 
     function test_modifyLiquidity_samePosition_zeroSalt_isUpdated() public {
         Position.Info memory position = manager.getPosition(
