@@ -169,11 +169,15 @@ library SqrtPriceMath {
         }
     }
 
-    /// @notice Equivalent to: `a > b ? a - b : b - a`
+    /// @notice Equivalent to: `a >= b ? a - b : b - a`
     function absDiff(uint160 a, uint160 b) internal pure returns (uint256 res) {
         assembly {
             let diff := sub(a, b)
+            // mask = 0 if a >= b else -1 (all 1s)
             let mask := sar(255, diff)
+            // if a >= b, res = a - b = 0 ^ (a - b)
+            // if a < b, res = b - a = ~~(b - a) = ~(-(b - a) - 1) = ~(a - b - 1) = (-1) ^ (a - b - 1)
+            // either way, res = mask ^ (a - b + mask)
             res := xor(mask, add(mask, diff))
         }
     }
