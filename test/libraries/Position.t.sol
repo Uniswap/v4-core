@@ -5,6 +5,8 @@ import {Test} from "forge-std/Test.sol";
 import {Position} from "../../src/libraries/Position.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 
+import "forge-std/console2.sol";
+
 contract PositionTest is Test {
     using Position for mapping(bytes32 => Position.Info);
 
@@ -40,19 +42,32 @@ contract PositionTest is Test {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
         }
 
-        // new liquidity cannot overflow uint128
-        uint256 newLiquidity = uint256(int256(uint256(position.liquidity)) + int256(liquidityDelta));
-        if (newLiquidity > type(uint128).max) {
-            vm.expectRevert(SafeCast.SafeCastOverflow.selector);
+        // new liquidity cannot overflow/underflow uint128
+        uint256 absLiquidityDelta;
+        if (liquidityDelta > 0) {
+            absLiquidityDelta = uint256(uint128(liquidityDelta));
+            uint256 newLiquidity = position.liquidity + absLiquidityDelta;
+            if (newLiquidity > type(uint128).max) {
+                vm.expectRevert(SafeCast.SafeCastOverflow.selector);
+            }
+        } else if (liquidityDelta < 0) {
+            if (liquidityDelta == type(int128).min) {
+                absLiquidityDelta = uint256(uint128(type(int128).max)) + 1;
+            } else {
+                absLiquidityDelta = uint256(uint128(-liquidityDelta));
+            }
+            if (position.liquidity < absLiquidityDelta) {
+                vm.expectRevert(SafeCast.SafeCastOverflow.selector);
+            }
         }
 
         Position.update(position, liquidityDelta, newFeeGrowthInside0X128, newFeeGrowthInside1X128);
         if (liquidityDelta == 0) {
             assertEq(position.liquidity, oldLiquidity);
         } else if (liquidityDelta > 0) {
-            assertEq(position.liquidity, oldLiquidity + uint128(liquidityDelta));
+            assertEq(position.liquidity, oldLiquidity + absLiquidityDelta);
         } else {
-            assertEq(position.liquidity, oldLiquidity - uint128(-liquidityDelta));
+            assertEq(position.liquidity, oldLiquidity - absLiquidityDelta);
         }
 
         assertEq(position.feeGrowthInside0LastX128, newFeeGrowthInside0X128);
