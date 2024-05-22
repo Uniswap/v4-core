@@ -71,8 +71,9 @@ library SwapMath {
                 } else {
                     // exhaust the remaining amount
                     amountIn = amountRemainingLessFee;
-                    sqrtPriceNextX96 =
-                        SqrtPriceMath.getNextSqrtPriceFromInput(sqrtPriceCurrentX96, liquidity, amountIn, zeroForOne);
+                    sqrtPriceNextX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
+                        sqrtPriceCurrentX96, liquidity, amountRemainingLessFee, zeroForOne
+                    );
                     // we didn't reach the target, so take the remainder of the maximum input as fee
                     feeAmount = amountRemainingAbs - amountIn;
                 }
@@ -83,15 +84,15 @@ library SwapMath {
                 amountOut = zeroForOne
                     ? SqrtPriceMath.getAmount1Delta(sqrtPriceTargetX96, sqrtPriceCurrentX96, liquidity, false)
                     : SqrtPriceMath.getAmount0Delta(sqrtPriceCurrentX96, sqrtPriceTargetX96, liquidity, false);
-                uint256 amountRemainingAbs = uint256(amountRemaining);
-                if (amountRemainingAbs >= amountOut) {
+                if (uint256(amountRemaining) >= amountOut) {
                     // `amountOut` is capped by the target price
                     sqrtPriceNextX96 = sqrtPriceTargetX96;
                 } else {
                     // cap the output amount to not exceed the remaining output amount
-                    amountOut = amountRemainingAbs;
-                    sqrtPriceNextX96 =
-                        SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtPriceCurrentX96, liquidity, amountOut, zeroForOne);
+                    amountOut = uint256(amountRemaining);
+                    sqrtPriceNextX96 = SqrtPriceMath.getNextSqrtPriceFromOutput(
+                        sqrtPriceCurrentX96, liquidity, uint256(amountRemaining), zeroForOne
+                    );
                 }
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity, true)
