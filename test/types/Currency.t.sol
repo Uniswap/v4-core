@@ -4,82 +4,141 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
+import {CurrencyTest} from "../../src/test/CurrencyTest.sol";
 
 contract TestCurrency is Test {
-    using CurrencyLibrary for Currency;
-    using CurrencyLibrary for uint256;
-
     uint256 constant initialERC20Balance = 1000 ether;
-    uint256 constant sentBalance = 2 ether;
     address constant otherAddress = address(1);
 
     Currency nativeCurrency;
     Currency erc20Currency;
+    CurrencyTest currencyTest;
 
     function setUp() public {
+        currencyTest = new CurrencyTest();
+        vm.deal(address(currencyTest), 30 ether);
         nativeCurrency = Currency.wrap(address(0));
         MockERC20 token = new MockERC20("TestA", "A", 18);
-        token.mint(address(this), initialERC20Balance);
+        token.mint(address(currencyTest), initialERC20Balance);
         erc20Currency = Currency.wrap(address(token));
-        erc20Currency.transfer(address(1), sentBalance);
-        nativeCurrency.transfer(address(1), sentBalance);
     }
 
-    function testCurrency_balanceOfSelf_native() public view {
-        assertEq(nativeCurrency.balanceOfSelf(), address(this).balance);
+    function test_fuzz_equals(address a, address b) public pure {
+        assertEq(a == b, Currency.wrap(a) == Currency.wrap(b));
     }
 
-    function testCurrency_balanceOfSelf_token() public view {
-        assertEq(erc20Currency.balanceOfSelf(), initialERC20Balance - sentBalance);
+    function test_fuzz_greaterThan(address a, address b) public pure {
+        assertEq(a > b, Currency.wrap(a) > Currency.wrap(b));
     }
 
-    function testCurrency_balanceOf_native() public view {
-        assertEq(nativeCurrency.balanceOf(otherAddress), sentBalance);
+    function test_fuzz_lessThan(address a, address b) public pure {
+        assertEq(a < b, Currency.wrap(a) < Currency.wrap(b));
     }
 
-    function testCurrency_balanceOf_token() public view {
-        assertEq(erc20Currency.balanceOf(otherAddress), sentBalance);
+    function test_fuzz_greaterThanOrEqualTo(address a, address b) public pure {
+        assertEq(a >= b, Currency.wrap(a) >= Currency.wrap(b));
     }
 
-    function testCurrency_isNative_native_returnsTrue() public view {
-        assertEq(nativeCurrency.isNative(), true);
+    function test_fuzz_balanceOfSelf_native(uint256 amount) public {
+        uint256 balanceBefore = address(currencyTest).balance;
+        amount = bound(amount, 0, balanceBefore);
+        currencyTest.transfer(nativeCurrency, otherAddress, amount);
+        assertEq(balanceBefore - amount, address(currencyTest).balance);
+        assertEq(currencyTest.balanceOfSelf(nativeCurrency), address(currencyTest).balance);
     }
 
-    function testCurrency_isNative_token_returnsFalse() public view {
-        assertEq(erc20Currency.isNative(), false);
-    }
-
-    function testCurrency_toId_native_returns0() public view {
-        assertEq(nativeCurrency.toId(), uint256(0));
-    }
-
-    function testCurrency_toId_token_returnsAddressAsUint160() public view {
-        assertEq(erc20Currency.toId(), uint256(uint160(Currency.unwrap(erc20Currency))));
-    }
-
-    function testCurrency_fromId_native_returns0() public view {
-        assertEq(Currency.unwrap(uint256(0).fromId()), Currency.unwrap(nativeCurrency));
-    }
-
-    function testCurrency_fromId_token_returnsAddressAsUint160() public view {
+    function test_fuzz_balanceOfSelf_token(uint256 amount) public {
+        amount = bound(amount, 0, initialERC20Balance);
+        currencyTest.transfer(erc20Currency, otherAddress, amount);
+        assertEq(currencyTest.balanceOfSelf(erc20Currency), initialERC20Balance - amount);
         assertEq(
-            Currency.unwrap(uint256(uint160(Currency.unwrap(erc20Currency))).fromId()), Currency.unwrap(erc20Currency)
+            currencyTest.balanceOfSelf(erc20Currency),
+            MockERC20(Currency.unwrap(erc20Currency)).balanceOf(address(currencyTest))
         );
     }
 
-    function testCurrency_transfer_native_successfullyTransfersFunds() public {
-        uint256 balanceBefore = otherAddress.balance;
-        nativeCurrency.transfer(otherAddress, sentBalance);
-        uint256 balanceAfter = otherAddress.balance;
+    function test_fuzz_balanceOf_native(uint256 amount) public {
+        uint256 currencyBalanceBefore = address(currencyTest).balance;
+        amount = bound(amount, 0, address(currencyTest).balance);
+        currencyTest.transfer(nativeCurrency, otherAddress, amount);
 
-        assertEq(balanceAfter - balanceBefore, sentBalance);
+        assertEq(otherAddress.balance, amount);
+        assertEq(address(currencyTest).balance, currencyBalanceBefore - amount);
+        assertEq(otherAddress.balance, currencyTest.balanceOf(nativeCurrency, otherAddress));
     }
 
-    function testCurrency_transfer_token_successfullyTransfersFunds() public {
-        uint256 balanceBefore = erc20Currency.balanceOf(otherAddress);
-        erc20Currency.transfer(otherAddress, sentBalance);
-        uint256 balanceAfter = erc20Currency.balanceOf(otherAddress);
+    function test_fuzz_balanceOf_token(uint256 amount) public {
+        amount = bound(amount, 0, initialERC20Balance);
+        currencyTest.transfer(erc20Currency, otherAddress, amount);
+        assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), amount);
+        assertEq(currencyTest.balanceOfSelf(erc20Currency), initialERC20Balance - amount);
+        assertEq(
+            MockERC20(Currency.unwrap(erc20Currency)).balanceOf(otherAddress),
+            currencyTest.balanceOf(erc20Currency, otherAddress)
+        );
+    }
 
-        assertEq(balanceAfter - balanceBefore, sentBalance);
+    function test_isNative_native_returnsTrue() public view {
+        assertEq(currencyTest.isNative(nativeCurrency), true);
+    }
+
+    function test_isNative_token_returnsFalse() public view {
+        assertEq(currencyTest.isNative(erc20Currency), false);
+    }
+
+    function test_fuzz_isNative(Currency currency) public view {
+        assertEq(currencyTest.isNative(currency), (Currency.unwrap(currency) == address(0)));
+    }
+
+    function test_toId_nativeReturns0() public view {
+        assertEq(currencyTest.toId(nativeCurrency), uint256(0));
+    }
+
+    function test_fuzz_toId_returnsCurrencyAsUint256(Currency currency) public view {
+        assertEq(currencyTest.toId(currency), uint256(uint160(Currency.unwrap(currency))));
+    }
+
+    function test_fromId_0ReturnsNative() public view {
+        assertEq(Currency.unwrap(currencyTest.fromId(0)), Currency.unwrap(nativeCurrency));
+    }
+
+    function test_fuzz_fromId_returnsUint256AsCurrency(uint256 id) public view {
+        uint160 expectedCurrency = uint160(uint256(type(uint160).max) & id);
+        assertEq(Currency.unwrap(currencyTest.fromId(id)), address(expectedCurrency));
+    }
+
+    function test_fuzz_fromId_toId_opposites(Currency currency) public view {
+        assertEq(Currency.unwrap(currency), Currency.unwrap(currencyTest.fromId(currencyTest.toId(currency))));
+    }
+
+    function test_fuzz_transfer_native(uint256 amount) public {
+        uint256 balanceBefore = otherAddress.balance;
+        uint256 contractBalanceBefore = address(currencyTest).balance;
+
+        if (amount <= contractBalanceBefore) {
+            currencyTest.transfer(nativeCurrency, otherAddress, amount);
+            assertEq(otherAddress.balance, balanceBefore + amount);
+            assertEq(address(currencyTest).balance, contractBalanceBefore - amount);
+        } else {
+            vm.expectRevert(CurrencyLibrary.NativeTransferFailed.selector);
+            currencyTest.transfer(nativeCurrency, otherAddress, amount);
+            assertEq(otherAddress.balance, balanceBefore);
+        }
+    }
+
+    function test_fuzz_transfer_token(uint256 amount) public {
+        uint256 balanceBefore = currencyTest.balanceOf(erc20Currency, otherAddress);
+
+        if (amount <= initialERC20Balance) {
+            currencyTest.transfer(erc20Currency, otherAddress, amount);
+            assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), balanceBefore + amount);
+            assertEq(
+                MockERC20(Currency.unwrap(erc20Currency)).balanceOf(address(currencyTest)), initialERC20Balance - amount
+            );
+        } else {
+            vm.expectRevert(CurrencyLibrary.ERC20TransferFailed.selector);
+            currencyTest.transfer(erc20Currency, otherAddress, amount);
+            assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), balanceBefore);
+        }
     }
 }

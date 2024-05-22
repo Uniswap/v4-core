@@ -21,9 +21,6 @@ import {SkipCallsTestHook} from "../src/test/SkipCallsTestHook.sol";
 contract SkipCallsTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
 
-    IPoolManager.SwapParams swapParams =
-        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
     PoolSwapTest.TestSettings testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
     function deploy(SkipCallsTestHook skipCallsTestHook) private {
@@ -144,10 +141,10 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 0);
 
         // swaps and increments counter
-        swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
         // swaps again and increments counter
-        swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
@@ -161,7 +158,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 0);
 
         // swaps and increments counter
-        swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, abi.encode(address(this)));
         snapLastCall("swap skips hook call if hook is caller");
         assertEq(skipCallsTestHook.counter(), 1);
     }
@@ -176,10 +173,10 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 0);
 
         // swaps and increments counter
-        swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 1);
         // swaps again and increments counter
-        swapRouter.swap(key, swapParams, testSettings, abi.encode(address(this)));
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, abi.encode(address(this)));
         assertEq(skipCallsTestHook.counter(), 2);
     }
 

@@ -50,15 +50,17 @@ library TickMath {
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
         unchecked {
             uint256 absTick;
+            assembly {
+                // mask = 0 if tick >= 0 else -1 (all 1s)
+                let mask := sar(255, tick)
+                // if tick >= 0, |tick| = tick = 0 ^ tick
+                // if tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
+                // either way, |tick| = mask ^ (tick + mask)
+                absTick := xor(mask, add(mask, tick))
+            }
+            // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
             /// @solidity memory-safe-assembly
             assembly {
-                // mask = 0 if tick >= 0 else -1
-                let mask := sar(255, tick)
-                // If tick >= 0, |tick| = tick = 0 ^ tick
-                // If tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
-                // Either case, |tick| = mask ^ (tick + mask)
-                absTick := xor(mask, add(mask, tick))
-                // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
                 if gt(absTick, MAX_TICK) {
                     // store 4-byte selector of "InvalidTick()" at memory [0x1c, 0x20)
                     mstore(0, 0xce8ef7fc)
@@ -98,15 +100,15 @@ library TickMath {
             if (absTick & 0x40000 != 0) price = (price * 0x2216e584f5fa1ea926041bedfe98) >> 128;
             if (absTick & 0x80000 != 0) price = (price * 0x48a170391f7dc42444e8fa2) >> 128;
 
-            // if (tick > 0) price = type(uint256).max / price;
             assembly {
+                // if (tick > 0) price = type(uint256).max / price;
                 if sgt(tick, 0) { price := div(not(0), price) }
-            }
 
-            // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
-            // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
-            // we round up in the division so getTickAtSqrtPrice of the output price is always consistent
-            assembly {
+                // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
+                // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
+                // we round up in the division so getTickAtSqrtPrice of the output price is always consistent
+                // `sub(shl(32, 1), 1)` is `type(uint32).max`
+                // `price + type(uint32).max` will not overflow because `price` fits in 192 bits
                 sqrtPriceX96 := shr(32, add(price, sub(shl(32, 1), 1)))
             }
         }
@@ -118,143 +120,143 @@ library TickMath {
     /// @param sqrtPriceX96 The sqrt price for which to compute the tick as a Q64.96
     /// @return tick The greatest tick for which the price is less than or equal to the input price
     function getTickAtSqrtPrice(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
-        // Equivalent: if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
-        // second inequality must be < because the price can never reach the price at the max tick
-        /// @solidity memory-safe-assembly
-        assembly {
-            // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
-            // if sqrtPriceX96 >= MAX_SQRT_PRICE, sqrtPriceX96 - MIN_SQRT_PRICE > MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1
-            if gt(sub(sqrtPriceX96, MIN_SQRT_PRICE), MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE) {
-                // store 4-byte selector of "InvalidSqrtPrice()" at memory [0x1c, 0x20)
-                mstore(0, 0x31efafe8)
-                revert(0x1c, 0x04)
-            }
-        }
-
-        // Find the most significant bit of `sqrtPriceX96`, 160 > msb >= 32.
-        uint8 msb;
-        assembly {
-            let x := sqrtPriceX96
-            msb := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
-            msb := or(msb, shl(6, lt(0xffffffffffffffff, shr(msb, x))))
-            msb := or(msb, shl(5, lt(0xffffffff, shr(msb, x))))
-            msb := or(msb, shl(4, lt(0xffff, shr(msb, x))))
-            msb := or(msb, shl(3, lt(0xff, shr(msb, x))))
-            msb :=
-                or(
-                    msb,
-                    byte(
-                        and(0x1f, shr(shr(msb, x), 0x8421084210842108cc6318c6db6d54be)),
-                        0x0706060506020504060203020504030106050205030304010505030400000000
-                    )
-                )
-        }
-
-        // 2**(msb - 95) > sqrtPrice >= 2**(msb - 96)
-        // the integer part of log_2(sqrtPrice) * 2**64 = (msb - 96) << 64, 8.64 number
-        int256 log_2;
-        assembly {
-            log_2 := shl(64, sub(msb, 96))
-
-            // Get the first 128 significant figures of `sqrtPriceX96`.
-            // r = sqrtPriceX96 / 2**(msb - 127), where 2**128 > r >= 2**127
-            // sqrtPrice = 2**(msb - 96) * r / 2**127, in floating point math
-            // Shift left first because 160 > msb >= 32. If we shift right first, we'll lose precision.
-            let r := shr(sub(msb, 31), shl(96, sqrtPriceX96))
-
-            // Approximate `log_2` to 14 binary digits after decimal
-            // Check whether r >= sqrt(2) * 2**127 for 2**128 > r >= 2**127
-            // 2**256 > square >= 2**254
-            let square := mul(r, r)
-            // f := square >= 2**255
-            let f := slt(square, 0)
-            // r := square >> 128 if square >= 2**255 else square >> 127
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(63, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(62, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(61, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(60, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(59, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(58, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(57, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(56, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(55, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(54, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(53, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(52, f), log_2)
-
-            square := mul(r, r)
-            f := slt(square, 0)
-            r := shr(127, shr(f, square))
-            log_2 := or(shl(51, f), log_2)
-
-            log_2 := or(shl(50, slt(mul(r, r), 0)), log_2)
-        }
-
-        // sqrtPrice = sqrt(1.0001^tick)
-        // tick = log_{sqrt(1.0001)}(sqrtPrice) = log_2(sqrtPrice) / log_2(sqrt(1.0001))
-        // 2**64 / log_2(sqrt(1.0001)) = 255738958999603826347141
-        int24 tickLow;
-        int24 tickHi;
-        assembly {
-            let log_sqrt10001 := mul(log_2, 255738958999603826347141) // 128.128 number
-            tickLow := sar(128, sub(log_sqrt10001, 3402992956809132418596140100660247210))
-            tickHi := sar(128, add(log_sqrt10001, 291339464771989622907027621153398088495))
-        }
-
-        // Equivalent: tick = tickLow == tickHi ? tickLow : getSqrtPriceAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
-        if (tickLow != tickHi) {
-            uint160 sqrtPriceAtTickHi = getSqrtPriceAtTick(tickHi);
+        unchecked {
+            // Equivalent: if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
+            // second inequality must be >= because the price can never reach the price at the max tick
+            /// @solidity memory-safe-assembly
             assembly {
-                tickLow := sub(tickHi, gt(sqrtPriceAtTickHi, sqrtPriceX96))
+                // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
+                // if sqrtPriceX96 >= MAX_SQRT_PRICE, sqrtPriceX96 - MIN_SQRT_PRICE > MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1
+                if gt(sub(sqrtPriceX96, MIN_SQRT_PRICE), MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE) {
+                    // store 4-byte selector of "InvalidSqrtPrice()" at memory [0x1c, 0x20)
+                    mstore(0, 0x31efafe8)
+                    revert(0x1c, 0x04)
+                }
             }
-            return tickLow;
-        } else {
-            return tickLow;
+
+            // Find the most significant bit of `sqrtPriceX96`, 160 > msb >= 32.
+            uint256 msb;
+            assembly {
+                let x := sqrtPriceX96
+                msb := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+                msb := or(msb, shl(6, lt(0xffffffffffffffff, shr(msb, x))))
+                msb := or(msb, shl(5, lt(0xffffffff, shr(msb, x))))
+                msb := or(msb, shl(4, lt(0xffff, shr(msb, x))))
+                msb := or(msb, shl(3, lt(0xff, shr(msb, x))))
+                msb :=
+                    or(
+                        msb,
+                        byte(
+                            and(0x1f, shr(shr(msb, x), 0x8421084210842108cc6318c6db6d54be)),
+                            0x0706060506020504060203020504030106050205030304010505030400000000
+                        )
+                    )
+            }
+
+            // 2**(msb - 95) > sqrtPrice >= 2**(msb - 96)
+            // the integer part of log_2(sqrtPrice) * 2**64 = (msb - 96) << 64, 8.64 number
+            int256 log_2 = (int256(msb) - 96) << 64;
+            assembly {
+                // Get the first 128 significant figures of `sqrtPriceX96`.
+                // r = sqrtPriceX96 / 2**(msb - 127), where 2**128 > r >= 2**127
+                // sqrtPrice = 2**(msb - 96) * r / 2**127, in floating point math
+                // Shift left first because 160 > msb >= 32. If we shift right first, we'll lose precision.
+                let r := shr(sub(msb, 31), shl(96, sqrtPriceX96))
+
+                // Approximate `log_2` to 14 binary digits after decimal
+                // Check whether r >= sqrt(2) * 2**127 for 2**128 > r >= 2**127
+                // 2**256 > square >= 2**254
+                let square := mul(r, r)
+                // f := square >= 2**255
+                let f := slt(square, 0)
+                // r := square >> 128 if square >= 2**255 else square >> 127
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(63, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(62, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(61, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(60, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(59, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(58, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(57, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(56, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(55, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(54, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(53, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(52, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(51, f), log_2)
+
+                log_2 := or(shl(50, slt(mul(r, r), 0)), log_2)
+            }
+
+            // sqrtPrice = sqrt(1.0001^tick)
+            // tick = log_{sqrt(1.0001)}(sqrtPrice) = log_2(sqrtPrice) / log_2(sqrt(1.0001))
+            // 2**64 / log_2(sqrt(1.0001)) = 255738958999603826347141
+            int24 tickLow;
+            int24 tickHi;
+            assembly {
+                let log_sqrt10001 := mul(log_2, 255738958999603826347141) // 128.128 number
+                tickLow := sar(128, sub(log_sqrt10001, 3402992956809132418596140100660247210))
+                tickHi := sar(128, add(log_sqrt10001, 291339464771989622907027621153398088495))
+            }
+
+            // Equivalent: tick = tickLow == tickHi ? tickLow : getSqrtPriceAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
+            if (tickLow != tickHi) {
+                uint160 sqrtPriceAtTickHi = getSqrtPriceAtTick(tickHi);
+                assembly {
+                    tickLow := sub(tickHi, gt(sqrtPriceAtTickHi, sqrtPriceX96))
+                }
+                return tickLow;
+            } else {
+                return tickLow;
+            }
         }
     }
 }

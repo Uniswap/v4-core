@@ -24,6 +24,7 @@ contract DynamicReturnFeeTestHook is BaseTestHooks {
 
     function beforeSwap(address, PoolKey calldata, IPoolManager.SwapParams calldata, bytes calldata)
         external
+        view
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
