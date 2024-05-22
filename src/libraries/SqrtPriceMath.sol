@@ -100,7 +100,13 @@ library SqrtPriceMath {
                     : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity)
             );
 
-            if (sqrtPX96 <= quotient) revert NotEnoughLiquidity();
+            /// @solidity memory-safe-assembly
+            assembly {
+                if iszero(gt(sqrtPX96, quotient)) {
+                    mstore(0, 0x4323a555) // selector for NotEnoughLiquidity()
+                    revert(0x1c, 0x04)
+                }
+            }
             // always fits 160 bits
             unchecked {
                 return uint160(sqrtPX96 - quotient);
@@ -120,7 +126,13 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
-        if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
+        /// @solidity memory-safe-assembly
+        assembly {
+            if or(iszero(sqrtPX96), iszero(liquidity)) {
+                mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
+                revert(0x1c, 0x04)
+            }
+        }
 
         // round to make sure that we don't pass the target price
         return zeroForOne
@@ -140,7 +152,13 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
-        if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
+        /// @solidity memory-safe-assembly
+        assembly {
+            if or(iszero(sqrtPX96), iszero(liquidity)) {
+                mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
+                revert(0x1c, 0x04)
+            }
+        }
 
         // round to make sure that we pass the target price
         return zeroForOne
