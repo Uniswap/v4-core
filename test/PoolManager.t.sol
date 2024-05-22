@@ -547,9 +547,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_succeedsIfInitialized() public {
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
 
@@ -558,21 +555,15 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             key.toId(), address(swapRouter), int128(-100), int128(98), 79228162514264329749955861424, 1e18, -1, 3000
         );
 
-        swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 
     function test_swap_failsIfLocked() public {
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         vm.expectRevert(IPoolManager.ManagerLocked.selector);
-        manager.swap(key, swapParams, ZERO_BYTES);
+        manager.swap(key, SWAP_PARAMS, ZERO_BYTES);
     }
 
     function test_swap_succeedsWithNativeTokensIfInitialized() public {
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
 
@@ -588,7 +579,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             3000
         );
 
-        swapRouter.swap{value: 100}(nativeKey, swapParams, testSettings, ZERO_BYTES);
+        swapRouter.swap{value: 100}(nativeKey, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 
     function test_swap_succeedsWithHooksIfInitialized() public {
@@ -603,19 +594,16 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(mockAddr), 3000, SQRT_PRICE_1_1, ZERO_BYTES);
 
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
 
-        BalanceDelta balanceDelta = swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
+        BalanceDelta balanceDelta = swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
         bytes32 beforeSelector = MockHooks.beforeSwap.selector;
-        bytes memory beforeParams = abi.encode(address(swapRouter), key, swapParams, ZERO_BYTES);
+        bytes memory beforeParams = abi.encode(address(swapRouter), key, SWAP_PARAMS, ZERO_BYTES);
 
         bytes32 afterSelector = MockHooks.afterSwap.selector;
-        bytes memory afterParams = abi.encode(address(swapRouter), key, swapParams, balanceDelta, ZERO_BYTES);
+        bytes memory afterParams = abi.encode(address(swapRouter), key, SWAP_PARAMS, balanceDelta, ZERO_BYTES);
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
@@ -676,38 +664,26 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_succeeds() public {
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 
     function test_swap_gas() public {
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
-        swapRouterNoChecks.swap(key, swapParams);
+        swapRouterNoChecks.swap(key, SWAP_PARAMS);
         snapLastCall("simple swap");
     }
 
     function test_swap_withNative_succeeds() public {
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        swapRouter.swap{value: 100}(nativeKey, swapParams, testSettings, ZERO_BYTES);
+        swapRouter.swap{value: 100}(nativeKey, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 
     function test_swap_withNative_gas() public {
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
-        swapRouterNoChecks.swap{value: 100}(nativeKey, swapParams);
+        swapRouterNoChecks.swap{value: 100}(nativeKey, SWAP_PARAMS);
         snapLastCall("simple swap with native");
     }
 
@@ -720,15 +696,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
 
-        IPoolManager.SwapParams memory swapParams =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        swapRouter.swap(key, swapParams, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
-        swapParams =
+        IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
         testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
@@ -737,15 +710,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_mint6909IfOutputNotTaken_gas() public {
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
 
         vm.expectEmit();
         emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
         snapLastCall("swap mint output as 6909");
 
         uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(currency1));
@@ -769,15 +739,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_burn6909AsInput_gas() public {
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
 
         vm.expectEmit();
         emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(currency1), 98);
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
         uint256 erc6909Balance = manager.balanceOf(address(this), uint256(uint160(Currency.unwrap(currency1))));
         assertEq(erc6909Balance, 98);
@@ -786,7 +753,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.setOperator(address(swapRouter), true);
 
         // swap from currency1 to currency0 again, using 6909s as input tokens
-        params = IPoolManager.SwapParams({zeroForOne: false, amountSpecified: 25, sqrtPriceLimitX96: SQRT_PRICE_4_1});
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: false, amountSpecified: 25, sqrtPriceLimitX96: SQRT_PRICE_4_1});
         testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: true});
 
         vm.expectEmit();
@@ -830,30 +798,26 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_againstLiquidity_gas() public {
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
-        params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
 
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapLastCall("swap against liquidity");
     }
 
     function test_swap_againstLiqWithNative_gas() public {
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        swapRouter.swap{value: 1 ether}(nativeKey, params, testSettings, ZERO_BYTES);
+        swapRouter.swap{value: 1 ether}(nativeKey, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
-        params = IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
+        IPoolManager.SwapParams memory params =
+            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_4});
 
         swapRouter.swap{value: 1 ether}(nativeKey, params, testSettings, ZERO_BYTES);
         snapLastCall("swap against liquidity with native token");
