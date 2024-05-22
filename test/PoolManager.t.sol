@@ -1076,10 +1076,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(key, protocolFee);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, protocolFee);
 
         // Add liquidity - Fees dont accrue for positive liquidity delta.
@@ -1266,10 +1269,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
         uint256 expectedFees = 10;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
@@ -1292,10 +1298,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_collectProtocolFees_ERC20_accumulateFees_exactOutput() public {
         uint256 expectedFees = 10;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
@@ -1317,10 +1326,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
         uint256 expectedFees = 10;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
@@ -1343,10 +1355,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 expectedFees = 10;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(nativeKey, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
@@ -1370,10 +1385,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 expectedFees = 10;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(nativeKey, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
