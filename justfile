@@ -1,15 +1,15 @@
-test: test-forge
-prep: fix
 
-test-mt TEST: install-forge build-forge
-    forge test --mt {{TEST}} --isolate --no-match-path 'test/js-scripts/**/*'
-
-test-forge: install-forge build-forge
-    forge test --isolate --no-match-path 'test/js-scripts/**/*' 
+test *args: (test-forge args)
+build *args: (build-forge args)
+prep *args: fix (test args)
 
 
-build-forge: install-forge
-    forge build --skip 'test/js-scripts/**/*'
+test-forge *args: install-forge build-forge
+    forge test --isolate --no-match-path 'test/js-scripts/**/*' {{args}}
+
+
+build-forge *args: install-forge
+    forge build --skip 'test/js-scripts/**/*' {{args}}
 
 install-forge:
     forge install
