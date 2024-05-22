@@ -94,15 +94,13 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
         dynamicReturnFeesHook.setFee(123);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
         snapLastCall("swap with return dynamic fee");
 
         assertEq(_fetchPoolSwapFee(key), 0);

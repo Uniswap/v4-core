@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "../../src/libraries/ProtocolFeeLibrary.sol";
-import "../../src/libraries/LPFeeLibrary.sol";
-import "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
+import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 
-contract ProtocolFeeLibraryTest is Test {
+contract ProtocolFeeLibraryTest is Test, GasSnapshot {
     function test_getZeroForOneFee() public pure {
         uint24 fee = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE - 1) << 12 | ProtocolFeeLibrary.MAX_PROTOCOL_FEE;
         assertEq(ProtocolFeeLibrary.getZeroForOneFee(fee), uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
@@ -79,5 +80,13 @@ contract ProtocolFeeLibraryTest is Test {
         uint256 expectedSwapFee =
             protocolFee + lpFee * uint256(LPFeeLibrary.MAX_LP_FEE - protocolFee) / LPFeeLibrary.MAX_LP_FEE;
         assertEq(swapFee, uint24(expectedSwapFee));
+    }
+
+    function test_calculateSwapFee_gas() public {
+        uint24 self = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE);
+        uint24 lpFee = LPFeeLibrary.MAX_LP_FEE;
+        snapStart("calculateSwapFee");
+        ProtocolFeeLibrary.calculateSwapFee(self, lpFee);
+        snapEnd();
     }
 }

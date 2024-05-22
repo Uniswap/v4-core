@@ -12,8 +12,8 @@ library SwapMath {
     /// @notice Computes the sqrt price target for the next swap step
     /// @param zeroForOne The direction of the swap, true for currency0 to currency1, false for currency1 to currency0
     /// @param sqrtPriceNextX96 The Q64.96 sqrt price for the next initialized tick
-    /// @param sqrtPriceLimitX96 The Q64.96 sqrt price limit. If zero for one, the price cannot be less than this
-    /// value after the swap. If one for zero, the price cannot be greater than this value after the swap
+    /// @param sqrtPriceLimitX96 The Q64.96 sqrt price limit. If zero for one, the price cannot be less than this value
+    /// after the swap. If one for zero, the price cannot be greater than this value after the swap
     /// @return sqrtPriceTargetX96 The price target for the next swap step
     function getSqrtPriceTarget(bool zeroForOne, uint160 sqrtPriceNextX96, uint160 sqrtPriceLimitX96)
         internal
