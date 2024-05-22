@@ -57,14 +57,15 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         assertEq(address(protocolFees.protocolFeeController()), address(0));
     }
 
-    function test_setProtocolFee_succeeds() public {
+    function test_setProtocolFee_succeeds_gas() public {
         PoolKey memory key = PoolKey(currency0, currency1, 3000, 60, IHooks(address(0)));
         protocolFees.setProtocolFeeController(feeController);
         protocolFees.setPrice(key, 1);
         vm.prank(address(feeController));
         vm.expectEmit(true, false, false, true, address(protocolFees));
-        emit ProtocolFeeUpdated(key.toId(), 1000);
-        protocolFees.setProtocolFee(key, 1000);
+        emit ProtocolFeeUpdated(key.toId(), MAX_PROTOCOL_FEE_BOTH_TOKENS);
+        protocolFees.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
+        snapLastCall("set protocol fee");
     }
 
     function test_setProtocolFee_revertsWithInvalidCaller() public {
