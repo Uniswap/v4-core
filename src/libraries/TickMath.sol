@@ -13,7 +13,7 @@ library TickMath {
     /// @dev The minimum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**-128
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**128
-    int24 internal constant MAX_TICK = -MIN_TICK;
+    int24 internal constant MAX_TICK = 887272;
 
     /// @dev The minimum tick spacing value drawn from the range of type int16 that is greater than 0, i.e. min from the range [1, 32767]
     int24 internal constant MIN_TICK_SPACING = 1;
@@ -24,6 +24,9 @@ library TickMath {
     uint160 internal constant MIN_SQRT_PRICE = 4295128739;
     /// @dev The maximum value that can be returned from #getSqrtPriceAtTick. Equivalent to getSqrtPriceAtTick(MAX_TICK)
     uint160 internal constant MAX_SQRT_PRICE = 1461446703485210103287273052203988822378723970342;
+    /// @dev A threshold used for optimized bounds check, equals `MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1`
+    uint160 internal constant MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE =
+        1461446703485210103287273052203988822378723970342 - 4295128739 - 1;
 
     /// @notice Given a tickSpacing, compute the maximum usable tick
     function maxUsableTick(int24 tickSpacing) internal pure returns (int24) {
@@ -46,11 +49,32 @@ library TickMath {
     /// at the given tick
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
         unchecked {
-            uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
-            if (absTick > uint256(int256(MAX_TICK))) revert InvalidTick();
+            uint256 absTick;
+            assembly {
+                // mask = 0 if tick >= 0 else -1 (all 1s)
+                let mask := sar(255, tick)
+                // if tick >= 0, |tick| = tick = 0 ^ tick
+                // if tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
+                // either way, |tick| = mask ^ (tick + mask)
+                absTick := xor(mask, add(mask, tick))
+            }
+            // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
+            /// @solidity memory-safe-assembly
+            assembly {
+                if gt(absTick, MAX_TICK) {
+                    // store 4-byte selector of "InvalidTick()" at memory [0x1c, 0x20)
+                    mstore(0, 0xce8ef7fc)
+                    revert(0x1c, 0x04)
+                }
+            }
 
-            uint256 price =
-                absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
+            // Equivalent to:
+            //     price = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
+            //     or price = int(2**128 / sqrt(1.0001)) if (absTick & 0x1) else 1 << 128
+            uint256 price;
+            assembly {
+                price := xor(shl(128, 1), mul(xor(shl(128, 1), 0xfffcb933bd6fad37aa2d162d1a594001), and(absTick, 0x1)))
+            }
             if (absTick & 0x2 != 0) price = (price * 0xfff97272373d413259a46990580e213a) >> 128;
             if (absTick & 0x4 != 0) price = (price * 0xfff2e50f5f656932ef12357cf3c7fdcc) >> 128;
             if (absTick & 0x8 != 0) price = (price * 0xffe5caca7e10e4e61c3624eaa0941cd0) >> 128;
@@ -71,12 +95,17 @@ library TickMath {
             if (absTick & 0x40000 != 0) price = (price * 0x2216e584f5fa1ea926041bedfe98) >> 128;
             if (absTick & 0x80000 != 0) price = (price * 0x48a170391f7dc42444e8fa2) >> 128;
 
-            if (tick > 0) price = type(uint256).max / price;
+            assembly {
+                // if (tick > 0) price = type(uint256).max / price;
+                if sgt(tick, 0) { price := div(not(0), price) }
 
-            // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
-            // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
-            // we round up in the division so getTickAtSqrtPrice of the output price is always consistent
-            sqrtPriceX96 = uint160((price >> 32) + (price & ((1 << 32) - 1) == 0 ? 0 : 1));
+                // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
+                // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
+                // we round up in the division so getTickAtSqrtPrice of the output price is always consistent
+                // `sub(shl(32, 1), 1)` is `type(uint32).max`
+                // `price + type(uint32).max` will not overflow because `price` fits in 192 bits
+                sqrtPriceX96 := shr(32, add(price, sub(shl(32, 1), 1)))
+            }
         }
     }
 
@@ -87,8 +116,19 @@ library TickMath {
     /// @return tick The greatest tick for which the price is less than or equal to the input price
     function getTickAtSqrtPrice(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
         unchecked {
+            // Equivalent: if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
             // second inequality must be < because the price can never reach the price at the max tick
-            if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
+            /// @solidity memory-safe-assembly
+            assembly {
+                // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
+                // if sqrtPriceX96 >= MAX_SQRT_PRICE, sqrtPriceX96 - MIN_SQRT_PRICE > MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1
+                if gt(sub(sqrtPriceX96, MIN_SQRT_PRICE), MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE) {
+                    // store 4-byte selector of "InvalidSqrtPrice()" at memory [0x1c, 0x20)
+                    mstore(0, 0x31efafe8)
+                    revert(0x1c, 0x04)
+                }
+            }
+
             uint256 price = uint256(sqrtPriceX96) << 32;
 
             uint256 r = price;
