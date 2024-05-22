@@ -7,10 +7,14 @@ import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
 import {ProtocolFeesImplementation} from "../src/test/ProtocolFeesImplementation.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
+import {OutOfBoundsProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {Deployers} from "../test/utils/Deployers.sol";
+import {IHooks} from "../src/interfaces/IHooks.sol";
+
+import "forge-std/console2.sol";
 
 contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     using CurrencyLibrary for Currency;
@@ -20,11 +24,10 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     uint24 constant MAX_PROTOCOL_FEE_BOTH_TOKENS = (1000 << 12) | 1000; // 1000 1000
 
     ProtocolFeesImplementation protocolFees;
-    
-    mapping(uint256 => PoolKey) public poolKeys;
 
     function setUp() public {
         protocolFees = new ProtocolFeesImplementation(5000);
+        feeController = new ProtocolFeeControllerTest();
         (currency0, currency1) = deployAndMint2Currencies();
         MockERC20(Currency.unwrap(currency0)).transfer(address(protocolFees),  2 ** 255);
     }
@@ -118,11 +121,20 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         assertEq(protocolFees.protocolFeesAccrued(currency0), newAmount);
     }
 
-    // function test_fetchProtocolFee_succeeds() public {
-    //     protocolFees.setProtocolFeeController(feeController);
-    //     vm.prank(address(feeController));
-    //     (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
-    //     assertTrue(success);
-    //     assertEq(protocolFee, 0);
-    // }
+    function test_fetchProtocolFee_succeeds() public {
+        protocolFees.setProtocolFeeController(feeController);
+        vm.prank(address(feeController));
+        (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
+        assertTrue(success);
+        assertEq(protocolFee, 0);
+    }
+
+    function test_fetchProtocolFee_outOfBounds() public {
+        outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
+        protocolFees.setProtocolFeeController(outOfBoundsFeeController);
+        vm.prank(address(outOfBoundsFeeController));
+        vm.expectRevert(IProtocolFees.InvalidProtocolFee.selector);
+        (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
+        assertFalse(success);
+    }
 }

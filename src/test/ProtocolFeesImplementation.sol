@@ -8,6 +8,8 @@ import {Currency} from "../types/Currency.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Pool} from "../libraries/Pool.sol";
 
+import "forge-std/console2.sol";
+
 contract ProtocolFeesImplementation is ProtocolFees {
 
     mapping(uint256 => Pool.State) pools;
@@ -19,6 +21,7 @@ contract ProtocolFeesImplementation is ProtocolFees {
     }
 
     function fetchProtocolFee(PoolKey memory key) public returns (bool, uint24) {
+        console2.log("fetching 1");
         return ProtocolFees._fetchProtocolFee(key);
     }
 

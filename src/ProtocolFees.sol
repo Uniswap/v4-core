@@ -78,6 +78,8 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
             assembly {
                 returnData := mload(add(_data, 0x20))
             }
+
+            console2.log("heree");
             // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
             (success, protocolFee) = (returnData == uint24(returnData)) && uint24(returnData).validate()
                 ? (true, uint24(returnData))

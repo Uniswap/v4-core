@@ -6,6 +6,8 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 
+import "forge-std/console2.sol";
+
 contract ProtocolFeeControllerTest is IProtocolFeeController {
     using PoolIdLibrary for PoolKey;
 
@@ -32,6 +34,7 @@ contract RevertingProtocolFeeControllerTest is IProtocolFeeController {
 contract OutOfBoundsProtocolFeeControllerTest is IProtocolFeeController {
     function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint24) {
         // set both protocol fees to 1001, which is greater than MAX_PROTOCOL_FEE
+        console2.log("here");
         return (1001 << 12) | 1001;
     }
 }

@@ -37,6 +37,8 @@ import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
+import "forge-std/console2.sol";
+
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
