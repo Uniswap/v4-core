@@ -32,7 +32,7 @@ contract Fuzzers is StdUtils {
 
     // Uses tickSpacingToMaxLiquidityPerTick/2 as one of the possible bounds.
     // Potentially adjust this value to be more strict for positions that touch the same tick.
-    function boundLiquidityDeltaStrict(PoolKey memory key, int256 liquidityDeltaUnbounded, int256 liquidityMaxByAmount)
+    function boundLiquidityDeltaTightly(PoolKey memory key, int256 liquidityDeltaUnbounded, int256 liquidityMaxByAmount)
         internal
         pure
         returns (int256)
@@ -137,7 +137,7 @@ contract Fuzzers is StdUtils {
     }
 
     // Creates liquidity parameters with a stricter bound. Should be used if multiple positions being intitialized on the pool, with potential for tick overlap.
-    function createFuzzyLiquidityParamsStrict(
+    function createFuzzyLiquidityParamsWithTightBound(
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         uint160 sqrtPriceX96
@@ -146,7 +146,7 @@ contract Fuzzers is StdUtils {
         int256 liquidityDeltaFromAmounts =
             getLiquidityDeltaFromAmounts(result.tickLower, result.tickUpper, sqrtPriceX96);
 
-        result.liquidityDelta = boundLiquidityDeltaStrict(key, params.liquidityDelta, liquidityDeltaFromAmounts);
+        result.liquidityDelta = boundLiquidityDeltaTightly(key, params.liquidityDelta, liquidityDeltaFromAmounts);
     }
 
     function createFuzzyLiquidity(
@@ -161,14 +161,14 @@ contract Fuzzers is StdUtils {
     }
 
     // There exists possible positions in the pool, so we tighten the boundaries of liquidity.
-    function createFuzzyLiquidityStrict(
+    function createFuzzyLiquidityWithTightBound(
         PoolModifyLiquidityTest modifyLiquidityRouter,
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         uint160 sqrtPriceX96,
         bytes memory hookData
     ) internal returns (IPoolManager.ModifyLiquidityParams memory result, BalanceDelta delta) {
-        result = createFuzzyLiquidityParamsStrict(key, params, sqrtPriceX96);
+        result = createFuzzyLiquidityParamsWithTightBound(key, params, sqrtPriceX96);
         delta = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
     }
 }

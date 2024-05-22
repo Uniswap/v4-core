@@ -107,9 +107,9 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         IPoolManager.ModifyLiquidityParams memory paramsB
     ) public {
         (IPoolManager.ModifyLiquidityParams memory _paramsA,) =
-            Fuzzers.createFuzzyLiquidityStrict(modifyLiquidityRouter, key, paramsA, SQRT_PRICE_1_1, ZERO_BYTES);
+            Fuzzers.createFuzzyLiquidityWithTightBound(modifyLiquidityRouter, key, paramsA, SQRT_PRICE_1_1, ZERO_BYTES);
         (IPoolManager.ModifyLiquidityParams memory _paramsB,) =
-            Fuzzers.createFuzzyLiquidityStrict(modifyLiquidityRouter, key, paramsB, SQRT_PRICE_1_1, ZERO_BYTES);
+            Fuzzers.createFuzzyLiquidityWithTightBound(modifyLiquidityRouter, key, paramsB, SQRT_PRICE_1_1, ZERO_BYTES);
 
         uint128 liquidityDeltaA = uint128(uint256(_paramsA.liquidityDelta));
         uint128 liquidityDeltaB = uint128(uint256(_paramsB.liquidityDelta));
