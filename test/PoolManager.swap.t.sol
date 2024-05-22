@@ -36,10 +36,9 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
     function addLiquidity(
         FeeTiers fee,
         int256 sqrtPriceX96seed,
+        int128 liquidityDeltaUnsanitized,
         int24 lowerTickUnsanitized,
-        int24 upperTickUnsanitized,
-        uint128 amount0Unbound,
-        uint128 amount1Unbound
+        int24 upperTickUnsanitized
     ) internal returns (IUniswapV3Pool v3Pool, PoolKey memory key_) {
         // init pools
         key_ = PoolKey(currency0, currency1, fee.amount(), fee.tickSpacing(), IHooks(address(0)));
@@ -49,12 +48,11 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         IPoolManager.ModifyLiquidityParams memory v4LiquidityParams = IPoolManager.ModifyLiquidityParams({
             tickLower: lowerTickUnsanitized,
             tickUpper: upperTickUnsanitized,
-            liquidityDelta: 0,
+            liquidityDelta: liquidityDeltaUnsanitized,
             salt: 0
         });
 
-        v4LiquidityParams =
-            createFuzzyLiquidityParamsFromAmounts(key_, v4LiquidityParams, amount0Unbound, amount1Unbound, sqrtPriceX96);
+        v4LiquidityParams = createFuzzyLiquidityParams(key_, v4LiquidityParams, sqrtPriceX96);
 
         v3Pool =
             IUniswapV3Pool(v3Factory.createPool(Currency.unwrap(currency0), Currency.unwrap(currency1), fee.amount()));
@@ -112,17 +110,11 @@ contract V3SwapTests is V3Fuzzer {
     function test_shouldSwapEqual(
         int24 lowerTickUnsanitized,
         int24 upperTickUnsanitized,
-        uint128 amount0Unbound,
-        uint128 amount1Unbound,
+        int128 liquidityDeltaUnsanitized,
         int256 sqrtPriceX96seed
     ) public {
         (IUniswapV3Pool pool, PoolKey memory key_) = addLiquidity(
-            FeeTiers.FEE_3000,
-            sqrtPriceX96seed,
-            lowerTickUnsanitized,
-            upperTickUnsanitized,
-            amount0Unbound,
-            amount1Unbound
+            FeeTiers.FEE_3000, sqrtPriceX96seed, liquidityDeltaUnsanitized, lowerTickUnsanitized, upperTickUnsanitized
         );
         (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, true, 100);
         assertEq(amount0Diff, 0);
