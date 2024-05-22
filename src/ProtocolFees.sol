@@ -37,7 +37,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// @inheritdoc IProtocolFees
     function setProtocolFee(PoolKey memory key, uint24 newProtocolFee) external {
         if (msg.sender != address(protocolFeeController)) revert InvalidCaller();
-        if (!newProtocolFee.validate()) revert InvalidProtocolFee();
+        if (!newProtocolFee.isValidProtocolFee()) revert InvalidProtocolFee();
         PoolId id = key.toId();
         _getPool(id).setProtocolFee(newProtocolFee);
         emit ProtocolFeeUpdated(id, newProtocolFee);
@@ -81,7 +81,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
 
             console2.log("heree");
             // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
-            (success, protocolFee) = (returnData == uint24(returnData)) && uint24(returnData).validate()
+            (success, protocolFees) = (returnData == uint24(returnData)) && uint24(returnData).isValidProtocolFee()
                 ? (true, uint24(returnData))
                 : (false, 0);
         }

@@ -37,7 +37,7 @@ contract CustomCurveHook is BaseTestHooks {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata /* hookData **/
-    ) external override onlyPoolManager returns (bytes4, BeforeSwapDelta) {
+    ) external override onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
         (Currency inputCurrency, Currency outputCurrency, uint256 amount) = _getInputOutputAndAmount(key, params);
 
         // this "custom curve" is a line, 1-1
@@ -47,7 +47,7 @@ contract CustomCurveHook is BaseTestHooks {
 
         // return -amountSpecified as specified to no-op the concentrated liquidity swap
         BeforeSwapDelta hookDelta = toBeforeSwapDelta(int128(-params.amountSpecified), int128(params.amountSpecified));
-        return (IHooks.beforeSwap.selector, hookDelta);
+        return (IHooks.beforeSwap.selector, hookDelta, 0);
     }
 
     function afterAddLiquidity(
