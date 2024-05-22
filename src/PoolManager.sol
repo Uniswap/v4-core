@@ -21,7 +21,6 @@ import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
-import {PoolGetters} from "./libraries/PoolGetters.sol";
 import {Reserves} from "./libraries/Reserves.sol";
 import {Extsload} from "./Extsload.sol";
 import {Exttload} from "./Exttload.sol";
@@ -84,7 +83,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using CurrencyLibrary for Currency;
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
-    using PoolGetters for Pool.State;
     using Reserves for Currency;
 
     /// @inheritdoc IPoolManager
