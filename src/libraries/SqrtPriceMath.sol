@@ -55,7 +55,13 @@ library SqrtPriceMath {
                 uint256 product = amount * sqrtPX96;
                 // if the product overflows, we know the denominator underflows
                 // in addition, we must check that the denominator does not underflow
-                if (product / amount != sqrtPX96 || numerator1 <= product) revert PriceOverflow();
+                /// @solidity memory-safe-assembly
+                assembly {
+                    if iszero(and(eq(div(product, amount), sqrtPX96), gt(numerator1, product))) {
+                        mstore(0, 0xf5c787f1) // selector for PriceOverflow()
+                        revert(0x1c, 0x04)
+                    }
+                }
                 uint256 denominator = numerator1 - product;
                 return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
             }
