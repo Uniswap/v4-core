@@ -207,10 +207,11 @@ contract FullMathTest is Test, JavascriptFfi {
         return mulDivResultOverflows || mulDivRoundingUpResultOverflows;
     }
 
-    function test_mulDiv_matchesJavaScriptImpl(uint256 a, uint256 b, uint256 denominator) public {
+    function test_ffi_fuzz_mulDiv_matchesJavaScriptImpl(uint256 a, uint256 b, uint256 denominator) public {
         vm.assume(denominator != 0);
         // Encode parameters for JavaScript script
-        string memory jsParameters = string(abi.encodePacked(vm.toString(a), ",", vm.toString(b), ",", vm.toString(denominator)));
+        string memory jsParameters =
+            string(abi.encodePacked(vm.toString(a), ",", vm.toString(b), ",", vm.toString(denominator)));
 
         // Run JavaScript script and get the result
         bytes memory jsResult = runScript("forge-test-mulDiv", jsParameters);
@@ -225,10 +226,11 @@ contract FullMathTest is Test, JavascriptFfi {
         }
     }
 
-    function test_mulDivRoundingUp_matchesJavaScriptImpl(uint256 a, uint256 b, uint256 denominator) public {
+    function test_ffi_fuzz_mulDivRoundingUp_matchesJavaScriptImpl(uint256 a, uint256 b, uint256 denominator) public {
         vm.assume(denominator != 0);
         // Encode parameters for JavaScript script
-        string memory jsParameters = string(abi.encodePacked(vm.toString(a), ",", vm.toString(b), ",", vm.toString(denominator)));
+        string memory jsParameters =
+            string(abi.encodePacked(vm.toString(a), ",", vm.toString(b), ",", vm.toString(denominator)));
 
         // Run JavaScript script and get the result
         bytes memory jsResult = runScript("forge-test-mulDivRoundingUp", jsParameters);
