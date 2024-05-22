@@ -51,11 +51,11 @@ library TickMath {
         unchecked {
             uint256 absTick;
             assembly {
-                // mask = 0 if tick >= 0 else -1
+                // mask = 0 if tick >= 0 else -1 (all 1s)
                 let mask := sar(255, tick)
-                // If tick >= 0, |tick| = tick = 0 ^ tick
-                // If tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
-                // Either case, |tick| = mask ^ (tick + mask)
+                // if tick >= 0, |tick| = tick = 0 ^ tick
+                // if tick < 0, |tick| = ~~|tick| = ~(-|tick| - 1) = ~(tick - 1) = (-1) ^ (tick - 1)
+                // either way, |tick| = mask ^ (tick + mask)
                 absTick := xor(mask, add(mask, tick))
             }
             // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
@@ -68,8 +68,13 @@ library TickMath {
                 }
             }
 
-            uint256 price =
-                absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
+            // Equivalent to:
+            //     price = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
+            //     or price = int(2**128 / sqrt(1.0001)) if (absTick & 0x1) else 1 << 128
+            uint256 price;
+            assembly {
+                price := xor(shl(128, 1), mul(xor(shl(128, 1), 0xfffcb933bd6fad37aa2d162d1a594001), and(absTick, 0x1)))
+            }
             if (absTick & 0x2 != 0) price = (price * 0xfff97272373d413259a46990580e213a) >> 128;
             if (absTick & 0x4 != 0) price = (price * 0xfff2e50f5f656932ef12357cf3c7fdcc) >> 128;
             if (absTick & 0x8 != 0) price = (price * 0xffe5caca7e10e4e61c3624eaa0941cd0) >> 128;
