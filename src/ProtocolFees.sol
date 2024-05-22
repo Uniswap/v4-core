@@ -10,8 +10,6 @@ import {Owned} from "solmate/auth/Owned.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {Pool} from "./libraries/Pool.sol";
 
-import "forge-std/console2.sol";
-
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using CurrencyLibrary for Currency;
     using ProtocolFeeLibrary for uint24;
@@ -79,9 +77,8 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
                 returnData := mload(add(_data, 0x20))
             }
 
-            console2.log("heree");
             // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
-            (success, protocolFees) = (returnData == uint24(returnData)) && uint24(returnData).isValidProtocolFee()
+            (success, protocolFee) = (returnData == uint24(returnData)) && uint24(returnData).isValidProtocolFee()
                 ? (true, uint24(returnData))
                 : (false, 0);
         }

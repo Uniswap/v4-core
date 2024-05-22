@@ -5,23 +5,28 @@ import {ProtocolFees} from "../ProtocolFees.sol";
 import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Currency} from "../types/Currency.sol";
-import {PoolId} from "../types/PoolId.sol";
+import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {Pool} from "../libraries/Pool.sol";
-
-import "forge-std/console2.sol";
+import {Slot0} from "../types/Slot0.sol";
 
 contract ProtocolFeesImplementation is ProtocolFees {
+    using PoolIdLibrary for PoolKey;
 
-    mapping(uint256 => Pool.State) pools;
+    mapping(PoolId id => Pool.State) internal _pools;
 
     constructor(uint256 _controllerGasLimit) ProtocolFees(_controllerGasLimit) {}
 
-    function _getPool(PoolId) internal override view returns (Pool.State storage) {
-        return pools[0];
+    function setPrice(PoolKey memory key, uint160 sqrtPriceX96) public {
+        Pool.State storage pool = _getPool(key.toId());
+        Slot0 newSlot = pool.slot0.setSqrtPriceX96(sqrtPriceX96);
+        pool.slot0 = newSlot;
+    }
+
+    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
+        return _pools[id];
     }
 
     function fetchProtocolFee(PoolKey memory key) public returns (bool, uint24) {
-        console2.log("fetching 1");
         return ProtocolFees._fetchProtocolFee(key);
     }
 
