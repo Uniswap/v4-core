@@ -163,11 +163,11 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        address hookEmptyAddr = Constants.ALL_HOOKS;
+        address allHooksAddr = Constants.ALL_HOOKS;
 
         MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+        vm.etch(allHooksAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(allHooksAddr);
 
         uninitializedKey.hooks = mockHooks;
 
