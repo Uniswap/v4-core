@@ -14,8 +14,8 @@ library Constants {
     uint160 constant MAX_UINT160 = type(uint160).max;
 
     address constant ADDRESS_ZERO = address(0);
-    address constant EMPTY_HOOKS = address(0x000000000000000000000000000000000000f000);
-    address constant MOCK_HOOKS = address(0x00000000000000000000000000000000000000ff);
+    address constant EMPTY_HOOKS = address(0x0000000000000000000000000000000000003c00);
+    address constant MOCK_HOOKS = address(0x0000000000000000000000000000000000003Fc0);
 
     uint256 constant POOL_SLOT = 10;
     uint256 constant TICKS_OFFSET = 4;
