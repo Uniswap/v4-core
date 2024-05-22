@@ -21,6 +21,8 @@ library Hooks {
     using BeforeSwapDeltaLibrary for BeforeSwapDelta;
     using ParseBytes for bytes;
 
+    uint160 internal constant ALL_HOOK_MASK = uint160((1 << 14) - 1);
+
     uint160 internal constant BEFORE_INITIALIZE_FLAG = 1 << 13;
     uint160 internal constant AFTER_INITIALIZE_FLAG = 1 << 12;
 
@@ -117,7 +119,7 @@ library Hooks {
         // If a hook contract is set, it must have at least 1 flag set, or have a dynamic fee
         return address(self) == address(0)
             ? !fee.isDynamicFee()
-            : (uint160(address(self)) & uint160((1 << 14) - 1) > 0 || fee.isDynamicFee());
+            : (uint160(address(self)) & ALL_HOOK_MASK > 0 || fee.isDynamicFee());
     }
 
     /// @notice performs a hook call using the given calldata on the given hook that doesnt return a delta
