@@ -30,6 +30,8 @@ contract Fuzzers is StdUtils {
         return bound(liquidityDeltaUnbounded, 0.0000001e18, liquidityMax);
     }
 
+    // Uses tickSpacingToMaxLiquidityPerTick/2 as one of the possible bounds.
+    // Potentially adjust this value to be more strict for positions that touch the same tick.
     function boundLiquidityDeltaStrict(PoolKey memory key, int256 liquidityDeltaUnbounded, int256 liquidityMaxByAmount)
         internal
         pure
@@ -134,6 +136,7 @@ contract Fuzzers is StdUtils {
         result.liquidityDelta = boundLiquidityDelta(key, params.liquidityDelta, liquidityDeltaFromAmounts);
     }
 
+    // Creates liquidity parameters with a stricter bound. Should be used if multiple positions being intitialized on the pool, with potential for tick overlap.
     function createFuzzyLiquidityParamsStrict(
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
