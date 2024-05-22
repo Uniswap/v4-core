@@ -81,7 +81,7 @@ contract Deployers {
 
     // Update this value when you add a new hook flag.
     uint160 hookPermissionCount = 14;
-    uint160 clearAllHookPermissionsMask = uint160(~((1 << hookPermissionCount) - 1));
+    uint160 clearAllHookPermissionsMask = ~uint160(0) << (hookPermissionCount);
 
     modifier noIsolate() {
         if (msg.sender != address(this)) {

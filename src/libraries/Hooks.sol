@@ -12,7 +12,7 @@ import {ParseBytes} from "../libraries/ParseBytes.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
-/// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
+/// For example, a hooks contract deployed to address: 0x0000000000000000000000000000000000002400
 /// has leading bits '1001' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
 library Hooks {
     using LPFeeLibrary for uint24;

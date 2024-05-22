@@ -29,7 +29,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;
 
-    /// 1111 1111 1111 1100
+    /// 0011 1111 1111 1111
     address payable ALL_HOOKS_ADDRESS = payable(0x0000000000000000000000000000000000003fFF);
     MockHooks mockHooks;
     BaseTestHooks revertingHookImpl;
@@ -993,7 +993,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 IHooks(0x1000000000000000000000000000000000000000), LPFeeLibrary.DYNAMIC_FEE_FLAG | uint24(3000)
             )
         );
-        assertTrue(Hooks.isValidHookAddress(IHooks(0x000000000A000000000000000000000000002000), 3000));
+        assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000004000), 3000));
     }
 
     function test_isValidHookAddress_invalid_noFlagsNoDynamicFee() public pure {
