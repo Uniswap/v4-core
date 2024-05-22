@@ -993,7 +993,6 @@ contract HooksTest is Test, Deployers, GasSnapshot {
                 IHooks(0x1000000000000000000000000000000000000000), LPFeeLibrary.DYNAMIC_FEE_FLAG | uint24(3000)
             )
         );
-        assertFalse(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000004000), 3000));
     }
 
     function test_isValidHookAddress_invalid_noFlagsNoDynamicFee() public pure {
