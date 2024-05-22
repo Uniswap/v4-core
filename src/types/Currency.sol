@@ -42,14 +42,14 @@ library CurrencyLibrary {
 
         bool success;
         if (currency.isNative()) {
-            assembly {
+            assembly ("memory-safe") {
                 // Transfer the ETH and store if it succeeded or not.
                 success := call(gas(), to, amount, 0, 0, 0, 0)
             }
 
             if (!success) revert NativeTransferFailed();
         } else {
-            assembly {
+            assembly ("memory-safe") {
                 // We'll write our calldata to this slot below, but restore it later.
                 let memPointer := mload(0x40)
 

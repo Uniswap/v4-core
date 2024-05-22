@@ -8,7 +8,7 @@ library LiquidityMath {
     /// @param y The delta by which liquidity should be changed
     /// @return z The liquidity delta
     function addDelta(uint128 x, int128 y) internal pure returns (uint128 z) {
-        assembly {
+        assembly ("memory-safe") {
             z := add(x, y)
             if shr(128, z) {
                 // revert SafeCastOverflow()

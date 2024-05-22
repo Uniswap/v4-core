@@ -327,7 +327,7 @@ library Hooks {
     /// @notice bubble up revert if present. Else throw FailedHookCall
     function _revert(bytes memory result) private pure {
         if (result.length == 0) revert FailedHookCall();
-        assembly {
+        assembly ("memory-safe") {
             revert(add(0x20, result), mload(result))
         }
     }

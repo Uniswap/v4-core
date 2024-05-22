@@ -5,7 +5,7 @@ import {Currency} from "../types/Currency.sol";
 
 library CurrencyDelta {
     function _computeSlot(address caller_, Currency currency) internal pure returns (bytes32 hashSlot) {
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, caller_)
             mstore(32, currency)
             hashSlot := keccak256(0, 64)
