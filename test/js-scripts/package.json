@@ -33,7 +33,6 @@
     "forge-test-mulDivRoundingUp": "npx ts-node src/mulDivRoundingUp.ts"
   },
   "dependencies": {
-    "@uniswap/v3-sdk": "^3.11.2",
-    "jsbi": "^4.3.0"
+    "@uniswap/v3-sdk": "^3.11.2"
   }
 }
