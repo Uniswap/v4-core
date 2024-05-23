@@ -92,7 +92,7 @@ library Pool {
 
     /// @dev Common checks for valid tick inputs.
     function checkTicks(int24 tickLower, int24 tickUpper) private pure {
-        if (tickLower >= tickUpper) revert TicksMisordered(tickLower, tickUpper);
+        if (tickLower >= tickUpper) TicksMisordered.selector.revertWith(tickLower, tickUpper);
         if (tickLower < TickMath.MIN_TICK) TickLowerOutOfBounds.selector.revertWithInt24(tickLower);
         if (tickUpper > TickMath.MAX_TICK) TickUpperOutOfBounds.selector.revertWithInt24(tickUpper);
     }
@@ -321,14 +321,14 @@ library Pool {
 
         if (zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96()) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
+                PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
                 PriceLimitOutOfBounds.selector.revertWithUint160(params.sqrtPriceLimitX96);
             }
         } else {
             if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96()) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
+                PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_PRICE) {
                 PriceLimitOutOfBounds.selector.revertWithUint160(params.sqrtPriceLimitX96);

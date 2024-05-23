@@ -40,4 +40,28 @@ library CustomRevert {
             revert(0, 0x24)
         }
     }
+
+    /// @dev Reverts with a custom error with two int24 arguments
+    /// @dev The free memory pointer is tampered with but it is fine since the call context is exited immediately
+    function revertWith(bytes4 selector, int24 value1, int24 value2) internal pure {
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0, selector)
+            mstore(0x04, value1)
+            mstore(0x24, value2)
+            revert(0, 0x44)
+        }
+    }
+
+    /// @dev Reverts with a custom error with two uint160 arguments
+    /// @dev The free memory pointer is tampered with but it is fine since the call context is exited immediately
+    function revertWith(bytes4 selector, uint160 value1, uint160 value2) internal pure {
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0, selector)
+            mstore(0x04, value1)
+            mstore(0x24, value2)
+            revert(0, 0x44)
+        }
+    }
 }
