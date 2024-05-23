@@ -118,7 +118,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (key.tickSpacing > MAX_TICK_SPACING) TickSpacingTooLarge.selector.revertWith();
         if (key.tickSpacing < MIN_TICK_SPACING) TickSpacingTooSmall.selector.revertWith();
         if (key.currency0 >= key.currency1) CurrenciesOutOfOrderOrEqual.selector.revertWith();
-        if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
+        if (!key.hooks.isValidHookAddress(key.fee)) Hooks.HookAddressNotValid.selector.revertWithAddress(address(key.hooks));
 
         uint24 lpFee = key.fee.getInitialLPFee();
 

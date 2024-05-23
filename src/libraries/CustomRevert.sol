@@ -10,4 +10,14 @@ library CustomRevert {
             revert(0, 0x04)
         }
     }
+
+    /// @dev Reverts with a custom error with an address argument in the scratch space
+    function revertWithAddress(bytes4 selector, address addr) internal pure {
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0, selector)
+            mstore(0x04, addr)
+            revert(0, 0x24)
+        }
+    }
 }

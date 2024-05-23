@@ -97,7 +97,7 @@ library Hooks {
                 || permissions.afterRemoveLiquidityReturnDelta
                     != self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
         ) {
-            revert HookAddressNotValid(address(self));
+            HookAddressNotValid.selector.revertWithAddress(address(self));
         }
     }
 
