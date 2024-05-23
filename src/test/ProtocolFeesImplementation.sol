@@ -18,8 +18,7 @@ contract ProtocolFeesImplementation is ProtocolFees {
 
     function setPrice(PoolKey memory key, uint160 sqrtPriceX96) public {
         Pool.State storage pool = _getPool(key.toId());
-        Slot0 newSlot = pool.slot0.setSqrtPriceX96(sqrtPriceX96);
-        pool.slot0 = newSlot;
+        pool.slot0 = pool.slot0.setSqrtPriceX96(sqrtPriceX96);
     }
 
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
