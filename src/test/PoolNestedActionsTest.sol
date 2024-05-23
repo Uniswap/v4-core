@@ -138,6 +138,13 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(delta.amount0(), deltaThisAfter0, "Swap delta 0");
         assertEq(delta.amount1(), deltaThisAfter1, "Swap delta 1");
 
+        uint256 nonZeroDeltaCount = (deltaCallerAfter0 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaCallerAfter1 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaThisAfter0 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaThisAfter1 != 0) ? 1 : 0;
+        assertEq(nonZeroDeltaCount, TransientStateLibrary.getNonzeroDeltaCount(manager), 'Incorrect nonZeroDeltaCount');
+        assertTrue(TransientStateLibrary.isUnlocked(manager), 'Unlock not set');
+
         key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
         key.currency1.take(manager, user, uint256(deltaThisAfter1), false);
     }
@@ -161,6 +168,13 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
         assertEq(deltaThisBefore0 + delta.amount0(), deltaThisAfter0, "Executor delta 0");
         assertEq(deltaThisBefore1 + delta.amount1(), deltaThisAfter1, "Executor delta 1");
+
+        uint256 nonZeroDeltaCount = (deltaCallerAfter0 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaCallerAfter1 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaThisAfter0 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaThisAfter1 != 0) ? 1 : 0;
+        assertEq(nonZeroDeltaCount, TransientStateLibrary.getNonzeroDeltaCount(manager), 'Incorrect nonZeroDeltaCount');
+        assertTrue(TransientStateLibrary.isUnlocked(manager), 'Unlock not set');
 
         key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
         key.currency1.settle(manager, user, uint256(-deltaThisAfter1), false);
@@ -187,6 +201,13 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaThisBefore0 + delta.amount0(), deltaThisAfter0, "Executor delta 0");
         assertEq(deltaThisBefore1 + delta.amount1(), deltaThisAfter1, "Executor delta 1");
 
+        uint256 nonZeroDeltaCount = (deltaCallerAfter0 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaCallerAfter1 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaThisAfter0 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaThisAfter1 != 0) ? 1 : 0;
+        assertEq(nonZeroDeltaCount, TransientStateLibrary.getNonzeroDeltaCount(manager), 'Incorrect nonZeroDeltaCount');
+        assertTrue(TransientStateLibrary.isUnlocked(manager), 'Unlock not set');
+
         key.currency0.take(manager, user, uint256(deltaThisAfter0), false);
         key.currency1.take(manager, user, uint256(deltaThisAfter1), false);
     }
@@ -212,6 +233,13 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaThisBefore1 - int256(DONATE_AMOUNT1), deltaThisAfter1, "Executor delta 1");
         assertEq(-delta.amount0(), int256(DONATE_AMOUNT0), "Donate delta 0");
         assertEq(-delta.amount1(), int256(DONATE_AMOUNT1), "Donate delta 1");
+
+        uint256 nonZeroDeltaCount = (deltaCallerAfter0 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaCallerAfter1 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaThisAfter0 != 0) ? 1 : 0;
+        nonZeroDeltaCount += (deltaThisAfter1 != 0) ? 1 : 0;
+        assertEq(nonZeroDeltaCount, TransientStateLibrary.getNonzeroDeltaCount(manager), 'Incorrect nonZeroDeltaCount');
+        assertTrue(TransientStateLibrary.isUnlocked(manager), 'Unlock not set');
 
         key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
         key.currency1.settle(manager, user, uint256(-deltaThisAfter1), false);

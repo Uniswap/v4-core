@@ -9,6 +9,7 @@ import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 
 contract PoolDonateTest is PoolTestBase {
     using CurrencyLibrary for Currency;
@@ -58,6 +59,11 @@ contract PoolDonateTest is PoolTestBase {
 
         require(deltaAfter0 == -int256(data.amount0), "deltaAfter0 is not equal to -int256(data.amount0)");
         require(deltaAfter1 == -int256(data.amount1), "deltaAfter1 is not equal to -int256(data.amount1)");
+
+        uint256 nonZeroDeltaCount = deltaAfter0 != 0 ? 1 : 0;
+        nonZeroDeltaCount += deltaAfter1 != 0 ? 1 : 0;
+        require(nonZeroDeltaCount == TransientStateLibrary.getNonzeroDeltaCount(manager), 'Incorrect nonZeroDeltaCount');
+        require(TransientStateLibrary.isUnlocked(manager), 'Unlock not set');
 
         if (deltaAfter0 < 0) data.key.currency0.settle(manager, data.sender, uint256(-deltaAfter0), false);
         if (deltaAfter1 < 0) data.key.currency1.settle(manager, data.sender, uint256(-deltaAfter1), false);

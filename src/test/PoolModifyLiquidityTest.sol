@@ -12,6 +12,7 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
+import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 
 contract PoolModifyLiquidityTest is PoolTestBase {
     using CurrencyLibrary for Currency;
@@ -87,6 +88,11 @@ contract PoolModifyLiquidityTest is PoolTestBase {
             assert(delta0 < 0 || delta1 < 0);
             assert(!(delta0 > 0 || delta1 > 0));
         }
+
+        uint256 nonZeroDeltaCount = delta0 != 0 ? 1 : 0;
+        nonZeroDeltaCount += delta1 != 0 ? 1 : 0;
+        require(nonZeroDeltaCount == TransientStateLibrary.getNonzeroDeltaCount(manager), 'Incorrect nonZeroDeltaCount');
+        require(TransientStateLibrary.isUnlocked(manager), 'Unlock not set');
 
         if (delta0 < 0) data.key.currency0.settle(manager, data.sender, uint256(-delta0), data.settleUsingBurn);
         if (delta1 < 0) data.key.currency1.settle(manager, data.sender, uint256(-delta1), data.settleUsingBurn);
