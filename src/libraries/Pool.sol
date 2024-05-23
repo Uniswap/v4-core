@@ -14,6 +14,7 @@ import {Slot0} from "../types/Slot0.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
+import {CustomRevert} from "./CustomRevert.sol";
 
 library Pool {
     using SafeCast for *;
@@ -23,6 +24,7 @@ library Pool {
     using Pool for State;
     using ProtocolFeeLibrary for uint24;
     using LPFeeLibrary for uint24;
+    using CustomRevert for bytes4;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -99,7 +101,7 @@ library Pool {
         internal
         returns (int24 tick)
     {
-        if (self.slot0.sqrtPriceX96() != 0) revert PoolAlreadyInitialized();
+        if (self.slot0.sqrtPriceX96() != 0) PoolAlreadyInitialized.selector.revertWith();
 
         tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
@@ -108,14 +110,14 @@ library Pool {
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
-        if (self.isNotInitialized()) revert PoolNotInitialized();
+        if (self.isNotInitialized()) PoolNotInitialized.selector.revertWith();
 
         self.slot0 = self.slot0.setProtocolFee(protocolFee);
     }
 
     /// @notice Only dynamic fee pools may update the lp fee.
     function setLPFee(State storage self, uint24 lpFee) internal {
-        if (self.isNotInitialized()) revert PoolNotInitialized();
+        if (self.isNotInitialized()) PoolNotInitialized.selector.revertWith();
         self.slot0 = self.slot0.setLpFee(lpFee);
     }
 
@@ -312,7 +314,7 @@ library Pool {
         bool exactInput = params.amountSpecified < 0;
 
         if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
-            revert InvalidFeeForExactOut();
+            InvalidFeeForExactOut.selector.revertWith();
         }
 
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
@@ -457,7 +459,7 @@ library Pool {
     /// @notice Donates the given amount of currency0 and currency1 to the pool
     function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
         uint128 liquidity = state.liquidity;
-        if (liquidity == 0) revert NoLiquidityToReceiveFees();
+        if (liquidity == 0) NoLiquidityToReceiveFees.selector.revertWith();
         unchecked {
             // negation safe as amount0 and amount1 are always positive
             delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));

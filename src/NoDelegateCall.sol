@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
+import {CustomRevert} from "./libraries/CustomRevert.sol";
+
 /// @title Prevents delegatecall to a contract
 /// @notice Base contract that provides a modifier for preventing delegatecall to methods in a child contract
 abstract contract NoDelegateCall {
+    using CustomRevert for bytes4;
+
     error DelegateCallNotAllowed();
 
     /// @dev The original address of this contract
@@ -18,7 +22,7 @@ abstract contract NoDelegateCall {
     /// @dev Private method is used instead of inlining into modifier because modifiers are copied into each method,
     ///     and the use of immutable means the address bytes are copied in every place the modifier is used.
     function checkNotDelegateCall() private view {
-        if (address(this) != original) revert DelegateCallNotAllowed();
+        if (address(this) != original) DelegateCallNotAllowed.selector.revertWith();
     }
 
     /// @notice Prevents delegatecall into the modified method
