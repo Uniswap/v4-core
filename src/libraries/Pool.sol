@@ -568,6 +568,13 @@ library Pool {
                     / uint256(int256(TickMath.MAX_TICK * 2 + tickSpacing))
             );
         }
+ 
+        // unchecked {
+        //     uint24 numTicks = uint24(
+        //         (TickMath.maxUsableTick(tickSpacing) - TickMath.minUsableTick(tickSpacing)) / tickSpacing
+        //     ) + 1; // 0 tick is not counted by this
+        //     return type(uint128).max / numTicks;
+        // }
     }
 
     function isNotInitialized(State storage self) internal view returns (bool) {
