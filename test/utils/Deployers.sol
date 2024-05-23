@@ -15,7 +15,9 @@ import {TickMath} from "../../src/libraries/TickMath.sol";
 import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
 import {PoolModifyLiquidityTest} from "../../src/test/PoolModifyLiquidityTest.sol";
+import {PoolModifyLiquidityTestNoChecks} from "../../src/test/PoolModifyLiquidityTestNoChecks.sol";
 import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
+import {SwapRouterNoChecks} from "../../src/test/SwapRouterNoChecks.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
@@ -49,12 +51,16 @@ contract Deployers {
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
     IPoolManager.ModifyLiquidityParams public REMOVE_LIQUIDITY_PARAMS =
         IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: -1e18, salt: 0});
+    IPoolManager.SwapParams public SWAP_PARAMS =
+        IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
 
     // Global variables
     Currency internal currency0;
     Currency internal currency1;
     IPoolManager manager;
     PoolModifyLiquidityTest modifyLiquidityRouter;
+    PoolModifyLiquidityTestNoChecks modifyLiquidityNoChecks;
+    SwapRouterNoChecks swapRouterNoChecks;
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
@@ -74,8 +80,8 @@ contract Deployers {
     PoolKey uninitializedNativeKey;
 
     // Update this value when you add a new hook flag.
-    uint256 hookPermissionCount = 14;
-    uint256 clearAllHookPermisssionsMask = uint256(~uint160(0) >> (hookPermissionCount));
+    uint160 hookPermissionCount = 14;
+    uint160 clearAllHookPermissionsMask = ~uint160(0) << (hookPermissionCount);
 
     modifier noIsolate() {
         if (msg.sender != address(this)) {
@@ -93,7 +99,9 @@ contract Deployers {
     function deployFreshManagerAndRouters() internal {
         deployFreshManager();
         swapRouter = new PoolSwapTest(manager);
+        swapRouterNoChecks = new SwapRouterNoChecks(manager);
         modifyLiquidityRouter = new PoolModifyLiquidityTest(manager);
+        modifyLiquidityNoChecks = new PoolModifyLiquidityTestNoChecks(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
         settleRouter = new PoolSettleTest(manager);
@@ -122,9 +130,11 @@ contract Deployers {
     function deployMintAndApproveCurrency() internal returns (Currency currency) {
         MockERC20 token = deployTokens(1, 2 ** 255)[0];
 
-        address[6] memory toApprove = [
+        address[8] memory toApprove = [
             address(swapRouter),
+            address(swapRouterNoChecks),
             address(modifyLiquidityRouter),
+            address(modifyLiquidityNoChecks),
             address(donateRouter),
             address(takeRouter),
             address(claimsRouter),
@@ -192,7 +202,7 @@ contract Deployers {
     // Deploys the manager, all test routers, and sets up 2 pools: with and without native
     function initializeManagerRoutersAndPoolsWithLiq(IHooks hooks) internal {
         deployFreshManagerAndRouters();
-        // sets the global currencyies and key
+        // sets the global currencies and key
         deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
         nestedActionRouter.executor().setKey(key);

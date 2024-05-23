@@ -7,7 +7,6 @@ import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
-import {PoolGetters} from "../src/libraries/PoolGetters.sol";
 
 contract LiquidityMathRef {
     function addDelta(uint128 x, int128 y) external pure returns (uint128) {
@@ -24,7 +23,6 @@ contract LiquidityMathRef {
 }
 
 contract TickTest is Test, GasSnapshot {
-    using PoolGetters for Pool.State;
     using Pool for Pool.State;
 
     int24 constant LOW_TICK_SPACING = 10;
@@ -41,6 +39,10 @@ contract TickTest is Test, GasSnapshot {
 
     function ticks(int24 tick) internal view returns (Pool.TickInfo memory) {
         return pool.ticks[tick];
+    }
+
+    function tickBitmap(int16 word) internal view returns (uint256) {
+        return pool.tickBitmap[word];
     }
 
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
@@ -62,7 +64,7 @@ contract TickTest is Test, GasSnapshot {
         uint256 feeGrowthGlobal0X128,
         uint256 feeGrowthGlobal1X128
     ) internal returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) {
-        pool.slot0.tick = tickCurrent;
+        pool.slot0 = pool.slot0.setTick(tickCurrent);
         pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128;
         pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128;
         return pool.getFeeGrowthInside(tickLower, tickUpper);
@@ -76,7 +78,7 @@ contract TickTest is Test, GasSnapshot {
         uint256 feeGrowthGlobal1X128,
         bool upper
     ) internal returns (bool flipped, uint128 liquidityGrossAfter) {
-        pool.slot0.tick = tickCurrent;
+        pool.slot0 = pool.slot0.setTick(tickCurrent);
         pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128;
         pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128;
         return pool.updateTick(tick, liquidityDelta, upper);
@@ -522,7 +524,7 @@ contract TickTest is Test, GasSnapshot {
 
     function test_getPoolTickInfo(int24 tick, Pool.TickInfo memory info) public {
         setTick(tick, info);
-        Pool.TickInfo memory actualInfo = pool.getPoolTickInfo(tick);
+        Pool.TickInfo memory actualInfo = ticks(tick);
         assertEq(actualInfo.liquidityGross, info.liquidityGross);
         assertEq(actualInfo.liquidityNet, info.liquidityNet);
         assertEq(actualInfo.feeGrowthOutside0X128, info.feeGrowthOutside0X128);
@@ -531,7 +533,7 @@ contract TickTest is Test, GasSnapshot {
 
     function test_getPoolBitmapInfo(int16 word, uint256 bitmap) public {
         setTickBitmap(word, bitmap);
-        assertEq(pool.getPoolBitmapInfo(word), bitmap);
+        assertEq(tickBitmap(word), bitmap);
     }
 
     function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public pure {
