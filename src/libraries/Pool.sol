@@ -15,6 +15,8 @@ import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 
+import "forge-std/console2.sol";
+
 library Pool {
     using SafeCast for *;
     using TickBitmap for mapping(int16 => uint256);
@@ -209,6 +211,7 @@ library Pool {
             Slot0 _slot0 = self.slot0;
             (int24 tick, uint160 sqrtPriceX96) = (_slot0.tick(), _slot0.sqrtPriceX96());
             if (tick < tickLower) {
+                console2.log("finding deltas for token0");
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
                 delta = toBalanceDelta(
@@ -218,6 +221,11 @@ library Pool {
                     0
                 );
             } else if (tick < tickUpper) {
+                console2.log("finding deltas for both tokens");
+                console2.log("amount1");
+                console2.log(
+                    SqrtPriceMath.getAmount1Delta(TickMath.getSqrtPriceAtTick(tickLower), sqrtPriceX96, liquidityDelta)
+                );
                 delta = toBalanceDelta(
                     SqrtPriceMath.getAmount0Delta(sqrtPriceX96, TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta)
                         .toInt128(),

@@ -19,10 +19,11 @@ import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
 import {toBalanceDelta} from "src/types/BalanceDelta.sol";
+import {Logger} from "./utils/Logger.sol";
 
 import "forge-std/console2.sol";
 
-contract ModifyLiquidityTest is Test, Deployers, JavascriptFfi, Fuzzers, GasSnapshot {
+contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers, GasSnapshot {
     using StateLibrary for IPoolManager;
 
     PoolKey simpleKey; // vanilla pool key
@@ -49,18 +50,57 @@ contract ModifyLiquidityTest is Test, Deployers, JavascriptFfi, Fuzzers, GasSnap
     //////////////////////////////////////////////////////////////*/
 
     // TODO Add fuzz
-    // TODO Add array of values
     // TODO Do multiple addLiquidity/removeLiquidity calls
     // tickLower: any, tickUpper: any, liquidity: any, slot0Tick: any, slot0Price: any
-    // IPoolManager.ModifyLiquidityParams memory paramSeed
-    function test_ffi_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta() public {
+    /// forge-config: default.fuzz.runs = 10
+    /// forge-config: pr.fuzz.runs = 10
+    /// forge-config: ci.fuzz.runs = 500
+    // function test_ffi_fuzz_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta(
+    //     IPoolManager.ModifyLiquidityParams memory paramSeed
+    // ) public {
+    //     // Sanitize the fuzzed params to get valid tickLower, tickUpper, and liquidityDelta.
+    //     // We use SQRT_PRICE_1_1 because the simpleKey pool has initial sqrtPrice of SQRT_PRICE_1_1.
+    //     IPoolManager.ModifyLiquidityParams memory params =
+    //         createFuzzyLiquidityParams(simpleKey, paramSeed, SQRT_PRICE_1_1);
+
+    //     logParams(params);
+
+    //     // TODO: Support fees accrued checks.
+    //     (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, params, ZERO_BYTES);
+
+    //     (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(simplePoolId, params);
+
+    //     _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
+    //     _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
+    // }
+
+    // Error off by exactly 1 pip. Hardcodes the values found in the failing fuzz.
+    function test_ffi_fuzz_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta() public {
+        // Sanitize the fuzzed params to get valid tickLower, tickUpper, and liquidityDelta.
+        // We use SQRT_PRICE_1_1 because the simpleKey pool has initial sqrtPrice of SQRT_PRICE_1_1.
+        IPoolManager.ModifyLiquidityParams memory paramSeed = IPoolManager.ModifyLiquidityParams({
+            tickLower: -4436103,
+            tickUpper: 0,
+            liquidityDelta: 1046746332250618950212058894387467594820167,
+            salt: 0x72880515a8b67a21551554f74123646d3dbc41d11891e8d3b4afc32f19ad3245
+        });
         IPoolManager.ModifyLiquidityParams memory params =
-            IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 1e18, salt: 0});
+            createFuzzyLiquidityParams(simpleKey, paramSeed, SQRT_PRICE_1_1);
+
+        logParams(params);
 
         // TODO: Support fees accrued checks.
         (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, params, ZERO_BYTES);
 
+        console2.log("solidity deltas");
+        console2.log(delta.amount0());
+        console2.log(delta.amount1());
+
         (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(simplePoolId, params);
+
+        console2.log("js deltas");
+        console2.log(jsDelta0);
+        console2.log(jsDelta1);
 
         _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
         _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
@@ -119,6 +159,8 @@ contract ModifyLiquidityTest is Test, Deployers, JavascriptFfi, Fuzzers, GasSnap
         returns (int128, int128)
     {
         (uint256 price, int24 tick,,) = manager.getSlot0(poolId);
+
+        console2.log("price", price);
 
         string memory jsParameters = string(
             abi.encodePacked(
