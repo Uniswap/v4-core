@@ -15,7 +15,7 @@ import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {SqrtPriceMath} from "../src/libraries/SqrtPriceMath.sol";
@@ -69,23 +69,47 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         modifyLiquidityRouter.modifyLiquidity(key_, v4LiquidityParams, "");
     }
 
-    function swap(IUniswapV3Pool pool, PoolKey memory key_, bool zeroForOne, int256 amountSpecified)
+    function swap(IUniswapV3Pool pool, PoolKey memory key_, bool zeroForOne, int128 amountSpecified)
         internal
         returns (int256 amount0Diff, int256 amount1Diff)
     {
-        vm.assume(amountSpecified != 0);
+        vm.assume(amountSpecified != 0 && amountSpecified != type(int128).min);
         // v3 swap
-        (int256 amount0Delta, int256 amount1Delta) =
-            pool.swap(address(this), zeroForOne, amountSpecified, zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT, "");
+        (int256 amount0Delta, int256 amount1Delta) = pool.swap(
+            // invert amountSpecified because v3 swaps use inverted signs
+            address(this),
+            zeroForOne,
+            amountSpecified * -1,
+            zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT,
+            ""
+        );
+        // v3 can handle bigger numbers than v4, so if we exceed int128, check that the next call reverts
+        bool overflows = false;
+        if (
+            amount0Delta > type(int128).max || amount1Delta > type(int128).max || amount0Delta < type(int128).min
+                || amount1Delta < type(int128).min
+        ) {
+            overflows = true;
+        }
         // v4 swap
         IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams({
             zeroForOne: zeroForOne,
-            amountSpecified: amountSpecified * -1, // invert because v3 and v4 swaps use inverted signs
+            amountSpecified: amountSpecified,
             sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
         });
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
-        BalanceDelta delta = swapRouter.swap(key_, swapParams, testSettings, "");
+
+        BalanceDelta delta;
+        try swapRouter.swap(key_, swapParams, testSettings, "") returns (BalanceDelta delta_) {
+            delta = delta_;
+        } catch (bytes memory reason) {
+            require(overflows, "v4 should not overflow");
+            assertEq(bytes4(reason), SafeCast.SafeCastOverflow.selector);
+            delta = toBalanceDelta(0, 0);
+            amount0Delta = 0;
+            amount1Delta = 0;
+        }
 
         // because signs for v3 and v4 swaps are inverted, add values up to get the difference
         amount0Diff = amount0Delta + delta.amount0();
@@ -111,14 +135,15 @@ contract V3SwapTests is V3Fuzzer {
         int24 upperTickUnsanitized,
         int256 liquidityDeltaUnbound,
         int256 sqrtPriceX96seed,
+        int128 swapAmount,
         bool zeroForOne
     ) public {
-        uint160 sqrtPriceX96 = createRandomSqrtPriceX96(FeeTiers.FEE_3000.tickSpacing(), sqrtPriceX96seed);
+        FeeTiers fee = FeeTiers.FEE_3000;
+        uint160 sqrtPriceX96 = createRandomSqrtPriceX96(fee.tickSpacing(), sqrtPriceX96seed);
 
-        (IUniswapV3Pool pool, PoolKey memory key_) = addLiquidity(
-            FeeTiers.FEE_3000, sqrtPriceX96, lowerTickUnsanitized, upperTickUnsanitized, liquidityDeltaUnbound
-        );
-        (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, zeroForOne, 1 ether);
+        (IUniswapV3Pool pool, PoolKey memory key_) =
+            addLiquidity(fee, sqrtPriceX96, lowerTickUnsanitized, upperTickUnsanitized, liquidityDeltaUnbound);
+        (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, zeroForOne, swapAmount);
         assertEq(amount0Diff, 0);
         assertEq(amount1Diff, 0);
     }
