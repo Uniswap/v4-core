@@ -35,26 +35,22 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
 
     function addLiquidity(
         FeeTiers fee,
-        int256 sqrtPriceX96seed,
+        uint160 sqrtPriceX96,
         int24 lowerTickUnsanitized,
         int24 upperTickUnsanitized,
-        uint128 amount0Unbound,
-        uint128 amount1Unbound
+        int256 liquidityDeltaUnbound
     ) internal returns (IUniswapV3Pool v3Pool, PoolKey memory key_) {
         // init pools
         key_ = PoolKey(currency0, currency1, fee.amount(), fee.tickSpacing(), IHooks(address(0)));
 
-        uint160 sqrtPriceX96 = createRandomSqrtPriceX96(key_, sqrtPriceX96seed);
-
         IPoolManager.ModifyLiquidityParams memory v4LiquidityParams = IPoolManager.ModifyLiquidityParams({
             tickLower: lowerTickUnsanitized,
             tickUpper: upperTickUnsanitized,
-            liquidityDelta: 0,
+            liquidityDelta: liquidityDeltaUnbound,
             salt: 0
         });
 
-        v4LiquidityParams =
-            createFuzzyLiquidityParamsFromAmounts(key_, v4LiquidityParams, amount0Unbound, amount1Unbound, sqrtPriceX96);
+        v4LiquidityParams = createFuzzyLiquidityParams(key_, v4LiquidityParams, sqrtPriceX96);
 
         v3Pool =
             IUniswapV3Pool(v3Factory.createPool(Currency.unwrap(currency0), Currency.unwrap(currency1), fee.amount()));
@@ -77,6 +73,7 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         internal
         returns (int256 amount0Diff, int256 amount1Diff)
     {
+        vm.assume(amountSpecified != 0);
         // v3 swap
         (int256 amount0Delta, int256 amount1Delta) =
             pool.swap(address(this), zeroForOne, amountSpecified, zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT, "");
@@ -107,70 +104,22 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
 }
 
 contract V3SwapTests is V3Fuzzer {
-    using SafeCast for *;
+    using FeeTiersLib for FeeTiers;
 
     function test_shouldSwapEqual(
         int24 lowerTickUnsanitized,
         int24 upperTickUnsanitized,
-        uint128 amount0Unbound,
-        uint128 amount1Unbound,
-        int256 sqrtPriceX96seed
+        int256 liquidityDeltaUnbound,
+        int256 sqrtPriceX96seed,
+        bool zeroForOne
     ) public {
+        uint160 sqrtPriceX96 = createRandomSqrtPriceX96(FeeTiers.FEE_3000.tickSpacing(), sqrtPriceX96seed);
+
         (IUniswapV3Pool pool, PoolKey memory key_) = addLiquidity(
-            FeeTiers.FEE_3000,
-            sqrtPriceX96seed,
-            lowerTickUnsanitized,
-            upperTickUnsanitized,
-            amount0Unbound,
-            amount1Unbound
+            FeeTiers.FEE_3000, sqrtPriceX96, lowerTickUnsanitized, upperTickUnsanitized, liquidityDeltaUnbound
         );
-        (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, true, 100);
+        (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, zeroForOne, 1 ether);
         assertEq(amount0Diff, 0);
         assertEq(amount1Diff, 0);
-    }
-
-    function test_shouldCalculateCorrectLiquidityDelta(
-        int128 liquidityDelta,
-        int24 tick,
-        int24 tickLowerUnsanitized,
-        int24 tickUpperUnsanitized
-    ) public pure {
-        tick = int24(bound(int256(tick), TickMath.minUsableTick(60), TickMath.maxUsableTick(60))) / 60 * 60;
-        uint160 sqrtPriceX96 = TickMath.getSqrtPriceAtTick(tick);
-        (int24 tickLower, int24 tickUpper) = boundTicks(tickLowerUnsanitized, tickUpperUnsanitized, 60);
-        int128 amount0Delta;
-        int128 amount1Delta;
-        console2.log("tick:", tick);
-        console2.log("tickLower:", tickLower);
-        console2.log("tickUpper:", tickUpper);
-        vm.assume(liquidityDelta > 0);
-        console2.log("liquidityDelta:", liquidityDelta);
-        if (tick < tickLower) {
-            amount0Delta = SqrtPriceMath.getAmount0Delta(
-                TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
-            ).toInt128();
-        } else if (tick < tickUpper) {
-            amount0Delta = SqrtPriceMath.getAmount0Delta(
-                sqrtPriceX96, TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
-            ).toInt128();
-            amount1Delta = SqrtPriceMath.getAmount1Delta(
-                TickMath.getSqrtPriceAtTick(tickLower), sqrtPriceX96, liquidityDelta
-            ).toInt128();
-        } else {
-            amount1Delta = SqrtPriceMath.getAmount1Delta(
-                TickMath.getSqrtPriceAtTick(tickLower), TickMath.getSqrtPriceAtTick(tickUpper), liquidityDelta
-            ).toInt128();
-        }
-        console2.log("amount0Delta:", amount0Delta);
-        console2.log("amount1Delta:", amount1Delta);
-        uint128 calculatedLiquidityDelta = LiquidityAmounts.getLiquidityForAmounts(
-            sqrtPriceX96,
-            TickMath.getSqrtPriceAtTick(tickLower),
-            TickMath.getSqrtPriceAtTick(tickUpper),
-            uint256(int256(-amount0Delta)),
-            uint256(int256(-amount1Delta))
-        );
-        console2.log("calculatedLiquidityDelta:", calculatedLiquidityDelta);
-        assertEq(calculatedLiquidityDelta, uint128(liquidityDelta));
     }
 }

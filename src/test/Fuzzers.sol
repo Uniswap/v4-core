@@ -27,6 +27,7 @@ contract Fuzzers is StdUtils {
 
         // Finally bound the seeded liquidity by either the max per tick, or by the amount allowed in the position range.
         int256 liquidityMax = liquidityMaxByAmount > liquidityMaxPerTick ? liquidityMaxPerTick : liquidityMaxByAmount;
+        _vm.assume(liquidityMax != 0);
         return bound(liquidityDeltaUnbounded, 1, liquidityMax);
     }
 
@@ -113,8 +114,7 @@ contract Fuzzers is StdUtils {
         return boundTicks(tickLower, tickUpper, key.tickSpacing);
     }
 
-    function createRandomSqrtPriceX96(PoolKey memory key, int256 seed) internal pure returns (uint160) {
-        int24 tickSpacing = key.tickSpacing;
+    function createRandomSqrtPriceX96(int24 tickSpacing, int256 seed) internal pure returns (uint160) {
         int256 min = int256(TickMath.minUsableTick(tickSpacing));
         int256 max = int256(TickMath.maxUsableTick(tickSpacing));
         int256 randomTick = bound(seed, min, max);
