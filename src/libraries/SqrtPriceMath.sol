@@ -55,6 +55,7 @@ library SqrtPriceMath {
                 uint256 product = amount * sqrtPX96;
                 // if the product overflows, we know the denominator underflows
                 // in addition, we must check that the denominator does not underflow
+                // equivalent: if (product / amount != sqrtPX96 || numerator1 <= product) revert PriceOverflow();
                 /// @solidity memory-safe-assembly
                 assembly {
                     if iszero(and(eq(div(product, amount), sqrtPX96), gt(numerator1, product))) {
@@ -100,6 +101,7 @@ library SqrtPriceMath {
                     : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, liquidity)
             );
 
+            // equivalent: if (sqrtPX96 <= quotient) revert NotEnoughLiquidity();
             /// @solidity memory-safe-assembly
             assembly {
                 if iszero(gt(sqrtPX96, quotient)) {
@@ -126,6 +128,7 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
+        // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
         /// @solidity memory-safe-assembly
         assembly {
             if or(iszero(sqrtPX96), iszero(liquidity)) {
@@ -152,6 +155,7 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
+        // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
         /// @solidity memory-safe-assembly
         assembly {
             if or(iszero(sqrtPX96), iszero(liquidity)) {
@@ -182,6 +186,7 @@ library SqrtPriceMath {
         unchecked {
             if (sqrtPriceAX96 > sqrtPriceBX96) (sqrtPriceAX96, sqrtPriceBX96) = (sqrtPriceBX96, sqrtPriceAX96);
 
+            // equivalent: if (sqrtPriceAX96 == 0) revert InvalidPrice();
             /// @solidity memory-safe-assembly
             assembly {
                 if iszero(sqrtPriceAX96) {
