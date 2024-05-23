@@ -77,7 +77,13 @@ contract PoolTest is Test {
         state.initialize(sqrtPriceX96, protocolFee, lpFee);
     }
 
-    function test_fuzz_setProtocolFee(uint160 sqrtPriceX96, uint24 protocolFee, uint24 lpFee, uint24 newProtocolFee, bool initialized) public {
+    function test_fuzz_setProtocolFee(
+        uint160 sqrtPriceX96,
+        uint24 protocolFee,
+        uint24 lpFee,
+        uint24 newProtocolFee,
+        bool initialized
+    ) public {
         if (initialized) {
             test_fuzz_initialize(sqrtPriceX96, protocolFee, lpFee);
             state.setProtocolFee(newProtocolFee);
@@ -107,7 +113,13 @@ contract PoolTest is Test {
         state.setProtocolFee(newProtocolFee);
     }
 
-    function test_fuzz_setLpFee(uint160 sqrtPriceX96, uint24 protocolFee, uint24 lpFee, uint24 newLpFee, bool initialized) public {
+    function test_fuzz_setLpFee(
+        uint160 sqrtPriceX96,
+        uint24 protocolFee,
+        uint24 lpFee,
+        uint24 newLpFee,
+        bool initialized
+    ) public {
         if (initialized) {
             test_fuzz_initialize(sqrtPriceX96, protocolFee, lpFee);
             state.setLPFee(newLpFee);
@@ -255,7 +267,7 @@ contract PoolTest is Test {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
                 state.swap(params);
             }
-        } 
+        }
 
         uint160 sqrtPriceBefore = state.slot0.sqrtPriceX96();
         state.swap(params);
@@ -267,7 +279,6 @@ contract PoolTest is Test {
         } else {
             assertLe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "oneForZero");
         }
-
     }
 
     function test_swap_oneForZero_priceLessThanOrEqaulToLimit() public {
@@ -275,7 +286,13 @@ contract PoolTest is Test {
         uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
         uint24 protocolFee = 0;
         uint24 lpFee = 0;
-        Pool.SwapParams memory params = Pool.SwapParams({tickSpacing: -2448282, zeroForOne: false, amountSpecified: 2459, sqrtPriceLimitX96: Constants.SQRT_PRICE_2_1 });
+        Pool.SwapParams memory params = Pool.SwapParams({
+            tickSpacing: -2448282,
+            zeroForOne: false,
+            amountSpecified: 2459,
+            sqrtPriceLimitX96: Constants.SQRT_PRICE_2_1,
+            lpFeeOverride: 0
+        });
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
         // initialize and add liquidity
@@ -295,7 +312,7 @@ contract PoolTest is Test {
 
         state.swap(params);
 
-        assertLe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "oneForZero"); 
+        assertLe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "oneForZero");
     }
 
     function test_swap_zeroForOne_priceGreaterThanOrEqualToLimit() public {
@@ -303,7 +320,13 @@ contract PoolTest is Test {
         uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
         uint24 protocolFee = 0;
         uint24 lpFee = 0;
-        Pool.SwapParams memory params = Pool.SwapParams({tickSpacing: -2448282, zeroForOne: true, amountSpecified: 2459, sqrtPriceLimitX96: Constants.SQRT_PRICE_1_2 });
+        Pool.SwapParams memory params = Pool.SwapParams({
+            tickSpacing: -2448282,
+            zeroForOne: true,
+            amountSpecified: 2459,
+            sqrtPriceLimitX96: Constants.SQRT_PRICE_1_2,
+            lpFeeOverride: 0
+        });
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
 
         // initialize and add liquidity
@@ -326,9 +349,17 @@ contract PoolTest is Test {
         assertGe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "zeroForOne");
     }
 
-    function test_fuzz_donate(uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper, Pool.ModifyLiquidityParams memory params, uint24 lpFee, uint24 protocolFee, uint256 amount0, uint256 amount1 
+    function test_fuzz_donate(
+        uint160 sqrtPriceX96,
+        int24 tickLower,
+        int24 tickUpper,
+        Pool.ModifyLiquidityParams memory params,
+        uint24 lpFee,
+        uint24 protocolFee,
+        uint256 amount0,
+        uint256 amount1
     ) public {
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE-1));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
         params.tickUpper = int24(bound(params.tickUpper, TickMath.getTickAtSqrtPrice(sqrtPriceX96), TickMath.MAX_TICK));
         params.tickLower = int24(bound(params.tickLower, TickMath.MIN_TICK, TickMath.getTickAtSqrtPrice(sqrtPriceX96)));
         amount0 = bound(amount0, 0, uint256(int256(type(int128).max)));
