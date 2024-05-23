@@ -93,8 +93,8 @@ library Pool {
     /// @dev Common checks for valid tick inputs.
     function checkTicks(int24 tickLower, int24 tickUpper) private pure {
         if (tickLower >= tickUpper) revert TicksMisordered(tickLower, tickUpper);
-        if (tickLower < TickMath.MIN_TICK) revert TickLowerOutOfBounds(tickLower);
-        if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
+        if (tickLower < TickMath.MIN_TICK) TickLowerOutOfBounds.selector.revertWithInt24(tickLower);
+        if (tickUpper > TickMath.MAX_TICK) TickUpperOutOfBounds.selector.revertWithInt24(tickUpper);
     }
 
     function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 lpFee)
@@ -169,10 +169,10 @@ library Pool {
                 if (liquidityDelta >= 0) {
                     uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
                     if (state.liquidityGrossAfterLower > maxLiquidityPerTick) {
-                        revert TickLiquidityOverflow(tickLower);
+                        TickLiquidityOverflow.selector.revertWithInt24(tickLower);
                     }
                     if (state.liquidityGrossAfterUpper > maxLiquidityPerTick) {
-                        revert TickLiquidityOverflow(tickUpper);
+                        TickLiquidityOverflow.selector.revertWithInt24(tickUpper);
                     }
                 }
 
