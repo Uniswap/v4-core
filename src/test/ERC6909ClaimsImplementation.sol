@@ -14,6 +14,11 @@ contract ERC6909ClaimsImplementation is ERC6909Claims {
         _mint(to, id, amount);
     }
 
+    /// @notice mocked burn logic
+    function burn(uint256 id, uint256 amount) public {
+        _burn(msg.sender, id, amount);
+    }
+
     /// @notice mocked burn logic without checking sender allowance
     function burnFrom(address from, uint256 id, uint256 amount) public {
         _burnFrom(from, id, amount);
