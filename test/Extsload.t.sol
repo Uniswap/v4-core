@@ -26,7 +26,7 @@ contract ExtsloadTest is Test, GasSnapshot {
         }
     }
 
-    function test_fuzz_extsload(uint256 length, uint256 seed) public {
+    function test_fuzz_extsload(uint256 length, uint256 seed, bytes memory dirtyBits) public {
         length = bound(length, 0, 1000);
         bytes32[] memory slots = new bytes32[](length);
         bytes32[] memory expected = new bytes32[](length);
@@ -37,5 +37,12 @@ contract ExtsloadTest is Test, GasSnapshot {
         }
         bytes32[] memory values = loadable.extsload(slots);
         assertEq(values, expected);
+        // test with dirty bits
+        bytes memory data = abi.encodeWithSignature("extsload(bytes32[])", (slots));
+        bytes memory malformedData = bytes.concat(data, dirtyBits);
+        (bool success, bytes memory returnData) = address(loadable).staticcall(malformedData);
+        assertTrue(success, "extsload failed");
+        assertEq(returnData.length % 0x20, 0, "return data length is not a multiple of 32");
+        assertEq(abi.decode(returnData, (bytes32[])), expected);
     }
 }
