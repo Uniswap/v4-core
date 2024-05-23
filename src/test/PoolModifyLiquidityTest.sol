@@ -91,8 +91,8 @@ contract PoolModifyLiquidityTest is PoolTestBase {
 
         uint256 nonZeroDeltaCount = delta0 != 0 ? 1 : 0;
         nonZeroDeltaCount += delta1 != 0 ? 1 : 0;
-        require(nonZeroDeltaCount == TransientStateLibrary.getNonzeroDeltaCount(manager), 'Incorrect nonZeroDeltaCount');
-        require(TransientStateLibrary.isUnlocked(manager), 'Unlock not set');
+        require(nonZeroDeltaCount == TransientStateLibrary.getNonzeroDeltaCount(manager), "Incorrect nonZeroDeltaCount");
+        require(TransientStateLibrary.isUnlocked(manager), "Unlock not set");
 
         if (delta0 < 0) data.key.currency0.settle(manager, data.sender, uint256(-delta0), data.settleUsingBurn);
         if (delta1 < 0) data.key.currency1.settle(manager, data.sender, uint256(-delta1), data.settleUsingBurn);

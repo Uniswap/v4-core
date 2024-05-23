@@ -103,8 +103,8 @@ contract PoolSwapTest is PoolTestBase {
 
         uint256 nonZeroDeltaCount = (deltaAfter0 != 0) ? 1 : 0;
         nonZeroDeltaCount += (deltaAfter1 != 0) ? 1 : 0;
-        require(nonZeroDeltaCount == TransientStateLibrary.getNonzeroDeltaCount(manager), 'Incorrect nonZeroDeltaCount');
-        require(TransientStateLibrary.isUnlocked(manager), 'Unlock not set');
+        require(nonZeroDeltaCount == TransientStateLibrary.getNonzeroDeltaCount(manager), "Incorrect nonZeroDeltaCount");
+        require(TransientStateLibrary.isUnlocked(manager), "Unlock not set");
 
         if (deltaAfter0 < 0) {
             data.key.currency0.settle(manager, data.sender, uint256(-deltaAfter0), data.testSettings.settleUsingBurn);

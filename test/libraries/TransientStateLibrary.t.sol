@@ -83,8 +83,8 @@ contract TransientStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot, Ext
 
     function _test_getReserves_withTransferAndSync() public {
         // Arrange
-        uint amount0 = 10 ether;
-        uint amount1 = 20 ether;
+        uint256 amount0 = 10 ether;
+        uint256 amount1 = 20 ether;
         currency0.transfer(address(manager), amount0);
         currency1.transfer(address(manager), amount1);
         manager.sync(currency0);
@@ -107,8 +107,8 @@ contract TransientStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot, Ext
         currency1.setReserves(amount1);
 
         // Act
-        uint reserves0 = TransientStateLibrary.getReserves(self, currency0);
-        uint reserves1 = TransientStateLibrary.getReserves(self, currency1);
+        uint256 reserves0 = TransientStateLibrary.getReserves(self, currency0);
+        uint256 reserves1 = TransientStateLibrary.getReserves(self, currency1);
 
         // Assert
         assertEq(reserves0, amount0);
@@ -116,11 +116,11 @@ contract TransientStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot, Ext
     }
 
     // Wrapper function to test in a single transaction
-    function test_fuzz_getReserves(uint amount0, uint amount1) public {
+    function test_fuzz_getReserves(uint256 amount0, uint256 amount1) public {
         wrapper._test_fuzz_getReserves(amount0, amount1);
     }
 
-    function _test_fuzz_getReserves(uint amount0, uint amount1) public {
+    function _test_fuzz_getReserves(uint256 amount0, uint256 amount1) public {
         // Arrange
         vm.assume(amount0 <= currency0.balanceOfSelf() && amount0 != 0);
         vm.assume(amount1 <= currency1.balanceOfSelf() && amount1 != 0);
@@ -159,7 +159,7 @@ contract TransientStateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot, Ext
         assertEq(queriedCount, 1);
     }
 
-    function test_fuzz_getNonzeroDeltaCount_self(uint8 incrementCount, uint8 decrementCount ) public {
+    function test_fuzz_getNonzeroDeltaCount_self(uint8 incrementCount, uint8 decrementCount) public {
         // Arrange
         vm.assume(incrementCount > decrementCount);
         for (uint8 i = 0; i < incrementCount; i++) {
