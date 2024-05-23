@@ -27,7 +27,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
     using LPFeeLibrary for uint24;
 
     DynamicReturnFeeTestHook dynamicReturnFeesHook = DynamicReturnFeeTestHook(
-        address(uint160(uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG))
+        address(uint160(uint256(type(uint160).max) & clearAllHookPermissionsMask | Hooks.BEFORE_SWAP_FLAG))
     );
 
     event Swap(

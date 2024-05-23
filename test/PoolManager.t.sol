@@ -81,25 +81,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapSize("poolManager bytecode size", address(manager));
     }
 
-    function test_setProtocolFeeController_succeeds() public {
-        deployFreshManager();
-        assertEq(address(manager.protocolFeeController()), address(0));
-        vm.expectEmit(false, false, false, true, address(manager));
-        emit ProtocolFeeControllerUpdated(address(feeController));
-        manager.setProtocolFeeController(feeController);
-        assertEq(address(manager.protocolFeeController()), address(feeController));
-    }
-
-    function test_setProtocolFeeController_failsIfNotOwner() public {
-        deployFreshManager();
-        assertEq(address(manager.protocolFeeController()), address(0));
-
-        vm.prank(address(1)); // not the owner address
-        vm.expectRevert("UNAUTHORIZED");
-        manager.setProtocolFeeController(feeController);
-        assertEq(address(manager.protocolFeeController()), address(0));
-    }
-
     function test_addLiquidity_failsIfNotInitialized() public {
         vm.expectRevert(Pool.PoolNotInitialized.selector);
         modifyLiquidityRouter.modifyLiquidity(uninitializedKey, LIQUIDITY_PARAMS, ZERO_BYTES);
@@ -249,7 +230,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         address payable mockAddr =
             payable(address(uint160(Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
-        address payable hookAddr = payable(Constants.MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.ALL_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -278,7 +259,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         address payable mockAddr =
             payable(address(uint160(Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)));
-        address payable hookAddr = payable(Constants.MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.ALL_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -508,10 +489,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_addLiquidity_withHooks_gas() public {
-        address hookEmptyAddr = Constants.EMPTY_HOOKS;
+        address allHooksAddr = Constants.ALL_HOOKS;
         MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+        vm.etch(allHooksAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(allHooksAddr);
 
         (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
 
@@ -520,10 +501,10 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_removeLiquidity_withHooks_gas() public {
-        address hookEmptyAddr = Constants.EMPTY_HOOKS;
+        address allHooksAddr = Constants.ALL_HOOKS;
         MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+        vm.etch(allHooksAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(allHooksAddr);
 
         (key,) = initPool(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
@@ -584,7 +565,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_swap_succeedsWithHooksIfInitialized() public {
         address payable mockAddr = payable(address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
-        address payable hookAddr = payable(Constants.MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.ALL_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -688,11 +669,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     }
 
     function test_swap_withHooks_gas() public {
-        address hookEmptyAddr = Constants.EMPTY_HOOKS;
+        address allHooksAddr = Constants.ALL_HOOKS;
 
         MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+        vm.etch(allHooksAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(allHooksAddr);
 
         (key,) = initPoolAndAddLiquidity(currency0, currency1, mockHooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
 
@@ -1059,10 +1040,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         uint24 protocolFee = (uint24(protocolFee1) << 12) | uint24(protocolFee0);
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(key, protocolFee);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, protocolFee);
 
         // Add liquidity - Fees dont accrue for positive liquidity delta.
@@ -1246,69 +1230,16 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.burn(address(this), key.currency0.toId(), 1);
     }
 
-    function test_setProtocolFee_gas() public {
-        vm.prank(address(feeController));
-        manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
-        snapLastCall("set protocol fee");
-    }
-
-    function test_setProtocolFee_updatesProtocolFeeForInitializedPool(uint24 protocolFee) public {
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
-        assertEq(slot0ProtocolFee, 0);
-
-        uint16 fee0 = protocolFee.getZeroForOneFee();
-        uint16 fee1 = protocolFee.getOneForZeroFee();
-        vm.prank(address(feeController));
-        if ((fee0 > 1000) || (fee1 > 1000)) {
-            vm.expectRevert(IProtocolFees.InvalidProtocolFee.selector);
-            manager.setProtocolFee(key, protocolFee);
-        } else {
-            vm.expectEmit(false, false, false, true);
-            emit IProtocolFees.ProtocolFeeUpdated(key.toId(), protocolFee);
-            manager.setProtocolFee(key, protocolFee);
-
-            (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
-            assertEq(slot0ProtocolFee, protocolFee);
-        }
-    }
-
-    function test_setProtocolFee_failsWithInvalidFee() public {
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
-        assertEq(slot0ProtocolFee, 0);
-
-        vm.prank(address(feeController));
-        vm.expectRevert(IProtocolFees.InvalidProtocolFee.selector);
-        manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS + 1);
-    }
-
-    function test_setProtocolFee_failsWithInvalidCaller() public {
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
-        assertEq(slot0ProtocolFee, 0);
-
-        vm.expectRevert(IProtocolFees.InvalidCaller.selector);
-        manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
-    }
-
-    function test_collectProtocolFees_initializesWithProtocolFeeIfCalled() public {
-        feeController.setProtocolFeeForPool(uninitializedKey.toId(), MAX_PROTOCOL_FEE_BOTH_TOKENS);
-
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
-    }
-
-    function test_collectProtocolFees_revertsIfCallerIsNotController() public {
-        vm.expectRevert(IProtocolFees.InvalidCaller.selector);
-        manager.collectProtocolFees(address(1), currency0, 0);
-    }
-
     function test_collectProtocolFees_ERC20_accumulateFees_gas() public {
         uint256 expectedFees = 10;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
@@ -1331,10 +1262,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_collectProtocolFees_ERC20_accumulateFees_exactOutput() public {
         uint256 expectedFees = 10;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
@@ -1356,10 +1290,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_collectProtocolFees_ERC20_returnsAllFeesIf0IsProvidedAsParameter() public {
         uint256 expectedFees = 10;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(key.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(key.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap(
@@ -1382,10 +1319,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 expectedFees = 10;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(nativeKey, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
@@ -1409,10 +1349,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint256 expectedFees = 10;
         Currency nativeCurrency = CurrencyLibrary.NATIVE;
 
+        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        assertEq(slot0ProtocolFee, 0);
+
         vm.prank(address(feeController));
         manager.setProtocolFee(nativeKey, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
+        (,, slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
         assertEq(slot0ProtocolFee, MAX_PROTOCOL_FEE_BOTH_TOKENS);
 
         swapRouter.swap{value: 10000}(
