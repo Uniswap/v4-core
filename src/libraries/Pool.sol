@@ -324,14 +324,14 @@ library Pool {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
-                revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
+                PriceLimitOutOfBounds.selector.revertWithUint160(params.sqrtPriceLimitX96);
             }
         } else {
             if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96()) {
                 revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_PRICE) {
-                revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
+                PriceLimitOutOfBounds.selector.revertWithUint160(params.sqrtPriceLimitX96);
             }
         }
 

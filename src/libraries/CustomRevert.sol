@@ -30,4 +30,14 @@ library CustomRevert {
             revert(0, 0x24)
         }
     }
+
+    /// @dev Reverts with a custom error with a uint160 argument in the scratch space
+    function revertWithUint160(bytes4 selector, uint160 value) internal pure {
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0, selector)
+            mstore(0x04, value)
+            revert(0, 0x24)
+        }
+    }
 }
