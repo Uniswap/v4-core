@@ -114,7 +114,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         address payable mockAddr = payable(address(uint160(Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
-        address payable hookAddr = payable(Constants.MOCK_HOOKS);
+        address payable hookAddr = payable(Constants.ALL_HOOKS);
 
         vm.etch(hookAddr, vm.getDeployedCode("EmptyTestHooks.sol:EmptyTestHooks"));
         MockContract mockContract = new MockContract();
@@ -163,11 +163,11 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        address hookEmptyAddr = Constants.EMPTY_HOOKS;
+        address allHooksAddr = Constants.ALL_HOOKS;
 
         MockHooks impl = new MockHooks();
-        vm.etch(hookEmptyAddr, address(impl).code);
-        MockHooks mockHooks = MockHooks(hookEmptyAddr);
+        vm.etch(allHooksAddr, address(impl).code);
+        MockHooks mockHooks = MockHooks(allHooksAddr);
 
         uninitializedKey.hooks = mockHooks;
 
