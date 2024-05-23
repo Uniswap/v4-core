@@ -93,12 +93,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
-    mapping(PoolId id => Pool.State) internal pools;
+    mapping(PoolId id => Pool.State) internal _pools;
 
     constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
 
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
-        return pools[id];
+        return _pools[id];
     }
 
     /// @notice This will revert if the contract is locked
@@ -127,7 +127,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolId id = key.toId();
         (, uint24 protocolFee) = _fetchProtocolFee(key);
 
-        tick = pools[id].initialize(sqrtPriceX96, protocolFee, lpFee);
+        tick = _pools[id].initialize(sqrtPriceX96, protocolFee, lpFee);
 
         key.hooks.afterInitialize(key, sqrtPriceX96, tick, hookData);
 
@@ -176,7 +176,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function _checkPoolInitialized(PoolId id) internal view {
-        if (pools[id].isNotInitialized()) PoolNotInitialized.selector.revertWith();
+        if (_pools[id].isNotInitialized()) PoolNotInitialized.selector.revertWith();
     }
 
     /// @inheritdoc IPoolManager
@@ -191,7 +191,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
         BalanceDelta principalDelta;
-        (principalDelta, feesAccrued) = pools[id].modifyLiquidity(
+        (principalDelta, feesAccrued) = _pools[id].modifyLiquidity(
             Pool.ModifyLiquidityParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -259,7 +259,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     // Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
     function _swap(PoolId id, Pool.SwapParams memory params, Currency inputCurrency) internal returns (BalanceDelta) {
         (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) =
-            pools[id].swap(params);
+            _pools[id].swap(params);
 
         // The fee is on the input currency.
         if (feeForProtocol > 0) _updateProtocolFees(inputCurrency, feeForProtocol);
@@ -283,7 +283,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
-        delta = pools[id].donate(amount0, amount1);
+        delta = _pools[id].donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta, msg.sender);
 
@@ -334,6 +334,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         }
         newDynamicLPFee.validate();
         PoolId id = key.toId();
-        pools[id].setLPFee(newDynamicLPFee);
+        _pools[id].setLPFee(newDynamicLPFee);
     }
 }
