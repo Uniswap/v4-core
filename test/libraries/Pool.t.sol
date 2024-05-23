@@ -105,9 +105,6 @@ contract PoolTest is Test {
     }
 
     function test_setProtocolFee_revertsWithPoolNotInitialized() public {
-        uint160 sqrtPriceX96 = TickMath.MIN_SQRT_PRICE;
-        uint24 protocolFee = MAX_PROTOCOL_FEE;
-        uint24 lpFee = 3000;
         uint24 newProtocolFee = 5000;
         vm.expectRevert(Pool.PoolNotInitialized.selector);
         state.setProtocolFee(newProtocolFee);
@@ -141,9 +138,6 @@ contract PoolTest is Test {
     }
 
     function test_setLPFee_revertsWithPoolNotInitialized() public {
-        uint160 sqrtPriceX96 = TickMath.MIN_SQRT_PRICE;
-        uint24 protocolFee = MAX_PROTOCOL_FEE;
-        uint24 lpFee = 3000;
         uint24 newLpFee = 5000;
         vm.expectRevert(Pool.PoolNotInitialized.selector);
         state.setLPFee(newLpFee);
@@ -171,8 +165,11 @@ contract PoolTest is Test {
             vm.expectRevert(SafeCast.SafeCastOverflow.selector);
         } else if (params.liquidityDelta == 0) {
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
+            //should be old + new if greater than max
+            // need for both lower and upper
         } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, params.tickLower));
+            // only if the lower/higher got flipped
         } else if (params.tickLower % params.tickSpacing != 0) {
             vm.expectRevert(
                 abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickLower, params.tickSpacing)
@@ -197,6 +194,52 @@ contract PoolTest is Test {
         }
 
         params.owner = address(this);
+        state.modifyLiquidity(params);
+    }
+
+    function test_modifyLiquidity_revertsWithTickLiquidityOverflow_lower() public {
+        uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
+        uint24 protocolFee = MAX_PROTOCOL_FEE;
+        uint24 lpFee = 3000;
+        state.initialize(sqrtPriceX96, protocolFee, lpFee);
+        Pool.ModifyLiquidityParams memory params = Pool.ModifyLiquidityParams({
+            owner: address(this),
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: 1e18,
+            tickSpacing: 60,
+            salt: 0
+        });
+        state.ticks[-120] = Pool.TickInfo({
+            liquidityGross: type(uint128).max - uint128(params.liquidityDelta),
+            liquidityNet: 0,
+            feeGrowthOutside0X128: 0,
+            feeGrowthOutside1X128: 0
+        });
+        vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, -120));
+        state.modifyLiquidity(params);
+    }
+
+    function test_modifyLiquidity_revertsWithTickLiquidityOverflow_upper() public {
+        uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
+        uint24 protocolFee = MAX_PROTOCOL_FEE;
+        uint24 lpFee = 3000;
+        state.initialize(sqrtPriceX96, protocolFee, lpFee);
+        Pool.ModifyLiquidityParams memory params = Pool.ModifyLiquidityParams({
+            owner: address(this),
+            tickLower: -120,
+            tickUpper: 120,
+            liquidityDelta: 1e18,
+            tickSpacing: 60,
+            salt: 0
+        });
+        state.ticks[120] = Pool.TickInfo({
+            liquidityGross: type(uint128).max - uint128(params.liquidityDelta),
+            liquidityNet: 0,
+            feeGrowthOutside0X128: 0,
+            feeGrowthOutside1X128: 0
+        });
+        vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, 120));
         state.modifyLiquidity(params);
     }
 
@@ -239,10 +282,8 @@ contract PoolTest is Test {
 
         if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
-            state.swap(params);
         } else if (!swapFee.isValid()) {
             vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
-            state.swap(params);
         } else if (params.zeroForOne && params.amountSpecified != 0) {
             if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96()) {
                 vm.expectRevert(
@@ -250,10 +291,8 @@ contract PoolTest is Test {
                         Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96(), params.sqrtPriceLimitX96
                     )
                 );
-                state.swap(params);
             } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
-                state.swap(params);
             }
         } else if (!params.zeroForOne && params.amountSpecified != 0) {
             if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96()) {
@@ -262,10 +301,8 @@ contract PoolTest is Test {
                         Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96(), params.sqrtPriceLimitX96
                     )
                 );
-                state.swap(params);
             } else if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_PRICE) {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
-                state.swap(params);
             }
         }
 
