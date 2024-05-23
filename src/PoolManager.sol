@@ -24,6 +24,7 @@ import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
 import {Reserves} from "./libraries/Reserves.sol";
 import {Extsload} from "./Extsload.sol";
 import {Exttload} from "./Exttload.sol";
+import {CustomRevert} from "./libraries/CustomRevert.sol";
 
 //  4
 //   44
@@ -84,6 +85,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
     using Reserves for Currency;
+    using CustomRevert for bytes4;
 
     /// @inheritdoc IPoolManager
     int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
@@ -101,7 +103,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @notice This will revert if the contract is locked
     modifier onlyWhenUnlocked() {
-        if (!Lock.isUnlocked()) revert ManagerLocked();
+        if (!Lock.isUnlocked()) ManagerLocked.selector.revertWith();
         _;
     }
 
@@ -113,10 +115,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         returns (int24 tick)
     {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
-        if (key.tickSpacing > MAX_TICK_SPACING) revert TickSpacingTooLarge();
-        if (key.tickSpacing < MIN_TICK_SPACING) revert TickSpacingTooSmall();
-        if (key.currency0 >= key.currency1) revert CurrenciesOutOfOrderOrEqual();
-        if (!key.hooks.isValidHookAddress(key.fee)) revert Hooks.HookAddressNotValid(address(key.hooks));
+        if (key.tickSpacing > MAX_TICK_SPACING) TickSpacingTooLarge.selector.revertWith();
+        if (key.tickSpacing < MIN_TICK_SPACING) TickSpacingTooSmall.selector.revertWith();
+        if (key.currency0 >= key.currency1) CurrenciesOutOfOrderOrEqual.selector.revertWith();
+        if (!key.hooks.isValidHookAddress(key.fee)) Hooks.HookAddressNotValid.selector.revertWith(address(key.hooks));
 
         uint24 lpFee = key.fee.getInitialLPFee();
 
@@ -135,14 +137,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function unlock(bytes calldata data) external override noDelegateCall returns (bytes memory result) {
-        if (Lock.isUnlocked()) revert AlreadyUnlocked();
+        if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();
 
         Lock.unlock();
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = IUnlockCallback(msg.sender).unlockCallback(data);
 
-        if (NonZeroDeltaCount.read() != 0) revert CurrencyNotSettled();
+        if (NonZeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
         Lock.lock();
     }
 
@@ -174,7 +176,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function _checkPoolInitialized(PoolId id) internal view {
-        if (_pools[id].isNotInitialized()) revert PoolNotInitialized();
+        if (_pools[id].isNotInitialized()) PoolNotInitialized.selector.revertWith();
     }
 
     /// @inheritdoc IPoolManager
@@ -220,7 +222,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         onlyWhenUnlocked
         returns (BalanceDelta swapDelta)
     {
-        if (params.amountSpecified == 0) revert SwapAmountCannotBeZero();
+        if (params.amountSpecified == 0) SwapAmountCannotBeZero.selector.revertWith();
 
         PoolId id = key.toId();
         _checkPoolInitialized(id);
@@ -302,7 +304,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (currency.isNative()) {
             paid = msg.value;
         } else {
-            if (msg.value > 0) revert NonZeroNativeValue();
+            if (msg.value > 0) NonZeroNativeValue.selector.revertWith();
             uint256 reservesBefore = currency.getReserves();
             uint256 reservesNow = sync(currency);
             paid = reservesNow - reservesBefore;
@@ -327,7 +329,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external {
-        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) revert UnauthorizedDynamicLPFeeUpdate();
+        if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) {
+            UnauthorizedDynamicLPFeeUpdate.selector.revertWith();
+        }
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         _pools[id].setLPFee(newDynamicLPFee);
