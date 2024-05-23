@@ -15,8 +15,6 @@ import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 
-import "forge-std/console2.sol";
-
 library Pool {
     using SafeCast for *;
     using TickBitmap for mapping(int16 => uint256);

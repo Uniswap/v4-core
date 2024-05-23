@@ -21,8 +21,6 @@ import {TickMath} from "src/libraries/TickMath.sol";
 import {toBalanceDelta} from "src/types/BalanceDelta.sol";
 import {Logger} from "./utils/Logger.sol";
 
-import "forge-std/console2.sol";
-
 contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers, GasSnapshot {
     using StateLibrary for IPoolManager;
 
@@ -127,8 +125,6 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
         returns (int128, int128)
     {
         (uint256 price, int24 tick,,) = manager.getSlot0(poolId);
-
-        console2.log("price", price);
 
         string memory jsParameters = string(
             abi.encodePacked(

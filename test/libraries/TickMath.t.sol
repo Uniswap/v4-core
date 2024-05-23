@@ -8,8 +8,6 @@ import {TickMathTest} from "src/test/TickMathTest.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
 import {JavascriptFfi} from "test/utils/JavascriptFfi.sol";
 
-import "forge-std/console2.sol";
-
 contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
     int24 constant MIN_TICK = -887272;
     int24 constant MAX_TICK = -MIN_TICK;
