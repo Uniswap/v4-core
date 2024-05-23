@@ -42,13 +42,16 @@ library CurrencyLibrary {
 
         bool success;
         if (currency.isNative()) {
+            /// @solidity memory-safe-assembly
             assembly {
-                // Transfer the ETH and store if it succeeded or not.
-                success := call(gas(), to, amount, 0, 0, 0, 0)
+                // Transfer the ETH and revert if it fails.
+                if iszero(call(gas(), to, amount, 0, 0, 0, 0)) {
+                    mstore(0, 0xf4b3b1bc) // `NativeTransferFailed()`.
+                    revert(0x1c, 0x04)
+                }
             }
-
-            if (!success) revert NativeTransferFailed();
         } else {
+            /// @solidity memory-safe-assembly
             assembly {
                 // We'll write our calldata to this slot below, but restore it later.
                 let memPointer := mload(0x40)
