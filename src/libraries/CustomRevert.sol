@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.4;
 
+/// @title Library for reverting with custom errors efficiently
+/// @notice Contains functions for reverting with custom errors with different argument types efficiently
+/// @dev To use this library, declare `using CustomRevert for bytes4;` and replace `revert CustomError()` with
+/// `CustomError.selector.revertWith()`
+/// @dev The functions may tamper with the free memory pointer but it is fine since the call context is exited immediately
 library CustomRevert {
     /// @dev Reverts with the selector of a custom error in the scratch space
     function revertWith(bytes4 selector) internal pure {
@@ -42,7 +47,6 @@ library CustomRevert {
     }
 
     /// @dev Reverts with a custom error with two int24 arguments
-    /// @dev The free memory pointer is tampered with but it is fine since the call context is exited immediately
     function revertWith(bytes4 selector, int24 value1, int24 value2) internal pure {
         /// @solidity memory-safe-assembly
         assembly {
@@ -54,7 +58,6 @@ library CustomRevert {
     }
 
     /// @dev Reverts with a custom error with two uint160 arguments
-    /// @dev The free memory pointer is tampered with but it is fine since the call context is exited immediately
     function revertWith(bytes4 selector, uint160 value1, uint160 value2) internal pure {
         /// @solidity memory-safe-assembly
         assembly {
