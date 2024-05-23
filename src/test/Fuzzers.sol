@@ -27,7 +27,7 @@ contract Fuzzers is StdUtils {
 
         // Finally bound the seeded liquidity by either the max per tick, or by the amount allowed in the position range.
         int256 liquidityMax = liquidityMaxByAmount > liquidityMaxPerTick ? liquidityMaxPerTick : liquidityMaxByAmount;
-        return bound(liquidityDeltaUnbounded, 0.0000001e18, liquidityMax);
+        return bound(liquidityDeltaUnbounded, 1, liquidityMax);
     }
 
     // Uses tickSpacingToMaxLiquidityPerTick/2 as one of the possible bounds.
