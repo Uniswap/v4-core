@@ -18,7 +18,6 @@ export function getAmount0Delta(sqrtPriceAX96: JSBI,sqrtPriceBX96: JSBI, liquidi
 }
 
 export function getAmount1Delta(sqrtPriceAX96: JSBI,sqrtPriceBX96: JSBI, liquidity: JSBI) : JSBI {
-
   if (JSBI.lessThan(liquidity, JSBI_ZERO)) {
     return SqrtPriceMath.getAmount1Delta(sqrtPriceAX96, sqrtPriceBX96, JSBI.unaryMinus(liquidity), false)
   } else {

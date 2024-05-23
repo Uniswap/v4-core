@@ -1,5 +1,6 @@
 import { BigNumber, ethers } from 'ethers'
 import JSBI from 'jsbi'
+import Decimal from 'decimal.js'
 
 import {getSqrtPriceAtTick, getAmount0Delta, getAmount1Delta, JSBI_ZERO} from "./utils/shared";
 
@@ -37,7 +38,9 @@ function modifyLiquidity(_tickLower: string, _tickUpper: string, _liquidity: str
 
 
     let delta : string[] = [];
+
     if (JSBI.LT(tick, tickLower)) {
+
         // The current tick is less than the lowest tick of the position, so the position is entirely in token0.
         let priceLower = JSBI.BigInt(getSqrtPriceAtTick(_tickLower)); 
         let priceUpper = JSBI.BigInt(getSqrtPriceAtTick(_tickUpper)); 
@@ -46,10 +49,19 @@ function modifyLiquidity(_tickLower: string, _tickUpper: string, _liquidity: str
         delta.push(JSBI_ZERO.toString());
 
     } else if (JSBI.LT(tick, tickUpper)) {
-        // The current tick is less than the highest tick of the position, but must be greater than the lowest tick of the position, so our position is in both token0 and token1.
+        // In-range liquidity. As we are just calculating the values of the delta. 
+        // We do not update any global state variable for state.liquidity, but note that the protocol increments state liquidity in this case.
+
         let priceUpper = JSBI.BigInt(getSqrtPriceAtTick(_tickUpper)); 
         let priceLower = JSBI.BigInt(getSqrtPriceAtTick(_tickLower)); 
 
+        // When tickLower == the current tick, the price returned from getSqrtPriceATick has a slight error in JS.
+        // In solidity because the calculations for getSqrtRatioAtTick(tickLower) == currentSqrtPriceX96, the 
+        // numerator becomes 0, and the amount becomes 0.
+        // So instead of using the price from getSqrtRatioAtTick, we set the priceLower to the current price.
+        if(JSBI.EQ(tickLower,tick)) {
+            priceLower = sqrtPriceX96;
+        }
         
         let amount0 = getAmount0Delta(sqrtPriceX96, priceUpper, liquidity);
         let amount1 = getAmount1Delta(priceLower, sqrtPriceX96, liquidity);

@@ -49,63 +49,28 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
                             Fuzz Add Liquidity
     //////////////////////////////////////////////////////////////*/
 
-    // TODO Add fuzz
-    // TODO Do multiple addLiquidity/removeLiquidity calls
-    // tickLower: any, tickUpper: any, liquidity: any, slot0Tick: any, slot0Price: any
     /// forge-config: default.fuzz.runs = 10
     /// forge-config: pr.fuzz.runs = 10
     /// forge-config: ci.fuzz.runs = 500
-    // function test_ffi_fuzz_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta(
-    //     IPoolManager.ModifyLiquidityParams memory paramSeed
-    // ) public {
-    //     // Sanitize the fuzzed params to get valid tickLower, tickUpper, and liquidityDelta.
-    //     // We use SQRT_PRICE_1_1 because the simpleKey pool has initial sqrtPrice of SQRT_PRICE_1_1.
-    //     IPoolManager.ModifyLiquidityParams memory params =
-    //         createFuzzyLiquidityParams(simpleKey, paramSeed, SQRT_PRICE_1_1);
-
-    //     logParams(params);
-
-    //     // TODO: Support fees accrued checks.
-    //     (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, params, ZERO_BYTES);
-
-    //     (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(simplePoolId, params);
-
-    //     _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
-    //     _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
-    // }
-
-    // Error off by exactly 1 pip. Hardcodes the values found in the failing fuzz.
-    function test_ffi_fuzz_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta() public {
+    function test_ffi_fuzz_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta(
+        IPoolManager.ModifyLiquidityParams memory paramSeed
+    ) public {
         // Sanitize the fuzzed params to get valid tickLower, tickUpper, and liquidityDelta.
         // We use SQRT_PRICE_1_1 because the simpleKey pool has initial sqrtPrice of SQRT_PRICE_1_1.
-        IPoolManager.ModifyLiquidityParams memory paramSeed = IPoolManager.ModifyLiquidityParams({
-            tickLower: -4436103,
-            tickUpper: 0,
-            liquidityDelta: 1046746332250618950212058894387467594820167,
-            salt: 0x72880515a8b67a21551554f74123646d3dbc41d11891e8d3b4afc32f19ad3245
-        });
         IPoolManager.ModifyLiquidityParams memory params =
             createFuzzyLiquidityParams(simpleKey, paramSeed, SQRT_PRICE_1_1);
 
         logParams(params);
 
-        // TODO: Support fees accrued checks.
         (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, params, ZERO_BYTES);
 
-        console2.log("solidity deltas");
-        console2.log(delta.amount0());
-        console2.log(delta.amount1());
-
         (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(simplePoolId, params);
-
-        console2.log("js deltas");
-        console2.log(jsDelta0);
-        console2.log(jsDelta1);
 
         _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
         _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
     }
 
+    // Static edge case, no fuzz test, to make sure we test max tickspacing.
     function test_ffi_addLiqudity_weirdPool_0_returnsCorrectLiquidityDelta() public {
         // Use a pool with TickSpacing of MAX_TICK_SPACING
         (PoolKey memory wp0, PoolId wpId0) = initPool(
@@ -130,6 +95,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
         _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
     }
 
+    // Static edge case, no fuzz test, to make sure we test min tick spacing.
     function test_ffi_addLiqudity_weirdPool_1_returnsCorrectLiquidityDelta() public {
         // Use a pool with TickSpacing of MIN_TICK_SPACING
         (PoolKey memory wp0, PoolId wpId0) = initPool(
@@ -145,6 +111,8 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
             liquidityDelta: 922871614499955267459963,
             salt: 0
         });
+
+        params.tickLower = 10;
 
         (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
 
