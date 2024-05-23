@@ -38,45 +38,35 @@ library CurrencyLibrary {
 
     function transfer(Currency currency, address to, uint256 amount) internal {
         // implementation from
-        // https://github.com/transmissions11/solmate/blob/e8f96f25d48fe702117ce76c79228ca4f20206cb/src/utils/SafeTransferLib.sol
+        // https://github.com/Vectorized/solady/blob/0dde2a008d917aa8076f348eac2855edbe181cc0/src/utils/SafeTransferLib.sol
 
         if (currency.isNative()) {
             /// @solidity memory-safe-assembly
             assembly {
                 // Transfer the ETH and revert if it fails.
                 if iszero(call(gas(), to, amount, 0, 0, 0, 0)) {
-                    mstore(0, 0xf4b3b1bc) // `NativeTransferFailed()`.
+                    mstore(0x00, 0xf4b3b1bc) // `NativeTransferFailed()`.
                     revert(0x1c, 0x04)
                 }
             }
         } else {
             /// @solidity memory-safe-assembly
             assembly {
-                // We'll write our calldata to this slot below, but restore it later.
-                let memPointer := mload(0x40)
-
-                // Write the abi-encoded calldata into memory, beginning with the function selector.
-                mstore(0, 0xa9059cbb00000000000000000000000000000000000000000000000000000000)
-                mstore(4, to) // Append the "to" argument.
-                mstore(36, amount) // Append the "amount" argument.
-
+                mstore(0x14, to) // Store the `to` address in [0x20, 0x34).
+                mstore(0x34, amount) // Store the `amount` argument in [0x34, 0x54).
+                // Store the selector of `transfer(address,uint256)` in [0x10, 0x14).
+                mstore(0x00, 0xa9059cbb000000000000000000000000)
+                // Perform the transfer, reverting upon failure.
                 if iszero(
-                    and(
-                        // Check whether the call reverted, if not we check it either
-                        // returned exactly 1 (can't just be non-zero data), or had no return data.
-                        or(and(eq(mload(0), 1), gt(returndatasize(), 31)), iszero(returndatasize())),
-                        // We use 68 because that's the total length of our calldata (4 + 32 * 2)
-                        // Counterintuitively, this call() must be positioned after the or() in the
-                        // surrounding and() because and() evaluates its arguments from right to left.
-                        call(gas(), currency, 0, 0, 68, 0, 32)
+                    and( // The arguments of `and` are evaluated from right to left.
+                        or(eq(mload(0x00), 1), iszero(returndatasize())), // Returned 1 or nothing.
+                        call(gas(), currency, 0, 0x10, 0x44, 0x00, 0x20)
                     )
                 ) {
                     mstore(0x00, 0xf27f64e4) // `ERC20TransferFailed()`.
                     revert(0x1c, 0x04)
                 }
-
-                mstore(0x60, 0) // Restore the zero slot to zero.
-                mstore(0x40, memPointer) // Restore the memPointer.
+                mstore(0x34, 0) // Restore the part of the free memory pointer that was overwritten.
             }
         }
     }
