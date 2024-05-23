@@ -23,21 +23,20 @@ import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {BaseTestHooks} from "../../src/test/BaseTestHooks.sol";
 import {EmptyRevertHook} from "../../src/test/EmptyRevertHook.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
+import {Constants} from "../utils/Constants.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;
 
-    /// 0011 1111 1111 1111
-    address payable ALL_HOOKS_ADDRESS = payable(0x0000000000000000000000000000000000003fFF);
     MockHooks mockHooks;
     BaseTestHooks revertingHookImpl;
 
     function setUp() public {
         MockHooks impl = new MockHooks();
-        vm.etch(ALL_HOOKS_ADDRESS, address(impl).code);
-        mockHooks = MockHooks(ALL_HOOKS_ADDRESS);
+        vm.etch(Constants.ALL_HOOKS, address(impl).code);
+        mockHooks = MockHooks(Constants.ALL_HOOKS);
 
         revertingHookImpl = new BaseTestHooks();
 
