@@ -131,6 +131,7 @@ contract V3SwapTests is V3Fuzzer {
     using FeeTiersLib for FeeTiers;
 
     function test_shouldSwapEqual(
+        uint256 feeSeed,
         int24 lowerTickUnsanitized,
         int24 upperTickUnsanitized,
         int256 liquidityDeltaUnbound,
@@ -138,7 +139,7 @@ contract V3SwapTests is V3Fuzzer {
         int128 swapAmount,
         bool zeroForOne
     ) public {
-        FeeTiers fee = FeeTiers.FEE_3000;
+        FeeTiers fee = FeeTiers(uint8(bound(feeSeed, 0, 2)));
         uint160 sqrtPriceX96 = createRandomSqrtPriceX96(fee.tickSpacing(), sqrtPriceX96seed);
 
         (IUniswapV3Pool pool, PoolKey memory key_) =
