@@ -15,9 +15,7 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         token = new ERC6909ClaimsImplementation();
     }
 
-    function test_burnFrom_withApproval(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount)
-        public
-    {
+    function test_burnFrom_withApproval(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount) public {
         token.mint(sender, id, mintAmount);
 
         vm.prank(sender);
@@ -42,9 +40,7 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         }
     }
 
-    function test_burnFrom_withOperator(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount)
-        public
-    {
+    function test_burnFrom_withOperator(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount) public {
         token.mint(sender, id, mintAmount);
 
         vm.prank(sender);
