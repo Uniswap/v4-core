@@ -93,8 +93,8 @@ library Pool {
     /// @dev Common checks for valid tick inputs.
     function checkTicks(int24 tickLower, int24 tickUpper) private pure {
         if (tickLower >= tickUpper) TicksMisordered.selector.revertWith(tickLower, tickUpper);
-        if (tickLower < TickMath.MIN_TICK) TickLowerOutOfBounds.selector.revertWithInt24(tickLower);
-        if (tickUpper > TickMath.MAX_TICK) TickUpperOutOfBounds.selector.revertWithInt24(tickUpper);
+        if (tickLower < TickMath.MIN_TICK) TickLowerOutOfBounds.selector.revertWith(tickLower);
+        if (tickUpper > TickMath.MAX_TICK) TickUpperOutOfBounds.selector.revertWith(tickUpper);
     }
 
     function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 lpFee)
@@ -169,10 +169,10 @@ library Pool {
                 if (liquidityDelta >= 0) {
                     uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
                     if (state.liquidityGrossAfterLower > maxLiquidityPerTick) {
-                        TickLiquidityOverflow.selector.revertWithInt24(tickLower);
+                        TickLiquidityOverflow.selector.revertWith(tickLower);
                     }
                     if (state.liquidityGrossAfterUpper > maxLiquidityPerTick) {
-                        TickLiquidityOverflow.selector.revertWithInt24(tickUpper);
+                        TickLiquidityOverflow.selector.revertWith(tickUpper);
                     }
                 }
 
@@ -324,14 +324,14 @@ library Pool {
                 PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
-                PriceLimitOutOfBounds.selector.revertWithUint160(params.sqrtPriceLimitX96);
+                PriceLimitOutOfBounds.selector.revertWith(params.sqrtPriceLimitX96);
             }
         } else {
             if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96()) {
                 PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_PRICE) {
-                PriceLimitOutOfBounds.selector.revertWithUint160(params.sqrtPriceLimitX96);
+                PriceLimitOutOfBounds.selector.revertWith(params.sqrtPriceLimitX96);
             }
         }
 
