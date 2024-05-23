@@ -5,14 +5,12 @@ ffi = true
 fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./out"}]
 solc = "0.8.24"
 evm_version = "cancun"
-no_match_test = 'ffi_fuzz'
 
 [profile.default.fuzz]
 runs = 1000
 seed = "0x4444"
 
 [profile.pr.fuzz]
-no_match_test = 'ffi_fuzz'
 runs = 10000
 
 [profile.ci.fuzz]
