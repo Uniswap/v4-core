@@ -8,15 +8,18 @@ import {PoolManager} from "../../src/PoolManager.sol";
 import {Position} from "../../src/libraries/Position.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
-import {LiquidityAmounts} from "../utils/LiquidityAmounts.sol";
-import {Constants} from "../utils/Constants.sol";
+import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
+import {Constants} from "../../test/utils/Constants.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
+import {Slot0} from "../../src/types/Slot0.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 
 contract PoolTest is Test {
     using Pool for Pool.State;
+    using LPFeeLibrary for uint24;
+    using ProtocolFeeLibrary for uint24;
 
     Pool.State state;
 
@@ -29,11 +32,11 @@ contract PoolTest is Test {
             state.initialize(sqrtPriceX96, protocolFee, swapFee);
         } else {
             state.initialize(sqrtPriceX96, protocolFee, swapFee);
-            assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
-            assertEq(state.slot0.protocolFee, protocolFee);
-            assertEq(state.slot0.tick, TickMath.getTickAtSqrtPrice(sqrtPriceX96));
-            assertLt(state.slot0.tick, TickMath.MAX_TICK);
-            assertGt(state.slot0.tick, TickMath.MIN_TICK - 1);
+            assertEq(state.slot0.sqrtPriceX96(), sqrtPriceX96);
+            assertEq(state.slot0.protocolFee(), protocolFee);
+            assertEq(state.slot0.tick(), TickMath.getTickAtSqrtPrice(sqrtPriceX96));
+            assertLt(state.slot0.tick(), TickMath.MAX_TICK);
+            assertGt(state.slot0.tick(), TickMath.MIN_TICK - 1);
         }
     }
 
@@ -42,11 +45,11 @@ contract PoolTest is Test {
         uint24 protocolFee = MAX_PROTOCOL_FEE;
         uint24 lpFee = 3000;
         state.initialize(sqrtPriceX96, protocolFee, lpFee);
-        assertEq(state.slot0.sqrtPriceX96, sqrtPriceX96);
-        assertEq(state.slot0.protocolFee, protocolFee);
-        assertEq(state.slot0.tick, TickMath.getTickAtSqrtPrice(sqrtPriceX96));
-        assertLt(state.slot0.tick, TickMath.MAX_TICK);
-        assertGt(state.slot0.tick, TickMath.MIN_TICK - 1);
+        assertEq(state.slot0.sqrtPriceX96(), sqrtPriceX96);
+        assertEq(state.slot0.protocolFee(), protocolFee);
+        assertEq(state.slot0.tick(), TickMath.getTickAtSqrtPrice(sqrtPriceX96));
+        assertLt(state.slot0.tick(), TickMath.MAX_TICK);
+        assertGt(state.slot0.tick(), TickMath.MIN_TICK - 1);
     }
 
     function test_initialize_revertsWithInvalidSqrtPrice_tooLow() public {
@@ -78,7 +81,7 @@ contract PoolTest is Test {
         if (initialized) {
             test_fuzz_initialize(sqrtPriceX96, protocolFee, lpFee);
             state.setProtocolFee(newProtocolFee);
-            assertEq(state.slot0.protocolFee, newProtocolFee);
+            assertEq(state.slot0.protocolFee(), newProtocolFee);
         } else {
             vm.expectRevert(Pool.PoolNotInitialized.selector);
             state.setProtocolFee(newProtocolFee);
@@ -92,7 +95,7 @@ contract PoolTest is Test {
         uint24 newProtocolFee = 5000;
         test_fuzz_initialize(sqrtPriceX96, protocolFee, lpFee);
         state.setProtocolFee(newProtocolFee);
-        assertEq(state.slot0.protocolFee, newProtocolFee);
+        assertEq(state.slot0.protocolFee(), newProtocolFee);
     }
 
     function test_setProtocolFee_revertsWithPoolNotInitialized() public {
@@ -108,7 +111,7 @@ contract PoolTest is Test {
         if (initialized) {
             test_fuzz_initialize(sqrtPriceX96, protocolFee, lpFee);
             state.setLPFee(newLpFee);
-            assertEq(state.slot0.lpFee, newLpFee);
+            assertEq(state.slot0.lpFee(), newLpFee);
         } else {
             vm.expectRevert(Pool.PoolNotInitialized.selector);
             state.setLPFee(newLpFee);
@@ -122,7 +125,7 @@ contract PoolTest is Test {
         uint24 newLpFee = 5000;
         test_fuzz_initialize(sqrtPriceX96, protocolFee, lpFee);
         state.setLPFee(newLpFee);
-        assertEq(state.slot0.lpFee, newLpFee);
+        assertEq(state.slot0.lpFee(), newLpFee);
     }
 
     function test_setLPFee_revertsWithPoolNotInitialized() public {
@@ -217,16 +220,22 @@ contract PoolTest is Test {
                 salt: 0
             })
         );
-        Pool.Slot0 memory slot0 = state.slot0;
+        Slot0 slot0 = state.slot0;
 
-        if (params.amountSpecified >= 0 && lpFee == MAX_LP_FEE) {
+        uint24 _lpFee = params.lpFeeOverride.isOverride() ? params.lpFeeOverride.removeOverrideFlag() : lpFee;
+        uint24 swapFee = protocolFee == 0 ? _lpFee : uint24(protocolFee).calculateSwapFee(_lpFee);
+
+        if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
             state.swap(params);
+        } else if (!swapFee.isValid()) {
+            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+            state.swap(params);
         } else if (params.zeroForOne && params.amountSpecified != 0) {
-            if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96) {
+            if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96()) {
                 vm.expectRevert(
                     abi.encodeWithSelector(
-                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96(), params.sqrtPriceLimitX96
                     )
                 );
                 state.swap(params);
@@ -235,10 +244,10 @@ contract PoolTest is Test {
                 state.swap(params);
             }
         } else if (!params.zeroForOne && params.amountSpecified != 0) {
-            if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96) {
+            if (params.sqrtPriceLimitX96 <= slot0.sqrtPriceX96()) {
                 vm.expectRevert(
                     abi.encodeWithSelector(
-                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96, params.sqrtPriceLimitX96
+                        Pool.PriceLimitAlreadyExceeded.selector, slot0.sqrtPriceX96(), params.sqrtPriceLimitX96
                     )
                 );
                 state.swap(params);
@@ -248,15 +257,15 @@ contract PoolTest is Test {
             }
         } 
 
-        uint160 sqrtPriceBefore = state.slot0.sqrtPriceX96;
+        uint160 sqrtPriceBefore = state.slot0.sqrtPriceX96();
         state.swap(params);
 
         if (params.amountSpecified == 0) {
-            assertEq(sqrtPriceBefore, state.slot0.sqrtPriceX96, "amountSpecified == 0");
+            assertEq(sqrtPriceBefore, state.slot0.sqrtPriceX96(), "amountSpecified == 0");
         } else if (params.zeroForOne) {
-            assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96, "zeroForOne");
+            assertGe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "zeroForOne");
         } else {
-            assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96, "oneForZero");
+            assertLe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "oneForZero");
         }
 
     }
@@ -286,7 +295,7 @@ contract PoolTest is Test {
 
         state.swap(params);
 
-        assertLe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96, "oneForZero"); 
+        assertLe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "oneForZero"); 
     }
 
     function test_swap_zeroForOne_priceGreaterThanOrEqualToLimit() public {
@@ -314,7 +323,7 @@ contract PoolTest is Test {
 
         state.swap(params);
 
-        assertGe(state.slot0.sqrtPriceX96, params.sqrtPriceLimitX96, "zeroForOne");
+        assertGe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "zeroForOne");
     }
 
     function test_fuzz_donate(uint160 sqrtPriceX96, int24 tickLower, int24 tickUpper, Pool.ModifyLiquidityParams memory params, uint24 lpFee, uint24 protocolFee, uint256 amount0, uint256 amount1 

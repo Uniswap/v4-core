@@ -51,7 +51,7 @@ contract DeltaReturningHook is BaseTestHooks {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata /* hookData **/
-    ) external override onlyPoolManager returns (bytes4, BeforeSwapDelta) {
+    ) external override onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
         (Currency specifiedCurrency, Currency unspecifiedCurrency) = _sortCurrencies(key, params);
 
         if (deltaSpecified != 0) _settleOrTake(specifiedCurrency, deltaSpecified);
@@ -59,7 +59,7 @@ contract DeltaReturningHook is BaseTestHooks {
 
         BeforeSwapDelta beforeSwapDelta = toBeforeSwapDelta(deltaSpecified, deltaUnspecifiedBeforeSwap);
 
-        return (IHooks.beforeSwap.selector, beforeSwapDelta);
+        return (IHooks.beforeSwap.selector, beforeSwapDelta, 0);
     }
 
     function afterSwap(

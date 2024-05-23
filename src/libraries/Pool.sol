@@ -10,6 +10,7 @@ import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
 import {SwapMath} from "./SwapMath.sol";
 import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {Slot0} from "../types/Slot0.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
@@ -21,6 +22,7 @@ library Pool {
     using Position for Position.Info;
     using Pool for State;
     using ProtocolFeeLibrary for uint24;
+    using LPFeeLibrary for uint24;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -63,20 +65,6 @@ library Pool {
     /// @notice Thrown when trying to swap with max lp fee and specifying an output amount
     error InvalidFeeForExactOut();
 
-    struct Slot0 {
-        // the current price
-        uint160 sqrtPriceX96;
-        // the current tick
-        int24 tick;
-        // protocol fee, expressed in hundredths of a bip
-        // upper 12 bits are for 1->0, and the lower 12 are for 0->1
-        // the maximum is 1000 - meaning the maximum protocol fee is 0.1%
-        // the protocolFee is taken from the input first, then the lpFee is taken from the remaining input
-        uint24 protocolFee;
-        // used for the lp fee, either static at initialize or dynamic via hook
-        uint24 lpFee;
-    }
-
     // info stored for each initialized individual tick
     struct TickInfo {
         // the total position liquidity that references this tick
@@ -111,23 +99,24 @@ library Pool {
         internal
         returns (int24 tick)
     {
-        if (self.slot0.sqrtPriceX96 != 0) revert PoolAlreadyInitialized();
+        if (self.slot0.sqrtPriceX96() != 0) revert PoolAlreadyInitialized();
 
         tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
-        self.slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick, protocolFee: protocolFee, lpFee: lpFee});
+        self.slot0 = Slot0.wrap(bytes32(0)).setSqrtPriceX96(sqrtPriceX96).setTick(tick).setProtocolFee(protocolFee)
+            .setLpFee(lpFee);
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
         if (self.isNotInitialized()) revert PoolNotInitialized();
 
-        self.slot0.protocolFee = protocolFee;
+        self.slot0 = self.slot0.setProtocolFee(protocolFee);
     }
 
     /// @notice Only dynamic fee pools may update the lp fee.
     function setLPFee(State storage self, uint24 lpFee) internal {
         if (self.isNotInitialized()) revert PoolNotInitialized();
-        self.slot0.lpFee = lpFee;
+        self.slot0 = self.slot0.setLpFee(lpFee);
     }
 
     struct ModifyLiquidityParams {
@@ -217,7 +206,8 @@ library Pool {
         }
 
         if (liquidityDelta != 0) {
-            (int24 tick, uint160 sqrtPriceX96) = (self.slot0.tick, self.slot0.sqrtPriceX96);
+            Slot0 _slot0 = self.slot0;
+            (int24 tick, uint160 sqrtPriceX96) = (_slot0.tick(), _slot0.sqrtPriceX96());
             if (tick < tickLower) {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
                 // right, when we'll need _more_ currency0 (it's becoming more valuable) so user must provide it
@@ -247,13 +237,6 @@ library Pool {
                 );
             }
         }
-    }
-
-    struct SwapCache {
-        // liquidity at the beginning of the swap
-        uint128 liquidityStart;
-        // the protocol fee for the input token
-        uint16 protocolFee;
     }
 
     // the top level state of the swap, the results of which are recorded in storage at the end
@@ -294,6 +277,7 @@ library Pool {
         bool zeroForOne;
         int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
+        uint24 lpFeeOverride;
     }
 
     /// @notice Executes a swap against the state, and returns the amount deltas of the pool
@@ -302,23 +286,28 @@ library Pool {
         internal
         returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
     {
-        Slot0 memory slot0Start = self.slot0;
+        Slot0 slot0Start = self.slot0;
         bool zeroForOne = params.zeroForOne;
 
-        SwapCache memory cache = SwapCache({
-            liquidityStart: self.liquidity,
-            protocolFee: zeroForOne ? slot0Start.protocolFee.getZeroForOneFee() : slot0Start.protocolFee.getOneForZeroFee()
-        });
+        uint128 liquidityStart = self.liquidity;
+        uint256 protocolFee =
+            zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee();
 
         state.amountSpecifiedRemaining = params.amountSpecified;
         state.amountCalculated = 0;
-        state.sqrtPriceX96 = slot0Start.sqrtPriceX96;
-        state.tick = slot0Start.tick;
+        state.sqrtPriceX96 = slot0Start.sqrtPriceX96();
+        state.tick = slot0Start.tick();
         state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
-        state.liquidity = cache.liquidityStart;
+        state.liquidity = liquidityStart;
 
-        swapFee =
-            cache.protocolFee == 0 ? slot0Start.lpFee : uint24(cache.protocolFee).calculateSwapFee(slot0Start.lpFee);
+        // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
+        {
+            uint24 lpFee = params.lpFeeOverride.isOverride()
+                ? params.lpFeeOverride.removeOverrideAndValidate()
+                : slot0Start.lpFee();
+
+            swapFee = protocolFee == 0 ? lpFee : uint24(protocolFee).calculateSwapFee(lpFee);
+        }
 
         bool exactInput = params.amountSpecified < 0;
 
@@ -329,15 +318,15 @@ library Pool {
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
 
         if (zeroForOne) {
-            if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
+            if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96()) {
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
             }
         } else {
-            if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96, params.sqrtPriceLimitX96);
+            if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96()) {
+                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_PRICE) {
                 revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
@@ -367,11 +356,7 @@ library Pool {
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
             (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
                 state.sqrtPriceX96,
-                (
-                    zeroForOne
-                        ? step.sqrtPriceNextX96 < params.sqrtPriceLimitX96
-                        : step.sqrtPriceNextX96 > params.sqrtPriceLimitX96
-                ) ? params.sqrtPriceLimitX96 : step.sqrtPriceNextX96,
+                SwapMath.getSqrtPriceTarget(zeroForOne, step.sqrtPriceNextX96, params.sqrtPriceLimitX96),
                 state.liquidity,
                 state.amountSpecifiedRemaining,
                 swapFee
@@ -391,12 +376,11 @@ library Pool {
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
-            if (cache.protocolFee > 0) {
+            if (protocolFee > 0) {
                 unchecked {
                     // step.amountIn does not include the swap fee, as it's already been taken from it,
                     // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
-                    uint256 delta =
-                        (step.amountIn + step.feeAmount) * cache.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+                    uint256 delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     feeForProtocol += delta;
@@ -443,10 +427,10 @@ library Pool {
             }
         }
 
-        (self.slot0.tick, self.slot0.sqrtPriceX96) = (state.tick, state.sqrtPriceX96);
+        self.slot0 = slot0Start.setTick(state.tick).setSqrtPriceX96(state.sqrtPriceX96);
 
         // update liquidity if it changed
-        if (cache.liquidityStart != state.liquidity) self.liquidity = state.liquidity;
+        if (liquidityStart != state.liquidity) self.liquidity = state.liquidity;
 
         // update fee growth global
         if (!zeroForOne) {
@@ -499,7 +483,7 @@ library Pool {
     {
         TickInfo storage lower = self.ticks[tickLower];
         TickInfo storage upper = self.ticks[tickUpper];
-        int24 tickCurrent = self.slot0.tick;
+        int24 tickCurrent = self.slot0.tick();
 
         unchecked {
             if (tickCurrent < tickLower) {
@@ -548,7 +532,7 @@ library Pool {
 
         if (liquidityGrossBefore == 0) {
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
-            if (tick <= self.slot0.tick) {
+            if (tick <= self.slot0.tick()) {
                 info.feeGrowthOutside0X128 = self.feeGrowthGlobal0X128;
                 info.feeGrowthOutside1X128 = self.feeGrowthGlobal1X128;
             }
@@ -587,7 +571,7 @@ library Pool {
     }
 
     function isNotInitialized(State storage self) internal view returns (bool) {
-        return self.slot0.sqrtPriceX96 == 0;
+        return self.slot0.sqrtPriceX96() == 0;
     }
 
     /// @notice Clears tick data

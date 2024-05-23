@@ -101,11 +101,11 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData)
         external
         override
-        returns (bytes4, BeforeSwapDelta)
+        returns (bytes4, BeforeSwapDelta, uint24)
     {
         counter++;
         _swap(key, params, hookData);
-        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA);
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
     function afterSwap(
