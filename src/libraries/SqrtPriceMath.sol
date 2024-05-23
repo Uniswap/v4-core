@@ -182,10 +182,16 @@ library SqrtPriceMath {
         unchecked {
             if (sqrtPriceAX96 > sqrtPriceBX96) (sqrtPriceAX96, sqrtPriceBX96) = (sqrtPriceBX96, sqrtPriceAX96);
 
+            /// @solidity memory-safe-assembly
+            assembly {
+                if iszero(sqrtPriceAX96) {
+                    mstore(0, 0x00bfc921) // selector for InvalidPrice()
+                    revert(0x1c, 0x04)
+                }
+            }
+
             uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
             uint256 numerator2 = sqrtPriceBX96 - sqrtPriceAX96;
-
-            if (sqrtPriceAX96 == 0) revert InvalidPrice();
 
             return roundUp
                 ? UnsafeMath.divRoundingUp(FullMath.mulDivRoundingUp(numerator1, numerator2, sqrtPriceBX96), sqrtPriceAX96)
