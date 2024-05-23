@@ -207,6 +207,9 @@ contract FullMathTest is Test, JavascriptFfi {
         return mulDivResultOverflows || mulDivRoundingUpResultOverflows;
     }
 
+    /// forge-config: default.fuzz.runs = 10
+    /// forge-config: pr.fuzz.runs = 10
+    /// forge-config: ci.fuzz.runs = 500
     function test_ffi_fuzz_mulDiv(uint256 a, uint256 b, uint256 denominator) public {
         vm.assume(denominator != 0);
         // Encode parameters for JavaScript script
@@ -225,6 +228,9 @@ contract FullMathTest is Test, JavascriptFfi {
         }
     }
 
+    /// forge-config: default.fuzz.runs = 10
+    /// forge-config: pr.fuzz.runs = 10
+    /// forge-config: ci.fuzz.runs = 500
     function test_ffi_fuzz_mulDivRoundingUp(uint256 a, uint256 b, uint256 denominator) public {
         vm.assume(denominator != 0);
         // Encode parameters for JavaScript script
