@@ -16,6 +16,7 @@ contract ProtocolFeesImplementation is ProtocolFees {
 
     constructor(uint256 _controllerGasLimit) ProtocolFees(_controllerGasLimit) {}
 
+    // Used to set the price of a pool to pretend that the pool has been initialized
     function setPrice(PoolKey memory key, uint160 sqrtPriceX96) public {
         Pool.State storage pool = _getPool(key.toId());
         pool.slot0 = pool.slot0.setSqrtPriceX96(sqrtPriceX96);

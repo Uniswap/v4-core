@@ -13,6 +13,7 @@ import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {Deployers} from "../test/utils/Deployers.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
+import {Constants} from "../test/utils/Constants.sol";
 import {
     ProtocolFeeControllerTest,
     OutOfBoundsProtocolFeeControllerTest,
@@ -60,7 +61,8 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     function test_setProtocolFee_succeeds_gas() public {
         PoolKey memory key = PoolKey(currency0, currency1, 3000, 60, IHooks(address(0)));
         protocolFees.setProtocolFeeController(feeController);
-        protocolFees.setPrice(key, 1);
+        // Set price to pretend that the pool is initialized
+        protocolFees.setPrice(key, Constants.SQRT_PRICE_1_1);
         vm.prank(address(feeController));
         vm.expectEmit(true, false, false, true, address(protocolFees));
         emit ProtocolFeeUpdated(key.toId(), MAX_PROTOCOL_FEE_BOTH_TOKENS);
@@ -79,11 +81,16 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         vm.prank(address(feeController));
         vm.expectRevert(IProtocolFees.InvalidProtocolFee.selector);
         protocolFees.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS + 1);
+
+        vm.prank(address(feeController));
+        vm.expectRevert(IProtocolFees.InvalidProtocolFee.selector);
+        protocolFees.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS + (1 << 12));
     }
 
     function test_fuzz_setProtocolFee(PoolKey memory key, uint24 protocolFee) public {
         protocolFees.setProtocolFeeController(feeController);
-        protocolFees.setPrice(key, 1);
+        // Set price to pretend that the pool is initialized
+        protocolFees.setPrice(key, Constants.SQRT_PRICE_1_1);
         uint16 fee0 = protocolFee.getZeroForOneFee();
         uint16 fee1 = protocolFee.getOneForZeroFee();
         vm.prank(address(feeController));
@@ -103,8 +110,10 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     }
 
     function test_collectProtocolFees_succeeds() public {
+        // set a balance of protocol fees that can be collected
         protocolFees.updateProtocolFees(currency0, 100);
         assertEq(protocolFees.protocolFeesAccrued(currency0), 100);
+
         protocolFees.setProtocolFeeController(feeController);
         vm.prank(address(feeController));
         protocolFees.collectProtocolFees(address(this), currency0, 100);
@@ -116,16 +125,17 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         vm.assume(feesAccrued <= currency0.balanceOf(address(protocolFees)));
         vm.assume(amount <= feesAccrued);
         vm.assume(recipient != address(protocolFees));
-        vm.assume(recipient != address(0));
 
         uint256 recipientBalanceBefore = currency0.balanceOf(recipient);
         uint256 senderBalanceBefore = currency0.balanceOf(address(protocolFees));
 
+        // set a balance of protocol fees that can be collected
         protocolFees.updateProtocolFees(currency0, feesAccrued);
         assertEq(protocolFees.protocolFeesAccrued(currency0), feesAccrued);
         if (amount == 0) {
             amount = protocolFees.protocolFeesAccrued(currency0);
         }
+
         protocolFees.setProtocolFeeController(feeController);
         vm.prank(address(feeController));
         uint256 amountCollected = protocolFees.collectProtocolFees(recipient, currency0, amount);
@@ -137,13 +147,16 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     }
 
     function test_updateProtocolFees_succeeds() public {
+        // set a starting balance of protocol fees
         protocolFees.updateProtocolFees(currency0, 100);
         assertEq(protocolFees.protocolFeesAccrued(currency0), 100);
+
         protocolFees.updateProtocolFees(currency0, 200);
         assertEq(protocolFees.protocolFeesAccrued(currency0), 300);
     }
 
     function test_fuzz_updateProtocolFees(uint256 amount, uint256 startingAmount) public {
+        // set a starting balance of protocol fees
         protocolFees.updateProtocolFees(currency0, startingAmount);
         assertEq(protocolFees.protocolFeesAccrued(currency0), startingAmount);
 
