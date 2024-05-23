@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 
 interface IUniswapV3Factory {
     function createPool(address tokenA, address tokenB, uint24 fee) external returns (address pool);
+    function enableFeeAmount(uint24 fee, int24 tickSpacing) external;
 }
 
 interface IUniswapV3Pool {
@@ -30,26 +31,6 @@ interface IUniswapV3MintCallback {
 
 interface IUniswapV3SwapCallback {
     function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata data) external;
-}
-
-enum FeeTiers {
-    FEE_500,
-    FEE_3000,
-    FEE_10000
-}
-
-library FeeTiersLib {
-    function amount(FeeTiers fee_) public pure returns (uint24) {
-        if (fee_ == FeeTiers.FEE_500) return 500;
-        if (fee_ == FeeTiers.FEE_3000) return 3000;
-        else return 10000;
-    }
-
-    function tickSpacing(FeeTiers fee_) public pure returns (int24) {
-        if (fee_ == FeeTiers.FEE_500) return 10;
-        if (fee_ == FeeTiers.FEE_3000) return 60;
-        else return 200;
-    }
 }
 
 abstract contract V3Helper is Test {

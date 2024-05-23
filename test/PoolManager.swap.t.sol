@@ -2,14 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import {
-    V3Helper,
-    IUniswapV3Pool,
-    IUniswapV3MintCallback,
-    IUniswapV3SwapCallback,
-    FeeTiers,
-    FeeTiersLib
-} from "./utils/V3Helper.sol";
+import {V3Helper, IUniswapV3Pool, IUniswapV3MintCallback, IUniswapV3SwapCallback} from "./utils/V3Helper.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
@@ -25,7 +18,6 @@ import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
 
 abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallback, IUniswapV3SwapCallback {
     using CurrencyLibrary for Currency;
-    using FeeTiersLib for FeeTiers;
 
     function setUp() public virtual override {
         super.setUp();
@@ -33,16 +25,35 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         deployMintAndApprove2Currencies();
     }
 
+    function initPools(uint24 fee, int24 tickSpacing, int256 sqrtPriceX96seed)
+        internal
+        returns (IUniswapV3Pool v3Pool, PoolKey memory key_, uint160 sqrtPriceX96)
+    {
+        fee = uint24(bound(fee, 0, 999999));
+        tickSpacing = int24(bound(tickSpacing, 1, 16383));
+        // v3 pools don't allow overwriting existing fees, 500, 3000, 10000 are set by default in the constructor
+        if (fee == 500) tickSpacing = 10;
+        else if (fee == 3000) tickSpacing = 60;
+        else if (fee == 10000) tickSpacing = 200;
+        else v3Factory.enableFeeAmount(fee, tickSpacing);
+
+        sqrtPriceX96 = createRandomSqrtPriceX96(tickSpacing, sqrtPriceX96seed);
+
+        v3Pool = IUniswapV3Pool(v3Factory.createPool(Currency.unwrap(currency0), Currency.unwrap(currency1), fee));
+        v3Pool.initialize(sqrtPriceX96);
+
+        key_ = PoolKey(currency0, currency1, fee, tickSpacing, IHooks(address(0)));
+        manager.initialize(key_, sqrtPriceX96, "");
+    }
+
     function addLiquidity(
-        FeeTiers fee,
+        IUniswapV3Pool v3Pool,
+        PoolKey memory key_,
         uint160 sqrtPriceX96,
         int24 lowerTickUnsanitized,
         int24 upperTickUnsanitized,
         int256 liquidityDeltaUnbound
-    ) internal returns (IUniswapV3Pool v3Pool, PoolKey memory key_) {
-        // init pools
-        key_ = PoolKey(currency0, currency1, fee.amount(), fee.tickSpacing(), IHooks(address(0)));
-
+    ) internal {
         IPoolManager.ModifyLiquidityParams memory v4LiquidityParams = IPoolManager.ModifyLiquidityParams({
             tickLower: lowerTickUnsanitized,
             tickUpper: upperTickUnsanitized,
@@ -52,13 +63,6 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
 
         v4LiquidityParams = createFuzzyLiquidityParams(key_, v4LiquidityParams, sqrtPriceX96);
 
-        v3Pool =
-            IUniswapV3Pool(v3Factory.createPool(Currency.unwrap(currency0), Currency.unwrap(currency1), fee.amount()));
-        v3Pool.initialize(sqrtPriceX96);
-
-        manager.initialize(key_, sqrtPriceX96, "");
-
-        // add liquidity
         v3Pool.mint(
             address(this),
             v4LiquidityParams.tickLower,
@@ -66,6 +70,7 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
             uint128(int128(v4LiquidityParams.liquidityDelta)),
             ""
         );
+
         modifyLiquidityRouter.modifyLiquidity(key_, v4LiquidityParams, "");
     }
 
@@ -128,10 +133,9 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
 }
 
 contract V3SwapTests is V3Fuzzer {
-    using FeeTiersLib for FeeTiers;
-
     function test_shouldSwapEqual(
-        uint256 feeSeed,
+        uint24 feeSeed,
+        int24 tickSpacingSeed,
         int24 lowerTickUnsanitized,
         int24 upperTickUnsanitized,
         int256 liquidityDeltaUnbound,
@@ -139,11 +143,9 @@ contract V3SwapTests is V3Fuzzer {
         int128 swapAmount,
         bool zeroForOne
     ) public {
-        FeeTiers fee = FeeTiers(uint8(bound(feeSeed, 0, 2)));
-        uint160 sqrtPriceX96 = createRandomSqrtPriceX96(fee.tickSpacing(), sqrtPriceX96seed);
-
-        (IUniswapV3Pool pool, PoolKey memory key_) =
-            addLiquidity(fee, sqrtPriceX96, lowerTickUnsanitized, upperTickUnsanitized, liquidityDeltaUnbound);
+        (IUniswapV3Pool pool, PoolKey memory key_, uint160 sqrtPriceX96) =
+            initPools(feeSeed, tickSpacingSeed, sqrtPriceX96seed);
+        addLiquidity(pool, key_, sqrtPriceX96, lowerTickUnsanitized, upperTickUnsanitized, liquidityDeltaUnbound);
         (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, zeroForOne, swapAmount);
         assertEq(amount0Diff, 0);
         assertEq(amount1Diff, 0);

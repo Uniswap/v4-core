@@ -117,7 +117,7 @@ contract Fuzzers is StdUtils {
     function createRandomSqrtPriceX96(int24 tickSpacing, int256 seed) internal pure returns (uint160) {
         int256 min = int256(TickMath.minUsableTick(tickSpacing));
         int256 max = int256(TickMath.maxUsableTick(tickSpacing));
-        int256 randomTick = bound(seed, min, max);
+        int256 randomTick = bound(seed, min + 1, max - 1);
         return TickMath.getSqrtPriceAtTick(int24(randomTick));
     }
 
