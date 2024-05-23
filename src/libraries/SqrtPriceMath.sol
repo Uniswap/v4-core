@@ -60,7 +60,14 @@ library SqrtPriceMath {
                 uint256 product = amount * _sqrtPX96;
                 // if the product overflows, we know the denominator underflows
                 // in addition, we must check that the denominator does not underflow
-                if (UnsafeMath.div(product, amount) != _sqrtPX96 || numerator1 <= product) revert PriceOverflow();
+                // equivalent: if (product / amount != sqrtPX96 || numerator1 <= product) revert PriceOverflow();
+                /// @solidity memory-safe-assembly
+                assembly {
+                    if iszero(and(eq(div(product, amount), _sqrtPX96), gt(numerator1, product))) {
+                        mstore(0, 0xf5c787f1) // selector for PriceOverflow()
+                        revert(0x1c, 0x04)
+                    }
+                }
                 uint256 denominator = numerator1 - product;
                 return FullMath.mulDivRoundingUp(numerator1, _sqrtPX96, denominator).toUint160();
             }
@@ -105,7 +112,14 @@ library SqrtPriceMath {
                     : FullMath.mulDivRoundingUp(amount, FixedPoint96.Q96, _liquidity)
             );
 
-            if (_sqrtPX96 <= quotient) revert NotEnoughLiquidity();
+            // equivalent: if (sqrtPX96 <= quotient) revert NotEnoughLiquidity();
+            /// @solidity memory-safe-assembly
+            assembly {
+                if iszero(gt(_sqrtPX96, quotient)) {
+                    mstore(0, 0x4323a555) // selector for NotEnoughLiquidity()
+                    revert(0x1c, 0x04)
+                }
+            }
             // always fits 160 bits
             unchecked {
                 return uint160(_sqrtPX96 - quotient);
@@ -125,7 +139,14 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
-        if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
+        // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
+        /// @solidity memory-safe-assembly
+        assembly {
+            if or(iszero(sqrtPX96), iszero(liquidity)) {
+                mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
+                revert(0x1c, 0x04)
+            }
+        }
 
         // round to make sure that we don't pass the target price
         return zeroForOne
@@ -145,7 +166,14 @@ library SqrtPriceMath {
         pure
         returns (uint160 sqrtQX96)
     {
-        if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
+        // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
+        /// @solidity memory-safe-assembly
+        assembly {
+            if or(iszero(sqrtPX96), iszero(liquidity)) {
+                mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
+                revert(0x1c, 0x04)
+            }
+        }
 
         // round to make sure that we pass the target price
         return zeroForOne
@@ -179,6 +207,7 @@ library SqrtPriceMath {
         unchecked {
             (sqrtPriceAX96, sqrtPriceBX96) = sort2(sqrtPriceAX96, sqrtPriceBX96);
 
+            // equivalent: if (sqrtPriceAX96 == 0) revert InvalidPrice();
             /// @solidity memory-safe-assembly
             assembly {
                 if iszero(sqrtPriceAX96) {
