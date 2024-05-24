@@ -49,19 +49,19 @@ Note that helper contracts used by tests are held in the `v4-core/src/test` subf
 ```markdown
 src/
 ----interfaces/
-| IPoolManager.sol
-| ...
+    | IPoolManager.sol
+    | ...
 ----libraries/
-| Position.sol
-| Pool.sol
-| ...
+    | Position.sol
+    | Pool.sol
+    | ...
 ----test
 ----PoolManager.sol
 ...
 test/
 ----libraries/
-| Position.t.sol
-| Pool.t.sol
+    | Position.t.sol
+    | Pool.t.sol
 ```
 
 ## Local deployment and Usage
