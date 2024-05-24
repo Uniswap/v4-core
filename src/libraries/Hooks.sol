@@ -210,9 +210,7 @@ library Hooks {
             if (self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
                     self.callHookWithReturnDelta(
-                        abi.encodeWithSelector(
-                            IHooks.afterAddLiquidity.selector, msg.sender, key, params, delta, hookData
-                        ),
+                        abi.encodeCall(IHooks.afterAddLiquidity, (msg.sender, key, params, delta, hookData)),
                         self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
@@ -222,9 +220,7 @@ library Hooks {
             if (self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
                     self.callHookWithReturnDelta(
-                        abi.encodeWithSelector(
-                            IHooks.afterRemoveLiquidity.selector, msg.sender, key, params, delta, hookData
-                        ),
+                        abi.encodeCall(IHooks.afterRemoveLiquidity, (msg.sender, key, params, delta, hookData)),
                         self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
