@@ -42,5 +42,7 @@ contract SwapRouterNoChecks is PoolTestBase {
             data.key.currency1.settle(manager, data.sender, uint256(int256(-delta.amount1())), false);
             data.key.currency0.take(manager, data.sender, uint256(int256(delta.amount0())), false);
         }
+
+        return "";
     }
 }
