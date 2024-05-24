@@ -81,7 +81,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using Pool for *;
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
-    using CurrencyLibrary for Currency;
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
     using Reserves for Currency;
@@ -96,10 +95,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     mapping(PoolId id => Pool.State) internal _pools;
 
     constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
-
-    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
-        return _pools[id];
-    }
 
     /// @notice This will revert if the contract is locked
     modifier onlyWhenUnlocked() {
@@ -154,31 +149,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         currency.setReserves(balance);
     }
 
-    function _accountDelta(Currency currency, int128 delta, address target) internal {
-        if (delta == 0) return;
-
-        int256 current = currency.getDelta(target);
-        int256 next = current + delta;
-
-        if (next == 0) {
-            NonZeroDeltaCount.decrement();
-        } else if (current == 0) {
-            NonZeroDeltaCount.increment();
-        }
-
-        currency.setDelta(target, next);
-    }
-
-    /// @dev Accumulates a balance change to a map of currency to balance changes
-    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta, address target) internal {
-        _accountDelta(key.currency0, delta.amount0(), target);
-        _accountDelta(key.currency1, delta.amount1(), target);
-    }
-
-    function _checkPoolInitialized(PoolId id) internal view {
-        if (_pools[id].isNotInitialized()) PoolNotInitialized.selector.revertWith();
-    }
-
     /// @inheritdoc IPoolManager
     function modifyLiquidity(
         PoolKey memory key,
@@ -186,12 +156,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         bytes calldata hookData
     ) external override onlyWhenUnlocked returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         PoolId id = key.toId();
-        _checkPoolInitialized(id);
+        Pool.State storage pool = _getPool(id);
+        pool.checkPoolInitialized();
 
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
         BalanceDelta principalDelta;
-        (principalDelta, feesAccrued) = _pools[id].modifyLiquidity(
+        (principalDelta, feesAccrued) = pool.modifyLiquidity(
             Pool.ModifyLiquidityParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -223,9 +194,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         returns (BalanceDelta swapDelta)
     {
         if (params.amountSpecified == 0) SwapAmountCannotBeZero.selector.revertWith();
-
         PoolId id = key.toId();
-        _checkPoolInitialized(id);
+        Pool.State storage pool = _getPool(id);
+        pool.checkPoolInitialized();
 
         BeforeSwapDelta beforeSwapDelta;
         {
@@ -235,6 +206,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
             // execute swap, account protocol fees, and emit swap event
             swapDelta = _swap(
+                pool,
                 id,
                 Pool.SwapParams({
                     tickSpacing: key.tickSpacing,
@@ -256,10 +228,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _accountPoolBalanceDelta(key, swapDelta, msg.sender);
     }
 
-    // Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
-    function _swap(PoolId id, Pool.SwapParams memory params, Currency inputCurrency) internal returns (BalanceDelta) {
-        (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) =
-            _pools[id].swap(params);
+    /// @notice Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
+    function _swap(Pool.State storage pool, PoolId id, Pool.SwapParams memory params, Currency inputCurrency)
+        internal
+        returns (BalanceDelta)
+    {
+        (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
 
         // The fee is on the input currency.
         if (feeForProtocol > 0) _updateProtocolFees(inputCurrency, feeForProtocol);
@@ -278,12 +252,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         onlyWhenUnlocked
         returns (BalanceDelta delta)
     {
-        PoolId id = key.toId();
-        _checkPoolInitialized(id);
+        Pool.State storage pool = _getPool(key.toId());
+        pool.checkPoolInitialized();
 
         key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
-        delta = _pools[id].donate(amount0, amount1);
+        delta = pool.donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta, msg.sender);
 
@@ -328,6 +302,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _burnFrom(from, id, amount);
     }
 
+    /// @inheritdoc IPoolManager
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external {
         if (!key.fee.isDynamicFee() || msg.sender != address(key.hooks)) {
             UnauthorizedDynamicLPFeeUpdate.selector.revertWith();
@@ -335,5 +310,32 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         _pools[id].setLPFee(newDynamicLPFee);
+    }
+
+    /// @notice Adds a balance delta in a currency for a target address
+    function _accountDelta(Currency currency, int128 delta, address target) internal {
+        if (delta == 0) return;
+
+        int256 current = currency.getDelta(target);
+        int256 next = current + delta;
+
+        if (next == 0) {
+            NonZeroDeltaCount.decrement();
+        } else if (current == 0) {
+            NonZeroDeltaCount.increment();
+        }
+
+        currency.setDelta(target, next);
+    }
+
+    /// @notice Accounts the deltas of 2 currencies to a target address
+    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta, address target) internal {
+        _accountDelta(key.currency0, delta.amount0(), target);
+        _accountDelta(key.currency1, delta.amount1(), target);
+    }
+
+    /// @notice implementation of the _getPool function defined in ProtocolFees
+    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
+        return _pools[id];
     }
 }
