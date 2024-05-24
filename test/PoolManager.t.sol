@@ -41,7 +41,6 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using PoolIdLibrary for PoolKey;
     using LPFeeLibrary for uint24;
-
     using SafeCast for uint256;
     using SafeCast for uint128;
     using ProtocolFeeLibrary for uint24;

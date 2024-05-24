@@ -16,7 +16,6 @@ import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 contract DeltaReturningHook is BaseTestHooks {
     using Hooks for IHooks;
-
     using CurrencyTeller for Currency;
 
     IPoolManager immutable manager;

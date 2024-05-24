@@ -81,7 +81,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using Pool for *;
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
-
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
     using Reserves for Currency;
