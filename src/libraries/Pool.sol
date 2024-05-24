@@ -571,6 +571,7 @@ library Pool {
         // return type(uint128).max / numTicks;
         int24 MAX_TICK = TickMath.MAX_TICK;
         int24 MIN_TICK = TickMath.MIN_TICK;
+        // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
         assembly {
             let minTick := mul(sdiv(MIN_TICK, tickSpacing), tickSpacing)
             let maxTick := mul(sdiv(MAX_TICK, tickSpacing), tickSpacing)
