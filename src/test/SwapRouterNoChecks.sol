@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import {CurrencyLibrary, Currency} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
-import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {CurrencyTeller} from "../libraries/CurrencyTeller.sol";
 
 contract SwapRouterNoChecks is PoolTestBase {
-    using CurrencyLibrary for Currency;
-    using CurrencySettleTake for Currency;
+    using CurrencyTeller for Currency;
     using Hooks for IHooks;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}

@@ -2,13 +2,11 @@
 pragma solidity ^0.8.15;
 
 import {Test} from "forge-std/Test.sol";
-import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {MockERC6909Claims} from "../src/test/MockERC6909Claims.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
 contract ERC6909ClaimsTest is Test, GasSnapshot {
-    using CurrencyLibrary for Currency;
-
     MockERC6909Claims token;
 
     function setUp() public {

@@ -72,7 +72,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         } else if (!key0.hooks.isValidHookAddress(key0.fee)) {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key0.hooks)));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
-        } else if ((key0.fee & LPFeeLibrary.DYNAMIC_FEE_FLAG == 0) && (key0.fee & LPFeeLibrary.FEE_MASK > 1000000)) {
+        } else if ((key0.fee & LPFeeLibrary.DYNAMIC_FEE_FLAG == 0) && (key0.fee > 1000000)) {
             vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.FeeTooLarge.selector));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else {

@@ -9,17 +9,17 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-import {CurrencyLibrary, Currency} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
-import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
+import {CurrencyTeller} from "../libraries/CurrencyTeller.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
-    using CurrencySettleTake for Currency;
+    using CurrencyTeller for Currency;
     using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;

@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Currency, CurrencyLibrary} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
-library CurrencySettleTake {
-    using CurrencyLibrary for Currency;
-
+library CurrencyTeller {
     /// @notice Settle (pay) a currency to the PoolManager
     /// @param currency Currency to settle
     /// @param manager IPoolManager to settle to

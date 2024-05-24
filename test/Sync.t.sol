@@ -7,7 +7,7 @@ import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 import {Deployers} from "./utils/Deployers.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {IUnlockCallback} from "../src/interfaces/callback/IUnlockCallback.sol";
@@ -19,7 +19,6 @@ import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
 
 contract SyncTest is Test, Deployers, GasSnapshot {
-    using CurrencyLibrary for Currency;
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
 
