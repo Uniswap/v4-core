@@ -272,7 +272,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function take(Currency currency, address to, uint256 amount) external override onlyWhenUnlocked {
         unchecked {
-            // subtraction must be safe
+            // negation must be safe as amount is not negative
             _accountDelta(currency, -(amount.toInt128()), msg.sender);
             currency.transfer(to, amount);
         }
@@ -295,7 +295,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function mint(address to, uint256 id, uint256 amount) external override onlyWhenUnlocked {
         unchecked {
-            // subtraction must be safe
+            // negation must be safe as amount is not negative
             _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()), msg.sender);
             _mint(to, id, amount);
         }
