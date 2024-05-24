@@ -156,7 +156,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         bytes calldata hookData
     ) external override onlyWhenUnlocked returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         PoolId id = key.toId();
-        _checkPoolInitialized(id);
+        _getPool(id).checkPoolInitialized();
 
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
@@ -195,7 +195,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (params.amountSpecified == 0) SwapAmountCannotBeZero.selector.revertWith();
 
         PoolId id = key.toId();
-        _checkPoolInitialized(id);
+        _getPool(id).checkPoolInitialized();
 
         BeforeSwapDelta beforeSwapDelta;
         {
@@ -249,7 +249,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         returns (BalanceDelta delta)
     {
         PoolId id = key.toId();
-        _checkPoolInitialized(id);
+        _getPool(id).checkPoolInitialized();
 
         key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
@@ -328,11 +328,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta, address target) internal {
         _accountDelta(key.currency0, delta.amount0(), target);
         _accountDelta(key.currency1, delta.amount1(), target);
-    }
-
-    /// @notice Checks if a given pool has been initialized
-    function _checkPoolInitialized(PoolId id) internal view {
-        if (_pools[id].isNotInitialized()) PoolNotInitialized.selector.revertWith();
     }
 
     /// @notice implementation of the _getPool function defined in ProtocolFees
