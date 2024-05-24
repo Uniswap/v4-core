@@ -73,8 +73,9 @@ import {CustomRevert} from "./libraries/CustomRevert.sol";
 //                             444444444           444
 //                                                  44444   444
 //                                                      444
-/// @notice Holds the state for all pools
 
+/// @title PoolManager
+/// @notice Holds the state for all pools
 contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload, Exttload {
     using PoolIdLibrary for PoolKey;
     using SafeCast for *;
@@ -103,6 +104,19 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
+    function unlock(bytes calldata data) external override noDelegateCall returns (bytes memory result) {
+        if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();
+
+        Lock.unlock();
+
+        // the caller does everything in this callback, including paying what they owe via calls to settle
+        result = IUnlockCallback(msg.sender).unlockCallback(data);
+
+        if (NonZeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
+        Lock.lock();
+    }
+
+    /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         override
@@ -126,27 +140,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         key.hooks.afterInitialize(key, sqrtPriceX96, tick, hookData);
 
-        // On initialize we emit the key's fee, which tells us all fee settings a pool can have: either a static swap fee or dynamic swap fee and if the hook has enabled swap or withdraw fees.
+        // emit all details of a pool key. poolkeys are not saved in storage and must always be provided by the caller
+        // the key's fee may be a static fee or a sentinel to denote a dynamic fee.
         emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
-    }
-
-    /// @inheritdoc IPoolManager
-    function unlock(bytes calldata data) external override noDelegateCall returns (bytes memory result) {
-        if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();
-
-        Lock.unlock();
-
-        // the caller does everything in this callback, including paying what they owe via calls to settle
-        result = IUnlockCallback(msg.sender).unlockCallback(data);
-
-        if (NonZeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
-        Lock.lock();
-    }
-
-    /// @inheritdoc IPoolManager
-    function sync(Currency currency) public returns (uint256 balance) {
-        balance = currency.balanceOfSelf();
-        currency.setReserves(balance);
     }
 
     /// @inheritdoc IPoolManager
@@ -175,12 +171,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         callerDelta = principalDelta + feesAccrued;
 
+        // event is emitted before the afterModifyLiquidity call to ensure events are always emitted in order
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
 
-        // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0.
         BalanceDelta hookDelta;
         (callerDelta, hookDelta) = key.hooks.afterModifyLiquidity(key, params, callerDelta, hookData);
 
+        // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0
         if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
 
         _accountPoolBalanceDelta(key, callerDelta, msg.sender);
@@ -205,6 +202,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             (amountToSwap, beforeSwapDelta, lpFeeOverride) = key.hooks.beforeSwap(key, params, hookData);
 
             // execute swap, account protocol fees, and emit swap event
+            // _swap is needed to avoid stack too deep error
             swapDelta = _swap(
                 pool,
                 id,
@@ -235,9 +233,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     {
         (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
 
-        // The fee is on the input currency.
+        // the fee is on the input currency
         if (feeForProtocol > 0) _updateProtocolFees(inputCurrency, feeForProtocol);
 
+        // event is emitted before the afterSwap call to ensure events are always emitted in order
         emit Swap(
             id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
         );
@@ -262,6 +261,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _accountPoolBalanceDelta(key, delta, msg.sender);
 
         key.hooks.afterDonate(key, amount0, amount1, hookData);
+    }
+
+    /// @inheritdoc IPoolManager
+    function sync(Currency currency) public returns (uint256 balance) {
+        balance = currency.balanceOfSelf();
+        currency.setReserves(balance);
     }
 
     /// @inheritdoc IPoolManager
@@ -334,7 +339,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _accountDelta(key.currency1, delta.amount1(), target);
     }
 
-    /// @notice implementation of the _getPool function defined in ProtocolFees
+    /// @notice Implementation of the _getPool function defined in ProtocolFees
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
         return _pools[id];
     }
