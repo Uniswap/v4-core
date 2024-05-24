@@ -11,7 +11,7 @@ library LPFeeLibrary {
     /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
     error FeeTooLarge();
 
-    // the top bit of the fee in a PoolKey is used to signal if a Pool's LP fee is dynamic
+    // an lp fee of exactly 0b1000000... signals a dynamic fee pool. This isnt a valid static fee as it is > MAX_LP_FEE
     uint24 public constant DYNAMIC_FEE_FLAG = 0x800000;
 
     // the second bit of the fee returned by beforeSwap is used to signal if the stored LP fee should be overridden in this swap
@@ -26,7 +26,7 @@ library LPFeeLibrary {
 
     /// @notice returns true if a pool's LP fee signals that the pool has a dynamic fee
     function isDynamicFee(uint24 self) internal pure returns (bool) {
-        return self & DYNAMIC_FEE_FLAG != 0;
+        return self == DYNAMIC_FEE_FLAG;
     }
 
     /// @notice returns true if an LP fee is valid, aka not above the maxmimum permitted fee
