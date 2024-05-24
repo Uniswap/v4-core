@@ -110,14 +110,13 @@ library Pool {
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
-        if (self.isNotInitialized()) PoolNotInitialized.selector.revertWith();
-
+        self.checkPoolInitialized();
         self.slot0 = self.slot0.setProtocolFee(protocolFee);
     }
 
     /// @notice Only dynamic fee pools may update the lp fee.
     function setLPFee(State storage self, uint24 lpFee) internal {
-        if (self.isNotInitialized()) PoolNotInitialized.selector.revertWith();
+        self.checkPoolInitialized();
         self.slot0 = self.slot0.setLpFee(lpFee);
     }
 
@@ -305,7 +304,7 @@ library Pool {
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
         {
             uint24 lpFee = params.lpFeeOverride.isOverride()
-                ? params.lpFeeOverride.removeOverrideAndValidate()
+                ? params.lpFeeOverride.removeOverrideFlagAndValidate()
                 : slot0Start.lpFee();
 
             swapFee = protocolFee == 0 ? lpFee : uint24(protocolFee).calculateSwapFee(lpFee);
@@ -580,8 +579,9 @@ library Pool {
         }
     }
 
-    function isNotInitialized(State storage self) internal view returns (bool) {
-        return self.slot0.sqrtPriceX96() == 0;
+    /// @notice Reverts if the given pool has not been initialized
+    function checkPoolInitialized(State storage self) internal view {
+        if (self.slot0.sqrtPriceX96() == 0) PoolNotInitialized.selector.revertWith();
     }
 
     /// @notice Clears tick data

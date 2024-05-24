@@ -10,18 +10,19 @@ contract LPFeeLibraryTest is Test {
         assertTrue(LPFeeLibrary.isDynamicFee(dynamicFee));
     }
 
-    function test_isDynamicFee_returnsTrue_forMaxValue() public pure {
+    function test_isDynamicFee_returnsFalse_forOtherValues() public pure {
         uint24 dynamicFee = 0xFFFFFF;
-        assertTrue(LPFeeLibrary.isDynamicFee(dynamicFee));
-    }
-
-    function test_isDynamicFee_returnsFalse() public pure {
-        uint24 dynamicFee = 0x7FFFFF;
+        assertFalse(LPFeeLibrary.isDynamicFee(dynamicFee));
+        dynamicFee = 0x7FFFFF;
+        assertFalse(LPFeeLibrary.isDynamicFee(dynamicFee));
+        dynamicFee = 0;
+        assertFalse(LPFeeLibrary.isDynamicFee(dynamicFee));
+        dynamicFee = 0x800001;
         assertFalse(LPFeeLibrary.isDynamicFee(dynamicFee));
     }
 
     function test_fuzz_isDynamicFee(uint24 fee) public pure {
-        assertEq((fee >> 23 == 1), LPFeeLibrary.isDynamicFee(fee));
+        assertEq(fee == LPFeeLibrary.DYNAMIC_FEE_FLAG, LPFeeLibrary.isDynamicFee(fee));
     }
 
     function test_validate_doesNotRevertWithNoFee() public pure {
@@ -64,12 +65,18 @@ contract LPFeeLibraryTest is Test {
     }
 
     function test_getInitialLPFee_forDynamicFeeIsZero() public pure {
-        uint24 dynamicFee = 0x800BB8;
+        uint24 dynamicFee = 0x800000;
         assertEq(LPFeeLibrary.getInitialLPFee(dynamicFee), 0);
     }
 
+    function test_getInitialLpFee_revertsWithNonExactDynamicFee() public {
+        uint24 dynamicFee = 0x800001;
+        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        LPFeeLibrary.getInitialLPFee(dynamicFee);
+    }
+
     function test_fuzz_getInitialLPFee(uint24 fee) public {
-        if (fee >> 23 == 1) {
+        if (fee == LPFeeLibrary.DYNAMIC_FEE_FLAG) {
             assertEq(LPFeeLibrary.getInitialLPFee(fee), 0);
         } else if (fee > 1000000) {
             vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
