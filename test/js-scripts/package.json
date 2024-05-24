@@ -1,7 +1,7 @@
 {
   "name": "v4-js-scripts",
   "description": "Scripts for v4 tests",
-  "license": "BUSL-1.1",
+  "license": "MIT",
   "publishConfig": {
     "access": "restricted"
   },
