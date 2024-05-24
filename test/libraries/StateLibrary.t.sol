@@ -23,7 +23,6 @@ import {Fuzzers} from "../../src/test/Fuzzers.sol";
 contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     using FixedPointMathLib for uint256;
     using PoolIdLibrary for PoolKey;
-    using CurrencyLibrary for Currency;
 
     PoolId poolId;
 

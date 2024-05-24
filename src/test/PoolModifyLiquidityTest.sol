@@ -14,7 +14,6 @@ import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
 
 contract PoolModifyLiquidityTest is PoolTestBase {
-    using CurrencyLibrary for Currency;
     using CurrencySettler for Currency;
     using Hooks for IHooks;
     using LPFeeLibrary for uint24;

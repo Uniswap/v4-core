@@ -11,7 +11,6 @@ import {PoolTestBase} from "./PoolTestBase.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 
 contract PoolSwapTest is PoolTestBase {
-    using CurrencyLibrary for Currency;
     using CurrencySettler for Currency;
     using Hooks for IHooks;
 

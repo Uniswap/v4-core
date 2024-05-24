@@ -11,12 +11,11 @@ import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-import {CurrencyLibrary, Currency} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 contract DeltaReturningHook is BaseTestHooks {
     using Hooks for IHooks;
-    using CurrencyLibrary for Currency;
     using CurrencySettler for Currency;
 
     IPoolManager immutable manager;
