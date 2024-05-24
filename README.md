@@ -17,7 +17,7 @@ A more detailed description of Uniswap v4 Core can be found in the draft of the 
 
 ## Architecture
 
-`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken by acquiring an unlock on the contract and implementing the `unlockCallback` callback to then proceed with any of the following actions on the pools:
+`v4-core` uses a singleton-style architecture, where all pool state is managed in the `PoolManager.sol` contract. Pool actions can be taken after an initial call to `unlock`. Integrators implement the `unlockCallback` and proceed with any of the following actions on the pools:
 
 - `swap`
 - `modifyLiquidity`
@@ -25,6 +25,9 @@ A more detailed description of Uniswap v4 Core can be found in the draft of the 
 - `take`
 - `settle`
 - `mint`
+- `burn`
+
+Note that pool initialization can happen outside the context of unlocking the PoolManager.
 
 Only the net balances owed to the user (positive) or to the pool (negative) are tracked throughout the duration of an unlock. This is the `delta` field held in the unlock state. Any number of actions can be run on the pools, as long as the deltas accumulated during the unlock reach 0 by the unlock’s release. This unlock and call style architecture gives callers maximum flexibility in integrating with the core code.
 
@@ -36,9 +39,7 @@ Additionally, a pool may be initialized with a hook contract, that can implement
 - {before,after}Swap
 - {before,after}Donate
 
-Hooks may also elect to specify fees on swaps, or liquidity withdrawal. Much like the actions above, fees are implemented using callback functions.
-
-The fee values, or callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool, including the type of fee or lack of fee, cannot change after pool initialization.
+The callback logic, may be updated by the hooks dependent on their implementation. However _which_ callbacks are executed on a pool cannot change after pool initialization.
 
 ## Repository Structure
 
