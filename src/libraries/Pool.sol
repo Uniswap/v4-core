@@ -110,14 +110,13 @@ library Pool {
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
-        if (self.isNotInitialized()) PoolNotInitialized.selector.revertWith();
-
+        self.checkPoolInitialized();
         self.slot0 = self.slot0.setProtocolFee(protocolFee);
     }
 
     /// @notice Only dynamic fee pools may update the lp fee.
     function setLPFee(State storage self, uint24 lpFee) internal {
-        if (self.isNotInitialized()) PoolNotInitialized.selector.revertWith();
+        self.checkPoolInitialized();
         self.slot0 = self.slot0.setLpFee(lpFee);
     }
 
@@ -572,8 +571,9 @@ library Pool {
         }
     }
 
-    function isNotInitialized(State storage self) internal view returns (bool) {
-        return self.slot0.sqrtPriceX96() == 0;
+    /// @notice Reverts if the given pool has not been initialized
+    function checkPoolInitialized(State storage self) internal view {
+        if (self.slot0.sqrtPriceX96() == 0) PoolNotInitialized.selector.revertWith();
     }
 
     /// @notice Clears tick data
