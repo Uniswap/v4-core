@@ -238,8 +238,7 @@ library Hooks {
         if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, lpFeeOverride);
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
-            bytes memory result =
-                callHook(self, abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
+            bytes memory result = callHook(self, abi.encodeCall(IHooks.beforeSwap, (msg.sender, key, params, hookData)));
 
             // dynamic fee pools that do not want to override the cache fee, return 0 otherwise they return a valid fee with the override flag
             if (key.fee.isDynamicFee()) lpFeeOverride = result.parseFee();
@@ -279,7 +278,7 @@ library Hooks {
 
         if (self.hasPermission(AFTER_SWAP_FLAG)) {
             hookDeltaUnspecified += self.callHookWithReturnDelta(
-                abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, swapDelta, hookData),
+                abi.encodeCall(IHooks.afterSwap, (msg.sender, key, params, swapDelta, hookData)),
                 self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)
             ).toInt128();
         }
