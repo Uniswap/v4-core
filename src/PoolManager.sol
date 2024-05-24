@@ -226,7 +226,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _accountPoolBalanceDelta(key, swapDelta, msg.sender);
     }
 
-    /// @dev Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
+    /// @notice Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
     function _swap(PoolId id, Pool.SwapParams memory params, Currency inputCurrency) internal returns (BalanceDelta) {
         (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) =
             _pools[id].swap(params);
@@ -308,7 +308,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         _pools[id].setLPFee(newDynamicLPFee);
     }
 
-    /// @dev Adds a balance delta in a currency for a target address
+    /// @notice Adds a balance delta in a currency for a target address
     function _accountDelta(Currency currency, int128 delta, address target) internal {
         if (delta == 0) return;
 
@@ -324,18 +324,18 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         currency.setDelta(target, next);
     }
 
-    /// @dev Accounts the deltas of 2 currencies to a target address
+    /// @notice Accounts the deltas of 2 currencies to a target address
     function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta, address target) internal {
         _accountDelta(key.currency0, delta.amount0(), target);
         _accountDelta(key.currency1, delta.amount1(), target);
     }
 
-    /// @dev Checks if a given pool has been initialized
+    /// @notice Checks if a given pool has been initialized
     function _checkPoolInitialized(PoolId id) internal view {
         if (_pools[id].isNotInitialized()) PoolNotInitialized.selector.revertWith();
     }
 
-    /// @dev
+    /// @notice implementation of the _getPool function defined in ProtocolFees
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
         return _pools[id];
     }
