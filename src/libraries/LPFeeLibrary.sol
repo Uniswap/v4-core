@@ -11,6 +11,9 @@ library LPFeeLibrary {
     /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
     error FeeTooLarge();
 
+    /// @notice Thrown when initializing a dynamic fee pool with a non-exact fee (0x800001)
+    error FeeNotExactlyDynamic();
+
     uint24 public constant FEE_MASK = 0x7FFFFF;
     uint24 public constant OVERRIDE_MASK = 0xBFFFFF;
 
@@ -38,7 +41,12 @@ library LPFeeLibrary {
 
     function getInitialLPFee(uint24 self) internal pure returns (uint24) {
         // the initial fee for a dynamic fee pool is 0
-        if (self.isDynamicFee()) return 0;
+        if (self.isDynamicFee()) {
+            if (self == DYNAMIC_FEE_FLAG) return 0;
+
+            // if the fee has the dynamic flag, but is carrying additional data (i.e. 0x800001) revert to prevent duplicate pools
+            FeeNotExactlyDynamic.selector.revertWith();
+        }
         self.validate();
         return self;
     }

@@ -64,12 +64,22 @@ contract LPFeeLibraryTest is Test {
     }
 
     function test_getInitialLPFee_forDynamicFeeIsZero() public pure {
-        uint24 dynamicFee = 0x800BB8;
+        uint24 dynamicFee = 0x800000;
         assertEq(LPFeeLibrary.getInitialLPFee(dynamicFee), 0);
     }
 
+    function test_getInitialLpFee_revertsWithNonExactDynamicFee() public {
+        uint24 dynamicFee = 0x800001;
+        vm.expectRevert(LPFeeLibrary.FeeNotExactlyDynamic.selector);
+        LPFeeLibrary.getInitialLPFee(dynamicFee);
+    }
+
     function test_fuzz_getInitialLPFee(uint24 fee) public {
-        if (fee >> 23 == 1) {
+        if (fee >> 23 == 1 && fee != LPFeeLibrary.DYNAMIC_FEE_FLAG) {
+            vm.expectRevert(LPFeeLibrary.FeeNotExactlyDynamic.selector);
+            LPFeeLibrary.getInitialLPFee(fee);
+            assertEq(LPFeeLibrary.getInitialLPFee(fee), 0);
+        } else if (fee == LPFeeLibrary.DYNAMIC_FEE_FLAG) {
             assertEq(LPFeeLibrary.getInitialLPFee(fee), 0);
         } else if (fee > 1000000) {
             vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
