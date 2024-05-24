@@ -9,7 +9,7 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
-import {CurrencyTeller} from "../libraries/CurrencyTeller.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {Currency} from "../types/Currency.sol";
@@ -17,7 +17,7 @@ import {Currency} from "../types/Currency.sol";
 contract CustomCurveHook is BaseTestHooks {
     using Hooks for IHooks;
 
-    using CurrencyTeller for Currency;
+    using CurrencySettleTake for Currency;
 
     error AddLiquidityDirectToHook();
 

@@ -8,10 +8,10 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
-import {CurrencyTeller} from "../libraries/CurrencyTeller.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolSwapTest is PoolTestBase {
-    using CurrencyTeller for Currency;
+    using CurrencySettleTake for Currency;
     using Hooks for IHooks;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}

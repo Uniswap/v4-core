@@ -5,7 +5,7 @@ import {Currency} from "../types/Currency.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
-library CurrencyTeller {
+library CurrencySettleTake {
     /// @notice Settle (pay) a currency to the PoolManager
     /// @param currency Currency to settle
     /// @param manager IPoolManager to settle to

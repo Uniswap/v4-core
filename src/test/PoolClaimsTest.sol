@@ -7,10 +7,10 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
-import {CurrencyTeller} from "../libraries/CurrencyTeller.sol";
+import {CurrencySettleTake} from "../libraries/CurrencySettleTake.sol";
 
 contract PoolClaimsTest is PoolTestBase {
-    using CurrencyTeller for Currency;
+    using CurrencySettleTake for Currency;
     using SafeCast for uint256;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
