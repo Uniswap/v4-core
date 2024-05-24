@@ -52,7 +52,8 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         uint160 sqrtPriceX96,
         int24 lowerTickUnsanitized,
         int24 upperTickUnsanitized,
-        int256 liquidityDeltaUnbound
+        int256 liquidityDeltaUnbound,
+        bool tight
     ) internal {
         IPoolManager.ModifyLiquidityParams memory v4LiquidityParams = IPoolManager.ModifyLiquidityParams({
             tickLower: lowerTickUnsanitized,
@@ -61,7 +62,9 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
             salt: 0
         });
 
-        v4LiquidityParams = createFuzzyLiquidityParams(key_, v4LiquidityParams, sqrtPriceX96);
+        v4LiquidityParams = tight
+            ? createFuzzyLiquidityParamsWithTightBound(key_, v4LiquidityParams, sqrtPriceX96, 20)
+            : createFuzzyLiquidityParams(key_, v4LiquidityParams, sqrtPriceX96);
 
         v3Pool.mint(
             address(this),
@@ -78,7 +81,8 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         internal
         returns (int256 amount0Diff, int256 amount1Diff)
     {
-        vm.assume(amountSpecified != 0 && amountSpecified != type(int128).min);
+        if (amountSpecified == 0) amountSpecified = 1;
+        if (amountSpecified == type(int128).min) amountSpecified = type(int128).min + 1;
         // v3 swap
         (int256 amount0Delta, int256 amount1Delta) = pool.swap(
             // invert amountSpecified because v3 swaps use inverted signs
@@ -145,7 +149,41 @@ contract V3SwapTests is V3Fuzzer {
     ) public {
         (IUniswapV3Pool pool, PoolKey memory key_, uint160 sqrtPriceX96) =
             initPools(feeSeed, tickSpacingSeed, sqrtPriceX96seed);
-        addLiquidity(pool, key_, sqrtPriceX96, lowerTickUnsanitized, upperTickUnsanitized, liquidityDeltaUnbound);
+        addLiquidity(pool, key_, sqrtPriceX96, lowerTickUnsanitized, upperTickUnsanitized, liquidityDeltaUnbound, false);
+        (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, zeroForOne, swapAmount);
+        assertEq(amount0Diff, 0);
+        assertEq(amount1Diff, 0);
+    }
+
+    struct TightLiquidityParams {
+        int24 lowerTickUnsanitized;
+        int24 upperTickUnsanitized;
+        int256 liquidityDeltaUnbound;
+    }
+
+    function test_shouldSwapEqualMultipleLP(
+        uint24 feeSeed,
+        int24 tickSpacingSeed,
+        TightLiquidityParams[] memory liquidityParams,
+        int256 sqrtPriceX96seed,
+        int128 swapAmount,
+        bool zeroForOne
+    ) public {
+        (IUniswapV3Pool pool, PoolKey memory key_, uint160 sqrtPriceX96) =
+            initPools(feeSeed, tickSpacingSeed, sqrtPriceX96seed);
+        for (uint256 i = 0; i < liquidityParams.length; ++i) {
+            if (i == 20) break;
+            addLiquidity(
+                pool,
+                key_,
+                sqrtPriceX96,
+                liquidityParams[i].lowerTickUnsanitized,
+                liquidityParams[i].upperTickUnsanitized,
+                liquidityParams[i].liquidityDeltaUnbound,
+                true
+            );
+        }
+
         (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, zeroForOne, swapAmount);
         assertEq(amount0Diff, 0);
         assertEq(amount1Diff, 0);
