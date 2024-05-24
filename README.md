@@ -1,7 +1,7 @@
 # Uniswap v4 Core
 
 [![Lint](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/lint.yml)
-[![Tests](https://github.com/Uniswap/v4-core/actions/workflows/tests.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/tests.yml)
+[![Tests](https://github.com/Uniswap/v4-core/actions/workflows/tests-merge.yml/badge.svg)](https://github.com/Uniswap/v4-core/actions/workflows/tests-merge.yml)
 
 Uniswap v4 is a new automated market maker protocol that provides extensible and customizable pools. `v4-core` hosts the core pool logic for creating pools and executing pool actions like swapping and providing liquidity.
 
@@ -49,19 +49,19 @@ Note that helper contracts used by tests are held in the `v4-core/src/test` subf
 ```markdown
 src/
 ----interfaces/
-    | IPoolManager.sol
-    | ...
+| IPoolManager.sol
+| ...
 ----libraries/
-    | Position.sol
-    | Pool.sol
-    | ...
+| Position.sol
+| Pool.sol
+| ...
 ----test
 ----PoolManager.sol
 ...
 test/
 ----libraries/
-    | Position.t.sol
-    | Pool.t.sol
+| Position.t.sol
+| Pool.t.sol
 ```
 
 ## Local deployment and Usage
