@@ -2,9 +2,11 @@
 pragma solidity ^0.8.20;
 
 import {PoolKey} from "../types/PoolKey.sol";
+import {CustomRevert} from "./CustomRevert.sol";
 
 library LPFeeLibrary {
     using LPFeeLibrary for uint24;
+    using CustomRevert for bytes4;
 
     /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
     error FeeTooLarge();
@@ -31,7 +33,7 @@ library LPFeeLibrary {
     }
 
     function validate(uint24 self) internal pure {
-        if (!self.isValid()) revert FeeTooLarge();
+        if (!self.isValid()) FeeTooLarge.selector.revertWith();
     }
 
     function getInitialLPFee(uint24 self) internal pure returns (uint24) {

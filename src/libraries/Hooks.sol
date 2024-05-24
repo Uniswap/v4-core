@@ -3,43 +3,47 @@ pragma solidity ^0.8.24;
 
 import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
-import {SafeCast} from "../libraries/SafeCast.sol";
+import {SafeCast} from "./SafeCast.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 import {BalanceDelta, toBalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {ParseBytes} from "../libraries/ParseBytes.sol";
+import {ParseBytes} from "./ParseBytes.sol";
+import {CustomRevert} from "./CustomRevert.sol";
 
-/// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
+/// @notice V4 decides whether to invoke specific hooks by inspecting the lowest significant bits of the address that
 /// the hooks contract is deployed to.
-/// For example, a hooks contract deployed to address: 0x9000000000000000000000000000000000000000
-/// has leading bits '1001' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
+/// For example, a hooks contract deployed to address: 0x0000000000000000000000000000000000002400
+/// has the lowest bits '10 0100 0000 0000' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
 library Hooks {
     using LPFeeLibrary for uint24;
     using Hooks for IHooks;
     using SafeCast for int256;
     using BeforeSwapDeltaLibrary for BeforeSwapDelta;
     using ParseBytes for bytes;
+    using CustomRevert for bytes4;
 
-    uint160 internal constant BEFORE_INITIALIZE_FLAG = 1 << 159;
-    uint160 internal constant AFTER_INITIALIZE_FLAG = 1 << 158;
+    uint160 internal constant ALL_HOOK_MASK = uint160((1 << 14) - 1);
 
-    uint160 internal constant BEFORE_ADD_LIQUIDITY_FLAG = 1 << 157;
-    uint160 internal constant AFTER_ADD_LIQUIDITY_FLAG = 1 << 156;
+    uint160 internal constant BEFORE_INITIALIZE_FLAG = 1 << 13;
+    uint160 internal constant AFTER_INITIALIZE_FLAG = 1 << 12;
 
-    uint160 internal constant BEFORE_REMOVE_LIQUIDITY_FLAG = 1 << 155;
-    uint160 internal constant AFTER_REMOVE_LIQUIDITY_FLAG = 1 << 154;
+    uint160 internal constant BEFORE_ADD_LIQUIDITY_FLAG = 1 << 11;
+    uint160 internal constant AFTER_ADD_LIQUIDITY_FLAG = 1 << 10;
 
-    uint160 internal constant BEFORE_SWAP_FLAG = 1 << 153;
-    uint160 internal constant AFTER_SWAP_FLAG = 1 << 152;
+    uint160 internal constant BEFORE_REMOVE_LIQUIDITY_FLAG = 1 << 9;
+    uint160 internal constant AFTER_REMOVE_LIQUIDITY_FLAG = 1 << 8;
 
-    uint160 internal constant BEFORE_DONATE_FLAG = 1 << 151;
-    uint160 internal constant AFTER_DONATE_FLAG = 1 << 150;
+    uint160 internal constant BEFORE_SWAP_FLAG = 1 << 7;
+    uint160 internal constant AFTER_SWAP_FLAG = 1 << 6;
 
-    uint160 internal constant BEFORE_SWAP_RETURNS_DELTA_FLAG = 1 << 149;
-    uint160 internal constant AFTER_SWAP_RETURNS_DELTA_FLAG = 1 << 148;
-    uint160 internal constant AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG = 1 << 147;
-    uint160 internal constant AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG = 1 << 146;
+    uint160 internal constant BEFORE_DONATE_FLAG = 1 << 5;
+    uint160 internal constant AFTER_DONATE_FLAG = 1 << 4;
+
+    uint160 internal constant BEFORE_SWAP_RETURNS_DELTA_FLAG = 1 << 3;
+    uint160 internal constant AFTER_SWAP_RETURNS_DELTA_FLAG = 1 << 2;
+    uint160 internal constant AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG = 1 << 1;
+    uint160 internal constant AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG = 1 << 0;
 
     struct Permissions {
         bool beforeInitialize;
@@ -93,7 +97,7 @@ library Hooks {
                 || permissions.afterRemoveLiquidityReturnDelta
                     != self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
         ) {
-            revert HookAddressNotValid(address(self));
+            HookAddressNotValid.selector.revertWith(address(self));
         }
     }
 
@@ -117,7 +121,7 @@ library Hooks {
         // If a hook contract is set, it must have at least 1 flag set, or have a dynamic fee
         return address(self) == address(0)
             ? !fee.isDynamicFee()
-            : (uint160(address(self)) >= AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG || fee.isDynamicFee());
+            : (uint160(address(self)) & ALL_HOOK_MASK > 0 || fee.isDynamicFee());
     }
 
     /// @notice performs a hook call using the given calldata on the given hook that doesnt return a delta
@@ -128,7 +132,7 @@ library Hooks {
         if (!success) _revert(result);
 
         // Check expected selector and returned selector match.
-        if (result.parseSelector() != data.parseSelector()) revert InvalidHookResponse();
+        if (result.parseSelector() != data.parseSelector()) InvalidHookResponse.selector.revertWith();
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
@@ -255,7 +259,9 @@ library Hooks {
                 if (hookDeltaSpecified != 0) {
                     bool exactInput = amountToSwap < 0;
                     amountToSwap += hookDeltaSpecified;
-                    if (exactInput ? amountToSwap > 0 : amountToSwap < 0) revert HookDeltaExceedsSwapAmount();
+                    if (exactInput ? amountToSwap > 0 : amountToSwap < 0) {
+                        HookDeltaExceedsSwapAmount.selector.revertWith();
+                    }
                 }
             }
         }
@@ -324,7 +330,7 @@ library Hooks {
 
     /// @notice bubble up revert if present. Else throw FailedHookCall
     function _revert(bytes memory result) private pure {
-        if (result.length == 0) revert FailedHookCall();
+        if (result.length == 0) FailedHookCall.selector.revertWith();
         assembly {
             revert(add(0x20, result), mload(result))
         }

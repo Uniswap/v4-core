@@ -45,6 +45,11 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
         assertEq(maxTick, MAX_TICK);
     }
 
+    function test_getSqrtPriceAtTick_throwsForInt24Min() public {
+        vm.expectRevert(TickMath.InvalidTick.selector);
+        tickMath.getSqrtPriceAtTick(type(int24).min);
+    }
+
     function test_getSqrtPriceAtTick_throwsForTooLow() public {
         vm.expectRevert(TickMath.InvalidTick.selector);
         tickMath.getSqrtPriceAtTick(MIN_TICK - 1);
@@ -53,6 +58,16 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
     function test_getSqrtPriceAtTick_throwsForTooHigh() public {
         vm.expectRevert(TickMath.InvalidTick.selector);
         tickMath.getSqrtPriceAtTick(MAX_TICK + 1);
+    }
+
+    function test_fuzz_getSqrtPriceAtTick_throwsForTooLarge(int24 tick) public {
+        if (tick > 0) {
+            tick = int24(bound(tick, MAX_TICK + 1, type(int24).max));
+        } else {
+            tick = int24(bound(tick, type(int24).min, MIN_TICK - 1));
+        }
+        vm.expectRevert(TickMath.InvalidTick.selector);
+        tickMath.getSqrtPriceAtTick(tick);
     }
 
     function test_getSqrtPriceAtTick_isValidMinTick() public view {
@@ -95,6 +110,16 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
     function test_getTickAtSqrtPrice_throwsForTooHigh() public {
         vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
         tickMath.getTickAtSqrtPrice(MAX_SQRT_PRICE);
+    }
+
+    function test_fuzz_getTickAtSqrtPrice_throwsForInvalid(uint160 sqrtPriceX96, bool gte) public {
+        if (gte) {
+            sqrtPriceX96 = uint160(bound(sqrtPriceX96, MAX_SQRT_PRICE, type(uint160).max));
+        } else {
+            sqrtPriceX96 = uint160(bound(sqrtPriceX96, 0, MIN_SQRT_PRICE - 1));
+        }
+        vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
+        tickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
     function test_getTickAtSqrtPrice_isValidMinSqrtPrice() public view {
