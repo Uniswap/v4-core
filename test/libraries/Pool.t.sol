@@ -169,7 +169,7 @@ contract PoolTest is Test, GasSnapshot {
     }
 
     function test_fuzz_tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) public pure {
-        vm.assume(tickSpacing > 0);
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
         // v3 math
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
         int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
