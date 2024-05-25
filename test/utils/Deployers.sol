@@ -34,7 +34,6 @@ import {
 contract Deployers {
     using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
-    using CurrencyLibrary for Currency;
 
     // Helpful test constants
     bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
