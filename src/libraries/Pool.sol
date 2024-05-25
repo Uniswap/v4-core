@@ -110,14 +110,13 @@ library Pool {
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
-        if (self.isNotInitialized()) PoolNotInitialized.selector.revertWith();
-
+        self.checkPoolInitialized();
         self.slot0 = self.slot0.setProtocolFee(protocolFee);
     }
 
     /// @notice Only dynamic fee pools may update the lp fee.
     function setLPFee(State storage self, uint24 lpFee) internal {
-        if (self.isNotInitialized()) PoolNotInitialized.selector.revertWith();
+        self.checkPoolInitialized();
         self.slot0 = self.slot0.setLpFee(lpFee);
     }
 
@@ -305,7 +304,7 @@ library Pool {
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
         {
             uint24 lpFee = params.lpFeeOverride.isOverride()
-                ? params.lpFeeOverride.removeOverrideAndValidate()
+                ? params.lpFeeOverride.removeOverrideFlagAndValidate()
                 : slot0Start.lpFee();
 
             swapFee = protocolFee == 0 ? lpFee : uint24(protocolFee).calculateSwapFee(lpFee);
@@ -575,18 +574,27 @@ library Pool {
     /// @dev Executed within the pool constructor
     /// @param tickSpacing The amount of required tick separation, realized in multiples of `tickSpacing`
     ///     e.g., a tickSpacing of 3 requires ticks to be initialized every 3rd tick i.e., ..., -6, -3, 0, 3, 6, ...
-    /// @return The max liquidity per tick
-    function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
-        unchecked {
-            return uint128(
-                (type(uint128).max * uint256(int256(tickSpacing)))
-                    / uint256(int256(TickMath.MAX_TICK * 2 + tickSpacing))
-            );
+    /// @return result The max liquidity per tick
+    function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128 result) {
+        // Equivalent to:
+        // int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
+        // int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
+        // uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
+        // return type(uint128).max / numTicks;
+        int24 MAX_TICK = TickMath.MAX_TICK;
+        int24 MIN_TICK = TickMath.MIN_TICK;
+        // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
+        assembly {
+            let minTick := mul(sdiv(MIN_TICK, tickSpacing), tickSpacing)
+            let maxTick := mul(sdiv(MAX_TICK, tickSpacing), tickSpacing)
+            let numTicks := add(sdiv(sub(maxTick, minTick), tickSpacing), 1)
+            result := div(sub(shl(128, 1), 1), numTicks)
         }
     }
 
-    function isNotInitialized(State storage self) internal view returns (bool) {
-        return self.slot0.sqrtPriceX96() == 0;
+    /// @notice Reverts if the given pool has not been initialized
+    function checkPoolInitialized(State storage self) internal view {
+        if (self.slot0.sqrtPriceX96() == 0) PoolNotInitialized.selector.revertWith();
     }
 
     /// @notice Clears tick data
