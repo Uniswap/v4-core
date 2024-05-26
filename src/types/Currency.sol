@@ -37,7 +37,7 @@ library CurrencyLibrary {
 
     function transfer(Currency currency, address to, uint256 amount) internal {
         // implementation from
-        // https://github.com/Vectorized/solady/blob/0dde2a008d917aa8076f348eac2855edbe181cc0/src/utils/SafeTransferLib.sol
+        // https://github.com/Vectorized/solady/blob/89101d53b7c8784cca935c1f2f6403639cee48b2/src/utils/SafeTransferLib.sol
 
         if (currency.isNative()) {
             /// @solidity memory-safe-assembly
