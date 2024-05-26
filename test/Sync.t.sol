@@ -7,7 +7,7 @@ import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 import {Deployers} from "./utils/Deployers.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {IUnlockCallback} from "../src/interfaces/callback/IUnlockCallback.sol";
@@ -19,7 +19,6 @@ import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
 
 contract SyncTest is Test, Deployers, GasSnapshot {
-    using CurrencyLibrary for Currency;
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
 
@@ -56,16 +55,13 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     function test_settle_withStartingBalance() public noIsolate {
         assertGt(currency0.balanceOf(address(manager)), uint256(0));
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
-
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         // Sync has not been called.
         assertEq(manager.getReserves(currency0), 0);
 
-        swapRouter.swap(key, params, testSettings, new bytes(0));
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, new bytes(0));
         (uint256 balanceCurrency0) = currency0.balanceOf(address(manager));
         assertEq(manager.getReserves(currency0), balanceCurrency0); // Reserves are up to date since settle was called.
     }
