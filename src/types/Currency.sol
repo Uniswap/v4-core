@@ -54,6 +54,7 @@ library CurrencyLibrary {
                 mstore(0x14, to) // Store the `to` address in [0x20, 0x34).
                 mstore(0x34, amount) // Store the `amount` argument in [0x34, 0x54).
                 // Store the selector of `transfer(address,uint256)` in [0x10, 0x14).
+                // also cleans the upper bits of `to`
                 mstore(0x00, 0xa9059cbb000000000000000000000000)
                 // Perform the transfer, reverting upon failure.
                 if iszero(
