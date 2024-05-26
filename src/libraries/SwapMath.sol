@@ -51,7 +51,7 @@ library SwapMath {
         uint24 feePips
     ) internal pure returns (uint160 sqrtPriceNextX96, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
         unchecked {
-            uint256 _feePips = feePips; // cast once and cache
+            uint256 _feePips = feePips; // upcast once and cache
             bool zeroForOne = sqrtPriceCurrentX96 >= sqrtPriceTargetX96;
             bool exactIn = amountRemaining < 0;
 
@@ -91,7 +91,7 @@ library SwapMath {
                     // cap the output amount to not exceed the remaining output amount
                     amountOut = uint256(amountRemaining);
                     sqrtPriceNextX96 = SqrtPriceMath.getNextSqrtPriceFromOutput(
-                        sqrtPriceCurrentX96, liquidity, uint256(amountRemaining), zeroForOne
+                        sqrtPriceCurrentX96, liquidity, amountOut, zeroForOne
                     );
                 }
                 amountIn = zeroForOne
