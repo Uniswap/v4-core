@@ -3,8 +3,9 @@ pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
 import {FullMath} from "../../src/libraries/FullMath.sol";
+import {JavascriptFfi} from "../utils/JavascriptFfi.sol";
 
-contract FullMathTest is Test {
+contract FullMathTest is Test, JavascriptFfi {
     using FullMath for uint256;
 
     uint256 constant Q128 = 2 ** 128;
@@ -208,5 +209,47 @@ contract FullMathTest is Test {
         }
 
         return mulDivResultOverflows || mulDivRoundingUpResultOverflows;
+    }
+
+    /// forge-config: default.fuzz.runs = 10
+    /// forge-config: pr.fuzz.runs = 10
+    /// forge-config: ci.fuzz.runs = 500
+    function test_ffi_fuzz_mulDiv(uint256 a, uint256 b, uint256 denominator) public {
+        vm.assume(denominator != 0);
+        // Encode parameters for JavaScript script
+        string memory jsParameters = string(abi.encodePacked(vm.toString(a), ",", vm.toString(b), ",", vm.toString(denominator)));
+
+        // Run JavaScript script and get the result
+        bytes memory jsResult = runScript("forge-test-mulDiv", jsParameters);
+        uint256 jsMulDivResult;
+        bool success;
+        (success, jsMulDivResult) = abi.decode(jsResult, (bool, uint256));
+
+        if (success) {
+            // Get the result from Solidity
+            uint256 solMulDivResult = FullMath.mulDiv(a, b, denominator);
+            assertEq(jsMulDivResult, solMulDivResult);
+        }
+    }
+
+    /// forge-config: default.fuzz.runs = 10
+    /// forge-config: pr.fuzz.runs = 10
+    /// forge-config: ci.fuzz.runs = 500
+    function test_ffi_fuzz_mulDivRoundingUp(uint256 a, uint256 b, uint256 denominator) public {
+        vm.assume(denominator != 0);
+        // Encode parameters for JavaScript script
+        string memory jsParameters = string(abi.encodePacked(vm.toString(a), ",", vm.toString(b), ",", vm.toString(denominator)));
+
+        // Run JavaScript script and get the result
+        bytes memory jsResult = runScript("forge-test-mulDivRoundingUp", jsParameters);
+        uint256 jsMulDivResult;
+        bool success;
+        (success, jsMulDivResult) = abi.decode(jsResult, (bool, uint256));
+
+        if (success) {
+            // Get the result from Solidity
+            uint256 solMulDivResult = FullMath.mulDivRoundingUp(a, b, denominator);
+            assertEq(jsMulDivResult, solMulDivResult);
+        }
     }
 }

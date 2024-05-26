@@ -28,6 +28,11 @@
   },
   "scripts": {
     "forge-test-getSqrtPriceAtTick": "npx ts-node src/getSqrtPriceAtTick.ts",
-    "forge-test-getTickAtSqrtPrice": "npx ts-node src/getTickAtSqrtPrice.ts"
+    "forge-test-getTickAtSqrtPrice": "npx ts-node src/getTickAtSqrtPrice.ts",
+    "forge-test-mulDiv": "npx ts-node src/mulDiv.ts",
+    "forge-test-mulDivRoundingUp": "npx ts-node src/mulDivRoundingUp.ts"
+  },
+  "dependencies": {
+    "@uniswap/v3-sdk": "^3.11.2"
   }
 }
