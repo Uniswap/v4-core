@@ -15,7 +15,7 @@ import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
@@ -28,14 +28,14 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     DynamicFeesTestHook dynamicFeesHooks = DynamicFeesTestHook(
         address(
             uint160(
-                uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG
+                uint256(type(uint160).max) & clearAllHookPermissionsMask | Hooks.BEFORE_SWAP_FLAG
                     | Hooks.AFTER_INITIALIZE_FLAG
             )
         )
     );
 
     DynamicFeesTestHook dynamicFeesNoHooks =
-        DynamicFeesTestHook(address(uint160(uint256(type(uint160).max) & clearAllHookPermisssionsMask)));
+        DynamicFeesTestHook(address(uint160(uint256(type(uint160).max) & clearAllHookPermissionsMask)));
 
     event Swap(
         PoolId indexed poolId,

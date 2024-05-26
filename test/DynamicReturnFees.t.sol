@@ -15,7 +15,7 @@ import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicReturnFeeTestHook} from "../src/test/DynamicReturnFeeTestHook.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {FullMath} from "../src/libraries/FullMath.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
@@ -27,7 +27,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
     using LPFeeLibrary for uint24;
 
     DynamicReturnFeeTestHook dynamicReturnFeesHook = DynamicReturnFeeTestHook(
-        address(uint160(uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG))
+        address(uint160(uint256(type(uint160).max) & clearAllHookPermissionsMask | Hooks.BEFORE_SWAP_FLAG))
     );
 
     event Swap(

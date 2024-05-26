@@ -14,6 +14,7 @@ import {Slot0} from "../types/Slot0.sol";
 import {ProtocolFeeLibrary} from "./ProtocolFeeLibrary.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
+import {CustomRevert} from "./CustomRevert.sol";
 
 library Pool {
     using SafeCast for *;
@@ -23,6 +24,7 @@ library Pool {
     using Pool for State;
     using ProtocolFeeLibrary for uint24;
     using LPFeeLibrary for uint24;
+    using CustomRevert for bytes4;
 
     /// @notice Thrown when tickLower is not below tickUpper
     /// @param tickLower The invalid tickLower
@@ -90,16 +92,16 @@ library Pool {
 
     /// @dev Common checks for valid tick inputs.
     function checkTicks(int24 tickLower, int24 tickUpper) private pure {
-        if (tickLower >= tickUpper) revert TicksMisordered(tickLower, tickUpper);
-        if (tickLower < TickMath.MIN_TICK) revert TickLowerOutOfBounds(tickLower);
-        if (tickUpper > TickMath.MAX_TICK) revert TickUpperOutOfBounds(tickUpper);
+        if (tickLower >= tickUpper) TicksMisordered.selector.revertWith(tickLower, tickUpper);
+        if (tickLower < TickMath.MIN_TICK) TickLowerOutOfBounds.selector.revertWith(tickLower);
+        if (tickUpper > TickMath.MAX_TICK) TickUpperOutOfBounds.selector.revertWith(tickUpper);
     }
 
     function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 lpFee)
         internal
         returns (int24 tick)
     {
-        if (self.slot0.sqrtPriceX96() != 0) revert PoolAlreadyInitialized();
+        if (self.slot0.sqrtPriceX96() != 0) PoolAlreadyInitialized.selector.revertWith();
 
         tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
@@ -108,14 +110,13 @@ library Pool {
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
-        if (self.isNotInitialized()) revert PoolNotInitialized();
-
+        self.checkPoolInitialized();
         self.slot0 = self.slot0.setProtocolFee(protocolFee);
     }
 
     /// @notice Only dynamic fee pools may update the lp fee.
     function setLPFee(State storage self, uint24 lpFee) internal {
-        if (self.isNotInitialized()) revert PoolNotInitialized();
+        self.checkPoolInitialized();
         self.slot0 = self.slot0.setLpFee(lpFee);
     }
 
@@ -167,10 +168,10 @@ library Pool {
                 if (liquidityDelta >= 0) {
                     uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(params.tickSpacing);
                     if (state.liquidityGrossAfterLower > maxLiquidityPerTick) {
-                        revert TickLiquidityOverflow(tickLower);
+                        TickLiquidityOverflow.selector.revertWith(tickLower);
                     }
                     if (state.liquidityGrossAfterUpper > maxLiquidityPerTick) {
-                        revert TickLiquidityOverflow(tickUpper);
+                        TickLiquidityOverflow.selector.revertWith(tickUpper);
                     }
                 }
 
@@ -303,7 +304,7 @@ library Pool {
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
         {
             uint24 lpFee = params.lpFeeOverride.isOverride()
-                ? params.lpFeeOverride.removeOverrideAndValidate()
+                ? params.lpFeeOverride.removeOverrideFlagAndValidate()
                 : slot0Start.lpFee();
 
             swapFee = protocolFee == 0 ? lpFee : uint24(protocolFee).calculateSwapFee(lpFee);
@@ -312,24 +313,24 @@ library Pool {
         bool exactInput = params.amountSpecified < 0;
 
         if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
-            revert InvalidFeeForExactOut();
+            InvalidFeeForExactOut.selector.revertWith();
         }
 
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
 
         if (zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96()) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
+                PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
-                revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
+                PriceLimitOutOfBounds.selector.revertWith(params.sqrtPriceLimitX96);
             }
         } else {
             if (params.sqrtPriceLimitX96 <= slot0Start.sqrtPriceX96()) {
-                revert PriceLimitAlreadyExceeded(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
+                PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
             if (params.sqrtPriceLimitX96 >= TickMath.MAX_SQRT_PRICE) {
-                revert PriceLimitOutOfBounds(params.sqrtPriceLimitX96);
+                PriceLimitOutOfBounds.selector.revertWith(params.sqrtPriceLimitX96);
             }
         }
 
@@ -457,7 +458,7 @@ library Pool {
     /// @notice Donates the given amount of currency0 and currency1 to the pool
     function donate(State storage state, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
         uint128 liquidity = state.liquidity;
-        if (liquidity == 0) revert NoLiquidityToReceiveFees();
+        if (liquidity == 0) NoLiquidityToReceiveFees.selector.revertWith();
         unchecked {
             // negation safe as amount0 and amount1 are always positive
             delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
@@ -560,18 +561,27 @@ library Pool {
     /// @dev Executed within the pool constructor
     /// @param tickSpacing The amount of required tick separation, realized in multiples of `tickSpacing`
     ///     e.g., a tickSpacing of 3 requires ticks to be initialized every 3rd tick i.e., ..., -6, -3, 0, 3, 6, ...
-    /// @return The max liquidity per tick
-    function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
-        unchecked {
-            return uint128(
-                (type(uint128).max * uint256(int256(tickSpacing)))
-                    / uint256(int256(TickMath.MAX_TICK * 2 + tickSpacing))
-            );
+    /// @return result The max liquidity per tick
+    function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128 result) {
+        // Equivalent to:
+        // int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
+        // int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
+        // uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
+        // return type(uint128).max / numTicks;
+        int24 MAX_TICK = TickMath.MAX_TICK;
+        int24 MIN_TICK = TickMath.MIN_TICK;
+        // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
+        assembly {
+            let minTick := mul(sdiv(MIN_TICK, tickSpacing), tickSpacing)
+            let maxTick := mul(sdiv(MAX_TICK, tickSpacing), tickSpacing)
+            let numTicks := add(sdiv(sub(maxTick, minTick), tickSpacing), 1)
+            result := div(sub(shl(128, 1), 1), numTicks)
         }
     }
 
-    function isNotInitialized(State storage self) internal view returns (bool) {
-        return self.slot0.sqrtPriceX96() == 0;
+    /// @notice Reverts if the given pool has not been initialized
+    function checkPoolInitialized(State storage self) internal view {
+        if (self.slot0.sqrtPriceX96() == 0) PoolNotInitialized.selector.revertWith();
     }
 
     /// @notice Clears tick data
