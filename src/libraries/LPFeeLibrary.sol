@@ -11,31 +11,36 @@ library LPFeeLibrary {
     /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
     error FeeTooLarge();
 
-    uint24 public constant FEE_MASK = 0x7FFFFF;
-    uint24 public constant OVERRIDE_MASK = 0xBFFFFF;
-
-    // the top bit of the fee in a PoolKey is used to signal if a Pool's LP fee is dynamic
+    // an lp fee of exactly 0b1000000... signals a dynamic fee pool. This isnt a valid static fee as it is > MAX_LP_FEE
     uint24 public constant DYNAMIC_FEE_FLAG = 0x800000;
 
     // the second bit of the fee returned by beforeSwap is used to signal if the stored LP fee should be overridden in this swap
     // only dynamic-fee pools can return a fee via the beforeSwap hook
     uint24 public constant OVERRIDE_FEE_FLAG = 0x400000;
 
+    // mask to remove the override fee flag from a fee returned by the beforeSwaphook
+    uint24 public constant REMOVE_OVERRIDE_MASK = 0xBFFFFF;
+
     // the lp fee is represented in hundredths of a bip, so the max is 100%
     uint24 public constant MAX_LP_FEE = 1000000;
 
+    /// @notice returns true if a pool's LP fee signals that the pool has a dynamic fee
     function isDynamicFee(uint24 self) internal pure returns (bool) {
-        return self & DYNAMIC_FEE_FLAG != 0;
+        return self == DYNAMIC_FEE_FLAG;
     }
 
+    /// @notice returns true if an LP fee is valid, aka not above the maxmimum permitted fee
     function isValid(uint24 self) internal pure returns (bool) {
         return self <= MAX_LP_FEE;
     }
 
+    /// @notice validates whether an LP fee is larger than the maximum, and reverts if invalid
     function validate(uint24 self) internal pure {
         if (!self.isValid()) FeeTooLarge.selector.revertWith();
     }
 
+    /// @notice gets and validates the initial LP fee for a pool. Dynamic fee pools have an initial fee of 0.
+    /// @dev if a dynamic fee pool wants a non-0 initial fee, it should call `updateDynamicLPFee` in the afterInitialize hook
     function getInitialLPFee(uint24 self) internal pure returns (uint24) {
         // the initial fee for a dynamic fee pool is 0
         if (self.isDynamicFee()) return 0;
@@ -50,11 +55,11 @@ library LPFeeLibrary {
 
     /// @notice returns a fee with the override flag removed
     function removeOverrideFlag(uint24 self) internal pure returns (uint24) {
-        return self & OVERRIDE_MASK;
+        return self & REMOVE_OVERRIDE_MASK;
     }
 
     /// @notice Removes the override flag and validates the fee (reverts if the fee is too large)
-    function removeOverrideAndValidate(uint24 self) internal pure returns (uint24 fee) {
+    function removeOverrideFlagAndValidate(uint24 self) internal pure returns (uint24 fee) {
         fee = self.removeOverrideFlag();
         fee.validate();
     }

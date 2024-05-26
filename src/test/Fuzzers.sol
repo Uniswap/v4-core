@@ -27,22 +27,26 @@ contract Fuzzers is StdUtils {
 
         // Finally bound the seeded liquidity by either the max per tick, or by the amount allowed in the position range.
         int256 liquidityMax = liquidityMaxByAmount > liquidityMaxPerTick ? liquidityMaxPerTick : liquidityMaxByAmount;
+        _vm.assume(liquidityMax != 0);
         return bound(liquidityDeltaUnbounded, 1, liquidityMax);
     }
 
     // Uses tickSpacingToMaxLiquidityPerTick/2 as one of the possible bounds.
     // Potentially adjust this value to be more strict for positions that touch the same tick.
-    function boundLiquidityDeltaTightly(PoolKey memory key, int256 liquidityDeltaUnbounded, int256 liquidityMaxByAmount)
-        internal
-        pure
-        returns (int256)
-    {
+    function boundLiquidityDeltaTightly(
+        PoolKey memory key,
+        int256 liquidityDeltaUnbounded,
+        int256 liquidityMaxByAmount,
+        uint256 maxPositions
+    ) internal pure returns (int256) {
         // Divide by half to bound liquidity more. TODO: Probably a better way to do this.
-        int256 liquidityMaxTightBound = int256(uint256(Pool.tickSpacingToMaxLiquidityPerTick(key.tickSpacing)) / 2);
+        int256 liquidityMaxTightBound =
+            int256(uint256(Pool.tickSpacingToMaxLiquidityPerTick(key.tickSpacing)) / maxPositions);
 
         // Finally bound the seeded liquidity by either the max per tick, or by the amount allowed in the position range.
         int256 liquidityMax =
             liquidityMaxByAmount > liquidityMaxTightBound ? liquidityMaxTightBound : liquidityMaxByAmount;
+        _vm.assume(liquidityMax != 0);
         return bound(liquidityDeltaUnbounded, 1, liquidityMax);
     }
 
@@ -104,7 +108,10 @@ contract Fuzzers is StdUtils {
 
         (tickLower, tickUpper) = tickLower < tickUpper ? (tickLower, tickUpper) : (tickUpper, tickLower);
 
-        _vm.assume(tickLower != tickUpper);
+        if (tickLower == tickUpper) {
+            if (tickLower != TickMath.minUsableTick(tickSpacing)) tickLower = tickLower - tickSpacing;
+            else tickUpper = tickUpper + tickSpacing;
+        }
 
         return (tickLower, tickUpper);
     }
@@ -113,11 +120,10 @@ contract Fuzzers is StdUtils {
         return boundTicks(tickLower, tickUpper, key.tickSpacing);
     }
 
-    function createRandomSqrtPriceX96(PoolKey memory key, int256 seed) internal pure returns (uint160) {
-        int24 tickSpacing = key.tickSpacing;
+    function createRandomSqrtPriceX96(int24 tickSpacing, int256 seed) internal pure returns (uint160) {
         int256 min = int256(TickMath.minUsableTick(tickSpacing));
         int256 max = int256(TickMath.maxUsableTick(tickSpacing));
-        int256 randomTick = bound(seed, min, max);
+        int256 randomTick = bound(seed, min + 1, max - 1);
         return TickMath.getSqrtPriceAtTick(int24(randomTick));
     }
 
@@ -140,13 +146,15 @@ contract Fuzzers is StdUtils {
     function createFuzzyLiquidityParamsWithTightBound(
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
-        uint160 sqrtPriceX96
+        uint160 sqrtPriceX96,
+        uint256 maxPositions
     ) internal pure returns (IPoolManager.ModifyLiquidityParams memory result) {
         (result.tickLower, result.tickUpper) = boundTicks(key, params.tickLower, params.tickUpper);
         int256 liquidityDeltaFromAmounts =
             getLiquidityDeltaFromAmounts(result.tickLower, result.tickUpper, sqrtPriceX96);
 
-        result.liquidityDelta = boundLiquidityDeltaTightly(key, params.liquidityDelta, liquidityDeltaFromAmounts);
+        result.liquidityDelta =
+            boundLiquidityDeltaTightly(key, params.liquidityDelta, liquidityDeltaFromAmounts, maxPositions);
     }
 
     function createFuzzyLiquidity(
@@ -166,9 +174,10 @@ contract Fuzzers is StdUtils {
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         uint160 sqrtPriceX96,
-        bytes memory hookData
+        bytes memory hookData,
+        uint256 maxPositions
     ) internal returns (IPoolManager.ModifyLiquidityParams memory result, BalanceDelta delta) {
-        result = createFuzzyLiquidityParamsWithTightBound(key, params, sqrtPriceX96);
+        result = createFuzzyLiquidityParamsWithTightBound(key, params, sqrtPriceX96, maxPositions);
         delta = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
     }
 }
