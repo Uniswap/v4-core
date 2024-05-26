@@ -173,6 +173,20 @@ contract Deployers {
         manager.initialize(_key, sqrtPriceX96, initData);
     }
 
+    function initPool(
+        Currency _currency0,
+        Currency _currency1,
+        IHooks hooks,
+        uint24 fee,
+        int24 tickSpacing,
+        uint160 sqrtPriceX96,
+        bytes memory initData
+    ) internal returns (PoolKey memory _key, PoolId id) {
+        _key = PoolKey(_currency0, _currency1, fee, tickSpacing, hooks);
+        id = _key.toId();
+        manager.initialize(_key, sqrtPriceX96, initData);
+    }
+
     function initPoolAndAddLiquidity(
         Currency _currency0,
         Currency _currency1,
