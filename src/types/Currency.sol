@@ -36,14 +36,14 @@ library CurrencyLibrary {
     Currency public constant NATIVE = Currency.wrap(address(0));
 
     function transfer(Currency currency, address to, uint256 amount) internal {
-        // implementation from
-        // https://github.com/Vectorized/solady/blob/89101d53b7c8784cca935c1f2f6403639cee48b2/src/utils/SafeTransferLib.sol
+        // altered from https://github.com/Vectorized/solady/blob/89101d53b7c8784cca935c1f2f6403639cee48b2/src/utils/SafeTransferLib.sol
+        // modified custom error selectors
 
         if (currency.isNative()) {
             /// @solidity memory-safe-assembly
             assembly {
                 // Transfer the ETH and revert if it fails.
-                if iszero(call(gas(), to, amount, 0, 0, 0, 0)) {
+                if iszero(call(gas(), to, amount, 0x00, 0x00, 0x00, 0x00)) {
                     mstore(0x00, 0xf4b3b1bc) // `NativeTransferFailed()`.
                     revert(0x1c, 0x04)
                 }
