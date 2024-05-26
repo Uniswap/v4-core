@@ -34,7 +34,6 @@ import {
 contract Deployers {
     using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
-    using CurrencyLibrary for Currency;
 
     // Helpful test constants
     bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
@@ -80,8 +79,8 @@ contract Deployers {
     PoolKey uninitializedNativeKey;
 
     // Update this value when you add a new hook flag.
-    uint256 hookPermissionCount = 14;
-    uint160 clearAllHookPermisssionsMask = ~uint160(0) >> (hookPermissionCount);
+    uint160 hookPermissionCount = 14;
+    uint160 clearAllHookPermissionsMask = ~uint160(0) << (hookPermissionCount);
 
     modifier noIsolate() {
         if (msg.sender != address(this)) {

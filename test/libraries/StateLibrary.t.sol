@@ -23,7 +23,6 @@ import {Fuzzers} from "../../src/test/Fuzzers.sol";
 contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     using FixedPointMathLib for uint256;
     using PoolIdLibrary for PoolKey;
-    using CurrencyLibrary for Currency;
 
     PoolId poolId;
 
@@ -77,7 +76,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
 
     function test_fuzz_getTickLiquidity(IPoolManager.ModifyLiquidityParams memory params) public {
         (IPoolManager.ModifyLiquidityParams memory _params,) =
-            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
+            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
         uint128 liquidityDelta = uint128(uint256(_params.liquidityDelta));
 
         (uint128 liquidityGrossLower, int128 liquidityNetLower) =
@@ -106,10 +105,12 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         IPoolManager.ModifyLiquidityParams memory paramsA,
         IPoolManager.ModifyLiquidityParams memory paramsB
     ) public {
-        (IPoolManager.ModifyLiquidityParams memory _paramsA,) =
-            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, paramsA, ZERO_BYTES);
-        (IPoolManager.ModifyLiquidityParams memory _paramsB,) =
-            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, paramsB, ZERO_BYTES);
+        (IPoolManager.ModifyLiquidityParams memory _paramsA,) = Fuzzers.createFuzzyLiquidityWithTightBound(
+            modifyLiquidityRouter, key, paramsA, SQRT_PRICE_1_1, ZERO_BYTES, 2
+        );
+        (IPoolManager.ModifyLiquidityParams memory _paramsB,) = Fuzzers.createFuzzyLiquidityWithTightBound(
+            modifyLiquidityRouter, key, paramsB, SQRT_PRICE_1_1, ZERO_BYTES, 2
+        );
 
         uint128 liquidityDeltaA = uint128(uint256(_paramsA.liquidityDelta));
         uint128 liquidityDeltaB = uint128(uint256(_paramsB.liquidityDelta));
@@ -225,7 +226,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
 
     function test_fuzz_getLiquidity(IPoolManager.ModifyLiquidityParams memory params) public {
         (IPoolManager.ModifyLiquidityParams memory _params,) =
-            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
+            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
         (, int24 tick,,) = StateLibrary.getSlot0(manager, poolId);
         uint128 liquidity = StateLibrary.getLiquidity(manager, poolId);
 
@@ -259,7 +260,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
 
     function test_fuzz_getTickBitmap(IPoolManager.ModifyLiquidityParams memory params) public {
         (IPoolManager.ModifyLiquidityParams memory _params,) =
-            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
+            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
 
         (int16 wordPos, uint8 bitPos) = TickBitmap.position(_params.tickLower / key.tickSpacing);
         (int16 wordPosUpper, uint8 bitPosUpper) = TickBitmap.position(_params.tickUpper / key.tickSpacing);
@@ -309,7 +310,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         bool zeroForOne
     ) public {
         (IPoolManager.ModifyLiquidityParams memory _params, BalanceDelta delta) =
-            createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
+            createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
 
         uint256 delta0 = uint256(int256(-delta.amount0()));
         uint256 delta1 = uint256(int256(-delta.amount1()));
@@ -456,7 +457,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         );
 
         (IPoolManager.ModifyLiquidityParams memory _params,) =
-            createFuzzyLiquidity(modifyLiquidityRouter, key, params, ZERO_BYTES);
+            createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
 
         swap(key, zeroForOne, -int256(100e18), ZERO_BYTES);
 
@@ -498,12 +499,20 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         IPoolManager.ModifyLiquidityParams memory paramsA,
         IPoolManager.ModifyLiquidityParams memory paramsB
     ) public {
-        (IPoolManager.ModifyLiquidityParams memory _paramsA,) =
-            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, paramsA, ZERO_BYTES);
-        (IPoolManager.ModifyLiquidityParams memory _paramsB,) =
-            Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, paramsB, ZERO_BYTES);
+        (IPoolManager.ModifyLiquidityParams memory _paramsA) =
+            Fuzzers.createFuzzyLiquidityParams(key, paramsA, SQRT_PRICE_1_1);
 
-        vm.assume(_paramsA.tickLower != _paramsB.tickLower && _paramsA.tickUpper != _paramsB.tickUpper);
+        (IPoolManager.ModifyLiquidityParams memory _paramsB) =
+            Fuzzers.createFuzzyLiquidityParams(key, paramsB, SQRT_PRICE_1_1);
+
+        // Assume there are no overlapping positions
+        vm.assume(
+            _paramsA.tickLower != _paramsB.tickLower && _paramsA.tickLower != _paramsB.tickUpper
+                && _paramsB.tickLower != _paramsA.tickUpper && _paramsA.tickUpper != _paramsB.tickUpper
+        );
+
+        modifyLiquidityRouter.modifyLiquidity(key, _paramsA, ZERO_BYTES);
+        modifyLiquidityRouter.modifyLiquidity(key, _paramsB, ZERO_BYTES);
 
         bytes32 positionIdA = keccak256(
             abi.encodePacked(address(modifyLiquidityRouter), _paramsA.tickLower, _paramsA.tickUpper, bytes32(0))

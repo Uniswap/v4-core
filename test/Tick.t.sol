@@ -7,7 +7,6 @@ import {GasSnapshot} from "../lib/forge-gas-snapshot/src/GasSnapshot.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
-import {PoolGetters} from "../src/libraries/PoolGetters.sol";
 
 contract LiquidityMathRef {
     function addDelta(uint128 x, int128 y) external pure returns (uint128) {
@@ -24,7 +23,6 @@ contract LiquidityMathRef {
 }
 
 contract TickTest is Test, GasSnapshot {
-    using PoolGetters for Pool.State;
     using Pool for Pool.State;
 
     int24 constant LOW_TICK_SPACING = 10;
@@ -41,6 +39,10 @@ contract TickTest is Test, GasSnapshot {
 
     function ticks(int24 tick) internal view returns (Pool.TickInfo memory) {
         return pool.ticks[tick];
+    }
+
+    function tickBitmap(int16 word) internal view returns (uint256) {
+        return pool.tickBitmap[word];
     }
 
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128) {
@@ -114,35 +116,35 @@ contract TickTest is Test, GasSnapshot {
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(LOW_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 1917565579412846627735051215301243);
+        assertEq(maxLiquidityPerTick, 1917569901783203986719870431555990);
         checkCantOverflow(LOW_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMediumFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(MEDIUM_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 11505069308564788430434325881101413); // 113.1 bits
+        assertEq(maxLiquidityPerTick, 11505743598341114571880798222544994);
         checkCantOverflow(MEDIUM_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForHighFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(HIGH_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 38347205785278154309959589375342946); // 114.7 bits
+        assertEq(maxLiquidityPerTick, 38350317471085141830651933667504588);
         checkCantOverflow(HIGH_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMinTickSpacing() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(TickMath.MIN_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 191757530477355301479181766273477); // 126 bits
+        assertEq(maxLiquidityPerTick, 191757530477355301479181766273477);
         checkCantOverflow(TickMath.MIN_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMaxTickSpacing() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(TickMath.MAX_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 6169404334338910476561253576012511949);
+        assertEq(maxLiquidityPerTick, 6186952125835244790243174680577603844);
         checkCantOverflow(TickMath.MAX_TICK_SPACING, maxLiquidityPerTick);
     }
 
@@ -156,7 +158,7 @@ contract TickTest is Test, GasSnapshot {
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor2302() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(2302);
 
-        assertEq(maxLiquidityPerTick, 440854192570431170114173285871668350); // 118 bits
+        assertEq(maxLiquidityPerTick, 441351967472034323558203122479595605);
         checkCantOverflow(2302, maxLiquidityPerTick);
     }
 
@@ -522,7 +524,7 @@ contract TickTest is Test, GasSnapshot {
 
     function test_getPoolTickInfo(int24 tick, Pool.TickInfo memory info) public {
         setTick(tick, info);
-        Pool.TickInfo memory actualInfo = pool.getPoolTickInfo(tick);
+        Pool.TickInfo memory actualInfo = ticks(tick);
         assertEq(actualInfo.liquidityGross, info.liquidityGross);
         assertEq(actualInfo.liquidityNet, info.liquidityNet);
         assertEq(actualInfo.feeGrowthOutside0X128, info.feeGrowthOutside0X128);
@@ -531,7 +533,7 @@ contract TickTest is Test, GasSnapshot {
 
     function test_getPoolBitmapInfo(int16 word, uint256 bitmap) public {
         setTickBitmap(word, bitmap);
-        assertEq(pool.getPoolBitmapInfo(word), bitmap);
+        assertEq(tickBitmap(word), bitmap);
     }
 
     function testTick_tickSpacingToParametersInvariants_fuzz(int24 tickSpacing) public pure {
