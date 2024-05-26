@@ -4,6 +4,17 @@ pragma solidity ^0.8.20;
 /// @title Math functions that do not check inputs or outputs
 /// @notice Contains methods that perform common math functions but do not do any overflow or underflow checks
 library UnsafeMath {
+    /// @notice Returns x / y or 0 if y == 0
+    /// @dev saves gas by skipping the zero divisor check
+    /// @param x The dividend
+    /// @param y The divisor
+    /// @return z The quotient, x / y
+    function div(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        assembly {
+            z := div(x, y)
+        }
+    }
+
     /// @notice Returns ceil(x / y)
     /// @dev division by 0 has unspecified behavior, and must be checked externally
     /// @param x The dividend
