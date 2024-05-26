@@ -6,6 +6,7 @@ import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 type Currency is address;
 
 using {greaterThan as >, lessThan as <, greaterThanOrEqualTo as >=, equals as ==} for Currency global;
+using CurrencyLibrary for Currency global;
 
 function equals(Currency currency, Currency other) pure returns (bool) {
     return Currency.unwrap(currency) == Currency.unwrap(other);
@@ -26,8 +27,6 @@ function greaterThanOrEqualTo(Currency currency, Currency other) pure returns (b
 /// @title CurrencyLibrary
 /// @dev This library allows for transferring and holding native tokens and ERC20 tokens
 library CurrencyLibrary {
-    using CurrencyLibrary for Currency;
-
     /// @notice Thrown when a native transfer fails
     error NativeTransferFailed();
 

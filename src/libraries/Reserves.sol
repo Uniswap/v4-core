@@ -2,8 +2,11 @@
 pragma solidity ^0.8.20;
 
 import {Currency} from "../types/Currency.sol";
+import {CustomRevert} from "./CustomRevert.sol";
 
 library Reserves {
+    using CustomRevert for bytes4;
+
     /// uint256(keccak256("ReservesOf")) - 1
     uint256 constant RESERVES_OF_SLOT = uint256(0x1e0745a7db1623981f0b2a5d4232364c00787266eb75ad546f190e6cebe9bd95);
     /// @notice The transient reserves for pools with no balance is set to the max as a sentinel to track that it has been synced.
@@ -25,7 +28,7 @@ library Reserves {
         assembly {
             value := tload(key)
         }
-        if (value == 0) revert ReservesMustBeSynced();
+        if (value == 0) ReservesMustBeSynced.selector.revertWith();
         if (value == ZERO_BALANCE) value = 0;
     }
 
