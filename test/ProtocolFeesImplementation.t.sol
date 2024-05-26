@@ -3,13 +3,13 @@ pragma solidity ^0.8.15;
 
 import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {ProtocolFeesImplementation} from "../src/test/ProtocolFeesImplementation.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {Deployers} from "../test/utils/Deployers.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
@@ -23,7 +23,6 @@ import {
 } from "../src/test/ProtocolFeeControllerTest.sol";
 
 contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
-    using CurrencyLibrary for Currency;
     using PoolIdLibrary for PoolKey;
     using ProtocolFeeLibrary for uint24;
 
