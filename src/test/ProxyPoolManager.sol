@@ -20,7 +20,7 @@ import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../types/Balanc
 import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 import {Lock} from "../libraries/Lock.sol";
 import {CurrencyDelta} from "../libraries/CurrencyDelta.sol";
-import {NonZeroDeltaCount} from "../libraries/NonZeroDeltaCount.sol";
+import {NonzeroDeltaCount} from "../libraries/NonzeroDeltaCount.sol";
 import {CurrencyReserves} from "../libraries/CurrencyReserves.sol";
 import {Extsload} from "../Extsload.sol";
 import {Exttload} from "../Exttload.sol";
@@ -65,7 +65,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = IUnlockCallback(msg.sender).unlockCallback(data);
 
-        if (NonZeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
+        if (NonzeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
         Lock.lock();
     }
 
@@ -90,7 +90,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
         PoolId id = key.toId();
-        (, uint24 protocolFee) = _fetchProtocolFee(key);
+        uint24 protocolFee = _fetchProtocolFee(key);
 
         tick = _pools[id].initialize(sqrtPriceX96, protocolFee, lpFee);
 
@@ -144,7 +144,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     /// @inheritdoc IPoolManager
     function sync(Currency currency) public {
         CurrencyReserves.requireNotSynced();
-        if (currency.isNative()) return;
+        if (currency.isAddressZero()) return;
         uint256 balance = currency.balanceOfSelf();
         CurrencyReserves.syncCurrencyAndReserves(currency, balance);
     }
