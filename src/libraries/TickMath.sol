@@ -117,7 +117,7 @@ library TickMath {
     function getTickAtSqrtPrice(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
         unchecked {
             // Equivalent: if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
-            // second inequality must be < because the price can never reach the price at the max tick
+            // second inequality must be >= because the price can never reach the price at the max tick
             /// @solidity memory-safe-assembly
             assembly {
                 // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
@@ -129,140 +129,111 @@ library TickMath {
                 }
             }
 
-            uint256 price = uint256(sqrtPriceX96) << 32;
-
-            uint256 r = price;
-            uint256 msb = 0;
-
+            // Find the most significant bit of `sqrtPriceX96`, 160 > msb >= 32.
+            uint256 msb;
             assembly {
-                let f := shl(7, gt(r, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(6, gt(r, 0xFFFFFFFFFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(5, gt(r, 0xFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(4, gt(r, 0xFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(3, gt(r, 0xFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(2, gt(r, 0xF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := shl(1, gt(r, 0x3))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly {
-                let f := gt(r, 0x1)
-                msb := or(msb, f)
+                let x := sqrtPriceX96
+                msb := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
+                msb := or(msb, shl(6, lt(0xffffffffffffffff, shr(msb, x))))
+                msb := or(msb, shl(5, lt(0xffffffff, shr(msb, x))))
+                msb := or(msb, shl(4, lt(0xffff, shr(msb, x))))
+                msb := or(msb, shl(3, lt(0xff, shr(msb, x))))
+                msb :=
+                    or(
+                        msb,
+                        byte(
+                            and(0x1f, shr(shr(msb, x), 0x8421084210842108cc6318c6db6d54be)),
+                            0x0706060506020504060203020504030106050205030304010505030400000000
+                        )
+                    )
             }
 
-            if (msb >= 128) r = price >> (msb - 127);
-            else r = price << (127 - msb);
+            // 2**(msb - 95) > sqrtPrice >= 2**(msb - 96)
+            // the integer part of log_2(sqrtPrice) * 2**64 = (msb - 96) << 64, 8.64 number
+            int256 log_2 = (int256(msb) - 96) << 64;
+            assembly {
+                // Get the first 128 significant figures of `sqrtPriceX96`.
+                // r = sqrtPriceX96 / 2**(msb - 127), where 2**128 > r >= 2**127
+                // sqrtPrice = 2**(msb - 96) * r / 2**127, in floating point math
+                // Shift left first because 160 > msb >= 32. If we shift right first, we'll lose precision.
+                let r := shr(sub(msb, 31), shl(96, sqrtPriceX96))
 
-            int256 log_2 = (int256(msb) - 128) << 64;
+                // Approximate `log_2` to 14 binary digits after decimal
+                // Check whether r >= sqrt(2) * 2**127 for 2**128 > r >= 2**127
+                // 2**256 > square >= 2**254
+                let square := mul(r, r)
+                // f := square >= 2**255
+                let f := slt(square, 0)
+                // r := square >> 128 if square >= 2**255 else square >> 127
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(63, f), log_2)
 
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(63, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(62, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(61, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(60, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(59, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(58, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(57, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(56, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(55, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(54, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(53, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(52, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(51, f))
-                r := shr(f, r)
-            }
-            assembly {
-                r := shr(127, mul(r, r))
-                let f := shr(128, r)
-                log_2 := or(log_2, shl(50, f))
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(62, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(61, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(60, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(59, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(58, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(57, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(56, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(55, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(54, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(53, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(52, f), log_2)
+
+                square := mul(r, r)
+                f := slt(square, 0)
+                r := shr(127, shr(f, square))
+                log_2 := or(shl(51, f), log_2)
+
+                log_2 := or(shl(50, slt(mul(r, r), 0)), log_2)
             }
 
+            // sqrtPrice = sqrt(1.0001^tick)
+            // tick = log_{sqrt(1.0001)}(sqrtPrice) = log_2(sqrtPrice) / log_2(sqrt(1.0001))
+            // 2**64 / log_2(sqrt(1.0001)) = 255738958999603826347141
             int256 log_sqrt10001 = log_2 * 255738958999603826347141; // 128.128 number
 
             int24 tickLow = int24((log_sqrt10001 - 3402992956809132418596140100660247210) >> 128);
