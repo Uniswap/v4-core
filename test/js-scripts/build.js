@@ -1,10 +1,6 @@
 const { build } = require("esbuild");
 
-const entryPoints = [
-  "getModifyLiquidityResult",
-  "getSqrtPriceAtTick",
-  "getTickAtSqrtPrice",
-];
+const entryPoints = ["getModifyLiquidityResult", "getSqrtPriceAtTick", "getTickAtSqrtPrice"];
 
 const sharedConfig = {
   bundle: true,
