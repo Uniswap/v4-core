@@ -1,0 +1,7 @@
+.prettierrc
+foundry.toml
+out
+lib/
+cache/
+*.sol
+dist/

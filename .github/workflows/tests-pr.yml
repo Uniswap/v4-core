@@ -16,15 +16,6 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache-dependency-path: './test/js-scripts'
-          cache: 'yarn'
-
-      - run: yarn
-        working-directory: ./test/js-scripts
-
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -40,4 +31,3 @@ jobs:
         env:
           FOUNDRY_PROFILE: pr
           FORGE_SNAPSHOT_CHECK: true
-
