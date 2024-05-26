@@ -90,9 +90,8 @@ library SwapMath {
                 } else {
                     // cap the output amount to not exceed the remaining output amount
                     amountOut = uint256(amountRemaining);
-                    sqrtPriceNextX96 = SqrtPriceMath.getNextSqrtPriceFromOutput(
-                        sqrtPriceCurrentX96, liquidity, amountOut, zeroForOne
-                    );
+                    sqrtPriceNextX96 =
+                        SqrtPriceMath.getNextSqrtPriceFromOutput(sqrtPriceCurrentX96, liquidity, amountOut, zeroForOne);
                 }
                 amountIn = zeroForOne
                     ? SqrtPriceMath.getAmount0Delta(sqrtPriceNextX96, sqrtPriceCurrentX96, liquidity, true)
