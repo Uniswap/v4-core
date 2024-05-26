@@ -136,9 +136,8 @@ library FullMath {
     function mulDivRoundingUp(uint256 a, uint256 b, uint256 denominator) internal pure returns (uint256 result) {
         unchecked {
             result = mulDiv(a, b, denominator);
-            if (mulmod(a, b, denominator) > 0) {
-                require(result < type(uint256).max);
-                result++;
+            if (mulmod(a, b, denominator) != 0) {
+                require(++result > 0);
             }
         }
     }

@@ -53,7 +53,7 @@ contract FullMathTest is Test {
     function test_fuzz_mulDiv(uint256 x, uint256 y, uint256 d) public pure {
         vm.assume(d != 0);
         vm.assume(y != 0);
-        vm.assume(x <= type(uint256).max / y);
+        x = bound(x, 0, type(uint256).max / y);
         assertEq(FullMath.mulDiv(x, y, d), x * y / d);
     }
 
@@ -122,10 +122,14 @@ contract FullMathTest is Test {
     function test_fuzz_mulDivRoundingUp(uint256 x, uint256 y, uint256 d) public pure {
         vm.assume(d != 0);
         vm.assume(y != 0);
-        vm.assume(x <= type(uint256).max / y);
+        x = bound(x, 0, type(uint256).max / y);
         uint256 numerator = x * y;
         uint256 result = FullMath.mulDivRoundingUp(x, y, d);
-        assertTrue(result == numerator / d || result == numerator / d + 1);
+        if (mulmod(x, y, d) > 0) {
+            assertEq(result, numerator / d + 1);
+        } else {
+            assertEq(result, numerator / d);
+        }
     }
 
     function test_invariant_mulDivRounding(uint256 x, uint256 y, uint256 d) public pure {

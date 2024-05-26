@@ -16,6 +16,18 @@ contract SwapMathTest is Test, GasSnapshot {
     uint160 private constant SQRT_PRICE_1010_100 = 251791039410471229173201122529;
     uint160 private constant SQRT_PRICE_10000_100 = 792281625142643375935439503360;
 
+    function test_fuzz_getSqrtPriceTarget(bool zeroForOne, uint160 sqrtPriceNextX96, uint160 sqrtPriceLimitX96)
+        public
+        pure
+    {
+        assertEq(
+            SwapMath.getSqrtPriceTarget(zeroForOne, sqrtPriceNextX96, sqrtPriceLimitX96),
+            (zeroForOne ? sqrtPriceNextX96 < sqrtPriceLimitX96 : sqrtPriceNextX96 > sqrtPriceLimitX96)
+                ? sqrtPriceLimitX96
+                : sqrtPriceNextX96
+        );
+    }
+
     function test_computeSwapStep_exactAmountIn_oneForZero_thatGetsCappedAtPriceTargetIn() public pure {
         uint160 priceTarget = SQRT_PRICE_101_100;
         uint160 price = SQRT_PRICE_1_1;

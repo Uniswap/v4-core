@@ -15,7 +15,7 @@ import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
@@ -28,14 +28,14 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     DynamicFeesTestHook dynamicFeesHooks = DynamicFeesTestHook(
         address(
             uint160(
-                uint256(type(uint160).max) & clearAllHookPermisssionsMask | Hooks.BEFORE_SWAP_FLAG
+                uint256(type(uint160).max) & clearAllHookPermissionsMask | Hooks.BEFORE_SWAP_FLAG
                     | Hooks.AFTER_INITIALIZE_FLAG
             )
         )
     );
 
     DynamicFeesTestHook dynamicFeesNoHooks =
-        DynamicFeesTestHook(address(uint160(uint256(type(uint160).max) & clearAllHookPermisssionsMask)));
+        DynamicFeesTestHook(address(uint160(uint256(type(uint160).max) & clearAllHookPermissionsMask)));
 
     event Swap(
         PoolId indexed poolId,
@@ -113,13 +113,11 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(1000001);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 
     function test_updateDynamicLPFee_beforeSwap_succeeds_gas() public {
@@ -127,15 +125,13 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(123);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
         snapLastCall("update dynamic fee in before swap");
 
         assertEq(_fetchPoolLPFee(key), 123);
@@ -146,15 +142,13 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(1000000);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 0, SQRT_PRICE_1_1, 1e18, -1, 1000000);
 
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
         assertEq(_fetchPoolLPFee(key), 1000000);
     }
@@ -164,15 +158,13 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         dynamicFeesHooks.setFee(500000);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 49, 79228162514264333632135824623, 1e18, -1, 500000);
 
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
         assertEq(_fetchPoolLPFee(key), 500000);
     }
@@ -264,15 +256,13 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.prank(address(feeController));
         manager.setProtocolFee(key, 1000);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 1122);
 
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
         assertEq(_fetchPoolLPFee(key), 123);
     }
@@ -316,15 +306,13 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesNoHooks.forcePoolFeeUpdate(key, 123);
         assertEq(_fetchPoolLPFee(key), 123);
 
-        IPoolManager.SwapParams memory params =
-            IPoolManager.SwapParams({zeroForOne: true, amountSpecified: -100, sqrtPriceLimitX96: SQRT_PRICE_1_2});
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -100, 98, 79228162514264329749955861424, 1e18, -1, 123);
 
-        swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
         snapLastCall("swap with dynamic fee");
     }
 
