@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Currency, CurrencyLibrary} from "../types/Currency.sol";
-import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
-import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {Currency} from "../../src/types/Currency.sol";
+import {IERC20Minimal} from "../../src/interfaces/external/IERC20Minimal.sol";
+import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 
-library CurrencySettleTake {
-    using CurrencyLibrary for Currency;
-
+/// @notice Library used to interact with PoolManager.sol to settle any open deltas.
+/// To settle a positive delta (a credit to the user), a user may take or mint.
+/// To settle a negative delta (a debt on the user), a user make transfer or burn to pay off a debt.
+/// @dev Note that sync() is called before any erc-20 transfer in `settle`.
+library CurrencySettler {
     /// @notice Settle (pay) a currency to the PoolManager
     /// @param currency Currency to settle
     /// @param manager IPoolManager to settle to
