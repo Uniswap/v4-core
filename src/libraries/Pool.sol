@@ -404,11 +404,11 @@ library Pool {
                         : (self.feeGrowthGlobal0X128, state.feeGrowthGlobalX128);
                     int128 liquidityNet =
                         Pool.crossTick(self, step.tickNext, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
-                    // if we're moving leftward, we interpret liquidityNet as the opposite sign
-                    // safe because liquidityNet cannot be type(int128).min
-                    unchecked {
-                        if (zeroForOne) liquidityNet = -liquidityNet;
-                    }
+                    // if we're moving leftward, we interpret `liquidityNet` as the opposite sign
+                    // `flipLiquidityDelta` can handle `type(int128).min` and return `1 << 127` as a valid `int256`
+                    // the soft wrap to `int128` is safe because `liquidityNet` is immediately consumed by `addDelta`
+                    // written in inline assembly
+                    liquidityNet = int128(LiquidityMath.flipLiquidityDelta(liquidityNet, zeroForOne));
 
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
@@ -529,7 +529,10 @@ library Pool {
 
         liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
-        flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
+        // Equivalent to `flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);`
+        assembly {
+            flipped := xor(iszero(liquidityGrossAfter), iszero(liquidityGrossBefore))
+        }
 
         if (liquidityGrossBefore == 0) {
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
@@ -540,7 +543,17 @@ library Pool {
         }
 
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
-        int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
+        // Equivalent to `liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;`
+        // `int128 liquidityDelta` is passed from `modifyLiquidity` and is sanitized in `PoolManager`
+        // `flipLiquidityDelta` can handle `type(int128).min` and return `1 << 127` as a valid `int256`
+        int256 _liquidityDelta = LiquidityMath.flipLiquidityDelta(liquidityDelta, upper);
+        // declare an int256 to prevent implicit conversion when calling toInt128
+        int256 liquidityNet;
+        assembly {
+            liquidityNet := add(liquidityNetBefore, _liquidityDelta)
+        }
+        // ensure the sum is a valid `int128`
+        liquidityNet.toInt128();
         assembly {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
             // So we can store them with a single sstore by packing them ourselves first
