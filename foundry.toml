@@ -1,5 +1,5 @@
 [profile.default]
-optimizer_runs = 144444
+optimizer_runs = 44444444
 via_ir = true
 ffi = true
 fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./out"}, {access = "read", path = "./test/bin"}]
