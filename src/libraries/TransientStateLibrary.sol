@@ -25,7 +25,7 @@ library TransientStateLibrary {
     /// @dev returns type(uint256).max if the reserves are synced but the value is 0
     function getReserves(IPoolManager manager, Currency currency) internal view returns (uint256) {
         bytes32 key;
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, RESERVES_OF_SLOT)
             mstore(32, currency)
             key := keccak256(0, 64)
@@ -43,7 +43,7 @@ library TransientStateLibrary {
     /// @param currency The currency for which to lookup the delta
     function currencyDelta(IPoolManager manager, address caller_, Currency currency) internal view returns (int256) {
         bytes32 key;
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, caller_)
             mstore(32, currency)
             key := keccak256(0, 64)

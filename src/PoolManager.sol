@@ -105,14 +105,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function unlock(bytes calldata data) external override noDelegateCall returns (bytes memory result) {
-        if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();
-
         Lock.unlock();
-
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = IUnlockCallback(msg.sender).unlockCallback(data);
-
-        if (NonZeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
         Lock.lock();
     }
 

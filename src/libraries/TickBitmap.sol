@@ -50,8 +50,7 @@ library TickBitmap {
          *     uint256 mask = 1 << bitPos;
          *     self[wordPos] ^= mask;
          */
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             // ensure that the tick is spaced
             if smod(tick, tickSpacing) {
                 mstore(0, 0xd4d8f3e6) // selector for TickMisaligned(int24,int24)

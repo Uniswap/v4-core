@@ -127,8 +127,7 @@ library Hooks {
     /// @notice performs a hook call using the given calldata on the given hook that doesnt return a delta
     /// @return result The complete data returned by the hook
     function callHook(IHooks self, bytes memory data) internal returns (bytes memory result) {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             if iszero(call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)) {
                 if iszero(returndatasize()) {
                     // if the call failed without a revert reason, revert with `FailedHookCall()`

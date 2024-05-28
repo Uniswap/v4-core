@@ -9,8 +9,7 @@ pragma solidity >=0.8.4;
 library CustomRevert {
     /// @dev Reverts with the selector of a custom error in the scratch space
     function revertWith(bytes4 selector) internal pure {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, selector)
             revert(0, 0x04)
         }
@@ -18,8 +17,7 @@ library CustomRevert {
 
     /// @dev Reverts with a custom error with an address argument in the scratch space
     function revertWith(bytes4 selector, address addr) internal pure {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, selector)
             mstore(0x04, addr)
             revert(0, 0x24)
@@ -28,8 +26,7 @@ library CustomRevert {
 
     /// @dev Reverts with a custom error with an int24 argument in the scratch space
     function revertWith(bytes4 selector, int24 value) internal pure {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, selector)
             mstore(0x04, value)
             revert(0, 0x24)
@@ -38,8 +35,7 @@ library CustomRevert {
 
     /// @dev Reverts with a custom error with a uint160 argument in the scratch space
     function revertWith(bytes4 selector, uint160 value) internal pure {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, selector)
             mstore(0x04, value)
             revert(0, 0x24)
@@ -48,8 +44,7 @@ library CustomRevert {
 
     /// @dev Reverts with a custom error with two int24 arguments
     function revertWith(bytes4 selector, int24 value1, int24 value2) internal pure {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, selector)
             mstore(0x04, value1)
             mstore(0x24, value2)
@@ -59,8 +54,7 @@ library CustomRevert {
 
     /// @dev Reverts with a custom error with two uint160 arguments
     function revertWith(bytes4 selector, uint160 value1, uint160 value2) internal pure {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, selector)
             mstore(0x04, value1)
             mstore(0x24, value2)

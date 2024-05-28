@@ -2,14 +2,20 @@
 pragma solidity ^0.8.20;
 
 import {IHooks} from "../interfaces/IHooks.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
+import {CustomRevert} from "./CustomRevert.sol";
+import {NonZeroDeltaCount} from "./NonZeroDeltaCount.sol";
 
 /// @notice This is a temporary library that allows us to use transient storage (tstore/tload)
 /// TODO: This library can be deleted when we have the transient keyword support in solidity.
 library Lock {
-    // The slot holding the unlocked state, transiently. uint256(keccak256("Unlocked")) - 1;
-    uint256 constant IS_UNLOCKED_SLOT = 0xc090fc4683624cfc3884e9d8de5eca132f2d0ec062aff75d43c0465d5ceeab23;
+    using CustomRevert for bytes4;
+
+    // The slot holding the unlocked state, transiently. bytes32(uint256(keccak256("Unlocked")) - 1)
+    bytes32 constant IS_UNLOCKED_SLOT = 0xc090fc4683624cfc3884e9d8de5eca132f2d0ec062aff75d43c0465d5ceeab23;
 
     function unlock() internal {
+        if (isUnlocked()) IPoolManager.AlreadyUnlocked.selector.revertWith();
         assembly {
             // unlock
             tstore(IS_UNLOCKED_SLOT, true)
@@ -17,6 +23,7 @@ library Lock {
     }
 
     function lock() internal {
+        if (NonZeroDeltaCount.read() != 0) IPoolManager.CurrencyNotSettled.selector.revertWith();
         assembly {
             tstore(IS_UNLOCKED_SLOT, false)
         }
