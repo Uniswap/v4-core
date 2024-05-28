@@ -18,14 +18,9 @@ library NonZeroDeltaCount {
 
     function increment() internal {
         assembly {
-            // original code:
-            // slot := NONZERO_DELTA_COUNT_SLOT
-            // let count := tload(slot)
-            // count := add(count, 1)
-            // tstore(slot, count)
-
-            // Optimized code:
-            tstore(NONZERO_DELTA_COUNT_SLOT, add(tload(NONZERO_DELTA_COUNT_SLOT), 1))
+            let count := tload(NONZERO_DELTA_COUNT_SLOT)
+            count := add(count, 1)
+            tstore(NONZERO_DELTA_COUNT_SLOT, count)
         }
     }
 
@@ -33,14 +28,9 @@ library NonZeroDeltaCount {
     /// Current usage ensures this will not happen because we call decrement with known boundaries (only up to the number of times we call increment).
     function decrement() internal {
         assembly {
-            // original code:
-            // slot := NONZERO_DELTA_COUNT_SLOT
-            // let count := tload(slot)
-            // count := sub(count, 1)
-            // tstore(slot, count)
-
-            // Optimized code:
-            tstore(NONZERO_DELTA_COUNT_SLOT, sub(tload(NONZERO_DELTA_COUNT_SLOT), 1))
+            let count := tload(NONZERO_DELTA_COUNT_SLOT)
+            count := sub(count, 1)
+            tstore(NONZERO_DELTA_COUNT_SLOT, count)
         }
     }
 }
