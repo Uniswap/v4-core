@@ -15,8 +15,9 @@ import {Slot0} from "../../src/types/Slot0.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
-contract PoolTest is Test {
+contract PoolTest is Test, GasSnapshot {
     using Pool for Pool.State;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for uint24;
@@ -162,20 +163,17 @@ contract PoolTest is Test {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLowerOutOfBounds.selector, params.tickLower));
         } else if (params.tickUpper > TickMath.MAX_TICK) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, params.tickUpper));
-        } else if (params.liquidityDelta < 0) {
+        } else if (params.liquidityDelta < 0) { // can't remove liquidity before adding it
             vm.expectRevert(SafeCast.SafeCastOverflow.selector);
-        } else if (params.liquidityDelta == 0) {
+        } else if (params.liquidityDelta == 0) { // b/c position is empty
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
-            //should be old + new if greater than max
-            // need for both lower and upper
-        } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) {
+        } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) { // b/c liquidity before starts at 0
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, params.tickLower));
-            // only if the lower/higher got flipped
-        } else if (params.tickLower % params.tickSpacing != 0) {
+        } else if (params.tickLower % params.tickSpacing != 0) { // since tick will always be flipped first time
             vm.expectRevert(
                 abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickLower, params.tickSpacing)
             );
-        } else if (params.tickUpper % params.tickSpacing != 0) {
+        } else if (params.tickUpper % params.tickSpacing != 0) { // since tick will always be flipped first time
             vm.expectRevert(
                 abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickUpper, params.tickSpacing)
             );
@@ -189,6 +187,7 @@ contract PoolTest is Test {
                 uint128(params.liquidityDelta)
             );
 
+            // fuzz test not checking this
             if ((amount0 > maxInt128InTypeUint256) || (amount1 > maxInt128InTypeUint256)) {
                 vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflow.selector));
             }
@@ -312,15 +311,195 @@ contract PoolTest is Test {
 
         if (params.amountSpecified == 0) {
             assertEq(sqrtPriceBefore, state.slot0.sqrtPriceX96(), "amountSpecified == 0");
-        } else if (params.zeroForOne) {
+        } else if (params.zeroForOne) { // fuzz test not checking this, checking in unit test: test_swap_zeroForOne_priceGreaterThanOrEqualToLimit
             assertGe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "zeroForOne");
-        } else {
+        } else { // fuzz test not checking this, checking in unit test: test_swap_oneForZero_priceLessThanOrEqualToLimit
             assertLe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "oneForZero");
         }
     }
 
-    function test_swap_oneForZero_priceLessThanOrEqaulToLimit() public {
-        // Assumptions tested in PoolManager.t.sol
+    function test_swap_withProtocolFee() public {
+        // not sure why line 380 is not being covered when this test has a protocol fee of over 1000
+        uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
+        uint24 protocolFee = 1000;
+        uint24 lpFee = 0;
+        Pool.SwapParams memory params = Pool.SwapParams({
+            tickSpacing: TickMath.MIN_TICK_SPACING,
+            zeroForOne: true,
+            amountSpecified: 2459,
+            sqrtPriceLimitX96: Constants.SQRT_PRICE_1_2,
+            lpFeeOverride: 0
+        });
+
+        // initialize and add liquidity
+        test_fuzz_modifyLiquidity(
+            sqrtPriceX96,
+            protocolFee,
+            lpFee,
+            Pool.ModifyLiquidityParams({
+                owner: address(this),
+                tickLower: -120,
+                tickUpper: 120,
+                liquidityDelta: 1e18,
+                tickSpacing: 60,
+                salt: 0
+            })
+        );
+
+        state.swap(params);
+    }
+
+    function test_swap_revertsWithPriceLimitAlreadyExceeded_zeroForOne() public {
+        uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
+        uint24 protocolFee = 0;
+        uint24 lpFee = 0;
+        Pool.SwapParams memory params = Pool.SwapParams({
+            tickSpacing: TickMath.MIN_TICK_SPACING,
+            zeroForOne: true,
+            amountSpecified: 2459,
+            sqrtPriceLimitX96: Constants.SQRT_PRICE_1_1,
+            lpFeeOverride: 0
+        });
+        params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+
+        // initialize and add liquidity
+        test_fuzz_modifyLiquidity(
+            sqrtPriceX96,
+            protocolFee,
+            lpFee,
+            Pool.ModifyLiquidityParams({
+                owner: address(this),
+                tickLower: -120,
+                tickUpper: 120,
+                liquidityDelta: 1e18,
+                tickSpacing: 60,
+                salt: 0
+            })
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.PriceLimitAlreadyExceeded.selector,
+                state.slot0.sqrtPriceX96(),
+                params.sqrtPriceLimitX96
+            )
+        );
+        state.swap(params);
+    }
+
+    function test_swap_revertsWithPriceLimitOutOfBounds_zeroForOne() public {
+        uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
+        uint24 protocolFee = 0;
+        uint24 lpFee = 0;
+        Pool.SwapParams memory params = Pool.SwapParams({
+            tickSpacing: TickMath.MIN_TICK_SPACING,
+            zeroForOne: true,
+            amountSpecified: 2459,
+            sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE ,
+            lpFeeOverride: 0
+        });
+        params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+
+        // initialize and add liquidity
+        test_fuzz_modifyLiquidity(
+            sqrtPriceX96,
+            protocolFee,
+            lpFee,
+            Pool.ModifyLiquidityParams({
+                owner: address(this),
+                tickLower: -120,
+                tickUpper: 120,
+                liquidityDelta: 1e18,
+                tickSpacing: 60,
+                salt: 0
+            })
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.PriceLimitOutOfBounds.selector,
+                params.sqrtPriceLimitX96
+            )
+        );
+        state.swap(params);
+    }
+
+    function test_swap_revertsWithPriceLimitAlreadyExceeded_oneForZero() public {
+        uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
+        uint24 protocolFee = 0;
+        uint24 lpFee = 0;
+        Pool.SwapParams memory params = Pool.SwapParams({
+            tickSpacing: TickMath.MIN_TICK_SPACING,
+            zeroForOne: false,
+            amountSpecified: 2459,
+            sqrtPriceLimitX96: Constants.SQRT_PRICE_1_1 - 1,
+            lpFeeOverride: 0
+        });
+        params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+
+        // initialize and add liquidity
+        test_fuzz_modifyLiquidity(
+            sqrtPriceX96,
+            protocolFee,
+            lpFee,
+            Pool.ModifyLiquidityParams({
+                owner: address(this),
+                tickLower: -120,
+                tickUpper: 120,
+                liquidityDelta: 1e18,
+                tickSpacing: 60,
+                salt: 0
+            })
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.PriceLimitAlreadyExceeded.selector,
+                state.slot0.sqrtPriceX96(),
+                params.sqrtPriceLimitX96
+            )
+        );
+        state.swap(params);
+    }
+
+    function test_swap_revertsWithPriceLimitOutOfBounds_oneForZero() public {
+        uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
+        uint24 protocolFee = 0;
+        uint24 lpFee = 0;
+        Pool.SwapParams memory params = Pool.SwapParams({
+            tickSpacing: TickMath.MIN_TICK_SPACING,
+            zeroForOne: false,
+            amountSpecified: 2459,
+            sqrtPriceLimitX96: TickMath.MAX_SQRT_PRICE,
+            lpFeeOverride: 0
+        });
+        params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+
+        // initialize and add liquidity
+        test_fuzz_modifyLiquidity(
+            sqrtPriceX96,
+            protocolFee,
+            lpFee,
+            Pool.ModifyLiquidityParams({
+                owner: address(this),
+                tickLower: -120,
+                tickUpper: 120,
+                liquidityDelta: 1e18,
+                tickSpacing: 60,
+                salt: 0
+            })
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.PriceLimitOutOfBounds.selector,
+                params.sqrtPriceLimitX96
+            )
+        );
+        state.swap(params);
+    }
+
+    function test_swap_oneForZero_priceLessThanOrEqualToLimit() public {
         uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
         uint24 protocolFee = 0;
         uint24 lpFee = 0;
@@ -354,7 +533,6 @@ contract PoolTest is Test {
     }
 
     function test_swap_zeroForOne_priceGreaterThanOrEqualToLimit() public {
-        // Assumptions tested in PoolManager.t.sol
         uint160 sqrtPriceX96 = Constants.SQRT_PRICE_1_1;
         uint24 protocolFee = 0;
         uint24 lpFee = 0;
@@ -389,8 +567,6 @@ contract PoolTest is Test {
 
     function test_fuzz_donate(
         uint160 sqrtPriceX96,
-        int24 tickLower,
-        int24 tickUpper,
         Pool.ModifyLiquidityParams memory params,
         uint24 lpFee,
         uint24 protocolFee,
@@ -410,11 +586,13 @@ contract PoolTest is Test {
         state.donate(amount0, amount1);
     }
 
-    function test_fuzz_tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) public {
-        vm.assume(tickSpacing > 0);
+    function test_fuzz_tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) public pure {
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        // v3 math
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
         int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
         uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
-        assertGe(type(uint128).max / numTicks, Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing));
+        // assert that the result is the same as the v3 math
+        assertEq(type(uint128).max / numTicks, Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing));
     }
 }

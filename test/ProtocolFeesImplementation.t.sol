@@ -3,13 +3,13 @@ pragma solidity ^0.8.15;
 
 import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {ProtocolFeesImplementation} from "../src/test/ProtocolFeesImplementation.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {Deployers} from "../test/utils/Deployers.sol";
 import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
@@ -23,7 +23,6 @@ import {
 } from "../src/test/ProtocolFeeControllerTest.sol";
 
 contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
-    using CurrencyLibrary for Currency;
     using PoolIdLibrary for PoolKey;
     using ProtocolFeeLibrary for uint24;
 
@@ -123,8 +122,6 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
 
     function test_fuzz_collectProtocolFees(address recipient, uint256 amount, uint256 feesAccrued) public {
         vm.assume(feesAccrued <= currency0.balanceOf(address(protocolFees)));
-        vm.assume(amount <= feesAccrued);
-        vm.assume(recipient != address(protocolFees));
 
         uint256 recipientBalanceBefore = currency0.balanceOf(recipient);
         uint256 senderBalanceBefore = currency0.balanceOf(address(protocolFees));
@@ -138,12 +135,21 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
 
         protocolFees.setProtocolFeeController(feeController);
         vm.prank(address(feeController));
+        if (amount > feesAccrued) {
+            vm.expectRevert();
+        }
         uint256 amountCollected = protocolFees.collectProtocolFees(recipient, currency0, amount);
 
-        assertEq(protocolFees.protocolFeesAccrued(currency0), feesAccrued - amount);
-        assertEq(currency0.balanceOf(recipient), recipientBalanceBefore + amount);
-        assertEq(currency0.balanceOf(address(protocolFees)), senderBalanceBefore - amount);
-        assertEq(amountCollected, amount);
+        if (amount <= feesAccrued) {
+            if (recipient == address(protocolFees)) {
+                assertEq(currency0.balanceOf(recipient), recipientBalanceBefore);
+            } else {
+                assertEq(currency0.balanceOf(recipient), recipientBalanceBefore + amount);
+                assertEq(currency0.balanceOf(address(protocolFees)), senderBalanceBefore - amount);
+            }
+            assertEq(protocolFees.protocolFeesAccrued(currency0), feesAccrued - amount);
+            assertEq(amountCollected, amount);
+        }
     }
 
     function test_updateProtocolFees_succeeds() public {

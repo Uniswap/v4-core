@@ -943,12 +943,6 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
     }
 
-    function test_gas_hookShouldCallBeforeSwap() public {
-        snapStart("HooksShouldCallBeforeSwap");
-        IHooks(address(0)).hasPermission(Hooks.BEFORE_SWAP_FLAG);
-        snapEnd();
-    }
-
     function test_isValidHookAddress_valid_anyFlags() public pure {
         assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000002000), 3000));
         assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000001000), 3000));
@@ -987,17 +981,18 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(
             Hooks.isValidHookAddress(IHooks(0x1000000000000000000000000000000000000000), LPFeeLibrary.DYNAMIC_FEE_FLAG)
         );
-        assertTrue(
-            Hooks.isValidHookAddress(
-                IHooks(0x1000000000000000000000000000000000000000), LPFeeLibrary.DYNAMIC_FEE_FLAG | uint24(3000)
-            )
-        );
     }
 
     function test_isValidHookAddress_invalid_noFlagsNoDynamicFee() public pure {
         assertFalse(Hooks.isValidHookAddress(IHooks(0x1000000000000000000000000000000000000000), 3000));
         assertFalse(Hooks.isValidHookAddress(IHooks(0x0001000000000000000000000000000000004000), 3000));
         assertFalse(Hooks.isValidHookAddress(IHooks(0x003840A85D5AF5bf1D1762F925BDaDdc42010000), 3000));
+        // not dynamic as another bit is dirty in the fee
+        assertFalse(
+            Hooks.isValidHookAddress(
+                IHooks(0x1000000000000000000000000000000000000000), LPFeeLibrary.DYNAMIC_FEE_FLAG | uint24(3000)
+            )
+        );
     }
 
     function test_callHook_revertsWithBubbleUp() public {

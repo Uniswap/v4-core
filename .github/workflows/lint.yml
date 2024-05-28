@@ -22,3 +22,15 @@ jobs:
 
       - name: Lint
         run: forge fmt --check
+
+      - uses: actions/cache@v2
+        name: Configure npm caching
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/workflows/prettier.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Check code formatting
+        run: |-
+          npx prettier --check .

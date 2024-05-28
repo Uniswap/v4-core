@@ -23,7 +23,6 @@ import {Fuzzers} from "../../src/test/Fuzzers.sol";
 contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     using FixedPointMathLib for uint256;
     using PoolIdLibrary for PoolKey;
-    using CurrencyLibrary for Currency;
 
     PoolId poolId;
 
@@ -106,10 +105,12 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         IPoolManager.ModifyLiquidityParams memory paramsA,
         IPoolManager.ModifyLiquidityParams memory paramsB
     ) public {
-        (IPoolManager.ModifyLiquidityParams memory _paramsA,) =
-            Fuzzers.createFuzzyLiquidityWithTightBound(modifyLiquidityRouter, key, paramsA, SQRT_PRICE_1_1, ZERO_BYTES);
-        (IPoolManager.ModifyLiquidityParams memory _paramsB,) =
-            Fuzzers.createFuzzyLiquidityWithTightBound(modifyLiquidityRouter, key, paramsB, SQRT_PRICE_1_1, ZERO_BYTES);
+        (IPoolManager.ModifyLiquidityParams memory _paramsA,) = Fuzzers.createFuzzyLiquidityWithTightBound(
+            modifyLiquidityRouter, key, paramsA, SQRT_PRICE_1_1, ZERO_BYTES, 2
+        );
+        (IPoolManager.ModifyLiquidityParams memory _paramsB,) = Fuzzers.createFuzzyLiquidityWithTightBound(
+            modifyLiquidityRouter, key, paramsB, SQRT_PRICE_1_1, ZERO_BYTES, 2
+        );
 
         uint128 liquidityDeltaA = uint128(uint256(_paramsA.liquidityDelta));
         uint128 liquidityDeltaB = uint128(uint256(_paramsB.liquidityDelta));
