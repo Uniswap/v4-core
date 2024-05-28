@@ -458,7 +458,7 @@ library Pool {
     /// @notice Donates the given amount of currency0 and currency1 to the pool
     function donate(State storage self, uint256 amount0, uint256 amount1) internal returns (BalanceDelta delta) {
         uint128 liquidity = self.liquidity;
-        if (liquidity == 0) revert NoLiquidityToReceiveFees();
+        if (liquidity == 0) NoLiquidityToReceiveFees.selector.revertWith();
         unchecked {
             // negation safe as amount0 and amount1 are always positive
             delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));

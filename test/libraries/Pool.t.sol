@@ -163,17 +163,22 @@ contract PoolTest is Test, GasSnapshot {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLowerOutOfBounds.selector, params.tickLower));
         } else if (params.tickUpper > TickMath.MAX_TICK) {
             vm.expectRevert(abi.encodeWithSelector(Pool.TickUpperOutOfBounds.selector, params.tickUpper));
-        } else if (params.liquidityDelta < 0) { // can't remove liquidity before adding it
+        } else if (params.liquidityDelta < 0) {
+            // can't remove liquidity before adding it
             vm.expectRevert(SafeCast.SafeCastOverflow.selector);
-        } else if (params.liquidityDelta == 0) { // b/c position is empty
+        } else if (params.liquidityDelta == 0) {
+            // b/c position is empty
             vm.expectRevert(Position.CannotUpdateEmptyPosition.selector);
-        } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) { // b/c liquidity before starts at 0
+        } else if (params.liquidityDelta > int128(Pool.tickSpacingToMaxLiquidityPerTick(params.tickSpacing))) {
+            // b/c liquidity before starts at 0
             vm.expectRevert(abi.encodeWithSelector(Pool.TickLiquidityOverflow.selector, params.tickLower));
-        } else if (params.tickLower % params.tickSpacing != 0) { // since tick will always be flipped first time
+        } else if (params.tickLower % params.tickSpacing != 0) {
+            // since tick will always be flipped first time
             vm.expectRevert(
                 abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickLower, params.tickSpacing)
             );
-        } else if (params.tickUpper % params.tickSpacing != 0) { // since tick will always be flipped first time
+        } else if (params.tickUpper % params.tickSpacing != 0) {
+            // since tick will always be flipped first time
             vm.expectRevert(
                 abi.encodeWithSelector(TickBitmap.TickMisaligned.selector, params.tickUpper, params.tickSpacing)
             );
@@ -311,9 +316,11 @@ contract PoolTest is Test, GasSnapshot {
 
         if (params.amountSpecified == 0) {
             assertEq(sqrtPriceBefore, state.slot0.sqrtPriceX96(), "amountSpecified == 0");
-        } else if (params.zeroForOne) { // fuzz test not checking this, checking in unit test: test_swap_zeroForOne_priceGreaterThanOrEqualToLimit
+        } else if (params.zeroForOne) {
+            // fuzz test not checking this, checking in unit test: test_swap_zeroForOne_priceGreaterThanOrEqualToLimit
             assertGe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "zeroForOne");
-        } else { // fuzz test not checking this, checking in unit test: test_swap_oneForZero_priceLessThanOrEqualToLimit
+        } else {
+            // fuzz test not checking this, checking in unit test: test_swap_oneForZero_priceLessThanOrEqualToLimit
             assertLe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "oneForZero");
         }
     }
@@ -379,9 +386,7 @@ contract PoolTest is Test, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.PriceLimitAlreadyExceeded.selector,
-                state.slot0.sqrtPriceX96(),
-                params.sqrtPriceLimitX96
+                Pool.PriceLimitAlreadyExceeded.selector, state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96
             )
         );
         state.swap(params);
@@ -395,7 +400,7 @@ contract PoolTest is Test, GasSnapshot {
             tickSpacing: TickMath.MIN_TICK_SPACING,
             zeroForOne: true,
             amountSpecified: 2459,
-            sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE ,
+            sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE,
             lpFeeOverride: 0
         });
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
@@ -415,12 +420,7 @@ contract PoolTest is Test, GasSnapshot {
             })
         );
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.PriceLimitOutOfBounds.selector,
-                params.sqrtPriceLimitX96
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
         state.swap(params);
     }
 
@@ -454,9 +454,7 @@ contract PoolTest is Test, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.PriceLimitAlreadyExceeded.selector,
-                state.slot0.sqrtPriceX96(),
-                params.sqrtPriceLimitX96
+                Pool.PriceLimitAlreadyExceeded.selector, state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96
             )
         );
         state.swap(params);
@@ -490,12 +488,7 @@ contract PoolTest is Test, GasSnapshot {
             })
         );
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.PriceLimitOutOfBounds.selector,
-                params.sqrtPriceLimitX96
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
         state.swap(params);
     }
 
