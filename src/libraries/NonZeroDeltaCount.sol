@@ -8,7 +8,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 /// TODO: This library can be deleted when we have the transient keyword support in solidity.
 library NonZeroDeltaCount {
     // The slot holding the number of nonzero deltas. uint256(keccak256("NonzeroDeltaCount")) - 1
-    uint256 constant NONZERO_DELTA_COUNT_SLOT = (0x7d4b3164c6e45b97e7d87b7125a44c5828d005af88f9d751cfd78729c5d99a0b);
+    uint256 constant NONZERO_DELTA_COUNT_SLOT = 0x7d4b3164c6e45b97e7d87b7125a44c5828d005af88f9d751cfd78729c5d99a0b;
 
     function read() internal view returns (uint256 count) {
         assembly {
