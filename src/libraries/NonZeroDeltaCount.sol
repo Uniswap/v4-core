@@ -8,33 +8,29 @@ import {IHooks} from "../interfaces/IHooks.sol";
 /// TODO: This library can be deleted when we have the transient keyword support in solidity.
 library NonZeroDeltaCount {
     // The slot holding the number of nonzero deltas. uint256(keccak256("NonzeroDeltaCount")) - 1
-    uint256 constant NONZERO_DELTA_COUNT_SLOT =
-        uint256(0x7d4b3164c6e45b97e7d87b7125a44c5828d005af88f9d751cfd78729c5d99a0b);
+    uint256 constant NONZERO_DELTA_COUNT_SLOT = 0x7d4b3164c6e45b97e7d87b7125a44c5828d005af88f9d751cfd78729c5d99a0b;
 
     function read() internal view returns (uint256 count) {
-        uint256 slot = NONZERO_DELTA_COUNT_SLOT;
         assembly {
-            count := tload(slot)
+            count := tload(NONZERO_DELTA_COUNT_SLOT)
         }
     }
 
     function increment() internal {
-        uint256 slot = NONZERO_DELTA_COUNT_SLOT;
         assembly {
-            let count := tload(slot)
+            let count := tload(NONZERO_DELTA_COUNT_SLOT)
             count := add(count, 1)
-            tstore(slot, count)
+            tstore(NONZERO_DELTA_COUNT_SLOT, count)
         }
     }
 
     /// @notice Potential to underflow.
     /// Current usage ensures this will not happen because we call decrement with known boundaries (only up to the number of times we call increment).
     function decrement() internal {
-        uint256 slot = NONZERO_DELTA_COUNT_SLOT;
         assembly {
-            let count := tload(slot)
+            let count := tload(NONZERO_DELTA_COUNT_SLOT)
             count := sub(count, 1)
-            tstore(slot, count)
+            tstore(NONZERO_DELTA_COUNT_SLOT, count)
         }
     }
 }
