@@ -8,7 +8,7 @@ import {Currency} from "../types/Currency.sol";
 library CurrencyDelta {
     /// @notice calculates which storage slot a delta should be stored in for a given caller and currency
     function _computeSlot(address caller_, Currency currency) internal pure returns (bytes32 hashSlot) {
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, caller_)
             mstore(32, currency)
             hashSlot := keccak256(0, 64)

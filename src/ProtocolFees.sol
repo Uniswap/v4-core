@@ -76,7 +76,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
             if (!_success || _data.length > 32) return (false, 0);
 
             uint256 returnData;
-            assembly {
+            assembly ("memory-safe") {
                 returnData := mload(add(_data, 0x20))
             }
 
