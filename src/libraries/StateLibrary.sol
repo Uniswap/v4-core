@@ -253,8 +253,7 @@ library StateLibrary {
         // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
         bytes32 positionKey;
 
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0x26, salt) // [0x26, 0x46)
             mstore(0x06, tickUpper) // [0x23, 0x26)
             mstore(0x03, tickLower) // [0x20, 0x23)

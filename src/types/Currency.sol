@@ -40,8 +40,7 @@ library CurrencyLibrary {
         // modified custom error selectors
 
         if (currency.isNative()) {
-            /// @solidity memory-safe-assembly
-            assembly {
+            assembly ("memory-safe") {
                 // Transfer the ETH and revert if it fails.
                 if iszero(call(gas(), to, amount, 0x00, 0x00, 0x00, 0x00)) {
                     mstore(0x00, 0xf4b3b1bc) // `NativeTransferFailed()`.
@@ -49,8 +48,7 @@ library CurrencyLibrary {
                 }
             }
         } else {
-            /// @solidity memory-safe-assembly
-            assembly {
+            assembly ("memory-safe") {
                 mstore(0x14, to) // Store the `to` address in [0x20, 0x34).
                 mstore(0x34, amount) // Store the `amount` argument in [0x34, 0x54).
                 // Store the selector of `transfer(address,uint256)` in [0x10, 0x14).
