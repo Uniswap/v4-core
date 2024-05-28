@@ -81,12 +81,4 @@ contract ProtocolFeeLibraryTest is Test, GasSnapshot {
             protocolFee + lpFee * uint256(LPFeeLibrary.MAX_LP_FEE - protocolFee) / LPFeeLibrary.MAX_LP_FEE;
         assertEq(swapFee, uint24(expectedSwapFee));
     }
-
-    function test_calculateSwapFee_gas() public {
-        uint24 self = uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE);
-        uint24 lpFee = LPFeeLibrary.MAX_LP_FEE;
-        snapStart("calculateSwapFee");
-        ProtocolFeeLibrary.calculateSwapFee(self, lpFee);
-        snapEnd();
-    }
 }

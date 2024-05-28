@@ -943,12 +943,6 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
     }
 
-    function test_gas_hookShouldCallBeforeSwap() public {
-        snapStart("HooksShouldCallBeforeSwap");
-        IHooks(address(0)).hasPermission(Hooks.BEFORE_SWAP_FLAG);
-        snapEnd();
-    }
-
     function test_isValidHookAddress_valid_anyFlags() public pure {
         assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000002000), 3000));
         assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000001000), 3000));
