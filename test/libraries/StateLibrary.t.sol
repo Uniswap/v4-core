@@ -37,6 +37,36 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
+    function test_getPoolState() public {
+        // create liquidity
+        modifyLiquidityRouter.modifyLiquidity(
+            key, IPoolManager.ModifyLiquidityParams(-60, 60, 10_000 ether, 0), ZERO_BYTES
+        );
+
+        modifyLiquidityRouter.modifyLiquidity(
+            key, IPoolManager.ModifyLiquidityParams(-600, 600, 10_000 ether, 0), ZERO_BYTES
+        );
+
+        // swap to create fees, crossing a tick
+        uint256 swapAmount = 100 ether;
+        swap(key, true, -int256(swapAmount), ZERO_BYTES);
+
+        StateLibrary.PoolStateView memory state = StateLibrary.getPoolState(manager, poolId);
+        snapLastCall("extsload getPoolState");
+
+        assertEq(state.slot0.sqrtPriceX96(), 78680104762184586858280382455);
+        assertEq(state.slot0.tick(), -139);
+        assertEq(state.slot0.protocolFee(), 0);
+        assertEq(state.slot0.lpFee(), 3000);
+
+        uint256 liquidity = StateLibrary.getLiquidity(manager, poolId);
+        assertEq(state.liquidity, liquidity);
+
+        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobals(manager, poolId);
+        assertEq(state.feeGrowthGlobal0X128, feeGrowthGlobal0);
+        assertEq(state.feeGrowthGlobal1X128, feeGrowthGlobal1);
+    }
+
     function test_getSlot0() public {
         // create liquidity
         modifyLiquidityRouter.modifyLiquidity(
@@ -50,15 +80,15 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         // swap to create fees, crossing a tick
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
-        (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 swapFee) = StateLibrary.getSlot0(manager, poolId);
+
+        (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee) = StateLibrary.getSlot0(manager, poolId);
         snapLastCall("extsload getSlot0");
-        assertEq(tick, -139);
 
         // magic number verified against a native getter
         assertEq(sqrtPriceX96, 78680104762184586858280382455);
         assertEq(tick, -139);
         assertEq(protocolFee, 0); // tested in protocol fee tests
-        assertEq(swapFee, 3000);
+        assertEq(lpFee, 3000);
     }
 
     function test_getTickLiquidity() public {

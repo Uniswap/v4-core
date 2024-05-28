@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {PoolId} from "../types/PoolId.sol";
+import {Slot0} from "../types/Slot0.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Currency} from "../types/Currency.sol";
 import {Position} from "./Position.sol";
@@ -29,6 +30,28 @@ library StateLibrary {
 
     // index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
     uint256 public constant POSITIONS_OFFSET = 6;
+
+    struct PoolStateView {
+        Slot0 slot0;
+        uint256 feeGrowthGlobal0X128;
+        uint256 feeGrowthGlobal1X128;
+        uint128 liquidity;
+    }
+
+    /**
+     * @notice Get the global state of a pool.
+     * @dev Corresponds to pools[poolId]
+     * @param manager The pool manager contract.
+     * @param poolId The ID of the pool.
+     * @return state The state of the pool.
+     */
+    function getPoolState(IPoolManager manager, PoolId poolId) internal view returns (PoolStateView memory state) {
+        bytes32 stateSlot = _getPoolStateSlot(poolId);
+        bytes memory data = manager.extsload(stateSlot, 4);
+        assembly {
+            state := add(data, 32)
+        }
+    }
 
     /**
      * @notice Get Slot0 of the pool: sqrtPriceX96, tick, protocolFee, lpFee
