@@ -56,8 +56,7 @@ library SqrtPriceMath {
                 // if the product overflows, we know the denominator underflows
                 // in addition, we must check that the denominator does not underflow
                 // equivalent: if (product / amount != sqrtPX96 || numerator1 <= product) revert PriceOverflow();
-                /// @solidity memory-safe-assembly
-                assembly {
+                assembly ("memory-safe") {
                     if iszero(and(eq(div(product, amount), sqrtPX96), gt(numerator1, product))) {
                         mstore(0, 0xf5c787f1) // selector for PriceOverflow()
                         revert(0x1c, 0x04)
@@ -102,8 +101,7 @@ library SqrtPriceMath {
             );
 
             // equivalent: if (sqrtPX96 <= quotient) revert NotEnoughLiquidity();
-            /// @solidity memory-safe-assembly
-            assembly {
+            assembly ("memory-safe") {
                 if iszero(gt(sqrtPX96, quotient)) {
                     mstore(0, 0x4323a555) // selector for NotEnoughLiquidity()
                     revert(0x1c, 0x04)
@@ -129,8 +127,7 @@ library SqrtPriceMath {
         returns (uint160 sqrtQX96)
     {
         // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             if or(iszero(sqrtPX96), iszero(liquidity)) {
                 mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
                 revert(0x1c, 0x04)
@@ -156,8 +153,7 @@ library SqrtPriceMath {
         returns (uint160 sqrtQX96)
     {
         // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             if or(iszero(sqrtPX96), iszero(liquidity)) {
                 mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
                 revert(0x1c, 0x04)
@@ -187,8 +183,7 @@ library SqrtPriceMath {
             if (sqrtPriceAX96 > sqrtPriceBX96) (sqrtPriceAX96, sqrtPriceBX96) = (sqrtPriceBX96, sqrtPriceAX96);
 
             // equivalent: if (sqrtPriceAX96 == 0) revert InvalidPrice();
-            /// @solidity memory-safe-assembly
-            assembly {
+            assembly ("memory-safe") {
                 if iszero(sqrtPriceAX96) {
                     mstore(0, 0x00bfc921) // selector for InvalidPrice()
                     revert(0x1c, 0x04)
