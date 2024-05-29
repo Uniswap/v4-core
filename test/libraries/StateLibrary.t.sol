@@ -292,7 +292,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 0, 0), ZERO_BYTES);
 
         bytes32 positionId =
-            keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
+            keccak256(abi.encodePacked(bytes32(0), int24(-60), int24(60), address(modifyLiquidityRouter)));
 
         (uint128 liquidity, uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
             StateLibrary.getPositionInfo(manager, poolId, positionId);
@@ -329,7 +329,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         );
 
         bytes32 positionId = keccak256(
-            abi.encodePacked(address(modifyLiquidityRouter), _params.tickLower, _params.tickUpper, bytes32(0))
+            abi.encodePacked(bytes32(0), _params.tickLower, _params.tickUpper, address(modifyLiquidityRouter))
         );
 
         (uint128 liquidity, uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
@@ -437,7 +437,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(key, IPoolManager.ModifyLiquidityParams(-60, 60, 0, 0), ZERO_BYTES);
 
         bytes32 positionId =
-            keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
+            keccak256(abi.encodePacked(bytes32(0), int24(-60), int24(60), address(modifyLiquidityRouter)));
 
         (, uint256 feeGrowthInside0X128_, uint256 feeGrowthInside1X128_) =
             StateLibrary.getPositionInfo(manager, poolId, positionId);
@@ -470,7 +470,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
             key, IPoolManager.ModifyLiquidityParams(_params.tickLower, _params.tickUpper, 0, 0), ZERO_BYTES
         );
         bytes32 positionId = keccak256(
-            abi.encodePacked(address(modifyLiquidityRouter), _params.tickLower, _params.tickUpper, bytes32(0))
+            abi.encodePacked(bytes32(0), _params.tickLower, _params.tickUpper, address(modifyLiquidityRouter))
         );
 
         (, uint256 feeGrowthInside0X128_, uint256 feeGrowthInside1X128_) =
@@ -487,7 +487,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         );
 
         bytes32 positionId =
-            keccak256(abi.encodePacked(address(modifyLiquidityRouter), int24(-60), int24(60), bytes32(0)));
+            keccak256(abi.encodePacked(bytes32(0), int24(-60), int24(60), address(modifyLiquidityRouter)));
 
         uint128 liquidity = StateLibrary.getPositionLiquidity(manager, poolId, positionId);
         snapLastCall("extsload getPositionLiquidity");
@@ -515,13 +515,13 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         modifyLiquidityRouter.modifyLiquidity(key, _paramsB, ZERO_BYTES);
 
         bytes32 positionIdA = keccak256(
-            abi.encodePacked(address(modifyLiquidityRouter), _paramsA.tickLower, _paramsA.tickUpper, bytes32(0))
+            abi.encodePacked(bytes32(0), _paramsA.tickLower, _paramsA.tickUpper, address(modifyLiquidityRouter))
         );
         uint128 liquidityA = StateLibrary.getPositionLiquidity(manager, poolId, positionIdA);
         assertEq(liquidityA, uint128(uint256(_paramsA.liquidityDelta)));
 
         bytes32 positionIdB = keccak256(
-            abi.encodePacked(address(modifyLiquidityRouter), _paramsB.tickLower, _paramsB.tickUpper, bytes32(0))
+            abi.encodePacked(bytes32(0), _paramsB.tickLower, _paramsB.tickUpper, address(modifyLiquidityRouter))
         );
         uint128 liquidityB = StateLibrary.getPositionLiquidity(manager, poolId, positionIdB);
         assertEq(liquidityB, uint128(uint256(_paramsB.liquidityDelta)));
