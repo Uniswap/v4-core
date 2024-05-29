@@ -17,6 +17,7 @@ import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
+
 contract PoolTest is Test, GasSnapshot {
     using Pool for Pool.State;
     using LPFeeLibrary for uint24;
@@ -259,6 +260,7 @@ contract PoolTest is Test, GasSnapshot {
     ) public {
         // Assumptions tested in PoolManager.t.sol
         params.tickSpacing = int24(bound(params.tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
         lpFee = uint24(bound(lpFee, 0, MAX_LP_FEE));
         protocolFee0 = uint16(bound(protocolFee0, 0, MAX_PROTOCOL_FEE));
         protocolFee1 = uint16(bound(protocolFee1, 0, MAX_PROTOCOL_FEE));
@@ -276,7 +278,7 @@ contract PoolTest is Test, GasSnapshot {
                 tickLower: tickLower,
                 tickUpper: tickUpper,
                 liquidityDelta: 1e18,
-                tickSpacing: 60,
+                tickSpacing: params.tickSpacing,
                 salt: 0
             })
         );
