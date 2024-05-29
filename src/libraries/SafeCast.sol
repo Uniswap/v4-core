@@ -7,8 +7,7 @@ library SafeCast {
     error SafeCastOverflow();
 
     function _revertOverflow() private pure {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             // Store the function selector of `SafeCastOverflow()`.
             mstore(0x00, 0x93dafdf1)
             // Revert with (offset, size).

@@ -8,8 +8,7 @@ import {IExtsload} from "./interfaces/IExtsload.sol";
 abstract contract Extsload is IExtsload {
     /// @inheritdoc IExtsload
     function extsload(bytes32 slot) external view returns (bytes32) {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0, sload(slot))
             return(0, 0x20)
         }
@@ -17,8 +16,7 @@ abstract contract Extsload is IExtsload {
 
     /// @inheritdoc IExtsload
     function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             // The abi offset of dynamic array in the returndata is 32.
             mstore(0, 0x20)
             // A left bit-shift of 5 is equivalent to multiplying by 32 but costs less gas.
@@ -40,8 +38,7 @@ abstract contract Extsload is IExtsload {
         // since the function is external and enters a new call context and exits right
         // after execution, Solidity's memory management convention can be disregarded
         // and a direct slice of memory can be returned
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             // Copy the abi offset of dynamic array and the length of the array to memory.
             calldatacopy(0, 0x04, 0x40)
             // A left bit-shift of 5 is equivalent to multiplying by 32 but costs less gas.

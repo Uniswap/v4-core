@@ -59,8 +59,7 @@ library TickMath {
                 absTick := xor(mask, add(mask, tick))
             }
             // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
-            /// @solidity memory-safe-assembly
-            assembly {
+            assembly ("memory-safe") {
                 if gt(absTick, MAX_TICK) {
                     // store 4-byte selector of "InvalidTick()" at memory [0x1c, 0x20)
                     mstore(0, 0xce8ef7fc)
@@ -118,8 +117,7 @@ library TickMath {
         unchecked {
             // Equivalent: if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
             // second inequality must be < because the price can never reach the price at the max tick
-            /// @solidity memory-safe-assembly
-            assembly {
+            assembly ("memory-safe") {
                 // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
                 // if sqrtPriceX96 >= MAX_SQRT_PRICE, sqrtPriceX96 - MIN_SQRT_PRICE > MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1
                 if gt(sub(sqrtPriceX96, MIN_SQRT_PRICE), MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE) {
