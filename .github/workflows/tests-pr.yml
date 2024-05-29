@@ -27,7 +27,7 @@ jobs:
           FOUNDRY_PROFILE: pr
 
       - name: Run tests
-        run: forge test --isolate -vvvvv
+        run: forge test --isolate -vvv
         env:
           FOUNDRY_PROFILE: pr
           FORGE_SNAPSHOT_CHECK: true
