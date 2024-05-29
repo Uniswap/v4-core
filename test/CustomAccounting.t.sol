@@ -28,12 +28,24 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         address impl = address(new DeltaReturningHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
+
+        // give the hook tokens so it can give tokens
+        key.currency0.transfer(hook, type(uint128).max);
+        key.currency1.transfer(hook, type(uint128).max);
+
+        // give the manager tokens so the hook can take tokens
+        key.currency0.transfer(address(manager), type(uint128).max);
+        key.currency1.transfer(address(manager), type(uint128).max);
     }
 
     function _setUpCustomCurvePool() internal {
         address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
         address impl = address(new CustomCurveHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
+
+        // add liquidity by sending tokens straight into the contract
+        key.currency0.transfer(hook, 10e18);
+        key.currency1.transfer(hook, 10e18);
     }
 
     function _setUpFeeTakingPool() internal {
@@ -104,10 +116,6 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     function test_swap_beforeSwapNoOpsSwap_exactInput() public {
         _setUpCustomCurvePool();
 
-        // add liquidity by sending tokens straight into the contract
-        key.currency0.transfer(hook, 10e18);
-        key.currency1.transfer(hook, 10e18);
-
         uint256 balanceBefore0 = currency0.balanceOf(address(this));
         uint256 balanceBefore1 = currency1.balanceOf(address(this));
 
@@ -130,10 +138,6 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     function test_swap_beforeSwapNoOpsSwap_exactOutput() public {
         _setUpCustomCurvePool();
 
-        // add liquidity by sending tokens straight into the contract
-        key.currency0.transfer(hook, 10e18);
-        key.currency1.transfer(hook, 10e18);
-
         uint256 balanceBefore0 = currency0.balanceOf(address(this));
         uint256 balanceBefore1 = currency1.balanceOf(address(this));
 
@@ -152,7 +156,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
     }
 
-    // maximum available liquidity in each direction for the pool in test_fuzz_swap_beforeSwap_returnsDeltaSpecified
+    // maximum available liquidity in each direction for the pool in
     int128 maxPossibleIn_fuzz_test = -6018336102428409;
     int128 maxPossibleOut_fuzz_test = 5981737760509662;
 
@@ -162,18 +166,13 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         bool zeroForOne
     ) public {
         // ------------------------ SETUP ------------------------
-        Currency specifiedCurrency;
-        bool isExactIn;
         _setUpDeltaReturnFuzzPool();
 
-        // initialize the pool and give the hook tokens to pay into swaps
-        key.currency0.transfer(hook, type(uint128).max);
-        key.currency1.transfer(hook, type(uint128).max);
-
-        // bound amount specified to be a fair amount less than the amount of liquidity we have
-        amountSpecified = int128(bound(amountSpecified, -3e11, 3e11));
-        isExactIn = amountSpecified < 0;
-        specifiedCurrency = (isExactIn == zeroForOne) ? key.currency0 : key.currency1;
+        // bound amount specified, but can be more/less than the available liquidity
+        amountSpecified =
+            int128(bound(amountSpecified, maxPossibleIn_fuzz_test - 3e11, maxPossibleOut_fuzz_test + 3e11));
+        bool isExactIn = amountSpecified < 0;
+        Currency specifiedCurrency = (isExactIn == zeroForOne) ? key.currency0 : key.currency1;
 
         // bound delta in specified to not take more than the reserves available, nor be the minimum int to
         // stop the hook reverting on take/settle
@@ -264,6 +263,72 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         }
     }
 
+    function test_fuzz_swap_beforeSwap_returnsDeltaUnspecified(
+        int128 hookDeltaUnspecified,
+        int256 amountSpecified,
+        bool zeroForOne
+    ) public {
+        // ------------------------ SETUP ------------------------
+        _setUpDeltaReturnFuzzPool();
+
+        // bound amount specified, but can be more/less than the available liquidity
+        amountSpecified =
+            int128(bound(amountSpecified, maxPossibleIn_fuzz_test - 3e11, maxPossibleOut_fuzz_test + 3e11));
+        bool isExactIn = amountSpecified < 0;
+        Currency unspecifiedCurrency = (isExactIn == zeroForOne) ? key.currency1 : key.currency0;
+
+        // bound delta in unspecified to not take more than the reserves available
+        // lower bound to make sure that hookDeltaUnspecified + amountUnspecified dont exceed min(int128)
+        uint128 reservesOfUnspecified = uint128(unspecifiedCurrency.balanceOf(address(manager)));
+        hookDeltaUnspecified = int128(
+            bound(
+                hookDeltaUnspecified, int256(type(int128).min) + maxPossibleOut_fuzz_test, int128(reservesOfUnspecified)
+            )
+        );
+
+        DeltaReturningHook(hook).setDeltaUnspecifiedBeforeSwap(hookDeltaUnspecified);
+
+        // setup swap variables
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+        IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+            zeroForOne: zeroForOne,
+            amountSpecified: amountSpecified,
+            sqrtPriceLimitX96: (zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT)
+        });
+
+        // ------------------------ FUZZING CASES ------------------------
+        if (amountSpecified == 0) {
+            vm.expectRevert(IPoolManager.SwapAmountCannotBeZero.selector);
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+            // successful swaps !
+        } else {
+            uint256 balanceThisBefore = unspecifiedCurrency.balanceOf(address(this));
+            uint256 balanceHookBefore = unspecifiedCurrency.balanceOf(hook);
+            uint256 balanceManagerBefore = unspecifiedCurrency.balanceOf(address(manager));
+
+            swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+
+            // in all cases the hook gets what they took exactly
+            assertEq(
+                balanceHookBefore.toInt256() + hookDeltaUnspecified,
+                unspecifiedCurrency.balanceOf(hook).toInt256(),
+                "hook balance change incorrect"
+            );
+
+            // positive if exactOut swapas input balances increases, negative if exactIn as output balance decreases
+            int256 managerDeltaUnspecified =
+                unspecifiedCurrency.balanceOf(address(manager)).toInt256() - balanceManagerBefore.toInt256();
+
+            // any delta that wasnt for the hook must have been for this swapper
+            assertEq(
+                balanceThisBefore.toInt256() - (managerDeltaUnspecified + hookDeltaUnspecified),
+                unspecifiedCurrency.balanceOf(address(this)).toInt256(),
+                "swapper balance change incorrect"
+            );
+        }
+    }
+
     // ------------------------ MODIFY LIQUIDITY ------------------------
 
     function test_addLiquidity_withFeeTakingHook() public {
@@ -275,7 +340,6 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         uint256 hookBalanceBefore1 = currency1.balanceOf(hook);
         uint256 managerBalanceBefore0 = currency0.balanceOf(address(manager));
         uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
-        // console2.log(address(key.hooks));
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
         snapLastCall("addLiquidity CA fee");
 
