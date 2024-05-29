@@ -48,7 +48,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         deployFreshManagerAndRouters();
         dynamicReturnFeesHook.setManager(IPoolManager(manager));
 
-        (currency0, currency1) = deployMintAndApprove2Currencies();
+        deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(
             currency0,
             currency1,
