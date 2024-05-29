@@ -36,17 +36,17 @@ library Position {
         view
         returns (Info storage position)
     {
-        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
+        // positionKey = keccak256(abi.encodePacked(salt, tickLower, tickUpper, owner))
         bytes32 positionKey;
 
         assembly ("memory-safe") {
-            mstore(0x26, salt) // [0x26, 0x46)
+            mstore(0x1a, owner) // [0x26, 0x3a)
             mstore(0x06, tickUpper) // [0x23, 0x26)
             mstore(0x03, tickLower) // [0x20, 0x23)
-            mstore(0, owner) // [0x0c, 0x20)
-            positionKey := keccak256(0x0c, 0x3a) // len is 58 bytes
-            mstore(0x26, 0) // rewrite 0x26 to 0
+            mstore(0, salt) // [0x00, 0x20)
+            positionKey := keccak256(0x0, 0x3a) // len is 58 bytes
         }
+
         position = self[positionKey];
     }
 
