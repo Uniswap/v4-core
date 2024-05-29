@@ -33,4 +33,29 @@ contract ProtocolFeesImplementation is ProtocolFees {
     function updateProtocolFees(Currency currency, uint256 amount) public {
         ProtocolFees._updateProtocolFees(currency, amount);
     }
+
+    function consumeGasLimitAndFetchFee(PoolKey memory key) public {
+        // consume gas before calling fetchProtocolFee / getting the protocolFeeForPool from the controller
+        while (true) {
+            // once gas left is less than the limit, stop consuming gas
+            if (gasleft() < 9079256829993496519) {
+                break;
+            }
+        }
+        // fetch the protocol fee after consuming gas
+        // will revert since the gas left is less than the limit
+        fetchProtocolFee(key);
+    }
+
+    function consumeGasAndFetchFee(PoolKey memory key) public {
+        while (true) {
+            // consume just under the gas limit
+            if (gasleft() < 9079256829993490000) {
+                break;
+            }
+        }
+        // try to fetch the protocol fee
+        // will revert while fetching since the gas limit has been reached
+        fetchProtocolFee(key);
+    }
 }

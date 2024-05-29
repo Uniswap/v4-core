@@ -19,7 +19,8 @@ import {
     OutOfBoundsProtocolFeeControllerTest,
     RevertingProtocolFeeControllerTest,
     OverflowProtocolFeeControllerTest,
-    InvalidReturnSizeProtocolFeeControllerTest
+    InvalidReturnSizeProtocolFeeControllerTest,
+    GasLimitProtocolFeeControllerTest
 } from "../src/test/ProtocolFeeControllerTest.sol";
 
 contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
@@ -217,5 +218,31 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
         assertFalse(success);
         assertEq(protocolFee, 0);
+    }
+
+    function test_fetchProtocolFee_gasLimit() public {
+        gasLimitFeeController = new GasLimitProtocolFeeControllerTest();
+        protocolFees.setProtocolFeeController(gasLimitFeeController);
+        vm.prank(address(gasLimitFeeController));
+        (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
+        assertFalse(success);
+        assertEq(protocolFee, 0);
+    }
+
+    function test_fetchProtocolFee_revertsWithProtocolFeeCannotBeFetched() public {
+        protocolFees = new ProtocolFeesImplementation(9079256829993496519);
+        protocolFees.setProtocolFeeController(feeController);
+        vm.prank(address(feeController));
+        vm.expectRevert(IProtocolFees.ProtocolFeeCannotBeFetched.selector);
+        // consumes too much gas before fetching the fee
+        protocolFees.consumeGasLimitAndFetchFee(key);
+    }
+
+    function test_fetchProtocolFee_revertsWithGasLimitExceeded() public {
+        protocolFees = new ProtocolFeesImplementation(9079256829993496519);
+        protocolFees.setProtocolFeeController(feeController);
+        vm.prank(address(feeController));
+        vm.expectRevert();
+        protocolFees.consumeGasAndFetchFee(key);
     }
 }

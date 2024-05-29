@@ -28,7 +28,8 @@ import {
     OutOfBoundsProtocolFeeControllerTest,
     RevertingProtocolFeeControllerTest,
     OverflowProtocolFeeControllerTest,
-    InvalidReturnSizeProtocolFeeControllerTest
+    InvalidReturnSizeProtocolFeeControllerTest,
+    GasLimitProtocolFeeControllerTest
 } from "../../src/test/ProtocolFeeControllerTest.sol";
 
 contract Deployers {
@@ -72,6 +73,7 @@ contract Deployers {
     OutOfBoundsProtocolFeeControllerTest outOfBoundsFeeController;
     OverflowProtocolFeeControllerTest overflowFeeController;
     InvalidReturnSizeProtocolFeeControllerTest invalidReturnSizeFeeController;
+    GasLimitProtocolFeeControllerTest gasLimitFeeController;
 
     PoolKey key;
     PoolKey nativeKey;
@@ -111,6 +113,7 @@ contract Deployers {
         outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
         overflowFeeController = new OverflowProtocolFeeControllerTest();
         invalidReturnSizeFeeController = new InvalidReturnSizeProtocolFeeControllerTest();
+        gasLimitFeeController = new GasLimitProtocolFeeControllerTest();
 
         manager.setProtocolFeeController(feeController);
     }

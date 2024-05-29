@@ -59,3 +59,11 @@ contract InvalidReturnSizeProtocolFeeControllerTest is IProtocolFeeController {
         }
     }
 }
+
+contract GasLimitProtocolFeeControllerTest is IProtocolFeeController {
+    function protocolFeeForPool(PoolKey memory /* key */ ) external pure returns (uint24) {
+        // consume gas
+        while (true) {}
+        return 1000;
+    }
+}
