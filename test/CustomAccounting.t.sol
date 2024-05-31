@@ -301,7 +301,11 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         });
 
         // ------------------------ FUZZING CASES ------------------------
-        if (amountSpecified == 0) {
+        _checkUnspecifiedDeltaFuzzCases(params, testSettings, unspecifiedCurrency, hookDeltaUnspecified);
+    }
+
+    function _checkUnspecifiedDeltaFuzzCases(IPoolManager.SwapParams memory params, PoolSwapTest.TestSettings memory testSettings, Currency unspecifiedCurrency, int128 hookDeltaUnspecified) internal {
+        if (params.amountSpecified == 0) {
             vm.expectRevert(IPoolManager.SwapAmountCannotBeZero.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
             // successful swaps !
@@ -319,7 +323,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
                 "hook balance change incorrect"
             );
 
-            // positive if exactOut swapas input balances increases, negative if exactIn as output balance decreases
+            // positive if exactOut as input balances increases, negative if exactIn as output balance decreases
             int256 managerDeltaUnspecified =
                 unspecifiedCurrency.balanceOf(address(manager)).toInt256() - balanceManagerBefore.toInt256();
 
