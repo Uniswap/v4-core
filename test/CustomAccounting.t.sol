@@ -266,7 +266,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         }
     }
 
-    function test_fuzz_swap_returnsDeltaUnspecified(
+    function test_fuzz_swap_beforeSwap_afterSwap_returnsDeltaUnspecified(
         int128 hookDeltaUnspecified,
         int256 amountSpecified,
         bool zeroForOne,
@@ -306,7 +306,16 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         });
 
         // ------------------------ FUZZING CASES ------------------------
-        if (amountSpecified == 0) {
+        _checkUnspecifiedDeltaFuzzCases(params, testSettings, unspecifiedCurrency, hookDeltaUnspecified);
+    }
+
+    function _checkUnspecifiedDeltaFuzzCases(
+        IPoolManager.SwapParams memory params,
+        PoolSwapTest.TestSettings memory testSettings,
+        Currency unspecifiedCurrency,
+        int128 hookDeltaUnspecified
+    ) internal {
+        if (params.amountSpecified == 0) {
             vm.expectRevert(IPoolManager.SwapAmountCannotBeZero.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
             // successful swaps !
