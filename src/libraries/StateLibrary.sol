@@ -290,6 +290,7 @@ library StateLibrary {
     /**
      * @notice Live calculate the fee growth inside a tick range of a pool
      * @dev pools[poolId].feeGrowthInside0LastX128 in Position.Info is cached and can become stale. This function will live calculate the feeGrowthInside
+     * @dev It must already be ensured that tickLower < tickUpper holds and both ticks be initialized ticks, otherwise the data will be incorrect.
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
      * @param tickLower The lower tick of the range.
