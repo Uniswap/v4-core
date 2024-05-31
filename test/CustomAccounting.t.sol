@@ -20,12 +20,15 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
 
     address hook;
 
+    address constant BEFORE_SWAP_FLAGS = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+    address constant AFTER_SWAP_FLAGS = address(uint160(Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG));
+    address constant BEFORE_AND_AFTER_SWAP_FLAGS = address(uint160(BEFORE_SWAP_FLAGS) | uint160(AFTER_SWAP_FLAGS));
+
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
     }
 
-    function _setUpDeltaReturnFuzzPool() internal {
-        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+    function _setUpDeltaReturnFuzzPool(address hookAddr) internal {
         address impl = address(new DeltaReturningHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
 
@@ -39,7 +42,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     }
 
     function _setUpCustomCurvePool() internal {
-        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+        address hookAddr = BEFORE_SWAP_FLAGS;
         address impl = address(new CustomCurveHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
 
@@ -166,7 +169,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         bool zeroForOne
     ) public {
         // ------------------------ SETUP ------------------------
-        _setUpDeltaReturnFuzzPool();
+        _setUpDeltaReturnFuzzPool(BEFORE_SWAP_FLAGS);
 
         // bound amount specified, but can be more/less than the available liquidity
         amountSpecified =
@@ -269,7 +272,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         bool zeroForOne
     ) public {
         // ------------------------ SETUP ------------------------
-        _setUpDeltaReturnFuzzPool();
+        _setUpDeltaReturnFuzzPool(BEFORE_SWAP_FLAGS);
 
         // bound amount specified, but can be more/less than the available liquidity
         amountSpecified =
