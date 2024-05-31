@@ -266,14 +266,13 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         }
     }
 
-    function test_fuzz_swap_beforeSwap_afterSwap_returnsDeltaUnspecified(
+    function test_fuzz_swap_beforeSwap_returnsDeltaUnspecified(
         int128 hookDeltaUnspecified,
         int256 amountSpecified,
-        bool zeroForOne,
-        bool beforeSwap
+        bool zeroForOne
     ) public {
         // ------------------------ SETUP ------------------------
-        _setUpDeltaReturnFuzzPool(beforeSwap ? BEFORE_SWAP_FLAGS : AFTER_SWAP_FLAGS);
+        _setUpDeltaReturnFuzzPool(BEFORE_SWAP_FLAGS);
 
         // bound amount specified, but can be more/less than the available liquidity
         amountSpecified =
@@ -290,31 +289,107 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
             )
         );
 
-        if (beforeSwap) {
-            DeltaReturningHook(hook).setDeltaUnspecifiedBeforeSwap(hookDeltaUnspecified);
+        DeltaReturningHook(hook).setDeltaUnspecifiedBeforeSwap(hookDeltaUnspecified);
+
+        // ------------------------ FUZZING CASES ------------------------
+        _checkUnspecifiedDeltaFuzzCases(amountSpecified, zeroForOne, unspecifiedCurrency, hookDeltaUnspecified);
+    }
+
+    function test_fuzz_swap_afterSwap_returnsDeltaUnspecified(
+        int128 hookDeltaUnspecified,
+        int256 amountSpecified,
+        bool zeroForOne
+    ) public {
+        // ------------------------ SETUP ------------------------
+        _setUpDeltaReturnFuzzPool(AFTER_SWAP_FLAGS);
+
+        // bound amount specified, but can be more/less than the available liquidity
+        amountSpecified =
+            int128(bound(amountSpecified, maxPossibleIn_fuzz_test - 3e11, maxPossibleOut_fuzz_test + 3e11));
+        bool isExactIn = amountSpecified < 0;
+        Currency unspecifiedCurrency = (isExactIn == zeroForOne) ? key.currency1 : key.currency0;
+
+        // bound delta in unspecified to not take more than the reserves available
+        // lower bound to make sure that hookDeltaUnspecified + amountUnspecified dont exceed min(int128)
+        uint128 reservesOfUnspecified = uint128(unspecifiedCurrency.balanceOf(address(manager)));
+        hookDeltaUnspecified = int128(
+            bound(
+                hookDeltaUnspecified, int256(type(int128).min) + maxPossibleOut_fuzz_test, int128(reservesOfUnspecified)
+            )
+        );
+
+        DeltaReturningHook(hook).setDeltaUnspecifiedAfterSwap(hookDeltaUnspecified);
+
+        // ------------------------ FUZZING CASES ------------------------
+        _checkUnspecifiedDeltaFuzzCases(amountSpecified, zeroForOne, unspecifiedCurrency, hookDeltaUnspecified);
+    }
+
+    function test_fuzz_swap_beforeSwap_and_afterSwap_returnDeltaUnspecified(
+        int128 hookDeltaUnspecifiedBeforeSwap,
+        int128 hookDeltaUnspecifiedAfterSwap,
+        int256 amountSpecified,
+        bool zeroForOne
+    ) public {
+        // ------------------------ SETUP ------------------------
+        _setUpDeltaReturnFuzzPool(BEFORE_AND_AFTER_SWAP_FLAGS);
+
+        // bound amount specified, but can be more/less than the available liquidity
+        amountSpecified =
+            int128(bound(amountSpecified, maxPossibleIn_fuzz_test - 3e11, maxPossibleOut_fuzz_test + 3e11));
+        bool isExactIn = amountSpecified < 0;
+        Currency unspecifiedCurrency = (isExactIn == zeroForOne) ? key.currency1 : key.currency0;
+
+        // bound delta in unspecified to not take more than the reserves available
+        // lower bound to make sure that hookDeltaUnspecified + amountUnspecified dont exceed min(int128)
+        uint128 reservesOfUnspecified = uint128(unspecifiedCurrency.balanceOf(address(manager)));
+        hookDeltaUnspecifiedBeforeSwap = int128(
+            bound(
+                hookDeltaUnspecifiedBeforeSwap,
+                int256(type(int128).min) + maxPossibleOut_fuzz_test,
+                int128(reservesOfUnspecified)
+            )
+        );
+        // bound the second delta by the first delta so that combined they do not exceed our bounds
+        if (hookDeltaUnspecifiedBeforeSwap >= 0) {
+            hookDeltaUnspecifiedAfterSwap = int128(
+                bound(
+                    hookDeltaUnspecifiedAfterSwap,
+                    int256(type(int128).min) + maxPossibleOut_fuzz_test,
+                    int256(int128(reservesOfUnspecified) - hookDeltaUnspecifiedBeforeSwap)
+                )
+            );
         } else {
-            DeltaReturningHook(hook).setDeltaUnspecifiedAfterSwap(hookDeltaUnspecified);
+            hookDeltaUnspecifiedAfterSwap = int128(
+                bound(
+                    hookDeltaUnspecifiedAfterSwap,
+                    int256(type(int128).min) + maxPossibleOut_fuzz_test - hookDeltaUnspecifiedBeforeSwap,
+                    int128(reservesOfUnspecified)
+                )
+            );
         }
 
-        // setup swap variables
-        PoolSwapTest.TestSettings memory testSettings =
-            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+        DeltaReturningHook(hook).setDeltaUnspecifiedBeforeSwap(hookDeltaUnspecifiedBeforeSwap);
+        DeltaReturningHook(hook).setDeltaUnspecifiedAfterSwap(hookDeltaUnspecifiedAfterSwap);
+        int128 hookDeltaUnspecified = hookDeltaUnspecifiedBeforeSwap + hookDeltaUnspecifiedAfterSwap;
+
+        // ------------------------ FUZZING CASES ------------------------
+        _checkUnspecifiedDeltaFuzzCases(amountSpecified, zeroForOne, unspecifiedCurrency, hookDeltaUnspecified);
+    }
+
+    function _checkUnspecifiedDeltaFuzzCases(
+        int256 amountSpecified,
+        bool zeroForOne,
+        Currency unspecifiedCurrency,
+        int128 hookDeltaUnspecified
+    ) internal {
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
             zeroForOne: zeroForOne,
             amountSpecified: amountSpecified,
             sqrtPriceLimitX96: (zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT)
         });
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        // ------------------------ FUZZING CASES ------------------------
-        _checkUnspecifiedDeltaFuzzCases(params, testSettings, unspecifiedCurrency, hookDeltaUnspecified);
-    }
-
-    function _checkUnspecifiedDeltaFuzzCases(
-        IPoolManager.SwapParams memory params,
-        PoolSwapTest.TestSettings memory testSettings,
-        Currency unspecifiedCurrency,
-        int128 hookDeltaUnspecified
-    ) internal {
         if (params.amountSpecified == 0) {
             vm.expectRevert(IPoolManager.SwapAmountCannotBeZero.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
