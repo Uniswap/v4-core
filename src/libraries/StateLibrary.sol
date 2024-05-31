@@ -31,25 +31,28 @@ library StateLibrary {
     // index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
     uint256 public constant POSITIONS_OFFSET = 6;
 
-    struct PoolStateView {
-        Slot0 slot0;
-        uint256 feeGrowthGlobal0X128;
-        uint256 feeGrowthGlobal1X128;
-        uint128 liquidity;
-    }
-
     /**
      * @notice Get the global state of a pool.
      * @dev Corresponds to pools[poolId]
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
-     * @return state The state of the pool.
+     * @return slot0 The slot0 of the pool.
+     * @return feeGrowthGlobal0X128 The global fee growth for token0.
+     * @return feeGrowthGlobal1X128 The global fee growth for token1.
+     * @return liquidity The liquidity of the pool.
      */
-    function getPoolState(IPoolManager manager, PoolId poolId) internal view returns (PoolStateView memory state) {
+    function getPoolState(IPoolManager manager, PoolId poolId)
+        internal
+        view
+        returns (Slot0 slot0, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128, uint128 liquidity)
+    {
         bytes32 stateSlot = _getPoolStateSlot(poolId);
         bytes memory data = manager.extsload(stateSlot, 4);
         assembly {
-            state := add(data, 32)
+            slot0 := mload(add(data, 32))
+            feeGrowthGlobal0X128 := mload(add(data, 64))
+            feeGrowthGlobal1X128 := mload(add(data, 96))
+            liquidity := mload(add(data, 128))
         }
     }
 

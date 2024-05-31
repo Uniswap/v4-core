@@ -8,6 +8,7 @@ import {Hooks} from "../../src/libraries/Hooks.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
+import {Slot0} from "../../src/types/Slot0.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "../../src/types/Currency.sol";
@@ -51,20 +52,22 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         uint256 swapAmount = 100 ether;
         swap(key, true, -int256(swapAmount), ZERO_BYTES);
 
-        StateLibrary.PoolStateView memory state = StateLibrary.getPoolState(manager, poolId);
+        (Slot0 slot0, uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128, uint128 liquidity) =
+            StateLibrary.getPoolState(manager, poolId);
         snapLastCall("extsload getPoolState");
 
-        assertEq(state.slot0.sqrtPriceX96(), 78680104762184586858280382455);
-        assertEq(state.slot0.tick(), -139);
-        assertEq(state.slot0.protocolFee(), 0);
-        assertEq(state.slot0.lpFee(), 3000);
+        assertEq(slot0.sqrtPriceX96(), 78680104762184586858280382455);
+        assertEq(slot0.tick(), -139);
+        assertEq(slot0.protocolFee(), 0);
+        assertEq(slot0.lpFee(), 3000);
 
-        uint256 liquidity = StateLibrary.getLiquidity(manager, poolId);
-        assertEq(state.liquidity, liquidity);
+        uint256 liquidityExpected = StateLibrary.getLiquidity(manager, poolId);
+        assertEq(liquidity, liquidityExpected);
 
-        (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1) = StateLibrary.getFeeGrowthGlobals(manager, poolId);
-        assertEq(state.feeGrowthGlobal0X128, feeGrowthGlobal0);
-        assertEq(state.feeGrowthGlobal1X128, feeGrowthGlobal1);
+        (uint256 feeGrowthGlobal0Expected, uint256 feeGrowthGlobal1Expected) =
+            StateLibrary.getFeeGrowthGlobals(manager, poolId);
+        assertEq(feeGrowthGlobal0X128, feeGrowthGlobal0Expected);
+        assertEq(feeGrowthGlobal1X128, feeGrowthGlobal1Expected);
     }
 
     function test_getSlot0() public {
