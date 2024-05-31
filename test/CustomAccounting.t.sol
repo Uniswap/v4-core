@@ -266,13 +266,14 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         }
     }
 
-    function test_fuzz_swap_beforeSwap_returnsDeltaUnspecified(
+    function test_fuzz_swap_returnsDeltaUnspecified(
         int128 hookDeltaUnspecified,
         int256 amountSpecified,
-        bool zeroForOne
+        bool zeroForOne,
+        bool beforeSwap
     ) public {
         // ------------------------ SETUP ------------------------
-        _setUpDeltaReturnFuzzPool(BEFORE_SWAP_FLAGS);
+        _setUpDeltaReturnFuzzPool(beforeSwap ? BEFORE_SWAP_FLAGS : AFTER_SWAP_FLAGS);
 
         // bound amount specified, but can be more/less than the available liquidity
         amountSpecified =
@@ -289,7 +290,11 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
             )
         );
 
-        DeltaReturningHook(hook).setDeltaUnspecifiedBeforeSwap(hookDeltaUnspecified);
+        if (beforeSwap) {
+            DeltaReturningHook(hook).setDeltaUnspecifiedBeforeSwap(hookDeltaUnspecified);
+        } else {
+            DeltaReturningHook(hook).setDeltaUnspecifiedAfterSwap(hookDeltaUnspecified);
+        }
 
         // setup swap variables
         PoolSwapTest.TestSettings memory testSettings =
@@ -301,11 +306,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         });
 
         // ------------------------ FUZZING CASES ------------------------
-        _checkUnspecifiedDeltaFuzzCases(params, testSettings, unspecifiedCurrency, hookDeltaUnspecified);
-    }
-
-    function _checkUnspecifiedDeltaFuzzCases(IPoolManager.SwapParams memory params, PoolSwapTest.TestSettings memory testSettings, Currency unspecifiedCurrency, int128 hookDeltaUnspecified) internal {
-        if (params.amountSpecified == 0) {
+        if (amountSpecified == 0) {
             vm.expectRevert(IPoolManager.SwapAmountCannotBeZero.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
             // successful swaps !
