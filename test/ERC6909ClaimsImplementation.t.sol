@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {CurrencyLibrary, Currency} from "../src/types/Currency.sol";
 import {ERC6909ClaimsImplementation} from "../src/test/ERC6909ClaimsImplementation.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {stdError} from "forge-std/StdError.sol";
 
 contract ERC6909ClaimsTest is Test, GasSnapshot {
     using CurrencyLibrary for Currency;
@@ -15,14 +16,14 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         token = new ERC6909ClaimsImplementation();
     }
 
-    function test_burnFrom_withApproval(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount) public {
+    function test_fuzz_burnFrom_withApproval(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount) public {
         token.mint(sender, id, mintAmount);
 
         vm.prank(sender);
         token.approve(address(this), id, mintAmount);
 
         if (burnAmount > mintAmount) {
-            vm.expectRevert();
+            vm.expectRevert(stdError.arithmeticError);
         }
         token.burnFrom(sender, id, burnAmount);
 
@@ -40,28 +41,31 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         }
     }
 
-    function test_burnFrom_withOperator(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount) public {
+    function test_fuzz_burnFrom_withOperator(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount) public {
         token.mint(sender, id, mintAmount);
+
+        assertFalse(token.isOperator(sender, address(this)));
 
         vm.prank(sender);
         token.setOperator(address(this), true);
 
+        assertTrue(token.isOperator(sender, address(this)));
+
         if (burnAmount > mintAmount) {
-            vm.expectRevert();
+            vm.expectRevert(stdError.arithmeticError);
         }
         token.burnFrom(sender, id, burnAmount);
 
         if (burnAmount <= mintAmount) {
             assertEq(token.balanceOf(sender, id), mintAmount - burnAmount);
         }
-        assertEq(token.allowance(sender, address(this), id), 0);
     }
 
     function test_burnFrom_revertsWithNoApproval() public {
         token.mint(address(this), 1337, 100);
 
         vm.prank(address(0xBEEF));
-        vm.expectRevert();
+        vm.expectRevert(stdError.arithmeticError);
         token.burnFrom(address(this), 1337, 100);
     }
 
