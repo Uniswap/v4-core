@@ -34,7 +34,6 @@ import {
 contract Deployers {
     using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
-    using CurrencyLibrary for Currency;
 
     // Helpful test constants
     bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
@@ -170,6 +169,20 @@ contract Deployers {
         bytes memory initData
     ) internal returns (PoolKey memory _key, PoolId id) {
         _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
+        id = _key.toId();
+        manager.initialize(_key, sqrtPriceX96, initData);
+    }
+
+    function initPool(
+        Currency _currency0,
+        Currency _currency1,
+        IHooks hooks,
+        uint24 fee,
+        int24 tickSpacing,
+        uint160 sqrtPriceX96,
+        bytes memory initData
+    ) internal returns (PoolKey memory _key, PoolId id) {
+        _key = PoolKey(_currency0, _currency1, fee, tickSpacing, hooks);
         id = _key.toId();
         manager.initialize(_key, sqrtPriceX96, initData);
     }

@@ -7,7 +7,7 @@ on:
       - main
   schedule:
     # random HH:MM to avoid a load spike on GitHub Actions at 00:00
-    - cron: '35 11 * * *'
+    - cron: "35 11 * * *"
 jobs:
   semgrep:
     name: semgrep/ci

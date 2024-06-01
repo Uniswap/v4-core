@@ -13,7 +13,7 @@ import {PoolManager} from "../src/PoolManager.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Constants} from "../test/utils/Constants.sol";
 import {SkipCallsTestHook} from "../src/test/SkipCallsTestHook.sol";
@@ -28,7 +28,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         vm.etch(address(skipCallsTestHook), address(impl).code);
         deployFreshManagerAndRouters();
         skipCallsTestHook.setManager(IPoolManager(manager));
-        (currency0, currency1) = deployMintAndApprove2Currencies();
+        deployMintAndApprove2Currencies();
 
         assertEq(skipCallsTestHook.counter(), 0);
 

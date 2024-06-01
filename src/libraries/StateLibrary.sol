@@ -11,7 +11,7 @@ library StateLibrary {
     // | Name                  | Type                                    | Slot | Offset | Bytes | Contract                        |
     // |-----------------------|-----------------------------------------|------|--------|-------|---------------------------------|
     // | pools                 | mapping(PoolId => struct Pool.State)    | 6    | 0      | 32    | src/PoolManager.sol:PoolManager |
-    uint256 public constant POOLS_SLOT = 6;
+    bytes32 public constant POOLS_SLOT = bytes32(uint256(6));
 
     // index of feeGrowthGlobal0X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL0_OFFSET = 1;
@@ -253,8 +253,7 @@ library StateLibrary {
         // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
         bytes32 positionKey;
 
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0x26, salt) // [0x26, 0x46)
             mstore(0x06, tickUpper) // [0x23, 0x26)
             mstore(0x03, tickLower) // [0x20, 0x23)
@@ -325,7 +324,7 @@ library StateLibrary {
     }
 
     function _getPoolStateSlot(PoolId poolId) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(PoolId.unwrap(poolId), bytes32(POOLS_SLOT)));
+        return keccak256(abi.encodePacked(PoolId.unwrap(poolId), POOLS_SLOT));
     }
 
     function _getTickInfoSlot(PoolId poolId, int24 tick) internal pure returns (bytes32) {

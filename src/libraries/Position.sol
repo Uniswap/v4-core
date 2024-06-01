@@ -4,11 +4,14 @@ pragma solidity ^0.8.20;
 import {FullMath} from "./FullMath.sol";
 import {FixedPoint128} from "./FixedPoint128.sol";
 import {LiquidityMath} from "./LiquidityMath.sol";
+import {CustomRevert} from "./CustomRevert.sol";
 
 /// @title Position
 /// @notice Positions represent an owner address' liquidity between a lower and upper tick boundary
 /// @dev Positions store additional state for tracking fees owed to the position
 library Position {
+    using CustomRevert for bytes4;
+
     /// @notice Cannot update a position with no liquidity
     error CannotUpdateEmptyPosition();
 
@@ -36,8 +39,7 @@ library Position {
         // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
         bytes32 positionKey;
 
-        /// @solidity memory-safe-assembly
-        assembly {
+        assembly ("memory-safe") {
             mstore(0x26, salt) // [0x26, 0x46)
             mstore(0x06, tickUpper) // [0x23, 0x26)
             mstore(0x03, tickLower) // [0x20, 0x23)
@@ -64,7 +66,8 @@ library Position {
         uint128 liquidity = self.liquidity;
 
         if (liquidityDelta == 0) {
-            if (liquidity == 0) revert CannotUpdateEmptyPosition(); // disallow pokes for 0 liquidity positions
+            // disallow pokes for 0 liquidity positions
+            if (liquidity == 0) CannotUpdateEmptyPosition.selector.revertWith();
         } else {
             self.liquidity = LiquidityMath.addDelta(liquidity, liquidityDelta);
         }
