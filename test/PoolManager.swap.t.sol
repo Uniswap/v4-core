@@ -15,9 +15,15 @@ import {SqrtPriceMath} from "../src/libraries/SqrtPriceMath.sol";
 import {TickMath} from "../src/libraries/TickMath.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
+import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {PoolIdLibrary} from "../src/types/PoolId.sol";
 
 abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallback, IUniswapV3SwapCallback {
     using CurrencyLibrary for Currency;
+    using StateLibrary for IPoolManager;
+    using PoolIdLibrary for PoolKey;
+
+    IPoolManager.ModifyLiquidityParams[] liquidityParams;
 
     function setUp() public virtual override {
         super.setUp();
@@ -75,11 +81,12 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         );
 
         modifyLiquidityRouter.modifyLiquidity(key_, v4LiquidityParams, "");
+        liquidityParams.push(v4LiquidityParams);
     }
 
     function swap(IUniswapV3Pool pool, PoolKey memory key_, bool zeroForOne, int128 amountSpecified)
         internal
-        returns (int256 amount0Diff, int256 amount1Diff)
+        returns (int256 amount0Diff, int256 amount1Diff, bool overflows)
     {
         if (amountSpecified == 0) amountSpecified = 1;
         if (amountSpecified == type(int128).min) amountSpecified = type(int128).min + 1;
@@ -93,7 +100,6 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
             ""
         );
         // v3 can handle bigger numbers than v4, so if we exceed int128, check that the next call reverts
-        bool overflows = false;
         if (
             amount0Delta > type(int128).max || amount1Delta > type(int128).max || amount0Delta < type(int128).min
                 || amount1Delta < type(int128).min
@@ -134,6 +140,30 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         if (amount0Delta > 0) currency0.transfer(msg.sender, uint256(amount0Delta));
         if (amount1Delta > 0) currency1.transfer(msg.sender, uint256(amount1Delta));
     }
+
+    function verifyFees(IUniswapV3Pool pool, PoolKey memory key_) internal {
+        (uint256 v4FeeGrowth0, uint256 v4FeeGrowth1) = manager.getFeeGrowthGlobals(key_.toId());
+        uint256 v3FeeGrowth0 = pool.feeGrowthGlobal0X128();
+        uint256 v3FeeGrowth1 = pool.feeGrowthGlobal1X128();
+        assertEq(v4FeeGrowth0, v3FeeGrowth0);
+        assertEq(v4FeeGrowth1, v3FeeGrowth1);
+
+        BalanceDelta v3FeesTotal = toBalanceDelta(0, 0);
+        BalanceDelta v4FeesTotal = toBalanceDelta(0, 0);
+        uint256 len = liquidityParams.length;
+        for (uint256 i = 0; i < len; ++i) {
+            IPoolManager.ModifyLiquidityParams memory params = liquidityParams[i];
+            pool.burn(params.tickLower, params.tickUpper, 0);
+            (uint128 v3Amount0, uint128 v3Amount1) =
+                pool.collect(address(this), params.tickLower, params.tickUpper, type(uint128).max, type(uint128).max);
+            v3FeesTotal = v3FeesTotal + toBalanceDelta(int128(v3Amount0), int128(v3Amount1));
+            params.liquidityDelta = 0;
+            (, BalanceDelta feesAccrued) = modifyLiquidityRouter.modifyLiquidity(key_, params, "");
+
+            v4FeesTotal = v4FeesTotal + feesAccrued;
+        }
+        assertTrue(v3FeesTotal == v4FeesTotal);
+    }
 }
 
 contract V3SwapTests is V3Fuzzer {
@@ -150,9 +180,11 @@ contract V3SwapTests is V3Fuzzer {
         (IUniswapV3Pool pool, PoolKey memory key_, uint160 sqrtPriceX96) =
             initPools(feeSeed, tickSpacingSeed, sqrtPriceX96seed);
         addLiquidity(pool, key_, sqrtPriceX96, lowerTickUnsanitized, upperTickUnsanitized, liquidityDeltaUnbound, false);
-        (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, zeroForOne, swapAmount);
+        (int256 amount0Diff, int256 amount1Diff, bool overflows) = swap(pool, key_, zeroForOne, swapAmount);
+        if (overflows) return;
         assertEq(amount0Diff, 0);
         assertEq(amount1Diff, 0);
+        verifyFees(pool, key_);
     }
 
     struct TightLiquidityParams {
@@ -164,28 +196,30 @@ contract V3SwapTests is V3Fuzzer {
     function test_shouldSwapEqualMultipleLP(
         uint24 feeSeed,
         int24 tickSpacingSeed,
-        TightLiquidityParams[] memory liquidityParams,
+        TightLiquidityParams[] memory liquidityParams_,
         int256 sqrtPriceX96seed,
         int128 swapAmount,
         bool zeroForOne
     ) public {
         (IUniswapV3Pool pool, PoolKey memory key_, uint160 sqrtPriceX96) =
             initPools(feeSeed, tickSpacingSeed, sqrtPriceX96seed);
-        for (uint256 i = 0; i < liquidityParams.length; ++i) {
+        for (uint256 i = 0; i < liquidityParams_.length; ++i) {
             if (i == 20) break;
             addLiquidity(
                 pool,
                 key_,
                 sqrtPriceX96,
-                liquidityParams[i].lowerTickUnsanitized,
-                liquidityParams[i].upperTickUnsanitized,
-                liquidityParams[i].liquidityDeltaUnbound,
+                liquidityParams_[i].lowerTickUnsanitized,
+                liquidityParams_[i].upperTickUnsanitized,
+                liquidityParams_[i].liquidityDeltaUnbound,
                 true
             );
         }
 
-        (int256 amount0Diff, int256 amount1Diff) = swap(pool, key_, zeroForOne, swapAmount);
+        (int256 amount0Diff, int256 amount1Diff, bool overflows) = swap(pool, key_, zeroForOne, swapAmount);
+        if (overflows) return;
         assertEq(amount0Diff, 0);
         assertEq(amount1Diff, 0);
+        verifyFees(pool, key_);
     }
 }
