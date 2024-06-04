@@ -12,7 +12,7 @@ import {Hooks} from "../src/libraries/Hooks.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {Currency} from "../src/types/Currency.sol";
-import {BalanceDelta} from "../src/types/BalanceDelta.sol";
+import {BalanceDeltas} from "../src/types/BalanceDeltas.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 
 contract CustomAccountingTest is Test, Deployers, GasSnapshot {
@@ -25,13 +25,13 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     }
 
     function _setUpDeltaReturnFuzzPool() internal {
-        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTAS_FLAG));
         address impl = address(new DeltaReturningHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
     }
 
     function _setUpCustomCurvePool() internal {
-        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTAS_FLAG));
         address impl = address(new CustomCurveHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
     }
@@ -40,8 +40,8 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         address hookAddr = address(
             uint160(
                 Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG
-                    | Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
-                    | Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG
+                    | Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTAS_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
+                    | Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTAS_FLAG
             )
         );
         address impl = address(new FeeTakingHook(manager));
@@ -157,7 +157,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     int128 maxPossibleOut_fuzz_test = 5981737760509662;
 
     function test_fuzz_swap_beforeSwap_returnsDeltaSpecified(
-        int128 hookDeltaSpecified,
+        int128 hookDeltaspecified,
         int256 amountSpecified,
         bool zeroForOne
     ) public {
@@ -178,8 +178,8 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         // bound delta in specified to not take more than the reserves available, nor be the minimum int to
         // stop the hook reverting on take/settle
         uint128 reservesOfSpecified = uint128(specifiedCurrency.balanceOf(address(manager)));
-        hookDeltaSpecified = int128(bound(hookDeltaSpecified, type(int128).min + 1, int128(reservesOfSpecified)));
-        DeltaReturningHook(hook).setDeltaSpecified(hookDeltaSpecified);
+        hookDeltaspecified = int128(bound(hookDeltaspecified, type(int128).min + 1, int128(reservesOfSpecified)));
+        DeltaReturningHook(hook).setDeltaSpecified(hookDeltaspecified);
 
         // setup swap variables
         PoolSwapTest.TestSettings memory testSettings =
@@ -196,15 +196,15 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
             vm.expectRevert(IPoolManager.SwapAmountCannotBeZero.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-            // trade is exact input of n:, the hook cannot TAKE (+ve hookDeltaSpecified) more than n in input
+            // trade is exact input of n:, the hook cannot TAKE (+ve hookDeltaspecified) more than n in input
             // otherwise the user would have to send more than n in input
-        } else if (isExactIn && (hookDeltaSpecified > -amountSpecified)) {
+        } else if (isExactIn && (hookDeltaspecified > -amountSpecified)) {
             vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-            // exact output of n: the hook cannot GIVE (-ve hookDeltaSpecified) more than n in output
+            // exact output of n: the hook cannot GIVE (-ve hookDeltaspecified) more than n in output
             // otherwise the user would receive more than n in output
-        } else if (!isExactIn && (amountSpecified < -hookDeltaSpecified)) {
+        } else if (!isExactIn && (amountSpecified < -hookDeltaspecified)) {
             vm.expectRevert(Hooks.HookDeltaExceedsSwapAmount.selector);
             swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
@@ -214,12 +214,12 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
             uint256 balanceHookBefore = specifiedCurrency.balanceOf(hook);
             uint256 balanceManagerBefore = specifiedCurrency.balanceOf(address(manager));
 
-            BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-            int128 deltaSpecified = (zeroForOne == isExactIn) ? delta.amount0() : delta.amount1();
+            BalanceDeltas deltas = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+            int128 deltaSpecified = (zeroForOne == isExactIn) ? deltas.amount0() : deltas.amount1();
 
             // in all cases the hook gets what they took, and the user gets the swap's output delta (checked more below)
             assertEq(
-                balanceHookBefore.toInt256() + hookDeltaSpecified,
+                balanceHookBefore.toInt256() + hookDeltaspecified,
                 specifiedCurrency.balanceOf(hook).toInt256(),
                 "hook balance change incorrect"
             );
@@ -231,9 +231,9 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
 
             // exact input, where there arent enough input reserves available to pay swap and hook
             // note: all 3 values are negative, so we use <
-            if (isExactIn && (hookDeltaSpecified + amountSpecified < maxPossibleIn_fuzz_test)) {
-                // the hook will have taken hookDeltaSpecified of the maxPossibleIn
-                assertEq(deltaSpecified, maxPossibleIn_fuzz_test - hookDeltaSpecified, "deltaSpecified exact input");
+            if (isExactIn && (hookDeltaspecified + amountSpecified < maxPossibleIn_fuzz_test)) {
+                // the hook will have taken hookDeltaspecified of the maxPossibleIn
+                assertEq(deltaSpecified, maxPossibleIn_fuzz_test - hookDeltaspecified, "deltaSpecified exact input");
                 // the manager received all possible input tokens
                 assertEq(
                     balanceManagerBefore.toInt256() - maxPossibleIn_fuzz_test,
@@ -242,9 +242,9 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
                 );
 
                 // exact output, where there isnt enough output reserves available to pay swap and hook
-            } else if (!isExactIn && (hookDeltaSpecified + amountSpecified > maxPossibleOut_fuzz_test)) {
-                // the hook will have taken hookDeltaSpecified of the maxPossibleOut
-                assertEq(deltaSpecified, maxPossibleOut_fuzz_test - hookDeltaSpecified, "deltaSpecified exact output");
+            } else if (!isExactIn && (hookDeltaspecified + amountSpecified > maxPossibleOut_fuzz_test)) {
+                // the hook will have taken hookDeltaspecified of the maxPossibleOut
+                assertEq(deltaSpecified, maxPossibleOut_fuzz_test - hookDeltaspecified, "deltaSpecified exact output");
                 // the manager sent out all possible output tokens
                 assertEq(
                     balanceManagerBefore.toInt256() - maxPossibleOut_fuzz_test,
@@ -256,7 +256,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
             } else {
                 assertEq(deltaSpecified, amountSpecified, "deltaSpecified not amountSpecified");
                 assertEq(
-                    balanceManagerBefore.toInt256() - amountSpecified - hookDeltaSpecified,
+                    balanceManagerBefore.toInt256() - amountSpecified - hookDeltaspecified,
                     specifiedCurrency.balanceOf(address(manager)).toInt256(),
                     "manager balance change not"
                 );

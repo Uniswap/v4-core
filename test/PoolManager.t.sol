@@ -17,7 +17,7 @@ import {MockContract} from "../src/test/MockContract.sol";
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
+import {BalanceDeltas, BalanceDeltasLibrary} from "../src/types/BalanceDeltas.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {PoolSettleTest} from "../src/test/PoolSettleTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
@@ -171,13 +171,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         (key,) = initPool(currency0, currency1, IHooks(mockAddr), 3000, sqrtPriceX96, ZERO_BYTES);
 
-        BalanceDelta balanceDelta = modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        BalanceDeltas balanceDeltas = modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
 
         bytes32 beforeSelector = MockHooks.beforeAddLiquidity.selector;
         bytes memory beforeParams = abi.encode(address(modifyLiquidityRouter), key, LIQUIDITY_PARAMS, ZERO_BYTES);
         bytes32 afterSelector = MockHooks.afterAddLiquidity.selector;
         bytes memory afterParams =
-            abi.encode(address(modifyLiquidityRouter), key, LIQUIDITY_PARAMS, balanceDelta, ZERO_BYTES);
+            abi.encode(address(modifyLiquidityRouter), key, LIQUIDITY_PARAMS, balanceDeltas, ZERO_BYTES);
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
@@ -200,13 +200,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         (key,) = initPool(currency0, currency1, IHooks(mockAddr), 3000, sqrtPriceX96, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
-        BalanceDelta balanceDelta = modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
+        BalanceDeltas balanceDeltas = modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
 
         bytes32 beforeSelector = MockHooks.beforeRemoveLiquidity.selector;
         bytes memory beforeParams = abi.encode(address(modifyLiquidityRouter), key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
         bytes32 afterSelector = MockHooks.afterRemoveLiquidity.selector;
         bytes memory afterParams =
-            abi.encode(address(modifyLiquidityRouter), key, REMOVE_LIQUIDITY_PARAMS, balanceDelta, ZERO_BYTES);
+            abi.encode(address(modifyLiquidityRouter), key, REMOVE_LIQUIDITY_PARAMS, balanceDeltas, ZERO_BYTES);
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
@@ -509,13 +509,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
 
-        BalanceDelta balanceDelta = swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
+        BalanceDeltas balanceDeltas = swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
 
         bytes32 beforeSelector = MockHooks.beforeSwap.selector;
         bytes memory beforeParams = abi.encode(address(swapRouter), key, SWAP_PARAMS, ZERO_BYTES);
 
         bytes32 afterSelector = MockHooks.afterSwap.selector;
-        bytes memory afterParams = abi.encode(address(swapRouter), key, SWAP_PARAMS, balanceDelta, ZERO_BYTES);
+        bytes memory afterParams = abi.encode(address(swapRouter), key, SWAP_PARAMS, balanceDeltas, ZERO_BYTES);
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
@@ -771,9 +771,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
         IPoolManager.SwapParams memory swapParams =
             IPoolManager.SwapParams(false, amountSpecified, TickMath.MAX_SQRT_PRICE - 1);
-        BalanceDelta delta = swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(false, false), ZERO_BYTES);
+        BalanceDeltas deltas = swapRouter.swap(key, swapParams, PoolSwapTest.TestSettings(false, false), ZERO_BYTES);
         uint256 expectedProtocolFee =
-            uint256(uint128(-delta.amount1())) * protocolFee1 / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+            uint256(uint128(-deltas.amount1())) * protocolFee1 / ProtocolFeeLibrary.PIPS_DENOMINATOR;
         assertEq(manager.protocolFeesAccrued(currency0), 0);
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }

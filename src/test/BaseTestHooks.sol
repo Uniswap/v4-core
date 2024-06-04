@@ -3,8 +3,8 @@ pragma solidity ^0.8.24;
 
 import {IHooks} from "../interfaces/IHooks.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
-import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
+import {BalanceDeltas} from "../types/BalanceDeltas.sol";
+import {BeforeSwapDeltas} from "../types/BeforeSwapDeltas.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 contract BaseTestHooks is IHooks {
@@ -42,9 +42,9 @@ contract BaseTestHooks is IHooks {
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
-        BalanceDelta, /* delta **/
+        BalanceDeltas, /* delta **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4, BalanceDelta) {
+    ) external virtual returns (bytes4, BalanceDeltas) {
         revert HookNotImplemented();
     }
 
@@ -61,9 +61,9 @@ contract BaseTestHooks is IHooks {
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
-        BalanceDelta, /* delta **/
+        BalanceDeltas, /* delta **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4, BalanceDelta) {
+    ) external virtual returns (bytes4, BalanceDeltas) {
         revert HookNotImplemented();
     }
 
@@ -72,7 +72,7 @@ contract BaseTestHooks is IHooks {
         PoolKey calldata, /* key **/
         IPoolManager.SwapParams calldata, /* params **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4, BeforeSwapDelta, uint24) {
+    ) external virtual returns (bytes4, BeforeSwapDeltas, uint24) {
         revert HookNotImplemented();
     }
 
@@ -80,7 +80,7 @@ contract BaseTestHooks is IHooks {
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.SwapParams calldata, /* params **/
-        BalanceDelta, /* delta **/
+        BalanceDeltas, /* delta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4, int128) {
         revert HookNotImplemented();

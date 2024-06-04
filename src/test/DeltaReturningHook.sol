@@ -7,12 +7,12 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDeltas, toBalanceDeltas} from "../types/BalanceDeltas.sol";
 import {Currency} from "../types/Currency.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {Currency} from "../types/Currency.sol";
-import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
+import {BeforeSwapDeltas, toBeforeSwapDeltas} from "../types/BeforeSwapDeltas.sol";
 
 contract DeltaReturningHook is BaseTestHooks {
     using Hooks for IHooks;
@@ -50,22 +50,22 @@ contract DeltaReturningHook is BaseTestHooks {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata /* hookData **/
-    ) external override onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
+    ) external override onlyPoolManager returns (bytes4, BeforeSwapDeltas, uint24) {
         (Currency specifiedCurrency, Currency unspecifiedCurrency) = _sortCurrencies(key, params);
 
         if (deltaSpecified != 0) _settleOrTake(specifiedCurrency, deltaSpecified);
         if (deltaUnspecifiedBeforeSwap != 0) _settleOrTake(unspecifiedCurrency, deltaUnspecifiedBeforeSwap);
 
-        BeforeSwapDelta beforeSwapDelta = toBeforeSwapDelta(deltaSpecified, deltaUnspecifiedBeforeSwap);
+        BeforeSwapDeltas beforeSwapDeltas = toBeforeSwapDeltas(deltaSpecified, deltaUnspecifiedBeforeSwap);
 
-        return (IHooks.beforeSwap.selector, beforeSwapDelta, 0);
+        return (IHooks.beforeSwap.selector, beforeSwapDeltas, 0);
     }
 
     function afterSwap(
         address, /* sender **/
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
-        BalanceDelta, /* delta **/
+        BalanceDeltas, /* delta **/
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, int128) {
         (, Currency unspecifiedCurrency) = _sortCurrencies(key, params);
