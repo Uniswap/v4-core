@@ -18,7 +18,6 @@ import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
-import {toBalanceDelta} from "src/types/BalanceDelta.sol";
 import {Logger} from "./utils/Logger.sol";
 
 contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers, GasSnapshot {
