@@ -5,7 +5,6 @@ import {ERC6909Claims} from "../ERC6909Claims.sol";
 
 /// @notice Mock contract for testing ERC6909Claims
 contract ERC6909ClaimsImplementation is ERC6909Claims {
-
     /// @notice mocked mint logic
     function mint(address to, uint256 id, uint256 amount) public {
         _mint(to, id, amount);

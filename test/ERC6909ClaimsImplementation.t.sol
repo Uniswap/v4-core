@@ -7,7 +7,6 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {stdError} from "forge-std/StdError.sol";
 
 contract ERC6909ClaimsTest is Test, GasSnapshot {
-
     ERC6909ClaimsImplementation token;
 
     function setUp() public {
