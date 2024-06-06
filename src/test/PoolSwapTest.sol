@@ -57,9 +57,11 @@ contract PoolSwapTest is PoolTestBase {
         require(deltaBefore1 == 0, "deltaBefore1 is not equal to 0");
 
         BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
-
         (,, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
+
+        bool hookCanReturnDeltaUnspecified = data.key.hooks.hasPermission(Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG)
+            || data.key.hooks.hasPermission(Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG);
 
         if (data.params.zeroForOne) {
             if (data.params.amountSpecified < 0) {
@@ -69,10 +71,14 @@ contract PoolSwapTest is PoolTestBase {
                     "deltaAfter0 is not greater than or equal to data.params.amountSpecified"
                 );
                 require(delta.amount0() == deltaAfter0, "delta.amount0() is not equal to deltaAfter0");
-                require(deltaAfter1 >= 0, "deltaAfter1 is not greater than or equal to 0");
+                if (!hookCanReturnDeltaUnspecified) {
+                    require(deltaAfter1 >= 0, "deltaAfter1 is not greater than or equal to 0");
+                }
             } else {
                 // exact output, 0 for 1
-                require(deltaAfter0 <= 0, "deltaAfter0 is not less than or equal to zero");
+                if (!hookCanReturnDeltaUnspecified) {
+                    require(deltaAfter0 <= 0, "deltaAfter0 is not less than or equal to zero");
+                }
                 require(delta.amount1() == deltaAfter1, "delta.amount1() is not equal to deltaAfter1");
                 require(
                     deltaAfter1 <= data.params.amountSpecified,
@@ -87,10 +93,14 @@ contract PoolSwapTest is PoolTestBase {
                     "deltaAfter1 is not greater than or equal to data.params.amountSpecified"
                 );
                 require(delta.amount1() == deltaAfter1, "delta.amount1() is not equal to deltaAfter1");
-                require(deltaAfter0 >= 0, "deltaAfter0 is not greater than or equal to 0");
+                if (!hookCanReturnDeltaUnspecified) {
+                    require(deltaAfter0 >= 0, "deltaAfter0 is not greater than or equal to 0");
+                }
             } else {
                 // exact output, 1 for 0
-                require(deltaAfter1 <= 0, "deltaAfter1 is not less than or equal to 0");
+                if (!hookCanReturnDeltaUnspecified) {
+                    require(deltaAfter1 <= 0, "deltaAfter1 is not less than or equal to 0");
+                }
                 require(delta.amount0() == deltaAfter0, "delta.amount0() is not equal to deltaAfter0");
                 require(
                     deltaAfter0 <= data.params.amountSpecified,
