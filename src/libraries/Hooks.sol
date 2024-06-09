@@ -127,9 +127,26 @@ library Hooks {
     /// @notice performs a hook call using the given calldata on the given hook that doesnt return a delta
     /// @return result The complete data returned by the hook
     function callHook(IHooks self, bytes memory data) internal returns (bytes memory result) {
-        bool success;
-        (success, result) = address(self).call(data);
-        if (!success) _revert(result);
+        assembly ("memory-safe") {
+            if iszero(call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)) {
+                if iszero(returndatasize()) {
+                    // if the call failed without a revert reason, revert with `FailedHookCall()`
+                    mstore(0, 0x36bc48c5)
+                    revert(0x1c, 0x04)
+                }
+                // bubble up revert
+                returndatacopy(0, 0, returndatasize())
+                revert(0, returndatasize())
+            }
+            // allocate result byte array from the free memory pointer
+            result := mload(0x40)
+            // store new free memory pointer at the end of the array padded to 32 bytes
+            mstore(0x40, add(result, and(add(returndatasize(), 0x3f), not(0x1f))))
+            // store length in memory
+            mstore(result, returndatasize())
+            // copy return data to result
+            returndatacopy(add(result, 0x20), 0, returndatasize())
+        }
 
         // Check expected selector and returned selector match.
         if (result.parseSelector() != data.parseSelector()) InvalidHookResponse.selector.revertWith();
@@ -210,9 +227,7 @@ library Hooks {
             if (self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
                     self.callHookWithReturnDelta(
-                        abi.encodeWithSelector(
-                            IHooks.afterAddLiquidity.selector, msg.sender, key, params, delta, hookData
-                        ),
+                        abi.encodeCall(IHooks.afterAddLiquidity, (msg.sender, key, params, delta, hookData)),
                         self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
@@ -222,9 +237,7 @@ library Hooks {
             if (self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
                     self.callHookWithReturnDelta(
-                        abi.encodeWithSelector(
-                            IHooks.afterRemoveLiquidity.selector, msg.sender, key, params, delta, hookData
-                        ),
+                        abi.encodeCall(IHooks.afterRemoveLiquidity, (msg.sender, key, params, delta, hookData)),
                         self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
@@ -242,8 +255,7 @@ library Hooks {
         if (msg.sender == address(self)) return (amountToSwap, BeforeSwapDeltaLibrary.ZERO_DELTA, lpFeeOverride);
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
-            bytes memory result =
-                callHook(self, abi.encodeWithSelector(IHooks.beforeSwap.selector, msg.sender, key, params, hookData));
+            bytes memory result = callHook(self, abi.encodeCall(IHooks.beforeSwap, (msg.sender, key, params, hookData)));
 
             // dynamic fee pools that do not want to override the cache fee, return 0 otherwise they return a valid fee with the override flag
             if (key.fee.isDynamicFee()) lpFeeOverride = result.parseFee();
@@ -283,7 +295,7 @@ library Hooks {
 
         if (self.hasPermission(AFTER_SWAP_FLAG)) {
             hookDeltaUnspecified += self.callHookWithReturnDelta(
-                abi.encodeWithSelector(IHooks.afterSwap.selector, msg.sender, key, params, swapDelta, hookData),
+                abi.encodeCall(IHooks.afterSwap, (msg.sender, key, params, swapDelta, hookData)),
                 self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)
             ).toInt128();
         }
@@ -326,13 +338,5 @@ library Hooks {
 
     function hasPermission(IHooks self, uint160 flag) internal pure returns (bool) {
         return uint160(address(self)) & flag != 0;
-    }
-
-    /// @notice bubble up revert if present. Else throw FailedHookCall
-    function _revert(bytes memory result) private pure {
-        if (result.length == 0) FailedHookCall.selector.revertWith();
-        assembly {
-            revert(add(0x20, result), mload(result))
-        }
     }
 }

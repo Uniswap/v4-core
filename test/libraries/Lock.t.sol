@@ -18,6 +18,6 @@ contract LockTest is Test {
     }
 
     function test_unlockedSlot() public pure {
-        assertEq(uint256(keccak256("Unlocked")) - 1, Lock.IS_UNLOCKED_SLOT);
+        assertEq(bytes32(uint256(keccak256("Unlocked")) - 1), Lock.IS_UNLOCKED_SLOT);
     }
 }

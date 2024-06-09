@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
-import {Currency, CurrencyLibrary} from "./types/Currency.sol";
+import {Currency} from "./types/Currency.sol";
 import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
 import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {PoolKey} from "./types/PoolKey.sol";
@@ -12,7 +12,6 @@ import {Pool} from "./libraries/Pool.sol";
 import {CustomRevert} from "./libraries/CustomRevert.sol";
 
 abstract contract ProtocolFees is IProtocolFees, Owned {
-    using CurrencyLibrary for Currency;
     using ProtocolFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
     using Pool for Pool.State;
@@ -55,6 +54,8 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
         currency.transfer(recipient, amountCollected);
     }
 
+    /// @dev abstract internal function to allow the ProtocolFees contract to access pool state
+    /// @dev this is overriden in PoolManager.sol to give access to the _pools mapping
     function _getPool(PoolId id) internal virtual returns (Pool.State storage);
 
     /// @notice Fetch the protocol fees for a given pool, returning false if the call fails or the returned fees are invalid.
@@ -69,13 +70,13 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
             if (gasleft() < controllerGasLimit) ProtocolFeeCannotBeFetched.selector.revertWith();
 
             (bool _success, bytes memory _data) = address(protocolFeeController).call{gas: controllerGasLimit}(
-                abi.encodeWithSelector(IProtocolFeeController.protocolFeeForPool.selector, key)
+                abi.encodeCall(IProtocolFeeController.protocolFeeForPool, (key))
             );
             // Ensure that the return data fits within a word
             if (!_success || _data.length > 32) return (false, 0);
 
             uint256 returnData;
-            assembly {
+            assembly ("memory-safe") {
                 returnData := mload(add(_data, 0x20))
             }
 

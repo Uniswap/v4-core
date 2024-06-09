@@ -3,20 +3,21 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {Pool} from "src/libraries/Pool.sol";
-import {PoolManager} from "src/PoolManager.sol";
-import {Position} from "src/libraries/Position.sol";
-import {TickMath} from "src/libraries/TickMath.sol";
-import {TickBitmap} from "src/libraries/TickBitmap.sol";
-import {LiquidityAmounts} from "test/utils/LiquidityAmounts.sol";
-import {Constants} from "test/utils/Constants.sol";
-import {BalanceDelta} from "src/types/BalanceDelta.sol";
-import {Slot0} from "src/types/Slot0.sol";
-import {SafeCast} from "src/libraries/SafeCast.sol";
-import {ProtocolFeeLibrary} from "src/libraries/ProtocolFeeLibrary.sol";
-import {LPFeeLibrary} from "src/libraries/LPFeeLibrary.sol";
+import {Pool} from "../../src/libraries/Pool.sol";
+import {PoolManager} from "../../src/PoolManager.sol";
+import {Position} from "../../src/libraries/Position.sol";
+import {TickMath} from "../../src/libraries/TickMath.sol";
+import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
+import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
+import {Constants} from "../../test/utils/Constants.sol";
+import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
+import {Slot0} from "../../src/types/Slot0.sol";
+import {SafeCast} from "../../src/libraries/SafeCast.sol";
+import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
+import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
+import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
-contract PoolTest is Test {
+contract PoolTest is Test, GasSnapshot {
     using Pool for Pool.State;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for uint24;
@@ -90,7 +91,7 @@ contract PoolTest is Test {
         state.modifyLiquidity(params);
     }
 
-    function testSwap(
+    function test_fuzz_swap(
         uint160 sqrtPriceX96,
         uint24 lpFee,
         uint16 protocolFee0,
@@ -165,5 +166,15 @@ contract PoolTest is Test {
                 assertLe(state.slot0.sqrtPriceX96(), params.sqrtPriceLimitX96, "oneForZero");
             }
         }
+    }
+
+    function test_fuzz_tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) public pure {
+        tickSpacing = int24(bound(tickSpacing, TickMath.MIN_TICK_SPACING, TickMath.MAX_TICK_SPACING));
+        // v3 math
+        int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
+        int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
+        uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
+        // assert that the result is the same as the v3 math
+        assertEq(type(uint128).max / numTicks, Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing));
     }
 }
