@@ -12,7 +12,7 @@ import {Hooks} from "../src/libraries/Hooks.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {Currency} from "../src/types/Currency.sol";
-import {BalanceDelta} from "../src/types/BalanceDelta.sol";
+import {BalanceDeltas} from "../src/types/BalanceDeltas.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
 
 contract CustomAccountingTest is Test, Deployers, GasSnapshot {
@@ -25,13 +25,13 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     }
 
     function _setUpDeltaReturnFuzzPool() internal {
-        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTAS_FLAG));
         address impl = address(new DeltaReturningHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
     }
 
     function _setUpCustomCurvePool() internal {
-        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTAS_FLAG));
         address impl = address(new CustomCurveHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
     }
@@ -40,8 +40,8 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         address hookAddr = address(
             uint160(
                 Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG
-                    | Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
-                    | Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG
+                    | Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTAS_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
+                    | Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTAS_FLAG
             )
         );
         address impl = address(new FeeTakingHook(manager));
@@ -214,8 +214,8 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
             uint256 balanceHookBefore = specifiedCurrency.balanceOf(hook);
             uint256 balanceManagerBefore = specifiedCurrency.balanceOf(address(manager));
 
-            BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-            int128 deltaSpecified = (zeroForOne == isExactIn) ? delta.amount0() : delta.amount1();
+            BalanceDeltas deltas = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+            int128 deltaSpecified = (zeroForOne == isExactIn) ? deltas.amount0() : deltas.amount1();
 
             // in all cases the hook gets what they took, and the user gets the swap's output delta (checked more below)
             assertEq(

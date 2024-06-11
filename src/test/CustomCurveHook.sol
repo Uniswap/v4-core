@@ -6,8 +6,8 @@ import {SafeCast} from "../libraries/SafeCast.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BeforeSwapDeltas, toBeforeSwapDeltas} from "../types/BeforeSwapDeltas.sol";
+import {BalanceDeltas} from "../types/BalanceDeltas.sol";
 import {Currency} from "../types/Currency.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 import {BaseTestHooks} from "./BaseTestHooks.sol";
@@ -36,7 +36,7 @@ contract CustomCurveHook is BaseTestHooks {
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
         bytes calldata /* hookData **/
-    ) external override onlyPoolManager returns (bytes4, BeforeSwapDelta, uint24) {
+    ) external override onlyPoolManager returns (bytes4, BeforeSwapDeltas, uint24) {
         (Currency inputCurrency, Currency outputCurrency, uint256 amount) = _getInputOutputAndAmount(key, params);
 
         // this "custom curve" is a line, 1-1
@@ -45,17 +45,17 @@ contract CustomCurveHook is BaseTestHooks {
         outputCurrency.settle(manager, address(this), amount, false);
 
         // return -amountSpecified as specified to no-op the concentrated liquidity swap
-        BeforeSwapDelta hookDelta = toBeforeSwapDelta(int128(-params.amountSpecified), int128(params.amountSpecified));
-        return (IHooks.beforeSwap.selector, hookDelta, 0);
+        BeforeSwapDeltas hookDeltas = toBeforeSwapDeltas(int128(-params.amountSpecified), int128(params.amountSpecified));
+        return (IHooks.beforeSwap.selector, hookDeltas, 0);
     }
 
     function afterAddLiquidity(
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
-        BalanceDelta, /* delta **/
+        BalanceDeltas, /* delta **/
         bytes calldata /* hookData **/
-    ) external view override onlyPoolManager returns (bytes4, BalanceDelta) {
+    ) external view override onlyPoolManager returns (bytes4, BalanceDeltas) {
         revert AddLiquidityDirectToHook();
     }
 

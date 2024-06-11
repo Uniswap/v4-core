@@ -5,19 +5,19 @@ import {SafeCast} from "../libraries/SafeCast.sol";
 
 /// @dev Two `int128` values packed into a single `int256` where the upper 128 bits represent the amount0
 /// and the lower 128 bits represent the amount1.
-type BalanceDelta is int256;
+type BalanceDeltas is int256;
 
-using {add as +, sub as -, eq as ==, neq as !=} for BalanceDelta global;
-using BalanceDeltaLibrary for BalanceDelta global;
+using {add as +, sub as -, eq as ==, neq as !=} for BalanceDeltas global;
+using BalanceDeltasLibrary for BalanceDeltas global;
 using SafeCast for int256;
 
-function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceDelta balanceDelta) {
+function toBalanceDeltas(int128 _amount0, int128 _amount1) pure returns (BalanceDeltas balanceDeltas) {
     assembly {
-        balanceDelta := or(shl(128, _amount0), and(sub(shl(128, 1), 1), _amount1))
+        balanceDeltas := or(shl(128, _amount0), and(sub(shl(128, 1), 1), _amount1))
     }
 }
 
-function add(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
+function add(BalanceDeltas a, BalanceDeltas b) pure returns (BalanceDeltas) {
     int256 res0;
     int256 res1;
     assembly {
@@ -28,10 +28,10 @@ function add(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
         res0 := add(a0, b0)
         res1 := add(a1, b1)
     }
-    return toBalanceDelta(res0.toInt128(), res1.toInt128());
+    return toBalanceDeltas(res0.toInt128(), res1.toInt128());
 }
 
-function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
+function sub(BalanceDeltas a, BalanceDeltas b) pure returns (BalanceDeltas) {
     int256 res0;
     int256 res1;
     assembly {
@@ -42,29 +42,29 @@ function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
         res0 := sub(a0, b0)
         res1 := sub(a1, b1)
     }
-    return toBalanceDelta(res0.toInt128(), res1.toInt128());
+    return toBalanceDeltas(res0.toInt128(), res1.toInt128());
 }
 
-function eq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
-    return BalanceDelta.unwrap(a) == BalanceDelta.unwrap(b);
+function eq(BalanceDeltas a, BalanceDeltas b) pure returns (bool) {
+    return BalanceDeltas.unwrap(a) == BalanceDeltas.unwrap(b);
 }
 
-function neq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
-    return BalanceDelta.unwrap(a) != BalanceDelta.unwrap(b);
+function neq(BalanceDeltas a, BalanceDeltas b) pure returns (bool) {
+    return BalanceDeltas.unwrap(a) != BalanceDeltas.unwrap(b);
 }
 
-library BalanceDeltaLibrary {
-    BalanceDelta public constant ZERO_DELTA = BalanceDelta.wrap(0);
+library BalanceDeltasLibrary {
+    BalanceDeltas public constant ZERO_DELTAS = BalanceDeltas.wrap(0);
 
-    function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {
+    function amount0(BalanceDeltas balanceDeltas) internal pure returns (int128 _amount0) {
         assembly {
-            _amount0 := sar(128, balanceDelta)
+            _amount0 := sar(128, balanceDeltas)
         }
     }
 
-    function amount1(BalanceDelta balanceDelta) internal pure returns (int128 _amount1) {
+    function amount1(BalanceDeltas balanceDeltas) internal pure returns (int128 _amount1) {
         assembly {
-            _amount1 := signextend(15, balanceDelta)
+            _amount1 := signextend(15, balanceDeltas)
         }
     }
 }

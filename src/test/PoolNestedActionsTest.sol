@@ -7,7 +7,7 @@ import {PoolTestBase} from "./PoolTestBase.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Constants} from "../../test/utils/Constants.sol";
 import {Test} from "forge-std/Test.sol";
-import {BalanceDelta} from "../types/BalanceDelta.sol";
+import {BalanceDeltas} from "../types/BalanceDeltas.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
@@ -124,7 +124,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        BalanceDelta delta = manager.swap(key, SWAP_PARAMS, "");
+        BalanceDeltas deltas = manager.swap(key, SWAP_PARAMS, "");
 
         (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
         (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
@@ -135,8 +135,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
         assertEq(deltaThisBefore0 + SWAP_PARAMS.amountSpecified, deltaThisAfter0, "Executor delta 0");
         assertEq(deltaThisBefore1 + 98, deltaThisAfter1, "Executor delta 1");
-        assertEq(delta.amount0(), deltaThisAfter0, "Swap delta 0");
-        assertEq(delta.amount1(), deltaThisAfter1, "Swap delta 1");
+        assertEq(deltas.amount0(), deltaThisAfter0, "Swap delta 0");
+        assertEq(deltas.amount1(), deltaThisAfter1, "Swap delta 1");
 
         key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
         key.currency1.take(manager, user, uint256(deltaThisAfter1), false);
@@ -150,7 +150,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        (BalanceDelta delta,) = manager.modifyLiquidity(key, ADD_LIQUIDITY_PARAMS, "");
+        (BalanceDeltas deltas,) = manager.modifyLiquidity(key, ADD_LIQUIDITY_PARAMS, "");
 
         (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
         (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
@@ -159,8 +159,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
         assertEq(deltaCallerBefore0, deltaCallerAfter0, "Caller delta 0");
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
-        assertEq(deltaThisBefore0 + delta.amount0(), deltaThisAfter0, "Executor delta 0");
-        assertEq(deltaThisBefore1 + delta.amount1(), deltaThisAfter1, "Executor delta 1");
+        assertEq(deltaThisBefore0 + deltas.amount0(), deltaThisAfter0, "Executor delta 0");
+        assertEq(deltaThisBefore1 + deltas.amount1(), deltaThisAfter1, "Executor delta 1");
 
         key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
         key.currency1.settle(manager, user, uint256(-deltaThisAfter1), false);
@@ -175,7 +175,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        (BalanceDelta delta,) = manager.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, "");
+        (BalanceDeltas deltas,) = manager.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, "");
 
         (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
         (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
@@ -184,8 +184,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
 
         assertEq(deltaCallerBefore0, deltaCallerAfter0, "Caller delta 0");
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
-        assertEq(deltaThisBefore0 + delta.amount0(), deltaThisAfter0, "Executor delta 0");
-        assertEq(deltaThisBefore1 + delta.amount1(), deltaThisAfter1, "Executor delta 1");
+        assertEq(deltaThisBefore0 + deltas.amount0(), deltaThisAfter0, "Executor delta 0");
+        assertEq(deltaThisBefore1 + deltas.amount1(), deltaThisAfter1, "Executor delta 1");
 
         key.currency0.take(manager, user, uint256(deltaThisAfter0), false);
         key.currency1.take(manager, user, uint256(deltaThisAfter1), false);
@@ -199,7 +199,7 @@ contract NestedActionExecutor is Test, PoolTestBase {
         (,, int256 deltaThisBefore0) = _fetchBalances(key.currency0, user, address(this));
         (,, int256 deltaThisBefore1) = _fetchBalances(key.currency1, user, address(this));
 
-        BalanceDelta delta = manager.donate(key, DONATE_AMOUNT0, DONATE_AMOUNT1, "");
+        BalanceDeltas deltas = manager.donate(key, DONATE_AMOUNT0, DONATE_AMOUNT1, "");
 
         (,, int256 deltaCallerAfter0) = _fetchBalances(key.currency0, user, caller);
         (,, int256 deltaCallerAfter1) = _fetchBalances(key.currency1, user, caller);
@@ -210,8 +210,8 @@ contract NestedActionExecutor is Test, PoolTestBase {
         assertEq(deltaCallerBefore1, deltaCallerAfter1, "Caller delta 1");
         assertEq(deltaThisBefore0 - int256(DONATE_AMOUNT0), deltaThisAfter0, "Executor delta 0");
         assertEq(deltaThisBefore1 - int256(DONATE_AMOUNT1), deltaThisAfter1, "Executor delta 1");
-        assertEq(-delta.amount0(), int256(DONATE_AMOUNT0), "Donate delta 0");
-        assertEq(-delta.amount1(), int256(DONATE_AMOUNT1), "Donate delta 1");
+        assertEq(-deltas.amount0(), int256(DONATE_AMOUNT0), "Donate delta 0");
+        assertEq(-deltas.amount1(), int256(DONATE_AMOUNT1), "Donate delta 1");
 
         key.currency0.settle(manager, user, uint256(-deltaThisAfter0), false);
         key.currency1.settle(manager, user, uint256(-deltaThisAfter1), false);

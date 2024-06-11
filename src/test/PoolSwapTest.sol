@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {BalanceDeltas, BalanceDeltasLibrary} from "../types/BalanceDeltas.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
@@ -36,9 +36,9 @@ contract PoolSwapTest is PoolTestBase {
         IPoolManager.SwapParams memory params,
         TestSettings memory testSettings,
         bytes memory hookData
-    ) external payable returns (BalanceDelta delta) {
-        delta = abi.decode(
-            manager.unlock(abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))), (BalanceDelta)
+    ) external payable returns (BalanceDeltas deltas) {
+        deltas = abi.decode(
+            manager.unlock(abi.encode(CallbackData(msg.sender, testSettings, key, params, hookData))), (BalanceDeltas)
         );
 
         uint256 ethBalance = address(this).balance;
@@ -56,7 +56,7 @@ contract PoolSwapTest is PoolTestBase {
         require(deltaBefore0 == 0, "deltaBefore0 is not equal to 0");
         require(deltaBefore1 == 0, "deltaBefore1 is not equal to 0");
 
-        BalanceDelta delta = manager.swap(data.key, data.params, data.hookData);
+        BalanceDeltas deltas = manager.swap(data.key, data.params, data.hookData);
 
         (,, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
@@ -68,12 +68,12 @@ contract PoolSwapTest is PoolTestBase {
                     deltaAfter0 >= data.params.amountSpecified,
                     "deltaAfter0 is not greater than or equal to data.params.amountSpecified"
                 );
-                require(delta.amount0() == deltaAfter0, "delta.amount0() is not equal to deltaAfter0");
+                require(deltas.amount0() == deltaAfter0, "deltas.amount0() is not equal to deltaAfter0");
                 require(deltaAfter1 >= 0, "deltaAfter1 is not greater than or equal to 0");
             } else {
                 // exact output, 0 for 1
                 require(deltaAfter0 <= 0, "deltaAfter0 is not less than or equal to zero");
-                require(delta.amount1() == deltaAfter1, "delta.amount1() is not equal to deltaAfter1");
+                require(deltas.amount1() == deltaAfter1, "deltas.amount1() is not equal to deltaAfter1");
                 require(
                     deltaAfter1 <= data.params.amountSpecified,
                     "deltaAfter1 is not less than or equal to data.params.amountSpecified"
@@ -86,12 +86,12 @@ contract PoolSwapTest is PoolTestBase {
                     deltaAfter1 >= data.params.amountSpecified,
                     "deltaAfter1 is not greater than or equal to data.params.amountSpecified"
                 );
-                require(delta.amount1() == deltaAfter1, "delta.amount1() is not equal to deltaAfter1");
+                require(deltas.amount1() == deltaAfter1, "deltas.amount1() is not equal to deltaAfter1");
                 require(deltaAfter0 >= 0, "deltaAfter0 is not greater than or equal to 0");
             } else {
                 // exact output, 1 for 0
                 require(deltaAfter1 <= 0, "deltaAfter1 is not less than or equal to 0");
-                require(delta.amount0() == deltaAfter0, "delta.amount0() is not equal to deltaAfter0");
+                require(deltas.amount0() == deltaAfter0, "deltas.amount0() is not equal to deltaAfter0");
                 require(
                     deltaAfter0 <= data.params.amountSpecified,
                     "deltaAfter0 is not less than or equal to data.params.amountSpecified"
@@ -112,6 +112,6 @@ contract PoolSwapTest is PoolTestBase {
             data.key.currency1.take(manager, data.sender, uint256(deltaAfter1), data.testSettings.takeClaims);
         }
 
-        return abi.encode(delta);
+        return abi.encode(deltas);
     }
 }

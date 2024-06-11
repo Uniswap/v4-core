@@ -16,8 +16,8 @@ import {IUnlockCallback} from "./interfaces/callback/IUnlockCallback.sol";
 import {ProtocolFees} from "./ProtocolFees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
-import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "./types/BalanceDelta.sol";
-import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
+import {BalanceDeltas, BalanceDeltasLibrary, toBalanceDeltas} from "./types/BalanceDeltas.sol";
+import {BeforeSwapDeltas} from "./types/BeforeSwapDeltas.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
@@ -150,15 +150,15 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override onlyWhenUnlocked returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+    ) external override onlyWhenUnlocked returns (BalanceDeltas callerDeltas, BalanceDeltas feesAccrued) {
         PoolId id = key.toId();
         Pool.State storage pool = _getPool(id);
         pool.checkPoolInitialized();
 
         key.hooks.beforeModifyLiquidity(key, params, hookData);
 
-        BalanceDelta principalDelta;
-        (principalDelta, feesAccrued) = pool.modifyLiquidity(
+        BalanceDeltas principalDeltas;
+        (principalDeltas, feesAccrued) = pool.modifyLiquidity(
             Pool.ModifyLiquidityParams({
                 owner: msg.sender,
                 tickLower: params.tickLower,
@@ -169,18 +169,18 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             })
         );
 
-        callerDelta = principalDelta + feesAccrued;
+        callerDeltas = principalDeltas + feesAccrued;
 
         // event is emitted before the afterModifyLiquidity call to ensure events are always emitted in order
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
 
-        BalanceDelta hookDelta;
-        (callerDelta, hookDelta) = key.hooks.afterModifyLiquidity(key, params, callerDelta, hookData);
+        BalanceDeltas hookDeltas;
+        (callerDeltas, hookDeltas) = key.hooks.afterModifyLiquidity(key, params, callerDeltas, hookData);
 
-        // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0
-        if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
+        // if the hook doesnt have the flag to be able to return deltas, hookDeltas will always be 0
+        if (hookDeltas != BalanceDeltasLibrary.ZERO_DELTAS) _accountPoolBalanceDeltas(key, hookDeltas, address(key.hooks));
 
-        _accountPoolBalanceDelta(key, callerDelta, msg.sender);
+        _accountPoolBalanceDeltas(key, callerDeltas, msg.sender);
     }
 
     /// @inheritdoc IPoolManager
@@ -188,22 +188,22 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         override
         onlyWhenUnlocked
-        returns (BalanceDelta swapDelta)
+        returns (BalanceDeltas swapDeltas)
     {
         if (params.amountSpecified == 0) SwapAmountCannotBeZero.selector.revertWith();
         PoolId id = key.toId();
         Pool.State storage pool = _getPool(id);
         pool.checkPoolInitialized();
 
-        BeforeSwapDelta beforeSwapDelta;
+        BeforeSwapDeltas beforeSwapDeltas;
         {
             int256 amountToSwap;
             uint24 lpFeeOverride;
-            (amountToSwap, beforeSwapDelta, lpFeeOverride) = key.hooks.beforeSwap(key, params, hookData);
+            (amountToSwap, beforeSwapDeltas, lpFeeOverride) = key.hooks.beforeSwap(key, params, hookData);
 
             // execute swap, account protocol fees, and emit swap event
             // _swap is needed to avoid stack too deep error
-            swapDelta = _swap(
+            swapDeltas = _swap(
                 pool,
                 id,
                 Pool.SwapParams({
@@ -217,31 +217,31 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             );
         }
 
-        BalanceDelta hookDelta;
-        (swapDelta, hookDelta) = key.hooks.afterSwap(key, params, swapDelta, hookData, beforeSwapDelta);
+        BalanceDeltas hookDeltas;
+        (swapDeltas, hookDeltas) = key.hooks.afterSwap(key, params, swapDeltas, hookData, beforeSwapDeltas);
 
-        // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0
-        if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));
+        // if the hook doesnt have the flag to be able to return deltas, hookDeltas will always be 0
+        if (hookDeltas != BalanceDeltasLibrary.ZERO_DELTAS) _accountPoolBalanceDeltas(key, hookDeltas, address(key.hooks));
 
-        _accountPoolBalanceDelta(key, swapDelta, msg.sender);
+        _accountPoolBalanceDeltas(key, swapDeltas, msg.sender);
     }
 
     /// @notice Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
     function _swap(Pool.State storage pool, PoolId id, Pool.SwapParams memory params, Currency inputCurrency)
         internal
-        returns (BalanceDelta)
+        returns (BalanceDeltas)
     {
-        (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
+        (BalanceDeltas deltas, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
 
         // the fee is on the input currency
         if (feeForProtocol > 0) _updateProtocolFees(inputCurrency, feeForProtocol);
 
         // event is emitted before the afterSwap call to ensure events are always emitted in order
         emit Swap(
-            id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
+            id, msg.sender, deltas.amount0(), deltas.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
         );
 
-        return delta;
+        return deltas;
     }
 
     /// @inheritdoc IPoolManager
@@ -249,16 +249,16 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         override
         onlyWhenUnlocked
-        returns (BalanceDelta delta)
+        returns (BalanceDeltas deltas)
     {
         Pool.State storage pool = _getPool(key.toId());
         pool.checkPoolInitialized();
 
         key.hooks.beforeDonate(key, amount0, amount1, hookData);
 
-        delta = pool.donate(amount0, amount1);
+        deltas = pool.donate(amount0, amount1);
 
-        _accountPoolBalanceDelta(key, delta, msg.sender);
+        _accountPoolBalanceDeltas(key, deltas, msg.sender);
 
         key.hooks.afterDonate(key, amount0, amount1, hookData);
     }
@@ -334,9 +334,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @notice Accounts the deltas of 2 currencies to a target address
-    function _accountPoolBalanceDelta(PoolKey memory key, BalanceDelta delta, address target) internal {
-        _accountDelta(key.currency0, delta.amount0(), target);
-        _accountDelta(key.currency1, delta.amount1(), target);
+    function _accountPoolBalanceDeltas(PoolKey memory key, BalanceDeltas deltas, address target) internal {
+        _accountDelta(key.currency0, deltas.amount0(), target);
+        _accountDelta(key.currency1, deltas.amount1(), target);
     }
 
     /// @notice Implementation of the _getPool function defined in ProtocolFees
