@@ -6,7 +6,7 @@ import {StdUtils} from "forge-std/StdUtils.sol";
 
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDeltas} from "../types/BalanceDeltas.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {PoolModifyLiquidityTest} from "./PoolModifyLiquidityTest.sol";
@@ -163,9 +163,9 @@ contract Fuzzers is StdUtils {
         IPoolManager.ModifyLiquidityParams memory params,
         uint160 sqrtPriceX96,
         bytes memory hookData
-    ) internal returns (IPoolManager.ModifyLiquidityParams memory result, BalanceDeltas deltas) {
+    ) internal returns (IPoolManager.ModifyLiquidityParams memory result, BalanceDelta delta) {
         result = createFuzzyLiquidityParams(key, params, sqrtPriceX96);
-        deltas = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
+        delta = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
     }
 
     // There exists possible positions in the pool, so we tighten the boundaries of liquidity.
@@ -176,8 +176,8 @@ contract Fuzzers is StdUtils {
         uint160 sqrtPriceX96,
         bytes memory hookData,
         uint256 maxPositions
-    ) internal returns (IPoolManager.ModifyLiquidityParams memory result, BalanceDeltas deltas) {
+    ) internal returns (IPoolManager.ModifyLiquidityParams memory result, BalanceDelta delta) {
         result = createFuzzyLiquidityParamsWithTightBound(key, params, sqrtPriceX96, maxPositions);
-        deltas = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
+        delta = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
     }
 }

@@ -7,7 +7,7 @@ import {Pool} from "../libraries/Pool.sol";
 import {IHooks} from "./IHooks.sol";
 import {IERC6909Claims} from "./external/IERC6909Claims.sol";
 import {IProtocolFees} from "./IProtocolFees.sol";
-import {BalanceDeltas} from "../types/BalanceDeltas.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {Position} from "../libraries/Position.sol";
 import {IExtsload} from "./IExtsload.sol";
@@ -122,11 +122,11 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
     /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
-    /// @return callerDeltas The balance delta of the caller of modifyLiquidity. This is the total of both principal and fee deltas.
+    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal and fee deltas.
     /// @return feeDelta The balance delta of the fees generated in the liquidity range. Returned for informational purposes.
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDeltas, BalanceDeltas);
+        returns (BalanceDelta, BalanceDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -138,18 +138,18 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param key The pool to swap in
     /// @param params The parameters for swapping
     /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
-    /// @return swapDeltas The balance delta of the address swapping
+    /// @return swapDelta The balance delta of the address swapping
     /// @dev Swapping on low liquidity pools may cause unexpected swap amounts when liquidity available is less than amountSpecified.
-    /// Additionally note that if interacting with hooks that have the BEFORE_SWAP_RETURNS_DELTAS_FLAG or AFTER_SWAP_RETURNS_DELTA_FLAG
-    /// the hook may alter the swap input/output. Integrators should perform checks on the returned swapDeltas.
+    /// Additionally note that if interacting with hooks that have the BEFORE_SWAP_RETURNS_DELTA_FLAG or AFTER_SWAP_RETURNS_DELTA_FLAG
+    /// the hook may alter the swap input/output. Integrators should perform checks on the returned swapDelta.
     function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDeltas);
+        returns (BalanceDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
-        returns (BalanceDeltas);
+        returns (BalanceDelta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans

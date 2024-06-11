@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {BalanceDeltas} from "../types/BalanceDeltas.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
@@ -35,8 +35,8 @@ contract PoolModifyLiquidityTest is PoolTestBase {
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes memory hookData
-    ) external payable returns (BalanceDeltas deltas) {
-        deltas = modifyLiquidity(key, params, hookData, false, false);
+    ) external payable returns (BalanceDelta delta) {
+        delta = modifyLiquidity(key, params, hookData, false, false);
     }
 
     function modifyLiquidity(
@@ -45,10 +45,10 @@ contract PoolModifyLiquidityTest is PoolTestBase {
         bytes memory hookData,
         bool settleUsingBurn,
         bool takeClaims
-    ) public payable returns (BalanceDeltas deltas) {
-        deltas = abi.decode(
+    ) public payable returns (BalanceDelta delta) {
+        delta = abi.decode(
             manager.unlock(abi.encode(CallbackData(msg.sender, key, params, hookData, settleUsingBurn, takeClaims))),
-            (BalanceDeltas)
+            (BalanceDelta)
         );
 
         uint256 ethBalance = address(this).balance;
@@ -66,7 +66,7 @@ contract PoolModifyLiquidityTest is PoolTestBase {
             data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper, data.params.salt
         ).liquidity;
 
-        (BalanceDeltas deltas,) = manager.modifyLiquidity(data.key, data.params, data.hookData);
+        (BalanceDelta delta,) = manager.modifyLiquidity(data.key, data.params, data.hookData);
 
         uint128 liquidityAfter = manager.getPosition(
             data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper, data.params.salt
@@ -92,6 +92,6 @@ contract PoolModifyLiquidityTest is PoolTestBase {
         if (delta0 > 0) data.key.currency0.take(manager, data.sender, uint256(delta0), data.takeClaims);
         if (delta1 > 0) data.key.currency1.take(manager, data.sender, uint256(delta1), data.takeClaims);
 
-        return abi.encode(deltas);
+        return abi.encode(delta);
     }
 }

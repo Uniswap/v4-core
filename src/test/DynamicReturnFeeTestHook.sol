@@ -5,7 +5,7 @@ import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
-import {BeforeSwapDeltas, BeforeSwapDeltasLibrary} from "../types/BeforeSwapDeltas.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 
 contract DynamicReturnFeeTestHook is BaseTestHooks {
@@ -26,10 +26,10 @@ contract DynamicReturnFeeTestHook is BaseTestHooks {
         external
         view
         override
-        returns (bytes4, BeforeSwapDeltas, uint24)
+        returns (bytes4, BeforeSwapDelta, uint24)
     {
         // attach the fee flag to `fee` to enable overriding the pool's stored fee
-        return (IHooks.beforeSwap.selector, BeforeSwapDeltasLibrary.ZERO_DELTAS, fee | LPFeeLibrary.OVERRIDE_FEE_FLAG);
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, fee | LPFeeLibrary.OVERRIDE_FEE_FLAG);
     }
 
     function forcePoolFeeUpdate(PoolKey calldata _key, uint24 _fee) external {

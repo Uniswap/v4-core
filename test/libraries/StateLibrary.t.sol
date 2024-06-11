@@ -8,7 +8,7 @@ import {Hooks} from "../../src/libraries/Hooks.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
-import {BalanceDeltas} from "../../src/types/BalanceDeltas.sol";
+import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "../../src/types/Currency.sol";
 import {Deployers} from "../utils/Deployers.sol";
@@ -309,11 +309,11 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         uint256 swapAmount,
         bool zeroForOne
     ) public {
-        (IPoolManager.ModifyLiquidityParams memory _params, BalanceDeltas deltas) =
+        (IPoolManager.ModifyLiquidityParams memory _params, BalanceDelta delta) =
             createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
 
-        uint256 delta0 = uint256(int256(-deltas.amount0()));
-        uint256 delta1 = uint256(int256(-deltas.amount1()));
+        uint256 delta0 = uint256(int256(-delta.amount0()));
+        uint256 delta1 = uint256(int256(-delta.amount1()));
         // if one of the deltas is zero, ensure to swap in the right direction
         if (delta0 == 0) {
             zeroForOne = true;

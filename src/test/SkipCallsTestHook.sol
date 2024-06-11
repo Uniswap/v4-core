@@ -6,7 +6,7 @@ import {BaseTestHooks} from "./BaseTestHooks.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDeltas, BalanceDeltasLibrary} from "../types/BalanceDeltas.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {Currency} from "../types/Currency.sol";
@@ -16,7 +16,7 @@ import {Test} from "forge-std/Test.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
-import {BeforeSwapDeltas, BeforeSwapDeltasLibrary} from "../types/BeforeSwapDeltas.sol";
+import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
     using CurrencySettler for Currency;
@@ -67,12 +67,12 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         address,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
-        BalanceDeltas,
+        BalanceDelta,
         bytes calldata hookData
-    ) external override returns (bytes4, BalanceDeltas) {
+    ) external override returns (bytes4, BalanceDelta) {
         counter++;
         _addLiquidity(key, params, hookData);
-        return (IHooks.afterAddLiquidity.selector, BalanceDeltasLibrary.ZERO_DELTAS);
+        return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeRemoveLiquidity(
@@ -90,29 +90,29 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         address,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
-        BalanceDeltas,
+        BalanceDelta,
         bytes calldata hookData
-    ) external override returns (bytes4, BalanceDeltas) {
+    ) external override returns (bytes4, BalanceDelta) {
         counter++;
         _removeLiquidity(key, params, hookData);
-        return (IHooks.afterRemoveLiquidity.selector, BalanceDeltasLibrary.ZERO_DELTAS);
+        return (IHooks.afterRemoveLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
     }
 
     function beforeSwap(address, PoolKey calldata key, IPoolManager.SwapParams calldata params, bytes calldata hookData)
         external
         override
-        returns (bytes4, BeforeSwapDeltas, uint24)
+        returns (bytes4, BeforeSwapDelta, uint24)
     {
         counter++;
         _swap(key, params, hookData);
-        return (IHooks.beforeSwap.selector, BeforeSwapDeltasLibrary.ZERO_DELTAS, 0);
+        return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
     function afterSwap(
         address,
         PoolKey calldata key,
         IPoolManager.SwapParams calldata params,
-        BalanceDeltas,
+        BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, int128) {
         counter++;

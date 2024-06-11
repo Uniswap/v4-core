@@ -18,7 +18,7 @@ import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
-import {BalanceDeltas, BalanceDeltasLibrary} from "../src/types/BalanceDeltas.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract TestDynamicFees is Test, Deployers, GasSnapshot {
@@ -217,10 +217,10 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         vm.expectEmit(true, true, true, true, address(manager));
         emit Swap(key.toId(), address(swapRouter), -101000000, 100, 79228162514264329670727698909, 1e18, -1, 999999);
 
-        BalanceDeltas deltas = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
         snapLastCall("swap with lp fee and protocol fee");
 
-        uint256 expectedProtocolFee = uint256(uint128(-deltas.amount0())) * 1000 / 1e6;
+        uint256 expectedProtocolFee = uint256(uint128(-delta.amount0())) * 1000 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
 
         assertEq(_fetchPoolLPFee(key), 999999);
@@ -291,9 +291,9 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        BalanceDeltas deltas = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
+        BalanceDelta delta = swapRouter.swap(key, params, testSettings, ZERO_BYTES);
 
-        uint256 expectedProtocolFee = uint256(uint128(-deltas.amount0())) * protocolFee0 / 1e6;
+        uint256 expectedProtocolFee = uint256(uint128(-delta.amount0())) * protocolFee0 / 1e6;
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);
     }
 

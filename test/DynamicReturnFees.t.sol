@@ -18,7 +18,7 @@ import {DynamicReturnFeeTestHook} from "../src/test/DynamicReturnFeeTestHook.sol
 import {Currency} from "../src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {FullMath} from "../src/libraries/FullMath.sol";
-import {BalanceDeltas} from "../src/types/BalanceDeltas.sol";
+import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
@@ -66,7 +66,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         uint24 actualFee = fee.removeOverrideFlag();
 
         int256 amountSpecified = -10000;
-        BalanceDeltas result;
+        BalanceDelta result;
         if (actualFee > LPFeeLibrary.MAX_LP_FEE) {
             vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
             result = swap(key, true, amountSpecified, ZERO_BYTES);
@@ -74,7 +74,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         } else {
             result = swap(key, true, amountSpecified, ZERO_BYTES);
         }
-        // BalanceDeltas result = swap(key, true, amountSpecified, ZERO_BYTES);
+        // BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
         assertEq(result.amount0(), amountSpecified);
 
         if (actualFee > LPFeeLibrary.MAX_LP_FEE) {
@@ -123,7 +123,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
         // despite returning a valid swap fee (1000), the static fee is used
         int256 amountSpecified = -10000;
-        BalanceDeltas result = swap(key, true, amountSpecified, ZERO_BYTES);
+        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
 
         // after swapping ~1:1, the amount out (amount1) should be approximately 0.30% less than the amount specified
         assertEq(result.amount0(), amountSpecified);
@@ -148,7 +148,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         dynamicReturnFeesHook.setFee(newFee);
 
         int256 amountSpecified = -10000;
-        BalanceDeltas result = swap(key, true, amountSpecified, ZERO_BYTES);
+        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
         assertApproxEqAbs(
             uint256(int256(result.amount1())), FullMath.mulDiv(uint256(-amountSpecified), (1e6 - newFee), 1e6), 1 wei
         );

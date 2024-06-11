@@ -10,7 +10,7 @@ import {TickMath} from "../../src/libraries/TickMath.sol";
 import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
 import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
 import {Constants} from "../../test/utils/Constants.sol";
-import {BalanceDeltas} from "../../src/types/BalanceDeltas.sol";
+import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {Slot0} from "../../src/types/Slot0.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";

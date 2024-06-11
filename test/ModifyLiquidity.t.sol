@@ -15,10 +15,10 @@ import {Currency} from "src/types/Currency.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {StateLibrary} from "src/libraries/StateLibrary.sol";
 import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
-import {BalanceDeltas} from "../src/types/BalanceDeltas.sol";
+import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
-import {toBalanceDeltas} from "src/types/BalanceDeltas.sol";
+import {toBalanceDelta} from "src/types/BalanceDelta.sol";
 import {Logger} from "./utils/Logger.sol";
 
 contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers, GasSnapshot {
@@ -60,12 +60,12 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
 
         logParams(params);
 
-        (BalanceDeltas deltas) = modifyLiquidityRouter.modifyLiquidity(simpleKey, params, ZERO_BYTES);
+        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, params, ZERO_BYTES);
 
         (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(simplePoolId, params);
 
-        _checkError(deltas.amount0(), jsDelta0, "amount0 is off by more than one pip");
-        _checkError(deltas.amount1(), jsDelta1, "amount1 is off by more than one pip");
+        _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
+        _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
     }
 
     // Static edge case, no fuzz test, to make sure we test max tickspacing.
@@ -85,12 +85,12 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
             salt: 0
         });
 
-        (BalanceDeltas deltas) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
+        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
 
         (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(wpId0, params);
 
-        _checkError(deltas.amount0(), jsDelta0, "amount0 is off by more than one pip");
-        _checkError(deltas.amount1(), jsDelta1, "amount1 is off by more than one pip");
+        _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
+        _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
     }
 
     // Static edge case, no fuzz test, to make sure we test min tick spacing.
@@ -112,12 +112,12 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
 
         params.tickLower = 10;
 
-        (BalanceDeltas deltas) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
+        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
 
         (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(wpId0, params);
 
-        _checkError(deltas.amount0(), jsDelta0, "amount0 is off by more than one pip");
-        _checkError(deltas.amount1(), jsDelta1, "amount1 is off by more than one pip");
+        _checkError(delta.amount0(), jsDelta0, "amount0 is off by more than one pip");
+        _checkError(delta.amount1(), jsDelta1, "amount1 is off by more than one pip");
     }
 
     function _modifyLiquidityJS(PoolId poolId, IPoolManager.ModifyLiquidityParams memory params)

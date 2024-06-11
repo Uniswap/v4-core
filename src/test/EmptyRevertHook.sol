@@ -3,9 +3,9 @@ pragma solidity ^0.8.24;
 
 import {IHooks} from "../interfaces/IHooks.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDeltas} from "../types/BalanceDeltas.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {BeforeSwapDeltas} from "../types/BeforeSwapDeltas.sol";
+import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 contract EmptyRevertHook is IHooks {
     function beforeInitialize(
@@ -40,9 +40,9 @@ contract EmptyRevertHook is IHooks {
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
-        BalanceDeltas, /* delta **/
+        BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4, BalanceDeltas) {
+    ) external virtual returns (bytes4, BalanceDelta) {
         revert();
     }
 
@@ -59,9 +59,9 @@ contract EmptyRevertHook is IHooks {
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
-        BalanceDeltas, /* delta **/
+        BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4, BalanceDeltas) {
+    ) external virtual returns (bytes4, BalanceDelta) {
         revert();
     }
 
@@ -70,7 +70,7 @@ contract EmptyRevertHook is IHooks {
         PoolKey calldata, /* key **/
         IPoolManager.SwapParams calldata, /* params **/
         bytes calldata /* hookData **/
-    ) external virtual returns (bytes4, BeforeSwapDeltas, uint24) {
+    ) external virtual returns (bytes4, BeforeSwapDelta, uint24) {
         revert();
     }
 
@@ -78,7 +78,7 @@ contract EmptyRevertHook is IHooks {
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.SwapParams calldata, /* params **/
-        BalanceDeltas, /* delta **/
+        BalanceDelta, /* delta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4, int128) {
         revert();

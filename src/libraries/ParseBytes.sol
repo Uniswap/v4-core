@@ -20,8 +20,8 @@ library ParseBytes {
         }
     }
 
-    function parseReturnDeltas(bytes memory result) internal pure returns (int256 hookReturn) {
-        // equivalent: (, hookReturnDeltas) = abi.decode(result, (bytes4, int256));
+    function parseReturnDelta(bytes memory result) internal pure returns (int256 hookReturn) {
+        // equivalent: (, hookReturnDelta) = abi.decode(result, (bytes4, int256));
         assembly ("memory-safe") {
             hookReturn := mload(add(result, 0x40))
         }

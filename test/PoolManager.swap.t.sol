@@ -8,7 +8,7 @@ import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
-import {BalanceDeltas, BalanceDeltasLibrary, toBalanceDeltas} from "../src/types/BalanceDeltas.sol";
+import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {SqrtPriceMath} from "../src/libraries/SqrtPriceMath.sol";
@@ -109,20 +109,20 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        BalanceDeltas deltas;
-        try swapRouter.swap(key_, swapParams, testSettings, "") returns (BalanceDeltas deltas_) {
-            deltas = deltas_;
+        BalanceDelta delta;
+        try swapRouter.swap(key_, swapParams, testSettings, "") returns (BalanceDelta delta_) {
+            delta = delta_;
         } catch (bytes memory reason) {
             require(overflows, "v4 should not overflow");
             assertEq(bytes4(reason), SafeCast.SafeCastOverflow.selector);
-            deltas = toBalanceDeltas(0, 0);
+            delta = toBalanceDelta(0, 0);
             amount0Delta = 0;
             amount1Delta = 0;
         }
 
         // because signs for v3 and v4 swaps are inverted, add values up to get the difference
-        amount0Diff = amount0Delta + deltas.amount0();
-        amount1Diff = amount1Delta + deltas.amount1();
+        amount0Diff = amount0Delta + delta.amount0();
+        amount1Diff = amount1Delta + delta.amount1();
     }
 
     function uniswapV3MintCallback(uint256 amount0Owed, uint256 amount1Owed, bytes calldata) external {
