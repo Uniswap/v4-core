@@ -25,13 +25,13 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     }
 
     function _setUpDeltaReturnFuzzPool() internal {
-        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTAS_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURN_DELTAS_FLAG));
         address impl = address(new DeltaReturningHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
     }
 
     function _setUpCustomCurvePool() internal {
-        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURNS_DELTAS_FLAG));
+        address hookAddr = address(uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.BEFORE_SWAP_RETURN_DELTAS_FLAG));
         address impl = address(new CustomCurveHook(manager));
         _etchHookAndInitPool(hookAddr, impl);
     }
@@ -39,9 +39,9 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     function _setUpFeeTakingPool() internal {
         address hookAddr = address(
             uint160(
-                Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURNS_DELTA_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG
-                    | Hooks.AFTER_ADD_LIQUIDITY_RETURNS_DELTAS_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
-                    | Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTAS_FLAG
+                Hooks.AFTER_SWAP_FLAG | Hooks.AFTER_SWAP_RETURN_DELTA_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG
+                    | Hooks.AFTER_ADD_LIQUIDITY_RETURN_DELTAS_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
+                    | Hooks.AFTER_REMOVE_LIQUIDITY_RETURN_DELTAS_FLAG
             )
         );
         address impl = address(new FeeTakingHook(manager));

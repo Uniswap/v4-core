@@ -53,7 +53,7 @@ contract CustomCurveHook is BaseTestHooks {
         address, /* sender **/
         PoolKey calldata, /* key **/
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
-        BalanceDeltas, /* delta **/
+        BalanceDeltas, /* deltas **/
         bytes calldata /* hookData **/
     ) external view override onlyPoolManager returns (bytes4, BalanceDeltas) {
         revert AddLiquidityDirectToHook();
