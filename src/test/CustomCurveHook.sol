@@ -45,7 +45,8 @@ contract CustomCurveHook is BaseTestHooks {
         outputCurrency.settle(manager, address(this), amount, false);
 
         // return -amountSpecified as specified to no-op the concentrated liquidity swap
-        BeforeSwapDeltas hookDeltas = toBeforeSwapDeltas(int128(-params.amountSpecified), int128(params.amountSpecified));
+        BeforeSwapDeltas hookDeltas =
+            toBeforeSwapDeltas(int128(-params.amountSpecified), int128(params.amountSpecified));
         return (IHooks.beforeSwap.selector, hookDeltas, 0);
     }
 

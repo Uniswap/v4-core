@@ -178,7 +178,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         (callerDeltas, hookDeltas) = key.hooks.afterModifyLiquidity(key, params, callerDeltas, hookData);
 
         // if the hook doesnt have the flag to be able to return deltas, hookDeltas will always be 0
-        if (hookDeltas != BalanceDeltasLibrary.ZERO_DELTAS) _accountPoolBalanceDeltas(key, hookDeltas, address(key.hooks));
+        if (hookDeltas != BalanceDeltasLibrary.ZERO_DELTAS) {
+            _accountPoolBalanceDeltas(key, hookDeltas, address(key.hooks));
+        }
 
         _accountPoolBalanceDeltas(key, callerDeltas, msg.sender);
     }
@@ -221,7 +223,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         (swapDeltas, hookDeltas) = key.hooks.afterSwap(key, params, swapDeltas, hookData, beforeSwapDeltas);
 
         // if the hook doesnt have the flag to be able to return deltas, hookDeltas will always be 0
-        if (hookDeltas != BalanceDeltasLibrary.ZERO_DELTAS) _accountPoolBalanceDeltas(key, hookDeltas, address(key.hooks));
+        if (hookDeltas != BalanceDeltasLibrary.ZERO_DELTAS) {
+            _accountPoolBalanceDeltas(key, hookDeltas, address(key.hooks));
+        }
 
         _accountPoolBalanceDeltas(key, swapDeltas, msg.sender);
     }
