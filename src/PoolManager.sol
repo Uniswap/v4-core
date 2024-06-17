@@ -272,7 +272,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function take(Currency currency, address to, uint256 amount) external override onlyWhenUnlocked noDelegateCall {
+    function take(Currency currency, address to, uint256 amount) external override onlyWhenUnlocked {
         unchecked {
             // negation must be safe as amount is not negative
             _accountDelta(currency, -(amount.toInt128()), msg.sender);
@@ -281,14 +281,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function settle(Currency currency)
-        external
-        payable
-        override
-        onlyWhenUnlocked
-        noDelegateCall
-        returns (uint256 paid)
-    {
+    function settle(Currency currency) external payable override onlyWhenUnlocked returns (uint256 paid) {
         if (currency.isNative()) {
             paid = msg.value;
         } else {
@@ -302,7 +295,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function mint(address to, uint256 id, uint256 amount) external override onlyWhenUnlocked noDelegateCall {
+    function mint(address to, uint256 id, uint256 amount) external override onlyWhenUnlocked {
         unchecked {
             // negation must be safe as amount is not negative
             _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()), msg.sender);
@@ -311,7 +304,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function burn(address from, uint256 id, uint256 amount) external override onlyWhenUnlocked noDelegateCall {
+    function burn(address from, uint256 id, uint256 amount) external override onlyWhenUnlocked {
         _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128(), msg.sender);
         _burnFrom(from, id, amount);
     }

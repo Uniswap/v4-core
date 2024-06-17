@@ -81,24 +81,4 @@ contract TestDelegateCall is Test, Deployers, GasSnapshot {
         vm.expectRevert(NoDelegateCall.DelegateCallNotAllowed.selector);
         donateRouter.donate(key, 100, 200, ZERO_BYTES);
     }
-
-    function test_take_noDelegateCall() public {
-        vm.expectRevert(NoDelegateCall.DelegateCallNotAllowed.selector);
-        takeRouter.take(key, 1, 1);
-    }
-
-    function test_settle_noDelegateCall() public {
-        vm.expectRevert(NoDelegateCall.DelegateCallNotAllowed.selector);
-        settleRouter.settle(key);
-    }
-
-    function test_mint_noDelegateCall() public {
-        vm.expectRevert(NoDelegateCall.DelegateCallNotAllowed.selector);
-        claimsRouter.mint(currency0, address(this), 1);
-    }
-
-    function test_burn_noDelegateCall() public {
-        vm.expectRevert(NoDelegateCall.DelegateCallNotAllowed.selector);
-        claimsRouter.burn(currency0, address(this), 1);
-    }
 }
