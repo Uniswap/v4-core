@@ -150,7 +150,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override onlyWhenUnlocked returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+    ) external override onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         PoolId id = key.toId();
         Pool.State storage pool = _getPool(id);
         pool.checkPoolInitialized();
@@ -188,6 +188,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         override
         onlyWhenUnlocked
+        noDelegateCall
         returns (BalanceDelta swapDelta)
     {
         if (params.amountSpecified == 0) SwapAmountCannotBeZero.selector.revertWith();
@@ -249,6 +250,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         external
         override
         onlyWhenUnlocked
+        noDelegateCall
         returns (BalanceDelta delta)
     {
         Pool.State storage pool = _getPool(key.toId());
@@ -270,7 +272,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function take(Currency currency, address to, uint256 amount) external override onlyWhenUnlocked {
+    function take(Currency currency, address to, uint256 amount) external override onlyWhenUnlocked noDelegateCall {
         unchecked {
             // negation must be safe as amount is not negative
             _accountDelta(currency, -(amount.toInt128()), msg.sender);
@@ -279,7 +281,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function settle(Currency currency) external payable override onlyWhenUnlocked returns (uint256 paid) {
+    function settle(Currency currency)
+        external
+        payable
+        override
+        onlyWhenUnlocked
+        noDelegateCall
+        returns (uint256 paid)
+    {
         if (currency.isNative()) {
             paid = msg.value;
         } else {
@@ -293,7 +302,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function mint(address to, uint256 id, uint256 amount) external override onlyWhenUnlocked {
+    function mint(address to, uint256 id, uint256 amount) external override onlyWhenUnlocked noDelegateCall {
         unchecked {
             // negation must be safe as amount is not negative
             _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()), msg.sender);
@@ -302,7 +311,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function burn(address from, uint256 id, uint256 amount) external override onlyWhenUnlocked {
+    function burn(address from, uint256 id, uint256 amount) external override onlyWhenUnlocked noDelegateCall {
         _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128(), msg.sender);
         _burnFrom(from, id, amount);
     }

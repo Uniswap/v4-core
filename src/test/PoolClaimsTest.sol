@@ -21,16 +21,27 @@ contract PoolClaimsTest is PoolTestBase {
         Currency currency;
         uint256 amount;
         bool deposit;
+        bool settle;
+    }
+
+    /// @notice Mint claimable 6909 without settling ERC20
+    function mint(Currency currency, address user, uint256 amount) external payable {
+        manager.unlock(abi.encode(CallbackData(msg.sender, user, currency, amount, true, false)));
+    }
+
+    /// @notice Burn claimable 6909 without settling ERC20
+    function burn(Currency currency, address user, uint256 amount) external payable {
+        manager.unlock(abi.encode(CallbackData(msg.sender, user, currency, amount, false, false)));
     }
 
     /// @notice Convert ERC20 into a claimable 6909
     function deposit(Currency currency, address user, uint256 amount) external payable {
-        manager.unlock(abi.encode(CallbackData(msg.sender, user, currency, amount, true)));
+        manager.unlock(abi.encode(CallbackData(msg.sender, user, currency, amount, true, true)));
     }
 
     /// @notice Redeem claimable 6909 for ERC20
     function withdraw(Currency currency, address user, uint256 amount) external payable {
-        manager.unlock(abi.encode(CallbackData(msg.sender, user, currency, amount, false)));
+        manager.unlock(abi.encode(CallbackData(msg.sender, user, currency, amount, false, true)));
     }
 
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
@@ -40,10 +51,14 @@ contract PoolClaimsTest is PoolTestBase {
 
         if (data.deposit) {
             data.currency.take(manager, data.user, data.amount, true); // mint 6909
-            data.currency.settle(manager, data.user, data.amount, false); // transfer ERC20
+            if (data.settle) {
+                data.currency.settle(manager, data.user, data.amount, false); // transfer ERC20
+            }
         } else {
             data.currency.settle(manager, data.user, data.amount, true); // burn 6909
-            data.currency.take(manager, data.user, data.amount, false); // claim ERC20
+            if (data.settle) {
+                data.currency.take(manager, data.user, data.amount, false); // claim ERC20
+            }
         }
 
         return abi.encode(0);
