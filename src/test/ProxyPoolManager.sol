@@ -16,8 +16,8 @@ import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {ProtocolFees} from "../ProtocolFees.sol";
 import {ERC6909Claims} from "../ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
-import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../types/BalanceDelta.sol";
-import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
+import {BalanceDeltas, BalanceDeltasLibrary, toBalanceDeltas} from "../types/BalanceDeltas.sol";
+import {BeforeSwapDeltas} from "../types/BeforeSwapDeltas.sol";
 import {Lock} from "../libraries/Lock.sol";
 import {CurrencyDelta} from "../libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "../libraries/NonZeroDeltaCount.sol";
@@ -105,12 +105,12 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+    ) external override onlyWhenUnlocked noDelegateCall returns (BalanceDeltas callerDeltas, BalanceDeltas feesAccrued) {
         bytes memory result = _delegateCall(
             _delegateManager, abi.encodeWithSelector(this.modifyLiquidity.selector, key, params, hookData)
         );
 
-        return abi.decode(result, (BalanceDelta, BalanceDelta));
+        return abi.decode(result, (BalanceDeltas, BalanceDeltas));
     }
 
     /// @inheritdoc IPoolManager
@@ -119,12 +119,12 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         override
         onlyWhenUnlocked
         noDelegateCall
-        returns (BalanceDelta swapDelta)
+        returns (BalanceDeltas swapDeltas)
     {
         bytes memory result =
             _delegateCall(_delegateManager, abi.encodeWithSelector(this.swap.selector, key, params, hookData));
 
-        return abi.decode(result, (BalanceDelta));
+        return abi.decode(result, (BalanceDeltas));
     }
 
     /// @inheritdoc IPoolManager
@@ -133,13 +133,13 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         override
         onlyWhenUnlocked
         noDelegateCall
-        returns (BalanceDelta delta)
+        returns (BalanceDeltas deltas)
     {
         bytes memory result = _delegateCall(
             _delegateManager, abi.encodeWithSelector(this.donate.selector, key, amount0, amount1, hookData)
         );
 
-        return abi.decode(result, (BalanceDelta));
+        return abi.decode(result, (BalanceDeltas));
     }
 
     /// @inheritdoc IPoolManager
