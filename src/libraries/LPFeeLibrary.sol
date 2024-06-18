@@ -48,7 +48,7 @@ library LPFeeLibrary {
         return self;
     }
 
-    /// @notice returns true if the fee has the override flag set (top bit of the uint24)
+    /// @notice returns true if the fee has the override flag set (2nd highest bit of the uint24)
     function isOverride(uint24 self) internal pure returns (bool) {
         return self & OVERRIDE_FEE_FLAG != 0;
     }
