@@ -150,7 +150,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override onlyWhenUnlocked noDelegateCall returns (BalanceDeltas callerDeltas, BalanceDeltas feesAccrued) {
+    )
+        external
+        override
+        onlyWhenUnlocked
+        noDelegateCall
+        returns (BalanceDeltas callerDeltas, BalanceDeltas feesAccrued)
+    {
         PoolId id = key.toId();
         Pool.State storage pool = _getPool(id);
         pool.checkPoolInitialized();

@@ -105,7 +105,13 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override onlyWhenUnlocked noDelegateCall returns (BalanceDeltas callerDeltas, BalanceDeltas feesAccrued) {
+    )
+        external
+        override
+        onlyWhenUnlocked
+        noDelegateCall
+        returns (BalanceDeltas callerDeltas, BalanceDeltas feesAccrued)
+    {
         bytes memory result = _delegateCall(
             _delegateManager, abi.encodeWithSelector(this.modifyLiquidity.selector, key, params, hookData)
         );
