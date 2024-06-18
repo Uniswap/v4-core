@@ -85,9 +85,9 @@ library Pool {
         uint256 feeGrowthGlobal0X128;
         uint256 feeGrowthGlobal1X128;
         uint128 liquidity;
-        mapping(int24 => TickInfo) ticks;
-        mapping(int16 => uint256) tickBitmap;
-        mapping(bytes32 => Position.Info) positions;
+        mapping(int24 tick => TickInfo) ticks;
+        mapping(int16 wordPos => uint256) tickBitmap;
+        mapping(bytes32 positionKey => Position.Info) positions;
     }
 
     /// @dev Common checks for valid tick inputs.
