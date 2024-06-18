@@ -54,6 +54,7 @@ interface IHooks {
     /// @param key The key for the pool
     /// @param params The parameters for adding liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidity provider to be passed on to the hook
+    /// @param delta The amount owed to the caller (positive) or owed to the pool (negative)
     /// @return bytes4 The function selector for the hook
     /// @return BalanceDelta The hook's delta in token0 and token1. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterAddLiquidity(
@@ -82,6 +83,7 @@ interface IHooks {
     /// @param key The key for the pool
     /// @param params The parameters for removing liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
+    /// @param delta The amount owed to the caller (positive)
     /// @return bytes4 The function selector for the hook
     /// @return BalanceDelta The hook's delta in token0 and token1. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterRemoveLiquidity(
