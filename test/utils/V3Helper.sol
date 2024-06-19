@@ -23,6 +23,15 @@ interface IUniswapV3Pool {
         uint160 sqrtPriceLimitX96,
         bytes calldata data
     ) external returns (int256 amount0, int256 amount1);
+    function collect(
+        address recipient,
+        int24 tickLower,
+        int24 tickUpper,
+        uint128 amount0Requested,
+        uint128 amount1Requested
+    ) external returns (uint128 amount0, uint128 amount1);
+    function feeGrowthGlobal0X128() external view returns (uint256);
+    function feeGrowthGlobal1X128() external view returns (uint256);
 }
 
 interface IUniswapV3MintCallback {

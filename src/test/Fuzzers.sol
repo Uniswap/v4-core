@@ -165,7 +165,7 @@ contract Fuzzers is StdUtils {
         bytes memory hookData
     ) internal returns (IPoolManager.ModifyLiquidityParams memory result, BalanceDelta delta) {
         result = createFuzzyLiquidityParams(key, params, sqrtPriceX96);
-        delta = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
+        (delta,) = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
     }
 
     // There exists possible positions in the pool, so we tighten the boundaries of liquidity.
@@ -178,6 +178,6 @@ contract Fuzzers is StdUtils {
         uint256 maxPositions
     ) internal returns (IPoolManager.ModifyLiquidityParams memory result, BalanceDelta delta) {
         result = createFuzzyLiquidityParamsWithTightBound(key, params, sqrtPriceX96, maxPositions);
-        delta = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
+        (delta,) = modifyLiquidityRouter.modifyLiquidity(key, result, hookData);
     }
 }
