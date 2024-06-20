@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {ProtocolFees} from "../ProtocolFees.sol";
-import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";

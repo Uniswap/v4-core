@@ -6,7 +6,6 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.sol";
-import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 
 contract DynamicFeesTestHook is BaseTestHooks {
     uint24 internal fee;
