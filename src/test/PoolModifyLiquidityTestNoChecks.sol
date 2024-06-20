@@ -11,7 +11,6 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
-import {Constants} from "../../test/utils/Constants.sol";
 
 contract PoolModifyLiquidityTestNoChecks is PoolTestBase {
     using CurrencySettler for Currency;
