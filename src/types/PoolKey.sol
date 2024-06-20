@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import {Currency} from "./Currency.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "./../interfaces/IPoolManager.sol";
+import {BalanceDelta} from "./BalanceDelta.sol";
 
 /// @notice Returns the key for identifying a pool
 struct PoolKey {
@@ -21,22 +22,26 @@ struct PoolKey {
 
 library PoolKeyLibrary {
     /// @notice Returns the unspecified currency and amount for a swap
-    function getUnspecified(PoolKey calldata key, IPoolManager.SwapParams calldata params)
+    function getUnspecified(PoolKey calldata key, IPoolManager.SwapParams calldata params, BalanceDelta delta)
         internal
         pure
         returns (Currency currencyUnspecified, int256 amountUnspecified)
     {
         bool currency0Specified = (params.amountSpecified < 0 == params.zeroForOne);
-        return (currency0Specified) ? (key.currency1, params.amountSpecified) : (key.currency0, params.amountSpecified);
+        (Currency feeCurrency, int128 swapAmount) =
+            (currency0Specified) ? (key.currency1, delta.amount1()) : (key.currency0, delta.amount0());
+        return (feeCurrency, swapAmount);
     }
 
     /// @notice Returns the specified currency and amount for a swap
-    function getSpecified(PoolKey calldata key, IPoolManager.SwapParams calldata params)
+    function getSpecified(PoolKey calldata key, IPoolManager.SwapParams calldata params, BalanceDelta delta)
         internal
         pure
         returns (Currency currencySpecified, int256 amountSpecified)
     {
         bool currency0Specified = (params.amountSpecified < 0 == params.zeroForOne);
-        return (currency0Specified) ? (key.currency0, params.amountSpecified) : (key.currency1, params.amountSpecified);
+        (Currency feeCurrency, int128 swapAmount) =
+            (currency0Specified) ? (key.currency0, delta.amount0()) : (key.currency1, delta.amount1());
+        return (feeCurrency, swapAmount);
     }
 }
