@@ -22,7 +22,7 @@ struct PoolKey {
 
 library PoolKeyLibrary {
     /// @notice Returns the unspecified currency and amount for a swap
-    function getUnspecified(PoolKey calldata key, IPoolManager.SwapParams calldata params, BalanceDelta delta)
+    function getUnspecifiedCurrencyAndAmount(PoolKey calldata key, IPoolManager.SwapParams calldata params, BalanceDelta delta)
         internal
         pure
         returns (Currency currencyUnspecified, int256 amountUnspecified)
@@ -34,7 +34,7 @@ library PoolKeyLibrary {
     }
 
     /// @notice Returns the specified currency and amount for a swap
-    function getSpecified(PoolKey calldata key, IPoolManager.SwapParams calldata params, BalanceDelta delta)
+    function getSpecifiedCurrencyAndAmount(PoolKey calldata key, IPoolManager.SwapParams calldata params, BalanceDelta delta)
         internal
         pure
         returns (Currency currencySpecified, int256 amountSpecified)
