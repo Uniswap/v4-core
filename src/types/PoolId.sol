@@ -10,7 +10,7 @@ library PoolIdLibrary {
     /// @notice Returns value equal to keccak256(abi.encode(poolKey))
     function toId(PoolKey memory poolKey) internal pure returns (PoolId poolId) {
         assembly ("memory-safe") {
-            poolId := keccak256(poolKey, mul(32, 5))
+            poolId := keccak256(poolKey, 160)
         }
     }
 }
