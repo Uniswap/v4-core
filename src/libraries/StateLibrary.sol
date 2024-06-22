@@ -242,6 +242,17 @@ library StateLibrary {
         }
     }
 
+    /**
+     * @notice Retrieves the position information of a pool at a specific position ID.
+     * @dev Corresponds to pools[poolId].positions[positionId]
+     * @param manager The pool manager contract.
+     * @param poolId The ID of the pool.
+     * @param owner The address of the position owner
+     * @param tickLower The lower tick boundary of the position
+     * @param tickUpper The upper tick boundary of the position
+     * @param salt A unique value to differentiate between multiple positions in the same range
+     * @return position The position info struct of the given owners' position
+     */
     function getPosition(
         IPoolManager manager,
         PoolId poolId,
@@ -250,17 +261,7 @@ library StateLibrary {
         int24 tickUpper,
         bytes32 salt
     ) internal view returns (Position.Info memory) {
-        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
-        bytes32 positionKey;
-
-        assembly ("memory-safe") {
-            mstore(0x26, salt) // [0x26, 0x46)
-            mstore(0x06, tickUpper) // [0x23, 0x26)
-            mstore(0x03, tickLower) // [0x20, 0x23)
-            mstore(0, owner) // [0x0c, 0x20)
-            positionKey := keccak256(0x0c, 0x3a) // len is 58 bytes
-            mstore(0x26, 0) // rewrite 0x26 to 0
-        }
+        bytes32 positionKey = Position.key(owner, tickLower, tickUpper, salt);
         (uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128) =
             getPositionInfo(manager, poolId, positionKey);
         return Position.Info({
@@ -272,18 +273,25 @@ library StateLibrary {
 
     /**
      * @notice Retrieves the liquidity of a position.
-     * @dev Corresponds to pools[poolId].positions[positionId].liquidity. A more gas efficient version of getPositionInfo
+     * @dev Corresponds to pools[poolId].positions[positionId].liquidity
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
-     * @param positionId The ID of the position.
+     * @param owner The address of the position owner
+     * @param tickLower The lower tick boundary of the position
+     * @param tickUpper The upper tick boundary of the position
+     * @param salt A unique value to differentiate between multiple positions in the same range
      * @return liquidity The liquidity of the position.
      */
-    function getPositionLiquidity(IPoolManager manager, PoolId poolId, bytes32 positionId)
-        internal
-        view
-        returns (uint128 liquidity)
-    {
-        bytes32 slot = _getPositionInfoSlot(poolId, positionId);
+    function getPositionLiquidity(
+        IPoolManager manager,
+        PoolId poolId,
+        address owner,
+        int24 tickLower,
+        int24 tickUpper,
+        bytes32 salt
+    ) internal view returns (uint128 liquidity) {
+        bytes32 positionKey = Position.key(owner, tickLower, tickUpper, salt);
+        bytes32 slot = _getPositionInfoSlot(poolId, positionKey);
         liquidity = uint128(uint256(manager.extsload(slot)));
     }
 
