@@ -18,7 +18,7 @@ import {ProtocolFees} from "../../src/ProtocolFees.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {IERC20Minimal} from "../../src/interfaces/external/IERC20Minimal.sol";
-import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
+import {BalanceDeltas} from "../../src/types/BalanceDeltas.sol";
 import {Constants} from "../utils/Constants.sol";
 
 /// @notice Testing Deployers.swap() and Deployers.swapNativeInput()
@@ -39,31 +39,31 @@ contract SwapHelperTest is Test, Deployers, GasSnapshot {
     // --- Deployers.swap() tests --- //
     function test_swap_helper_zeroForOne_exactInput() public {
         int256 amountSpecified = -100;
-        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
+        BalanceDeltas result = swap(key, true, amountSpecified, ZERO_BYTES);
         assertEq(result.amount0(), amountSpecified);
     }
 
     function test_swap_helper_zeroForOne_exactOutput() public {
         int256 amountSpecified = 100;
-        BalanceDelta result = swap(key, true, amountSpecified, ZERO_BYTES);
+        BalanceDeltas result = swap(key, true, amountSpecified, ZERO_BYTES);
         assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swap_helper_oneForZero_exactInput() public {
         int256 amountSpecified = -100;
-        BalanceDelta result = swap(key, false, amountSpecified, ZERO_BYTES);
+        BalanceDeltas result = swap(key, false, amountSpecified, ZERO_BYTES);
         assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swap_helper_oneForZero_exactOutput() public {
         int256 amountSpecified = 100;
-        BalanceDelta result = swap(key, false, amountSpecified, ZERO_BYTES);
+        BalanceDeltas result = swap(key, false, amountSpecified, ZERO_BYTES);
         assertEq(result.amount0(), amountSpecified);
     }
 
     function test_swap_helper_native_zeroForOne_exactInput() public {
         int256 amountSpecified = -100;
-        BalanceDelta result = swap(nativeKey, true, amountSpecified, ZERO_BYTES);
+        BalanceDeltas result = swap(nativeKey, true, amountSpecified, ZERO_BYTES);
         assertEq(result.amount0(), amountSpecified);
     }
 
@@ -75,38 +75,38 @@ contract SwapHelperTest is Test, Deployers, GasSnapshot {
 
     function test_swap_helper_native_oneForZero_exactInput() public {
         int256 amountSpecified = -100;
-        BalanceDelta result = swap(nativeKey, false, amountSpecified, ZERO_BYTES);
+        BalanceDeltas result = swap(nativeKey, false, amountSpecified, ZERO_BYTES);
         assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swap_helper_native_oneForZero_exactOutput() public {
         int256 amountSpecified = 100;
-        BalanceDelta result = swap(nativeKey, false, amountSpecified, ZERO_BYTES);
+        BalanceDeltas result = swap(nativeKey, false, amountSpecified, ZERO_BYTES);
         assertEq(result.amount0(), amountSpecified);
     }
 
     // --- Deployers.swapNativeInput() tests --- //
     function test_swapNativeInput_helper_zeroForOne_exactInput() public {
         int256 amountSpecified = -100;
-        BalanceDelta result = swapNativeInput(nativeKey, true, amountSpecified, ZERO_BYTES, 100 wei);
+        BalanceDeltas result = swapNativeInput(nativeKey, true, amountSpecified, ZERO_BYTES, 100 wei);
         assertEq(result.amount0(), amountSpecified);
     }
 
     function test_swapNativeInput_helper_zeroForOne_exactOutput() public {
         int256 amountSpecified = 100;
-        BalanceDelta result = swapNativeInput(nativeKey, true, amountSpecified, ZERO_BYTES, 200 wei); // overpay
+        BalanceDeltas result = swapNativeInput(nativeKey, true, amountSpecified, ZERO_BYTES, 200 wei); // overpay
         assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swapNativeInput_helper_oneForZero_exactInput() public {
         int256 amountSpecified = -100;
-        BalanceDelta result = swapNativeInput(nativeKey, false, amountSpecified, ZERO_BYTES, 0 wei);
+        BalanceDeltas result = swapNativeInput(nativeKey, false, amountSpecified, ZERO_BYTES, 0 wei);
         assertEq(result.amount1(), amountSpecified);
     }
 
     function test_swapNativeInput_helper_oneForZero_exactOutput() public {
         int256 amountSpecified = 100;
-        BalanceDelta result = swapNativeInput(nativeKey, false, amountSpecified, ZERO_BYTES, 0 wei);
+        BalanceDeltas result = swapNativeInput(nativeKey, false, amountSpecified, ZERO_BYTES, 0 wei);
         assertEq(result.amount0(), amountSpecified);
     }
 
