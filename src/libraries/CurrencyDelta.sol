@@ -15,21 +15,16 @@ library CurrencyDelta {
         }
     }
 
-    /// @notice sets a new currency delta for a given caller and currency
-    function setDelta(Currency currency, address caller, int256 delta) internal {
+    /// @notice applies a new currency delta for a given caller and currency
+    function applyDelta(Currency currency, address caller, int128 delta) internal returns (int256 previous, int256 next) {
         bytes32 hashSlot = _computeSlot(caller, currency);
 
         assembly {
-            tstore(hashSlot, delta)
+            previous := tload(hashSlot)
         }
-    }
-
-    /// @notice gets a new currency delta for a given caller and currency
-    function getDelta(Currency currency, address caller) internal view returns (int256 delta) {
-        bytes32 hashSlot = _computeSlot(caller, currency);
-
+        next = previous + delta;
         assembly {
-            delta := tload(hashSlot)
+            tstore(hashSlot, next)
         }
     }
 }
