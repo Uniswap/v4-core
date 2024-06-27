@@ -85,4 +85,9 @@ contract LPFeeLibraryTest is Test {
             assertEq(LPFeeLibrary.getInitialLPFee(fee), fee);
         }
     }
+
+    function test_asOverrideFee() public pure {
+        uint24 fee = 3000;
+        assertEq(LPFeeLibrary.asOverrideFee(fee), fee | LPFeeLibrary.OVERRIDE_FEE_FLAG);
+    }
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.20;
 
-import {PoolKey} from "../types/PoolKey.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
 library LPFeeLibrary {
@@ -62,5 +61,9 @@ library LPFeeLibrary {
     function removeOverrideFlagAndValidate(uint24 self) internal pure returns (uint24 fee) {
         fee = self.removeOverrideFlag();
         fee.validate();
+    }
+
+    function asOverrideFee(uint24 self) internal pure returns (uint24) {
+        return self | OVERRIDE_FEE_FLAG;
     }
 }
