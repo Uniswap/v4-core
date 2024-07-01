@@ -2,18 +2,18 @@
 pragma solidity ^0.8.15;
 
 import {Test} from "forge-std/Test.sol";
-import {Currency} from "../src/types/Currency.sol";
-import {MockERC6909Claims} from "../src/test/MockERC6909Claims.sol";
+import {ERC6909ClaimsImplementation} from "../src/test/ERC6909ClaimsImplementation.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {stdError} from "forge-std/StdError.sol";
 
 contract ERC6909ClaimsTest is Test, GasSnapshot {
-    MockERC6909Claims token;
+    ERC6909ClaimsImplementation token;
 
     function setUp() public {
-        token = new MockERC6909Claims();
+        token = new ERC6909ClaimsImplementation();
     }
 
-    function test_burnFrom_withApproval(address sender, uint256 id, uint256 mintAmount, uint256 transferAmount)
+    function test_fuzz_burnFrom_withApproval(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount)
         public
     {
         token.mint(sender, id, mintAmount);
@@ -21,22 +21,44 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         vm.prank(sender);
         token.approve(address(this), id, mintAmount);
 
-        if (transferAmount > mintAmount) {
-            vm.expectRevert();
+        if (burnAmount > mintAmount) {
+            vm.expectRevert(stdError.arithmeticError);
         }
-        token.burnFrom(sender, id, transferAmount);
+        token.burnFrom(sender, id, burnAmount);
 
-        if (transferAmount <= mintAmount) {
+        if (burnAmount <= mintAmount) {
             if (mintAmount == type(uint256).max) {
                 assertEq(token.allowance(sender, address(this), id), type(uint256).max);
             } else {
                 if (sender != address(this)) {
-                    assertEq(token.allowance(sender, address(this), id), mintAmount - transferAmount);
+                    assertEq(token.allowance(sender, address(this), id), mintAmount - burnAmount);
                 } else {
                     assertEq(token.allowance(sender, address(this), id), mintAmount);
                 }
             }
-            assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
+            assertEq(token.balanceOf(sender, id), mintAmount - burnAmount);
+        }
+    }
+
+    function test_fuzz_burnFrom_withOperator(address sender, uint256 id, uint256 mintAmount, uint256 burnAmount)
+        public
+    {
+        token.mint(sender, id, mintAmount);
+
+        assertFalse(token.isOperator(sender, address(this)));
+
+        vm.prank(sender);
+        token.setOperator(address(this), true);
+
+        assertTrue(token.isOperator(sender, address(this)));
+
+        if (burnAmount > mintAmount) {
+            vm.expectRevert(stdError.arithmeticError);
+        }
+        token.burnFrom(sender, id, burnAmount);
+
+        if (burnAmount <= mintAmount) {
+            assertEq(token.balanceOf(sender, id), mintAmount - burnAmount);
         }
     }
 
@@ -44,7 +66,7 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         token.mint(address(this), 1337, 100);
 
         vm.prank(address(0xBEEF));
-        vm.expectRevert();
+        vm.expectRevert(stdError.arithmeticError);
         token.burnFrom(address(this), 1337, 100);
     }
 
