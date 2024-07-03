@@ -179,7 +179,7 @@ library Hooks {
     {
         if (self.hasPermission(BEFORE_INITIALIZE_FLAG)) {
             self.callHook(
-                abi.encodeWithSelector(IHooks.beforeInitialize.selector, msg.sender, key, sqrtPriceX96, hookData)
+                abi.encodeCall(IHooks.beforeInitialize, (msg.sender, key, sqrtPriceX96, hookData))
             );
         }
     }
@@ -191,7 +191,7 @@ library Hooks {
     {
         if (self.hasPermission(AFTER_INITIALIZE_FLAG)) {
             self.callHook(
-                abi.encodeWithSelector(IHooks.afterInitialize.selector, msg.sender, key, sqrtPriceX96, tick, hookData)
+                abi.encodeCall(IHooks.afterInitialize, (msg.sender, key, sqrtPriceX96, tick, hookData))
             );
         }
     }
@@ -204,10 +204,10 @@ library Hooks {
         bytes calldata hookData
     ) internal noSelfCall(self) {
         if (params.liquidityDelta > 0 && self.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
-            self.callHook(abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData));
+            self.callHook(abi.encodeCall(IHooks.beforeAddLiquidity, (msg.sender, key, params, hookData)));
         } else if (params.liquidityDelta <= 0 && self.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
             self.callHook(
-                abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
+                abi.encodeCall(IHooks.beforeRemoveLiquidity, (msg.sender, key, params, hookData))
             );
         }
     }
@@ -319,7 +319,7 @@ library Hooks {
     {
         if (self.hasPermission(BEFORE_DONATE_FLAG)) {
             self.callHook(
-                abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
+                abi.encodeCall(IHooks.beforeDonate, (msg.sender, key, amount0, amount1, hookData))
             );
         }
     }
@@ -331,7 +331,7 @@ library Hooks {
     {
         if (self.hasPermission(AFTER_DONATE_FLAG)) {
             self.callHook(
-                abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, amount0, amount1, hookData)
+                abi.encodeCall(IHooks.afterDonate, (msg.sender, key, amount0, amount1, hookData))
             );
         }
     }
