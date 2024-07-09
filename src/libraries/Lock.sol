@@ -7,7 +7,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 /// TODO: This library can be deleted when we have the transient keyword support in solidity.
 library Lock {
     // The slot holding the unlocked state, transiently. bytes32(uint256(keccak256("Unlocked")) - 1)
-    bytes32 constant IS_UNLOCKED_SLOT = 0xc090fc4683624cfc3884e9d8de5eca132f2d0ec062aff75d43c0465d5ceeab23;
+    bytes32 private constant IS_UNLOCKED_SLOT = 0xc090fc4683624cfc3884e9d8de5eca132f2d0ec062aff75d43c0465d5ceeab23;
 
     function unlock() internal {
         assembly {
