@@ -25,13 +25,13 @@ contract ReservesTest is Test {
         assertEq(value, 0);
     }
 
-    function test_getReserves_returns_set() public {
+    function test_getReserves_RETURN_set() public {
         currency0.setReserves(100);
         uint256 value = currency0.getReserves();
         assertEq(value, 100);
     }
 
-    function test_set_twice_returns_correct_value() public {
+    function test_set_twice_RETURN_correct_value() public {
         currency0.setReserves(100);
         currency0.setReserves(200);
         uint256 value = currency0.getReserves();

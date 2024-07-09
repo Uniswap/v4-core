@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {BalanceDeltas, BalanceDeltasLibrary} from "../types/BalanceDeltas.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
@@ -27,10 +27,10 @@ contract PoolDonateTest is PoolTestBase {
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes memory hookData)
         external
         payable
-        returns (BalanceDelta delta)
+        returns (BalanceDeltas deltas)
     {
-        delta = abi.decode(
-            manager.unlock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDelta)
+        deltas = abi.decode(
+            manager.unlock(abi.encode(CallbackData(msg.sender, key, amount0, amount1, hookData))), (BalanceDeltas)
         );
 
         uint256 ethBalance = address(this).balance;
@@ -50,7 +50,7 @@ contract PoolDonateTest is PoolTestBase {
         require(deltaBefore0 == 0, "deltaBefore0 is not 0");
         require(deltaBefore1 == 0, "deltaBefore1 is not 0");
 
-        BalanceDelta delta = manager.donate(data.key, data.amount0, data.amount1, data.hookData);
+        BalanceDeltas deltas = manager.donate(data.key, data.amount0, data.amount1, data.hookData);
 
         (,, int256 deltaAfter0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, int256 deltaAfter1) = _fetchBalances(data.key.currency1, data.sender, address(this));
@@ -63,6 +63,6 @@ contract PoolDonateTest is PoolTestBase {
         if (deltaAfter0 > 0) data.key.currency0.take(manager, data.sender, uint256(deltaAfter0), false);
         if (deltaAfter1 > 0) data.key.currency1.take(manager, data.sender, uint256(deltaAfter1), false);
 
-        return abi.encode(delta);
+        return abi.encode(deltas);
     }
 }

@@ -10,7 +10,7 @@ import {PoolManager} from "../../src/PoolManager.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
-import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
+import {BalanceDeltas} from "../../src/types/BalanceDeltas.sol";
 import {TickMath} from "../../src/libraries/TickMath.sol";
 import {Constants} from "../utils/Constants.sol";
 import {SortTokens} from "./SortTokens.sol";
@@ -231,7 +231,7 @@ contract Deployers {
     /// @notice Helper function for a simple ERC20 swaps that allows for unlimited price impact
     function swap(PoolKey memory _key, bool zeroForOne, int256 amountSpecified, bytes memory hookData)
         internal
-        returns (BalanceDelta)
+        returns (BalanceDeltas)
     {
         // allow native input for exact-input, guide users to the `swapNativeInput` function
         bool isNativeInput = zeroForOne && _key.currency0.isNative();
@@ -258,7 +258,7 @@ contract Deployers {
         int256 amountSpecified,
         bytes memory hookData,
         uint256 msgValue
-    ) internal returns (BalanceDelta) {
+    ) internal returns (BalanceDeltas) {
         require(_key.currency0.isNative(), "currency0 is not native. Use swap() instead");
         if (zeroForOne == false) require(msgValue == 0, "msgValue must be 0 for oneForZero swaps");
 
