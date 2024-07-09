@@ -40,8 +40,8 @@ interface IERC6909Claims {
     /// @param amount The amount of the token.
     function approve(address spender, uint256 id, uint256 amount) external returns (bool);
 
-    /// @notice Sets or removes a spender as an operator for the caller.
-    /// @param spender The address of the spender.
+    /// @notice Sets or removes an operator for the caller.
+    /// @param operator The address of the operator.
     /// @param approved The approval status.
-    function setOperator(address spender, bool approved) external returns (bool);
+    function setOperator(address operator, bool approved) external returns (bool);
 }

@@ -162,7 +162,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     function burn(address from, uint256 id, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
-    function settle(Currency token) external payable returns (uint256 paid);
+    function settle(Currency currency) external payable returns (uint256 paid);
 
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external;
