@@ -20,16 +20,18 @@ interface IProtocolFees {
     event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
 
     /// @notice Given a currency address, returns the protocol fees accrued in that currency
-    function protocolFeesAccrued(Currency) external view returns (uint256);
+    function protocolFeesAccrued(Currency currency) external view returns (uint256 amount);
 
     /// @notice Sets the protocol fee for the given pool
-    function setProtocolFee(PoolKey memory key, uint24) external;
+    function setProtocolFee(PoolKey memory key, uint24 newProtocolFee) external;
 
     /// @notice Sets the protocol fee controller
-    function setProtocolFeeController(IProtocolFeeController) external;
+    function setProtocolFeeController(IProtocolFeeController controller) external;
 
     /// @notice Collects the protocol fees for a given recipient and currency, returning the amount collected
-    function collectProtocolFees(address, Currency, uint256) external returns (uint256);
+    function collectProtocolFees(address recipient, Currency currency, uint256 amount)
+        external
+        returns (uint256 amountCollected);
 
     function protocolFeeController() external view returns (IProtocolFeeController);
 }
