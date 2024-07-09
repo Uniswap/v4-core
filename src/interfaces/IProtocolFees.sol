@@ -15,7 +15,7 @@ interface IProtocolFees {
     /// @notice Thrown when collectProtocolFees or setProtocolFee is not called by the controller.
     error InvalidCaller();
 
-    event ProtocolFeeControllerUpdated(address protocolFeeController);
+    event ProtocolFeeControllerUpdated(address indexed protocolFeeController);
 
     event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
 
