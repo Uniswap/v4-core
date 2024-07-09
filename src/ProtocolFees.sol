@@ -69,21 +69,28 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
             // in mind.
             if (gasleft() < controllerGasLimit) ProtocolFeeCannotBeFetched.selector.revertWith();
 
-            (bool _success, bytes memory _data) = address(protocolFeeController).call{gas: controllerGasLimit}(
-                abi.encodeCall(IProtocolFeeController.protocolFeeForPool, (key))
-            );
-            // Ensure that the return data fits within a word
-            if (!_success || _data.length > 32) return (false, 0);
+            uint256 gasLimit = controllerGasLimit;
+            address toAddress = address(protocolFeeController);
 
+            bytes memory data = abi.encodeCall(IProtocolFeeController.protocolFeeForPool, (key));
             uint256 returnData;
             assembly ("memory-safe") {
-                returnData := mload(add(_data, 0x20))
+                success := call(gasLimit, toAddress, 0, add(data, 0x20), mload(data), 0, 0)
+
+                // success if return data size is 32 bytes or less
+                success := and(success, lt(returndatasize(), 33))
+
+                // load the return data if success is true
+                if iszero(iszero(success)) {
+                    let fmp := mload(0x40)
+                    returndatacopy(fmp, 0, returndatasize())
+                    returnData := mload(fmp)
+                }
             }
 
             // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
-            (success, protocolFee) = (returnData == uint24(returnData)) && uint24(returnData).isValidProtocolFee()
-                ? (true, uint24(returnData))
-                : (false, 0);
+            (success, protocolFee) = success && (returnData == uint24(returnData))
+                && uint24(returnData).isValidProtocolFee() ? (true, uint24(returnData)) : (false, 0);
         }
     }
 
