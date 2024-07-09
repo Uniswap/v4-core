@@ -53,10 +53,11 @@ library TickBitmap {
         assembly ("memory-safe") {
             // ensure that the tick is spaced
             if smod(tick, tickSpacing) {
-                mstore(0, 0xd4d8f3e6) // selector for TickMisaligned(int24,int24)
-                mstore(0x20, tick)
-                mstore(0x40, tickSpacing)
-                revert(0x1c, 0x44)
+                let fmp := mload(0x40)
+                mstore(fmp, 0xd4d8f3e6) // selector for TickMisaligned(int24,int24)
+                mstore(add(fmp, 0x20), tick)
+                mstore(add(fmp, 0x40), tickSpacing)
+                revert(add(fmp, 0x1c), 0x44)
             }
             tick := sdiv(tick, tickSpacing)
             // calculate the storage slot corresponding to the tick
