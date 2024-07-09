@@ -6,15 +6,16 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Currency} from "../types/Currency.sol";
 import {Position} from "./Position.sol";
 
+/// @notice A helper library to provide state getters that use exttload
 library TransientStateLibrary {
-    /// bytes32(uint256(keccak256("ReservesOf")) - 1)
+    /// @dev bytes32(uint256(keccak256("ReservesOf")) - 1)
     bytes32 public constant RESERVES_OF_SLOT = 0x1e0745a7db1623981f0b2a5d4232364c00787266eb75ad546f190e6cebe9bd95;
 
-    // The slot holding the number of nonzero deltas. bytes32(uint256(keccak256("NonzeroDeltaCount")) - 1)
+    /// @notice The slot holding the number of nonzero deltas. bytes32(uint256(keccak256("NonzeroDeltaCount")) - 1)
     bytes32 public constant NONZERO_DELTA_COUNT_SLOT =
         0x7d4b3164c6e45b97e7d87b7125a44c5828d005af88f9d751cfd78729c5d99a0b;
 
-    // The slot holding the unlocked state, transiently. bytes32(uint256(keccak256("Unlocked")) - 1)
+    /// @notice The slot holding the unlocked state, transiently. bytes32(uint256(keccak256("Unlocked")) - 1)
     bytes32 public constant IS_UNLOCKED_SLOT = 0xc090fc4683624cfc3884e9d8de5eca132f2d0ec062aff75d43c0465d5ceeab23;
 
     /// @notice returns the reserves of a currency

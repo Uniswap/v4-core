@@ -54,6 +54,7 @@ function neq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
 }
 
 library BalanceDeltaLibrary {
+    /// @notice A balance delta of 0
     BalanceDelta public constant ZERO_DELTA = BalanceDelta.wrap(0);
 
     function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {

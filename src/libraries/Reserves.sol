@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 import {Currency} from "../types/Currency.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
+/// @notice A library implementing a mapping of reserves in transient storage
+/// @dev equivalent to mapping(Currency currency => uint256 value) reservesOf;
 library Reserves {
     using CustomRevert for bytes4;
 
