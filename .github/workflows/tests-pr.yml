@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+      - audit/*
 
 jobs:
   forge-tests:
