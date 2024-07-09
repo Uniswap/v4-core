@@ -153,11 +153,8 @@ library Hooks {
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
-    /// @return delta The delta returned by the hook
-    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn)
-        internal
-        returns (int256 delta)
-    {
+    /// @return int256 The delta returned by the hook
+    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn) internal returns (int256) {
         bytes memory result = callHook(self, data);
 
         // If this hook wasnt meant to return something, default to 0 delta
