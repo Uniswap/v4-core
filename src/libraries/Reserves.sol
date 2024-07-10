@@ -3,10 +3,12 @@ pragma solidity ^0.8.20;
 
 import {Currency} from "../types/Currency.sol";
 import {CustomRevert} from "./CustomRevert.sol";
-import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 library Reserves {
     using CustomRevert for bytes4;
+
+    /// @notice Thrown when a user has already synced a currency, but not yet settled
+    error AlreadySynced();
 
     /// bytes32(uint256(keccak256("ReservesOf")) - 1)
     bytes32 constant RESERVES_OF_SLOT = 0x1e0745a7db1623981f0b2a5d4232364c00787266eb75ad546f190e6cebe9bd95;
@@ -19,7 +21,7 @@ library Reserves {
             syncing := tload(SYNC_SLOT)
         }
         if (!syncing.isZero()) {
-            IPoolManager.AlreadySynced.selector.revertWith();
+            AlreadySynced.selector.revertWith();
         }
     }
 
