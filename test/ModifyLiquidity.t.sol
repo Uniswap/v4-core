@@ -60,7 +60,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
 
         logParams(params);
 
-        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(simpleKey, params, ZERO_BYTES);
+        (BalanceDelta delta,) = modifyLiquidityRouter.modifyLiquidity(simpleKey, params, ZERO_BYTES);
 
         (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(simplePoolId, params);
 
@@ -85,7 +85,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
             salt: 0
         });
 
-        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
+        (BalanceDelta delta,) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
 
         (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(wpId0, params);
 
@@ -112,7 +112,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
 
         params.tickLower = 10;
 
-        (BalanceDelta delta) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
+        (BalanceDelta delta,) = modifyLiquidityRouter.modifyLiquidity(wp0, params, ZERO_BYTES);
 
         (int128 jsDelta0, int128 jsDelta1) = _modifyLiquidityJS(wpId0, params);
 
