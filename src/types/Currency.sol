@@ -34,7 +34,6 @@ library CurrencyLibrary {
     error ERC20TransferFailed();
 
     Currency public constant NATIVE = Currency.wrap(address(0));
-    uint160 internal constant MASK_160_BITS = 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     function transfer(Currency currency, address to, uint256 amount) internal {
         // altered from https://github.com/Vectorized/solady/blob/89101d53b7c8784cca935c1f2f6403639cee48b2/src/utils/SafeTransferLib.sol
