@@ -85,6 +85,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
                     let fmp := mload(0x40)
                     returndatacopy(fmp, 0, returndatasize())
                     returnData := mload(fmp)
+                    mstore(fmp, 0)
                 }
             }
 
