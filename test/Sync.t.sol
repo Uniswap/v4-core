@@ -17,6 +17,7 @@ import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {Reserves} from "../src/libraries/Reserves.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
+import {NativeERC20} from "../src/test/NativeERC20.sol";
 
 contract SyncTest is Test, Deployers, GasSnapshot {
     using StateLibrary for IPoolManager;
@@ -262,5 +263,42 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(currency0.balanceOf(address(manager)), managerCurrency0BalanceBefore + 10);
         // The user lost 10 currency0, and can never claim it back.
         assertEq(currency0.balanceOf(address(this)), userCurrency0BalanceBefore - 10);
+    }
+
+    function test_settle_failsWithNativeERC20IfNotSyncedInOrder(uint256 value) public {
+        value = bound(value, 1, uint256(int256(type(int128).max / 2)));
+        vm.deal(address(this), value);
+        vm.deal(address(manager), value);
+        NativeERC20 nativeERC20 = new NativeERC20();
+
+        manager.sync(Currency.wrap(address(nativeERC20)));
+
+        uint256 balanceBefore = address(this).balance;
+
+        Actions[] memory actions = new Actions[](6);
+        bytes[] memory params = new bytes[](6);
+
+        actions[0] = Actions.SETTLE_NATIVE;
+        params[0] = abi.encode(value);
+
+        actions[1] = Actions.SETTLE;
+        params[1] = abi.encode(Currency.wrap(address(nativeERC20)));
+
+        actions[2] = Actions.ASSERT_DELTA_EQUALS;
+        params[2] = abi.encode(Currency.wrap(address(0)), address(router), value);
+
+        actions[3] = Actions.ASSERT_DELTA_EQUALS;
+        params[3] = abi.encode(Currency.wrap(address(nativeERC20)), address(router), value);
+
+        actions[4] = Actions.TAKE;
+        params[4] = abi.encode(Currency.wrap(address(0)), address(this), value);
+
+        actions[5] = Actions.TAKE;
+        params[5] = abi.encode(Currency.wrap(address(nativeERC20)), address(this), value);
+
+        router.executeActions{value: value}(actions, params);
+
+        uint256 balanceAfter = address(this).balance;
+        assertEq(balanceAfter - balanceBefore, value);
     }
 }

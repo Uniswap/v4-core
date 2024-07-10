@@ -13,6 +13,7 @@ import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 // Supported Actions.
 enum Actions {
     SETTLE,
+    SETTLE_NATIVE,
     TAKE,
     SYNC,
     MINT,
@@ -52,6 +53,8 @@ contract ActionsRouter is IUnlockCallback, Test {
             bytes memory param = params[i];
             if (action == Actions.SETTLE) {
                 _settle(param);
+            } else if (action == Actions.SETTLE_NATIVE) {
+                _settleNative(param);
             } else if (action == Actions.TAKE) {
                 _take(param);
             } else if (action == Actions.SYNC) {
@@ -70,13 +73,18 @@ contract ActionsRouter is IUnlockCallback, Test {
         }
     }
 
-    function executeActions(Actions[] memory actions, bytes[] memory params) external {
+    function executeActions(Actions[] memory actions, bytes[] memory params) external payable {
         manager.unlock(abi.encode(actions, params));
     }
 
     function _settle(bytes memory params) internal {
         Currency currency = abi.decode(params, (Currency));
         manager.settle(currency);
+    }
+
+    function _settleNative(bytes memory params) internal {
+        uint256 amount = abi.decode(params, (uint256));
+        manager.settle{value: amount}(Currency.wrap(address(0)));
     }
 
     function _take(bytes memory params) internal {
