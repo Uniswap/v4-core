@@ -23,7 +23,7 @@ library BeforeSwapDeltaLibrary {
     /// extracts int128 from the upper 128 bits of the BeforeSwapDelta
     /// returned by beforeSwap
     function getSpecifiedDelta(BeforeSwapDelta delta) internal pure returns (int128 deltaSpecified) {
-        assembly {
+        assembly ("memory-safe") {
             deltaSpecified := sar(128, delta)
         }
     }

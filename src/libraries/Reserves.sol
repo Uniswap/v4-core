@@ -18,14 +18,14 @@ library Reserves {
     function setReserves(Currency currency, uint256 value) internal {
         if (value == 0) value = ZERO_BALANCE;
         bytes32 key = _getKey(currency);
-        assembly {
+        assembly ("memory-safe") {
             tstore(key, value)
         }
     }
 
     function getReserves(Currency currency) internal view returns (uint256 value) {
         bytes32 key = _getKey(currency);
-        assembly {
+        assembly ("memory-safe") {
             value := tload(key)
         }
         if (value == 0) ReservesMustBeSynced.selector.revertWith();

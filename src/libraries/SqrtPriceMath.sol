@@ -201,7 +201,7 @@ library SqrtPriceMath {
 
     /// @notice Equivalent to: `a >= b ? a - b : b - a`
     function absDiff(uint160 a, uint160 b) internal pure returns (uint256 res) {
-        assembly {
+        assembly ("memory-safe") {
             let diff := sub(a, b)
             // mask = 0 if a >= b else -1 (all 1s)
             let mask := sar(255, diff)
@@ -227,7 +227,7 @@ library SqrtPriceMath {
         uint256 numerator = absDiff(sqrtPriceAX96, sqrtPriceBX96);
         uint256 denominator = FixedPoint96.Q96;
         uint256 _liquidity;
-        assembly {
+        assembly ("memory-safe") {
             // avoid implicit upcasting
             _liquidity := liquidity
         }
@@ -239,7 +239,7 @@ library SqrtPriceMath {
          * Cannot overflow because `type(uint128).max * type(uint160).max >> 96 < (1 << 192)`.
          */
         amount1 = FullMath.mulDiv(_liquidity, numerator, denominator);
-        assembly {
+        assembly ("memory-safe") {
             amount1 := add(amount1, and(gt(mulmod(_liquidity, numerator, denominator), 0), roundUp))
         }
     }
