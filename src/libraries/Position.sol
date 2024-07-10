@@ -45,6 +45,7 @@ library Position {
             mstore(add(fmp, 0x06), tickUpper) // [0x23, 0x26)
             mstore(add(fmp, 0x03), tickLower) // [0x20, 0x23)
             mstore(fmp, owner) // [0x0c, 0x20)
+            mstore(0x40, add(fmp, 0x60))
             positionKey := keccak256(add(fmp, 0x0c), 0x3a) // len is 58 bytes
         }
         position = self[positionKey];

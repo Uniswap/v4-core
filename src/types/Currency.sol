@@ -67,6 +67,7 @@ library CurrencyLibrary {
                         // surrounding and() call or else returndatasize() will be zero during the computation.
                         call(gas(), currency, 0, fmp, 68, 0, 32)
                     )
+                mstore(0x40, add(fmp, 0x40))
             }
             if (!success) revert ERC20TransferFailed();
         }
