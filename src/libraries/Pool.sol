@@ -367,13 +367,13 @@ library Pool {
                 unchecked {
                     state.amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
-                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
+                state.amountCalculated -= (step.amountIn + step.feeAmount).toInt256();
             } else {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
                     state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
                 }
-                state.amountCalculated = state.amountCalculated + step.amountOut.toInt256();
+                state.amountCalculated += step.amountOut.toInt256();
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
