@@ -95,6 +95,6 @@ library CurrencyLibrary {
     }
 
     function fromId(uint256 id) internal pure returns (Currency) {
-        return Currency.wrap(address(uint160(id & MASK_160_BITS)));
+        return Currency.wrap(address(uint160(id)));
     }
 }
