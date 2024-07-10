@@ -3,40 +3,48 @@ pragma solidity ^0.8.20;
 
 import {Currency} from "../types/Currency.sol";
 import {CustomRevert} from "./CustomRevert.sol";
+import {IPoolManager} from "../interfaces/IPoolManager.sol";
 
 library Reserves {
     using CustomRevert for bytes4;
 
     /// bytes32(uint256(keccak256("ReservesOf")) - 1)
     bytes32 constant RESERVES_OF_SLOT = 0x1e0745a7db1623981f0b2a5d4232364c00787266eb75ad546f190e6cebe9bd95;
-    /// @notice The transient reserves for pools with no balance is set to the max as a sentinel to track that it has been synced.
-    uint256 public constant ZERO_BALANCE = type(uint256).max;
+    /// bytes32(uint256(keccak256("Sync")) - 1)
+    bytes32 constant SYNC_SLOT = 0xf0e14a408baf7f453312eec68e9b7d728ec5337fbdf671f917ee8c80f3255231;
 
-    /// @notice Thrown when someone has not called sync before calling settle for the first time.
-    error ReservesMustBeSynced();
+    function checkSync() internal view {
+        Currency syncing;
+        assembly {
+            syncing := tload(SYNC_SLOT)
+        }
+        if (!syncing.isZero()) {
+            IPoolManager.AlreadySynced.selector.revertWith();
+        }
+    }
+
+    function getSyncedCurrency() internal view returns (Currency currency) {
+        assembly {
+            currency := tload(SYNC_SLOT)
+        }
+    }
+
+    function reset() internal {
+        assembly {
+            tstore(SYNC_SLOT, 0)
+        }
+    }
 
     function setReserves(Currency currency, uint256 value) internal {
-        if (value == 0) value = ZERO_BALANCE;
-        bytes32 key = _getKey(currency);
         assembly {
-            tstore(key, value)
+            tstore(SYNC_SLOT, currency)
+            tstore(RESERVES_OF_SLOT, value)
         }
     }
 
-    function getReserves(Currency currency) internal view returns (uint256 value) {
-        bytes32 key = _getKey(currency);
+    function getReserves() internal view returns (uint256 value) {
         assembly {
-            value := tload(key)
-        }
-        if (value == 0) ReservesMustBeSynced.selector.revertWith();
-        if (value == ZERO_BALANCE) value = 0;
-    }
-
-    function _getKey(Currency currency) private pure returns (bytes32 key) {
-        assembly ("memory-safe") {
-            mstore(0, RESERVES_OF_SLOT)
-            mstore(32, currency)
-            key := keccak256(0, 64)
+            value := tload(RESERVES_OF_SLOT)
         }
     }
 }

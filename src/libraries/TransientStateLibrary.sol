@@ -17,20 +17,13 @@ library TransientStateLibrary {
     // The slot holding the unlocked state, transiently. bytes32(uint256(keccak256("Unlocked")) - 1)
     bytes32 public constant IS_UNLOCKED_SLOT = 0xc090fc4683624cfc3884e9d8de5eca132f2d0ec062aff75d43c0465d5ceeab23;
 
-    /// @notice returns the reserves of a currency
+    /// @notice returns the reserves for the synced currency
     /// @param manager The pool manager contract.
-    /// @param currency The currency to get the reserves for.
     /// @return value The reserves of the currency.
     /// @dev returns 0 if the reserves are not synced
     /// @dev returns type(uint256).max if the reserves are synced but the value is 0
-    function getReserves(IPoolManager manager, Currency currency) internal view returns (uint256) {
-        bytes32 key;
-        assembly ("memory-safe") {
-            mstore(0, RESERVES_OF_SLOT)
-            mstore(32, currency)
-            key := keccak256(0, 64)
-        }
-        return uint256(manager.exttload(key));
+    function getReserves(IPoolManager manager) internal view returns (uint256) {
+        return uint256(manager.exttload(RESERVES_OF_SLOT));
     }
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod out before the contract is locked
