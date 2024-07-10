@@ -57,7 +57,6 @@ library TickBitmap {
                 mstore(fmp, 0xd4d8f3e6) // selector for TickMisaligned(int24,int24)
                 mstore(add(fmp, 0x20), tick)
                 mstore(add(fmp, 0x40), tickSpacing)
-                mstore(0x40, add(fmp, 0x60))
                 revert(add(fmp, 0x1c), 0x44)
             }
             tick := sdiv(tick, tickSpacing)

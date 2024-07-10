@@ -137,8 +137,6 @@ library Hooks {
                 // bubble up revert
                 let fmp := mload(0x40)
                 returndatacopy(fmp, 0, returndatasize())
-                // store new free memory pointer at the end of the array padded to 32 bytes
-                mstore(0x40, add(fmp, and(add(returndatasize(), 0x3f), not(0x1f))))
                 revert(fmp, returndatasize())
             }
             // allocate result byte array from the free memory pointer

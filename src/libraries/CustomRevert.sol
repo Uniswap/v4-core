@@ -49,7 +49,6 @@ library CustomRevert {
             mstore(fmp, selector)
             mstore(add(fmp, 0x04), value1)
             mstore(add(fmp, 0x24), value2)
-            mstore(0x40, add(fmp, 0x60))
             revert(fmp, 0x44)
         }
     }
@@ -61,7 +60,6 @@ library CustomRevert {
             mstore(fmp, selector)
             mstore(add(fmp, 0x04), value1)
             mstore(add(fmp, 0x24), value2)
-            mstore(0x40, add(fmp, 0x60))
             revert(fmp, 0x44)
         }
     }

@@ -67,7 +67,11 @@ library CurrencyLibrary {
                         // surrounding and() call or else returndatasize() will be zero during the computation.
                         call(gas(), currency, 0, fmp, 68, 0, 32)
                     )
-                mstore(0x40, add(fmp, 0x40))
+
+                // Now clean the memory we used
+                mstore(fmp, 0) // 4 byte `selector` and 28 bytes of `to` were stored here
+                mstore(add(fmp, 0x20), 0) // 4 bytes of `to` and 28 bytes of `amount` were stored here
+                mstore(add(fmp, 0x40), 0) // 4 bytes of `amount` were stored here
             }
             if (!success) revert ERC20TransferFailed();
         }
