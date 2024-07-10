@@ -37,7 +37,6 @@ interface IProtocolFees {
     /// @param recipient The address to receive the protocol fees
     /// @param currency The currency to withdraw
     /// @param amount The amount of currency to withdraw
-    /// @param amountCollected The amount of currency successfully withdrawn
     function collectProtocolFees(address recipient, Currency currency, uint256 amount) external returns (uint256);
 
     /// @return protocolFeeController The currency protocol fee controller
