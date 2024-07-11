@@ -20,7 +20,7 @@ library TransientStateLibrary {
     }
 
     function getSyncedCurrency(IPoolManager manager) internal view returns (Currency) {
-        return Currency.wrap(address(bytes20(manager.exttload(Reserves.CURRENCY_SLOT))));
+        return Currency.wrap(address(bytes20(manager.exttload(Reserves.SYNC_SLOT))));
     }
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod out before the contract is locked
