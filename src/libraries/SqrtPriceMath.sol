@@ -133,7 +133,10 @@ library SqrtPriceMath {
     {
         // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
         assembly ("memory-safe") {
-            if or(iszero(and(sqrtPX96, 0xffffffffffffffffffffffffffffffffffffffff)), iszero(and(liquidity, 0xffffffffffffffffffffffffffffffff))) {
+            if or(
+                iszero(and(sqrtPX96, 0xffffffffffffffffffffffffffffffffffffffff)),
+                iszero(and(liquidity, 0xffffffffffffffffffffffffffffffff))
+            ) {
                 mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
                 revert(0x1c, 0x04)
             }
@@ -159,7 +162,10 @@ library SqrtPriceMath {
     {
         // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
         assembly ("memory-safe") {
-            if or(iszero(and(sqrtPX96, 0xffffffffffffffffffffffffffffffffffffffff)), iszero(and(liquidity, 0xffffffffffffffffffffffffffffffff))) {
+            if or(
+                iszero(and(sqrtPX96, 0xffffffffffffffffffffffffffffffffffffffff)),
+                iszero(and(liquidity, 0xffffffffffffffffffffffffffffffff))
+            ) {
                 mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
                 revert(0x1c, 0x04)
             }
