@@ -49,7 +49,7 @@ library CurrencyLibrary {
             }
         } else {
             assembly ("memory-safe") {
-                mstore(0x14, to) // Store the `to` address in [0x20, 0x34).
+                mstore(0x14, and(to, 0xffffffffffffffffffffffffffffffffffffffff)) // Store the `to` address in [0x20, 0x34).
                 mstore(0x34, amount) // Store the `amount` argument in [0x34, 0x54).
                 // Store the selector of `transfer(address,uint256)` in [0x10, 0x14).
                 // also cleans the upper bits of `to`

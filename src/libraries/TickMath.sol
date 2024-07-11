@@ -51,6 +51,7 @@ library TickMath {
         unchecked {
             uint256 absTick;
             assembly {
+                tick := signextend(2, tick)
                 // mask = 0 if tick >= 0 else -1 (all 1s)
                 let mask := sar(255, tick)
                 // if tick >= 0, |tick| = tick = 0 ^ tick

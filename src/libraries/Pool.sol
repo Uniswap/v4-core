@@ -418,7 +418,7 @@ library Pool {
                     // cannot cast a bool to an int24 in Solidity
                     int24 _zeroForOne;
                     assembly {
-                        _zeroForOne := zeroForOne
+                        _zeroForOne := and(zeroForOne, 0xff)
                     }
                     state.tick = step.tickNext - _zeroForOne;
                 }
@@ -549,9 +549,9 @@ library Pool {
                 // bitwise OR to pack liquidityGrossAfter and liquidityNet
                 or(
                     // liquidityGross is in the low bits, upper bits are already 0
-                    liquidityGrossAfter,
+                    and(liquidityGrossAfter, 0xffffffffffffffffffffffffffffffff),
                     // shift liquidityNet to take the upper bits and lower bits get filled with 0
-                    shl(128, liquidityNet)
+                    shl(128, signextend(15, liquidityNet))
                 )
             )
         }
@@ -572,6 +572,7 @@ library Pool {
         int24 MIN_TICK = TickMath.MIN_TICK;
         // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
         assembly {
+            tickSpacing := signextend(2, tickSpacing)
             let minTick := mul(sdiv(MIN_TICK, tickSpacing), tickSpacing)
             let maxTick := mul(sdiv(MAX_TICK, tickSpacing), tickSpacing)
             let numTicks := add(sdiv(sub(maxTick, minTick), tickSpacing), 1)

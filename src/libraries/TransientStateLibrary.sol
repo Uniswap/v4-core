@@ -27,7 +27,7 @@ library TransientStateLibrary {
         bytes32 key;
         assembly ("memory-safe") {
             mstore(0, RESERVES_OF_SLOT)
-            mstore(32, currency)
+            mstore(32, and(currency, 0xffffffffffffffffffffffffffffffffffffffff))
             key := keccak256(0, 64)
         }
         return uint256(manager.exttload(key));
@@ -45,7 +45,7 @@ library TransientStateLibrary {
         bytes32 key;
         assembly ("memory-safe") {
             mstore(0, caller_)
-            mstore(32, currency)
+            mstore(32, and(currency, 0xffffffffffffffffffffffffffffffffffffffff))
             key := keccak256(0, 64)
         }
         return int256(uint256(manager.exttload(key)));

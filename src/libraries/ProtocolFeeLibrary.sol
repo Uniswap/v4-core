@@ -35,6 +35,8 @@ library ProtocolFeeLibrary {
     function calculateSwapFee(uint24 self, uint24 lpFee) internal pure returns (uint24 swapFee) {
         // protocolFee + lpFee - (protocolFee * lpFee / 1_000_000). Div rounds up to favor LPs over the protocol.
         assembly {
+            self := and(self, 0xffffff)
+            lpFee := and(lpFee, 0xffffff)
             let numerator := mul(self, lpFee)
             let divRoundingUp := add(div(numerator, PIPS_DENOMINATOR), gt(mod(numerator, PIPS_DENOMINATOR), 0))
             swapFee := sub(add(self, lpFee), divRoundingUp)

@@ -17,6 +17,8 @@ library TickBitmap {
         // compressed = tick / tickSpacing;
         // if (tick < 0 && tick % tickSpacing != 0) compressed--;
         assembly {
+            tick := signextend(2, tick)
+            tickSpacing := signextend(2, tickSpacing)
             compressed :=
                 sub(
                     sdiv(tick, tickSpacing),
@@ -51,6 +53,8 @@ library TickBitmap {
          *     self[wordPos] ^= mask;
          */
         assembly ("memory-safe") {
+            tick := signextend(2, tick)
+            tickSpacing := signextend(2, tickSpacing)
             // ensure that the tick is spaced
             if smod(tick, tickSpacing) {
                 mstore(0, 0xd4d8f3e6) // selector for TickMisaligned(int24,int24)

@@ -35,7 +35,7 @@ library Reserves {
     function _getKey(Currency currency) private pure returns (bytes32 key) {
         assembly ("memory-safe") {
             mstore(0, RESERVES_OF_SLOT)
-            mstore(32, currency)
+            mstore(32, and(currency, 0xffffffffffffffffffffffffffffffffffffffff))
             key := keccak256(0, 64)
         }
     }
