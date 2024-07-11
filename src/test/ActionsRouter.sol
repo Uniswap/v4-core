@@ -108,7 +108,7 @@ contract ActionsRouter is IUnlockCallback, Test {
     }
 
     function _assertReservesEquals(bytes memory params) internal view {
-        (, uint256 expectedReserves) = abi.decode(params, (Currency, uint256));
+        uint256 expectedReserves = abi.decode(params, (uint256));
         assertEq(manager.getReserves(), expectedReserves, "reserves value incorrect");
     }
 

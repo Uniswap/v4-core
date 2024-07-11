@@ -94,7 +94,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
 
     /// @notice Writes the current ERC20 balance of the specified currency to transient storage
     /// This is used to checkpoint balances for the manager and derive deltas for the caller.
-    /// @dev This MUST be called before any ERC20 tokens are sent into the contract.
+    /// @dev This MUST be called before any ERC20 tokens are sent into the contract, but can be skipped
+    /// for native tokens because the amount to settle is determined by the sent value.
     function sync(Currency currency) external;
 
     /// @notice Initialize the state for a given pool ID

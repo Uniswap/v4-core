@@ -262,7 +262,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function sync(Currency currency) external {
-        Reserves.checkSync();
+        Reserves.checkNotSynced();
         if (currency.isNative()) return;
         uint256 balance = currency.balanceOfSelf();
         Reserves.setReserves(currency, balance);
@@ -284,6 +284,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             paid = msg.value;
         } else {
             if (msg.value > 0) NonZeroNativeValue.selector.revertWith();
+            // Reserves are guaranteed to be set, because currency and reserves are always set together
             uint256 reservesBefore = Reserves.getReserves();
             uint256 reservesNow = currency.balanceOfSelf();
             paid = reservesNow - reservesBefore;

@@ -15,7 +15,7 @@ library Reserves {
     /// bytes32(uint256(keccak256("Sync")) - 1)
     bytes32 constant SYNC_SLOT = 0xf0e14a408baf7f453312eec68e9b7d728ec5337fbdf671f917ee8c80f3255231;
 
-    function checkSync() internal view {
+    function checkNotSynced() internal view {
         Currency syncing;
         assembly {
             syncing := tload(SYNC_SLOT)

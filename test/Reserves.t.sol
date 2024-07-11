@@ -14,16 +14,11 @@ contract ReservesTest is Test {
         currency0 = Currency.wrap(address(0xbeef));
     }
 
-    function test_getReserves_returns0AfterSet() public {
-        currency0.setReserves(0);
-        uint256 value = Reserves.getReserves();
-        assertEq(value, 0);
-    }
-
     function test_getReserves_returns_set() public {
         currency0.setReserves(100);
         uint256 value = Reserves.getReserves();
         assertEq(value, 100);
+        assertEq(Currency.unwrap(Reserves.getSyncedCurrency()), Currency.unwrap(currency0));
     }
 
     function test_set_twice_returns_correct_value() public {
@@ -31,15 +26,33 @@ contract ReservesTest is Test {
         currency0.setReserves(200);
         uint256 value = Reserves.getReserves();
         assertEq(value, 200);
+        assertEq(Currency.unwrap(Reserves.getSyncedCurrency()), Currency.unwrap(currency0));
+    }
+
+    function test_reset_currency() public {
+        currency0.setReserves(100);
+        uint256 value = Reserves.getReserves();
+        assertEq(value, 100);
+        assertEq(Currency.unwrap(Reserves.getSyncedCurrency()), Currency.unwrap(currency0));
+        Reserves.reset();
+        uint256 valueAfterReset = Reserves.getReserves();
+        assertEq(valueAfterReset, 100);
+        assertEq(Currency.unwrap(Reserves.getSyncedCurrency()), address(0));
     }
 
     function test_reservesOfSlot() public pure {
         assertEq(bytes32(uint256(keccak256("ReservesOf")) - 1), Reserves.RESERVES_OF_SLOT);
     }
 
+    function test_syncSlot() public pure {
+        assertEq(bytes32(uint256(keccak256("Sync")) - 1), Reserves.SYNC_SLOT);
+    }
+
     function test_fuzz_get_set(Currency currency, uint256 value) public {
         vm.assume(value != type(uint256).max);
         currency.setReserves(value);
+
+        assertEq(Currency.unwrap(Reserves.getSyncedCurrency()), Currency.unwrap(currency));
         assertEq(Reserves.getReserves(), value);
     }
 }
