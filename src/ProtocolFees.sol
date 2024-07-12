@@ -77,8 +77,8 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
             assembly ("memory-safe") {
                 success := call(gasLimit, toAddress, 0, add(data, 0x20), mload(data), 0, 0)
 
-                // success if return data size is 32 bytes or less
-                success := and(success, lt(returndatasize(), 33))
+                // success if return data size is 32 bytes
+                success := and(success, eq(returndatasize(), 32))
 
                 // load the return data if success is true
                 if success {
