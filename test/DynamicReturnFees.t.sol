@@ -32,7 +32,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
     event Swap(
         PoolId indexed poolId,
-        address sender,
+        address indexed sender,
         int128 amount0,
         int128 amount1,
         uint160 sqrtPriceX96,
