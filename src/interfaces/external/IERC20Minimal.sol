@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 /// @title Minimal ERC20 interface for Uniswap
 /// @notice Contains a subset of the full ERC20 interface that is used in Uniswap V3
 interface IERC20Minimal {
-    /// @notice Returns the balance of a token
+    /// @notice Returns an account's balance in the token
     /// @param account The account for which to look up the number of tokens it has, i.e. its balance
     /// @return The number of tokens held by the account
     function balanceOf(address account) external view returns (uint256);
