@@ -17,7 +17,9 @@ function toBeforeSwapDelta(int128 deltaSpecified, int128 deltaUnspecified)
     }
 }
 
+/// @notice Library for getting the specified and unspecified deltas from the BeforeSwapDelta type
 library BeforeSwapDeltaLibrary {
+    /// @notice A BeforeSwapDelta of 0
     BeforeSwapDelta public constant ZERO_DELTA = BeforeSwapDelta.wrap(0);
 
     /// extracts int128 from the upper 128 bits of the BeforeSwapDelta

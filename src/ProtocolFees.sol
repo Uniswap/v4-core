@@ -11,6 +11,7 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {CustomRevert} from "./libraries/CustomRevert.sol";
 
+/// @notice Contract handling the setting and accrual of protocol fees
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using ProtocolFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;

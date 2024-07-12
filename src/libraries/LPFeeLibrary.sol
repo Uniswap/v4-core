@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {PoolKey} from "../types/PoolKey.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
+/// @notice Library of helper functions for a pools LP fee
 library LPFeeLibrary {
     using LPFeeLibrary for uint24;
     using CustomRevert for bytes4;

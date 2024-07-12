@@ -16,8 +16,10 @@ interface IProtocolFees {
     /// @notice Thrown when collectProtocolFees or setProtocolFee is not called by the controller.
     error InvalidCaller();
 
+    /// @notice Emitted when the protocol fee controller address is updated in setProtocolFeeController.
     event ProtocolFeeControllerUpdated(address protocolFeeController);
 
+    /// @notice Emitted when the protocol fee is updated for a pool.
     event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
 
     /// @notice Given a currency address, returns the protocol fees accrued in that currency
@@ -32,5 +34,6 @@ interface IProtocolFees {
     /// @notice Collects the protocol fees for a given recipient and currency, returning the amount collected
     function collectProtocolFees(address, Currency, uint256) external returns (uint256);
 
+    /// @notice Returns the current protocol fee controller address
     function protocolFeeController() external view returns (IProtocolFeeController);
 }
