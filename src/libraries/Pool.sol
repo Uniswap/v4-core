@@ -312,7 +312,7 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
+        if (swapFee == LPFeeLibrary.MAX_LP_FEE && !exactInput) {
             InvalidFeeForExactOut.selector.revertWith();
         }
 
