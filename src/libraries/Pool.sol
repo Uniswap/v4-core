@@ -551,7 +551,7 @@ library Pool {
                     // liquidityGross is in the low bits, upper bits are already 0
                     and(liquidityGrossAfter, 0xffffffffffffffffffffffffffffffff),
                     // shift liquidityNet to take the upper bits and lower bits get filled with 0
-                    shl(128, signextend(15, liquidityNet))
+                    shl(128, liquidityNet)
                 )
             )
         }

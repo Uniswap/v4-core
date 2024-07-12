@@ -44,7 +44,7 @@ library TransientStateLibrary {
     function currencyDelta(IPoolManager manager, address caller_, Currency currency) internal view returns (int256) {
         bytes32 key;
         assembly ("memory-safe") {
-            mstore(0, caller_)
+            mstore(0, and(caller_, 0xffffffffffffffffffffffffffffffffffffffff))
             mstore(32, and(currency, 0xffffffffffffffffffffffffffffffffffffffff))
             key := keccak256(0, 64)
         }
