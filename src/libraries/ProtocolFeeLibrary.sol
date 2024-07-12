@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 library ProtocolFeeLibrary {
     // Max protocol fee is 0.1% (1000 pips)

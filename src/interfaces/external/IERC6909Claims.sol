@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.0;
 
 interface IERC6909Claims {
     /// @notice Owner balance of an id.
