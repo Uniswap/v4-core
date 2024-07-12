@@ -26,7 +26,7 @@ library TickMath {
     uint160 internal constant MAX_SQRT_PRICE = 1461446703485210103287273052203988822378723970342;
     /// @dev A threshold used for optimized bounds check, equals `MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1`
     uint160 internal constant MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE =
-        1461446703485210103287273052203988822378723970342 - 4295128739 - 1;
+        MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1;
 
     /// @notice Given a tickSpacing, compute the maximum usable tick
     function maxUsableTick(int24 tickSpacing) internal pure returns (int24) {
