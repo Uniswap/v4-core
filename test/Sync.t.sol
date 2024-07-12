@@ -14,7 +14,7 @@ import {IUnlockCallback} from "../src/interfaces/callback/IUnlockCallback.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {ActionsRouter, Actions} from "../src/test/ActionsRouter.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
-import {Reserves} from "../src/libraries/Reserves.sol";
+import {CurrencyReserves} from "../src/libraries/CurrencyReserves.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../src/libraries/TransientStateLibrary.sol";
 import {NativeERC20} from "../src/test/NativeERC20.sol";

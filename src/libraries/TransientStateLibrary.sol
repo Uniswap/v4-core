@@ -5,22 +5,21 @@ import {PoolId} from "../types/PoolId.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Currency} from "../types/Currency.sol";
 import {Position} from "./Position.sol";
-import {Reserves} from "./Reserves.sol";
+import {CurrencyReserves} from "./CurrencyReserves.sol";
 import {NonZeroDeltaCount} from "./NonZeroDeltaCount.sol";
 import {Lock} from "./Lock.sol";
 
 library TransientStateLibrary {
     /// @notice returns the reserves for the synced currency
     /// @param manager The pool manager contract.
-    /// @return value The reserves of the currency.
-    /// @dev returns 0 if the reserves are not synced
-    /// @dev returns type(uint256).max if the reserves are synced but the value is 0
+    /// @return uint256 The reserves of the currency.
+    /// @dev returns 0 if the reserves are not synced or value is 0.
     function getReserves(IPoolManager manager) internal view returns (uint256) {
-        return uint256(manager.exttload(Reserves.RESERVES_OF_SLOT));
+        return uint256(manager.exttload(CurrencyReserves.RESERVES_OF_SLOT));
     }
 
     function getSyncedCurrency(IPoolManager manager) internal view returns (Currency) {
-        return Currency.wrap(address(bytes20(manager.exttload(Reserves.SYNC_SLOT))));
+        return Currency.wrap(address(bytes20(manager.exttload(CurrencyReserves.CURRENCY_SLOT))));
     }
 
     /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod out before the contract is locked

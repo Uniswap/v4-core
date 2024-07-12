@@ -21,7 +21,7 @@ import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
-import {Reserves} from "./libraries/Reserves.sol";
+import {CurrencyReserves} from "./libraries/CurrencyReserves.sol";
 import {Extsload} from "./Extsload.sol";
 import {Exttload} from "./Exttload.sol";
 import {CustomRevert} from "./libraries/CustomRevert.sol";
@@ -84,7 +84,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
-    using Reserves for Currency;
+    using CurrencyReserves for Currency;
     using CustomRevert for bytes4;
 
     /// @inheritdoc IPoolManager
@@ -262,10 +262,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function sync(Currency currency) external {
-        Reserves.checkNotSynced();
+        CurrencyReserves.requireNotSynced();
         if (currency.isNative()) return;
         uint256 balance = currency.balanceOfSelf();
-        Reserves.setReserves(currency, balance);
+        CurrencyReserves.syncCurrencyAndReserves(currency, balance);
     }
 
     /// @inheritdoc IPoolManager
@@ -279,19 +279,20 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function settle() external payable onlyWhenUnlocked returns (uint256 paid) {
-        Currency currency = Reserves.getSyncedCurrency();
+        Currency currency = CurrencyReserves.getSyncedCurrency();
+        // If not previously synced, expects native currency to be settled because currency.isNative() == address(0)
         if (currency.isNative()) {
             paid = msg.value;
         } else {
             if (msg.value > 0) NonZeroNativeValue.selector.revertWith();
             // Reserves are guaranteed to be set, because currency and reserves are always set together
-            uint256 reservesBefore = Reserves.getReserves();
+            uint256 reservesBefore = CurrencyReserves.getSyncedReserves();
             uint256 reservesNow = currency.balanceOfSelf();
             paid = reservesNow - reservesBefore;
         }
 
         _accountDelta(currency, paid.toInt128(), msg.sender);
-        Reserves.reset();
+        CurrencyReserves.reset();
     }
 
     /// @inheritdoc IPoolManager
