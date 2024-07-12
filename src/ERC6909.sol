@@ -9,16 +9,6 @@ import {IERC6909Claims} from "./interfaces/external/IERC6909Claims.sol";
 /// @dev This contract has been modified from the implementation at the above link.
 abstract contract ERC6909 is IERC6909Claims {
     /*//////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    event OperatorSet(address indexed owner, address indexed operator, bool approved);
-
-    event Approval(address indexed owner, address indexed spender, uint256 indexed id, uint256 amount);
-
-    event Transfer(address caller, address indexed from, address indexed to, uint256 indexed id, uint256 amount);
-
-    /*//////////////////////////////////////////////////////////////
                              ERC6909 STORAGE
     //////////////////////////////////////////////////////////////*/
 
