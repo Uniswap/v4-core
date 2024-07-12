@@ -102,7 +102,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         external
         returns (int24 tick);
 
-    /// @notice All operations go through this function
+    /// @notice All interactions with this contract go through this function. A caller that calls `unlock` must implement
+    /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
     /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
     /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
     function unlock(bytes calldata data) external returns (bytes memory);
@@ -126,7 +127,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @return feeDelta The balance delta of the fees generated in the liquidity range. Returned for informational purposes.
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta, BalanceDelta);
+        returns (BalanceDelta callerDelta, BalanceDelta feeDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -144,7 +145,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// the hook may alter the swap input/output. Integrators should perform checks on the returned swapDelta.
     function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta);
+        returns (BalanceDelta swapDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
