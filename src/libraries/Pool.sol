@@ -322,7 +322,7 @@ library Pool {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96()) {
                 PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
-            if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
+            if (params.sqrtPriceLimitX96 < TickMath.MIN_SQRT_PRICE) {
                 PriceLimitOutOfBounds.selector.revertWith(params.sqrtPriceLimitX96);
             }
         } else {
