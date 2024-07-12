@@ -2,14 +2,14 @@
 pragma solidity ^0.8.20;
 
 library ProtocolFeeLibrary {
-    // Max protocol fee is 0.1% (1000 pips)
-    uint16 public constant MAX_PROTOCOL_FEE = 1000;
-
-    // Thresholds used for optimized bounds checks on protocol fees
+    /// Thresholds used for optimized bounds checks on protocol fees
     uint24 internal constant FEE_0_THRESHOLD = 1001;
     uint24 internal constant FEE_1_THRESHOLD = 1001 << 12;
 
-    // the protocol fee is represented in hundredths of a bip
+    /// @dev Increasing these values could lead to overflow in Pool.swap
+    /// Max protocol fee is 0.1% (1000 pips)
+    uint16 public constant MAX_PROTOCOL_FEE = 1000;
+    /// the protocol fee is represented in hundredths of a bip
     uint256 internal constant PIPS_DENOMINATOR = 1_000_000;
 
     function getZeroForOneFee(uint24 self) internal pure returns (uint16) {
