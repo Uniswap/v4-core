@@ -14,8 +14,9 @@ import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 enum Actions {
     SETTLE,
     SETTLE_NATIVE,
+    SETTLE_FOR,
     TAKE,
-    TAKE_FROM,
+    PRANK_TAKE_FROM,
     SYNC,
     MINT,
     ASSERT_BALANCE_EQUALS,
@@ -53,13 +54,15 @@ contract ActionsRouter is IUnlockCallback, Test {
             Actions action = actions[i];
             bytes memory param = params[i];
             if (action == Actions.SETTLE) {
-                _settle(param);
+                _settle();
             } else if (action == Actions.SETTLE_NATIVE) {
                 _settleNative(param);
+            } else if (action == Actions.SETTLE_FOR) {
+                _settleFor(param);
             } else if (action == Actions.TAKE) {
                 _take(param);
-            } else if (action == Actions.TAKE_FROM) {
-                _takeFrom(param);
+            } else if (action == Actions.PRANK_TAKE_FROM) {
+                _prankTakeFrom(param);
             } else if (action == Actions.SYNC) {
                 _sync(param);
             } else if (action == Actions.MINT) {
@@ -81,14 +84,18 @@ contract ActionsRouter is IUnlockCallback, Test {
         manager.unlock(abi.encode(actions, params));
     }
 
-    function _settle(bytes memory params) internal {
-        address recipient = abi.decode(params, (address));
-        manager.settle(recipient);
+    function _settle() internal {
+        manager.settle();
     }
 
     function _settleNative(bytes memory params) internal {
-        (uint256 amount, address recipient) = abi.decode(params, (uint256, address));
-        manager.settle{value: amount}(recipient);
+        uint256 amount = abi.decode(params, (uint256));
+        manager.settle{value: amount}();
+    }
+
+    function _settleFor(bytes memory params) internal {
+        address recipient = abi.decode(params, (address));
+        manager.settleFor(recipient);
     }
 
     function _take(bytes memory params) internal {
@@ -96,7 +103,7 @@ contract ActionsRouter is IUnlockCallback, Test {
         manager.take(currency, recipient, uint128(amount));
     }
 
-    function _takeFrom(bytes memory params) internal {
+    function _prankTakeFrom(bytes memory params) internal {
         (Currency currency, address from, address recipient, uint256 amount) =
             abi.decode(params, (Currency, address, address, uint256));
         vm.prank(from);

@@ -102,7 +102,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[1] = Actions.TRANSFER_FROM;
         params[1] = abi.encode(currency2, address(this), address(manager), amount);
 
-        actions[2] = Actions.SETTLE;
+        actions[2] = Actions.SETTLE_FOR;
         params[2] = abi.encode(recipient);
 
         actions[3] = Actions.ASSERT_DELTA_EQUALS;
@@ -111,7 +111,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[4] = Actions.ASSERT_DELTA_EQUALS;
         params[4] = abi.encode(currency2, address(router), 0);
 
-        actions[5] = Actions.TAKE_FROM;
+        actions[5] = Actions.PRANK_TAKE_FROM;
         params[5] = abi.encode(currency2, recipient, address(this), amount);
 
         router.executeActions(actions, params);
@@ -128,7 +128,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         bytes[] memory params = new bytes[](2);
 
         actions[0] = Actions.SETTLE;
-        params[0] = abi.encode(address(router));
 
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
         params[1] = abi.encode(currency2, address(router), 0);
@@ -150,7 +149,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         bytes[] memory params = new bytes[](2);
 
         actions[0] = Actions.SETTLE;
-        params[0] = abi.encode(address(router));
 
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
         params[1] = abi.encode(currency0, address(router), 0);
@@ -184,7 +182,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         params[2] = abi.encode(currency0, address(this), manager, 10);
 
         actions[3] = Actions.SETTLE; // Since reserves now == reserves, paid = 0 and the delta owed by the user will still be -10 after settle.
-        params[3] = abi.encode(address(router));
 
         actions[4] = Actions.ASSERT_DELTA_EQUALS;
         params[4] = abi.encode(currency0, address(router), -10);
@@ -198,7 +195,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         params[6] = abi.encode(currency0, address(this), manager, 10);
 
         actions[7] = Actions.SETTLE;
-        params[7] = abi.encode(address(router));
 
         actions[8] = Actions.ASSERT_DELTA_EQUALS;
         params[8] = abi.encode(currency0, address(router), 0);
@@ -226,7 +222,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         // Revert with NonZeroNativeValue
         actions[0] = Actions.SETTLE_NATIVE;
-        params[0] = abi.encode(value, address(router));
+        params[0] = abi.encode(value);
 
         // Reference only - see OZ C01 report - previous test confirming vulnerability
 

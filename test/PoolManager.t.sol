@@ -1211,7 +1211,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_settle_failsIfLocked() public {
         vm.expectRevert(IPoolManager.ManagerLocked.selector);
-        manager.settle(address(this));
+        manager.settle();
     }
 
     function test_settle_revertsSendingNativeWithToken() public noIsolate {
