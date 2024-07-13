@@ -15,7 +15,7 @@ contract PoolSettleTest is PoolTestBase {
     function unlockCallback(bytes calldata) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
-        manager.settle{value: address(this).balance}();
+        manager.settle{value: address(this).balance}(address(this));
 
         return abi.encode(0);
     }

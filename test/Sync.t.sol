@@ -88,6 +88,35 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getReserves(), balanceCurrency2);
     }
 
+    function test_settle_payOnBehalf(address recipient, uint256 amount) public {
+        vm.assume(recipient != address(router));
+        amount = bound(amount, 1, uint256(int256(type(int128).max)));
+        MockERC20(Currency.unwrap(currency2)).approve(address(router), type(uint256).max);
+
+        Actions[] memory actions = new Actions[](6);
+        bytes[] memory params = new bytes[](6);
+
+        actions[0] = Actions.SYNC;
+        params[0] = abi.encode(currency2);
+
+        actions[1] = Actions.TRANSFER_FROM;
+        params[1] = abi.encode(currency2, address(this), address(manager), amount);
+
+        actions[2] = Actions.SETTLE;
+        params[2] = abi.encode(recipient);
+
+        actions[3] = Actions.ASSERT_DELTA_EQUALS;
+        params[3] = abi.encode(currency2, recipient, amount);
+
+        actions[4] = Actions.ASSERT_DELTA_EQUALS;
+        params[4] = abi.encode(currency2, address(router), 0);
+
+        actions[5] = Actions.TAKE_FROM;
+        params[5] = abi.encode(currency2, recipient, address(this), amount);
+
+        router.executeActions(actions, params);
+    }
+
     /// @notice When there is no balance and reserves are set to 0, no delta should be applied.
     function test_settle_noBalanceInPool_shouldNotApplyDelta() public noIsolate {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
@@ -99,7 +128,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         bytes[] memory params = new bytes[](2);
 
         actions[0] = Actions.SETTLE;
-        params[0] = abi.encode(currency2);
+        params[0] = abi.encode(address(router));
 
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
         params[1] = abi.encode(currency2, address(router), 0);
@@ -121,7 +150,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         bytes[] memory params = new bytes[](2);
 
         actions[0] = Actions.SETTLE;
-        params[0] = abi.encode(currency0);
+        params[0] = abi.encode(address(router));
 
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
         params[1] = abi.encode(currency0, address(router), 0);
@@ -155,6 +184,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         params[2] = abi.encode(currency0, address(this), manager, 10);
 
         actions[3] = Actions.SETTLE; // Since reserves now == reserves, paid = 0 and the delta owed by the user will still be -10 after settle.
+        params[3] = abi.encode(address(router));
 
         actions[4] = Actions.ASSERT_DELTA_EQUALS;
         params[4] = abi.encode(currency0, address(router), -10);
@@ -168,7 +198,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         params[6] = abi.encode(currency0, address(this), manager, 10);
 
         actions[7] = Actions.SETTLE;
-        params[7] = abi.encode(currency0);
+        params[7] = abi.encode(address(router));
 
         actions[8] = Actions.ASSERT_DELTA_EQUALS;
         params[8] = abi.encode(currency0, address(router), 0);
@@ -196,7 +226,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         // Revert with NonZeroNativeValue
         actions[0] = Actions.SETTLE_NATIVE;
-        params[0] = abi.encode(value);
+        params[0] = abi.encode(value, address(router));
 
         // Reference only - see OZ C01 report - previous test confirming vulnerability
 

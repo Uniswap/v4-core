@@ -15,6 +15,7 @@ enum Actions {
     SETTLE,
     SETTLE_NATIVE,
     TAKE,
+    TAKE_FROM,
     SYNC,
     MINT,
     ASSERT_BALANCE_EQUALS,
@@ -52,11 +53,13 @@ contract ActionsRouter is IUnlockCallback, Test {
             Actions action = actions[i];
             bytes memory param = params[i];
             if (action == Actions.SETTLE) {
-                _settle();
+                _settle(param);
             } else if (action == Actions.SETTLE_NATIVE) {
                 _settleNative(param);
             } else if (action == Actions.TAKE) {
                 _take(param);
+            } else if (action == Actions.TAKE_FROM) {
+                _takeFrom(param);
             } else if (action == Actions.SYNC) {
                 _sync(param);
             } else if (action == Actions.MINT) {
@@ -78,18 +81,26 @@ contract ActionsRouter is IUnlockCallback, Test {
         manager.unlock(abi.encode(actions, params));
     }
 
-    function _settle() internal {
-        manager.settle();
+    function _settle(bytes memory params) internal {
+        address recipient = abi.decode(params, (address));
+        manager.settle(recipient);
     }
 
     function _settleNative(bytes memory params) internal {
-        uint256 amount = abi.decode(params, (uint256));
-        manager.settle{value: amount}();
+        (uint256 amount, address recipient) = abi.decode(params, (uint256, address));
+        manager.settle{value: amount}(recipient);
     }
 
     function _take(bytes memory params) internal {
         (Currency currency, address recipient, int128 amount) = abi.decode(params, (Currency, address, int128));
         manager.take(currency, recipient, uint128(amount));
+    }
+
+    function _takeFrom(bytes memory params) internal {
+        (Currency currency, address from, address recipient, uint256 amount) =
+            abi.decode(params, (Currency, address, address, uint256));
+        vm.prank(from);
+        manager.take(currency, recipient, amount);
     }
 
     function _sync(bytes memory params) internal {
