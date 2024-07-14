@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 
 import {PoolId} from "../types/PoolId.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {Currency} from "../types/Currency.sol";
 import {Position} from "./Position.sol";
 
 library StateLibrary {
@@ -338,7 +337,7 @@ library StateLibrary {
         return keccak256(abi.encodePacked(int256(tick), ticksMappingSlot));
     }
 
-    function _getPositionInfoSlot(PoolId poolId, bytes32 positionId) internal pure returns (bytes32 slot) {
+    function _getPositionInfoSlot(PoolId poolId, bytes32 positionId) internal pure returns (bytes32) {
         // slot key of Pool.State value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 

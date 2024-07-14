@@ -103,6 +103,7 @@ library Hooks {
 
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param self The hook to verify
+    /// @param fee The fee of the pool the hook is used with
     /// @return bool True if the hook address is valid
     function isValidHookAddress(IHooks self, uint24 fee) internal pure returns (bool) {
         // The hook can only have a flag to return a hook delta on an action if it also has the corresponding action flag
@@ -153,11 +154,8 @@ library Hooks {
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
-    /// @return delta The delta returned by the hook
-    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn)
-        internal
-        returns (int256 delta)
-    {
+    /// @return int256 The delta returned by the hook
+    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn) internal returns (int256) {
         bytes memory result = callHook(self, data);
 
         // If this hook wasnt meant to return something, default to 0 delta
