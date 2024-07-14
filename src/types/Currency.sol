@@ -89,6 +89,10 @@ library CurrencyLibrary {
         return Currency.unwrap(currency) == Currency.unwrap(NATIVE);
     }
 
+    function isZero(Currency currency) internal pure returns (bool) {
+        return isNative(currency);
+    }
+
     function toId(Currency currency) internal pure returns (uint256) {
         return uint160(Currency.unwrap(currency));
     }
