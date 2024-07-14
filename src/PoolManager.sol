@@ -280,7 +280,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function settle() external payable onlyWhenUnlocked returns (uint256 paid) {
         Currency currency = CurrencyReserves.getSyncedCurrency();
-        // If not previously synced, expects native currency to be settled because currency.isNative() == address(0)
+        // If not previously synced, expects native currency to be settled because CurrencyLibrary.NATIVE == address(0)
         if (currency.isNative()) {
             paid = msg.value;
         } else {
