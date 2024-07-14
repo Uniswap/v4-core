@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import {PoolId} from "../types/PoolId.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Currency} from "../types/Currency.sol";
-import {Position} from "./Position.sol";
 import {CurrencyReserves} from "./CurrencyReserves.sol";
 import {NonZeroDeltaCount} from "./NonZeroDeltaCount.sol";
 import {Lock} from "./Lock.sol";

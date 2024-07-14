@@ -3,13 +3,11 @@ pragma solidity ^0.8.24;
 
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {Pool} from "../libraries/Pool.sol";
 import {IHooks} from "./IHooks.sol";
 import {IERC6909Claims} from "./external/IERC6909Claims.sol";
 import {IProtocolFees} from "./IProtocolFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
-import {Position} from "../libraries/Position.sol";
 import {IExtsload} from "./IExtsload.sol";
 import {IExttload} from "./IExttload.sol";
 
@@ -86,26 +84,31 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         uint24 fee
     );
 
-    /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
+    /// @return int24 the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
 
-    /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
+    /// @return int24 the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice Writes the current ERC20 balance of the specified currency to transient storage
     /// This is used to checkpoint balances for the manager and derive deltas for the caller.
     /// @dev This MUST be called before any ERC20 tokens are sent into the contract, but can be skipped
     /// for native tokens because the amount to settle is determined by the sent value.
+    /// @param currency The currency whose balance to sync
     function sync(Currency currency) external;
 
     /// @notice Initialize the state for a given pool ID
+    /// @param key The pool key for the pool to initialize
+    /// @param sqrtPriceX96 The initial square root price
+    /// @param hookData The data to pass through to the initialize hooks
+    /// @return tick The initial tick of the pool
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         returns (int24 tick);
 
     /// @notice All operations go through this function
     /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
-    /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
+    /// @return bytes The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
     function unlock(bytes calldata data) external returns (bytes memory);
 
     struct ModifyLiquidityParams {
@@ -122,7 +125,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @dev Poke by calling with a zero liquidityDelta
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
-    /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
+    /// @param hookData The data to pass through to the add/removeLiquidity hooks
     /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal and fee deltas.
     /// @return feeDelta The balance delta of the fees generated in the liquidity range. Returned for informational purposes.
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
@@ -138,7 +141,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @notice Swap against the given pool
     /// @param key The pool to swap in
     /// @param params The parameters for swapping
-    /// @param hookData Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
+    /// @param hookData The data to pass through to the swap hooks
     /// @return swapDelta The balance delta of the address swapping
     /// @dev Swapping on low liquidity pools may cause unexpected swap amounts when liquidity available is less than amountSpecified.
     /// Additionally note that if interacting with hooks that have the BEFORE_SWAP_RETURNS_DELTA_FLAG or AFTER_SWAP_RETURNS_DELTA_FLAG
@@ -148,23 +151,40 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         returns (BalanceDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
+    /// @param key The key of the pool to donate to
+    /// @param amount0 The amount of currency0 to donate
+    /// @param amount1 The amount of currency1 to donate
+    /// @param hookData The data to pass through to the donate hooks
+    /// @return BalanceDelta The delta of the caller after the donate
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
         returns (BalanceDelta);
 
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
+    /// @param currency The currency to withdraw from the pool manager
+    /// @param to The address to withdraw to
+    /// @param amount The amount of currency to withdraw
     function take(Currency currency, address to, uint256 amount) external;
 
     /// @notice Called by the user to move value into ERC6909 balance
+    /// @param to The address to mint the tokens to
+    /// @param id The currency address to mint to ERC6909s, as a uint256
+    /// @param amount The amount of currency to mint
     function mint(address to, uint256 id, uint256 amount) external;
 
     /// @notice Called by the user to move value from ERC6909 balance
+    /// @param from The address to burn the tokens from
+    /// @param id The currency address to burn from ERC6909s, as a uint256
+    /// @param amount The amount of currency to burn
     function burn(address from, uint256 id, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
+    /// @return paid The amount of currency settled
     function settle() external payable returns (uint256 paid);
 
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
+    /// @param key The key of the pool to update dynamic LP fees for
+    /// @param newDynamicLPFee The new dynamic pool LP fee
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external;
 }
