@@ -3,13 +3,11 @@ pragma solidity ^0.8.24;
 
 import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {Pool} from "../libraries/Pool.sol";
 import {IHooks} from "./IHooks.sol";
 import {IERC6909Claims} from "./external/IERC6909Claims.sol";
 import {IProtocolFees} from "./IProtocolFees.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolId} from "../types/PoolId.sol";
-import {Position} from "../libraries/Position.sol";
 import {IExtsload} from "./IExtsload.sol";
 import {IExttload} from "./IExttload.sol";
 

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.20;
 
-import {IHooks} from "../interfaces/IHooks.sol";
-
 /// @notice This is a temporary library that allows us to use transient storage (tstore/tload)
 /// TODO: This library can be deleted when we have the transient keyword support in solidity.
 library Lock {
