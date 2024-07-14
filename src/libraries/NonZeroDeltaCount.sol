@@ -10,13 +10,13 @@ library NonZeroDeltaCount {
         0x7d4b3164c6e45b97e7d87b7125a44c5828d005af88f9d751cfd78729c5d99a0b;
 
     function read() internal view returns (uint256 count) {
-        assembly {
+        assembly ("memory-safe") {
             count := tload(NONZERO_DELTA_COUNT_SLOT)
         }
     }
 
     function increment() internal {
-        assembly {
+        assembly ("memory-safe") {
             let count := tload(NONZERO_DELTA_COUNT_SLOT)
             count := add(count, 1)
             tstore(NONZERO_DELTA_COUNT_SLOT, count)
@@ -26,7 +26,7 @@ library NonZeroDeltaCount {
     /// @notice Potential to underflow.
     /// Current usage ensures this will not happen because we call decrement with known boundaries (only up to the number of times we call increment).
     function decrement() internal {
-        assembly {
+        assembly ("memory-safe") {
             let count := tload(NONZERO_DELTA_COUNT_SLOT)
             count := sub(count, 1)
             tstore(NONZERO_DELTA_COUNT_SLOT, count)

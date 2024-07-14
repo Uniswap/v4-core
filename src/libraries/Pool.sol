@@ -413,7 +413,7 @@ library Pool {
                 unchecked {
                     // cannot cast a bool to an int24 in Solidity
                     int24 _zeroForOne;
-                    assembly {
+                    assembly ("memory-safe") {
                         _zeroForOne := zeroForOne
                     }
                     state.tick = step.tickNext - _zeroForOne;
@@ -513,7 +513,7 @@ library Pool {
 
         uint128 liquidityGrossBefore;
         int128 liquidityNetBefore;
-        assembly {
+        assembly ("memory-safe") {
             // load first slot of info which contains liquidityGross and liquidityNet packed
             // where the top 128 bits are liquidityNet and the bottom 128 bits are liquidityGross
             let liquidity := sload(info.slot)
@@ -537,7 +537,7 @@ library Pool {
 
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
         int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
-        assembly {
+        assembly ("memory-safe") {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
             // So we can store them with a single sstore by packing them ourselves first
             sstore(
@@ -567,7 +567,7 @@ library Pool {
         int24 MAX_TICK = TickMath.MAX_TICK;
         int24 MIN_TICK = TickMath.MIN_TICK;
         // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
-        assembly {
+        assembly ("memory-safe") {
             let minTick := mul(sdiv(MIN_TICK, tickSpacing), tickSpacing)
             let maxTick := mul(sdiv(MAX_TICK, tickSpacing), tickSpacing)
             let numTicks := add(sdiv(sub(maxTick, minTick), tickSpacing), 1)
