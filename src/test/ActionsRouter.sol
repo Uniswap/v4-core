@@ -13,6 +13,7 @@ import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 // Supported Actions.
 enum Actions {
     SETTLE,
+    SETTLE_NATIVE,
     TAKE,
     SYNC,
     MINT,
@@ -51,7 +52,9 @@ contract ActionsRouter is IUnlockCallback, Test {
             Actions action = actions[i];
             bytes memory param = params[i];
             if (action == Actions.SETTLE) {
-                _settle(param);
+                _settle();
+            } else if (action == Actions.SETTLE_NATIVE) {
+                _settleNative(param);
             } else if (action == Actions.TAKE) {
                 _take(param);
             } else if (action == Actions.SYNC) {
@@ -68,15 +71,20 @@ contract ActionsRouter is IUnlockCallback, Test {
                 _transferFrom(param);
             }
         }
+        return "";
     }
 
-    function executeActions(Actions[] memory actions, bytes[] memory params) external {
+    function executeActions(Actions[] memory actions, bytes[] memory params) external payable {
         manager.unlock(abi.encode(actions, params));
     }
 
-    function _settle(bytes memory params) internal {
-        Currency currency = abi.decode(params, (Currency));
-        manager.settle(currency);
+    function _settle() internal {
+        manager.settle();
+    }
+
+    function _settleNative(bytes memory params) internal {
+        uint256 amount = abi.decode(params, (uint256));
+        manager.settle{value: amount}();
     }
 
     function _take(bytes memory params) internal {
@@ -100,8 +108,8 @@ contract ActionsRouter is IUnlockCallback, Test {
     }
 
     function _assertReservesEquals(bytes memory params) internal view {
-        (Currency currency, uint256 expectedReserves) = abi.decode(params, (Currency, uint256));
-        assertEq(manager.getReserves(currency), expectedReserves, "reserves value incorrect");
+        uint256 expectedReserves = abi.decode(params, (uint256));
+        assertEq(manager.getSyncedReserves(), expectedReserves, "reserves value incorrect");
     }
 
     function _assertDeltaEquals(bytes memory params) internal view {

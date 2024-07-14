@@ -93,9 +93,10 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
 
     /// @notice Writes the current ERC20 balance of the specified currency to transient storage
     /// This is used to checkpoint balances for the manager and derive deltas for the caller.
-    /// @dev This MUST be called before any ERC20 tokens are sent into the contract.
+    /// @dev This MUST be called before any ERC20 tokens are sent into the contract, but can be skipped
+    /// for native tokens because the amount to settle is determined by the sent value.
     /// @param currency The currency whose balance to sync
-    function sync(Currency currency) external returns (uint256 balance);
+    function sync(Currency currency) external;
 
     /// @notice Initialize the state for a given pool ID
     /// @param key The pool key for the pool to initialize
@@ -180,9 +181,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     function burn(address from, uint256 id, uint256 amount) external;
 
     /// @notice Called by the user to pay what is owed
-    /// @param currency The currency to settle to the pool manager
     /// @return paid The amount of currency settled
-    function settle(Currency currency) external payable returns (uint256 paid);
+    function settle() external payable returns (uint256 paid);
 
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
     /// @param key The key of the pool to update dynamic LP fees for
