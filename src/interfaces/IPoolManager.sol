@@ -107,8 +107,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         external
         returns (int24 tick);
 
-    /// @notice All interactions with this contract go through this function. A caller that calls `unlock` must implement
+    /// @notice All interactions on the contract that account deltas require unlocking. A caller that calls `unlock` must implement
     /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
+    /// @dev The only functions callable without an unlocking are `initialize` and `updateDynamicLPFee`
     /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
     /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
     function unlock(bytes calldata data) external returns (bytes memory);
