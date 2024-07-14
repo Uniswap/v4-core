@@ -78,6 +78,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
                 success := call(gasLimit, toAddress, 0, add(data, 0x20), mload(data), 0, 0)
 
                 // success if return data size is 32 bytes
+                // only load the return value if it is 32 bytes to prevent gas griefing
                 success := and(success, eq(returndatasize(), 32))
 
                 // load the return data if success is true
