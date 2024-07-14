@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {Currency, CurrencyLibrary} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
