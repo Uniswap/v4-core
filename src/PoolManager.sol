@@ -298,16 +298,18 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function mint(address to, uint256 id, uint256 amount) external onlyWhenUnlocked {
         unchecked {
+            Currency currency = CurrencyLibrary.fromId(id);
             // negation must be safe as amount is not negative
-            _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()), msg.sender);
-            _mint(to, id, amount);
+            _accountDelta(currency, -(amount.toInt128()), msg.sender);
+            _mint(to, currency.toId(), amount);
         }
     }
 
     /// @inheritdoc IPoolManager
     function burn(address from, uint256 id, uint256 amount) external onlyWhenUnlocked {
-        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128(), msg.sender);
-        _burnFrom(from, id, amount);
+        Currency currency = CurrencyLibrary.fromId(id);
+        _accountDelta(currency, amount.toInt128(), msg.sender);
+        _burnFrom(from, currency.toId(), amount);
     }
 
     /// @inheritdoc IPoolManager

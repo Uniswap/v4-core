@@ -97,6 +97,8 @@ library CurrencyLibrary {
         return uint160(Currency.unwrap(currency));
     }
 
+    // If the upper 12 bytes are non-zero, they will be zero-ed out
+    // Therefore, fromId() and toId() are not inverses of each other
     function fromId(uint256 id) internal pure returns (Currency) {
         return Currency.wrap(address(uint160(id)));
     }
