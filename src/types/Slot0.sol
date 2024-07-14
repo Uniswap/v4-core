@@ -21,7 +21,7 @@ pragma solidity ^0.8.20;
  * the protocolFee is taken from the input first, then the lpFee is taken from the remaining input
  * uint24 protocolFee;
  *
- * Used for the lp fee, either static at initialize or dynamic via hook
+ * The current LP fee of the pool. If the pool is dynamic, this does not include the dynamic fee flag.
  * uint24 lpFee;
  */
 type Slot0 is bytes32;
