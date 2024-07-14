@@ -19,7 +19,7 @@ library CurrencyDelta {
     function setDelta(Currency currency, address caller, int256 delta) internal {
         bytes32 hashSlot = _computeSlot(caller, currency);
 
-        assembly {
+        assembly ("memory-safe") {
             tstore(hashSlot, delta)
         }
     }
@@ -28,7 +28,7 @@ library CurrencyDelta {
     function getDelta(Currency currency, address caller) internal view returns (int256 delta) {
         bytes32 hashSlot = _computeSlot(caller, currency);
 
-        assembly {
+        assembly ("memory-safe") {
             delta := tload(hashSlot)
         }
     }
