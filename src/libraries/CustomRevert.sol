@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.4;
+pragma solidity ^0.8.0;
 
 /// @title Library for reverting with custom errors efficiently
 /// @notice Contains functions for reverting with custom errors with different argument types efficiently
