@@ -40,12 +40,17 @@ library Position {
         bytes32 positionKey;
 
         assembly ("memory-safe") {
-            mstore(0x26, salt) // [0x26, 0x46)
-            mstore(0x06, tickUpper) // [0x23, 0x26)
-            mstore(0x03, tickLower) // [0x20, 0x23)
-            mstore(0, owner) // [0x0c, 0x20)
-            positionKey := keccak256(0x0c, 0x3a) // len is 58 bytes
-            mstore(0x26, 0) // rewrite 0x26 to 0
+            let fmp := mload(0x40)
+            mstore(add(fmp, 0x26), salt) // [0x26, 0x46)
+            mstore(add(fmp, 0x06), tickUpper) // [0x23, 0x26)
+            mstore(add(fmp, 0x03), tickLower) // [0x20, 0x23)
+            mstore(fmp, owner) // [0x0c, 0x20)
+            positionKey := keccak256(add(fmp, 0x0c), 0x3a) // len is 58 bytes
+
+            // now clean the memory we used
+            mstore(add(fmp, 0x40), 0) // fmp+0x40 held salt
+            mstore(add(fmp, 0x20), 0) // fmp+0x20 held tickLower, tickUpper, salt
+            mstore(fmp, 0) // fmp held owner
         }
         position = self[positionKey];
     }

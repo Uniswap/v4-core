@@ -136,8 +136,9 @@ library Hooks {
                     revert(0x1c, 0x04)
                 }
                 // bubble up revert
-                returndatacopy(0, 0, returndatasize())
-                revert(0, returndatasize())
+                let fmp := mload(0x40)
+                returndatacopy(fmp, 0, returndatasize())
+                revert(fmp, returndatasize())
             }
             // allocate result byte array from the free memory pointer
             result := mload(0x40)
