@@ -55,7 +55,7 @@ library LPFeeLibrary {
         return self;
     }
 
-    /// @notice returns true if the fee has the override flag set (top bit of the uint24)
+    /// @notice returns true if the fee has the override flag set (2nd highest bit of the uint24)
     /// @param self The fee to check
     /// @return bool True of the fee has the override flag set
     function isOverride(uint24 self) internal pure returns (bool) {

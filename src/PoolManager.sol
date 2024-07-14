@@ -104,7 +104,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function unlock(bytes calldata data) external noDelegateCall returns (bytes memory result) {
+    function unlock(bytes calldata data) external override returns (bytes memory result) {
         if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();
 
         Lock.unlock();
@@ -149,7 +149,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external onlyWhenUnlocked returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+    ) external onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         PoolId id = key.toId();
         Pool.State storage pool = _getPool(id);
         pool.checkPoolInitialized();
@@ -186,6 +186,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function swap(PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         external
         onlyWhenUnlocked
+        noDelegateCall
         returns (BalanceDelta swapDelta)
     {
         if (params.amountSpecified == 0) SwapAmountCannotBeZero.selector.revertWith();
@@ -246,6 +247,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
         onlyWhenUnlocked
+        noDelegateCall
         returns (BalanceDelta delta)
     {
         Pool.State storage pool = _getPool(key.toId());
