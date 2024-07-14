@@ -191,7 +191,7 @@ library Pool {
                 (uint256 feesOwed0, uint256 feesOwed1) =
                     position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
 
-                // Fees earned from LPing are added to the user's currency delta.
+                // Fees earned from LPing are calculated, and returned
                 feeDelta = toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
             }
 
