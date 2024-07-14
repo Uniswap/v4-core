@@ -42,10 +42,6 @@ library Pool {
     /// @notice For the tick spacing, the tick has too much liquidity
     error TickLiquidityOverflow(int24 tick);
 
-    /// @notice Thrown when interacting with an uninitialized tick that must be initialized
-    /// @param tick The uninitialized tick
-    error TickNotInitialized(int24 tick);
-
     /// @notice Thrown when trying to initialize an already initialized pool
     error PoolAlreadyInitialized();
 
