@@ -26,7 +26,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     using PoolIdLibrary for PoolKey;
     using ProtocolFeeLibrary for uint24;
 
-    event ProtocolFeeControllerUpdated(address feeController);
+    event ProtocolFeeControllerUpdated(address indexed feeController);
     event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
 
     uint24 constant MAX_PROTOCOL_FEE_BOTH_TOKENS = (1000 << 12) | 1000; // 1000 1000
@@ -42,7 +42,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
 
     function test_setProtocolFeeController_succeedsNoRevert() public {
         assertEq(address(protocolFees.protocolFeeController()), address(0));
-        vm.expectEmit(false, false, false, true, address(protocolFees));
+        vm.expectEmit(true, false, false, false, address(protocolFees));
         emit ProtocolFeeControllerUpdated(address(feeController));
         protocolFees.setProtocolFeeController(feeController);
         assertEq(address(protocolFees.protocolFeeController()), address(feeController));
