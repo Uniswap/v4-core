@@ -20,7 +20,7 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 contract PoolTest is Test, GasSnapshot {
     using Pool for Pool.State;
     using LPFeeLibrary for uint24;
-    using ProtocolFeeLibrary for uint24;
+    using ProtocolFeeLibrary for *;
 
     Pool.State state;
 
@@ -122,7 +122,7 @@ contract PoolTest is Test, GasSnapshot {
         Slot0 slot0 = state.slot0;
 
         uint24 _lpFee = params.lpFeeOverride.isOverride() ? params.lpFeeOverride.removeOverrideFlag() : lpFee;
-        uint24 swapFee = protocolFee == 0 ? _lpFee : uint24(protocolFee).calculateSwapFee(_lpFee);
+        uint24 swapFee = protocolFee == 0 ? _lpFee : uint16(protocolFee).calculateSwapFee(_lpFee);
 
         if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
