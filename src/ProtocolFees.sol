@@ -17,7 +17,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     using Pool for Pool.State;
     using CustomRevert for bytes4;
 
-    mapping(Currency currency => uint256) public protocolFeesAccrued;
+    mapping(Currency currency => uint256 amount) public protocolFeesAccrued;
 
     IProtocolFeeController public protocolFeeController;
 
