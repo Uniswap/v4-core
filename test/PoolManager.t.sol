@@ -1211,12 +1211,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_settle_failsIfLocked() public {
         vm.expectRevert(IPoolManager.ManagerLocked.selector);
-        manager.settle(key.currency0);
+        manager.settle();
     }
 
-    function test_settle_revertsSendingNativeWithToken() public {
+    function test_settle_revertsSendingNativeWithToken() public noIsolate {
+        manager.sync(key.currency0);
         vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
-        settleRouter.settle{value: 1}(key);
+        settleRouter.settle{value: 1}();
     }
 
     function test_mint_failsIfLocked() public {
