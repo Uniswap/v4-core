@@ -40,7 +40,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         uint256 balance = currency2.balanceOf(address(manager));
 
         assertEq(uint256(balance), 0);
-        assertEq(manager.getReserves(), 0);
+        assertEq(manager.getSyncedReserves(), 0);
     }
 
     function test_sync_balanceIsNonZero() public noIsolate {
@@ -48,12 +48,12 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertGt(currency0Balance, uint256(0));
 
         // Without calling sync, getReserves should return 0.
-        assertEq(manager.getReserves(), 0);
+        assertEq(manager.getSyncedReserves(), 0);
 
         manager.sync(currency0);
         uint256 balance = currency0.balanceOf(address(manager));
         assertEq(balance, currency0Balance, "balance not equal");
-        assertEq(manager.getReserves(), balance);
+        assertEq(manager.getSyncedReserves(), balance);
     }
 
     function test_settle_withStartingBalance() public noIsolate {
@@ -63,12 +63,12 @@ contract SyncTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         // Sync has not been called.
-        assertEq(manager.getReserves(), 0);
+        assertEq(manager.getSyncedReserves(), 0);
 
         swapRouter.swap(key, SWAP_PARAMS, testSettings, new bytes(0));
         (uint256 balanceCurrency0) = currency0.balanceOf(address(manager));
         manager.sync(currency0);
-        assertEq(manager.getReserves(), balanceCurrency0); // Reserves are up to date since settle + sync was called.
+        assertEq(manager.getSyncedReserves(), balanceCurrency0); // Reserves are up to date since settle + sync was called.
     }
 
     function test_settle_withNoStartingBalance() public noIsolate {
@@ -81,11 +81,11 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         manager.initialize(key2, SQRT_PRICE_1_1, new bytes(0));
 
         // Sync has not been called.
-        assertEq(manager.getReserves(), 0);
+        assertEq(manager.getSyncedReserves(), 0);
         modifyLiquidityRouter.modifyLiquidity(key2, IPoolManager.ModifyLiquidityParams(-60, 60, 100, 0), new bytes(0));
         (uint256 balanceCurrency2) = currency2.balanceOf(address(manager));
         manager.sync(currency2);
-        assertEq(manager.getReserves(), balanceCurrency2);
+        assertEq(manager.getSyncedReserves(), balanceCurrency2);
     }
 
     /// @notice When there is no balance and reserves are set to 0, no delta should be applied.
@@ -93,7 +93,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
 
         manager.sync(currency2);
-        assertEq(manager.getReserves(), 0);
+        assertEq(manager.getSyncedReserves(), 0);
 
         Actions[] memory actions = new Actions[](2);
         bytes[] memory params = new bytes[](2);
@@ -112,10 +112,10 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
 
         // Sync has not been called.
-        assertEq(manager.getReserves(), 0);
+        assertEq(manager.getSyncedReserves(), 0);
 
         manager.sync(currency0);
-        assertEq(manager.getReserves(), currency0Balance);
+        assertEq(manager.getSyncedReserves(), currency0Balance);
 
         Actions[] memory actions = new Actions[](2);
         bytes[] memory params = new bytes[](2);
@@ -140,7 +140,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         manager.sync(currency0);
         snapStart("getReserves");
-        uint256 reserves = manager.getReserves();
+        uint256 reserves = manager.getSyncedReserves();
         snapEnd();
         assertEq(reserves, managerCurrency0BalanceBefore); // reserves are 100.
 
