@@ -16,6 +16,8 @@ library CurrencyDelta {
     }
 
     /// @notice applies a new currency delta for a given caller and currency
+    /// @return previous the prior value
+    /// @return next the modified result
     function applyDelta(Currency currency, address caller, int128 delta)
         internal
         returns (int256 previous, int256 next)
