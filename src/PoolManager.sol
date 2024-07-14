@@ -289,7 +289,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             uint256 reservesBefore = CurrencyReserves.getSyncedReserves();
             uint256 reservesNow = currency.balanceOfSelf();
             paid = reservesNow - reservesBefore;
-            CurrencyReserves.reset();
+            CurrencyReserves.resetCurrency();
         }
 
         _accountDelta(currency, paid.toInt128(), msg.sender);

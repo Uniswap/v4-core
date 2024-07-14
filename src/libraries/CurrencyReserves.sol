@@ -27,7 +27,7 @@ library CurrencyReserves {
         }
     }
 
-    function reset() internal {
+    function resetCurrency() internal {
         assembly {
             tstore(CURRENCY_SLOT, 0)
         }
