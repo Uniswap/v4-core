@@ -129,8 +129,8 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         router.executeActions(actions, params);
     }
 
-    // @notice This tests expected behavior if you DO NOT call sync. (ie. Do not interact with the pool manager properly. You can lose funds.)
-    function test_settle_withoutSync_doesNotRevert_takesUserBalance() public noIsolate {
+    // @notice This tests expected behavior if you DO NOT call sync before a non native settle. (ie. Do not interact with the pool manager properly. You can lose funds.)
+    function test_settle_nonNative_withoutSync_loseFunds() public noIsolate {
         MockERC20(Currency.unwrap(currency0)).approve(address(router), type(uint256).max);
         uint256 managerCurrency0BalanceBefore = currency0.balanceOf(address(manager));
         uint256 userCurrency0BalanceBefore = currency0.balanceOf(address(this));
@@ -151,10 +151,10 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
         params[1] = abi.encode(currency0, address(router), -10);
 
-        actions[2] = Actions.TRANSFER_FROM;
+        actions[2] = Actions.TRANSFER_FROM; // NOT syned before sending tokens
         params[2] = abi.encode(currency0, address(this), manager, 10);
 
-        actions[3] = Actions.SETTLE; // Since reserves now == reserves, paid = 0 and the delta owed by the user will still be -10 after settle.
+        actions[3] = Actions.SETTLE; // calling settle without sync is expecting a native token, but msg.value == 0 so it settles for 0.
 
         actions[4] = Actions.ASSERT_DELTA_EQUALS;
         params[4] = abi.encode(currency0, address(router), -10);
@@ -163,7 +163,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         params[5] = abi.encode(currency0);
 
         // To now settle the delta, the user owes 10 to the pool.
-        // Because sync is called in settle we can transfer + settle.
         actions[6] = Actions.TRANSFER_FROM;
         params[6] = abi.encode(currency0, address(this), manager, 10);
 
@@ -189,8 +188,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         manager.sync(Currency.wrap(address(nativeERC20)));
 
-        // uint256 balanceBefore = address(this).balance;
-
         Actions[] memory actions = new Actions[](1);
         bytes[] memory params = new bytes[](1);
 
@@ -198,7 +195,11 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[0] = Actions.SETTLE_NATIVE;
         params[0] = abi.encode(value);
 
+        vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
+        router.executeActions{value: value}(actions, params);
+
         // Reference only - see OZ C01 report - previous test confirming vulnerability
+        // uint256 balanceBefore = address(this).balance;
 
         // actions[1] = Actions.SETTLE;
         // params[1] = abi.encode(Currency.wrap(address(nativeERC20)));
@@ -214,9 +215,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         // actions[5] = Actions.TAKE;
         // params[5] = abi.encode(Currency.wrap(address(nativeERC20)), address(this), value);
-
-        vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
-        router.executeActions{value: value}(actions, params);
 
         // uint256 balanceAfter = address(this).balance;
         // assertEq(balanceAfter - balanceBefore, value);
