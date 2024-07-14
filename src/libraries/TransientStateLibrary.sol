@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import {PoolId} from "../types/PoolId.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Currency} from "../types/Currency.sol";
-import {Position} from "./Position.sol";
 
 library TransientStateLibrary {
     /// bytes32(uint256(keccak256("ReservesOf")) - 1)

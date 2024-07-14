@@ -154,11 +154,8 @@ library Hooks {
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
-    /// @return delta The delta returned by the hook
-    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn)
-        internal
-        returns (int256 delta)
-    {
+    /// @return int256 The delta returned by the hook
+    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn) internal returns (int256) {
         bytes memory result = callHook(self, data);
 
         // If this hook wasnt meant to return something, default to 0 delta
@@ -179,9 +176,7 @@ library Hooks {
         noSelfCall(self)
     {
         if (self.hasPermission(BEFORE_INITIALIZE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.beforeInitialize.selector, msg.sender, key, sqrtPriceX96, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.beforeInitialize, (msg.sender, key, sqrtPriceX96, hookData)));
         }
     }
 
@@ -191,9 +186,7 @@ library Hooks {
         noSelfCall(self)
     {
         if (self.hasPermission(AFTER_INITIALIZE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.afterInitialize.selector, msg.sender, key, sqrtPriceX96, tick, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.afterInitialize, (msg.sender, key, sqrtPriceX96, tick, hookData)));
         }
     }
 
@@ -205,11 +198,9 @@ library Hooks {
         bytes calldata hookData
     ) internal noSelfCall(self) {
         if (params.liquidityDelta > 0 && self.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
-            self.callHook(abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData));
+            self.callHook(abi.encodeCall(IHooks.beforeAddLiquidity, (msg.sender, key, params, hookData)));
         } else if (params.liquidityDelta <= 0 && self.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.beforeRemoveLiquidity, (msg.sender, key, params, hookData)));
         }
     }
 
@@ -319,9 +310,7 @@ library Hooks {
         noSelfCall(self)
     {
         if (self.hasPermission(BEFORE_DONATE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.beforeDonate, (msg.sender, key, amount0, amount1, hookData)));
         }
     }
 
@@ -331,9 +320,7 @@ library Hooks {
         noSelfCall(self)
     {
         if (self.hasPermission(AFTER_DONATE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, amount0, amount1, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.afterDonate, (msg.sender, key, amount0, amount1, hookData)));
         }
     }
 

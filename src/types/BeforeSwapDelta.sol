@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {BalanceDelta} from "./BalanceDelta.sol";
-
 // Return type of the beforeSwap hook.
 // Upper 128 bits is the delta in specified tokens. Lower 128 bits is delta in unspecified tokens (to match the afterSwap hook)
 type BeforeSwapDelta is int256;
@@ -23,7 +21,7 @@ library BeforeSwapDeltaLibrary {
     /// extracts int128 from the upper 128 bits of the BeforeSwapDelta
     /// returned by beforeSwap
     function getSpecifiedDelta(BeforeSwapDelta delta) internal pure returns (int128 deltaSpecified) {
-        assembly {
+        assembly ("memory-safe") {
             deltaSpecified := sar(128, delta)
         }
     }
