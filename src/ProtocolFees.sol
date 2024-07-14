@@ -18,10 +18,10 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     using Pool for Pool.State;
     using CustomRevert for bytes4;
 
-    /// @notice the protocol fees accrued, per currency
+    /// @inheritdoc IProtocolFees
     mapping(Currency currency => uint256) public protocolFeesAccrued;
 
-    /// @notice the address that sets protocol fees per pool, and can claim the fees
+    /// @inheritdoc IProtocolFees
     IProtocolFeeController public protocolFeeController;
 
     uint256 private immutable controllerGasLimit;
