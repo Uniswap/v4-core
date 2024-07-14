@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
+import {CustomRevert} from "../libraries/CustomRevert.sol";
 
 type Currency is address;
 
@@ -27,12 +28,15 @@ function greaterThanOrEqualTo(Currency currency, Currency other) pure returns (b
 /// @title CurrencyLibrary
 /// @dev This library allows for transferring and holding native tokens and ERC20 tokens
 library CurrencyLibrary {
+    using CustomRevert for bytes4;
+
     /// @notice Thrown when a native transfer fails
     error NativeTransferFailed();
 
     /// @notice Thrown when an ERC20 transfer fails
     error ERC20TransferFailed();
 
+    /// @notice A constant to represent the native currency
     Currency public constant NATIVE = Currency.wrap(address(0));
 
     function transfer(Currency currency, address to, uint256 amount) internal {
@@ -45,7 +49,7 @@ library CurrencyLibrary {
                 // Transfer the ETH and revert if it fails.
                 success := call(gas(), to, amount, 0, 0, 0, 0)
             }
-            if (!success) revert NativeTransferFailed();
+            if (!success) NativeTransferFailed.selector.revertWith();
         } else {
             assembly ("memory-safe") {
                 // Get a pointer to some free memory.
@@ -73,7 +77,7 @@ library CurrencyLibrary {
                 mstore(add(fmp, 0x20), 0) // 4 bytes of `to` and 28 bytes of `amount` were stored here
                 mstore(add(fmp, 0x40), 0) // 4 bytes of `amount` were stored here
             }
-            if (!success) revert ERC20TransferFailed();
+            if (!success) ERC20TransferFailed.selector.revertWith();
         }
     }
 
@@ -97,10 +101,16 @@ library CurrencyLibrary {
         return Currency.unwrap(currency) == Currency.unwrap(NATIVE);
     }
 
+    function isZero(Currency currency) internal pure returns (bool) {
+        return isNative(currency);
+    }
+
     function toId(Currency currency) internal pure returns (uint256) {
         return uint160(Currency.unwrap(currency));
     }
 
+    // If the upper 12 bytes are non-zero, they will be zero-ed out
+    // Therefore, fromId() and toId() are not inverses of each other
     function fromId(uint256 id) internal pure returns (Currency) {
         return Currency.wrap(address(uint160(id)));
     }

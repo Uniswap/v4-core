@@ -57,7 +57,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setManager(IPoolManager(manager));
         dynamicFeesNoHooks.setManager(IPoolManager(manager));
 
-        (currency0, currency1) = deployMintAndApprove2Currencies();
+        deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(
             currency0,
             currency1,

@@ -11,7 +11,7 @@ library UnsafeMath {
     /// @return z The quotient, ceil(x / y)
     function divRoundingUp(uint256 x, uint256 y) internal pure returns (uint256 z) {
         unchecked {
-            assembly {
+            assembly ("memory-safe") {
                 z := add(div(x, y), gt(mod(x, y), 0))
             }
         }

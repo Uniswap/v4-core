@@ -16,7 +16,7 @@ library TickBitmap {
     function compress(int24 tick, int24 tickSpacing) internal pure returns (int24 compressed) {
         // compressed = tick / tickSpacing;
         // if (tick < 0 && tick % tickSpacing != 0) compressed--;
-        assembly {
+        assembly ("memory-safe") {
             compressed :=
                 sub(
                     sdiv(tick, tickSpacing),
@@ -31,7 +31,7 @@ library TickBitmap {
     /// @return wordPos The key in the mapping containing the word in which the bit is stored
     /// @return bitPos The bit position in the word where the flag is stored
     function position(int24 tick) internal pure returns (int16 wordPos, uint8 bitPos) {
-        assembly {
+        assembly ("memory-safe") {
             // signed arithmetic shift right
             wordPos := sar(8, tick)
             bitPos := and(tick, 0xff)
@@ -43,13 +43,11 @@ library TickBitmap {
     /// @param tick The tick to flip
     /// @param tickSpacing The spacing between usable ticks
     function flipTick(mapping(int16 => uint256) storage self, int24 tick, int24 tickSpacing) internal {
-        /**
-         * Equivalent to the following Solidity:
-         *     if (tick % tickSpacing != 0) revert TickMisaligned(tick, tickSpacing);
-         *     (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
-         *     uint256 mask = 1 << bitPos;
-         *     self[wordPos] ^= mask;
-         */
+        // Equivalent to the following Solidity:
+        //     if (tick % tickSpacing != 0) revert TickMisaligned(tick, tickSpacing);
+        //     (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
+        //     uint256 mask = 1 << bitPos;
+        //     self[wordPos] ^= mask;
         assembly ("memory-safe") {
             // ensure that the tick is spaced
             if smod(tick, tickSpacing) {

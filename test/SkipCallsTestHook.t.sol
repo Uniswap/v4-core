@@ -28,7 +28,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         vm.etch(address(skipCallsTestHook), address(impl).code);
         deployFreshManagerAndRouters();
         skipCallsTestHook.setManager(IPoolManager(manager));
-        (currency0, currency1) = deployMintAndApprove2Currencies();
+        deployMintAndApprove2Currencies();
 
         assertEq(skipCallsTestHook.counter(), 0);
 

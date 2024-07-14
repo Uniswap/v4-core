@@ -50,12 +50,12 @@ contract OverflowProtocolFeeControllerTest is IProtocolFeeController {
 /// @notice Returns data that is larger than a word
 contract InvalidReturnSizeProtocolFeeControllerTest is IProtocolFeeController {
     function protocolFeeForPool(PoolKey memory /* key */ ) external view returns (uint24) {
-        address a = address(this);
+        address a = address(1);
         assembly {
             let ptr := mload(0x40)
             mstore(ptr, a)
             mstore(add(ptr, 0x20), a)
-            return(ptr, 0x20)
+            return(ptr, 0x40)
         }
     }
 }
