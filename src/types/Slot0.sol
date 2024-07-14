@@ -6,7 +6,7 @@ pragma solidity ^0.8.20;
  * Using the packaged version saves gas by not storing the structure fields in memory slots.
  *
  * Layout:
- * 24 bits empty | 24 bits lpFee | 24 bits protocolFee | 24 bits tick | 160 bits sqrtPriceX96
+ * 24 bits empty | 24 bits lpFee | 12 bits protocolFee 1->0 | 12 bits protocolFee 0->1 | 24 bits tick | 160 bits sqrtPriceX96
  *
  * Fields in the direction from the least significant bit:
  *
