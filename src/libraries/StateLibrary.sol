@@ -337,7 +337,7 @@ library StateLibrary {
         return keccak256(abi.encodePacked(int256(tick), ticksMappingSlot));
     }
 
-    function _getPositionInfoSlot(PoolId poolId, bytes32 positionId) internal pure returns (bytes32 slot) {
+    function _getPositionInfoSlot(PoolId poolId, bytes32 positionId) internal pure returns (bytes32) {
         // slot key of Pool.State value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
