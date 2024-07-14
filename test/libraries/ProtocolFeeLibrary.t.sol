@@ -12,7 +12,7 @@ contract ProtocolFeeLibraryTest is Test, GasSnapshot {
         assertEq(ProtocolFeeLibrary.getZeroForOneFee(fee), uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
     }
 
-    function test_fuzz_getZeroForOneFee(uint24 fee) public pure {
+    function test_getZeroForOneFee_fuzz(uint24 fee) public pure {
         assertEq(ProtocolFeeLibrary.getZeroForOneFee(fee), fee % 4096);
     }
 
@@ -21,7 +21,7 @@ contract ProtocolFeeLibraryTest is Test, GasSnapshot {
         assertEq(ProtocolFeeLibrary.getOneForZeroFee(fee), uint24(ProtocolFeeLibrary.MAX_PROTOCOL_FEE - 1));
     }
 
-    function test_fuzz_getOneForZeroFee(uint24 fee) public pure {
+    function test_getOneForZeroFee_fuzz(uint24 fee) public pure {
         assertEq(ProtocolFeeLibrary.getOneForZeroFee(fee), fee >> 12);
     }
 
@@ -45,7 +45,7 @@ contract ProtocolFeeLibraryTest is Test, GasSnapshot {
         assertTrue(ProtocolFeeLibrary.isValidProtocolFee(fee));
     }
 
-    function test_fuzz_isValidProtocolFee(uint24 fee) public pure {
+    function test_isValidProtocolFee_fuzz(uint24 fee) public pure {
         if ((fee >> 12 > ProtocolFeeLibrary.MAX_PROTOCOL_FEE) || (fee % 4096 > ProtocolFeeLibrary.MAX_PROTOCOL_FEE)) {
             assertFalse(ProtocolFeeLibrary.isValidProtocolFee(fee));
         } else {
@@ -67,7 +67,7 @@ contract ProtocolFeeLibraryTest is Test, GasSnapshot {
         assertEq(ProtocolFeeLibrary.calculateSwapFee(0, 1000), 1000);
     }
 
-    function test_fuzz_calculateSwapFee(uint16 protocolFee, uint24 lpFee) public pure {
+    function test_calculateSwapFee_fuzz(uint16 protocolFee, uint24 lpFee) public pure {
         protocolFee = uint16(bound(protocolFee, 0, ProtocolFeeLibrary.MAX_PROTOCOL_FEE));
         lpFee = uint24(bound(lpFee, 0, LPFeeLibrary.MAX_LP_FEE));
         uint24 swapFee = ProtocolFeeLibrary.calculateSwapFee(protocolFee, lpFee);

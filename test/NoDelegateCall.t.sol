@@ -26,7 +26,7 @@ contract TestDelegateCall is Test, Deployers, GasSnapshot {
         noDelegateCallTest = new NoDelegateCallTest();
     }
 
-    function test_gas_noDelegateCall() public {
+    function test_noDelegateCall_gas() public {
         snap(
             "NoDelegateCall",
             noDelegateCallTest.getGasCostOfCannotBeDelegateCalled()

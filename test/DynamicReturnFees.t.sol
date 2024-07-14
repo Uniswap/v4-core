@@ -59,7 +59,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         );
     }
 
-    function test_fuzz_dynamicReturnSwapFee(uint24 fee) public {
+    function test_dynamicReturnSwapFee_fuzz(uint24 fee) public {
         // hook will handle adding the override flag
         dynamicReturnFeesHook.setFee(fee);
 

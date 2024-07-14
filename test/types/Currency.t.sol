@@ -25,23 +25,23 @@ contract TestCurrency is Test {
         erc20Currency = Currency.wrap(address(token));
     }
 
-    function test_fuzz_equals(address a, address b) public pure {
+    function test_equals_fuzz(address a, address b) public pure {
         assertEq(a == b, Currency.wrap(a) == Currency.wrap(b));
     }
 
-    function test_fuzz_greaterThan(address a, address b) public pure {
+    function test_greaterThan_fuzz(address a, address b) public pure {
         assertEq(a > b, Currency.wrap(a) > Currency.wrap(b));
     }
 
-    function test_fuzz_lessThan(address a, address b) public pure {
+    function test_lessThan_fuzz(address a, address b) public pure {
         assertEq(a < b, Currency.wrap(a) < Currency.wrap(b));
     }
 
-    function test_fuzz_greaterThanOrEqualTo(address a, address b) public pure {
+    function test_greaterThanOrEqualTo_fuzz(address a, address b) public pure {
         assertEq(a >= b, Currency.wrap(a) >= Currency.wrap(b));
     }
 
-    function test_fuzz_balanceOfSelf_native(uint256 amount) public {
+    function test_balanceOfSelf_native_fuzz(uint256 amount) public {
         uint256 balanceBefore = address(currencyTest).balance;
         amount = bound(amount, 0, balanceBefore);
         currencyTest.transfer(nativeCurrency, otherAddress, amount);
@@ -49,7 +49,7 @@ contract TestCurrency is Test {
         assertEq(currencyTest.balanceOfSelf(nativeCurrency), address(currencyTest).balance);
     }
 
-    function test_fuzz_balanceOfSelf_token(uint256 amount) public {
+    function test_balanceOfSelf_token_fuzz(uint256 amount) public {
         amount = bound(amount, 0, initialERC20Balance);
         currencyTest.transfer(erc20Currency, otherAddress, amount);
         assertEq(currencyTest.balanceOfSelf(erc20Currency), initialERC20Balance - amount);
@@ -59,7 +59,7 @@ contract TestCurrency is Test {
         );
     }
 
-    function test_fuzz_balanceOf_native(uint256 amount) public {
+    function test_balanceOf_native_fuzz(uint256 amount) public {
         uint256 currencyBalanceBefore = address(currencyTest).balance;
         amount = bound(amount, 0, address(currencyTest).balance);
         currencyTest.transfer(nativeCurrency, otherAddress, amount);
@@ -69,7 +69,7 @@ contract TestCurrency is Test {
         assertEq(otherAddress.balance, currencyTest.balanceOf(nativeCurrency, otherAddress));
     }
 
-    function test_fuzz_balanceOf_token(uint256 amount) public {
+    function test_balanceOf_token_fuzz(uint256 amount) public {
         amount = bound(amount, 0, initialERC20Balance);
         currencyTest.transfer(erc20Currency, otherAddress, amount);
         assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), amount);
@@ -88,7 +88,7 @@ contract TestCurrency is Test {
         assertEq(currencyTest.isNative(erc20Currency), false);
     }
 
-    function test_fuzz_isNative(Currency currency) public view {
+    function test_isNative_fuzz(Currency currency) public view {
         assertEq(currencyTest.isNative(currency), (Currency.unwrap(currency) == address(0)));
     }
 
@@ -96,7 +96,7 @@ contract TestCurrency is Test {
         assertEq(currencyTest.toId(nativeCurrency), uint256(0));
     }
 
-    function test_fuzz_toId_returnsCurrencyAsUint256(Currency currency) public view {
+    function test_toId_returnsCurrencyAsUint256_fuzz(Currency currency) public view {
         assertEq(currencyTest.toId(currency), uint256(uint160(Currency.unwrap(currency))));
     }
 
@@ -104,16 +104,16 @@ contract TestCurrency is Test {
         assertEq(Currency.unwrap(currencyTest.fromId(0)), Currency.unwrap(nativeCurrency));
     }
 
-    function test_fuzz_fromId_returnsUint256AsCurrency(uint256 id) public view {
+    function test_fromId_returnsUint256AsCurrency_fuzz(uint256 id) public view {
         uint160 expectedCurrency = uint160(uint256(type(uint160).max) & id);
         assertEq(Currency.unwrap(currencyTest.fromId(id)), address(expectedCurrency));
     }
 
-    function test_fuzz_fromId_toId_opposites(Currency currency) public view {
+    function test_fromId_toId_opposites_fuzz(Currency currency) public view {
         assertEq(Currency.unwrap(currency), Currency.unwrap(currencyTest.fromId(currencyTest.toId(currency))));
     }
 
-    function test_fuzz_toId_fromId_opposites(uint256 id) public view {
+    function test_toId_fromId_opposites_fuzz(uint256 id) public view {
         assertEq(id & 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, currencyTest.toId(currencyTest.fromId(id)));
     }
 
@@ -125,7 +125,7 @@ contract TestCurrency is Test {
         currencyTest.transfer(Currency.wrap(address(emptyRevertingToken)), otherAddress, 100);
     }
 
-    function test_fuzz_transfer_native(uint256 amount) public {
+    function test_transfer_native_fuzz(uint256 amount) public {
         uint256 balanceBefore = otherAddress.balance;
         uint256 contractBalanceBefore = address(currencyTest).balance;
 
@@ -140,7 +140,7 @@ contract TestCurrency is Test {
         }
     }
 
-    function test_fuzz_transfer_token(uint256 amount) public {
+    function test_transfer_token_fuzz(uint256 amount) public {
         uint256 balanceBefore = currencyTest.balanceOf(erc20Currency, otherAddress);
 
         if (amount <= initialERC20Balance) {

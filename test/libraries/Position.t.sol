@@ -10,7 +10,7 @@ contract PositionTest is Test {
 
     mapping(bytes32 => Position.Info) internal positions;
 
-    function test_fuzz_get(address owner, int24 tickLower, int24 tickUpper, bytes32 salt) public view {
+    function test_get_fuzz(address owner, int24 tickLower, int24 tickUpper, bytes32 salt) public view {
         bytes32 positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt));
         Position.Info storage expectedPosition = positions[positionKey];
         Position.Info storage position = positions.get(owner, tickLower, tickUpper, salt);
@@ -23,7 +23,7 @@ contract PositionTest is Test {
         assertEq(positionSlot, expectedPositionSlot, "slots not equal");
     }
 
-    function test_fuzz_update(
+    function test_update_fuzz(
         int128 liquidityDelta,
         Position.Info memory pos,
         uint256 newFeeGrowthInside0X128,

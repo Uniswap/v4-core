@@ -74,7 +74,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertEq(liquidityNetUpper, -10 ether);
     }
 
-    function test_fuzz_getTickLiquidity(IPoolManager.ModifyLiquidityParams memory params) public {
+    function test_getTickLiquidity_fuzz(IPoolManager.ModifyLiquidityParams memory params) public {
         (IPoolManager.ModifyLiquidityParams memory _params,) =
             Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
         uint128 liquidityDelta = uint128(uint256(_params.liquidityDelta));
@@ -101,7 +101,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertEq(_liquidityNetUpper, liquidityNetUpper);
     }
 
-    function test_fuzz_getTickLiquidity_two_positions(
+    function test_getTickLiquidity_two_positions_fuzz(
         IPoolManager.ModifyLiquidityParams memory paramsA,
         IPoolManager.ModifyLiquidityParams memory paramsB
     ) public {
@@ -224,7 +224,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertEq(liquidity, 20 ether);
     }
 
-    function test_fuzz_getLiquidity(IPoolManager.ModifyLiquidityParams memory params) public {
+    function test_getLiquidity_fuzz(IPoolManager.ModifyLiquidityParams memory params) public {
         (IPoolManager.ModifyLiquidityParams memory _params,) =
             Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
         (, int24 tick,,) = StateLibrary.getSlot0(manager, poolId);
@@ -258,7 +258,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertEq(tickBitmap, 1 << bitPos);
     }
 
-    function test_fuzz_getTickBitmap(IPoolManager.ModifyLiquidityParams memory params) public {
+    function test_getTickBitmap_fuzz(IPoolManager.ModifyLiquidityParams memory params) public {
         (IPoolManager.ModifyLiquidityParams memory _params,) =
             Fuzzers.createFuzzyLiquidity(modifyLiquidityRouter, key, params, SQRT_PRICE_1_1, ZERO_BYTES);
 
@@ -304,7 +304,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertEq(feeGrowthInside1X128, 0);
     }
 
-    function test_fuzz_getPositionInfo(
+    function test_getPositionInfo_fuzz(
         IPoolManager.ModifyLiquidityParams memory params,
         uint256 swapAmount,
         bool zeroForOne
@@ -447,7 +447,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertEq(feeGrowthInside1X128, feeGrowthInside1X128_);
     }
 
-    function test_fuzz_getFeeGrowthInside(IPoolManager.ModifyLiquidityParams memory params, bool zeroForOne) public {
+    function test_getFeeGrowthInside_fuzz(IPoolManager.ModifyLiquidityParams memory params, bool zeroForOne) public {
         modifyLiquidityRouter.modifyLiquidity(
             key,
             IPoolManager.ModifyLiquidityParams(
@@ -495,7 +495,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         assertEq(liquidity, 10_000 ether);
     }
 
-    function test_fuzz_getPositionLiquidity(
+    function test_getPositionLiquidity_fuzz(
         IPoolManager.ModifyLiquidityParams memory paramsA,
         IPoolManager.ModifyLiquidityParams memory paramsB
     ) public {

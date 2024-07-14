@@ -89,7 +89,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         protocolFees.setProtocolFee(key, protocolFee);
     }
 
-    function test_fuzz_setProtocolFee(PoolKey memory key, uint24 protocolFee) public {
+    function test_setProtocolFee_fuzz(PoolKey memory key, uint24 protocolFee) public {
         protocolFees.setProtocolFeeController(feeController);
         // Set price to pretend that the pool is initialized
         protocolFees.setPrice(key, Constants.SQRT_PRICE_1_1);
@@ -123,7 +123,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         assertEq(currency0.balanceOf(address(this)), 100);
     }
 
-    function test_fuzz_collectProtocolFees(address recipient, uint256 amount, uint256 feesAccrued) public {
+    function test_collectProtocolFees_fuzz(address recipient, uint256 amount, uint256 feesAccrued) public {
         vm.assume(feesAccrued <= currency0.balanceOf(address(protocolFees)));
 
         uint256 recipientBalanceBefore = currency0.balanceOf(recipient);
@@ -164,7 +164,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         assertEq(protocolFees.protocolFeesAccrued(currency0), 300);
     }
 
-    function test_fuzz_updateProtocolFees(uint256 amount, uint256 startingAmount) public {
+    function test_updateProtocolFees_fuzz(uint256 amount, uint256 startingAmount) public {
         // set a starting balance of protocol fees
         protocolFees.updateProtocolFees(currency0, startingAmount);
         assertEq(protocolFees.protocolFeesAccrued(currency0), startingAmount);

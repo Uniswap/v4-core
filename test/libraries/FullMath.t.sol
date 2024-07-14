@@ -10,7 +10,7 @@ contract FullMathTest is Test {
     uint256 constant Q128 = 2 ** 128;
     uint256 constant MAX_UINT256 = type(uint256).max;
 
-    function test_fuzz_mulDiv_revertsWith0Denominator(uint256 x, uint256 y) public {
+    function test_mulDiv_revertsWith0Denominator_fuzz(uint256 x, uint256 y) public {
         vm.expectRevert();
         x.mulDiv(y, 0);
     }
@@ -49,14 +49,14 @@ contract FullMathTest is Test {
         assertEq(Q128.mulDiv(1000 * Q128, 3000 * Q128), result);
     }
 
-    function test_fuzz_mulDiv(uint256 x, uint256 y, uint256 d) public pure {
+    function test_mulDiv_fuzz(uint256 x, uint256 y, uint256 d) public pure {
         vm.assume(d != 0);
         vm.assume(y != 0);
         x = bound(x, 0, type(uint256).max / y);
         assertEq(FullMath.mulDiv(x, y, d), x * y / d);
     }
 
-    function test_fuzz_mulDivRoundingUp_revertsWith0Denominator(uint256 x, uint256 y) public {
+    function test_mulDivRoundingUp_revertsWith0Denominator_fuzz(uint256 x, uint256 y) public {
         vm.expectRevert();
         x.mulDivRoundingUp(y, 0);
     }
@@ -94,7 +94,7 @@ contract FullMathTest is Test {
         );
     }
 
-    function test_fuzz_mulDivRoundingUp(uint256 x, uint256 y, uint256 d) public pure {
+    function test_mulDivRoundingUp_fuzz(uint256 x, uint256 y, uint256 d) public pure {
         vm.assume(d != 0);
         vm.assume(y != 0);
         x = bound(x, 0, type(uint256).max / y);

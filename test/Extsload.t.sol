@@ -26,7 +26,7 @@ contract ExtsloadTest is Test, GasSnapshot {
         }
     }
 
-    function test_fuzz_consecutiveExtsload(uint256 startSlot, uint256 length, uint256 seed) public {
+    function test_consecutiveExtsload_fuzz(uint256 startSlot, uint256 length, uint256 seed) public {
         length = bound(length, 0, 1000);
         startSlot = bound(startSlot, 0, type(uint256).max - length);
         for (uint256 i; i < length; ++i) {
@@ -39,7 +39,7 @@ contract ExtsloadTest is Test, GasSnapshot {
         }
     }
 
-    function test_fuzz_extsload(uint256 length, uint256 seed, bytes memory dirtyBits) public {
+    function test_extsload_fuzz(uint256 length, uint256 seed, bytes memory dirtyBits) public {
         length = bound(length, 0, 1000);
         bytes32[] memory slots = new bytes32[](length);
         bytes32[] memory expected = new bytes32[](length);

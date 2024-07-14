@@ -27,13 +27,13 @@ contract TestBalanceDelta is Test {
         assertEq(balanceDelta.amount1(), type(int128).min);
     }
 
-    function test_fuzz_toBalanceDelta(int128 x, int128 y) public pure {
+    function test_toBalanceDelta_fuzz(int128 x, int128 y) public pure {
         BalanceDelta balanceDelta = toBalanceDelta(x, y);
         int256 expectedBD = int256(uint256(bytes32(abi.encodePacked(x, y))));
         assertEq(BalanceDelta.unwrap(balanceDelta), expectedBD);
     }
 
-    function test_fuzz_amount0_amount1(int128 x, int128 y) public pure {
+    function test_amount0_amount1_fuzz(int128 x, int128 y) public pure {
         BalanceDelta balanceDelta = toBalanceDelta(x, y);
         assertEq(balanceDelta.amount0(), x);
         assertEq(balanceDelta.amount1(), y);
@@ -68,7 +68,7 @@ contract TestBalanceDelta is Test {
         toBalanceDelta(0, type(int128).max) + toBalanceDelta(0, 1);
     }
 
-    function test_fuzz_add(int128 a, int128 b, int128 c, int128 d) public {
+    function test_add_fuzz(int128 a, int128 b, int128 c, int128 d) public {
         int256 ac = int256(a) + c;
         int256 bd = int256(b) + d;
 
@@ -111,7 +111,7 @@ contract TestBalanceDelta is Test {
         toBalanceDelta(0, type(int128).min) - toBalanceDelta(0, 1);
     }
 
-    function test_fuzz_sub(int128 a, int128 b, int128 c, int128 d) public {
+    function test_sub_fuzz(int128 a, int128 b, int128 c, int128 d) public {
         int256 ac = int256(a) - c;
         int256 bd = int256(b) - d;
 
@@ -125,13 +125,13 @@ contract TestBalanceDelta is Test {
         assertEq(balanceDelta.amount1(), bd);
     }
 
-    function test_fuzz_eq(int128 a, int128 b, int128 c, int128 d) public pure {
+    function test_eq_fuzz(int128 a, int128 b, int128 c, int128 d) public pure {
         bool isEqual = (toBalanceDelta(a, b) == toBalanceDelta(c, d));
         if (a == c && b == d) assertTrue(isEqual);
         else assertFalse(isEqual);
     }
 
-    function test_fuzz_neq(int128 a, int128 b, int128 c, int128 d) public pure {
+    function test_neq_fuzz(int128 a, int128 b, int128 c, int128 d) public pure {
         bool isNotEqual = (toBalanceDelta(a, b) != toBalanceDelta(c, d));
         if (a != c || b != d) assertTrue(isNotEqual);
         else assertFalse(isNotEqual);

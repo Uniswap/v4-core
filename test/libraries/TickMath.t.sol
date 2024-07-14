@@ -63,7 +63,7 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
         tickMath.getSqrtPriceAtTick(tick);
     }
 
-    function test_fuzz_getSqrtPriceAtTick_throwsForTooLarge(int24 tick) public {
+    function test_getSqrtPriceAtTick_throwsForTooLarge_fuzz(int24 tick) public {
         if (tick > 0) {
             tick = int24(bound(tick, MAX_TICK + 1, type(int24).max));
         } else {
@@ -117,7 +117,7 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
         tickMath.getTickAtSqrtPrice(sqrtPriceX96);
     }
 
-    function test_fuzz_getTickAtSqrtPrice_throwsForInvalid(uint160 sqrtPriceX96, bool gte) public {
+    function test_getTickAtSqrtPrice_throwsForInvalid_fuzz(uint160 sqrtPriceX96, bool gte) public {
         if (gte) {
             sqrtPriceX96 = uint160(bound(sqrtPriceX96, MAX_SQRT_PRICE, type(uint160).max));
         } else {
