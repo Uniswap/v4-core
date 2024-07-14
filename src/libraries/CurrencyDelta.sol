@@ -16,8 +16,8 @@ library CurrencyDelta {
     }
 
     /// @notice applies a new currency delta for a given account and currency
-    /// @return previous the prior value
-    /// @return next the modified result
+    /// @return previous The prior value
+    /// @return next The modified result
     function applyDelta(Currency currency, address target, int128 delta)
         internal
         returns (int256 previous, int256 next)
