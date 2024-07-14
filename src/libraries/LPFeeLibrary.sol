@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.20;
 
-import {PoolKey} from "../types/PoolKey.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
 library LPFeeLibrary {
@@ -25,22 +24,29 @@ library LPFeeLibrary {
     uint24 public constant MAX_LP_FEE = 1000000;
 
     /// @notice returns true if a pool's LP fee signals that the pool has a dynamic fee
+    /// @param self The fee to check
+    /// @return bool True of the fee is dynamic
     function isDynamicFee(uint24 self) internal pure returns (bool) {
         return self == DYNAMIC_FEE_FLAG;
     }
 
     /// @notice returns true if an LP fee is valid, aka not above the maxmimum permitted fee
+    /// @param self The fee to check
+    /// @return bool True of the fee is valid
     function isValid(uint24 self) internal pure returns (bool) {
         return self <= MAX_LP_FEE;
     }
 
     /// @notice validates whether an LP fee is larger than the maximum, and reverts if invalid
+    /// @param self The fee to validate
     function validate(uint24 self) internal pure {
         if (!self.isValid()) FeeTooLarge.selector.revertWith();
     }
 
     /// @notice gets and validates the initial LP fee for a pool. Dynamic fee pools have an initial fee of 0.
     /// @dev if a dynamic fee pool wants a non-0 initial fee, it should call `updateDynamicLPFee` in the afterInitialize hook
+    /// @param self The fee to get the initial LP from
+    /// @return initialFee 0 if the fee is dynamic, otherwise the fee (if valid)
     function getInitialLPFee(uint24 self) internal pure returns (uint24) {
         // the initial fee for a dynamic fee pool is 0
         if (self.isDynamicFee()) return 0;
@@ -49,16 +55,22 @@ library LPFeeLibrary {
     }
 
     /// @notice returns true if the fee has the override flag set (top bit of the uint24)
+    /// @param self The fee to check
+    /// @return bool True of the fee has the override flag set
     function isOverride(uint24 self) internal pure returns (bool) {
         return self & OVERRIDE_FEE_FLAG != 0;
     }
 
     /// @notice returns a fee with the override flag removed
+    /// @param self The fee to remove the override flag from
+    /// @return fee The fee without the override flag set
     function removeOverrideFlag(uint24 self) internal pure returns (uint24) {
         return self & REMOVE_OVERRIDE_MASK;
     }
 
     /// @notice Removes the override flag and validates the fee (reverts if the fee is too large)
+    /// @param self The fee to remove the override flag from, and then validate
+    /// @return fee The fee without the override flag set (if valid)
     function removeOverrideFlagAndValidate(uint24 self) internal pure returns (uint24 fee) {
         fee = self.removeOverrideFlag();
         fee.validate();

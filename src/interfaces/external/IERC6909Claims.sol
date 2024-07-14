@@ -25,6 +25,7 @@ interface IERC6909Claims {
     /// @param receiver The address of the receiver.
     /// @param id The id of the token.
     /// @param amount The amount of the token.
+    /// @return bool True, always, unless the function reverts
     function transfer(address receiver, uint256 id, uint256 amount) external returns (bool);
 
     /// @notice Transfers an amount of an id from a sender to a receiver.
@@ -32,16 +33,19 @@ interface IERC6909Claims {
     /// @param receiver The address of the receiver.
     /// @param id The id of the token.
     /// @param amount The amount of the token.
+    /// @return bool True, always, unless the function reverts
     function transferFrom(address sender, address receiver, uint256 id, uint256 amount) external returns (bool);
 
     /// @notice Approves an amount of an id to a spender.
     /// @param spender The address of the spender.
     /// @param id The id of the token.
     /// @param amount The amount of the token.
+    /// @return bool True, always
     function approve(address spender, uint256 id, uint256 amount) external returns (bool);
 
     /// @notice Sets or removes an operator for the caller.
     /// @param operator The address of the operator.
     /// @param approved The approval status.
+    /// @return bool True, always
     function setOperator(address operator, bool approved) external returns (bool);
 }
