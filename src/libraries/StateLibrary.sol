@@ -5,28 +5,26 @@ import {PoolId} from "../types/PoolId.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Position} from "./Position.sol";
 
+/// @notice A helper library to provide state getters that use extsload
 library StateLibrary {
-    // forge inspect src/PoolManager.sol:PoolManager storage --pretty
-    // | Name                  | Type                                    | Slot | Offset | Bytes | Contract                        |
-    // |-----------------------|-----------------------------------------|------|--------|-------|---------------------------------|
-    // | pools                 | mapping(PoolId => struct Pool.State)    | 6    | 0      | 32    | src/PoolManager.sol:PoolManager |
+    /// @notice index of pools mapping in the PoolManager
     bytes32 public constant POOLS_SLOT = bytes32(uint256(6));
 
-    // index of feeGrowthGlobal0X128 in Pool.State
+    /// @notice index of feeGrowthGlobal0X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL0_OFFSET = 1;
-    // index of feeGrowthGlobal1X128 in Pool.State
+    /// @notice index of feeGrowthGlobal1X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL1_OFFSET = 2;
 
-    // index of liquidity in Pool.State
+    /// @notice index of liquidity in Pool.State
     uint256 public constant LIQUIDITY_OFFSET = 3;
 
-    // index of TicksInfo mapping in Pool.State: mapping(int24 => TickInfo) ticks;
+    /// @notice index of TicksInfo mapping in Pool.State: mapping(int24 => TickInfo) ticks;
     uint256 public constant TICKS_OFFSET = 4;
 
-    // index of tickBitmap mapping in Pool.State
+    /// @notice index of tickBitmap mapping in Pool.State
     uint256 public constant TICK_BITMAP_OFFSET = 5;
 
-    // index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
+    /// @notice index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
     uint256 public constant POSITIONS_OFFSET = 6;
 
     /**

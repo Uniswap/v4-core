@@ -16,6 +16,7 @@ import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
+/// @notice a library with all actions that can be performed on a pool
 library Pool {
     using SafeCast for *;
     using TickBitmap for mapping(int16 => uint256);

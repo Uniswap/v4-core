@@ -6,6 +6,7 @@ import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
 import {PoolId} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 
+/// @notice Interface for all protocol-fee related functions in the pool manager
 interface IProtocolFees {
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
     error ProtocolFeeCannotBeFetched();
@@ -15,8 +16,10 @@ interface IProtocolFees {
     /// @notice Thrown when collectProtocolFees or setProtocolFee is not called by the controller.
     error InvalidCaller();
 
+    /// @notice Emitted when the protocol fee controller address is updated in setProtocolFeeController.
     event ProtocolFeeControllerUpdated(address indexed protocolFeeController);
 
+    /// @notice Emitted when the protocol fee is updated for a pool.
     event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFee);
 
     /// @notice Given a currency address, returns the protocol fees accrued in that currency
@@ -42,6 +45,7 @@ interface IProtocolFees {
         external
         returns (uint256 amountCollected);
 
-    /// @return protocolFeeController The currency protocol fee controller
+    /// @notice Returns the current protocol fee controller address
+    /// @return IProtocolFeeController The currency protocol fee controller
     function protocolFeeController() external view returns (IProtocolFeeController);
 }

@@ -53,7 +53,9 @@ function neq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
     return BalanceDelta.unwrap(a) != BalanceDelta.unwrap(b);
 }
 
+/// @notice Library for getting the amount0 and amount1 deltas from the BalanceDelta type
 library BalanceDeltaLibrary {
+    /// @notice A BalanceDelta of 0
     BalanceDelta public constant ZERO_DELTA = BalanceDelta.wrap(0);
 
     function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {

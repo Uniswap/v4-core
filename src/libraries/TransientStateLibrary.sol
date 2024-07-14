@@ -7,6 +7,7 @@ import {CurrencyReserves} from "./CurrencyReserves.sol";
 import {NonZeroDeltaCount} from "./NonZeroDeltaCount.sol";
 import {Lock} from "./Lock.sol";
 
+/// @notice A helper library to provide state getters that use exttload
 library TransientStateLibrary {
     /// @notice returns the reserves for the synced currency
     /// @param manager The pool manager contract.

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {CustomRevert} from "./CustomRevert.sol";
 
+/// @notice Library of helper functions for a pools LP fee
 library LPFeeLibrary {
     using LPFeeLibrary for uint24;
     using CustomRevert for bytes4;
@@ -10,17 +11,17 @@ library LPFeeLibrary {
     /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
     error FeeTooLarge();
 
-    // an lp fee of exactly 0b1000000... signals a dynamic fee pool. This isnt a valid static fee as it is > MAX_LP_FEE
+    /// @notice An lp fee of exactly 0b1000000... signals a dynamic fee pool. This isnt a valid static fee as it is > MAX_LP_FEE
     uint24 public constant DYNAMIC_FEE_FLAG = 0x800000;
 
-    // the second bit of the fee returned by beforeSwap is used to signal if the stored LP fee should be overridden in this swap
+    /// @notice the second bit of the fee returned by beforeSwap is used to signal if the stored LP fee should be overridden in this swap
     // only dynamic-fee pools can return a fee via the beforeSwap hook
     uint24 public constant OVERRIDE_FEE_FLAG = 0x400000;
 
-    // mask to remove the override fee flag from a fee returned by the beforeSwaphook
+    /// @notice mask to remove the override fee flag from a fee returned by the beforeSwaphook
     uint24 public constant REMOVE_OVERRIDE_MASK = 0xBFFFFF;
 
-    // the lp fee is represented in hundredths of a bip, so the max is 100%
+    /// @notice the lp fee is represented in hundredths of a bip, so the max is 100%
     uint24 public constant MAX_LP_FEE = 1000000;
 
     /// @notice returns true if a pool's LP fee signals that the pool has a dynamic fee

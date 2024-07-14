@@ -11,6 +11,7 @@ import {PoolId} from "../types/PoolId.sol";
 import {IExtsload} from "./IExtsload.sol";
 import {IExttload} from "./IExttload.sol";
 
+/// @notice Interface for the PoolManager
 interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @notice Thrown when a currency is not netted out after the contract is unlocked
     error CurrencyNotSettled();
