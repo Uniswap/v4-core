@@ -137,10 +137,8 @@ library StateLibrary {
 
         // offset by 1 word, since the first word is liquidityGross + liquidityNet
         bytes32[] memory data = manager.extsload(bytes32(uint256(slot) + 1), 2);
-        assembly ("memory-safe") {
-            feeGrowthOutside0X128 := mload(add(data, 32))
-            feeGrowthOutside1X128 := mload(add(data, 64))
-        }
+        feeGrowthOutside0X128 = uint256(data[0]);
+        feeGrowthOutside1X128 = uint256(data[1]);
     }
 
     /**
@@ -164,10 +162,8 @@ library StateLibrary {
 
         // read the 2 words of feeGrowthGlobal
         bytes32[] memory data = manager.extsload(slot_feeGrowthGlobal0X128, 2);
-        assembly ("memory-safe") {
-            feeGrowthGlobal0 := mload(add(data, 32))
-            feeGrowthGlobal1 := mload(add(data, 64))
-        }
+        feeGrowthGlobal0 = uint256(data[0]);
+        feeGrowthGlobal1 = uint256(data[1]);
     }
 
     /**
@@ -231,12 +227,9 @@ library StateLibrary {
 
         // read all 3 words of the Position.Info struct
         bytes32[] memory data = manager.extsload(slot, 3);
-
-        assembly ("memory-safe") {
-            liquidity := mload(add(data, 32))
-            feeGrowthInside0LastX128 := mload(add(data, 64))
-            feeGrowthInside1LastX128 := mload(add(data, 96))
-        }
+        liquidity = uint128(uint256(data[0]));
+        feeGrowthInside0LastX128 = uint256(data[1]);
+        feeGrowthInside1LastX128 = uint256(data[2]);
     }
 
     function getPosition(
