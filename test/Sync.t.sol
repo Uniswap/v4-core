@@ -92,6 +92,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         vm.assume(taker != address(router));
         amount = bound(amount, 1, uint256(int256(type(int128).max)));
         MockERC20(Currency.unwrap(currency2)).approve(address(router), type(uint256).max);
+        MockERC20(Currency.unwrap(currency2)).mint(address(manager), amount);
 
         Actions[] memory actions = new Actions[](6);
         bytes[] memory params = new bytes[](6);
@@ -100,7 +101,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         params[0] = abi.encode(currency2, taker, taker, amount);
 
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
-        params[1] = abi.encode(currency2, taker, amount);
+        params[1] = abi.encode(currency2, taker, int256(amount) * -1);
 
         actions[2] = Actions.SYNC;
         params[2] = abi.encode(currency2);
