@@ -160,6 +160,14 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     }
 
     /// @inheritdoc IPoolManager
+    function settleFor(address recipient) external payable onlyWhenUnlocked noDelegateCall returns (uint256 paid) {
+        bytes memory result =
+            _delegateCall(_delegateManager, abi.encodeWithSelector(this.settleFor.selector, recipient));
+
+        return abi.decode(result, (uint256));
+    }
+
+    /// @inheritdoc IPoolManager
     function mint(address to, uint256 id, uint256 amount) external onlyWhenUnlocked noDelegateCall {
         _delegateCall(_delegateManager, abi.encodeWithSelector(this.mint.selector, to, id, amount));
     }

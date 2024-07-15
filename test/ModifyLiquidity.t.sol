@@ -150,7 +150,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     }
 
     // assert solc/js result is at most off by 1/100th of a bip (aka one pip)
-    function _checkError(int128 solc, int128 js, string memory errMsg) public pure returns (int128) {
+    function _checkError(int128 solc, int128 js, string memory errMsg) public pure {
         if (solc != js) {
             // Ensures no div by 0 in the case of one-sided liquidity adds.
             (int128 gtResult, int128 ltResult) = js > solc ? (js, solc) : (solc, js);

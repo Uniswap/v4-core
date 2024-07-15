@@ -86,7 +86,7 @@ library StateLibrary {
         bytes32 slot = _getTickInfoSlot(poolId, tick);
 
         // read all 3 words of the TickInfo struct
-        bytes memory data = manager.extsload(slot, 3);
+        bytes32[] memory data = manager.extsload(slot, 3);
         assembly ("memory-safe") {
             let firstWord := mload(add(data, 32))
             liquidityNet := sar(128, firstWord)
@@ -136,7 +136,7 @@ library StateLibrary {
         bytes32 slot = _getTickInfoSlot(poolId, tick);
 
         // offset by 1 word, since the first word is liquidityGross + liquidityNet
-        bytes memory data = manager.extsload(bytes32(uint256(slot) + 1), 2);
+        bytes32[] memory data = manager.extsload(bytes32(uint256(slot) + 1), 2);
         assembly ("memory-safe") {
             feeGrowthOutside0X128 := mload(add(data, 32))
             feeGrowthOutside1X128 := mload(add(data, 64))
@@ -163,7 +163,7 @@ library StateLibrary {
         bytes32 slot_feeGrowthGlobal0X128 = bytes32(uint256(stateSlot) + FEE_GROWTH_GLOBAL0_OFFSET);
 
         // read the 2 words of feeGrowthGlobal
-        bytes memory data = manager.extsload(slot_feeGrowthGlobal0X128, 2);
+        bytes32[] memory data = manager.extsload(slot_feeGrowthGlobal0X128, 2);
         assembly ("memory-safe") {
             feeGrowthGlobal0 := mload(add(data, 32))
             feeGrowthGlobal1 := mload(add(data, 64))
@@ -230,7 +230,7 @@ library StateLibrary {
         bytes32 slot = _getPositionInfoSlot(poolId, positionId);
 
         // read all 3 words of the Position.Info struct
-        bytes memory data = manager.extsload(slot, 3);
+        bytes32[] memory data = manager.extsload(slot, 3);
 
         assembly ("memory-safe") {
             liquidity := mload(add(data, 32))
