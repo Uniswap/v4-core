@@ -11,14 +11,17 @@ import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {CustomRevert} from "./libraries/CustomRevert.sol";
 
+/// @notice Contract handling the setting and accrual of protocol fees
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using ProtocolFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
     using Pool for Pool.State;
     using CustomRevert for bytes4;
 
-    mapping(Currency currency => uint256) public protocolFeesAccrued;
+    /// @inheritdoc IProtocolFees
+    mapping(Currency currency => uint256 amount) public protocolFeesAccrued;
 
+    /// @inheritdoc IProtocolFees
     IProtocolFeeController public protocolFeeController;
 
     uint256 private immutable controllerGasLimit;
@@ -69,21 +72,30 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
             // in mind.
             if (gasleft() < controllerGasLimit) ProtocolFeeCannotBeFetched.selector.revertWith();
 
-            (bool _success, bytes memory _data) = address(protocolFeeController).call{gas: controllerGasLimit}(
-                abi.encodeCall(IProtocolFeeController.protocolFeeForPool, (key))
-            );
-            // Ensure that the return data fits within a word
-            if (!_success || _data.length > 32) return (false, 0);
+            uint256 gasLimit = controllerGasLimit;
+            address toAddress = address(protocolFeeController);
 
+            bytes memory data = abi.encodeCall(IProtocolFeeController.protocolFeeForPool, (key));
             uint256 returnData;
             assembly ("memory-safe") {
-                returnData := mload(add(_data, 0x20))
+                success := call(gasLimit, toAddress, 0, add(data, 0x20), mload(data), 0, 0)
+
+                // success if return data size is 32 bytes
+                // only load the return value if it is 32 bytes to prevent gas griefing
+                success := and(success, eq(returndatasize(), 32))
+
+                // load the return data if success is true
+                if success {
+                    let fmp := mload(0x40)
+                    returndatacopy(fmp, 0, returndatasize())
+                    returnData := mload(fmp)
+                    mstore(fmp, 0)
+                }
             }
 
             // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
-            (success, protocolFee) = (returnData == uint24(returnData)) && uint24(returnData).isValidProtocolFee()
-                ? (true, uint24(returnData))
-                : (false, 0);
+            (success, protocolFee) = success && (returnData == uint24(returnData))
+                && uint24(returnData).isValidProtocolFee() ? (true, uint24(returnData)) : (false, 0);
         }
     }
 

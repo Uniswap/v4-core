@@ -14,7 +14,10 @@ import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 // Supported Actions.
 enum Actions {
     SETTLE,
+    SETTLE_NATIVE,
+    SETTLE_FOR,
     TAKE,
+    PRANK_TAKE_FROM,
     SYNC,
     MINT,
     CLEAR,
@@ -54,9 +57,15 @@ contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
             Actions action = actions[i];
             bytes memory param = params[i];
             if (action == Actions.SETTLE) {
-                _settle(param);
+                _settle();
+            } else if (action == Actions.SETTLE_NATIVE) {
+                _settleNative(param);
+            } else if (action == Actions.SETTLE_FOR) {
+                _settleFor(param);
             } else if (action == Actions.TAKE) {
                 _take(param);
+            } else if (action == Actions.PRANK_TAKE_FROM) {
+                _prankTakeFrom(param);
             } else if (action == Actions.SYNC) {
                 _sync(param);
             } else if (action == Actions.MINT) {
@@ -75,20 +84,37 @@ contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
                 _transferFrom(param);
             }
         }
+        return "";
     }
 
-    function executeActions(Actions[] memory actions, bytes[] memory params) external {
+    function executeActions(Actions[] memory actions, bytes[] memory params) external payable {
         manager.unlock(abi.encode(actions, params));
     }
 
-    function _settle(bytes memory params) internal {
-        Currency currency = abi.decode(params, (Currency));
-        manager.settle(currency);
+    function _settle() internal {
+        manager.settle();
+    }
+
+    function _settleNative(bytes memory params) internal {
+        uint256 amount = abi.decode(params, (uint256));
+        manager.settle{value: amount}();
+    }
+
+    function _settleFor(bytes memory params) internal {
+        address recipient = abi.decode(params, (address));
+        manager.settleFor(recipient);
     }
 
     function _take(bytes memory params) internal {
         (Currency currency, address recipient, int128 amount) = abi.decode(params, (Currency, address, int128));
         manager.take(currency, recipient, uint128(amount));
+    }
+
+    function _prankTakeFrom(bytes memory params) internal {
+        (Currency currency, address from, address recipient, uint256 amount) =
+            abi.decode(params, (Currency, address, address, uint256));
+        vm.prank(from);
+        manager.take(currency, recipient, amount);
     }
 
     function _sync(bytes memory params) internal {
@@ -115,8 +141,8 @@ contract ActionsRouter is IUnlockCallback, Test, GasSnapshot {
     }
 
     function _assertReservesEquals(bytes memory params) internal view {
-        (Currency currency, uint256 expectedReserves) = abi.decode(params, (Currency, uint256));
-        assertEq(manager.getReserves(currency), expectedReserves, "reserves value incorrect");
+        uint256 expectedReserves = abi.decode(params, (uint256));
+        assertEq(manager.getSyncedReserves(), expectedReserves, "reserves value incorrect");
     }
 
     function _assertDeltaEquals(bytes memory params) internal view {

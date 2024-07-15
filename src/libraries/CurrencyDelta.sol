@@ -31,11 +31,11 @@ library CurrencyDelta {
     {
         bytes32 hashSlot = _computeSlot(target, currency);
 
-        assembly {
+        assembly ("memory-safe") {
             previous := tload(hashSlot)
         }
         next = previous + delta;
-        assembly {
+        assembly ("memory-safe") {
             tstore(hashSlot, next)
         }
     }
