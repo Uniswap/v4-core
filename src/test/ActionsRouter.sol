@@ -16,9 +16,11 @@ enum Actions {
     TAKE,
     SYNC,
     MINT,
+    CLEAR,
     ASSERT_BALANCE_EQUALS,
     ASSERT_RESERVES_EQUALS,
     ASSERT_DELTA_EQUALS,
+    ASSERT_NONZERO_DELTA_COUNT_EQUALS,
     TRANSFER_FROM
 }
 // TODO: Add other actions as needed.
@@ -58,12 +60,16 @@ contract ActionsRouter is IUnlockCallback, Test {
                 _sync(param);
             } else if (action == Actions.MINT) {
                 _mint(param);
+            } else if (action == Actions.CLEAR) {
+                _clear(param);
             } else if (action == Actions.ASSERT_BALANCE_EQUALS) {
                 _assertBalanceEquals(param);
             } else if (action == Actions.ASSERT_RESERVES_EQUALS) {
                 _assertReservesEquals(param);
             } else if (action == Actions.ASSERT_DELTA_EQUALS) {
                 _assertDeltaEquals(param);
+            } else if (action == Actions.ASSERT_NONZERO_DELTA_COUNT_EQUALS) {
+                _assertNonzeroDeltaCountEquals(param);
             } else if (action == Actions.TRANSFER_FROM) {
                 _transferFrom(param);
             }
@@ -94,6 +100,11 @@ contract ActionsRouter is IUnlockCallback, Test {
         manager.mint(recipient, currency.toId(), amount);
     }
 
+    function _clear(bytes memory params) internal {
+        (Currency currency, uint256 amount) = abi.decode(params, (Currency, uint256));
+        manager.clear(currency, amount);
+    }
+
     function _assertBalanceEquals(bytes memory params) internal view {
         (Currency currency, address user, uint256 expectedBalance) = abi.decode(params, (Currency, address, uint256));
         assertEq(currency.balanceOf(user), expectedBalance, "usertoken value incorrect");
@@ -108,6 +119,11 @@ contract ActionsRouter is IUnlockCallback, Test {
         (Currency currency, address caller, int256 expectedDelta) = abi.decode(params, (Currency, address, int256));
 
         assertEq(manager.currencyDelta(caller, currency), expectedDelta, "delta value incorrect");
+    }
+
+    function _assertNonzeroDeltaCountEquals(bytes memory params) internal view {
+        (uint256 expectedCount) = abi.decode(params, (uint256));
+        assertEq(manager.getNonzeroDeltaCount(), expectedCount, "nonzero delta count incorrect");
     }
 
     function _transferFrom(bytes memory params) internal {

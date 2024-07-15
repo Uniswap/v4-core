@@ -45,6 +45,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     ///@notice Thrown when native currency is passed to a non native settlement
     error NonZeroNativeValue();
 
+    /// @notice Thrown when `clear` is called on a currency with a negative balance. `sync` & `settle` or `burn` should be called instead.
+    error OwedFundsCannotBeCleared();
+
+    /// @notice Thrown when `clear` is called with an amount that is not exactly equal to the open currency delta.
+    error MustClearExactBalance();
+
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
     /// @param currency0 The first currency of the pool by address sort order
@@ -92,20 +98,15 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @notice Returns the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
-    /// @notice Writes the current ERC20 balance of the specified currency to transient storage
-    /// This is used to checkpoint balances for the manager and derive deltas for the caller.
-    /// @dev This MUST be called before any ERC20 tokens are sent into the contract.
-    function sync(Currency currency) external returns (uint256 balance);
+    /// @notice All operations go through this function
+    /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
+    /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
+    function unlock(bytes calldata data) external returns (bytes memory);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
         returns (int24 tick);
-
-    /// @notice All operations go through this function
-    /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
-    /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
-    function unlock(bytes calldata data) external returns (bytes memory);
 
     struct ModifyLiquidityParams {
         // the lower and upper tick of the position
@@ -151,18 +152,28 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         external
         returns (BalanceDelta);
 
+    /// @notice Writes the current ERC20 balance of the specified currency to transient storage
+    /// This is used to checkpoint balances for the manager and derive deltas for the caller.
+    /// @dev This MUST be called before any ERC20 tokens are sent into the contract.
+    function sync(Currency currency) external returns (uint256 balance);
+
     /// @notice Called by the user to net out some value owed to the user
     /// @dev Can also be used as a mechanism for _free_ flash loans
     function take(Currency currency, address to, uint256 amount) external;
+
+    /// @notice Called by the user to pay what is owed
+    function settle(Currency currency) external payable returns (uint256 paid);
+
+    /// @notice Called to clear a positive balance without a corresponding transfer.
+    /// @dev This could be used to clear a balance that is considered dust.
+    /// @dev The amount must be the exact positive balance. This is to enforce that the caller is aware of the amount being cleared.
+    function clear(Currency currency, uint256 amount) external;
 
     /// @notice Called by the user to move value into ERC6909 balance
     function mint(address to, uint256 id, uint256 amount) external;
 
     /// @notice Called by the user to move value from ERC6909 balance
     function burn(address from, uint256 id, uint256 amount) external;
-
-    /// @notice Called by the user to pay what is owed
-    function settle(Currency token) external payable returns (uint256 paid);
 
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external;
