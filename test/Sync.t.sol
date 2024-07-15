@@ -88,31 +88,31 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getSyncedReserves(), balanceCurrency2);
     }
 
-    function test_settle_payOnBehalf(address recipient, uint256 amount) public {
-        vm.assume(recipient != address(router));
+    function test_settle_payOnBehalf(address taker, uint256 amount) public {
+        vm.assume(taker != address(router));
         amount = bound(amount, 1, uint256(int256(type(int128).max)));
         MockERC20(Currency.unwrap(currency2)).approve(address(router), type(uint256).max);
 
         Actions[] memory actions = new Actions[](6);
         bytes[] memory params = new bytes[](6);
 
-        actions[0] = Actions.SYNC;
-        params[0] = abi.encode(currency2);
+        actions[0] = Actions.PRANK_TAKE_FROM;
+        params[0] = abi.encode(currency2, taker, taker, amount);
 
-        actions[1] = Actions.TRANSFER_FROM;
-        params[1] = abi.encode(currency2, address(this), address(manager), amount);
+        actions[1] = Actions.ASSERT_DELTA_EQUALS;
+        params[1] = abi.encode(currency2, taker, amount);
 
-        actions[2] = Actions.SETTLE_FOR;
-        params[2] = abi.encode(recipient);
+        actions[2] = Actions.SYNC;
+        params[2] = abi.encode(currency2);
 
-        actions[3] = Actions.ASSERT_DELTA_EQUALS;
-        params[3] = abi.encode(currency2, recipient, amount);
+        actions[3] = Actions.TRANSFER_FROM;
+        params[3] = abi.encode(currency2, address(this), address(manager), amount);
 
-        actions[4] = Actions.ASSERT_DELTA_EQUALS;
-        params[4] = abi.encode(currency2, address(router), 0);
+        actions[4] = Actions.SETTLE_FOR;
+        params[4] = abi.encode(taker);
 
-        actions[5] = Actions.PRANK_TAKE_FROM;
-        params[5] = abi.encode(currency2, recipient, address(this), amount);
+        actions[5] = Actions.ASSERT_DELTA_EQUALS;
+        params[5] = abi.encode(currency2, taker, 0);
 
         router.executeActions(actions, params);
     }
