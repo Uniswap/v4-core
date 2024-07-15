@@ -149,7 +149,9 @@ library Hooks {
         }
 
         // Length must be at least 32 to contain the selector. Check expected selector and returned selector match.
-        if (result.parseSelector() != data.parseSelector()) InvalidHookResponse.selector.revertWith();
+        if (result.length < 32 || result.parseSelector() != data.parseSelector()) {
+            InvalidHookResponse.selector.revertWith();
+        }
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
@@ -162,6 +164,9 @@ library Hooks {
 
         // If this hook wasnt meant to return something, default to 0 delta
         if (!parseReturn) return 0;
+
+        // A length of 64 bytes is required to return a bytes4, and a 32 byte delta
+        if (result.length != 64) InvalidHookResponse.selector.revertWith();
         return result.parseReturnDelta();
     }
 
@@ -256,6 +261,9 @@ library Hooks {
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
             bytes memory result = callHook(self, abi.encodeCall(IHooks.beforeSwap, (msg.sender, key, params, hookData)));
+
+            // A length of 96 bytes is required to return a bytes4, a 32 byte delta, and an LP fee
+            if (result.length != 96) InvalidHookResponse.selector.revertWith();
 
             // dynamic fee pools that do not want to override the cache fee, return 0 otherwise they return a valid fee with the override flag
             if (key.fee.isDynamicFee()) lpFeeOverride = result.parseFee();
