@@ -12,15 +12,11 @@ library CurrencyReserves {
 
     /// bytes32(uint256(keccak256("ReservesOf")) - 1)
     bytes32 constant RESERVES_OF_SLOT = 0x1e0745a7db1623981f0b2a5d4232364c00787266eb75ad546f190e6cebe9bd95;
-    /// bytes32(uint256(keccak256("Sync")) - 1)
-    bytes32 constant CURRENCY_SLOT = 0xf0e14a408baf7f453312eec68e9b7d728ec5337fbdf671f917ee8c80f3255231;
+    /// bytes32(uint256(keccak256("Currency")) - 1)
+    bytes32 constant CURRENCY_SLOT = 0x27e098c505d44ec3574004bca052aabf76bd35004c182099d8c575fb238593b9;
 
     function requireNotSynced() internal view {
-        Currency currencySynced;
-        assembly {
-            currencySynced := tload(CURRENCY_SLOT)
-        }
-        if (!currencySynced.isZero()) {
+        if (!getSyncedCurrency().isZero()) {
             AlreadySynced.selector.revertWith();
         }
     }
@@ -31,7 +27,7 @@ library CurrencyReserves {
         }
     }
 
-    function reset() internal {
+    function resetCurrency() internal {
         assembly {
             tstore(CURRENCY_SLOT, 0)
         }

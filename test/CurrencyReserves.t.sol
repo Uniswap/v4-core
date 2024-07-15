@@ -34,7 +34,7 @@ contract CurrencyReservesTest is Test {
         uint256 value = CurrencyReserves.getSyncedReserves();
         assertEq(value, 100);
         assertEq(Currency.unwrap(CurrencyReserves.getSyncedCurrency()), Currency.unwrap(currency0));
-        CurrencyReserves.reset();
+        CurrencyReserves.resetCurrency();
         uint256 valueAfterReset = CurrencyReserves.getSyncedReserves();
         assertEq(valueAfterReset, 100);
         assertEq(Currency.unwrap(CurrencyReserves.getSyncedCurrency()), address(0));
@@ -45,7 +45,7 @@ contract CurrencyReservesTest is Test {
     }
 
     function test_syncSlot() public pure {
-        assertEq(bytes32(uint256(keccak256("Sync")) - 1), CurrencyReserves.CURRENCY_SLOT);
+        assertEq(bytes32(uint256(keccak256("Currency")) - 1), CurrencyReserves.CURRENCY_SLOT);
     }
 
     function test_fuzz_get_set(Currency currency, uint256 value) public {

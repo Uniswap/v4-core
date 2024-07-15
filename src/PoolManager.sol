@@ -16,7 +16,7 @@ import {IUnlockCallback} from "./interfaces/callback/IUnlockCallback.sol";
 import {ProtocolFees} from "./ProtocolFees.sol";
 import {ERC6909Claims} from "./ERC6909Claims.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
-import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "./types/BalanceDelta.sol";
+import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
@@ -104,7 +104,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function unlock(bytes calldata data) external noDelegateCall returns (bytes memory result) {
+    function unlock(bytes calldata data) external override returns (bytes memory result) {
         if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();
 
         Lock.unlock();
@@ -149,7 +149,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external onlyWhenUnlocked returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+    ) external onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         PoolId id = key.toId();
         Pool.State storage pool = _getPool(id);
         pool.checkPoolInitialized();
@@ -186,6 +186,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function swap(PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         external
         onlyWhenUnlocked
+        noDelegateCall
         returns (BalanceDelta swapDelta)
     {
         if (params.amountSpecified == 0) SwapAmountCannotBeZero.selector.revertWith();
@@ -246,6 +247,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
         onlyWhenUnlocked
+        noDelegateCall
         returns (BalanceDelta delta)
     {
         Pool.State storage pool = _getPool(key.toId());
@@ -290,16 +292,18 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function mint(address to, uint256 id, uint256 amount) external onlyWhenUnlocked {
         unchecked {
+            Currency currency = CurrencyLibrary.fromId(id);
             // negation must be safe as amount is not negative
-            _accountDelta(CurrencyLibrary.fromId(id), -(amount.toInt128()), msg.sender);
-            _mint(to, id, amount);
+            _accountDelta(currency, -(amount.toInt128()), msg.sender);
+            _mint(to, currency.toId(), amount);
         }
     }
 
     /// @inheritdoc IPoolManager
     function burn(address from, uint256 id, uint256 amount) external onlyWhenUnlocked {
-        _accountDelta(CurrencyLibrary.fromId(id), amount.toInt128(), msg.sender);
-        _burnFrom(from, id, amount);
+        Currency currency = CurrencyLibrary.fromId(id);
+        _accountDelta(currency, amount.toInt128(), msg.sender);
+        _burnFrom(from, currency.toId(), amount);
     }
 
     /// @inheritdoc IPoolManager
@@ -314,7 +318,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function _settle(address recipient) internal returns (uint256 paid) {
         Currency currency = CurrencyReserves.getSyncedCurrency();
-        // If not previously synced, expects native currency to be settled because currency.isNative() == address(0)
+        // If not previously synced, expects native currency to be settled because CurrencyLibrary.NATIVE == address(0)
         if (currency.isNative()) {
             paid = msg.value;
         } else {
@@ -323,9 +327,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             uint256 reservesBefore = CurrencyReserves.getSyncedReserves();
             uint256 reservesNow = currency.balanceOfSelf();
             paid = reservesNow - reservesBefore;
-            CurrencyReserves.reset();
+            CurrencyReserves.resetCurrency();
         }
-
         _accountDelta(currency, paid.toInt128(), recipient);
     }
 

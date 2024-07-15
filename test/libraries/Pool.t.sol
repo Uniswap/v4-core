@@ -91,7 +91,7 @@ contract PoolTest is Test, GasSnapshot {
         state.modifyLiquidity(params);
     }
 
-    function testSwap(
+    function test_fuzz_swap(
         uint160 sqrtPriceX96,
         uint24 lpFee,
         uint16 protocolFee0,

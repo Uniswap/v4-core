@@ -42,7 +42,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
     function setUp() public {
         deployFreshManagerAndRouters();
-        (currency0, currency1) = deployMintAndApprove2Currencies();
+        deployMintAndApprove2Currencies();
 
         uninitializedKey = PoolKey({
             currency0: currency0,
