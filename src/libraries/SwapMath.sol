@@ -43,7 +43,7 @@ library SwapMath {
     /// @return amountIn The amount to be swapped in, of either currency0 or currency1, based on the direction of the swap
     /// @return amountOut The amount to be received, of either currency0 or currency1, based on the direction of the swap
     /// @return feeAmount The amount of input that will be taken as a fee/
-    /// @dev feePips must be no larger than MAX_FEE_PIPS
+    /// @dev feePips must be no larger than MAX_FEE_PIPS for this function. We ensure that before setting a fee using LPFeeLibrary.isValid.
     function computeSwapStep(
         uint160 sqrtPriceCurrentX96,
         uint160 sqrtPriceTargetX96,
