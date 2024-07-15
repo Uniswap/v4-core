@@ -128,18 +128,15 @@ library Hooks {
     /// @notice performs a hook call using the given calldata on the given hook that doesnt return a delta
     /// @return result The complete data returned by the hook
     function callHook(IHooks self, bytes memory data) internal returns (bytes memory result) {
+        bool success;
         assembly ("memory-safe") {
-            if iszero(call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)) {
-                if iszero(returndatasize()) {
-                    // if the call failed without a revert reason, revert with `FailedHookCall()`
-                    mstore(0, 0x36bc48c5)
-                    revert(0x1c, 0x04)
-                }
-                // bubble up revert
-                let fmp := mload(0x40)
-                returndatacopy(fmp, 0, returndatasize())
-                revert(fmp, returndatasize())
-            }
+            success := call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)
+        }
+        // If the hook reverted with a reason, bubble it up, otherwise revert with FailedHookCall
+        if (!success) FailedHookCall.selector.bubbleUpOrRevertWith();
+        
+        // The call was successful, fetch the returned data
+        assembly ("memory-safe") {
             // allocate result byte array from the free memory pointer
             result := mload(0x40)
             // store new free memory pointer at the end of the array padded to 32 bytes

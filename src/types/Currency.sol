@@ -49,7 +49,8 @@ library CurrencyLibrary {
                 // Transfer the ETH and revert if it fails.
                 success := call(gas(), to, amount, 0, 0, 0, 0)
             }
-            if (!success) NativeTransferFailed.selector.revertWith();
+            // bubble up the revert message if it exists, otherwise revert with `NativeTransferFailed`
+            if (!success) NativeTransferFailed.selector.bubbleUpOrRevertWith();
         } else {
             assembly ("memory-safe") {
                 // Get a pointer to some free memory.
@@ -77,7 +78,9 @@ library CurrencyLibrary {
                 mstore(add(fmp, 0x20), 0) // 4 bytes of `to` and 28 bytes of `amount` were stored here
                 mstore(add(fmp, 0x40), 0) // 4 bytes of `amount` were stored here
             }
-            if (!success) ERC20TransferFailed.selector.revertWith();
+            // bubble up the revert message if it exists, otherwise revert with `ERC20TransferFailed`
+            // if the token returned `false` but did not revert, `false` will be bubbled up
+            if (!success) ERC20TransferFailed.selector.bubbleUpOrRevertWith();
         }
     }
 

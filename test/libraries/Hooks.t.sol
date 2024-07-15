@@ -21,7 +21,7 @@ import {PoolKey} from "../../src/types/PoolKey.sol";
 import {IERC20Minimal} from "../../src/interfaces/external/IERC20Minimal.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {BaseTestHooks} from "../../src/test/BaseTestHooks.sol";
-import {EmptyRevertHook} from "../../src/test/EmptyRevertHook.sol";
+import {EmptyRevertContract} from "../../src/test/EmptyRevertContract.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Constants} from "../utils/Constants.sol";
 
@@ -1014,14 +1014,14 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
     }
 
-    function test_callHook_revertsWithInternalErrorHookCallFailed() public {
+    function test_callHook_revertsWithInternalErrorFailedHookCall() public {
         // This test executes _callHook through beforeSwap.
-        EmptyRevertHook emptyRevertingHookImpl = new EmptyRevertHook();
+        EmptyRevertContract emptyRevertingHookImpl = new EmptyRevertContract();
         address beforeSwapFlag = address(uint160(Hooks.BEFORE_SWAP_FLAG));
         vm.etch(beforeSwapFlag, address(emptyRevertingHookImpl).code);
-        EmptyRevertHook revertingHook = EmptyRevertHook(beforeSwapFlag);
+        EmptyRevertContract revertingHook = EmptyRevertContract(beforeSwapFlag);
 
-        PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(revertingHook));
+        PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(address(revertingHook)));
         manager.initialize(key, SQRT_PRICE_1_1, new bytes(0));
 
         IPoolManager.SwapParams memory swapParams =

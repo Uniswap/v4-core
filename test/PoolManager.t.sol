@@ -890,7 +890,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         );
 
         (uint256 amount0, uint256 amount1) = currency0Invalid ? (1, 0) : (0, 1);
-        vm.expectRevert(CurrencyLibrary.ERC20TransferFailed.selector);
+        vm.expectRevert(abi.encode(bytes32(0)));
         takeRouter.take(key, amount0, amount1);
 
         // should not revert when non zero amount passed in for valid currency

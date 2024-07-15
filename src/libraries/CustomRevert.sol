@@ -63,4 +63,20 @@ library CustomRevert {
             revert(fmp, 0x44)
         }
     }
+
+    /// @notice bubble up the revert message returned by a call, or if there wasnt one
+    /// revert with the selector provided
+    function bubbleUpOrRevertWith(bytes4 selector) internal pure {
+        assembly ("memory-safe") {
+            if iszero(returndatasize()) {
+                // if the call failed without a revert reason, revert with selector()
+                mstore(0, selector)
+                revert(0, 0x04)
+            }
+            // otherwise bubble up revert message
+            let fmp := mload(0x40)
+            returndatacopy(fmp, 0, returndatasize())
+            revert(fmp, returndatasize())
+        }
+    }
 }
