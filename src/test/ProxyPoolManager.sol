@@ -79,9 +79,13 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         returns (int24 tick)
     {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
-        if (key.tickSpacing > MAX_TICK_SPACING) TickSpacingTooLarge.selector.revertWith();
-        if (key.tickSpacing < MIN_TICK_SPACING) TickSpacingTooSmall.selector.revertWith();
-        if (key.currency0 >= key.currency1) CurrenciesOutOfOrderOrEqual.selector.revertWith();
+        if (key.tickSpacing > MAX_TICK_SPACING) TickSpacingTooLarge.selector.revertWith(key.tickSpacing);
+        if (key.tickSpacing < MIN_TICK_SPACING) TickSpacingTooSmall.selector.revertWith(key.tickSpacing);
+        if (key.currency0 >= key.currency1) {
+            CurrenciesOutOfOrderOrEqual.selector.revertWith(
+                Currency.unwrap(key.currency0), Currency.unwrap(key.currency1)
+            );
+        }
         if (!key.hooks.isValidHookAddress(key.fee)) Hooks.HookAddressNotValid.selector.revertWith(address(key.hooks));
 
         uint24 lpFee = key.fee.getInitialLPFee();

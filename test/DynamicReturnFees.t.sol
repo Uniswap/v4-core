@@ -68,7 +68,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         int256 amountSpecified = -10000;
         BalanceDelta result;
         if (actualFee > LPFeeLibrary.MAX_LP_FEE) {
-            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, actualFee));
             result = swap(key, true, amountSpecified, ZERO_BYTES);
             return;
         } else {
@@ -157,15 +157,16 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolSwapFee(key), initialFee);
     }
 
-    function test_dynamicReturnSwapFee_revertIfFeeTooLarge() public {
+    function test_dynamicReturnSwapFee_revertIfLPFeeTooLarge() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
         // hook adds the override flag
-        dynamicReturnFeesHook.setFee(1000001);
+        uint24 fee = 1000001;
+        dynamicReturnFeesHook.setFee(fee);
 
         // a large fee is not used
         int256 amountSpecified = -10000;
-        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee));
         swap(key, true, amountSpecified, ZERO_BYTES);
     }
 

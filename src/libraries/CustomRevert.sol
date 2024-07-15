@@ -61,4 +61,14 @@ library CustomRevert {
             revert(0, 0x44)
         }
     }
+
+    /// @dev Reverts with a custom error with two address arguments
+    function revertWith(bytes4 selector, address value1, address value2) internal pure {
+        assembly ("memory-safe") {
+            mstore(0, selector)
+            mstore(0x04, value1)
+            mstore(0x24, value2)
+            revert(0, 0x44)
+        }
+    }
 }

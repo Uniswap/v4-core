@@ -9,7 +9,7 @@ library LPFeeLibrary {
     using CustomRevert for bytes4;
 
     /// @notice Thrown when the static or dynamic fee on a pool exceeds 100%.
-    error FeeTooLarge();
+    error LPFeeTooLarge(uint24 fee);
 
     // an lp fee of exactly 0b1000000... signals a dynamic fee pool. This isnt a valid static fee as it is > MAX_LP_FEE
     uint24 public constant DYNAMIC_FEE_FLAG = 0x800000;
@@ -36,7 +36,7 @@ library LPFeeLibrary {
 
     /// @notice validates whether an LP fee is larger than the maximum, and reverts if invalid
     function validate(uint24 self) internal pure {
-        if (!self.isValid()) FeeTooLarge.selector.revertWith();
+        if (!self.isValid()) LPFeeTooLarge.selector.revertWith(self);
     }
 
     /// @notice gets and validates the initial LP fee for a pool. Dynamic fee pools have an initial fee of 0.
