@@ -39,12 +39,12 @@ library TransientStateLibrary {
     }
 
     /// @notice Get the current delta for a caller in the given currency
-    /// @param caller_ The address of the caller
+    /// @param target The credited account address
     /// @param currency The currency for which to lookup the delta
-    function currencyDelta(IPoolManager manager, address caller_, Currency currency) internal view returns (int256) {
+    function currencyDelta(IPoolManager manager, address target, Currency currency) internal view returns (int256) {
         bytes32 key;
         assembly ("memory-safe") {
-            mstore(0, caller_)
+            mstore(0, target)
             mstore(32, currency)
             key := keccak256(0, 64)
         }
