@@ -148,8 +148,10 @@ library Hooks {
             returndatacopy(add(result, 0x20), 0, returndatasize())
         }
 
-        // Check expected selector and returned selector match.
-        if (result.parseSelector() != data.parseSelector()) InvalidHookResponse.selector.revertWith();
+        // Check return length is long enough for selector, and that expected selector and returned selector match.
+        if (result.length < 32 || result.parseSelector() != data.parseSelector()) {
+            InvalidHookResponse.selector.revertWith();
+        }
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
