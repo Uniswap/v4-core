@@ -148,7 +148,7 @@ library Hooks {
             returndatacopy(add(result, 0x20), 0, returndatasize())
         }
 
-        // Check return length is long enough for selector, and that expected selector and returned selector match.
+        // Length must be at least 32 to contain the selector. Check expected selector and returned selector match.
         if (result.length < 32 || result.parseSelector() != data.parseSelector()) {
             InvalidHookResponse.selector.revertWith();
         }

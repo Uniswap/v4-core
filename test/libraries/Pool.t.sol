@@ -29,7 +29,7 @@ contract PoolTest is Test, GasSnapshot {
 
     function testPoolInitialize(uint160 sqrtPriceX96, uint24 protocolFee, uint24 swapFee) public {
         if (sqrtPriceX96 < TickMath.MIN_SQRT_PRICE || sqrtPriceX96 >= TickMath.MAX_SQRT_PRICE) {
-            vm.expectRevert(TickMath.InvalidSqrtPrice.selector);
+            vm.expectRevert(abi.encodeWithSelector(TickMath.InvalidSqrtPrice.selector, sqrtPriceX96));
             state.initialize(sqrtPriceX96, protocolFee, swapFee);
         } else {
             state.initialize(sqrtPriceX96, protocolFee, swapFee);
@@ -127,8 +127,8 @@ contract PoolTest is Test, GasSnapshot {
         if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
             state.swap(params);
-        } else if (!swapFee.isValid()) {
-            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        } else if (!_lpFee.isValid()) {
+            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, _lpFee));
             state.swap(params);
         } else if (params.zeroForOne && params.amountSpecified != 0) {
             if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96()) {

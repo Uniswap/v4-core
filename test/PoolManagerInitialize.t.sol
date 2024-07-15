@@ -61,19 +61,23 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         key0.hooks = IHooks(Constants.ADDRESS_ZERO);
 
         if (key0.tickSpacing > manager.MAX_TICK_SPACING()) {
-            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector));
+            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector, key0.tickSpacing));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (key0.tickSpacing < manager.MIN_TICK_SPACING()) {
-            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
+            vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, key0.tickSpacing));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (key0.currency0 >= key0.currency1) {
-            vm.expectRevert(abi.encodeWithSelector(IPoolManager.CurrenciesOutOfOrderOrEqual.selector));
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IPoolManager.CurrenciesOutOfOrderOrEqual.selector, key0.currency0, key0.currency1
+                )
+            );
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (!key0.hooks.isValidHookAddress(key0.fee)) {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key0.hooks)));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if ((key0.fee != LPFeeLibrary.DYNAMIC_FEE_FLAG) && (key0.fee > 1000000)) {
-            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.FeeTooLarge.selector));
+            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, key0.fee));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else {
             vm.expectEmit(true, true, true, true);
@@ -183,7 +187,13 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Both currencies are currency0
         uninitializedKey.currency1 = currency0;
 
-        vm.expectRevert(IPoolManager.CurrenciesOutOfOrderOrEqual.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPoolManager.CurrenciesOutOfOrderOrEqual.selector,
+                Currency.unwrap(currency0),
+                Currency.unwrap(currency0)
+            )
+        );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
     }
 
@@ -194,7 +204,13 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         uninitializedKey.currency1 = currency0;
         uninitializedKey.currency0 = currency1;
 
-        vm.expectRevert(IPoolManager.CurrenciesOutOfOrderOrEqual.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPoolManager.CurrenciesOutOfOrderOrEqual.selector,
+                Currency.unwrap(currency1),
+                Currency.unwrap(currency0)
+            )
+        );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
     }
 
@@ -278,7 +294,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         uninitializedKey.tickSpacing = manager.MAX_TICK_SPACING() + 1;
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector));
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector, uninitializedKey.tickSpacing));
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
     }
 
@@ -288,7 +304,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         uninitializedKey.tickSpacing = 0;
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, uninitializedKey.tickSpacing));
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
     }
 
@@ -298,7 +314,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         uninitializedKey.tickSpacing = -1;
 
-        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector));
+        vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, uninitializedKey.tickSpacing));
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
     }
 
