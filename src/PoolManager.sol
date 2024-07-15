@@ -297,8 +297,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function clear(Currency currency, uint256 amount) external onlyWhenUnlocked {
         int256 current = currency.getDelta(msg.sender);
+        // Because input is `uint256`, only positive amounts can be cleared.
         int128 amountDelta = amount.toInt128();
-        if (amountDelta != current) revert MustClearExactBalance();
+        if (amountDelta != current) revert MustClearExactPositiveDelta();
         _accountDelta(currency, -(amountDelta), msg.sender);
     }
 

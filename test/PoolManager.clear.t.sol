@@ -28,7 +28,7 @@ contract ClearTest is Test, Deployers {
         actions[1] = Actions.CLEAR;
         params[1] = abi.encode(currency0, amount, false, "");
 
-        vm.expectRevert(IPoolManager.MustClearExactBalance.selector);
+        vm.expectRevert(IPoolManager.MustClearExactPositiveDelta.selector);
         actionsRouter.executeActions(actions, params);
     }
 
@@ -55,7 +55,7 @@ contract ClearTest is Test, Deployers {
         actions[4] = Actions.CLEAR;
         params[4] = abi.encode(currency0, amount + 1, false, "");
 
-        vm.expectRevert(IPoolManager.MustClearExactBalance.selector);
+        vm.expectRevert(IPoolManager.MustClearExactPositiveDelta.selector);
         actionsRouter.executeActions(actions, params);
     }
 
@@ -81,7 +81,7 @@ contract ClearTest is Test, Deployers {
         actions[4] = Actions.CLEAR;
         params[4] = abi.encode(currency0, amount - 1, false, "");
 
-        vm.expectRevert(IPoolManager.MustClearExactBalance.selector);
+        vm.expectRevert(IPoolManager.MustClearExactPositiveDelta.selector);
         actionsRouter.executeActions(actions, params);
     }
 
@@ -107,7 +107,7 @@ contract ClearTest is Test, Deployers {
         actions[4] = Actions.CLEAR;
         params[4] = abi.encode(currency0, 0, false, "");
 
-        vm.expectRevert(IPoolManager.MustClearExactBalance.selector);
+        vm.expectRevert(IPoolManager.MustClearExactPositiveDelta.selector);
         actionsRouter.executeActions(actions, params);
     }
 
@@ -149,7 +149,7 @@ contract ClearTest is Test, Deployers {
         actions[2] = Actions.CLEAR;
         params[2] = abi.encode(currency0, amount, false, "");
 
-        vm.expectRevert(IPoolManager.MustClearExactBalance.selector);
+        vm.expectRevert(IPoolManager.MustClearExactPositiveDelta.selector);
         actionsRouter.executeActions(actions, params);
     }
 

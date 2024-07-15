@@ -46,7 +46,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     error NonZeroNativeValue();
 
     /// @notice Thrown when `clear` is called with an amount that is not exactly equal to the open currency delta.
-    error MustClearExactBalance();
+    error MustClearExactPositiveDelta();
 
     /// @notice Emitted when a new pool is initialized
     /// @param id The abi encoded hash of the pool key struct for the new pool
@@ -162,7 +162,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     function settle(Currency currency) external payable returns (uint256 paid);
 
     /// @notice WARNING - Any currency that is cleared, will be non-retreivable, and locked in the contract permanently.
-    /// A callt to clear will zero out a positive balance WITHOUT a corresponding transfer.
+    /// A call to clear will zero out a positive balance WITHOUT a corresponding transfer.
     /// @dev This could be used to clear a balance that is considered dust.
     /// Additionally, the amount must be the exact positive balance. This is to enforce that the caller is aware of the amount being cleared.
     function clear(Currency currency, uint256 amount) external;
