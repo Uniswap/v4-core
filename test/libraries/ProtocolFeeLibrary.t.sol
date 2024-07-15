@@ -74,7 +74,11 @@ contract ProtocolFeeLibraryTest is Test, GasSnapshot {
         // if lp fee is not the max, the swap fee should never be the max since the protocol fee is taken off first and then the lp fee is taken from the remaining amount
         if (lpFee < LPFeeLibrary.MAX_LP_FEE) {
             assertLt(swapFee, LPFeeLibrary.MAX_LP_FEE);
+        } else {
+            // otherwise it is equal to max, and can therefore never be larger
+            assertEq(swapFee, LPFeeLibrary.MAX_LP_FEE);
         }
+
         assertGe(swapFee, lpFee);
 
         uint256 expectedSwapFee =
