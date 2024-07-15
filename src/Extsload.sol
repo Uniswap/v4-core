@@ -15,7 +15,7 @@ abstract contract Extsload is IExtsload {
     }
 
     /// @inheritdoc IExtsload
-    function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes memory) {
+    function extsload(bytes32 startSlot, uint256 nSlots) external view returns (bytes32[] memory) {
         assembly ("memory-safe") {
             let memptr := mload(0x40)
             let start := memptr
@@ -23,8 +23,8 @@ abstract contract Extsload is IExtsload {
             let length := shl(5, nSlots)
             // The abi offset of dynamic array in the returndata is 32.
             mstore(memptr, 0x20)
-            // Store the length of the bytes returned
-            mstore(add(memptr, 0x20), length)
+            // Store the length of the array returned
+            mstore(add(memptr, 0x20), nSlots)
             // update memptr to the first location to hold a result
             memptr := add(memptr, 0x40)
             let end := add(memptr, length)
