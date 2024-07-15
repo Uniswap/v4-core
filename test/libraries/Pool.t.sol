@@ -127,8 +127,8 @@ contract PoolTest is Test, GasSnapshot {
         if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
             state.swap(params);
-        } else if (!swapFee.isValid()) {
-            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, swapFee));
+        } else if (!_lpFee.isValid()) {
+            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, _lpFee));
             state.swap(params);
         } else if (params.zeroForOne && params.amountSpecified != 0) {
             if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96()) {

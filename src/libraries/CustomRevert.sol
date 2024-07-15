@@ -42,16 +42,6 @@ library CustomRevert {
         }
     }
 
-    /// @dev Reverts with a custom error with two bytes4 arguments
-    function revertWith(bytes4 selector, bytes4 value1, bytes4 value2) internal pure {
-        assembly ("memory-safe") {
-            mstore(0, selector)
-            mstore(0x04, value1)
-            mstore(0x24, value2)
-            revert(0, 0x44)
-        }
-    }
-
     /// @dev Reverts with a custom error with two int24 arguments
     function revertWith(bytes4 selector, int24 value1, int24 value2) internal pure {
         assembly ("memory-safe") {

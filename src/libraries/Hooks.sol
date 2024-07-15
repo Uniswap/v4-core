@@ -67,7 +67,7 @@ library Hooks {
     error HookAddressNotValid(address hooks);
 
     /// @notice Hook did not return its selector
-    error InvalidHookResponse(bytes4 selectorExpected, bytes4 selectorReturned);
+    error InvalidHookResponse();
 
     /// @notice thrown when a hook call fails
     error FailedHookCall();
@@ -148,10 +148,8 @@ library Hooks {
             returndatacopy(add(result, 0x20), 0, returndatasize())
         }
 
-        // Check expected selector and returned selector match.
-        if (result.parseSelector() != data.parseSelector()) {
-            InvalidHookResponse.selector.revertWith(data.parseSelector(), result.parseSelector());
-        }
+        // Length must be at least 32 to contain the selector. Check expected selector and returned selector match.
+        if (result.parseSelector() != data.parseSelector()) InvalidHookResponse.selector.revertWith();
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
