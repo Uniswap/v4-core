@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
+import {CustomRevert} from "./CustomRevert.sol";
+
 /// @title Math library for computing sqrt prices from ticks and vice versa
 /// @notice Computes sqrt price for ticks of size 1.0001, i.e. sqrt(1.0001^tick) as fixed point Q64.96 numbers. Supports
 /// prices between 2**-128 and 2**128
 library TickMath {
+    using CustomRevert for bytes4;
+
     /// @notice Thrown when the tick passed to #getSqrtPriceAtTick is not between MIN_TICK and MAX_TICK
-    error InvalidTick();
+    error InvalidTick(int24 tick);
     /// @notice Thrown when the price passed to #getTickAtSqrtPrice does not correspond to a price between MIN_TICK and MAX_TICK
     error InvalidSqrtPrice();
 
@@ -14,6 +18,7 @@ library TickMath {
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**128
     int24 internal constant MAX_TICK = 887272;
+    uint256 internal constant MAX_TICK_UINT256 = 887272;
 
     /// @dev The minimum tick spacing value drawn from the range of type int16 that is greater than 0, i.e. min from the range [1, 32767]
     int24 internal constant MIN_TICK_SPACING = 1;
@@ -58,14 +63,8 @@ library TickMath {
                 // either way, |tick| = mask ^ (tick + mask)
                 absTick := xor(mask, add(mask, tick))
             }
-            // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
-            assembly ("memory-safe") {
-                if gt(absTick, MAX_TICK) {
-                    // store 4-byte selector of "InvalidTick()" at memory [0x1c, 0x20)
-                    mstore(0, 0xce8ef7fc)
-                    revert(0x1c, 0x04)
-                }
-            }
+
+            if (absTick > MAX_TICK_UINT256) InvalidTick.selector.revertWith(tick);
 
             // Equivalent to:
             //     price = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
@@ -116,15 +115,11 @@ library TickMath {
     function getTickAtSqrtPrice(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
         unchecked {
             // Equivalent: if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
-            // second inequality must be < because the price can never reach the price at the max tick
-            assembly ("memory-safe") {
-                // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
-                // if sqrtPriceX96 >= MAX_SQRT_PRICE, sqrtPriceX96 - MIN_SQRT_PRICE > MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1
-                if gt(sub(sqrtPriceX96, MIN_SQRT_PRICE), MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE) {
-                    // store 4-byte selector of "InvalidSqrtPrice()" at memory [0x1c, 0x20)
-                    mstore(0, 0x31efafe8)
-                    revert(0x1c, 0x04)
-                }
+            // second inequality must be >= because the price can never reach the price at the max tick
+            // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
+            // if sqrtPriceX96 >= MAX_SQRT_PRICE, sqrtPriceX96 - MIN_SQRT_PRICE > MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1
+            if ((sqrtPriceX96 - MIN_SQRT_PRICE) > MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE) {
+                InvalidSqrtPrice.selector.revertWith(sqrtPriceX96);
             }
 
             uint256 price = uint256(sqrtPriceX96) << 32;

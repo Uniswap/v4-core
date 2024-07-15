@@ -70,9 +70,10 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function test_updateDynamicLPFee_afterInitialize_failsWithTooLargeFee() public {
         key.tickSpacing = 30;
-        dynamicFeesHooks.setFee(1000001);
+        uint24 fee = 1000001;
+        dynamicFeesHooks.setFee(fee);
 
-        vm.expectRevert(LPFeeLibrary.LPFeeTooLarge.selector);
+        vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee));
         manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
@@ -111,12 +112,13 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
     function test_updateDynamicLPFee_beforeSwap_failsWithTooLargeFee() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
+        uint24 fee = 1000001;
         dynamicFeesHooks.setFee(1000001);
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(LPFeeLibrary.LPFeeTooLarge.selector);
+        vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee));
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 
