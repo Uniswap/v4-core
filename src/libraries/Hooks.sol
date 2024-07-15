@@ -163,7 +163,7 @@ library Hooks {
         // If this hook wasnt meant to return something, default to 0 delta
         if (!parseReturn) return 0;
 
-        // A length of 96 bytes is required to return a bytes4, and a 32 byte delta
+        // A length of 64 bytes is required to return a bytes4, and a 32 byte delta
         if (result.length != 64) InvalidHookResponse.selector.revertWith();
         return result.parseReturnDelta();
     }
