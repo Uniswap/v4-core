@@ -328,16 +328,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     function _accountDelta(Currency currency, int128 delta, address target) internal {
         if (delta == 0) return;
 
-        int256 current = currency.getDelta(target);
-        int256 next = current + delta;
+        (int256 previous, int256 next) = currency.applyDelta(target, delta);
 
         if (next == 0) {
             NonZeroDeltaCount.decrement();
-        } else if (current == 0) {
+        } else if (previous == 0) {
             NonZeroDeltaCount.increment();
         }
-
-        currency.setDelta(target, next);
     }
 
     /// @notice Accounts the deltas of 2 currencies to a target address
