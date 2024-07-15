@@ -18,7 +18,6 @@ library TickMath {
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**128
     int24 internal constant MAX_TICK = 887272;
-    uint256 internal constant MAX_TICK_UINT256 = 887272;
 
     /// @dev The minimum tick spacing value drawn from the range of type int16 that is greater than 0, i.e. min from the range [1, 32767]
     int24 internal constant MIN_TICK_SPACING = 1;
@@ -64,7 +63,7 @@ library TickMath {
                 absTick := xor(mask, add(mask, tick))
             }
 
-            if (absTick > MAX_TICK_UINT256) InvalidTick.selector.revertWith(tick);
+            if (absTick > uint256(int256(MAX_TICK))) InvalidTick.selector.revertWith(tick);
 
             // Equivalent to:
             //     price = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;

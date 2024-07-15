@@ -33,7 +33,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     error TickSpacingTooSmall(int24 tickSpacing);
 
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
-    error CurrenciesOutOfOrderOrEqual();
+    error CurrenciesOutOfOrderOrEqual(address currency0, address currency1);
 
     /// @notice Thrown when a call to updateDynamicLPFee is made by an address that is not the hook,
     /// or on a pool that does not have a dynamic swap fee.
