@@ -12,7 +12,7 @@ library TickMath {
     /// @notice Thrown when the tick passed to #getSqrtPriceAtTick is not between MIN_TICK and MAX_TICK
     error InvalidTick(int24 tick);
     /// @notice Thrown when the price passed to #getTickAtSqrtPrice does not correspond to a price between MIN_TICK and MAX_TICK
-    error InvalidSqrtPrice();
+    error InvalidSqrtPrice(uint160 sqrtPriceX96);
 
     /// @dev The minimum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**-128
     int24 internal constant MIN_TICK = -887272;
