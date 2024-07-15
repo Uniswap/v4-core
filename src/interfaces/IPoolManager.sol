@@ -45,9 +45,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     ///@notice Thrown when native currency is passed to a non native settlement
     error NonZeroNativeValue();
 
-    /// @notice Thrown when `clear` is called on a currency with a negative balance. `sync` & `settle` or `burn` should be called instead.
-    error OwedFundsCannotBeCleared();
-
     /// @notice Thrown when `clear` is called with an amount that is not exactly equal to the open currency delta.
     error MustClearExactBalance();
 
@@ -164,9 +161,10 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @notice Called by the user to pay what is owed
     function settle(Currency currency) external payable returns (uint256 paid);
 
-    /// @notice Called to clear a positive balance without a corresponding transfer.
+    /// @notice WARNING - Any currency that is cleared, will be non-retreivable, and locked in the contract permanently.
+    /// A callt to clear will zero out a positive balance WITHOUT a corresponding transfer.
     /// @dev This could be used to clear a balance that is considered dust.
-    /// @dev The amount must be the exact positive balance. This is to enforce that the caller is aware of the amount being cleared.
+    /// Additionally, the amount must be the exact positive balance. This is to enforce that the caller is aware of the amount being cleared.
     function clear(Currency currency, uint256 amount) external;
 
     /// @notice Called by the user to move value into ERC6909 balance
