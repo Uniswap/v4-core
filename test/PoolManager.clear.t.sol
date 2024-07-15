@@ -28,7 +28,7 @@ contract ClearTest is Test, Deployers {
         actions[1] = Actions.CLEAR;
         params[1] = abi.encode(currency0, amount, false, "");
 
-        vm.expectRevert(IPoolManager.OwedFundsCannotBeCleared.selector);
+        vm.expectRevert(IPoolManager.MustClearExactBalance.selector);
         actionsRouter.executeActions(actions, params);
     }
 
