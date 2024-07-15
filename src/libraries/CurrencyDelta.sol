@@ -15,6 +15,13 @@ library CurrencyDelta {
         }
     }
 
+    function getDelta(Currency currency, address target) internal view returns (int256 delta) {
+        bytes32 hashSlot = _computeSlot(target, currency);
+        assembly {
+            delta := tload(hashSlot)
+        }
+    }
+
     /// @notice applies a new currency delta for a given account and currency
     /// @return previous The prior value
     /// @return next The modified result

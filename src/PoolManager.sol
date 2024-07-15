@@ -295,6 +295,15 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
+    function clear(Currency currency, uint256 amount) external onlyWhenUnlocked {
+        int256 current = currency.getDelta(msg.sender);
+        // Because input is `uint256`, only positive amounts can be cleared.
+        int128 amountDelta = amount.toInt128();
+        if (amountDelta != current) MustClearExactPositiveDelta.selector.revertWith();
+        _accountDelta(currency, -(amountDelta), msg.sender);
+    }
+
+    /// @inheritdoc IPoolManager
     function mint(address to, uint256 id, uint256 amount) external override onlyWhenUnlocked {
         unchecked {
             // negation must be safe as amount is not negative
