@@ -88,6 +88,36 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getSyncedReserves(), balanceCurrency2);
     }
 
+    function test_settle_payOnBehalf(address taker, uint256 amount) public {
+        vm.assume(taker != address(router));
+        amount = bound(amount, 1, uint256(int256(type(int128).max)));
+        MockERC20(Currency.unwrap(currency2)).approve(address(router), type(uint256).max);
+        MockERC20(Currency.unwrap(currency2)).mint(address(manager), amount);
+
+        Actions[] memory actions = new Actions[](6);
+        bytes[] memory params = new bytes[](6);
+
+        actions[0] = Actions.PRANK_TAKE_FROM;
+        params[0] = abi.encode(currency2, taker, taker, amount);
+
+        actions[1] = Actions.ASSERT_DELTA_EQUALS;
+        params[1] = abi.encode(currency2, taker, int256(amount) * -1);
+
+        actions[2] = Actions.SYNC;
+        params[2] = abi.encode(currency2);
+
+        actions[3] = Actions.TRANSFER_FROM;
+        params[3] = abi.encode(currency2, address(this), address(manager), amount);
+
+        actions[4] = Actions.SETTLE_FOR;
+        params[4] = abi.encode(taker);
+
+        actions[5] = Actions.ASSERT_DELTA_EQUALS;
+        params[5] = abi.encode(currency2, taker, 0);
+
+        router.executeActions(actions, params);
+    }
+
     /// @notice When there is no balance and reserves are set to 0, no delta should be applied.
     function test_settle_noBalanceInPool_shouldNotApplyDelta() public noIsolate {
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
@@ -99,7 +129,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         bytes[] memory params = new bytes[](2);
 
         actions[0] = Actions.SETTLE;
-        params[0] = abi.encode(currency2);
 
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
         params[1] = abi.encode(currency2, address(router), 0);
@@ -121,7 +150,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         bytes[] memory params = new bytes[](2);
 
         actions[0] = Actions.SETTLE;
-        params[0] = abi.encode(currency0);
 
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
         params[1] = abi.encode(currency0, address(router), 0);
@@ -167,7 +195,6 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         params[6] = abi.encode(currency0, address(this), manager, 10);
 
         actions[7] = Actions.SETTLE;
-        params[7] = abi.encode(currency0);
 
         actions[8] = Actions.ASSERT_DELTA_EQUALS;
         params[8] = abi.encode(currency0, address(router), 0);

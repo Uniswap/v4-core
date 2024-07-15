@@ -281,20 +281,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function settle() external payable onlyWhenUnlocked returns (uint256 paid) {
-        Currency currency = CurrencyReserves.getSyncedCurrency();
-        // If not previously synced, expects native currency to be settled because CurrencyLibrary.NATIVE == address(0)
-        if (currency.isNative()) {
-            paid = msg.value;
-        } else {
-            if (msg.value > 0) NonZeroNativeValue.selector.revertWith();
-            // Reserves are guaranteed to be set, because currency and reserves are always set together
-            uint256 reservesBefore = CurrencyReserves.getSyncedReserves();
-            uint256 reservesNow = currency.balanceOfSelf();
-            paid = reservesNow - reservesBefore;
-            CurrencyReserves.resetCurrency();
-        }
+        return _settle(msg.sender);
+    }
 
-        _accountDelta(currency, paid.toInt128(), msg.sender);
+    /// @inheritdoc IPoolManager
+    function settleFor(address recipient) external payable onlyWhenUnlocked returns (uint256 paid) {
+        return _settle(recipient);
     }
 
     /// @inheritdoc IPoolManager
@@ -322,6 +314,22 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         _pools[id].setLPFee(newDynamicLPFee);
+    }
+
+    function _settle(address recipient) internal returns (uint256 paid) {
+        Currency currency = CurrencyReserves.getSyncedCurrency();
+        // If not previously synced, expects native currency to be settled because CurrencyLibrary.NATIVE == address(0)
+        if (currency.isNative()) {
+            paid = msg.value;
+        } else {
+            if (msg.value > 0) NonZeroNativeValue.selector.revertWith();
+            // Reserves are guaranteed to be set, because currency and reserves are always set together
+            uint256 reservesBefore = CurrencyReserves.getSyncedReserves();
+            uint256 reservesNow = currency.balanceOfSelf();
+            paid = reservesNow - reservesBefore;
+            CurrencyReserves.resetCurrency();
+        }
+        _accountDelta(currency, paid.toInt128(), recipient);
     }
 
     /// @notice Adds a balance delta in a currency for a target address

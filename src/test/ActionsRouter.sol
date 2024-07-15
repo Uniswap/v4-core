@@ -14,7 +14,9 @@ import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 enum Actions {
     SETTLE,
     SETTLE_NATIVE,
+    SETTLE_FOR,
     TAKE,
+    PRANK_TAKE_FROM,
     SYNC,
     MINT,
     ASSERT_BALANCE_EQUALS,
@@ -55,8 +57,12 @@ contract ActionsRouter is IUnlockCallback, Test {
                 _settle();
             } else if (action == Actions.SETTLE_NATIVE) {
                 _settleNative(param);
+            } else if (action == Actions.SETTLE_FOR) {
+                _settleFor(param);
             } else if (action == Actions.TAKE) {
                 _take(param);
+            } else if (action == Actions.PRANK_TAKE_FROM) {
+                _prankTakeFrom(param);
             } else if (action == Actions.SYNC) {
                 _sync(param);
             } else if (action == Actions.MINT) {
@@ -87,9 +93,21 @@ contract ActionsRouter is IUnlockCallback, Test {
         manager.settle{value: amount}();
     }
 
+    function _settleFor(bytes memory params) internal {
+        address recipient = abi.decode(params, (address));
+        manager.settleFor(recipient);
+    }
+
     function _take(bytes memory params) internal {
         (Currency currency, address recipient, int128 amount) = abi.decode(params, (Currency, address, int128));
         manager.take(currency, recipient, uint128(amount));
+    }
+
+    function _prankTakeFrom(bytes memory params) internal {
+        (Currency currency, address from, address recipient, uint256 amount) =
+            abi.decode(params, (Currency, address, address, uint256));
+        vm.prank(from);
+        manager.take(currency, recipient, amount);
     }
 
     function _sync(bytes memory params) internal {
