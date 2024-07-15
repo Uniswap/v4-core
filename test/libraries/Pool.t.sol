@@ -128,7 +128,7 @@ contract PoolTest is Test, GasSnapshot {
             vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
             state.swap(params);
         } else if (!swapFee.isValid()) {
-            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+            vm.expectRevert(LPFeeLibrary.LPFeeTooLarge.selector);
             state.swap(params);
         } else if (params.zeroForOne && params.amountSpecified != 0) {
             if (params.sqrtPriceLimitX96 >= slot0.sqrtPriceX96()) {

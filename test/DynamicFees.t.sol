@@ -72,7 +72,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         key.tickSpacing = 30;
         dynamicFeesHooks.setFee(1000001);
 
-        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        vm.expectRevert(LPFeeLibrary.LPFeeTooLarge.selector);
         manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
@@ -116,7 +116,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        vm.expectRevert(LPFeeLibrary.LPFeeTooLarge.selector);
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 

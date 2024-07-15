@@ -78,11 +78,11 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     function test_setProtocolFee_revertsWithInvalidFee() public {
         protocolFees.setProtocolFeeController(feeController);
         vm.prank(address(feeController));
-        vm.expectRevert(IProtocolFees.InvalidProtocolFee.selector);
+        vm.expectRevert(IProtocolFees.ProtocolFeeTooLarge.selector);
         protocolFees.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS + 1);
 
         vm.prank(address(feeController));
-        vm.expectRevert(IProtocolFees.InvalidProtocolFee.selector);
+        vm.expectRevert(IProtocolFees.ProtocolFeeTooLarge.selector);
         protocolFees.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS + (1 << 12));
     }
 
@@ -94,7 +94,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         uint16 fee1 = protocolFee.getOneForZeroFee();
         vm.prank(address(feeController));
         if ((fee0 > 1000) || (fee1 > 1000)) {
-            vm.expectRevert(IProtocolFees.InvalidProtocolFee.selector);
+            vm.expectRevert(IProtocolFees.ProtocolFeeTooLarge.selector);
             protocolFees.setProtocolFee(key, protocolFee);
         } else {
             vm.expectEmit(true, false, false, true, address(protocolFees));
