@@ -36,7 +36,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// @inheritdoc IProtocolFees
     function setProtocolFee(PoolKey memory key, uint24 newProtocolFee) external {
         if (msg.sender != address(protocolFeeController)) InvalidCaller.selector.revertWith();
-        if (!newProtocolFee.isValidProtocolFee()) ProtocolFeeTooLarge.selector.revertWith();
+        if (!newProtocolFee.isValidProtocolFee()) ProtocolFeeTooLarge.selector.revertWith(newProtocolFee);
         PoolId id = key.toId();
         _getPool(id).setProtocolFee(newProtocolFee);
         emit ProtocolFeeUpdated(id, newProtocolFee);

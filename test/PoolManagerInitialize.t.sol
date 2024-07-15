@@ -67,7 +67,11 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, key0.tickSpacing));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (key0.currency0 >= key0.currency1) {
-            vm.expectRevert(abi.encodeWithSelector(IPoolManager.CurrenciesOutOfOrderOrEqual.selector));
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IPoolManager.CurrenciesOutOfOrderOrEqual.selector, key0.currency0, key0.currency1
+                )
+            );
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (!key0.hooks.isValidHookAddress(key0.fee)) {
             vm.expectRevert(abi.encodeWithSelector(Hooks.HookAddressNotValid.selector, address(key0.hooks)));
@@ -183,7 +187,13 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Both currencies are currency0
         uninitializedKey.currency1 = currency0;
 
-        vm.expectRevert(IPoolManager.CurrenciesOutOfOrderOrEqual.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPoolManager.CurrenciesOutOfOrderOrEqual.selector,
+                Currency.unwrap(currency0),
+                Currency.unwrap(currency0)
+            )
+        );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
     }
 
@@ -194,7 +204,13 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         uninitializedKey.currency1 = currency0;
         uninitializedKey.currency0 = currency1;
 
-        vm.expectRevert(IPoolManager.CurrenciesOutOfOrderOrEqual.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPoolManager.CurrenciesOutOfOrderOrEqual.selector,
+                Currency.unwrap(currency1),
+                Currency.unwrap(currency0)
+            )
+        );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
     }
 

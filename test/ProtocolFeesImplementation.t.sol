@@ -76,14 +76,17 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     }
 
     function test_setProtocolFee_revertsWithInvalidFee() public {
+        uint24 protocolFee = MAX_PROTOCOL_FEE_BOTH_TOKENS + 1;
+
         protocolFees.setProtocolFeeController(feeController);
         vm.prank(address(feeController));
-        vm.expectRevert(IProtocolFees.ProtocolFeeTooLarge.selector);
-        protocolFees.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS + 1);
+        vm.expectRevert(abi.encodeWithSelector(IProtocolFees.ProtocolFeeTooLarge.selector, protocolFee));
+        protocolFees.setProtocolFee(key, protocolFee);
 
+        protocolFee = MAX_PROTOCOL_FEE_BOTH_TOKENS + (1 << 12);
         vm.prank(address(feeController));
-        vm.expectRevert(IProtocolFees.ProtocolFeeTooLarge.selector);
-        protocolFees.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS + (1 << 12));
+        vm.expectRevert(abi.encodeWithSelector(IProtocolFees.ProtocolFeeTooLarge.selector, protocolFee));
+        protocolFees.setProtocolFee(key, protocolFee);
     }
 
     function test_fuzz_setProtocolFee(PoolKey memory key, uint24 protocolFee) public {
@@ -94,7 +97,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         uint16 fee1 = protocolFee.getOneForZeroFee();
         vm.prank(address(feeController));
         if ((fee0 > 1000) || (fee1 > 1000)) {
-            vm.expectRevert(IProtocolFees.ProtocolFeeTooLarge.selector);
+            vm.expectRevert(abi.encodeWithSelector(IProtocolFees.ProtocolFeeTooLarge.selector, protocolFee));
             protocolFees.setProtocolFee(key, protocolFee);
         } else {
             vm.expectEmit(true, false, false, true, address(protocolFees));

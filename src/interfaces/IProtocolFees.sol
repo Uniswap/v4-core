@@ -10,7 +10,7 @@ interface IProtocolFees {
     /// @notice Thrown when not enough gas is provided to look up the protocol fee
     error ProtocolFeeCannotBeFetched();
     /// @notice Thrown when protocol fee is set too high
-    error ProtocolFeeTooLarge();
+    error ProtocolFeeTooLarge(uint24 fee);
 
     /// @notice Thrown when collectProtocolFees or setProtocolFee is not called by the controller.
     error InvalidCaller();
