@@ -22,7 +22,7 @@ library Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Pool for State;
-    using ProtocolFeeLibrary for uint24;
+    using ProtocolFeeLibrary for *;
     using LPFeeLibrary for uint24;
     using CustomRevert for bytes4;
 
@@ -191,7 +191,7 @@ library Pool {
                 (uint256 feesOwed0, uint256 feesOwed1) =
                     position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
 
-                // Fees earned from LPing are added to the user's currency delta.
+                // Fees earned from LPing are calculated, and returned
                 feeDelta = toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
             }
 
@@ -307,12 +307,12 @@ library Pool {
                 ? params.lpFeeOverride.removeOverrideFlagAndValidate()
                 : slot0Start.lpFee();
 
-            swapFee = protocolFee == 0 ? lpFee : uint24(protocolFee).calculateSwapFee(lpFee);
+            swapFee = protocolFee == 0 ? lpFee : uint16(protocolFee).calculateSwapFee(lpFee);
         }
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
+        if (swapFee == LPFeeLibrary.MAX_LP_FEE && !exactInput) {
             InvalidFeeForExactOut.selector.revertWith();
         }
 

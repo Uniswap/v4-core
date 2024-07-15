@@ -169,6 +169,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             })
         );
 
+        // fee delta and principal delta are both accrued to the caller
         callerDelta = principalDelta + feesAccrued;
 
         // event is emitted before the afterModifyLiquidity call to ensure events are always emitted in order

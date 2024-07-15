@@ -32,7 +32,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using StateLibrary for IPoolManager;
 
     event Initialize(
-        PoolId poolId,
+        PoolId indexed poolId,
         Currency indexed currency0,
         Currency indexed currency1,
         uint24 fee,

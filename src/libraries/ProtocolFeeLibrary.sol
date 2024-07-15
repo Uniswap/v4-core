@@ -32,7 +32,8 @@ library ProtocolFeeLibrary {
     // The protocol fee is taken from the input amount first and then the LP fee is taken from the remaining
     // The swap fee is capped at 100%
     // Equivalent to protocolFee + lpFee(1_000_000 - protocolFee) / 1_000_000
-    function calculateSwapFee(uint24 self, uint24 lpFee) internal pure returns (uint24 swapFee) {
+    /// @dev here `self` is just a single direction's protocol fee, not a packed type of 2 protocol fees
+    function calculateSwapFee(uint16 self, uint24 lpFee) internal pure returns (uint24 swapFee) {
         // protocolFee + lpFee - (protocolFee * lpFee / 1_000_000). Div rounds up to favor LPs over the protocol.
         assembly {
             let numerator := mul(self, lpFee)

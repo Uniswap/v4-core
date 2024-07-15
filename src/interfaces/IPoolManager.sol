@@ -53,7 +53,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     event Initialize(
-        PoolId id, Currency indexed currency0, Currency indexed currency1, uint24 fee, int24 tickSpacing, IHooks hooks
+        PoolId indexed id,
+        Currency indexed currency0,
+        Currency indexed currency1,
+        uint24 fee,
+        int24 tickSpacing,
+        IHooks hooks
     );
 
     /// @notice Emitted when a liquidity position is modified
@@ -77,7 +82,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param fee The swap fee in hundredths of a bip
     event Swap(
         PoolId indexed id,
-        address sender,
+        address indexed sender,
         int128 amount0,
         int128 amount1,
         uint160 sqrtPriceX96,
@@ -102,7 +107,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         external
         returns (int24 tick);
 
-    /// @notice All operations go through this function
+    /// @notice All interactions on the contract that account deltas require unlocking. A caller that calls `unlock` must implement
+    /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
+    /// @dev The only functions callable without an unlocking are `initialize` and `updateDynamicLPFee`
     /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
     /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
     function unlock(bytes calldata data) external returns (bytes memory);
@@ -126,7 +133,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @return feeDelta The balance delta of the fees generated in the liquidity range. Returned for informational purposes.
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta, BalanceDelta);
+        returns (BalanceDelta callerDelta, BalanceDelta feeDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -144,7 +151,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// the hook may alter the swap input/output. Integrators should perform checks on the returned swapDelta.
     function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta);
+        returns (BalanceDelta swapDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
