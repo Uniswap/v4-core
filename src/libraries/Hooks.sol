@@ -134,7 +134,7 @@ library Hooks {
         }
         // If the hook reverted with a reason, bubble it up, otherwise revert with FailedHookCall
         if (!success) FailedHookCall.selector.bubbleUpOrRevertWith();
-        
+
         // The call was successful, fetch the returned data
         assembly ("memory-safe") {
             // allocate result byte array from the free memory pointer
