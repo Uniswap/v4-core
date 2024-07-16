@@ -31,10 +31,12 @@ library CurrencyLibrary {
     using CustomRevert for bytes4;
 
     /// @notice Thrown when a native transfer fails
-    error NativeTransferFailed();
+    /// @param revertReason bubbled up revert reason
+    error NativeTransferFailed(bytes revertReason);
 
     /// @notice Thrown when an ERC20 transfer fails
-    error ERC20TransferFailed();
+    /// @param revertReason bubbled up revert reason
+    error ERC20TransferFailed(bytes revertReason);
 
     /// @notice A constant to represent the native currency
     Currency public constant NATIVE = Currency.wrap(address(0));
@@ -50,7 +52,7 @@ library CurrencyLibrary {
                 success := call(gas(), to, amount, 0, 0, 0, 0)
             }
             // bubble up the revert message if it exists, otherwise revert with `NativeTransferFailed`
-            if (!success) NativeTransferFailed.selector.bubbleUpOrRevertWith();
+            if (!success) NativeTransferFailed.selector.bubbleUpAndRevertWith();
         } else {
             assembly ("memory-safe") {
                 // Get a pointer to some free memory.
@@ -80,7 +82,7 @@ library CurrencyLibrary {
             }
             // bubble up the revert message if it exists, otherwise revert with `ERC20TransferFailed`
             // if the token returned `false` but did not revert, `false` will be bubbled up
-            if (!success) ERC20TransferFailed.selector.bubbleUpOrRevertWith();
+            if (!success) ERC20TransferFailed.selector.bubbleUpAndRevertWith();
         }
     }
 

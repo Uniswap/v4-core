@@ -64,19 +64,21 @@ library CustomRevert {
         }
     }
 
-    /// @notice bubble up the revert message returned by a call, or if there wasnt one
-    /// revert with the selector provided
-    function bubbleUpOrRevertWith(bytes4 selector) internal pure {
+    /// @notice bubble up the revert message returned by a call and revert with the selector provided
+    function bubbleUpAndRevertWith(bytes4 selector) internal pure {
         assembly ("memory-safe") {
-            if iszero(returndatasize()) {
-                // if the call failed without a revert reason, revert with selector()
-                mstore(0, selector)
-                revert(0, 0x04)
-            }
-            // otherwise bubble up revert message
+            let size := returndatasize()
             let fmp := mload(0x40)
-            returndatacopy(fmp, 0, returndatasize())
-            revert(fmp, returndatasize())
+
+            // Encode selector, offset, size, data
+            mstore(fmp, selector)
+            mstore(add(fmp, 0x04), 0x20)
+            mstore(add(fmp, 0x24), size)
+            returndatacopy(add(fmp, 0x44), 0, size)
+
+            // Ensure the size is a multiple of 32 bytes
+            let encodedSize := add(0x44, mul(div(add(size, 31), 32), 32))
+            revert(fmp, encodedSize)
         }
     }
 }

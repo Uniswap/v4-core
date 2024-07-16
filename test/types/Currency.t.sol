@@ -121,7 +121,7 @@ contract TestCurrency is Test {
         // This contract reverts with no data
         EmptyRevertContract emptyRevertingToken = new EmptyRevertContract();
         // the token reverts with no data, so our custom error will be emitted instead
-        vm.expectRevert(CurrencyLibrary.ERC20TransferFailed.selector);
+        vm.expectRevert(abi.encodeWithSelector(CurrencyLibrary.ERC20TransferFailed.selector, new bytes(0)));
         currencyTest.transfer(Currency.wrap(address(emptyRevertingToken)), otherAddress, 100);
     }
 
@@ -134,7 +134,7 @@ contract TestCurrency is Test {
             assertEq(otherAddress.balance, balanceBefore + amount);
             assertEq(address(currencyTest).balance, contractBalanceBefore - amount);
         } else {
-            vm.expectRevert(CurrencyLibrary.NativeTransferFailed.selector);
+            vm.expectRevert(abi.encodeWithSelector(CurrencyLibrary.NativeTransferFailed.selector, new bytes(0)));
             currencyTest.transfer(nativeCurrency, otherAddress, amount);
             assertEq(otherAddress.balance, balanceBefore);
         }
@@ -151,7 +151,9 @@ contract TestCurrency is Test {
             );
         } else {
             // the token reverts with an overflow error message, so this is bubbled up
-            vm.expectRevert(stdError.arithmeticError);
+            vm.expectRevert(
+                abi.encodeWithSelector(CurrencyLibrary.ERC20TransferFailed.selector, stdError.arithmeticError)
+            );
             currencyTest.transfer(erc20Currency, otherAddress, amount);
             assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), balanceBefore);
         }

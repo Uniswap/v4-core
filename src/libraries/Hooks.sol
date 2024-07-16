@@ -70,7 +70,8 @@ library Hooks {
     error InvalidHookResponse();
 
     /// @notice thrown when a hook call fails
-    error FailedHookCall();
+    /// @param revertReason bubbled up revert reason
+    error FailedHookCall(bytes revertReason);
 
     /// @notice The hook's delta changed the swap from exactIn to exactOut or vice versa
     error HookDeltaExceedsSwapAmount();
@@ -133,7 +134,7 @@ library Hooks {
             success := call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)
         }
         // If the hook reverted with a reason, bubble it up, otherwise revert with FailedHookCall
-        if (!success) FailedHookCall.selector.bubbleUpOrRevertWith();
+        if (!success) FailedHookCall.selector.bubbleUpAndRevertWith();
 
         // The call was successful, fetch the returned data
         assembly ("memory-safe") {

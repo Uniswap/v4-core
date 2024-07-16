@@ -1010,7 +1010,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(BaseTestHooks.HookNotImplemented.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Hooks.FailedHookCall.selector, abi.encodeWithSelector(BaseTestHooks.HookNotImplemented.selector)
+            )
+        );
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
     }
 
@@ -1030,7 +1034,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(Hooks.FailedHookCall.selector);
+        vm.expectRevert(abi.encodeWithSelector(Hooks.FailedHookCall.selector, new bytes(0)));
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
     }
 }
