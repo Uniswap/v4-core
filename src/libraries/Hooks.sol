@@ -133,7 +133,7 @@ library Hooks {
         assembly ("memory-safe") {
             success := call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)
         }
-        // If the hook reverted with a reason, bubble it up, otherwise revert with FailedHookCall
+        // Revert with FailedHookCall, containing any error message to bubble up
         if (!success) FailedHookCall.selector.bubbleUpAndRevertWith();
 
         // The call was successful, fetch the returned data
