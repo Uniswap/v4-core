@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
+
+import {CustomRevert} from "./CustomRevert.sol";
 
 /// @title Math library for computing sqrt prices from ticks and vice versa
 /// @notice Computes sqrt price for ticks of size 1.0001, i.e. sqrt(1.0001^tick) as fixed point Q64.96 numbers. Supports
 /// prices between 2**-128 and 2**128
 library TickMath {
+    using CustomRevert for bytes4;
+
     /// @notice Thrown when the tick passed to #getSqrtPriceAtTick is not between MIN_TICK and MAX_TICK
-    error InvalidTick();
+    error InvalidTick(int24 tick);
     /// @notice Thrown when the price passed to #getTickAtSqrtPrice does not correspond to a price between MIN_TICK and MAX_TICK
-    error InvalidSqrtPrice();
+    error InvalidSqrtPrice(uint160 sqrtPriceX96);
 
     /// @dev The minimum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**-128
     int24 internal constant MIN_TICK = -887272;
@@ -50,7 +54,7 @@ library TickMath {
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
         unchecked {
             uint256 absTick;
-            assembly {
+            assembly ("memory-safe") {
                 // mask = 0 if tick >= 0 else -1 (all 1s)
                 let mask := sar(255, tick)
                 // if tick >= 0, |tick| = tick = 0 ^ tick
@@ -58,20 +62,14 @@ library TickMath {
                 // either way, |tick| = mask ^ (tick + mask)
                 absTick := xor(mask, add(mask, tick))
             }
-            // Equivalent: if (absTick > MAX_TICK) revert InvalidTick();
-            assembly ("memory-safe") {
-                if gt(absTick, MAX_TICK) {
-                    // store 4-byte selector of "InvalidTick()" at memory [0x1c, 0x20)
-                    mstore(0, 0xce8ef7fc)
-                    revert(0x1c, 0x04)
-                }
-            }
+
+            if (absTick > uint256(int256(MAX_TICK))) InvalidTick.selector.revertWith(tick);
 
             // Equivalent to:
             //     price = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
             //     or price = int(2**128 / sqrt(1.0001)) if (absTick & 0x1) else 1 << 128
             uint256 price;
-            assembly {
+            assembly ("memory-safe") {
                 price := xor(shl(128, 1), mul(xor(shl(128, 1), 0xfffcb933bd6fad37aa2d162d1a594001), and(absTick, 0x1)))
             }
             if (absTick & 0x2 != 0) price = (price * 0xfff97272373d413259a46990580e213a) >> 128;
@@ -94,7 +92,7 @@ library TickMath {
             if (absTick & 0x40000 != 0) price = (price * 0x2216e584f5fa1ea926041bedfe98) >> 128;
             if (absTick & 0x80000 != 0) price = (price * 0x48a170391f7dc42444e8fa2) >> 128;
 
-            assembly {
+            assembly ("memory-safe") {
                 // if (tick > 0) price = type(uint256).max / price;
                 if sgt(tick, 0) { price := div(not(0), price) }
 
@@ -116,15 +114,11 @@ library TickMath {
     function getTickAtSqrtPrice(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
         unchecked {
             // Equivalent: if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
-            // second inequality must be < because the price can never reach the price at the max tick
-            assembly ("memory-safe") {
-                // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
-                // if sqrtPriceX96 >= MAX_SQRT_PRICE, sqrtPriceX96 - MIN_SQRT_PRICE > MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1
-                if gt(sub(sqrtPriceX96, MIN_SQRT_PRICE), MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE) {
-                    // store 4-byte selector of "InvalidSqrtPrice()" at memory [0x1c, 0x20)
-                    mstore(0, 0x31efafe8)
-                    revert(0x1c, 0x04)
-                }
+            // second inequality must be >= because the price can never reach the price at the max tick
+            // if sqrtPriceX96 < MIN_SQRT_PRICE, the `sub` underflows and `gt` is true
+            // if sqrtPriceX96 >= MAX_SQRT_PRICE, sqrtPriceX96 - MIN_SQRT_PRICE > MAX_SQRT_PRICE - MIN_SQRT_PRICE - 1
+            if ((sqrtPriceX96 - MIN_SQRT_PRICE) > MAX_SQRT_PRICE_MINUS_MIN_SQRT_PRICE_MINUS_ONE) {
+                InvalidSqrtPrice.selector.revertWith(sqrtPriceX96);
             }
 
             uint256 price = uint256(sqrtPriceX96) << 32;
@@ -132,42 +126,42 @@ library TickMath {
             uint256 r = price;
             uint256 msb = 0;
 
-            assembly {
+            assembly ("memory-safe") {
                 let f := shl(7, gt(r, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
                 msb := or(msb, f)
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 let f := shl(6, gt(r, 0xFFFFFFFFFFFFFFFF))
                 msb := or(msb, f)
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 let f := shl(5, gt(r, 0xFFFFFFFF))
                 msb := or(msb, f)
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 let f := shl(4, gt(r, 0xFFFF))
                 msb := or(msb, f)
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 let f := shl(3, gt(r, 0xFF))
                 msb := or(msb, f)
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 let f := shl(2, gt(r, 0xF))
                 msb := or(msb, f)
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 let f := shl(1, gt(r, 0x3))
                 msb := or(msb, f)
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 let f := gt(r, 0x1)
                 msb := or(msb, f)
             }
@@ -177,85 +171,85 @@ library TickMath {
 
             int256 log_2 = (int256(msb) - 128) << 64;
 
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(63, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(62, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(61, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(60, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(59, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(58, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(57, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(56, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(55, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(54, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(53, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(52, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(51, f))
                 r := shr(f, r)
             }
-            assembly {
+            assembly ("memory-safe") {
                 r := shr(127, mul(r, r))
                 let f := shr(128, r)
                 log_2 := or(log_2, shl(50, f))

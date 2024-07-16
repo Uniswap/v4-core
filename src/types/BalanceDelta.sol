@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 import {SafeCast} from "../libraries/SafeCast.sol";
 
@@ -12,7 +12,7 @@ using BalanceDeltaLibrary for BalanceDelta global;
 using SafeCast for int256;
 
 function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceDelta balanceDelta) {
-    assembly {
+    assembly ("memory-safe") {
         balanceDelta := or(shl(128, _amount0), and(sub(shl(128, 1), 1), _amount1))
     }
 }
@@ -20,7 +20,7 @@ function toBalanceDelta(int128 _amount0, int128 _amount1) pure returns (BalanceD
 function add(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
     int256 res0;
     int256 res1;
-    assembly {
+    assembly ("memory-safe") {
         let a0 := sar(128, a)
         let a1 := signextend(15, a)
         let b0 := sar(128, b)
@@ -34,7 +34,7 @@ function add(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
 function sub(BalanceDelta a, BalanceDelta b) pure returns (BalanceDelta) {
     int256 res0;
     int256 res1;
-    assembly {
+    assembly ("memory-safe") {
         let a0 := sar(128, a)
         let a1 := signextend(15, a)
         let b0 := sar(128, b)
@@ -53,17 +53,19 @@ function neq(BalanceDelta a, BalanceDelta b) pure returns (bool) {
     return BalanceDelta.unwrap(a) != BalanceDelta.unwrap(b);
 }
 
+/// @notice Library for getting the amount0 and amount1 deltas from the BalanceDelta type
 library BalanceDeltaLibrary {
+    /// @notice A BalanceDelta of 0
     BalanceDelta public constant ZERO_DELTA = BalanceDelta.wrap(0);
 
     function amount0(BalanceDelta balanceDelta) internal pure returns (int128 _amount0) {
-        assembly {
+        assembly ("memory-safe") {
             _amount0 := sar(128, balanceDelta)
         }
     }
 
     function amount1(BalanceDelta balanceDelta) internal pure returns (int128 _amount1) {
-        assembly {
+        assembly ("memory-safe") {
             _amount1 := signextend(15, balanceDelta)
         }
     }

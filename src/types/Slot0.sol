@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 /**
  * @dev Slot0 is a packed version of solidity structure.
  * Using the packaged version saves gas by not storing the structure fields in memory slots.
  *
  * Layout:
- * 24 bits empty | 24 bits lpFee | 24 bits protocolFee | 24 bits tick | 160 bits sqrtPriceX96
+ * 24 bits empty | 24 bits lpFee | 12 bits protocolFee 1->0 | 12 bits protocolFee 0->1 | 24 bits tick | 160 bits sqrtPriceX96
  *
  * Fields in the direction from the least significant bit:
  *
@@ -21,13 +21,14 @@ pragma solidity ^0.8.20;
  * the protocolFee is taken from the input first, then the lpFee is taken from the remaining input
  * uint24 protocolFee;
  *
- * Used for the lp fee, either static at initialize or dynamic via hook
+ * The current LP fee of the pool. If the pool is dynamic, this does not include the dynamic fee flag.
  * uint24 lpFee;
  */
 type Slot0 is bytes32;
 
 using Slot0Library for Slot0 global;
 
+/// @notice Library for getting and setting values in the Slot0 type
 library Slot0Library {
     uint160 internal constant MASK_160_BITS = 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
     uint24 internal constant MASK_24_BITS = 0xFFFFFF;

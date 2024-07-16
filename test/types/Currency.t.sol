@@ -111,6 +111,10 @@ contract TestCurrency is Test {
         assertEq(Currency.unwrap(currency), Currency.unwrap(currencyTest.fromId(currencyTest.toId(currency))));
     }
 
+    function test_fuzz_toId_fromId_opposites(uint256 id) public view {
+        assertEq(id & 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, currencyTest.toId(currencyTest.fromId(id)));
+    }
+
     function test_fuzz_transfer_native(uint256 amount) public {
         uint256 balanceBefore = otherAddress.balance;
         uint256 contractBalanceBefore = address(currencyTest).balance;

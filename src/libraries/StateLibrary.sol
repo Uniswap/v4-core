@@ -1,33 +1,30 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.0;
 
 import {PoolId} from "../types/PoolId.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {Currency} from "../types/Currency.sol";
 import {Position} from "./Position.sol";
 
+/// @notice A helper library to provide state getters that use extsload
 library StateLibrary {
-    // forge inspect src/PoolManager.sol:PoolManager storage --pretty
-    // | Name                  | Type                                    | Slot | Offset | Bytes | Contract                        |
-    // |-----------------------|-----------------------------------------|------|--------|-------|---------------------------------|
-    // | pools                 | mapping(PoolId => struct Pool.State)    | 6    | 0      | 32    | src/PoolManager.sol:PoolManager |
+    /// @notice index of pools mapping in the PoolManager
     bytes32 public constant POOLS_SLOT = bytes32(uint256(6));
 
-    // index of feeGrowthGlobal0X128 in Pool.State
+    /// @notice index of feeGrowthGlobal0X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL0_OFFSET = 1;
-    // index of feeGrowthGlobal1X128 in Pool.State
+    /// @notice index of feeGrowthGlobal1X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL1_OFFSET = 2;
 
-    // index of liquidity in Pool.State
+    /// @notice index of liquidity in Pool.State
     uint256 public constant LIQUIDITY_OFFSET = 3;
 
-    // index of TicksInfo mapping in Pool.State: mapping(int24 => TickInfo) ticks;
+    /// @notice index of TicksInfo mapping in Pool.State: mapping(int24 => TickInfo) ticks;
     uint256 public constant TICKS_OFFSET = 4;
 
-    // index of tickBitmap mapping in Pool.State
+    /// @notice index of tickBitmap mapping in Pool.State
     uint256 public constant TICK_BITMAP_OFFSET = 5;
 
-    // index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
+    /// @notice index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
     uint256 public constant POSITIONS_OFFSET = 6;
 
     /**
@@ -53,7 +50,7 @@ library StateLibrary {
         //   24 bits  |24bits|24bits      |24 bits|160 bits
         // 0x000000   |000bb8|000000      |ffff75 |0000000000000000fe3aa841ba359daa0ea9eff7
         // ---------- | fee  |protocolfee | tick  | sqrtPriceX96
-        assembly {
+        assembly ("memory-safe") {
             // bottom 160 bits of data
             sqrtPriceX96 := and(data, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
             // next 24 bits of data
@@ -89,8 +86,8 @@ library StateLibrary {
         bytes32 slot = _getTickInfoSlot(poolId, tick);
 
         // read all 3 words of the TickInfo struct
-        bytes memory data = manager.extsload(slot, 3);
-        assembly {
+        bytes32[] memory data = manager.extsload(slot, 3);
+        assembly ("memory-safe") {
             let firstWord := mload(add(data, 32))
             liquidityNet := sar(128, firstWord)
             liquidityGross := and(firstWord, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
@@ -116,7 +113,7 @@ library StateLibrary {
         bytes32 slot = _getTickInfoSlot(poolId, tick);
 
         bytes32 value = manager.extsload(slot);
-        assembly {
+        assembly ("memory-safe") {
             liquidityNet := sar(128, value)
             liquidityGross := and(value, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
         }
@@ -139,8 +136,8 @@ library StateLibrary {
         bytes32 slot = _getTickInfoSlot(poolId, tick);
 
         // offset by 1 word, since the first word is liquidityGross + liquidityNet
-        bytes memory data = manager.extsload(bytes32(uint256(slot) + 1), 2);
-        assembly {
+        bytes32[] memory data = manager.extsload(bytes32(uint256(slot) + 1), 2);
+        assembly ("memory-safe") {
             feeGrowthOutside0X128 := mload(add(data, 32))
             feeGrowthOutside1X128 := mload(add(data, 64))
         }
@@ -166,8 +163,8 @@ library StateLibrary {
         bytes32 slot_feeGrowthGlobal0X128 = bytes32(uint256(stateSlot) + FEE_GROWTH_GLOBAL0_OFFSET);
 
         // read the 2 words of feeGrowthGlobal
-        bytes memory data = manager.extsload(slot_feeGrowthGlobal0X128, 2);
-        assembly {
+        bytes32[] memory data = manager.extsload(slot_feeGrowthGlobal0X128, 2);
+        assembly ("memory-safe") {
             feeGrowthGlobal0 := mload(add(data, 32))
             feeGrowthGlobal1 := mload(add(data, 64))
         }
@@ -233,9 +230,9 @@ library StateLibrary {
         bytes32 slot = _getPositionInfoSlot(poolId, positionId);
 
         // read all 3 words of the Position.Info struct
-        bytes memory data = manager.extsload(slot, 3);
+        bytes32[] memory data = manager.extsload(slot, 3);
 
-        assembly {
+        assembly ("memory-safe") {
             liquidity := mload(add(data, 32))
             feeGrowthInside0LastX128 := mload(add(data, 64))
             feeGrowthInside1LastX128 := mload(add(data, 96))
@@ -254,12 +251,17 @@ library StateLibrary {
         bytes32 positionKey;
 
         assembly ("memory-safe") {
-            mstore(0x26, salt) // [0x26, 0x46)
-            mstore(0x06, tickUpper) // [0x23, 0x26)
-            mstore(0x03, tickLower) // [0x20, 0x23)
-            mstore(0, owner) // [0x0c, 0x20)
-            positionKey := keccak256(0x0c, 0x3a) // len is 58 bytes
-            mstore(0x26, 0) // rewrite 0x26 to 0
+            let fmp := mload(0x40)
+            mstore(add(fmp, 0x26), salt) // [0x26, 0x46)
+            mstore(add(fmp, 0x06), tickUpper) // [0x23, 0x26)
+            mstore(add(fmp, 0x03), tickLower) // [0x20, 0x23)
+            mstore(fmp, owner) // [0x0c, 0x20)
+            positionKey := keccak256(add(fmp, 0x0c), 0x3a) // len is 58 bytes
+
+            // now clean the memory we used
+            mstore(add(fmp, 0x40), 0) // fmp+0x40 held salt
+            mstore(add(fmp, 0x20), 0) // fmp+0x20 held tickLower, tickUpper, salt
+            mstore(fmp, 0) // fmp held owner
         }
         (uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128) =
             getPositionInfo(manager, poolId, positionKey);
@@ -338,7 +340,7 @@ library StateLibrary {
         return keccak256(abi.encodePacked(int256(tick), ticksMappingSlot));
     }
 
-    function _getPositionInfoSlot(PoolId poolId, bytes32 positionId) internal pure returns (bytes32 slot) {
+    function _getPositionInfoSlot(PoolId poolId, bytes32 positionId) internal pure returns (bytes32) {
         // slot key of Pool.State value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
