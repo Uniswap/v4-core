@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.24;
+pragma solidity 0.8.26;
 
 import {Hooks} from "./libraries/Hooks.sol";
 import {Pool} from "./libraries/Pool.sol";
@@ -123,9 +123,13 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         returns (int24 tick)
     {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
-        if (key.tickSpacing > MAX_TICK_SPACING) TickSpacingTooLarge.selector.revertWith();
-        if (key.tickSpacing < MIN_TICK_SPACING) TickSpacingTooSmall.selector.revertWith();
-        if (key.currency0 >= key.currency1) CurrenciesOutOfOrderOrEqual.selector.revertWith();
+        if (key.tickSpacing > MAX_TICK_SPACING) TickSpacingTooLarge.selector.revertWith(key.tickSpacing);
+        if (key.tickSpacing < MIN_TICK_SPACING) TickSpacingTooSmall.selector.revertWith(key.tickSpacing);
+        if (key.currency0 >= key.currency1) {
+            CurrenciesOutOfOrderOrEqual.selector.revertWith(
+                Currency.unwrap(key.currency0), Currency.unwrap(key.currency1)
+            );
+        }
         if (!key.hooks.isValidHookAddress(key.fee)) Hooks.HookAddressNotValid.selector.revertWith(address(key.hooks));
 
         uint24 lpFee = key.fee.getInitialLPFee();
@@ -168,6 +172,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
             })
         );
 
+        // fee delta and principal delta are both accrued to the caller
         callerDelta = principalDelta + feesAccrued;
 
         // event is emitted before the afterModifyLiquidity call to ensure events are always emitted in order
@@ -287,6 +292,15 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function settleFor(address recipient) external payable onlyWhenUnlocked returns (uint256 paid) {
         return _settle(recipient);
+    }
+
+    /// @inheritdoc IPoolManager
+    function clear(Currency currency, uint256 amount) external onlyWhenUnlocked {
+        int256 current = currency.getDelta(msg.sender);
+        // Because input is `uint256`, only positive amounts can be cleared.
+        int128 amountDelta = amount.toInt128();
+        if (amountDelta != current) MustClearExactPositiveDelta.selector.revertWith();
+        _accountDelta(currency, -(amountDelta), msg.sender);
     }
 
     /// @inheritdoc IPoolManager

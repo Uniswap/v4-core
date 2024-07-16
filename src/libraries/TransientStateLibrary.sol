@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.24;
 
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Currency} from "../types/Currency.sol";

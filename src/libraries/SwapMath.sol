@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 import {FullMath} from "./FullMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
@@ -42,7 +42,8 @@ library SwapMath {
     /// @return sqrtPriceNextX96 The price after swapping the amount in/out, not to exceed the price target
     /// @return amountIn The amount to be swapped in, of either currency0 or currency1, based on the direction of the swap
     /// @return amountOut The amount to be received, of either currency0 or currency1, based on the direction of the swap
-    /// @return feeAmount The amount of input that will be taken as a fee
+    /// @return feeAmount The amount of input that will be taken as a fee/
+    /// @dev feePips must be no larger than MAX_FEE_PIPS for this function. We ensure that before setting a fee using LPFeeLibrary.isValid.
     function computeSwapStep(
         uint160 sqrtPriceCurrentX96,
         uint160 sqrtPriceTargetX96,

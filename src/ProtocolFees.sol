@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.0;
 
 import {Currency} from "./types/Currency.sol";
 import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
@@ -39,7 +39,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// @inheritdoc IProtocolFees
     function setProtocolFee(PoolKey memory key, uint24 newProtocolFee) external {
         if (msg.sender != address(protocolFeeController)) InvalidCaller.selector.revertWith();
-        if (!newProtocolFee.isValidProtocolFee()) InvalidProtocolFee.selector.revertWith();
+        if (!newProtocolFee.isValidProtocolFee()) ProtocolFeeTooLarge.selector.revertWith(newProtocolFee);
         PoolId id = key.toId();
         _getPool(id).setProtocolFee(newProtocolFee);
         emit ProtocolFeeUpdated(id, newProtocolFee);

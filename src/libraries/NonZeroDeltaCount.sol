@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 /// @notice This is a temporary library that allows us to use transient storage (tstore/tload)
 /// for the nonzero delta count.
@@ -23,7 +23,7 @@ library NonZeroDeltaCount {
         }
     }
 
-    /// @notice Potential to underflow.
+    /// @notice Potential to underflow. Ensure checks are performed by integrating contracts to ensure this does not happen.
     /// Current usage ensures this will not happen because we call decrement with known boundaries (only up to the number of times we call increment).
     function decrement() internal {
         assembly ("memory-safe") {

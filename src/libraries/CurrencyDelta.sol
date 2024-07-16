@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import {Currency} from "../types/Currency.sol";
 
@@ -12,6 +12,13 @@ library CurrencyDelta {
             mstore(0, target)
             mstore(32, currency)
             hashSlot := keccak256(0, 64)
+        }
+    }
+
+    function getDelta(Currency currency, address target) internal view returns (int256 delta) {
+        bytes32 hashSlot = _computeSlot(target, currency);
+        assembly {
+            delta := tload(hashSlot)
         }
     }
 
