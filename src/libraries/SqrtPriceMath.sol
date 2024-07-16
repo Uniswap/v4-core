@@ -57,7 +57,12 @@ library SqrtPriceMath {
                 // in addition, we must check that the denominator does not underflow
                 // equivalent: if (product / amount != sqrtPX96 || numerator1 <= product) revert PriceOverflow();
                 assembly ("memory-safe") {
-                    if iszero(and(eq(div(product, amount), sqrtPX96), gt(numerator1, product))) {
+                    if iszero(
+                        and(
+                            eq(div(product, amount), and(sqrtPX96, 0xffffffffffffffffffffffffffffffffffffffff)),
+                            gt(numerator1, product)
+                        )
+                    ) {
                         mstore(0, 0xf5c787f1) // selector for PriceOverflow()
                         revert(0x1c, 0x04)
                     }
@@ -102,7 +107,7 @@ library SqrtPriceMath {
 
             // equivalent: if (sqrtPX96 <= quotient) revert NotEnoughLiquidity();
             assembly ("memory-safe") {
-                if iszero(gt(sqrtPX96, quotient)) {
+                if iszero(gt(and(sqrtPX96, 0xffffffffffffffffffffffffffffffffffffffff), quotient)) {
                     mstore(0, 0x4323a555) // selector for NotEnoughLiquidity()
                     revert(0x1c, 0x04)
                 }
@@ -128,7 +133,10 @@ library SqrtPriceMath {
     {
         // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
         assembly ("memory-safe") {
-            if or(iszero(sqrtPX96), iszero(liquidity)) {
+            if or(
+                iszero(and(sqrtPX96, 0xffffffffffffffffffffffffffffffffffffffff)),
+                iszero(and(liquidity, 0xffffffffffffffffffffffffffffffff))
+            ) {
                 mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
                 revert(0x1c, 0x04)
             }
@@ -154,7 +162,10 @@ library SqrtPriceMath {
     {
         // equivalent: if (sqrtPX96 == 0 || liquidity == 0) revert InvalidPriceOrLiquidity();
         assembly ("memory-safe") {
-            if or(iszero(sqrtPX96), iszero(liquidity)) {
+            if or(
+                iszero(and(sqrtPX96, 0xffffffffffffffffffffffffffffffffffffffff)),
+                iszero(and(liquidity, 0xffffffffffffffffffffffffffffffff))
+            ) {
                 mstore(0, 0x4f2461b8) // selector for InvalidPriceOrLiquidity()
                 revert(0x1c, 0x04)
             }
@@ -184,7 +195,7 @@ library SqrtPriceMath {
 
             // equivalent: if (sqrtPriceAX96 == 0) revert InvalidPrice();
             assembly ("memory-safe") {
-                if iszero(sqrtPriceAX96) {
+                if iszero(and(sqrtPriceAX96, 0xffffffffffffffffffffffffffffffffffffffff)) {
                     mstore(0, 0x00bfc921) // selector for InvalidPrice()
                     revert(0x1c, 0x04)
                 }
@@ -202,7 +213,8 @@ library SqrtPriceMath {
     /// @notice Equivalent to: `a >= b ? a - b : b - a`
     function absDiff(uint160 a, uint160 b) internal pure returns (uint256 res) {
         assembly ("memory-safe") {
-            let diff := sub(a, b)
+            let diff :=
+                sub(and(a, 0xffffffffffffffffffffffffffffffffffffffff), and(b, 0xffffffffffffffffffffffffffffffffffffffff))
             // mask = 0 if a >= b else -1 (all 1s)
             let mask := sar(255, diff)
             // if a >= b, res = a - b = 0 ^ (a - b)
@@ -229,7 +241,7 @@ library SqrtPriceMath {
         uint256 _liquidity;
         assembly ("memory-safe") {
             // avoid implicit upcasting
-            _liquidity := liquidity
+            _liquidity := and(liquidity, 0xffffffffffffffffffffffffffffffff)
         }
         /**
          * Equivalent to:

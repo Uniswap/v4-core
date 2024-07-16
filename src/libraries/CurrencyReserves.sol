@@ -35,7 +35,7 @@ library CurrencyReserves {
 
     function syncCurrencyAndReserves(Currency currency, uint256 value) internal {
         assembly {
-            tstore(CURRENCY_SLOT, currency)
+            tstore(CURRENCY_SLOT, and(currency, 0xffffffffffffffffffffffffffffffffffffffff))
             tstore(RESERVES_OF_SLOT, value)
         }
     }
