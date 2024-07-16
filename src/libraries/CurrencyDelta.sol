@@ -9,8 +9,8 @@ library CurrencyDelta {
     /// @notice calculates which storage slot a delta should be stored in for a given account and currency
     function _computeSlot(address target, Currency currency) internal pure returns (bytes32 hashSlot) {
         assembly ("memory-safe") {
-            mstore(0, target)
-            mstore(32, currency)
+            mstore(0, and(target, 0xffffffffffffffffffffffffffffffffffffffff))
+            mstore(32, and(currency, 0xffffffffffffffffffffffffffffffffffffffff))
             hashSlot := keccak256(0, 64)
         }
     }
