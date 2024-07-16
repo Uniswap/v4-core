@@ -45,20 +45,22 @@ library CustomRevert {
     /// @dev Reverts with a custom error with two int24 arguments
     function revertWith(bytes4 selector, int24 value1, int24 value2) internal pure {
         assembly ("memory-safe") {
-            mstore(0, selector)
-            mstore(0x04, value1)
-            mstore(0x24, value2)
-            revert(0, 0x44)
+            let fmp := mload(0x40)
+            mstore(fmp, selector)
+            mstore(add(fmp, 0x04), value1)
+            mstore(add(fmp, 0x24), value2)
+            revert(fmp, 0x44)
         }
     }
 
     /// @dev Reverts with a custom error with two uint160 arguments
     function revertWith(bytes4 selector, uint160 value1, uint160 value2) internal pure {
         assembly ("memory-safe") {
-            mstore(0, selector)
-            mstore(0x04, value1)
-            mstore(0x24, value2)
-            revert(0, 0x44)
+            let fmp := mload(0x40)
+            mstore(fmp, selector)
+            mstore(add(fmp, 0x04), value1)
+            mstore(add(fmp, 0x24), value2)
+            revert(fmp, 0x44)
         }
     }
 

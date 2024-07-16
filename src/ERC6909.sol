@@ -12,11 +12,11 @@ abstract contract ERC6909 is IERC6909Claims {
                              ERC6909 STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    mapping(address => mapping(address => bool)) public isOperator;
+    mapping(address owner => mapping(address operator => bool isOperator)) public isOperator;
 
-    mapping(address => mapping(uint256 => uint256)) public balanceOf;
+    mapping(address owner => mapping(uint256 id => uint256 balance)) public balanceOf;
 
-    mapping(address => mapping(address => mapping(uint256 => uint256))) public allowance;
+    mapping(address owner => mapping(address spender => mapping(uint256 id => uint256 amount))) public allowance;
 
     /*//////////////////////////////////////////////////////////////
                               ERC6909 LOGIC

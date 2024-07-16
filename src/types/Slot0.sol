@@ -28,6 +28,7 @@ type Slot0 is bytes32;
 
 using Slot0Library for Slot0 global;
 
+/// @notice Library for getting and setting values in the Slot0 type
 library Slot0Library {
     uint160 internal constant MASK_160_BITS = 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
     uint24 internal constant MASK_24_BITS = 0xFFFFFF;

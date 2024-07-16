@@ -21,7 +21,7 @@ import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 import {Lock} from "../libraries/Lock.sol";
 import {CurrencyDelta} from "../libraries/CurrencyDelta.sol";
 import {NonZeroDeltaCount} from "../libraries/NonZeroDeltaCount.sol";
-import {Reserves} from "../libraries/Reserves.sol";
+import {CurrencyReserves} from "../libraries/CurrencyReserves.sol";
 import {Extsload} from "../Extsload.sol";
 import {Exttload} from "../Exttload.sol";
 import {CustomRevert} from "../libraries/CustomRevert.sol";
@@ -35,7 +35,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
-    using Reserves for Currency;
+    using CurrencyReserves for Currency;
     using CustomRevert for bytes4;
 
     /// @inheritdoc IPoolManager
@@ -59,7 +59,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     }
 
     /// @inheritdoc IPoolManager
-    function unlock(bytes calldata data) external override noDelegateCall returns (bytes memory result) {
+    function unlock(bytes calldata data) external noDelegateCall returns (bytes memory result) {
         if (Lock.isUnlocked()) AlreadyUnlocked.selector.revertWith();
 
         Lock.unlock();
@@ -74,7 +74,6 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     /// @inheritdoc IPoolManager
     function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
-        override
         noDelegateCall
         returns (int24 tick)
     {
@@ -109,7 +108,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         bytes calldata hookData
-    ) external override onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+    ) external onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         bytes memory result = _delegateCall(
             _delegateManager, abi.encodeWithSelector(this.modifyLiquidity.selector, key, params, hookData)
         );
@@ -120,7 +119,6 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     /// @inheritdoc IPoolManager
     function swap(PoolKey memory key, IPoolManager.SwapParams memory params, bytes calldata hookData)
         external
-        override
         onlyWhenUnlocked
         noDelegateCall
         returns (BalanceDelta swapDelta)
@@ -134,7 +132,6 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     /// @inheritdoc IPoolManager
     function donate(PoolKey memory key, uint256 amount0, uint256 amount1, bytes calldata hookData)
         external
-        override
         onlyWhenUnlocked
         noDelegateCall
         returns (BalanceDelta delta)
@@ -147,37 +144,45 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     }
 
     /// @inheritdoc IPoolManager
-    function sync(Currency currency) public returns (uint256 balance) {
-        balance = currency.balanceOfSelf();
-        currency.setReserves(balance);
+    function sync(Currency currency) public {
+        CurrencyReserves.requireNotSynced();
+        if (currency.isNative()) return;
+        uint256 balance = currency.balanceOfSelf();
+        CurrencyReserves.syncCurrencyAndReserves(currency, balance);
     }
 
     /// @inheritdoc IPoolManager
-    function take(Currency currency, address to, uint256 amount) external override onlyWhenUnlocked noDelegateCall {
+    function take(Currency currency, address to, uint256 amount) external onlyWhenUnlocked noDelegateCall {
         _delegateCall(_delegateManager, abi.encodeWithSelector(this.take.selector, currency, to, amount));
     }
 
     /// @inheritdoc IPoolManager
-    function settle(Currency currency)
-        external
-        payable
-        override
-        onlyWhenUnlocked
-        noDelegateCall
-        returns (uint256 paid)
-    {
-        bytes memory result = _delegateCall(_delegateManager, abi.encodeWithSelector(this.settle.selector, currency));
+    function settle() external payable onlyWhenUnlocked noDelegateCall returns (uint256 paid) {
+        bytes memory result = _delegateCall(_delegateManager, abi.encodeWithSelector(this.settle.selector));
 
         return abi.decode(result, (uint256));
     }
 
     /// @inheritdoc IPoolManager
-    function mint(address to, uint256 id, uint256 amount) external override onlyWhenUnlocked noDelegateCall {
+    function settleFor(address recipient) external payable onlyWhenUnlocked noDelegateCall returns (uint256 paid) {
+        bytes memory result =
+            _delegateCall(_delegateManager, abi.encodeWithSelector(this.settleFor.selector, recipient));
+
+        return abi.decode(result, (uint256));
+    }
+
+    /// @inheritdoc IPoolManager
+    function clear(Currency currency, uint256 amount) external onlyWhenUnlocked {
+        _delegateCall(_delegateManager, abi.encodeWithSelector(this.clear.selector, currency, amount));
+    }
+
+    /// @inheritdoc IPoolManager
+    function mint(address to, uint256 id, uint256 amount) external onlyWhenUnlocked noDelegateCall {
         _delegateCall(_delegateManager, abi.encodeWithSelector(this.mint.selector, to, id, amount));
     }
 
     /// @inheritdoc IPoolManager
-    function burn(address from, uint256 id, uint256 amount) external override onlyWhenUnlocked noDelegateCall {
+    function burn(address from, uint256 id, uint256 amount) external onlyWhenUnlocked noDelegateCall {
         _delegateCall(_delegateManager, abi.encodeWithSelector(this.burn.selector, from, id, amount));
     }
 
