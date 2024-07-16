@@ -1,8 +1,22 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.0;
 
 /// @notice Interface for claims over a contract balance, wrapped as a ERC6909
 interface IERC6909Claims {
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event OperatorSet(address indexed owner, address indexed operator, bool approved);
+
+    event Approval(address indexed owner, address indexed spender, uint256 indexed id, uint256 amount);
+
+    event Transfer(address caller, address indexed from, address indexed to, uint256 indexed id, uint256 amount);
+
+    /*//////////////////////////////////////////////////////////////
+                                 FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Owner balance of an id.
     /// @param owner The address of the owner.
     /// @param id The id of the token.

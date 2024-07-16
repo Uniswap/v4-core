@@ -26,13 +26,13 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     error ManagerLocked();
 
     /// @notice Pools are limited to type(int16).max tickSpacing in #initialize, to prevent overflow
-    error TickSpacingTooLarge();
+    error TickSpacingTooLarge(int24 tickSpacing);
 
     /// @notice Pools must have a positive non-zero tickSpacing passed to #initialize
-    error TickSpacingTooSmall();
+    error TickSpacingTooSmall(int24 tickSpacing);
 
     /// @notice PoolKey must have currencies where address(currency0) < address(currency1)
-    error CurrenciesOutOfOrderOrEqual();
+    error CurrenciesOutOfOrderOrEqual(address currency0, address currency1);
 
     /// @notice Thrown when a call to updateDynamicLPFee is made by an address that is not the hook,
     /// or on a pool that does not have a dynamic swap fee.
@@ -55,7 +55,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
     event Initialize(
-        PoolId id, Currency indexed currency0, Currency indexed currency1, uint24 fee, int24 tickSpacing, IHooks hooks
+        PoolId indexed id,
+        Currency indexed currency0,
+        Currency indexed currency1,
+        uint24 fee,
+        int24 tickSpacing,
+        IHooks hooks
     );
 
     /// @notice Emitted when a liquidity position is modified
@@ -79,7 +84,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param fee The swap fee in hundredths of a bip
     event Swap(
         PoolId indexed id,
-        address sender,
+        address indexed sender,
         int128 amount0,
         int128 amount1,
         uint160 sqrtPriceX96,
@@ -94,7 +99,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @return int24 the constant representing the minimum tickSpacing for an initialized pool key
     function MIN_TICK_SPACING() external view returns (int24);
 
-    /// @notice All operations go through this function
+    /// @notice All interactions on the contract that account deltas require unlocking. A caller that calls `unlock` must implement
+    /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
+    /// @dev The only functions callable without an unlocking are `initialize` and `updateDynamicLPFee`
     /// @param data Any data to pass to the callback, via `IUnlockCallback(msg.sender).unlockCallback(data)`
     /// @return The data returned by the call to `IUnlockCallback(msg.sender).unlockCallback(data)`
     function unlock(bytes calldata data) external returns (bytes memory);
@@ -127,7 +134,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @return feeDelta The balance delta of the fees generated in the liquidity range. Returned for informational purposes.
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta, BalanceDelta);
+        returns (BalanceDelta callerDelta, BalanceDelta feeDelta);
 
     struct SwapParams {
         bool zeroForOne;
@@ -145,7 +152,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// the hook may alter the swap input/output. Integrators should perform checks on the returned swapDelta.
     function swap(PoolKey memory key, SwapParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta);
+        returns (BalanceDelta swapDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
     /// @param key The key of the pool to donate to

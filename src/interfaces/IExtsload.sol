@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0;
+pragma solidity ^0.8.0;
 
 /// @notice Interface for functions to access any storage slot in a contract
 interface IExtsload {
