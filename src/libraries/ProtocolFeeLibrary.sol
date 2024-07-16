@@ -26,7 +26,7 @@ library ProtocolFeeLibrary {
         // Equivalent to: getZeroForOneFee(self) <= MAX_PROTOCOL_FEE && getOneForZeroFee(self) <= MAX_PROTOCOL_FEE
         assembly ("memory-safe") {
             let isZeroForOneFeeOk := lt(and(self, 0xfff), FEE_0_THRESHOLD)
-            let isOneForZeroFeeOk := lt(self, FEE_1_THRESHOLD)
+            let isOneForZeroFeeOk := lt(and(self, 0xfff000), FEE_1_THRESHOLD)
             valid := and(isZeroForOneFeeOk, isOneForZeroFeeOk)
         }
     }
