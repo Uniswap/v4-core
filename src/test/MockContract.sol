@@ -50,7 +50,7 @@ contract MockContract is Proxy {
 
     function _fallback() internal override {
         _beforeFallback();
-        _delegate(_implementation());
+        super._fallback();
     }
 
     receive() external payable {}
