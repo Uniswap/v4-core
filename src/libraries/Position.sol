@@ -36,7 +36,6 @@ library Position {
         view
         returns (Info storage position)
     {
-        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
         bytes32 positionKey = calculatePositionKey(owner, tickLower, tickUpper, salt);
         position = self[positionKey];
     }
@@ -51,6 +50,7 @@ library Position {
         pure
         returns (bytes32 positionKey)
     {
+        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
         assembly ("memory-safe") {
             let fmp := mload(0x40)
             mstore(add(fmp, 0x26), salt) // [0x26, 0x46)
