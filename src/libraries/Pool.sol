@@ -413,14 +413,16 @@ library Pool {
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
 
-                // Equivalent to `state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;`
+                // Equivalent to ``
                 unchecked {
+                    state.tick = (zeroForOne && state.amountSpecifiedRemaining != 0) ? step.tickNext - 1 : step.tickNext;
+
                     // cannot cast a bool to an int24 in Solidity
-                    int24 _zeroForOne;
-                    assembly {
-                        _zeroForOne := zeroForOne
-                    }
-                    state.tick = step.tickNext - _zeroForOne;
+                    // int24 _zeroForOne;
+                    // assembly {
+                    //     _zeroForOne := zeroForOne
+                    // }
+                    // state.tick = step.tickNext - _zeroForOne;
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
