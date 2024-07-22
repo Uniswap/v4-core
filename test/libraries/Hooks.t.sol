@@ -194,7 +194,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
     }
 
     // hook validation
-    function test_fuzz_validateHookPermissions_noHooks(uint160 addr) public view {
+    function test_validateHookPermissions_noHooks_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
 
         IHooks hookAddr = IHooks(address(preAddr));
@@ -233,7 +233,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeInitialize(uint160 addr) public view {
+    function test_validateHookPermissions_beforeInitialize_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
 
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG)));
@@ -272,7 +272,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_afterInitialize(uint160 addr) public view {
+    function test_validateHookPermissions_afterInitialize_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
 
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_INITIALIZE_FLAG)));
@@ -311,7 +311,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeAndAfterInitialize(uint160 addr) public view {
+    function test_validateHookPermissions_beforeAndAfterInitialize_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_INITIALIZE_FLAG)));
         Hooks.validateHookPermissions(
@@ -349,7 +349,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeAddLiquidity(uint160 addr) public view {
+    function test_validateHookPermissions_beforeAddLiquidity_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
@@ -387,7 +387,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_afterAddLiquidity(uint160 addr) public view {
+    function test_validateHookPermissions_afterAddLiquidity_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
@@ -425,7 +425,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeAndAfterAddLiquidity(uint160 addr) public view {
+    function test_validateHookPermissions_beforeAndAfterAddLiquidity_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr =
             IHooks(address(uint160(preAddr | Hooks.BEFORE_ADD_LIQUIDITY_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
@@ -464,7 +464,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeRemoveLiquidity(uint160 addr) public view {
+    function test_validateHookPermissions_beforeRemoveLiquidity_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
@@ -502,7 +502,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_afterRemoveLiquidity(uint160 addr) public view {
+    function test_validateHookPermissions_afterRemoveLiquidity_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)));
         Hooks.validateHookPermissions(
@@ -540,7 +540,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeAfterRemoveLiquidity(uint160 addr) public view {
+    function test_validateHookPermissions_beforeAfterRemoveLiquidity_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr =
             IHooks(address(uint160(preAddr | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG)));
@@ -579,7 +579,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeInitializeAfterAddLiquidity(uint160 addr) public view {
+    function test_validateHookPermissions_beforeInitializeAfterAddLiquidity_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr =
             IHooks(address(uint160(preAddr | Hooks.BEFORE_INITIALIZE_FLAG | Hooks.AFTER_ADD_LIQUIDITY_FLAG)));
@@ -618,7 +618,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeSwap(uint160 addr) public view {
+    function test_validateHookPermissions_beforeSwap_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG)));
         Hooks.validateHookPermissions(
@@ -656,7 +656,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_afterSwap(uint160 addr) public view {
+    function test_validateHookPermissions_afterSwap_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_SWAP_FLAG)));
         Hooks.validateHookPermissions(
@@ -694,7 +694,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeAndAfterSwap(uint160 addr) public view {
+    function test_validateHookPermissions_beforeAndAfterSwap_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG)));
         Hooks.validateHookPermissions(
@@ -732,7 +732,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeDonate(uint160 addr) public view {
+    function test_validateHookPermissions_beforeDonate_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG)));
         Hooks.validateHookPermissions(
@@ -770,7 +770,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_afterDonate(uint160 addr) public view {
+    function test_validateHookPermissions_afterDonate_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.AFTER_DONATE_FLAG)));
         Hooks.validateHookPermissions(
@@ -808,7 +808,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_beforeAndAfterDonate(uint160 addr) public view {
+    function test_validateHookPermissions_beforeAndAfterDonate_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_DONATE_FLAG | Hooks.AFTER_DONATE_FLAG)));
         Hooks.validateHookPermissions(
@@ -846,7 +846,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookPermissions_allHooks(uint160 addr) public view {
+    function test_validateHookPermissions_allHooks_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         uint160 allHookBitsFlipped = uint160((1 << hookPermissionCount) - 1);
         IHooks hookAddr = IHooks(address(uint160(preAddr) | allHookBitsFlipped));
@@ -885,7 +885,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertTrue(hookAddr.hasPermission(Hooks.AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG));
     }
 
-    function test_fuzz_validateHookAddress_failsAllHooks(uint160 addr, uint16 mask) public {
+    function test_validateHookAddress_failsAllHooks_fuzz(uint160 addr, uint16 mask) public {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         // Set the upper `hooksPermissionCount` number of bits to get the full mask in uint16.
         uint16 allHooksMask = uint16(~uint16(0));
@@ -914,7 +914,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
     }
 
-    function test_fuzz_validateHookAddress_failsNoHooks(uint160 addr, uint16 mask) public {
+    function test_validateHookAddress_failsNoHooks_fuzz(uint160 addr, uint16 mask) public {
         // we only want hookPermissionCount of mask
         mask = mask >> (16 - hookPermissionCount);
         uint160 preAddr = addr & clearAllHookPermissionsMask;
@@ -965,7 +965,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         assertFalse(Hooks.isValidHookAddress(IHooks(address(0)), LPFeeLibrary.DYNAMIC_FEE_FLAG));
     }
 
-    function test_fuzz_isValidHookAddress_invalid_returnsDeltaWithoutHookFlag(uint160 addr) public view {
+    function test_isValidHookAddress_invalid_returnsDeltaWithoutHookFlag_fuzz(uint160 addr) public view {
         uint160 preAddr = addr & clearAllHookPermissionsMask;
         IHooks hookAddr = IHooks(address(uint160(preAddr | Hooks.BEFORE_SWAP_RETURNS_DELTA_FLAG)));
         assertFalse(Hooks.isValidHookAddress(hookAddr, 3000));

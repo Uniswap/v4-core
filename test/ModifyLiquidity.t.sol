@@ -50,7 +50,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     /// forge-config: default.fuzz.runs = 10
     /// forge-config: pr.fuzz.runs = 10
     /// forge-config: ci.fuzz.runs = 500
-    function test_ffi_fuzz_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta(
+    function test_ffi_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta_fuzz(
         IPoolManager.ModifyLiquidityParams memory paramSeed
     ) public {
         // Sanitize the fuzzed params to get valid tickLower, tickUpper, and liquidityDelta.
@@ -304,12 +304,12 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
         assertEq(updatedPositionSalt.liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
     }
 
-    function test_gas_modifyLiquidity_newPosition() public {
+    function test_modifyLiquidity_newPosition_gas() public {
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
         snapLastCall("create new liquidity to a position with salt");
     }
 
-    function test_gas_modifyLiquidity_updateSamePosition_withSalt() public {
+    function test_modifyLiquidity_updateSamePosition_withSalt_gas() public {
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
         snapLastCall("add liquidity to already existing position with salt");

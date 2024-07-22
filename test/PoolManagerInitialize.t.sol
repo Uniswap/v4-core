@@ -53,7 +53,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         });
     }
 
-    function test_fuzz_initialize(PoolKey memory key0, uint160 sqrtPriceX96) public {
+    function test_initialize_fuzz(PoolKey memory key0, uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 

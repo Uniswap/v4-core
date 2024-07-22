@@ -148,7 +148,7 @@ contract SkipCallsTest is Test, Deployers, GasSnapshot {
         assertEq(skipCallsTestHook.counter(), 2);
     }
 
-    function test_gas_beforeSwap_skipIfCalledByHook() public {
+    function test_beforeSwap_skipIfCalledByHook_gas() public {
         SkipCallsTestHook skipCallsTestHook = SkipCallsTestHook(
             address(uint160(type(uint160).max & clearAllHookPermissionsMask | Hooks.BEFORE_SWAP_FLAG))
         );

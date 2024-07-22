@@ -21,7 +21,7 @@ contract LPFeeLibraryTest is Test {
         assertFalse(LPFeeLibrary.isDynamicFee(dynamicFee));
     }
 
-    function test_fuzz_isDynamicFee(uint24 fee) public pure {
+    function test_isDynamicFee_fuzz(uint24 fee) public pure {
         assertEq(fee == LPFeeLibrary.DYNAMIC_FEE_FLAG, LPFeeLibrary.isDynamicFee(fee));
     }
 
@@ -46,7 +46,7 @@ contract LPFeeLibraryTest is Test {
         LPFeeLibrary.validate(fee);
     }
 
-    function test_fuzz_validate(uint24 fee) public {
+    function test_validate_fuzz(uint24 fee) public {
         if (fee > 1000000) {
             vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee));
         }
@@ -75,7 +75,7 @@ contract LPFeeLibraryTest is Test {
         LPFeeLibrary.getInitialLPFee(dynamicFee);
     }
 
-    function test_fuzz_getInitialLPFee(uint24 fee) public {
+    function test_getInitialLPFee_fuzz(uint24 fee) public {
         if (fee == LPFeeLibrary.DYNAMIC_FEE_FLAG) {
             assertEq(LPFeeLibrary.getInitialLPFee(fee), 0);
         } else if (fee > 1000000) {

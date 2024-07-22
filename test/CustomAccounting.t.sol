@@ -152,11 +152,11 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         assertEq(currency1.balanceOf(address(this)), balanceBefore1 + amountToSwap, "amount 1");
     }
 
-    // maximum available liquidity in each direction for the pool in test_fuzz_swap_beforeSwap_returnsDeltaSpecified
+    // maximum available liquidity in each direction for the pool in test_swap_beforeSwap_returnsDeltaSpecified_fuzz
     int128 maxPossibleIn_fuzz_test = -6018336102428409;
     int128 maxPossibleOut_fuzz_test = 5981737760509662;
 
-    function test_fuzz_swap_beforeSwap_returnsDeltaSpecified(
+    function test_swap_beforeSwap_returnsDeltaSpecified_fuzz(
         int128 hookDeltaSpecified,
         int256 amountSpecified,
         bool zeroForOne

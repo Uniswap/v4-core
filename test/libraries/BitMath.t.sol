@@ -30,7 +30,7 @@ contract TestBitMath is Test, GasSnapshot {
         assertEq(BitMath.mostSignificantBit(type(uint256).max), 255);
     }
 
-    function test_fuzz_mostSignificantBit(uint256 x) public pure {
+    function test_mostSignificantBit_fuzz(uint256 x) public pure {
         vm.assume(x != 0);
         assertEq(BitMath.mostSignificantBit(x), mostSignificantBitReference(x));
     }
@@ -80,7 +80,7 @@ contract TestBitMath is Test, GasSnapshot {
         assertEq(BitMath.leastSignificantBit(type(uint256).max), 0);
     }
 
-    function test_fuzz_leastSignificantBit(uint256 x) public pure {
+    function test_leastSignificantBit_fuzz(uint256 x) public pure {
         vm.assume(x != 0);
         assertEq(BitMath.leastSignificantBit(x), leastSignificantBitReference(x));
     }

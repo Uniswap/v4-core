@@ -6,7 +6,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 
 contract SafeCastTest is Test {
-    function test_fuzz_toUint160(uint256 x) public {
+    function test_toUint160_fuzz(uint256 x) public {
         if (x <= type(uint160).max) {
             assertEq(uint256(SafeCast.toUint160(x)), x);
         } else {
@@ -22,7 +22,7 @@ contract SafeCastTest is Test {
         SafeCast.toUint160(type(uint160).max + uint256(1));
     }
 
-    function test_fuzz_toUint128(uint256 x) public {
+    function test_toUint128_fuzz(uint256 x) public {
         if (x <= type(uint128).max) {
             assertEq(uint256(SafeCast.toUint128(x)), x);
         } else {
@@ -38,7 +38,7 @@ contract SafeCastTest is Test {
         SafeCast.toUint128(type(uint128).max + uint256(1));
     }
 
-    function test_fuzz_toInt128_fromInt256(int256 x) public {
+    function test_toInt128_fromInt256_fuzz(int256 x) public {
         if (x <= type(int128).max && x >= type(int128).min) {
             assertEq(int256(SafeCast.toInt128(x)), x);
         } else {
@@ -57,7 +57,7 @@ contract SafeCastTest is Test {
         SafeCast.toInt128(type(int128).min - int256(1));
     }
 
-    function test_fuzz_toInt256(uint256 x) public {
+    function test_toInt256_fuzz(uint256 x) public {
         if (x <= uint256(type(int256).max)) {
             assertEq(uint256(SafeCast.toInt256(x)), x);
         } else {
@@ -73,7 +73,7 @@ contract SafeCastTest is Test {
         SafeCast.toInt256(uint256(type(int256).max) + uint256(1));
     }
 
-    function test_fuzz_toInt128_fromUint256(uint256 x) public {
+    function test_toInt128_fromUint256_fuzz(uint256 x) public {
         if (x <= uint128(type(int128).max)) {
             assertEq(uint128(SafeCast.toInt128(x)), x);
         } else {

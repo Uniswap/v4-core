@@ -23,7 +23,7 @@ contract UnsafeMathTest is Test {
         assertEq(Q128.divRoundingUp(3), result);
     }
 
-    function test_fuzz_divRoundingUp(uint256 x, uint256 y) public pure {
+    function test_divRoundingUp_fuzz(uint256 x, uint256 y) public pure {
         vm.assume(y != 0);
         uint256 result = x.divRoundingUp(y);
         assertTrue(result == x / y || result == x / y + 1);

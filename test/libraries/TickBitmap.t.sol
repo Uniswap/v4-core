@@ -25,14 +25,14 @@ contract TickBitmapTest is Test, GasSnapshot {
         }
     }
 
-    function test_fuzz_compress(int24 tick, int24 tickSpacing) public pure {
+    function test_compress_fuzz(int24 tick, int24 tickSpacing) public pure {
         tickSpacing = int24(bound(tickSpacing, 1, type(int24).max));
         int24 compressed = tick / tickSpacing;
         if (tick < 0 && tick % tickSpacing != 0) compressed--;
         assertEq(TickBitmap.compress(tick, tickSpacing), compressed);
     }
 
-    function test_fuzz_position(int24 tick) public pure {
+    function test_position_fuzz(int24 tick) public pure {
         (int16 wordPos, uint8 bitPos) = TickBitmap.position(tick);
         assertEq(wordPos, tick >> 8);
         assertEq(bitPos, uint8(int8(tick % 256)));
@@ -112,7 +112,7 @@ contract TickBitmapTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_fuzz_flipTick(int24 tick, int24 tickSpacing) public {
+    function test_flipTick_fuzz(int24 tick, int24 tickSpacing) public {
         tickSpacing = int24(bound(tickSpacing, 1, type(int24).max));
 
         if (tick % tickSpacing != 0) {
@@ -294,7 +294,7 @@ contract TickBitmapTest is Test, GasSnapshot {
         snapEnd();
     }
 
-    function test_fuzz_nextInitializedTickWithinOneWord(int24 tick, bool lte) public view {
+    function test_nextInitializedTickWithinOneWord_fuzz(int24 tick, bool lte) public view {
         // assume tick is at least one word inside type(int24).(max | min)
         vm.assume(lte ? tick >= -8388352 : tick < 8388351);
 
@@ -319,7 +319,7 @@ contract TickBitmapTest is Test, GasSnapshot {
         }
     }
 
-    function test_fuzz_nextInitializedTickWithinOneWord_onEmptyBitmap(
+    function test_nextInitializedTickWithinOneWord_onEmptyBitmap_fuzz(
         int24 tick,
         int24 tickSpacing,
         uint8 nextBitPos,
