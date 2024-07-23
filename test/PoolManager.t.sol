@@ -1158,10 +1158,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     // }
 
     function test_getPosition() public view {
-        Position.Info memory managerPosition =
-            manager.getPosition(key.toId(), address(modifyLiquidityRouter), -120, 120, 0);
+        (uint128 liquidity,,) = manager.getPositionInfo(key.toId(), address(modifyLiquidityRouter), -120, 120, 0);
         assert(LIQUIDITY_PARAMS.liquidityDelta > 0);
-        assertEq(managerPosition.liquidity, uint128(uint256(LIQUIDITY_PARAMS.liquidityDelta)));
+        assertEq(liquidity, uint128(uint256(LIQUIDITY_PARAMS.liquidityDelta)));
     }
 
     function supportsInterface(bytes4) external pure returns (bool) {
