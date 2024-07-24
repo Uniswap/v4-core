@@ -267,7 +267,7 @@ library StateLibrary {
 
     /**
      * @notice Retrieves the liquidity of a position.
-     * @dev Corresponds to pools[poolId].positions[positionId].liquidity. A more gas efficient version of getPositionInfo
+     * @dev Corresponds to pools[poolId].positions[positionId].liquidity. More gas efficient for just retrieiving liquidity as compared to getPositionInfo
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
      * @param positionId The ID of the position.
@@ -283,8 +283,8 @@ library StateLibrary {
     }
 
     /**
-     * @notice Live calculate the fee growth inside a tick range of a pool
-     * @dev pools[poolId].feeGrowthInside0LastX128 in Position.Info is cached and can become stale. This function will live calculate the feeGrowthInside
+     * @notice Calculate the fee growth inside a tick range of a pool
+     * @dev pools[poolId].feeGrowthInside0LastX128 in Position.Info is cached and can become stale. This function will calculate the up to date feeGrowthInside
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
      * @param tickLower The lower tick of the range.
