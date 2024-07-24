@@ -213,7 +213,7 @@ library StateLibrary {
     }
 
     /**
-     * @notice Retrieves the position information of a pool without needing to calulcate the `positionId`.
+     * @notice Retrieves the position information of a pool without needing to calculate the `positionId`.
      * @dev Corresponds to pools[poolId].positions[positionId]
      * @param poolId The ID of the pool.
      * @param owner The owner of the liquidity position.
