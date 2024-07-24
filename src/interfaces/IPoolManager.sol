@@ -54,13 +54,17 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
+    /// @param sqrtPriceX96 The price of the pool on initialization
+    /// @param tick The initial tick of the pool corresponding to the intialized price
     event Initialize(
         PoolId indexed id,
         Currency indexed currency0,
         Currency indexed currency1,
         uint24 fee,
         int24 tickSpacing,
-        IHooks hooks
+        IHooks hooks,
+        uint160 sqrtPriceX96,
+        int24 tick
     );
 
     /// @notice Emitted when a liquidity position is modified
