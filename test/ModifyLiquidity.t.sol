@@ -50,6 +50,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     /// forge-config: default.fuzz.runs = 10
     /// forge-config: pr.fuzz.runs = 10
     /// forge-config: ci.fuzz.runs = 500
+    /// forge-config: debug.fuzz.runs = 10
     function test_ffi_fuzz_addLiquidity_defaultPool_ReturnsCorrectLiquidityDelta(
         IPoolManager.ModifyLiquidityParams memory paramSeed
     ) public {
@@ -150,7 +151,7 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     }
 
     // assert solc/js result is at most off by 1/100th of a bip (aka one pip)
-    function _checkError(int128 solc, int128 js, string memory errMsg) public pure returns (int128) {
+    function _checkError(int128 solc, int128 js, string memory errMsg) public pure {
         if (solc != js) {
             // Ensures no div by 0 in the case of one-sided liquidity adds.
             (int128 gtResult, int128 ltResult) = js > solc ? (js, solc) : (solc, js);
@@ -164,92 +165,92 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     //////////////////////////////////////////////////////////////*/
 
     function test_modifyLiquidity_samePosition_zeroSalt_isUpdated() public {
-        Position.Info memory position = manager.getPosition(
+        (uint128 liquidity,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
-        assertEq(position.liquidity, 0);
+        assertEq(liquidity, 0);
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_NO_SALT, ZERO_BYTES);
-        position = manager.getPosition(
+        (liquidity,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
 
-        assertEq(position.liquidity, uint128(uint256(LIQ_PARAM_NO_SALT.liquidityDelta)));
+        assertEq(liquidity, uint128(uint256(LIQ_PARAM_NO_SALT.liquidityDelta)));
 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_NO_SALT, ZERO_BYTES);
-        Position.Info memory updated = manager.getPosition(
+        (uint128 liquidityUpdated,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
-        assertEq(updated.liquidity, position.liquidity + uint128(uint256(LIQ_PARAM_NO_SALT.liquidityDelta)));
+        assertEq(liquidityUpdated, liquidity + uint128(uint256(LIQ_PARAM_NO_SALT.liquidityDelta)));
     }
 
     function test_modifyLiquidity_samePosition_withSalt_isUpdated() public {
-        Position.Info memory position = manager.getPosition(
+        (uint128 liquidity,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
-        assertEq(position.liquidity, 0);
+        assertEq(liquidity, 0);
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        position = manager.getPosition(
+        (liquidity,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
-        assertEq(position.liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
+        assertEq(liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        Position.Info memory updated = manager.getPosition(
+        (uint128 liquidityUpdated,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
-        assertEq(updated.liquidity, position.liquidity + uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
+        assertEq(liquidityUpdated, liquidity + uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
     }
 
     function test_modifyLiquidity_sameTicks_withDifferentSalt_isNotUpdated() public {
-        Position.Info memory positionNoSalt = manager.getPosition(
+        (uint128 liquidityNoSalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
 
-        Position.Info memory positionSalt = manager.getPosition(
+        (uint128 liquiditySalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
-        assertEq(positionNoSalt.liquidity, 0);
-        assertEq(positionSalt.liquidity, 0);
+        assertEq(liquidityNoSalt, 0);
+        assertEq(liquiditySalt, 0);
 
         // Modify the liquidity with the salt.
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
 
-        positionNoSalt = manager.getPosition(
+        (liquidityNoSalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
 
-        positionSalt = manager.getPosition(
+        (liquiditySalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
 
-        assertEq(positionNoSalt.liquidity, 0); // This position does not have liquidity.
-        assertEq(positionSalt.liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta))); // This position does.
+        assertEq(liquidityNoSalt, 0); // This position does not have liquidity.
+        assertEq(liquiditySalt, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta))); // This position does.
 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_NO_SALT, ZERO_BYTES); // Now the positions should have the same liquidity.
 
-        positionNoSalt = manager.getPosition(
+        (liquidityNoSalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
 
-        positionSalt = manager.getPosition(
+        (liquiditySalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
 
         // positionSalt should still only have the original liquidity deposited to it
-        assertEq(positionSalt.liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
-        assertEq(positionNoSalt.liquidity, positionSalt.liquidity);
+        assertEq(liquiditySalt, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
+        assertEq(liquidityNoSalt, liquiditySalt);
 
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
-        Position.Info memory updatedWithSalt = manager.getPosition(
+        (uint128 updatedLiquidityWithSalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
-        Position.Info memory updatedNoSalt = manager.getPosition(
+        (uint128 updatedLiquidityNoSalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_NO_SALT.tickLower, LIQ_PARAM_NO_SALT.tickUpper, 0
         );
 
-        assertEq(updatedWithSalt.liquidity, positionSalt.liquidity + uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
-        assertGt(updatedWithSalt.liquidity, updatedNoSalt.liquidity);
-        assertEq(updatedNoSalt.liquidity, positionNoSalt.liquidity);
+        assertEq(updatedLiquidityWithSalt, liquiditySalt + uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
+        assertGt(updatedLiquidityWithSalt, updatedLiquidityNoSalt);
+        assertEq(updatedLiquidityNoSalt, liquidityNoSalt);
     }
 
     function test_modifyLiquidity_sameSalt_differentLiquidityRouters_doNotEditSamePosition() public {
@@ -263,45 +264,45 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
             IPoolManager.ModifyLiquidityParams({tickLower: -120, tickUpper: 120, liquidityDelta: 2e18, salt: SALT});
 
         // Get the uninitialized positions and assert they have no liquidity.
-        Position.Info memory positionSalt = manager.getPosition(
+        (uint128 liquiditySalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
 
-        Position.Info memory positionSalt2 = manager.getPosition(
+        (uint128 liquiditySalt2,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter2), LIQ_PARAM_SALT_2.tickLower, LIQ_PARAM_SALT_2.tickUpper, SALT
         );
 
-        assertEq(positionSalt.liquidity, 0);
-        assertEq(positionSalt2.liquidity, 0);
+        assertEq(liquiditySalt, 0);
+        assertEq(liquiditySalt2, 0);
 
         // Modify the liquidity with the salt with the first router.
         modifyLiquidityRouter.modifyLiquidity(simpleKey, LIQ_PARAM_SALT, ZERO_BYTES);
 
-        Position.Info memory updatedPositionSalt = manager.getPosition(
+        (uint128 updatedLiquiditySalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
 
-        Position.Info memory updatedPositionSalt2 = manager.getPosition(
-            simplePoolId, address(modifyLiquidityRouter2), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
+        (uint128 updatedLiquiditySalt2,,) = manager.getPositionInfo(
+            simplePoolId, address(modifyLiquidityRouter2), LIQ_PARAM_SALT_2.tickLower, LIQ_PARAM_SALT_2.tickUpper, SALT
         );
 
         // Assert only the liquidity from the first router is updated.
-        assertEq(updatedPositionSalt.liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
-        assertEq(updatedPositionSalt2.liquidity, 0);
+        assertEq(updatedLiquiditySalt, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
+        assertEq(updatedLiquiditySalt2, 0);
 
         // Modify the liquidity with the second router.
         modifyLiquidityRouter2.modifyLiquidity(simpleKey, LIQ_PARAM_SALT_2, ZERO_BYTES);
 
-        updatedPositionSalt2 = manager.getPosition(
+        (updatedLiquiditySalt2,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter2), LIQ_PARAM_SALT_2.tickLower, LIQ_PARAM_SALT_2.tickUpper, SALT
         );
-        updatedPositionSalt = manager.getPosition(
+        (updatedLiquiditySalt,,) = manager.getPositionInfo(
             simplePoolId, address(modifyLiquidityRouter), LIQ_PARAM_SALT.tickLower, LIQ_PARAM_SALT.tickUpper, SALT
         );
 
         // Assert only the liquidity from the second router is updated.
-        assertEq(updatedPositionSalt2.liquidity, uint128(uint256(LIQ_PARAM_SALT_2.liquidityDelta)));
-        assertEq(updatedPositionSalt.liquidity, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
+        assertEq(updatedLiquiditySalt2, uint128(uint256(LIQ_PARAM_SALT_2.liquidityDelta)));
+        assertEq(updatedLiquiditySalt, uint128(uint256(LIQ_PARAM_SALT.liquidityDelta)));
     }
 
     function test_gas_modifyLiquidity_newPosition() public {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
@@ -16,13 +16,14 @@ import {LiquidityMath} from "./LiquidityMath.sol";
 import {LPFeeLibrary} from "./LPFeeLibrary.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
+/// @notice a library with all actions that can be performed on a pool
 library Pool {
     using SafeCast for *;
     using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
     using Pool for State;
-    using ProtocolFeeLibrary for uint24;
+    using ProtocolFeeLibrary for *;
     using LPFeeLibrary for uint24;
     using CustomRevert for bytes4;
 
@@ -41,10 +42,6 @@ library Pool {
 
     /// @notice For the tick spacing, the tick has too much liquidity
     error TickLiquidityOverflow(int24 tick);
-
-    /// @notice Thrown when interacting with an uninitialized tick that must be initialized
-    /// @param tick The uninitialized tick
-    error TickNotInitialized(int24 tick);
 
     /// @notice Thrown when trying to initialize an already initialized pool
     error PoolAlreadyInitialized();
@@ -191,7 +188,7 @@ library Pool {
                 (uint256 feesOwed0, uint256 feesOwed1) =
                     position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
 
-                // Fees earned from LPing are added to the user's currency delta.
+                // Fees earned from LPing are calculated, and returned
                 feeDelta = toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
             }
 
@@ -307,12 +304,12 @@ library Pool {
                 ? params.lpFeeOverride.removeOverrideFlagAndValidate()
                 : slot0Start.lpFee();
 
-            swapFee = protocolFee == 0 ? lpFee : uint24(protocolFee).calculateSwapFee(lpFee);
+            swapFee = protocolFee == 0 ? lpFee : uint16(protocolFee).calculateSwapFee(lpFee);
         }
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (!exactInput && (swapFee == LPFeeLibrary.MAX_LP_FEE)) {
+        if (swapFee == LPFeeLibrary.MAX_LP_FEE && !exactInput) {
             InvalidFeeForExactOut.selector.revertWith();
         }
 
@@ -367,13 +364,13 @@ library Pool {
                 unchecked {
                     state.amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
-                state.amountCalculated = state.amountCalculated - (step.amountIn + step.feeAmount).toInt256();
+                state.amountCalculated -= (step.amountIn + step.feeAmount).toInt256();
             } else {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
                     state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
                 }
-                state.amountCalculated = state.amountCalculated + step.amountOut.toInt256();
+                state.amountCalculated += step.amountOut.toInt256();
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
@@ -381,6 +378,7 @@ library Pool {
                 unchecked {
                     // step.amountIn does not include the swap fee, as it's already been taken from it,
                     // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
+                    // this line cannot overflow due to limits on the size of protocolFee and params.amountSpecified
                     uint256 delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
@@ -413,7 +411,6 @@ library Pool {
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
 
-                // Equivalent to ``
                 unchecked {
                     state.tick = (zeroForOne && state.amountSpecifiedRemaining != 0) ? step.tickNext - 1 : step.tickNext;
                 }
@@ -512,7 +509,7 @@ library Pool {
 
         uint128 liquidityGrossBefore;
         int128 liquidityNetBefore;
-        assembly {
+        assembly ("memory-safe") {
             // load first slot of info which contains liquidityGross and liquidityNet packed
             // where the top 128 bits are liquidityNet and the bottom 128 bits are liquidityGross
             let liquidity := sload(info.slot)
@@ -536,7 +533,7 @@ library Pool {
 
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
         int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
-        assembly {
+        assembly ("memory-safe") {
             // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
             // So we can store them with a single sstore by packing them ourselves first
             sstore(
@@ -544,7 +541,7 @@ library Pool {
                 // bitwise OR to pack liquidityGrossAfter and liquidityNet
                 or(
                     // liquidityGross is in the low bits, upper bits are already 0
-                    liquidityGrossAfter,
+                    and(liquidityGrossAfter, 0xffffffffffffffffffffffffffffffff),
                     // shift liquidityNet to take the upper bits and lower bits get filled with 0
                     shl(128, liquidityNet)
                 )
@@ -566,7 +563,8 @@ library Pool {
         int24 MAX_TICK = TickMath.MAX_TICK;
         int24 MIN_TICK = TickMath.MIN_TICK;
         // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
-        assembly {
+        assembly ("memory-safe") {
+            tickSpacing := signextend(2, tickSpacing)
             let minTick := mul(sdiv(MIN_TICK, tickSpacing), tickSpacing)
             let maxTick := mul(sdiv(MAX_TICK, tickSpacing), tickSpacing)
             let numTicks := add(sdiv(sub(maxTick, minTick), tickSpacing), 1)
