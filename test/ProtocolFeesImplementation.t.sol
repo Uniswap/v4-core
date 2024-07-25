@@ -2,7 +2,7 @@
 pragma solidity ^0.8.15;
 
 import {Test} from "forge-std/Test.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {ProtocolFeesImplementation} from "../src/test/ProtocolFeesImplementation.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
