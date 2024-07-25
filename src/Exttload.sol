@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.24;
+pragma solidity ^0.8.24;
 
 import {IExttload} from "./interfaces/IExttload.sol";
 
@@ -16,24 +16,25 @@ abstract contract Exttload is IExttload {
 
     /// @inheritdoc IExttload
     function exttload(bytes32[] calldata slots) external view returns (bytes32[] memory) {
-        // since the function is external and enters a new call context and exits right
-        // after execution, Solidity's memory management convention can be disregarded
-        // and a direct slice of memory can be returned
         assembly ("memory-safe") {
-            // Copy the abi offset of dynamic array and the length of the array to memory.
-            calldatacopy(0, 0x04, 0x40)
+            let memptr := mload(0x40)
+            let start := memptr
+            // for abi encoding the response - the array will be found at 0x20
+            mstore(memptr, 0x20)
+            // next we store the length of the return array
+            mstore(add(memptr, 0x20), slots.length)
+            // update memptr to the first location to hold an array entry
+            memptr := add(memptr, 0x40)
             // A left bit-shift of 5 is equivalent to multiplying by 32 but costs less gas.
-            let end := add(0x40, shl(5, slots.length))
+            let end := add(memptr, shl(5, slots.length))
             let calldataptr := slots.offset
-            // Return values will start at 64 while calldata offset is 68.
-            for { let memptr := 0x40 } 1 {} {
+            for {} 1 {} {
                 mstore(memptr, tload(calldataload(calldataptr)))
                 memptr := add(memptr, 0x20)
                 calldataptr := add(calldataptr, 0x20)
                 if iszero(lt(memptr, end)) { break }
             }
-            // The end offset is also the length of the returndata.
-            return(0, end)
+            return(start, sub(end, start))
         }
     }
 }
