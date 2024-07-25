@@ -12,7 +12,7 @@ import {PoolId} from "src/types/PoolId.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {Constants} from "./utils/Constants.sol";
 import {Currency} from "src/types/Currency.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {StateLibrary} from "src/libraries/StateLibrary.sol";
 import {JavascriptFfi} from "./utils/JavascriptFfi.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
