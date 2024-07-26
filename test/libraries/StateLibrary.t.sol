@@ -12,7 +12,7 @@ import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
 import {CurrencyLibrary, Currency} from "../../src/types/Currency.sol";
 import {Deployers} from "../utils/Deployers.sol";
-import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 import {Pool} from "../../src/libraries/Pool.sol";
 import {TickBitmap} from "../../src/libraries/TickBitmap.sol";
 import {FixedPoint128} from "../../src/libraries/FixedPoint128.sol";

@@ -1,8 +1,8 @@
 [profile.default]
-optimizer_runs = 800
-via_ir = false
+optimizer_runs = 44444444
+via_ir = true
 ffi = true
-fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./out"}]
+fs_permissions = [{ access = "read-write", path = ".forge-snapshots/"}, { access = "read", path = "./out"}, {access = "read", path = "./test/bin"}]
 solc = "0.8.26"
 evm_version = "cancun"
 
@@ -15,5 +15,10 @@ runs = 10000
 
 [profile.ci.fuzz]
 runs = 100000
+
+[profile.debug]
+via_ir = false
+optimizer_runs = 200
+fuzz.runs = 100
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

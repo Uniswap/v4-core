@@ -18,7 +18,6 @@ library Constants {
     /// 0011 1111 1111 1111
     address payable constant ALL_HOOKS = payable(0x0000000000000000000000000000000000003fFF);
 
-    uint256 constant POOL_SLOT = 10;
     uint256 constant TICKS_OFFSET = 4;
 
     uint24 constant FEE_LOW = 500;

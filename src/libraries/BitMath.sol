@@ -1,98 +1,49 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 /// @title BitMath
 /// @dev This library provides functionality for computing bit properties of an unsigned integer
+/// @author Solady (https://github.com/Vectorized/solady/blob/8200a70e8dc2a77ecb074fc2e99a2a0d36547522/src/utils/LibBit.sol)
 library BitMath {
     /// @notice Returns the index of the most significant bit of the number,
     ///     where the least significant bit is at index 0 and the most significant bit is at index 255
-    /// @dev The function satisfies the property:
-    ///     x >= 2**mostSignificantBit(x) and x < 2**(mostSignificantBit(x)+1)
     /// @param x the value for which to compute the most significant bit, must be greater than 0
     /// @return r the index of the most significant bit
     function mostSignificantBit(uint256 x) internal pure returns (uint8 r) {
         require(x > 0);
 
-        unchecked {
-            if (x >= 0x100000000000000000000000000000000) {
-                x >>= 128;
-                r += 128;
-            }
-            if (x >= 0x10000000000000000) {
-                x >>= 64;
-                r += 64;
-            }
-            if (x >= 0x100000000) {
-                x >>= 32;
-                r += 32;
-            }
-            if (x >= 0x10000) {
-                x >>= 16;
-                r += 16;
-            }
-            if (x >= 0x100) {
-                x >>= 8;
-                r += 8;
-            }
-            if (x >= 0x10) {
-                x >>= 4;
-                r += 4;
-            }
-            if (x >= 0x4) {
-                x >>= 2;
-                r += 2;
-            }
-            if (x >= 0x2) r += 1;
+        assembly ("memory-safe") {
+            r := or(shl(8, iszero(x)), shl(7, lt(0xffffffffffffffffffffffffffffffff, x)))
+            r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
+            r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
+            r := or(r, shl(4, lt(0xffff, shr(r, x))))
+            r := or(r, shl(3, lt(0xff, shr(r, x))))
+            // forgefmt: disable-next-item
+            r := or(r, byte(and(0x1f, shr(shr(r, x), 0x8421084210842108cc6318c6db6d54be)),
+                0x0706060506020504060203020504030106050205030304010505030400000000))
         }
     }
 
     /// @notice Returns the index of the least significant bit of the number,
     ///     where the least significant bit is at index 0 and the most significant bit is at index 255
-    /// @dev The function satisfies the property:
-    ///     (x & 2**leastSignificantBit(x)) != 0 and (x & (2**(leastSignificantBit(x)) - 1)) == 0)
     /// @param x the value for which to compute the least significant bit, must be greater than 0
     /// @return r the index of the least significant bit
     function leastSignificantBit(uint256 x) internal pure returns (uint8 r) {
         require(x > 0);
 
-        unchecked {
-            r = 255;
-            if (x & type(uint128).max > 0) {
-                r -= 128;
-            } else {
-                x >>= 128;
-            }
-            if (x & type(uint64).max > 0) {
-                r -= 64;
-            } else {
-                x >>= 64;
-            }
-            if (x & type(uint32).max > 0) {
-                r -= 32;
-            } else {
-                x >>= 32;
-            }
-            if (x & type(uint16).max > 0) {
-                r -= 16;
-            } else {
-                x >>= 16;
-            }
-            if (x & type(uint8).max > 0) {
-                r -= 8;
-            } else {
-                x >>= 8;
-            }
-            if (x & 0xf > 0) {
-                r -= 4;
-            } else {
-                x >>= 4;
-            }
-            if (x & 0x3 > 0) {
-                r -= 2;
-            } else {
-                x >>= 2;
-            }
-            if (x & 0x1 > 0) r -= 1;
+        assembly ("memory-safe") {
+            // Isolate the least significant bit.
+            x := and(x, add(not(x), 1))
+            // For the upper 3 bits of the result, use a De Bruijn-like lookup.
+            // Credit to adhusson: https://blog.adhusson.com/cheap-find-first-set-evm/
+            // forgefmt: disable-next-item
+            r := shl(5, shr(252, shl(shl(2, shr(250, mul(x,
+                0xb6db6db6ddddddddd34d34d349249249210842108c6318c639ce739cffffffff))),
+                0x8040405543005266443200005020610674053026020000107506200176117077)))
+            // For the lower 5 bits of the result, use a De Bruijn lookup.
+            // forgefmt: disable-next-item
+            r := or(r, byte(and(div(0xd76453e0, shr(r, x)), 0x1f),
+                0x001f0d1e100c1d070f090b19131c1706010e11080a1a141802121b1503160405))
         }
     }
 }

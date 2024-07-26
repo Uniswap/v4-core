@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.0;
 
 import {IERC6909Claims} from "./interfaces/external/IERC6909Claims.sol";
 
@@ -9,24 +9,14 @@ import {IERC6909Claims} from "./interfaces/external/IERC6909Claims.sol";
 /// @dev This contract has been modified from the implementation at the above link.
 abstract contract ERC6909 is IERC6909Claims {
     /*//////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    event OperatorSet(address indexed owner, address indexed operator, bool approved);
-
-    event Approval(address indexed owner, address indexed spender, uint256 indexed id, uint256 amount);
-
-    event Transfer(address caller, address indexed from, address indexed to, uint256 indexed id, uint256 amount);
-
-    /*//////////////////////////////////////////////////////////////
                              ERC6909 STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    mapping(address => mapping(address => bool)) public isOperator;
+    mapping(address owner => mapping(address operator => bool isOperator)) public isOperator;
 
-    mapping(address => mapping(uint256 => uint256)) public balanceOf;
+    mapping(address owner => mapping(uint256 id => uint256 balance)) public balanceOf;
 
-    mapping(address => mapping(address => mapping(uint256 => uint256))) public allowance;
+    mapping(address owner => mapping(address spender => mapping(uint256 id => uint256 amount))) public allowance;
 
     /*//////////////////////////////////////////////////////////////
                               ERC6909 LOGIC

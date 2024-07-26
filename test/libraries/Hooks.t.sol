@@ -8,7 +8,7 @@ import {Hooks} from "../../src/libraries/Hooks.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {MockHooks} from "../../src/test/MockHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {Currency} from "../../src/types/Currency.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
@@ -21,7 +21,7 @@ import {PoolKey} from "../../src/types/PoolKey.sol";
 import {IERC20Minimal} from "../../src/interfaces/external/IERC20Minimal.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
 import {BaseTestHooks} from "../../src/test/BaseTestHooks.sol";
-import {EmptyRevertHook} from "../../src/test/EmptyRevertHook.sol";
+import {EmptyRevertContract} from "../../src/test/EmptyRevertContract.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Constants} from "../utils/Constants.sol";
 
@@ -943,12 +943,6 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         );
     }
 
-    function test_gas_hookShouldCallBeforeSwap() public {
-        snapStart("HooksShouldCallBeforeSwap");
-        IHooks(address(0)).hasPermission(Hooks.BEFORE_SWAP_FLAG);
-        snapEnd();
-    }
-
     function test_isValidHookAddress_valid_anyFlags() public pure {
         assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000002000), 3000));
         assertTrue(Hooks.isValidHookAddress(IHooks(0x0000000000000000000000000000000000001000), 3000));
@@ -1016,18 +1010,22 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(BaseTestHooks.HookNotImplemented.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Hooks.FailedHookCall.selector, abi.encodeWithSelector(BaseTestHooks.HookNotImplemented.selector)
+            )
+        );
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
     }
 
-    function test_callHook_revertsWithInternalErrorHookCallFailed() public {
+    function test_callHook_revertsWithInternalErrorFailedHookCall() public {
         // This test executes _callHook through beforeSwap.
-        EmptyRevertHook emptyRevertingHookImpl = new EmptyRevertHook();
+        EmptyRevertContract emptyRevertingHookImpl = new EmptyRevertContract();
         address beforeSwapFlag = address(uint160(Hooks.BEFORE_SWAP_FLAG));
         vm.etch(beforeSwapFlag, address(emptyRevertingHookImpl).code);
-        EmptyRevertHook revertingHook = EmptyRevertHook(beforeSwapFlag);
+        EmptyRevertContract revertingHook = EmptyRevertContract(beforeSwapFlag);
 
-        PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(revertingHook));
+        PoolKey memory key = PoolKey(currency0, currency1, 0, 60, IHooks(address(revertingHook)));
         manager.initialize(key, SQRT_PRICE_1_1, new bytes(0));
 
         IPoolManager.SwapParams memory swapParams =
@@ -1036,7 +1034,7 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(Hooks.FailedHookCall.selector);
+        vm.expectRevert(abi.encodeWithSelector(Hooks.FailedHookCall.selector, new bytes(0)));
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
     }
 }

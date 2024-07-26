@@ -71,4 +71,12 @@ contract PositionTest is Test {
         assertEq(position.feeGrowthInside0LastX128, newFeeGrowthInside0X128);
         assertEq(position.feeGrowthInside1LastX128, newFeeGrowthInside1X128);
     }
+
+    function test_fuzz_calculatePositionKey(address owner, int24 tickLower, int24 tickUpper, bytes32 salt)
+        public
+        pure
+    {
+        bytes32 positionKey = Position.calculatePositionKey(owner, tickLower, tickUpper, salt);
+        assertEq(positionKey, keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt)));
+    }
 }

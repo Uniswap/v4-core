@@ -8,5 +8,5 @@
     "typeRoots": ["./typechain", "./node_modules/@types"],
     "types": ["@nomiclabs/hardhat-ethers"]
   },
-  "include": ["./test"],
+  "include": ["./test"]
 }
