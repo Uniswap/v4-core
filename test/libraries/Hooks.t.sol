@@ -8,7 +8,7 @@ import {Hooks} from "../../src/libraries/Hooks.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {MockHooks} from "../../src/test/MockHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {Currency} from "../../src/types/Currency.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
