@@ -15,7 +15,7 @@ import {Slot0} from "../../src/types/Slot0.sol";
 import {SafeCast} from "../../src/libraries/SafeCast.sol";
 import {ProtocolFeeLibrary} from "../../src/libraries/ProtocolFeeLibrary.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {GasSnapshot} from "forge-gas-snapshot/src/GasSnapshot.sol";
 
 contract PoolTest is Test, GasSnapshot {
     using Pool for Pool.State;

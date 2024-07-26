@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {SqrtPriceMath} from "../../src/libraries/SqrtPriceMath.sol";
 import {SwapMath} from "../../src/libraries/SwapMath.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {GasSnapshot} from "forge-gas-snapshot/src/GasSnapshot.sol";
 
 contract SwapMathTest is Test, GasSnapshot {
     uint160 private constant SQRT_PRICE_1_1 = 79228162514264337593543950336;

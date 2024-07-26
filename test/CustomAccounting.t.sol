@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {GasSnapshot} from "forge-gas-snapshot/src/GasSnapshot.sol";
 import {Deployers} from "./utils/Deployers.sol";
 import {FeeTakingHook} from "../src/test/FeeTakingHook.sol";
 import {CustomCurveHook} from "../src/test/CustomCurveHook.sol";
