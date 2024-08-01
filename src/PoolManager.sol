@@ -20,7 +20,7 @@ import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "./types/Balance
 import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
-import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
+import {NonzeroDeltaCount} from "./libraries/NonzeroDeltaCount.sol";
 import {Reserves} from "./libraries/Reserves.sol";
 import {Extsload} from "./Extsload.sol";
 import {Exttload} from "./Exttload.sol";
@@ -112,7 +112,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = IUnlockCallback(msg.sender).unlockCallback(data);
 
-        if (NonZeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
+        if (NonzeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
         Lock.lock();
     }
 
@@ -325,9 +325,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         int256 next = current + delta;
 
         if (next == 0) {
-            NonZeroDeltaCount.decrement();
+            NonzeroDeltaCount.decrement();
         } else if (current == 0) {
-            NonZeroDeltaCount.increment();
+            NonzeroDeltaCount.increment();
         }
 
         currency.setDelta(target, next);

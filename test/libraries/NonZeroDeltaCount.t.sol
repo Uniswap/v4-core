@@ -2,45 +2,45 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {NonZeroDeltaCount} from "../../src/libraries/NonZeroDeltaCount.sol";
+import {NonzeroDeltaCount} from "../../src/libraries/NonzeroDeltaCount.sol";
 
-contract NonZeroDeltaCountTest is Test {
+contract NonzeroDeltaCountTest is Test {
     function test_incrementNonzeroDeltaCount() public {
-        assertEq(NonZeroDeltaCount.read(), 0);
-        NonZeroDeltaCount.increment();
-        assertEq(NonZeroDeltaCount.read(), 1);
+        assertEq(NonzeroDeltaCount.read(), 0);
+        NonzeroDeltaCount.increment();
+        assertEq(NonzeroDeltaCount.read(), 1);
     }
 
     function test_decrementNonzeroDeltaCount() public {
-        assertEq(NonZeroDeltaCount.read(), 0);
-        NonZeroDeltaCount.increment();
-        assertEq(NonZeroDeltaCount.read(), 1);
-        NonZeroDeltaCount.decrement();
-        assertEq(NonZeroDeltaCount.read(), 0);
+        assertEq(NonzeroDeltaCount.read(), 0);
+        NonzeroDeltaCount.increment();
+        assertEq(NonzeroDeltaCount.read(), 1);
+        NonzeroDeltaCount.decrement();
+        assertEq(NonzeroDeltaCount.read(), 0);
     }
 
     // Reading from right to left. Bit of 0: call increase. Bit of 1: call decrease.
     // The library allows over over/underflow so we dont check for that here
-    function test_fuzz_nonZeroDeltaCount(uint256 instructions) public {
-        assertEq(NonZeroDeltaCount.read(), 0);
+    function test_fuzz_nonzeroDeltaCount(uint256 instructions) public {
+        assertEq(NonzeroDeltaCount.read(), 0);
         uint256 expectedCount;
         for (uint256 i = 0; i < 256; i++) {
             if ((instructions & (1 << i)) == 0) {
-                NonZeroDeltaCount.increment();
+                NonzeroDeltaCount.increment();
                 unchecked {
                     expectedCount++;
                 }
             } else {
-                NonZeroDeltaCount.decrement();
+                NonzeroDeltaCount.decrement();
                 unchecked {
                     expectedCount--;
                 }
             }
-            assertEq(NonZeroDeltaCount.read(), expectedCount);
+            assertEq(NonzeroDeltaCount.read(), expectedCount);
         }
     }
 
-    function test_nonZeroDeltaCountSlot() public pure {
-        assertEq(bytes32(uint256(keccak256("NonzeroDeltaCount")) - 1), NonZeroDeltaCount.NONZERO_DELTA_COUNT_SLOT);
+    function test_nonzeroDeltaCountSlot() public pure {
+        assertEq(bytes32(uint256(keccak256("NonzeroDeltaCount")) - 1), NonzeroDeltaCount.NONZERO_DELTA_COUNT_SLOT);
     }
 }
