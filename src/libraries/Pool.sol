@@ -396,7 +396,7 @@ library Pool {
             // shift tick if we reached the next price
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
-                if (step.initialized) {
+                if (step.initialized && (state.amountSpecifiedRemaining != 0 || !zeroForOne)) {
                     (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = zeroForOne
                         ? (state.feeGrowthGlobalX128, self.feeGrowthGlobal1X128)
                         : (self.feeGrowthGlobal0X128, state.feeGrowthGlobalX128);
@@ -411,14 +411,8 @@ library Pool {
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
 
-                // Equivalent to `state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;`
                 unchecked {
-                    // cannot cast a bool to an int24 in Solidity
-                    int24 _zeroForOne;
-                    assembly ("memory-safe") {
-                        _zeroForOne := and(zeroForOne, 0xff)
-                    }
-                    state.tick = step.tickNext - _zeroForOne;
+                    state.tick = (zeroForOne && state.amountSpecifiedRemaining != 0) ? step.tickNext - 1 : step.tickNext;
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
