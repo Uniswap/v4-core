@@ -396,7 +396,7 @@ library Pool {
             // shift tick if we reached the next price
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
-                if (step.initialized && state.amountSpecifiedRemaining != 0) {
+                if (step.initialized && (state.amountSpecifiedRemaining != 0 || !zeroForOne)) {
                     (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = zeroForOne
                         ? (state.feeGrowthGlobalX128, self.feeGrowthGlobal1X128)
                         : (self.feeGrowthGlobal0X128, state.feeGrowthGlobalX128);
