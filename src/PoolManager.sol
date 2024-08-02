@@ -87,11 +87,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using CurrencyReserves for Currency;
     using CustomRevert for bytes4;
 
-    /// @inheritdoc IPoolManager
-    int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
+    int24 private constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
-    /// @inheritdoc IPoolManager
-    int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
+    int24 private constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
     mapping(PoolId id => Pool.State) internal _pools;
 

@@ -62,10 +62,10 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // tested in Hooks.t.sol
         key0.hooks = IHooks(Constants.ADDRESS_ZERO);
 
-        if (key0.tickSpacing > manager.MAX_TICK_SPACING()) {
+        if (key0.tickSpacing > TickMath.MAX_TICK_SPACING) {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector, key0.tickSpacing));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
-        } else if (key0.tickSpacing < manager.MIN_TICK_SPACING()) {
+        } else if (key0.tickSpacing < TickMath.MIN_TICK_SPACING) {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, key0.tickSpacing));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (key0.currency0 >= key0.currency1) {
@@ -157,7 +157,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        uninitializedKey.tickSpacing = manager.MAX_TICK_SPACING();
+        uninitializedKey.tickSpacing = TickMath.MAX_TICK_SPACING;
 
         int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
@@ -309,7 +309,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        uninitializedKey.tickSpacing = manager.MAX_TICK_SPACING() + 1;
+        uninitializedKey.tickSpacing = TickMath.MAX_TICK_SPACING + 1;
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector, uninitializedKey.tickSpacing));
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
