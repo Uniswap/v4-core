@@ -36,7 +36,7 @@ library CurrencyLibrary {
 
     /// @notice Thrown when an ERC20 transfer fails
     /// @param reason bubbled up revert reason
-    error Wrap__ERC20TransferFailed(address token, address recipient, bytes reason);
+    error Wrap__ERC20TransferFailed(address token, bytes reason);
 
     /// @notice A constant to represent the native currency
     Currency public constant NATIVE = Currency.wrap(address(0));
