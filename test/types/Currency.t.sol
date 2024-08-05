@@ -121,7 +121,13 @@ contract TestCurrency is Test {
         // This contract reverts with no data
         EmptyRevertContract emptyRevertingToken = new EmptyRevertContract();
         // the token reverts with no data, so our custom error will be emitted instead
-        vm.expectRevert(abi.encodeWithSelector(CurrencyLibrary.ERC20TransferFailed.selector, new bytes(0)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CurrencyLibrary.Wrap__ERC20TransferFailed.selector,
+                Currency.unwrap(Currency.wrap(address(emptyRevertingToken))),
+                new bytes(0)
+            )
+        );
         currencyTest.transfer(Currency.wrap(address(emptyRevertingToken)), otherAddress, 100);
     }
 
@@ -134,7 +140,9 @@ contract TestCurrency is Test {
             assertEq(otherAddress.balance, balanceBefore + amount);
             assertEq(address(currencyTest).balance, contractBalanceBefore - amount);
         } else {
-            vm.expectRevert(abi.encodeWithSelector(CurrencyLibrary.NativeTransferFailed.selector, new bytes(0)));
+            vm.expectRevert(
+                abi.encodeWithSelector(CurrencyLibrary.Wrap__NativeTransferFailed.selector, otherAddress, new bytes(0))
+            );
             currencyTest.transfer(nativeCurrency, otherAddress, amount);
             assertEq(otherAddress.balance, balanceBefore);
         }
@@ -152,7 +160,11 @@ contract TestCurrency is Test {
         } else {
             // the token reverts with an overflow error message, so this is bubbled up
             vm.expectRevert(
-                abi.encodeWithSelector(CurrencyLibrary.ERC20TransferFailed.selector, stdError.arithmeticError)
+                abi.encodeWithSelector(
+                    CurrencyLibrary.Wrap__ERC20TransferFailed.selector,
+                    Currency.unwrap(erc20Currency),
+                    stdError.arithmeticError
+                )
             );
             currencyTest.transfer(erc20Currency, otherAddress, amount);
             assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), balanceBefore);

@@ -75,7 +75,9 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.FailedHookCall.selector, abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+                Hooks.Wrap__FailedHookCall.selector,
+                address(dynamicFeesHooks),
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
             )
         );
         manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
@@ -111,7 +113,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         // afterInitialize will try to update the fee, and fail
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.FailedHookCall.selector,
+                Hooks.Wrap__FailedHookCall.selector,
+                address(dynamicFeesHooks),
                 abi.encodeWithSelector(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector)
             )
         );
@@ -129,7 +132,9 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.FailedHookCall.selector, abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+                Hooks.Wrap__FailedHookCall.selector,
+                address(dynamicFeesHooks),
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
             )
         );
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
