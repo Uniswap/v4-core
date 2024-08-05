@@ -75,7 +75,7 @@ library CustomRevert {
     }
 
     /// @notice bubble up the revert message returned by a call and revert with the selector provided
-    /// @dev this function should only be used with custom errors of the type `CustomError(address contract, bytes revertReason)`
+    /// @dev this function should only be used with custom errors of the type `CustomError(address target, bytes revertReason)`
     function bubbleUpAndRevertWith(bytes4 selector, address addr) internal pure {
         assembly ("memory-safe") {
             let size := returndatasize()
