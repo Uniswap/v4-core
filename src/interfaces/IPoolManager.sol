@@ -73,8 +73,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param tickLower The lower tick of the position
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
+    /// @param salt The extra data to make positions unique
     event ModifyLiquidity(
-        PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
+        PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta, bytes32 salt
     );
 
     /// @notice Emitted for swaps between currency0 and currency1
