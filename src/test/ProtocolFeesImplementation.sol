@@ -5,12 +5,11 @@ import {ProtocolFees} from "../ProtocolFees.sol";
 import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Currency} from "../types/Currency.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {PoolId} from "../types/PoolId.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {Slot0} from "../types/Slot0.sol";
 
 contract ProtocolFeesImplementation is ProtocolFees {
-    using PoolIdLibrary for PoolKey;
 
     mapping(PoolId id => Pool.State) internal _pools;
 

@@ -7,7 +7,7 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {PoolId} from "../types/PoolId.sol";
 import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
@@ -20,7 +20,6 @@ import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
     using CurrencySettler for Currency;
-    using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;

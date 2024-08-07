@@ -6,7 +6,7 @@ import {Pool} from "../libraries/Pool.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 import {Position} from "../libraries/Position.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
-import {Currency, CurrencyLibrary} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {NoDelegateCall} from "../NoDelegateCall.sol";
@@ -15,7 +15,7 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {ProtocolFees} from "../ProtocolFees.sol";
 import {ERC6909Claims} from "../ERC6909Claims.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {PoolId} from "../types/PoolId.sol";
 import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 import {Lock} from "../libraries/Lock.sol";
@@ -28,7 +28,6 @@ import {CustomRevert} from "../libraries/CustomRevert.sol";
 
 /// @notice A proxy pool manager that delegates calls to the real/delegate pool manager
 contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload, Exttload {
-    using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;

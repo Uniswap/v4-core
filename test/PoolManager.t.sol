@@ -24,7 +24,7 @@ import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolEmptyUnlockTest} from "../src/test/PoolEmptyUnlockTest.sol";
 import {Action} from "../src/test/PoolNestedActionsTest.sol";
-import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {Position} from "../src/libraries/Position.sol";
 import {Constants} from "./utils/Constants.sol";
@@ -36,7 +36,6 @@ import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
-    using PoolIdLibrary for PoolKey;
     using LPFeeLibrary for uint24;
     using SafeCast for *;
     using ProtocolFeeLibrary for uint24;

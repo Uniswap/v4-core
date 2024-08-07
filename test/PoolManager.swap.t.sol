@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import {V3Helper, IUniswapV3Pool, IUniswapV3MintCallback, IUniswapV3SwapCallback} from "./utils/V3Helper.sol";
 import {Deployers} from "./utils/Deployers.sol";
-import {Currency, CurrencyLibrary} from "../src/types/Currency.sol";
+import {Currency} from "../src/types/Currency.sol";
 import {Fuzzers} from "../src/test/Fuzzers.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
@@ -17,7 +17,6 @@ import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
 
 abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallback, IUniswapV3SwapCallback {
-    using CurrencyLibrary for Currency;
 
     function setUp() public virtual override {
         super.setUp();

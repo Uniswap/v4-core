@@ -11,7 +11,7 @@ import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {Deployers} from "../test/utils/Deployers.sol";
-import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Constants} from "../test/utils/Constants.sol";
 import {
@@ -23,7 +23,6 @@ import {
 } from "../src/test/ProtocolFeeControllerTest.sol";
 
 contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
-    using PoolIdLibrary for PoolKey;
     using ProtocolFeeLibrary for uint24;
 
     event ProtocolFeeControllerUpdated(address indexed feeController);
