@@ -5,7 +5,7 @@ import {Hooks} from "../libraries/Hooks.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
+import {CurrencySettlerTestUtil} from "../../test/utils/CurrencySettlerTestUtil.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, toBalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
@@ -16,7 +16,7 @@ import {BeforeSwapDelta, toBeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
 contract DeltaReturningHook is BaseTestHooks {
     using Hooks for IHooks;
-    using CurrencySettler for Currency;
+    using CurrencySettlerTestUtil for Currency;
 
     IPoolManager immutable manager;
 

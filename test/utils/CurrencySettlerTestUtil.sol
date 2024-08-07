@@ -9,7 +9,9 @@ import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 /// To settle a positive delta (a credit to the user), a user may take or mint.
 /// To settle a negative delta (a debt on the user), a user make transfer or burn to pay off a debt.
 /// @dev Note that sync() is called before any erc-20 transfer in `settle`.
-library CurrencySettler {
+/// @dev THIS CONTRACT IS NOT SECURE, IT IS FOR TESTING PURPOSES, DO NOT USE IT IN PROD
+/// For an equivalent library, see v4-periphery/contracts/libraries/CurrencySettlerTestUtil.sol
+library CurrencySettlerTestUtil {
     /// @notice Settle (pay) a currency to the PoolManager
     /// @param currency Currency to settle
     /// @param manager IPoolManager to settle to

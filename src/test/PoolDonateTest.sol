@@ -8,10 +8,10 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
-import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
+import {CurrencySettlerTestUtil} from "../../test/utils/CurrencySettlerTestUtil.sol";
 
 contract PoolDonateTest is PoolTestBase {
-    using CurrencySettler for Currency;
+    using CurrencySettlerTestUtil for Currency;
     using Hooks for IHooks;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}

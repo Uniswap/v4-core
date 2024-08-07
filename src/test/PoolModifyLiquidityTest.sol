@@ -10,11 +10,11 @@ import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
-import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
+import {CurrencySettlerTestUtil} from "../../test/utils/CurrencySettlerTestUtil.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
 
 contract PoolModifyLiquidityTest is PoolTestBase {
-    using CurrencySettler for Currency;
+    using CurrencySettlerTestUtil for Currency;
     using Hooks for IHooks;
     using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
