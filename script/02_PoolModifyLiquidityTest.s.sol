@@ -5,13 +5,14 @@ import {Script, console2} from "forge-std/Script.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 
-contract PoolModifyLiquidityTestScript is Script {
+import "forge-std/console2.sol";
 
-    address poolManager = 0xc021A7Deb4a939fd7E661a0669faB5ac7Ba2D5d6;
+contract DeployPoolModifyLiquidityTest is Script {
     function setUp() public {}
 
-    function run() public {
+    function run(address poolManager) public returns (PoolModifyLiquidityTest testModifyRouter) {
         vm.broadcast();
-        new PoolModifyLiquidityTest(IPoolManager(poolManager));
+        testModifyRouter = new PoolModifyLiquidityTest(IPoolManager(poolManager));
+        console2.log("PoolModifyLiquidityTest", address(testModifyRouter));
     }
 }

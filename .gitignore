@@ -6,3 +6,4 @@ typechain/
 foundry-out/
 .vscode/
 out/
+**/run-latest.json

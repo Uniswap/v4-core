@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {DeployPoolManager} from "../../script/DeployPoolManager.s.sol";
+import {DeployPoolManager} from "../../script/01_PoolManager.s.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {Test} from "forge-std/Test.sol";
 
