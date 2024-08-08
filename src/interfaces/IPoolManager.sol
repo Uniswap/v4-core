@@ -73,8 +73,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param tickLower The lower tick of the position
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
+    /// @param salt The extra data to make positions unique
     event ModifyLiquidity(
-        PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
+        PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta, bytes32 salt
     );
 
     /// @notice Emitted for swaps between currency0 and currency1
@@ -96,12 +97,6 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         int24 tick,
         uint24 fee
     );
-
-    /// @return int24 the constant representing the maximum tickSpacing for an initialized pool key
-    function MAX_TICK_SPACING() external view returns (int24);
-
-    /// @return int24 the constant representing the minimum tickSpacing for an initialized pool key
-    function MIN_TICK_SPACING() external view returns (int24);
 
     /// @notice All interactions on the contract that account deltas require unlocking. A caller that calls `unlock` must implement
     /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
