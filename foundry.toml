@@ -21,4 +21,11 @@ via_ir = false
 optimizer_runs = 200
 fuzz.runs = 100
 
+[profile.statefulfuzz]
+solc = "0.8.24"
+via_ir = false
+ffi = true
+optimizer_runs = 0
+fuzz.runs = 0
+
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
