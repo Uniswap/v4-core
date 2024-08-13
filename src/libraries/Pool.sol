@@ -507,17 +507,8 @@ library Pool {
     {
         TickInfo storage info = self.ticks[tick];
 
-        uint128 liquidityGrossBefore;
-        int128 liquidityNetBefore;
-        assembly ("memory-safe") {
-            // load first slot of info which contains liquidityGross and liquidityNet packed
-            // where the top 128 bits are liquidityNet and the bottom 128 bits are liquidityGross
-            let liquidity := sload(info.slot)
-            // slice off top 128 bits of liquidity (liquidityNet) to get just liquidityGross
-            liquidityGrossBefore := shr(128, shl(128, liquidity))
-            // signed shift right 128 bits to get just liquidityNet
-            liquidityNetBefore := sar(128, liquidity)
-        }
+        uint128 liquidityGrossBefore = info.liquidityGross;
+        int128 liquidityNetBefore = info.liquidityNet;
 
         liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
