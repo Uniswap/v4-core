@@ -515,12 +515,13 @@ library Pool {
 
         uint128 liquidityGrossBefore;
         int128 liquidityNetBefore;
+
         assembly ("memory-safe") {
             // load first slot of info which contains liquidityGross and liquidityNet packed
             // where the top 128 bits are liquidityNet and the bottom 128 bits are liquidityGross
             let liquidity := sload(info.slot)
             // slice off top 128 bits of liquidity (liquidityNet) to get just liquidityGross
-            liquidityGrossBefore := shr(128, shl(128, liquidity))
+            liquidityGrossBefore := and(liquidity, 0xffffffffffffffffffffffffffffffff)
             // signed shift right 128 bits to get just liquidityNet
             liquidityNetBefore := sar(128, liquidity)
         }
