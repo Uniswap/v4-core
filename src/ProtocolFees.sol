@@ -85,11 +85,10 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
                 success := and(success, eq(returndatasize(), 32))
 
                 // load the return data if success is true
+                // if the returndatasize != 32, success is false, so we can load 32 bytes
                 if success {
-                    let fmp := mload(0x40)
-                    returndatacopy(fmp, 0, returndatasize())
-                    returnData := mload(fmp)
-                    mstore(fmp, 0)
+                    returndatacopy(0, 0, 32)
+                    returnData := mload(0)
                 }
             }
 
