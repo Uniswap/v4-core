@@ -298,7 +298,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         // Because input is `uint256`, only positive amounts can be cleared.
         int128 amountDelta = amount.toInt128();
         if (amountDelta != current) MustClearExactPositiveDelta.selector.revertWith();
-        _accountDelta(currency, -(amountDelta), msg.sender);
+        // negation must be safe as amountDelta is positive
+        unchecked {
+            _accountDelta(currency, -(amountDelta), msg.sender);
+        }
     }
 
     /// @inheritdoc IPoolManager
