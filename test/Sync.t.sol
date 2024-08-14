@@ -40,7 +40,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getReserves(currency2), type(uint256).max);
     }
 
-    function test_sync_balanceIsNonZero() public noIsolate {
+    function test_sync_balanceIsNonzero() public noIsolate {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
         assertGt(currency0Balance, uint256(0));
 
