@@ -16,7 +16,7 @@ import {Deployers} from "./utils/Deployers.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicReturnFeeTestHook} from "../src/test/DynamicReturnFeeTestHook.sol";
 import {Currency} from "../src/types/Currency.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {FullMath} from "../src/libraries/FullMath.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
@@ -32,7 +32,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
     event Swap(
         PoolId indexed poolId,
-        address sender,
+        address indexed sender,
         int128 amount0,
         int128 amount1,
         uint160 sqrtPriceX96,
@@ -68,7 +68,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         int256 amountSpecified = -10000;
         BalanceDelta result;
         if (actualFee > LPFeeLibrary.MAX_LP_FEE) {
-            vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+            vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, actualFee));
             result = swap(key, true, amountSpecified, ZERO_BYTES);
             return;
         } else {
@@ -157,15 +157,16 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolSwapFee(key), initialFee);
     }
 
-    function test_dynamicReturnSwapFee_revertIfFeeTooLarge() public {
+    function test_dynamicReturnSwapFee_revertIfLPFeeTooLarge() public {
         assertEq(_fetchPoolSwapFee(key), 0);
 
         // hook adds the override flag
-        dynamicReturnFeesHook.setFee(1000001);
+        uint24 fee = 1000001;
+        dynamicReturnFeesHook.setFee(fee);
 
         // a large fee is not used
         int256 amountSpecified = -10000;
-        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee));
         swap(key, true, amountSpecified, ZERO_BYTES);
     }
 
