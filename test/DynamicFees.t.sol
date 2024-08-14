@@ -16,7 +16,7 @@ import {Deployers} from "./utils/Deployers.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
 import {Currency} from "../src/types/Currency.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
@@ -39,7 +39,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     event Swap(
         PoolId indexed poolId,
-        address sender,
+        address indexed sender,
         int128 amount0,
         int128 amount1,
         uint160 sqrtPriceX96,
@@ -70,9 +70,16 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function test_updateDynamicLPFee_afterInitialize_failsWithTooLargeFee() public {
         key.tickSpacing = 30;
-        dynamicFeesHooks.setFee(1000001);
+        uint24 fee = 1000001;
+        dynamicFeesHooks.setFee(fee);
 
-        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Hooks.Wrap__FailedHookCall.selector,
+                address(dynamicFeesHooks),
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+            )
+        );
         manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
@@ -104,19 +111,32 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(123);
 
         // afterInitialize will try to update the fee, and fail
-        vm.expectRevert(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Hooks.Wrap__FailedHookCall.selector,
+                address(dynamicFeesHooks),
+                abi.encodeWithSelector(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector)
+            )
+        );
         manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     function test_updateDynamicLPFee_beforeSwap_failsWithTooLargeFee() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
+        uint24 fee = 1000001;
         dynamicFeesHooks.setFee(1000001);
 
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(LPFeeLibrary.FeeTooLarge.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Hooks.Wrap__FailedHookCall.selector,
+                address(dynamicFeesHooks),
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+            )
+        );
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);
     }
 
