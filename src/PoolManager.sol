@@ -330,7 +330,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function _settle(address recipient) internal returns (uint256 paid) {
         Currency currency = CurrencyReserves.getSyncedCurrency();
-        // If not previously synced, expects native currency to be settled because CurrencyLibrary.ADDRESS_ZERO == address(0)
+        // if not previously synced, expects native currency to be settled
         if (currency.isAddressZero()) {
             paid = msg.value;
         } else {
