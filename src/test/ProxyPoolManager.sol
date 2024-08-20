@@ -144,7 +144,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     /// @inheritdoc IPoolManager
     function sync(Currency currency) public {
         CurrencyReserves.requireNotSynced();
-        if (currency.isNative()) return;
+        if (currency.isAddressZero()) return;
         uint256 balance = currency.balanceOfSelf();
         CurrencyReserves.syncCurrencyAndReserves(currency, balance);
     }
