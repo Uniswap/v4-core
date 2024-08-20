@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {MockERC6909Claims} from "../src/test/MockERC6909Claims.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
+import {IERC6909Claims} from "../src/interfaces/external/IERC6909Claims.sol";
 
 contract ERC6909ClaimsTest is Test, GasSnapshot {
     MockERC6909Claims token;
@@ -384,5 +385,33 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
 
         vm.assume(sender != address(this));
         token.transferFrom(sender, receiver, id, amount);
+    }
+
+    function test_fuzz_transferFrom_revert_insufficientAllowance(
+        address sender,
+        address receiver,
+        uint256 id,
+        uint256 mintAmount,
+        uint256 allowance,
+        uint256 transferAmount
+    ) public {
+        mintAmount = bound(mintAmount, 1, type(uint256).max);
+        allowance = bound(allowance, 1, type(uint256).max);
+        transferAmount = bound(transferAmount, 1, type(uint256).max);
+
+        token.mint(sender, id, mintAmount);
+
+        vm.prank(sender);
+        token.approve(address(this), id, allowance);
+
+        if (transferAmount > allowance) {
+            vm.expectRevert(IERC6909Claims.InsufficientAllowance.selector);
+            token.transferFrom(sender, receiver, id, transferAmount);
+        } else if (transferAmount > mintAmount) {
+            vm.expectRevert(); // reverts with arithmetic overflow
+            token.transferFrom(sender, receiver, id, transferAmount);
+        } else {
+            token.transferFrom(sender, receiver, id, transferAmount);
+        }
     }
 }
