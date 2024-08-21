@@ -12,3 +12,9 @@ To run the Actions harness, install Medusa or Echidna, then use:
 `forge clean && forge build --build-info && medusa fuzz`
 
 `echidna ./test/trailofbits/ActionFuzzEntrypoint.sol --contract ActionFuzzEntrypoint --config ./echidna.config.yml`
+
+
+## Sequence Diagram for Actions harness
+
+
+![Sequence Diagram for Actions harness](./SequenceDiagram.svg)
