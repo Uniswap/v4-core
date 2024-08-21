@@ -282,7 +282,7 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
+        returns (BalanceDelta result, uint256 amountToProtocol, uint24 swapFee, SwapState memory state)
     {
         Slot0 slot0Start = self.slot0;
         bool zeroForOne = params.zeroForOne;
@@ -382,7 +382,7 @@ library Pool {
                     uint256 delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
-                    feeForProtocol += delta;
+                    amountToProtocol += delta;
                 }
             }
 
