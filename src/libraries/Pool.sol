@@ -309,8 +309,10 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (swapFee == LPFeeLibrary.MAX_LP_FEE && !exactInput) {
-            InvalidFeeForExactOut.selector.revertWith();
+        if (swapFee == LPFeeLibrary.MAX_LP_FEE) {
+            if(!exactInput) {
+                InvalidFeeForExactOut.selector.revertWith();
+            }
         }
 
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
