@@ -313,6 +313,7 @@ library Pool {
             InvalidFeeForExactOut.selector.revertWith();
         }
 
+        // amountToProtocol (the fee amount going to the protocol) is 0, while swapFee is the pool's total fee percentage (LP fee + protocol fee) so fine to be non-zero
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
 
         if (zeroForOne) {
