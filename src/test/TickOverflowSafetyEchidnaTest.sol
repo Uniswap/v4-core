@@ -4,12 +4,12 @@ pragma solidity ^0.8.20;
 import {Pool} from "../libraries/Pool.sol";
 
 contract TickOverflowSafetyEchidnaTest {
-    using Pool for Pool.State;
+    using Pool for Pool.PoolState;
 
     int24 private constant MIN_TICK = -16;
     int24 private constant MAX_TICK = 16;
 
-    Pool.State private pool;
+    Pool.PoolState private pool;
     int24 private tick = 0;
 
     // half the cap of fee growth has happened, this can overflow

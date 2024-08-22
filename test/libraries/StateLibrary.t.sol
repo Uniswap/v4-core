@@ -230,7 +230,7 @@ contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
         (, int24 tick,,) = StateLibrary.getSlot0(manager, poolId);
         uint128 liquidity = StateLibrary.getLiquidity(manager, poolId);
 
-        // out of range liquidity is not added to Pool.State.liquidity
+        // out of range liquidity is not added to Pool.PoolState.liquidity
         if (tick < _params.tickLower || tick >= _params.tickUpper) {
             assertEq(liquidity, 0);
         } else {

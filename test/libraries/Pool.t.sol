@@ -18,11 +18,11 @@ import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 
 contract PoolTest is Test, GasSnapshot {
-    using Pool for Pool.State;
+    using Pool for Pool.PoolState;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for *;
 
-    Pool.State state;
+    Pool.PoolState state;
 
     uint24 constant MAX_PROTOCOL_FEE = ProtocolFeeLibrary.MAX_PROTOCOL_FEE; // 0.1%
     uint24 constant MAX_LP_FEE = LPFeeLibrary.MAX_LP_FEE; // 100%

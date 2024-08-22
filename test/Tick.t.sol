@@ -23,13 +23,13 @@ contract LiquidityMathRef {
 }
 
 contract TickTest is Test, GasSnapshot {
-    using Pool for Pool.State;
+    using Pool for Pool.PoolState;
 
     int24 constant LOW_TICK_SPACING = 10;
     int24 constant MEDIUM_TICK_SPACING = 60;
     int24 constant HIGH_TICK_SPACING = 200;
 
-    Pool.State public pool;
+    Pool.PoolState public pool;
 
     LiquidityMathRef internal liquidityMath;
 

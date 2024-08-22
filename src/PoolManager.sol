@@ -91,7 +91,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     int24 private constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
-    mapping(PoolId id => Pool.State) internal _pools;
+    mapping(PoolId id => Pool.PoolState) internal _pools;
 
     constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
 
@@ -153,7 +153,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         bytes calldata hookData
     ) external onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         PoolId id = key.toId();
-        Pool.State storage pool = _getPool(id);
+        Pool.PoolState storage pool = _getPool(id);
         pool.checkPoolInitialized();
 
         key.hooks.beforeModifyLiquidity(key, params, hookData);
@@ -194,7 +194,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     {
         if (params.amountSpecified == 0) SwapAmountCannotBeZero.selector.revertWith();
         PoolId id = key.toId();
-        Pool.State storage pool = _getPool(id);
+        Pool.PoolState storage pool = _getPool(id);
         pool.checkPoolInitialized();
 
         BeforeSwapDelta beforeSwapDelta;
@@ -229,7 +229,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @notice Internal swap function to execute a swap, take protocol fees on input token, and emit the swap event
-    function _swap(Pool.State storage pool, PoolId id, Pool.SwapParams memory params, Currency inputCurrency)
+    function _swap(Pool.PoolState storage pool, PoolId id, Pool.SwapParams memory params, Currency inputCurrency)
         internal
         returns (BalanceDelta)
     {
@@ -253,7 +253,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         noDelegateCall
         returns (BalanceDelta delta)
     {
-        Pool.State storage pool = _getPool(key.toId());
+        Pool.PoolState storage pool = _getPool(key.toId());
         pool.checkPoolInitialized();
 
         key.hooks.beforeDonate(key, amount0, amount1, hookData);
@@ -367,7 +367,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @notice Implementation of the _getPool function defined in ProtocolFees
-    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
+    function _getPool(PoolId id) internal view override returns (Pool.PoolState storage) {
         return _pools[id];
     }
 }

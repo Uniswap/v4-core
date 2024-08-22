@@ -10,21 +10,21 @@ library StateLibrary {
     /// @notice index of pools mapping in the PoolManager
     bytes32 public constant POOLS_SLOT = bytes32(uint256(6));
 
-    /// @notice index of feeGrowthGlobal0X128 in Pool.State
+    /// @notice index of feeGrowthGlobal0X128 in Pool.PoolState
     uint256 public constant FEE_GROWTH_GLOBAL0_OFFSET = 1;
-    /// @notice index of feeGrowthGlobal1X128 in Pool.State
+    /// @notice index of feeGrowthGlobal1X128 in Pool.PoolState
     uint256 public constant FEE_GROWTH_GLOBAL1_OFFSET = 2;
 
-    /// @notice index of liquidity in Pool.State
+    /// @notice index of liquidity in Pool.PoolState
     uint256 public constant LIQUIDITY_OFFSET = 3;
 
-    /// @notice index of TicksInfo mapping in Pool.State: mapping(int24 => TickInfo) ticks;
+    /// @notice index of TicksInfo mapping in Pool.PoolState: mapping(int24 => TickInfo) ticks;
     uint256 public constant TICKS_OFFSET = 4;
 
-    /// @notice index of tickBitmap mapping in Pool.State
+    /// @notice index of tickBitmap mapping in Pool.PoolState
     uint256 public constant TICK_BITMAP_OFFSET = 5;
 
-    /// @notice index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
+    /// @notice index of Position.Info mapping in Pool.PoolState: mapping(bytes32 => Position.Info) positions;
     uint256 public constant POSITIONS_OFFSET = 6;
 
     /**
@@ -42,7 +42,7 @@ library StateLibrary {
         view
         returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)
     {
-        // slot key of Pool.State value: `pools[poolId]`
+        // slot key of Pool.PoolState value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
         bytes32 data = manager.extsload(stateSlot);
@@ -156,10 +156,10 @@ library StateLibrary {
         view
         returns (uint256 feeGrowthGlobal0, uint256 feeGrowthGlobal1)
     {
-        // slot key of Pool.State value: `pools[poolId]`
+        // slot key of Pool.PoolState value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
-        // Pool.State, `uint256 feeGrowthGlobal0X128`
+        // Pool.PoolState, `uint256 feeGrowthGlobal0X128`
         bytes32 slot_feeGrowthGlobal0X128 = bytes32(uint256(stateSlot) + FEE_GROWTH_GLOBAL0_OFFSET);
 
         // read the 2 words of feeGrowthGlobal
@@ -178,10 +178,10 @@ library StateLibrary {
      * @return liquidity The liquidity of the pool.
      */
     function getLiquidity(IPoolManager manager, PoolId poolId) internal view returns (uint128 liquidity) {
-        // slot key of Pool.State value: `pools[poolId]`
+        // slot key of Pool.PoolState value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
-        // Pool.State: `uint128 liquidity`
+        // Pool.PoolState: `uint128 liquidity`
         bytes32 slot = bytes32(uint256(stateSlot) + LIQUIDITY_OFFSET);
 
         liquidity = uint128(uint256(manager.extsload(slot)));
@@ -200,10 +200,10 @@ library StateLibrary {
         view
         returns (uint256 tickBitmap)
     {
-        // slot key of Pool.State value: `pools[poolId]`
+        // slot key of Pool.PoolState value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
-        // Pool.State: `mapping(int16 => uint256) tickBitmap;`
+        // Pool.PoolState: `mapping(int16 => uint256) tickBitmap;`
         bytes32 tickBitmapMapping = bytes32(uint256(stateSlot) + TICK_BITMAP_OFFSET);
 
         // slot id of the mapping key: `pools[poolId].tickBitmap[tick]
@@ -323,10 +323,10 @@ library StateLibrary {
     }
 
     function _getTickInfoSlot(PoolId poolId, int24 tick) internal pure returns (bytes32) {
-        // slot key of Pool.State value: `pools[poolId]`
+        // slot key of Pool.PoolState value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
-        // Pool.State: `mapping(int24 => TickInfo) ticks`
+        // Pool.PoolState: `mapping(int24 => TickInfo) ticks`
         bytes32 ticksMappingSlot = bytes32(uint256(stateSlot) + TICKS_OFFSET);
 
         // slot key of the tick key: `pools[poolId].ticks[tick]
@@ -334,10 +334,10 @@ library StateLibrary {
     }
 
     function _getPositionInfoSlot(PoolId poolId, bytes32 positionId) internal pure returns (bytes32) {
-        // slot key of Pool.State value: `pools[poolId]`
+        // slot key of Pool.PoolState value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
-        // Pool.State: `mapping(bytes32 => Position.Info) positions;`
+        // Pool.PoolState: `mapping(bytes32 => Position.Info) positions;`
         bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITIONS_OFFSET);
 
         // slot of the mapping key: `pools[poolId].positions[positionId]

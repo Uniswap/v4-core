@@ -12,17 +12,17 @@ import {Slot0} from "../types/Slot0.sol";
 contract ProtocolFeesImplementation is ProtocolFees {
     using PoolIdLibrary for PoolKey;
 
-    mapping(PoolId id => Pool.State) internal _pools;
+    mapping(PoolId id => Pool.PoolState) internal _pools;
 
     constructor(uint256 _controllerGasLimit) ProtocolFees(_controllerGasLimit) {}
 
     // Used to set the price of a pool to pretend that the pool has been initialized in order to successfully set a protocol fee
     function setPrice(PoolKey memory key, uint160 sqrtPriceX96) public {
-        Pool.State storage pool = _getPool(key.toId());
+        Pool.PoolState storage pool = _getPool(key.toId());
         pool.slot0 = pool.slot0.setSqrtPriceX96(sqrtPriceX96);
     }
 
-    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
+    function _getPool(PoolId id) internal view override returns (Pool.PoolState storage) {
         return _pools[id];
     }
 

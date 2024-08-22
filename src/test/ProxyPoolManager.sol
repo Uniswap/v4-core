@@ -42,7 +42,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
 
     int24 private constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
-    mapping(PoolId id => Pool.State) internal _pools;
+    mapping(PoolId id => Pool.PoolState) internal _pools;
 
     address internal immutable _delegateManager;
 
@@ -213,7 +213,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     }
 
     /// @notice Implementation of the _getPool function defined in ProtocolFees
-    function _getPool(PoolId id) internal view override returns (Pool.State storage) {
+    function _getPool(PoolId id) internal view override returns (Pool.PoolState storage) {
         return _pools[id];
     }
 }

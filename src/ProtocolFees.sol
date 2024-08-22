@@ -15,7 +15,7 @@ import {CustomRevert} from "./libraries/CustomRevert.sol";
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using ProtocolFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
-    using Pool for Pool.State;
+    using Pool for Pool.PoolState;
     using CustomRevert for bytes4;
 
     /// @inheritdoc IProtocolFees
@@ -59,7 +59,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
 
     /// @dev abstract internal function to allow the ProtocolFees contract to access pool state
     /// @dev this is overriden in PoolManager.sol to give access to the _pools mapping
-    function _getPool(PoolId id) internal virtual returns (Pool.State storage);
+    function _getPool(PoolId id) internal virtual returns (Pool.PoolState storage);
 
     /// @notice Fetch the protocol fees for a given pool, returning false if the call fails or the returned fees are invalid.
     /// @dev to prevent an invalid protocol fee controller from blocking pools from being initialized
