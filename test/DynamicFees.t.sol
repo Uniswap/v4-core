@@ -48,6 +48,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         uint24 fee
     );
 
+    event DynamicLPFeeUpdated(PoolId indexed poolId, uint24 fee);
+
     function setUp() public {
         DynamicFeesTestHook impl = new DynamicFeesTestHook();
         vm.etch(address(dynamicFeesHooks), address(impl).code);
@@ -98,6 +100,19 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         dynamicFeesHooks.setFee(123);
 
         manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        assertEq(_fetchPoolLPFee(key), 123);
+    }
+
+    function test_emitsDynamicLPFeeUpdated() public {
+        assertEq(_fetchPoolLPFee(key), 0);
+        key.tickSpacing = 30;
+        dynamicFeesHooks.setFee(123);
+
+        vm.expectEmit(true, true, true, true, address(manager));
+        emit DynamicLPFeeUpdated(key.toId(), 123);
+
+        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+
         assertEq(_fetchPoolLPFee(key), 123);
     }
 

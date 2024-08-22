@@ -326,6 +326,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         newDynamicLPFee.validate();
         PoolId id = key.toId();
         _pools[id].setLPFee(newDynamicLPFee);
+
+        emit DynamicLPFeeUpdated(id, newDynamicLPFee);
     }
 
     function _settle(address recipient) internal returns (uint256 paid) {

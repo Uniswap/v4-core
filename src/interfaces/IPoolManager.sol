@@ -79,7 +79,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     );
 
     /// @notice Emitted for swaps between currency0 and currency1
-    /// @param id The abi encoded hash of the pool key struct for the pool that was modified
+    /// @param id The abi encoded hash of the pool key struct for the pool that was swapped in
     /// @param sender The address that initiated the swap call, and that received the callback
     /// @param amount0 The delta of the currency0 balance of the pool
     /// @param amount1 The delta of the currency1 balance of the pool
@@ -97,6 +97,11 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         int24 tick,
         uint24 fee
     );
+
+    /// @notice Emitted when the dynamic LP fee is updated for a pool
+    /// @param id The abi encoded hash of the pool key struct for the pool with the updated fee
+    /// @param newDynamicLPFee The new LP fee for the pool
+    event DynamicLPFeeUpdated(PoolId indexed id, uint24 newDynamicLPFee);
 
     /// @notice All interactions on the contract that account deltas require unlocking. A caller that calls `unlock` must implement
     /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
