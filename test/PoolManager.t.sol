@@ -934,7 +934,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_settle_revertsSendingNativeWithToken() public noIsolate {
         manager.sync(key.currency0);
-        vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
+        vm.expectRevert(IPoolManager.NonzeroNativeValue.selector);
         settleRouter.settle{value: 1}();
     }
 
