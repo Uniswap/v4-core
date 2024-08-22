@@ -61,9 +61,6 @@ library Pool {
     /// @notice Thrown by donate if there is currently 0 liquidity, since the fees will not go to any liquidity providers
     error NoLiquidityToReceiveFees();
 
-    /// @notice Thrown when trying to swap with max lp fee and specifying an output amount
-    error InvalidFeeForExactOut();
-
     // info stored for each initialized individual tick
     struct TickInfo {
         // the total position liquidity that references this tick
@@ -299,6 +296,7 @@ library Pool {
         state.liquidity = liquidityStart;
 
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
+        // a swap fee of MAX_FEE_PIPS will revert for exact output swaps
         {
             uint24 lpFee = params.lpFeeOverride.isOverride()
                 ? params.lpFeeOverride.removeOverrideFlagAndValidate()
@@ -308,10 +306,6 @@ library Pool {
         }
 
         bool exactInput = params.amountSpecified < 0;
-
-        if (swapFee == LPFeeLibrary.MAX_LP_FEE && !exactInput) {
-            InvalidFeeForExactOut.selector.revertWith();
-        }
 
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
 

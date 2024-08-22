@@ -125,7 +125,7 @@ contract PoolTest is Test, GasSnapshot {
         uint24 swapFee = protocolFee == 0 ? _lpFee : uint16(protocolFee).calculateSwapFee(_lpFee);
 
         if (params.amountSpecified >= 0 && swapFee == MAX_LP_FEE) {
-            vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
+            vm.expectRevert();
             state.swap(params);
         } else if (!_lpFee.isValid()) {
             vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, _lpFee));
