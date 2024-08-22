@@ -282,7 +282,7 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 feeForProtocol, uint24 swapFee, SwapState memory state)
+        returns (BalanceDelta result, uint256 amountToProtocol, uint24 swapFee, SwapState memory state)
     {
         Slot0 slot0Start = self.slot0;
         bool zeroForOne = params.zeroForOne;
@@ -382,7 +382,7 @@ library Pool {
                     uint256 delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
-                    feeForProtocol += delta;
+                    amountToProtocol += delta;
                 }
             }
 
@@ -411,14 +411,8 @@ library Pool {
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
 
-                // Equivalent to `state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;`
                 unchecked {
-                    // cannot cast a bool to an int24 in Solidity
-                    int24 _zeroForOne;
-                    assembly ("memory-safe") {
-                        _zeroForOne := and(zeroForOne, 0xff)
-                    }
-                    state.tick = step.tickNext - _zeroForOne;
+                    state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
                 }
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
@@ -513,17 +507,8 @@ library Pool {
     {
         TickInfo storage info = self.ticks[tick];
 
-        uint128 liquidityGrossBefore;
-        int128 liquidityNetBefore;
-        assembly ("memory-safe") {
-            // load first slot of info which contains liquidityGross and liquidityNet packed
-            // where the top 128 bits are liquidityNet and the bottom 128 bits are liquidityGross
-            let liquidity := sload(info.slot)
-            // slice off top 128 bits of liquidity (liquidityNet) to get just liquidityGross
-            liquidityGrossBefore := shr(128, shl(128, liquidity))
-            // signed shift right 128 bits to get just liquidityNet
-            liquidityNetBefore := sar(128, liquidity)
-        }
+        uint128 liquidityGrossBefore = info.liquidityGross;
+        int128 liquidityNetBefore = info.liquidityNet;
 
         liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
