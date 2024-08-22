@@ -299,6 +299,7 @@ library Pool {
         state.liquidity = liquidityStart;
 
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
+        // lpFee, swapFee, and protocolFee are all in pips
         {
             uint24 lpFee = params.lpFeeOverride.isOverride()
                 ? params.lpFeeOverride.removeOverrideFlagAndValidate()
@@ -313,7 +314,8 @@ library Pool {
             InvalidFeeForExactOut.selector.revertWith();
         }
 
-        // amountToProtocol (the fee amount going to the protocol) is 0, while swapFee is the pool's total fee percentage (LP fee + protocol fee) so fine to be non-zero
+        // 0 is the amountToProtocol (the actual fee amount going to the protocol)
+        // swapFee is the pool's fee in pips (LP fee + protocol fee)
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
 
         if (zeroForOne) {
