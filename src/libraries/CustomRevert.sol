@@ -67,10 +67,11 @@ library CustomRevert {
     /// @dev Reverts with a custom error with two address arguments
     function revertWith(bytes4 selector, address value1, address value2) internal pure {
         assembly ("memory-safe") {
-            mstore(0, selector)
-            mstore(0x04, and(value1, 0xffffffffffffffffffffffffffffffffffffffff))
-            mstore(0x24, and(value2, 0xffffffffffffffffffffffffffffffffffffffff))
-            revert(0, 0x44)
+            let fmp := mload(0x40)
+            mstore(fmp, selector)
+            mstore(add(fmp, 0x04), and(value1, 0xffffffffffffffffffffffffffffffffffffffff))
+            mstore(add(fmp, 0x24), and(value2, 0xffffffffffffffffffffffffffffffffffffffff))
+            revert(fmp, 0x44)
         }
     }
 
