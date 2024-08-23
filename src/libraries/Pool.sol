@@ -389,7 +389,8 @@ library Pool {
             // update global fee tracker
             if (state.liquidity > 0) {
                 unchecked {
-                    state.feeGrowthGlobalX128 += step.feeAmount * FixedPoint128.Q128 / state.liquidity;
+                    state.feeGrowthGlobalX128 +=
+                        UnsafeMath.simpleMulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
                 }
             }
 
