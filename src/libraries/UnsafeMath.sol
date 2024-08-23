@@ -16,4 +16,10 @@ library UnsafeMath {
             }
         }
     }
+
+    function simpleMulDiv(uint256 a, uint256 b, uint256 denominator) internal pure returns (uint256 result) {
+        assembly ("memory-safe") {
+            result := div(mul(a, b), denominator)
+        }
+    }
 }
