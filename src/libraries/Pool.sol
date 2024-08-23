@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
 import {Position} from "./Position.sol";
-import {FullMath} from "./FullMath.sol";
+// import {FullMath} from "./FullMath.sol";
 import {FixedPoint128} from "./FixedPoint128.sol";
 import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
@@ -389,7 +389,7 @@ library Pool {
             // update global fee tracker
             if (state.liquidity > 0) {
                 unchecked {
-                    state.feeGrowthGlobalX128 += FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
+                    state.feeGrowthGlobalX128 += step.feeAmount * FixedPoint128.Q128 / state.liquidity;
                 }
             }
 
@@ -455,10 +455,10 @@ library Pool {
             // negation safe as amount0 and amount1 are always positive
             delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
             if (amount0 > 0) {
-                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, liquidity);
+                state.feeGrowthGlobal0X128 += amount0 * FixedPoint128.Q128 / liquidity;
             }
             if (amount1 > 0) {
-                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, liquidity);
+                state.feeGrowthGlobal1X128 += amount1 * FixedPoint128.Q128 / liquidity;
             }
         }
     }
