@@ -58,7 +58,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     }
 
     /// @dev abstract internal function to allow the ProtocolFees contract to access pool state
-    /// @dev this is overriden in PoolManager.sol to give access to the _pools mapping
+    /// @dev this is overridden in PoolManager.sol to give access to the _pools mapping
     function _getPool(PoolId id) internal virtual returns (Pool.State storage);
 
     /// @notice Fetch the protocol fees for a given pool, returning false if the call fails or the returned fees are invalid.

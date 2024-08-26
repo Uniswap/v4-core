@@ -129,15 +129,18 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
     /// @param hookData The data to pass through to the add/removeLiquidity hooks
-    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal and fee deltas.
-    /// @return feeDelta The balance delta of the fees generated in the liquidity range. Returned for informational purposes.
+    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal and fee deltas
+    /// @return feesAccrued The balance delta of the fees generated in the liquidity range. Returned for informational purposes
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta callerDelta, BalanceDelta feeDelta);
+        returns (BalanceDelta callerDelta, BalanceDelta feesAccrued);
 
     struct SwapParams {
+        /// Whether to swap token zero for token one or vice versa
         bool zeroForOne;
+        /// The desired input amount if negative (exactIn), or the desired output amount if positive (exactOut)
         int256 amountSpecified;
+        /// The most extreme square root price the pool may reach by the end of the swap
         uint160 sqrtPriceLimitX96;
     }
 
@@ -186,7 +189,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @return paid The amount of currency settled
     function settleFor(address recipient) external payable returns (uint256 paid);
 
-    /// @notice WARNING - Any currency that is cleared, will be non-retreivable, and locked in the contract permanently.
+    /// @notice WARNING - Any currency that is cleared, will be non-retrievable, and locked in the contract permanently.
     /// A call to clear will zero out a positive balance WITHOUT a corresponding transfer.
     /// @dev This could be used to clear a balance that is considered dust.
     /// Additionally, the amount must be the exact positive balance. This is to enforce that the caller is aware of the amount being cleared.
