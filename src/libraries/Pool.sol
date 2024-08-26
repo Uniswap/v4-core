@@ -314,7 +314,7 @@ library Pool {
             InvalidFeeForExactOut.selector.revertWith();
         }
 
-        // 0 is the amountToProtocol (the actual fee amount going to the protocol)
+        // 0 is the fee amount that should be paid to the protocol
         // swapFee is the pool's fee in pips (LP fee + protocol fee)
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
 
