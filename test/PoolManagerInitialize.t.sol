@@ -98,7 +98,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     function test_initialize_forNativeTokens(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-        uninitializedKey.currency0 = CurrencyLibrary.NATIVE;
+        uninitializedKey.currency0 = CurrencyLibrary.ADDRESS_ZERO;
 
         int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
