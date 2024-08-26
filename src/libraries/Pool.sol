@@ -311,7 +311,7 @@ library Pool {
         bool exactInput = params.amountSpecified < 0;
 
         // a swap fee of MAX_FEE_PIPS (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
-        if (swapFee == LPFeeLibrary.MAX_LP_FEE) {
+        if (swapFee >= LPFeeLibrary.MAX_LP_FEE) {
             if (!exactInput) {
                 InvalidFeeForExactOut.selector.revertWith();
             }
