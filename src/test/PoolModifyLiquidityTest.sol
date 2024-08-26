@@ -53,7 +53,7 @@ contract PoolModifyLiquidityTest is PoolTestBase {
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {
-            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+            CurrencyLibrary.ADDRESS_ZERO.transfer(msg.sender, ethBalance);
         }
     }
 
