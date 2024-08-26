@@ -43,7 +43,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getSyncedReserves(), 0);
     }
 
-    function test_sync_balanceIsNonZero() public noIsolate {
+    function test_sync_balanceIsNonzero() public noIsolate {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
         assertGt(currency0Balance, uint256(0));
 
@@ -218,11 +218,11 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         Actions[] memory actions = new Actions[](1);
         bytes[] memory params = new bytes[](1);
 
-        // Revert with NonZeroNativeValue
+        // Revert with NonzeroNativeValue
         actions[0] = Actions.SETTLE_NATIVE;
         params[0] = abi.encode(value);
 
-        vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
+        vm.expectRevert(IPoolManager.NonzeroNativeValue.selector);
         router.executeActions{value: value}(actions, params);
 
         // Reference only - see OZ C01 report - previous test confirming vulnerability

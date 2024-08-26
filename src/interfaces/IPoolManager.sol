@@ -42,7 +42,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     error SwapAmountCannotBeZero();
 
     ///@notice Thrown when native currency is passed to a non native settlement
-    error NonZeroNativeValue();
+    error NonzeroNativeValue();
 
     /// @notice Thrown when `clear` is called with an amount that is not exactly equal to the open currency delta.
     error MustClearExactPositiveDelta();
@@ -97,6 +97,13 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         int24 tick,
         uint24 fee
     );
+
+    /// @notice Emitted for donations
+    /// @param id The abi encoded hash of the pool key struct for the pool that was donated to
+    /// @param sender The address that initiated the donate call
+    /// @param amount0 The amount donated in currency0
+    /// @param amount1 The amount donated in currency1
+    event Donate(PoolId indexed id, address indexed sender, uint256 amount0, uint256 amount1);
 
     /// @notice All interactions on the contract that account deltas require unlocking. A caller that calls `unlock` must implement
     /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
