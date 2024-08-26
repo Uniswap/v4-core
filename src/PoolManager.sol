@@ -272,7 +272,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function sync(Currency currency) external {
         CurrencyReserves.requireNotSynced();
-        if (currency.isNative()) return;
+        // address(0) is used for the native currency
+        if (currency.isAddressZero()) return;
         uint256 balance = currency.balanceOfSelf();
         CurrencyReserves.syncCurrencyAndReserves(currency, balance);
     }
@@ -337,8 +338,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function _settle(address recipient) internal returns (uint256 paid) {
         Currency currency = CurrencyReserves.getSyncedCurrency();
-        // If not previously synced, expects native currency to be settled because CurrencyLibrary.NATIVE == address(0)
-        if (currency.isNative()) {
+        // if not previously synced, expects native currency to be settled
+        if (currency.isAddressZero()) {
             paid = msg.value;
         } else {
             if (msg.value > 0) NonzeroNativeValue.selector.revertWith();
