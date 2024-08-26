@@ -32,7 +32,7 @@ jobs:
         run: |
           {
           echo 'COVERAGE<<EOF'
-          forge coverage --via-ir | grep '^|' | grep -v 'test/'
+          forge coverage --ir-minimum | grep '^|' | grep -v 'test/'
           echo EOF
           } >> "$GITHUB_OUTPUT"
         env:
