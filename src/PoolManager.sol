@@ -233,14 +233,22 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         internal
         returns (BalanceDelta)
     {
-        (BalanceDelta delta, uint256 amountToProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
+        (BalanceDelta delta, uint256 amountToProtocol, uint24 swapFee, Pool.SwapResult memory result) =
+            pool.swap(params);
 
         // the fee is on the input currency
         if (amountToProtocol > 0) _updateProtocolFees(inputCurrency, amountToProtocol);
 
         // event is emitted before the afterSwap call to ensure events are always emitted in order
         emit Swap(
-            id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
+            id,
+            msg.sender,
+            delta.amount0(),
+            delta.amount1(),
+            result.sqrtPriceX96,
+            result.liquidity,
+            result.tick,
+            swapFee
         );
 
         return delta;
