@@ -299,6 +299,7 @@ library Pool {
         result.liquidity = liquidityStart;
 
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
+        // lpFee, swapFee, and protocolFee are all in pips
         {
             uint24 lpFee = params.lpFeeOverride.isOverride()
                 ? params.lpFeeOverride.removeOverrideFlagAndValidate()
@@ -315,6 +316,8 @@ library Pool {
             }
         }
 
+        // 0 is the fee amount that should be paid to the protocol
+        // swapFee is the pool's fee in pips (LP fee + protocol fee)
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, result);
 
         if (zeroForOne) {
