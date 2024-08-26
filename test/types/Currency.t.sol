@@ -80,16 +80,16 @@ contract TestCurrency is Test {
         );
     }
 
-    function test_isNative_native_returnsTrue() public view {
-        assertEq(currencyTest.isNative(nativeCurrency), true);
+    function test_isAddressZero_native_returnsTrue() public view {
+        assertEq(currencyTest.isAddressZero(nativeCurrency), true);
     }
 
-    function test_isNative_token_returnsFalse() public view {
-        assertEq(currencyTest.isNative(erc20Currency), false);
+    function test_isAddressZero_token_returnsFalse() public view {
+        assertEq(currencyTest.isAddressZero(erc20Currency), false);
     }
 
-    function test_fuzz_isNative(Currency currency) public view {
-        assertEq(currencyTest.isNative(currency), (Currency.unwrap(currency) == address(0)));
+    function test_fuzz_isAddressZero(Currency currency) public view {
+        assertEq(currencyTest.isAddressZero(currency), (Currency.unwrap(currency) == address(0)));
     }
 
     function test_toId_nativeReturns0() public view {
