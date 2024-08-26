@@ -388,7 +388,7 @@ library Pool {
 
             // update global fee tracker
             if (state.liquidity > 0) {
-                // FullMath.mulDiv isn't needed as the numerator can't overflow uint256 since tokens have a max supply of `type(uint128).max`
+                // FullMath.mulDiv isn't needed as the numerator can't overflow uint256 since tokens have a max supply of type(uint128).max
                 unchecked {
                     state.feeGrowthGlobalX128 +=
                         UnsafeMath.simpleMulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
@@ -456,7 +456,7 @@ library Pool {
         unchecked {
             // negation safe as amount0 and amount1 are always positive
             delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
-            // FullMath.mulDiv is unnecessary because the numerator is bounded by `type(int128).max * Q128`, which is less than `type(uint256).max`
+            // FullMath.mulDiv is unnecessary because the numerator is bounded by type(int128).max * Q128, which is less than type(uint256).max
             if (amount0 > 0) {
                 state.feeGrowthGlobal0X128 += UnsafeMath.simpleMulDiv(amount0, FixedPoint128.Q128, liquidity);
             }
