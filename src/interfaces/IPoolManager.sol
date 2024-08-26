@@ -136,18 +136,18 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
     /// @param hookData The data to pass through to the add/removeLiquidity hooks
-    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal and fee deltas
+    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal, fee deltas, and hook deltas if applicable
     /// @return feesAccrued The balance delta of the fees generated in the liquidity range. Returned for informational purposes
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
         returns (BalanceDelta callerDelta, BalanceDelta feesAccrued);
 
     struct SwapParams {
-        /// Whether to swap token zero for token one or vice versa
+        /// Whether to swap token0 for token1 or vice versa
         bool zeroForOne;
         /// The desired input amount if negative (exactIn), or the desired output amount if positive (exactOut)
         int256 amountSpecified;
-        /// The most extreme square root price the pool may reach by the end of the swap
+        /// The sqrt price at which, if reached, the swap will stop executing
         uint160 sqrtPriceLimitX96;
     }
 
