@@ -42,7 +42,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     error SwapAmountCannotBeZero();
 
     ///@notice Thrown when native currency is passed to a non native settlement
-    error NonZeroNativeValue();
+    error NonzeroNativeValue();
 
     /// @notice Thrown when `clear` is called with an amount that is not exactly equal to the open currency delta.
     error MustClearExactPositiveDelta();
@@ -54,13 +54,17 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
     /// @param tickSpacing The minimum number of ticks between initialized ticks
     /// @param hooks The hooks contract address for the pool, or address(0) if none
+    /// @param sqrtPriceX96 The price of the pool on initialization
+    /// @param tick The initial tick of the pool corresponding to the intialized price
     event Initialize(
         PoolId indexed id,
         Currency indexed currency0,
         Currency indexed currency1,
         uint24 fee,
         int24 tickSpacing,
-        IHooks hooks
+        IHooks hooks,
+        uint160 sqrtPriceX96,
+        int24 tick
     );
 
     /// @notice Emitted when a liquidity position is modified
@@ -69,8 +73,9 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param tickLower The lower tick of the position
     /// @param tickUpper The upper tick of the position
     /// @param liquidityDelta The amount of liquidity that was added or removed
+    /// @param salt The extra data to make positions unique
     event ModifyLiquidity(
-        PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
+        PoolId indexed id, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta, bytes32 salt
     );
 
     /// @notice Emitted for swaps between currency0 and currency1
@@ -93,11 +98,12 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         uint24 fee
     );
 
-    /// @return int24 the constant representing the maximum tickSpacing for an initialized pool key
-    function MAX_TICK_SPACING() external view returns (int24);
-
-    /// @return int24 the constant representing the minimum tickSpacing for an initialized pool key
-    function MIN_TICK_SPACING() external view returns (int24);
+    /// @notice Emitted for donations
+    /// @param id The abi encoded hash of the pool key struct for the pool that was donated to
+    /// @param sender The address that initiated the donate call
+    /// @param amount0 The amount donated in currency0
+    /// @param amount1 The amount donated in currency1
+    event Donate(PoolId indexed id, address indexed sender, uint256 amount0, uint256 amount1);
 
     /// @notice All interactions on the contract that account deltas require unlocking. A caller that calls `unlock` must implement
     /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
@@ -130,15 +136,18 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
     /// @param hookData The data to pass through to the add/removeLiquidity hooks
-    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal and fee deltas.
-    /// @return feeDelta The balance delta of the fees generated in the liquidity range. Returned for informational purposes.
+    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal, fee deltas, and hook deltas if applicable
+    /// @return feesAccrued The balance delta of the fees generated in the liquidity range. Returned for informational purposes
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta callerDelta, BalanceDelta feeDelta);
+        returns (BalanceDelta callerDelta, BalanceDelta feesAccrued);
 
     struct SwapParams {
+        /// Whether to swap token0 for token1 or vice versa
         bool zeroForOne;
+        /// The desired input amount if negative (exactIn), or the desired output amount if positive (exactOut)
         int256 amountSpecified;
+        /// The sqrt price at which, if reached, the swap will stop executing
         uint160 sqrtPriceLimitX96;
     }
 
@@ -187,7 +196,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @return paid The amount of currency settled
     function settleFor(address recipient) external payable returns (uint256 paid);
 
-    /// @notice WARNING - Any currency that is cleared, will be non-retreivable, and locked in the contract permanently.
+    /// @notice WARNING - Any currency that is cleared, will be non-retrievable, and locked in the contract permanently.
     /// A call to clear will zero out a positive balance WITHOUT a corresponding transfer.
     /// @dev This could be used to clear a balance that is considered dust.
     /// Additionally, the amount must be the exact positive balance. This is to enforce that the caller is aware of the amount being cleared.

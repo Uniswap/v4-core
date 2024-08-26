@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 
 import {Deployers} from "./utils/Deployers.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
@@ -43,7 +43,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         assertEq(manager.getSyncedReserves(), 0);
     }
 
-    function test_sync_balanceIsNonZero() public noIsolate {
+    function test_sync_balanceIsNonzero() public noIsolate {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
         assertGt(currency0Balance, uint256(0));
 
@@ -218,11 +218,11 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         Actions[] memory actions = new Actions[](1);
         bytes[] memory params = new bytes[](1);
 
-        // Revert with NonZeroNativeValue
+        // Revert with NonzeroNativeValue
         actions[0] = Actions.SETTLE_NATIVE;
         params[0] = abi.encode(value);
 
-        vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
+        vm.expectRevert(IPoolManager.NonzeroNativeValue.selector);
         router.executeActions{value: value}(actions, params);
 
         // Reference only - see OZ C01 report - previous test confirming vulnerability

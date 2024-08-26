@@ -45,7 +45,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     event UnlockCallback();
     event ProtocolFeeControllerUpdated(address feeController);
     event ModifyLiquidity(
-        PoolId indexed poolId, address indexed sender, int24 tickLower, int24 tickUpper, int256 liquidityDelta
+        PoolId indexed poolId,
+        address indexed sender,
+        int24 tickLower,
+        int24 tickUpper,
+        int256 liquidityDelta,
+        bytes32 salt
     );
     event Swap(
         PoolId indexed poolId,
@@ -57,6 +62,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         int24 tick,
         uint24 fee
     );
+
+    event Donate(PoolId indexed id, address indexed sender, uint256 amount0, uint256 amount1);
 
     event Transfer(
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
@@ -99,13 +106,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_addLiquidity_succeedsIfInitialized(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, true, address(manager));
         emit ModifyLiquidity(
             key.toId(),
             address(modifyLiquidityRouter),
             LIQUIDITY_PARAMS.tickLower,
             LIQUIDITY_PARAMS.tickUpper,
-            LIQUIDITY_PARAMS.liquidityDelta
+            LIQUIDITY_PARAMS.liquidityDelta,
+            LIQUIDITY_PARAMS.salt
         );
 
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
@@ -114,13 +122,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_removeLiquidity_succeedsIfInitialized(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, true, address(manager));
         emit ModifyLiquidity(
             key.toId(),
             address(modifyLiquidityRouter),
             REMOVE_LIQUIDITY_PARAMS.tickLower,
             REMOVE_LIQUIDITY_PARAMS.tickUpper,
-            REMOVE_LIQUIDITY_PARAMS.liquidityDelta
+            REMOVE_LIQUIDITY_PARAMS.liquidityDelta,
+            LIQUIDITY_PARAMS.salt
         );
 
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
@@ -129,13 +138,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_addLiquidity_succeedsForNativeTokensIfInitialized(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, true, address(manager));
         emit ModifyLiquidity(
             nativeKey.toId(),
             address(modifyLiquidityRouter),
             LIQUIDITY_PARAMS.tickLower,
             LIQUIDITY_PARAMS.tickUpper,
-            LIQUIDITY_PARAMS.liquidityDelta
+            LIQUIDITY_PARAMS.liquidityDelta,
+            LIQUIDITY_PARAMS.salt
         );
 
         modifyLiquidityRouter.modifyLiquidity{value: 1 ether}(nativeKey, LIQUIDITY_PARAMS, ZERO_BYTES);
@@ -144,13 +154,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_removeLiquidity_succeedsForNativeTokensIfInitialized(uint160 sqrtPriceX96) public {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, true, address(manager));
         emit ModifyLiquidity(
             nativeKey.toId(),
             address(modifyLiquidityRouter),
             REMOVE_LIQUIDITY_PARAMS.tickLower,
             REMOVE_LIQUIDITY_PARAMS.tickUpper,
-            REMOVE_LIQUIDITY_PARAMS.liquidityDelta
+            REMOVE_LIQUIDITY_PARAMS.liquidityDelta,
+            LIQUIDITY_PARAMS.salt
         );
 
         modifyLiquidityRouter.modifyLiquidity{value: 1 ether}(nativeKey, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
@@ -271,13 +282,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.beforeAddLiquidity.selector, mockHooks.beforeAddLiquidity.selector);
         mockHooks.setReturnValue(mockHooks.afterAddLiquidity.selector, mockHooks.afterAddLiquidity.selector);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, true, address(manager));
         emit ModifyLiquidity(
             key.toId(),
             address(modifyLiquidityRouter),
             LIQUIDITY_PARAMS.tickLower,
             LIQUIDITY_PARAMS.tickUpper,
-            LIQUIDITY_PARAMS.liquidityDelta
+            LIQUIDITY_PARAMS.liquidityDelta,
+            LIQUIDITY_PARAMS.salt
         );
 
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
@@ -296,13 +308,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.beforeRemoveLiquidity.selector, mockHooks.beforeRemoveLiquidity.selector);
         mockHooks.setReturnValue(mockHooks.afterRemoveLiquidity.selector, mockHooks.afterRemoveLiquidity.selector);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, true, address(manager));
         emit ModifyLiquidity(
             key.toId(),
             address(modifyLiquidityRouter),
             REMOVE_LIQUIDITY_PARAMS.tickLower,
             REMOVE_LIQUIDITY_PARAMS.tickUpper,
-            REMOVE_LIQUIDITY_PARAMS.liquidityDelta
+            REMOVE_LIQUIDITY_PARAMS.liquidityDelta,
+            REMOVE_LIQUIDITY_PARAMS.salt
         );
 
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
@@ -865,6 +878,15 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapLastCall("donate gas with 1 token");
     }
 
+    function test_fuzz_donate_emits_event(uint256 amount0, uint256 amount1) public {
+        amount0 = bound(amount0, 0, uint256(int256(type(int128).max)));
+        amount1 = bound(amount1, 0, uint256(int256(type(int128).max)));
+
+        vm.expectEmit(true, true, false, true, address(manager));
+        emit Donate(key.toId(), address(donateRouter), uint256(amount0), uint256(amount1));
+        donateRouter.donate(key, amount0, amount1, ZERO_BYTES);
+    }
+
     function test_take_failsWithNoLiquidity() public {
         deployFreshManagerAndRouters();
 
@@ -890,7 +912,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         );
 
         (uint256 amount0, uint256 amount1) = currency0Invalid ? (1, 0) : (0, 1);
-        vm.expectRevert(abi.encodeWithSelector(CurrencyLibrary.ERC20TransferFailed.selector, abi.encode(bytes32(0))));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CurrencyLibrary.Wrap__ERC20TransferFailed.selector, invalidToken, abi.encode(bytes32(0))
+            )
+        );
         takeRouter.take(key, amount0, amount1);
 
         // should not revert when non zero amount passed in for valid currency
@@ -919,7 +945,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_settle_revertsSendingNativeWithToken() public noIsolate {
         manager.sync(key.currency0);
-        vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
+        vm.expectRevert(IPoolManager.NonzeroNativeValue.selector);
         settleRouter.settle{value: 1}();
     }
 
@@ -1158,10 +1184,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     // }
 
     function test_getPosition() public view {
-        Position.Info memory managerPosition =
-            manager.getPosition(key.toId(), address(modifyLiquidityRouter), -120, 120, 0);
+        (uint128 liquidity,,) = manager.getPositionInfo(key.toId(), address(modifyLiquidityRouter), -120, 120, 0);
         assert(LIQUIDITY_PARAMS.liquidityDelta > 0);
-        assertEq(managerPosition.liquidity, uint128(uint256(LIQUIDITY_PARAMS.liquidityDelta)));
+        assertEq(liquidity, uint128(uint256(LIQUIDITY_PARAMS.liquidityDelta)));
     }
 
     function supportsInterface(bytes4) external pure returns (bool) {

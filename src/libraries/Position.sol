@@ -36,9 +36,21 @@ library Position {
         view
         returns (Info storage position)
     {
-        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
-        bytes32 positionKey;
+        bytes32 positionKey = calculatePositionKey(owner, tickLower, tickUpper, salt);
+        position = self[positionKey];
+    }
 
+    /// @notice A helper function to calculate the position key
+    /// @param owner The address of the position owner
+    /// @param tickLower the lower tick boundary of the position
+    /// @param tickUpper the upper tick boundary of the position
+    /// @param salt A unique value to differentiate between multiple positions in the same range, by the same owner. Passed in by the caller.
+    function calculatePositionKey(address owner, int24 tickLower, int24 tickUpper, bytes32 salt)
+        internal
+        pure
+        returns (bytes32 positionKey)
+    {
+        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
         assembly ("memory-safe") {
             let fmp := mload(0x40)
             mstore(add(fmp, 0x26), salt) // [0x26, 0x46)
@@ -52,7 +64,6 @@ library Position {
             mstore(add(fmp, 0x20), 0) // fmp+0x20 held tickLower, tickUpper, salt
             mstore(fmp, 0) // fmp held owner
         }
-        position = self[positionKey];
     }
 
     /// @notice Credits accumulated fees to a user's position

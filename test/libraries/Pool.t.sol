@@ -138,7 +138,7 @@ contract PoolTest is Test, GasSnapshot {
                     )
                 );
                 state.swap(params);
-            } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
+            } else if (params.sqrtPriceLimitX96 < TickMath.MIN_SQRT_PRICE) {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
                 state.swap(params);
             }

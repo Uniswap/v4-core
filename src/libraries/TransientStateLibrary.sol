@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {Currency} from "../types/Currency.sol";
 import {CurrencyReserves} from "./CurrencyReserves.sol";
-import {NonZeroDeltaCount} from "./NonZeroDeltaCount.sol";
+import {NonzeroDeltaCount} from "./NonzeroDeltaCount.sol";
 import {Lock} from "./Lock.sol";
 
 /// @notice A helper library to provide state getters that use exttload
@@ -24,9 +24,9 @@ library TransientStateLibrary {
         return Currency.wrap(address(uint160(uint256(manager.exttload(CurrencyReserves.CURRENCY_SLOT)))));
     }
 
-    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod out before the contract is locked
+    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zeroed out before the contract is locked
     function getNonzeroDeltaCount(IPoolManager manager) internal view returns (uint256) {
-        return uint256(manager.exttload(NonZeroDeltaCount.NONZERO_DELTA_COUNT_SLOT));
+        return uint256(manager.exttload(NonzeroDeltaCount.NONZERO_DELTA_COUNT_SLOT));
     }
 
     /// @notice Get the current delta for a caller in the given currency

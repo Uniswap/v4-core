@@ -20,7 +20,7 @@ import {BalanceDelta, BalanceDeltaLibrary} from "./types/BalanceDelta.sol";
 import {BeforeSwapDelta} from "./types/BeforeSwapDelta.sol";
 import {Lock} from "./libraries/Lock.sol";
 import {CurrencyDelta} from "./libraries/CurrencyDelta.sol";
-import {NonZeroDeltaCount} from "./libraries/NonZeroDeltaCount.sol";
+import {NonzeroDeltaCount} from "./libraries/NonzeroDeltaCount.sol";
 import {CurrencyReserves} from "./libraries/CurrencyReserves.sol";
 import {Extsload} from "./Extsload.sol";
 import {Exttload} from "./Exttload.sol";
@@ -87,11 +87,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using CurrencyReserves for Currency;
     using CustomRevert for bytes4;
 
-    /// @inheritdoc IPoolManager
-    int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
+    int24 private constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
-    /// @inheritdoc IPoolManager
-    int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
+    int24 private constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
     mapping(PoolId id => Pool.State) internal _pools;
 
@@ -112,7 +110,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = IUnlockCallback(msg.sender).unlockCallback(data);
 
-        if (NonZeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
+        if (NonzeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
         Lock.lock();
     }
 
@@ -137,7 +135,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
         PoolId id = key.toId();
-        (, uint24 protocolFee) = _fetchProtocolFee(key);
+        uint24 protocolFee = _fetchProtocolFee(key);
 
         tick = _pools[id].initialize(sqrtPriceX96, protocolFee, lpFee);
 
@@ -145,7 +143,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         // emit all details of a pool key. poolkeys are not saved in storage and must always be provided by the caller
         // the key's fee may be a static fee or a sentinel to denote a dynamic fee.
-        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks, sqrtPriceX96, tick);
     }
 
     /// @inheritdoc IPoolManager
@@ -176,7 +174,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         callerDelta = principalDelta + feesAccrued;
 
         // event is emitted before the afterModifyLiquidity call to ensure events are always emitted in order
-        emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta);
+        emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta, params.salt);
 
         BalanceDelta hookDelta;
         (callerDelta, hookDelta) = key.hooks.afterModifyLiquidity(key, params, callerDelta, hookData);
@@ -235,10 +233,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         internal
         returns (BalanceDelta)
     {
-        (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
+        (BalanceDelta delta, uint256 amountToProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
 
         // the fee is on the input currency
-        if (feeForProtocol > 0) _updateProtocolFees(inputCurrency, feeForProtocol);
+        if (amountToProtocol > 0) _updateProtocolFees(inputCurrency, amountToProtocol);
 
         // event is emitted before the afterSwap call to ensure events are always emitted in order
         emit Swap(
@@ -255,7 +253,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         noDelegateCall
         returns (BalanceDelta delta)
     {
-        Pool.State storage pool = _getPool(key.toId());
+        PoolId poolId = key.toId();
+        Pool.State storage pool = _getPool(poolId);
         pool.checkPoolInitialized();
 
         key.hooks.beforeDonate(key, amount0, amount1, hookData);
@@ -263,6 +262,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         delta = pool.donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta, msg.sender);
+
+        // event is emitted before the afterDonate call to ensure events are always emitted in order
+        emit Donate(poolId, msg.sender, amount0, amount1);
 
         key.hooks.afterDonate(key, amount0, amount1, hookData);
     }
@@ -285,12 +287,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function settle() external payable onlyWhenUnlocked returns (uint256 paid) {
+    function settle() external payable onlyWhenUnlocked returns (uint256) {
         return _settle(msg.sender);
     }
 
     /// @inheritdoc IPoolManager
-    function settleFor(address recipient) external payable onlyWhenUnlocked returns (uint256 paid) {
+    function settleFor(address recipient) external payable onlyWhenUnlocked returns (uint256) {
         return _settle(recipient);
     }
 
@@ -300,7 +302,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         // Because input is `uint256`, only positive amounts can be cleared.
         int128 amountDelta = amount.toInt128();
         if (amountDelta != current) MustClearExactPositiveDelta.selector.revertWith();
-        _accountDelta(currency, -(amountDelta), msg.sender);
+        // negation must be safe as amountDelta is positive
+        unchecked {
+            _accountDelta(currency, -(amountDelta), msg.sender);
+        }
     }
 
     /// @inheritdoc IPoolManager
@@ -336,7 +341,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         if (currency.isNative()) {
             paid = msg.value;
         } else {
-            if (msg.value > 0) NonZeroNativeValue.selector.revertWith();
+            if (msg.value > 0) NonzeroNativeValue.selector.revertWith();
             // Reserves are guaranteed to be set, because currency and reserves are always set together
             uint256 reservesBefore = CurrencyReserves.getSyncedReserves();
             uint256 reservesNow = currency.balanceOfSelf();
@@ -353,9 +358,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         (int256 previous, int256 next) = currency.applyDelta(target, delta);
 
         if (next == 0) {
-            NonZeroDeltaCount.decrement();
+            NonzeroDeltaCount.decrement();
         } else if (previous == 0) {
-            NonZeroDeltaCount.increment();
+            NonzeroDeltaCount.increment();
         }
     }
 
