@@ -207,7 +207,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         assertEq(_fetchPoolLPFee(key), 500000);
     }
 
-    function test_swap_reverts_ForExactOutWhenFeeIsMax() public {
+    function test_swap_revertsWith_InvalidFeeForExactOut_whenFeeIsMax() public {
         assertEq(_fetchPoolLPFee(key), 0);
 
         dynamicFeesHooks.setFee(1000000);
@@ -217,7 +217,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert();
+        vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
     }
 
