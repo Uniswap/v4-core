@@ -25,7 +25,7 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build --sizes
+          forge build --sizes --via-ir
         id: build
       - name: Run forge coverage
         id: coverage
