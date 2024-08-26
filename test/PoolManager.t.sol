@@ -63,6 +63,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint24 fee
     );
 
+    event Donate(PoolId indexed id, address indexed sender, uint256 amount0, uint256 amount1);
+
     event Transfer(
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
     );
@@ -874,6 +876,15 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
     function test_donate_OneToken_gas() public {
         donateRouter.donate(key, 100, 0, ZERO_BYTES);
         snapLastCall("donate gas with 1 token");
+    }
+
+    function test_fuzz_donate_emits_event(uint256 amount0, uint256 amount1) public {
+        amount0 = bound(amount0, 0, uint256(int256(type(int128).max)));
+        amount1 = bound(amount1, 0, uint256(int256(type(int128).max)));
+
+        vm.expectEmit(true, true, false, true, address(manager));
+        emit Donate(key.toId(), address(donateRouter), uint256(amount0), uint256(amount1));
+        donateRouter.donate(key, amount0, amount1, ZERO_BYTES);
     }
 
     function test_take_failsWithNoLiquidity() public {

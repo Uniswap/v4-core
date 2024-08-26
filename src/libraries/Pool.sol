@@ -310,8 +310,10 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (swapFee == LPFeeLibrary.MAX_LP_FEE && !exactInput) {
-            InvalidFeeForExactOut.selector.revertWith();
+        if (swapFee == LPFeeLibrary.MAX_LP_FEE) {
+            if (!exactInput) {
+                InvalidFeeForExactOut.selector.revertWith();
+            }
         }
 
         // 0 is the fee amount that should be paid to the protocol
@@ -544,7 +546,7 @@ library Pool {
     }
 
     /// @notice Derives max liquidity per tick from given tick spacing
-    /// @dev Executed within the pool constructor
+    /// @dev Executed when adding liquidity
     /// @param tickSpacing The amount of required tick separation, realized in multiples of `tickSpacing`
     ///     e.g., a tickSpacing of 3 requires ticks to be initialized every 3rd tick i.e., ..., -6, -3, 0, 3, 6, ...
     /// @return result The max liquidity per tick
