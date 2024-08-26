@@ -272,7 +272,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function sync(Currency currency) external {
         CurrencyReserves.requireNotSynced();
-        /// address(0) is used for the native currency
+        // address(0) is used for the native currency
         if (currency.isAddressZero()) return;
         uint256 balance = currency.balanceOfSelf();
         CurrencyReserves.syncCurrencyAndReserves(currency, balance);
