@@ -17,7 +17,7 @@ library CurrencyDelta {
 
     function getDelta(Currency currency, address target) internal view returns (int256 delta) {
         bytes32 hashSlot = _computeSlot(target, currency);
-        assembly {
+        assembly ("memory-safe") {
             delta := tload(hashSlot)
         }
     }

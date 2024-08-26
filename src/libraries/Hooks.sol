@@ -11,8 +11,8 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {ParseBytes} from "./ParseBytes.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
-/// @notice V4 decides whether to invoke specific hooks by inspecting the lowest significant bits of the address that
-/// the hooks contract is deployed to.
+/// @notice V4 decides whether to invoke specific hooks by inspecting the least significant bits
+/// of the address that the hooks contract is deployed to.
 /// For example, a hooks contract deployed to address: 0x0000000000000000000000000000000000002400
 /// has the lowest bits '10 0100 0000 0000' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
 library Hooks {

@@ -26,7 +26,7 @@ contract ProtocolFeesImplementation is ProtocolFees {
         return _pools[id];
     }
 
-    function fetchProtocolFee(PoolKey memory key) public returns (bool, uint24) {
+    function fetchProtocolFee(PoolKey memory key) public returns (uint24) {
         return ProtocolFees._fetchProtocolFee(key);
     }
 
