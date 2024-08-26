@@ -25,7 +25,10 @@ abstract contract ERC6909 is IERC6909Claims {
     //////////////////////////////////////////////////////////////*/
 
     function transfer(address receiver, uint256 id, uint256 amount) public virtual returns (bool) {
-        balanceOf[msg.sender][id] -= amount;
+        if (balanceOf[msg.sender][id] < amount) InsufficientBalance.selector.revertWith();
+        unchecked {
+            balanceOf[msg.sender][id] -= amount;
+        }
 
         balanceOf[receiver][id] += amount;
 
@@ -47,7 +50,10 @@ abstract contract ERC6909 is IERC6909Claims {
             }
         }
 
-        balanceOf[sender][id] -= amount;
+        if (balanceOf[sender][id] < amount) InsufficientBalance.selector.revertWith();
+        unchecked {
+            balanceOf[sender][id] -= amount;
+        }
 
         balanceOf[receiver][id] += amount;
 

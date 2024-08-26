@@ -3,7 +3,12 @@ pragma solidity ^0.8.0;
 
 /// @notice Interface for claims over a contract balance, wrapped as a ERC6909
 interface IERC6909Claims {
+    /// @notice thrown in transfer or transferFrom, when the transfer amount exceeds the owner's balance
+    error InsufficientBalance();
+
+    /// @notice thrown in transferFrom, when the transfer amount exceeds the owner's allowance
     error InsufficientAllowance();
+
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/

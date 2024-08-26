@@ -387,7 +387,7 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         token.transferFrom(sender, receiver, id, amount);
     }
 
-    function test_fuzz_transferFrom_revert_insufficientAllowance(
+    function test_fuzz_transferFrom(
         address sender,
         address receiver,
         uint256 id,
@@ -404,14 +404,51 @@ contract ERC6909ClaimsTest is Test, GasSnapshot {
         vm.prank(sender);
         token.approve(address(this), id, allowance);
 
-        if (transferAmount > allowance) {
+        // when allowance == type(uint256).max, allowance check is skipped
+        if (transferAmount > allowance && allowance != type(uint256).max) {
             vm.expectRevert(IERC6909Claims.InsufficientAllowance.selector);
             token.transferFrom(sender, receiver, id, transferAmount);
         } else if (transferAmount > mintAmount) {
-            vm.expectRevert(); // reverts with arithmetic overflow
+            vm.expectRevert(IERC6909Claims.InsufficientBalance.selector);
             token.transferFrom(sender, receiver, id, transferAmount);
         } else {
             token.transferFrom(sender, receiver, id, transferAmount);
+            if (sender != receiver) {
+                assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
+                assertEq(token.balanceOf(receiver, id), transferAmount);
+            } else {
+                // sent money to themselves
+                assertEq(token.balanceOf(sender, id), mintAmount);
+            }
+        }
+    }
+
+    function test_fuzz_transfer(
+        address sender,
+        address receiver,
+        uint256 id,
+        uint256 mintAmount,
+        uint256 transferAmount
+    ) public {
+        mintAmount = bound(mintAmount, 1, type(uint256).max);
+        transferAmount = bound(transferAmount, 1, type(uint256).max);
+
+        token.mint(sender, id, mintAmount);
+
+        if (transferAmount > mintAmount) {
+            vm.expectRevert(IERC6909Claims.InsufficientBalance.selector);
+            vm.prank(sender);
+            token.transfer(receiver, id, transferAmount);
+        } else {
+            vm.prank(sender);
+            token.transfer(receiver, id, transferAmount);
+            if (sender != receiver) {
+                assertEq(token.balanceOf(sender, id), mintAmount - transferAmount);
+                assertEq(token.balanceOf(receiver, id), transferAmount);
+            } else {
+                // sent money to themselves
+                assertEq(token.balanceOf(sender, id), mintAmount);
+            }
         }
     }
 }
