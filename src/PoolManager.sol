@@ -233,10 +233,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         internal
         returns (BalanceDelta)
     {
-        (BalanceDelta delta, uint256 feeForProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
+        (BalanceDelta delta, uint256 amountToProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
 
         // the fee is on the input currency
-        if (feeForProtocol > 0) _updateProtocolFees(inputCurrency, feeForProtocol);
+        if (amountToProtocol > 0) _updateProtocolFees(inputCurrency, amountToProtocol);
 
         // event is emitted before the afterSwap call to ensure events are always emitted in order
         emit Swap(
@@ -253,7 +253,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         noDelegateCall
         returns (BalanceDelta delta)
     {
-        Pool.State storage pool = _getPool(key.toId());
+        PoolId poolId = key.toId();
+        Pool.State storage pool = _getPool(poolId);
         pool.checkPoolInitialized();
 
         key.hooks.beforeDonate(key, amount0, amount1, hookData);
@@ -261,6 +262,9 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         delta = pool.donate(amount0, amount1);
 
         _accountPoolBalanceDelta(key, delta, msg.sender);
+
+        // event is emitted before the afterDonate call to ensure events are always emitted in order
+        emit Donate(poolId, msg.sender, amount0, amount1);
 
         key.hooks.afterDonate(key, amount0, amount1, hookData);
     }
@@ -283,12 +287,12 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function settle() external payable onlyWhenUnlocked returns (uint256 paid) {
+    function settle() external payable onlyWhenUnlocked returns (uint256) {
         return _settle(msg.sender);
     }
 
     /// @inheritdoc IPoolManager
-    function settleFor(address recipient) external payable onlyWhenUnlocked returns (uint256 paid) {
+    function settleFor(address recipient) external payable onlyWhenUnlocked returns (uint256) {
         return _settle(recipient);
     }
 
@@ -298,7 +302,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         // Because input is `uint256`, only positive amounts can be cleared.
         int128 amountDelta = amount.toInt128();
         if (amountDelta != current) MustClearExactPositiveDelta.selector.revertWith();
-        _accountDelta(currency, -(amountDelta), msg.sender);
+        // negation must be safe as amountDelta is positive
+        unchecked {
+            _accountDelta(currency, -(amountDelta), msg.sender);
+        }
     }
 
     /// @inheritdoc IPoolManager
