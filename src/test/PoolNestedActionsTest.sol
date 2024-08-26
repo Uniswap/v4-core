@@ -10,7 +10,7 @@ import {Test} from "forge-std/Test.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
-import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
+import {CurrencySettlerTestUtil} from "../../test/utils/CurrencySettlerTestUtil.sol";
 import {StateLibrary} from "../libraries/StateLibrary.sol";
 import {TransientStateLibrary} from "../libraries/TransientStateLibrary.sol";
 
@@ -66,7 +66,7 @@ contract PoolNestedActionsTest is Test, IUnlockCallback {
 contract NestedActionExecutor is Test, PoolTestBase {
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
-    using CurrencySettler for Currency;
+    using CurrencySettlerTestUtil for Currency;
     using PoolIdLibrary for PoolKey;
 
     PoolKey internal key;
