@@ -16,7 +16,7 @@ library CurrencyReserves {
     bytes32 constant CURRENCY_SLOT = 0x27e098c505d44ec3574004bca052aabf76bd35004c182099d8c575fb238593b9;
 
     function requireNotSynced() internal view {
-        if (!getSyncedCurrency().isZero()) {
+        if (!getSyncedCurrency().isAddressZero()) {
             AlreadySynced.selector.revertWith();
         }
     }
