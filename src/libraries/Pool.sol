@@ -310,15 +310,15 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        // a swap fee of MAX_FEE_PIPS (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
+        // a swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
         if (swapFee >= LPFeeLibrary.MAX_LP_FEE) {
             if (!exactInput) {
                 InvalidFeeForExactOut.selector.revertWith();
             }
         }
 
-        // 0 is the fee amount that should be paid to the protocol
         // swapFee is the pool's fee in pips (LP fee + protocol fee)
+        // when the amount swapped is 0, there is no protocolFee applied and the fee amount paid to the protocol is set to 0
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, result);
 
         if (zeroForOne) {
