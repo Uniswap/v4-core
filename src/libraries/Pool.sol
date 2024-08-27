@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
 import {Position} from "./Position.sol";
-import {FullMath} from "./FullMath.sol";
+import {UnsafeMath} from "./UnsafeMath.sol";
 import {FixedPoint128} from "./FixedPoint128.sol";
 import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
@@ -394,7 +394,8 @@ library Pool {
             // update global fee tracker
             if (result.liquidity > 0) {
                 unchecked {
-                    feeGrowthGlobalX128 += FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, result.liquidity);
+                    // FullMath.mulDiv isn't needed as the numerator can't overflow uint256 since tokens have a max supply of type(uint128).max
+                    feeGrowthGlobalX128 += UnsafeMath.simpleMulDiv(step.feeAmount, FixedPoint128.Q128, result.liquidity);
                 }
             }
 
@@ -460,11 +461,12 @@ library Pool {
         unchecked {
             // negation safe as amount0 and amount1 are always positive
             delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
+            // FullMath.mulDiv is unnecessary because the numerator is bounded by type(int128).max * Q128, which is less than type(uint256).max
             if (amount0 > 0) {
-                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, liquidity);
+                state.feeGrowthGlobal0X128 += UnsafeMath.simpleMulDiv(amount0, FixedPoint128.Q128, liquidity);
             }
             if (amount1 > 0) {
-                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, liquidity);
+                state.feeGrowthGlobal1X128 += UnsafeMath.simpleMulDiv(amount1, FixedPoint128.Q128, liquidity);
             }
         }
     }
@@ -553,18 +555,18 @@ library Pool {
     /// @return result The max liquidity per tick
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128 result) {
         // Equivalent to:
-        // int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
-        // int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
-        // uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
+        // int24 minTick = (TickMath.MIN_TICK / tickSpacing);
+        // int24 maxTick = (TickMath.MAX_TICK / tickSpacing);
+        // uint24 numTicks = maxTick - minTick + 1;
         // return type(uint128).max / numTicks;
         int24 MAX_TICK = TickMath.MAX_TICK;
         int24 MIN_TICK = TickMath.MIN_TICK;
         // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
         assembly ("memory-safe") {
             tickSpacing := signextend(2, tickSpacing)
-            let minTick := mul(sdiv(MIN_TICK, tickSpacing), tickSpacing)
-            let maxTick := mul(sdiv(MAX_TICK, tickSpacing), tickSpacing)
-            let numTicks := add(sdiv(sub(maxTick, minTick), tickSpacing), 1)
+            let minTick := sdiv(MIN_TICK, tickSpacing)
+            let maxTick := sdiv(MAX_TICK, tickSpacing)
+            let numTicks := add(sub(maxTick, minTick), 1)
             result := div(sub(shl(128, 1), 1), numTicks)
         }
     }
