@@ -30,7 +30,7 @@ library SwapMath {
             // sqrtPriceTargetX96 = min(sqrtPriceNextX96, sqrtPriceLimitX96)
             sqrtPriceNextX96 := and(sqrtPriceNextX96, 0xffffffffffffffffffffffffffffffffffffffff)
             sqrtPriceLimitX96 := and(sqrtPriceLimitX96, 0xffffffffffffffffffffffffffffffffffffffff)
-            let nextOrLimit := xor(lt(sqrtPriceNextX96, sqrtPriceLimitX96), and(zeroForOne, 0xff))
+            let nextOrLimit := xor(lt(sqrtPriceNextX96, sqrtPriceLimitX96), and(zeroForOne, 0x1))
             let symDiff := xor(sqrtPriceNextX96, sqrtPriceLimitX96)
             sqrtPriceTargetX96 := xor(sqrtPriceLimitX96, mul(symDiff, nextOrLimit))
         }

@@ -16,7 +16,7 @@ library TransientStateLibrary {
     /// @dev returns 0 if the reserves are not synced or value is 0.
     /// Checks the synced currency to only return valid reserve values (after a sync and before a settle).
     function getSyncedReserves(IPoolManager manager) internal view returns (uint256) {
-        if (getSyncedCurrency(manager).isZero()) return 0;
+        if (getSyncedCurrency(manager).isAddressZero()) return 0;
         return uint256(manager.exttload(CurrencyReserves.RESERVES_OF_SLOT));
     }
 
@@ -24,7 +24,7 @@ library TransientStateLibrary {
         return Currency.wrap(address(uint160(uint256(manager.exttload(CurrencyReserves.CURRENCY_SLOT)))));
     }
 
-    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zerod out before the contract is locked
+    /// @notice Returns the number of nonzero deltas open on the PoolManager that must be zeroed out before the contract is locked
     function getNonzeroDeltaCount(IPoolManager manager) internal view returns (uint256) {
         return uint256(manager.exttload(NonzeroDeltaCount.NONZERO_DELTA_COUNT_SLOT));
     }
