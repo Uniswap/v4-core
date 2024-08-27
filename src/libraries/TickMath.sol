@@ -108,8 +108,8 @@ library TickMath {
         }
     }
 
-    /// @notice Calculates the greatest tick value such that getPriceAtTick(tick) <= price
-    /// @dev Throws in case sqrtPriceX96 < MIN_SQRT_PRICE, as MIN_SQRT_PRICE is the lowest value getPriceAtTick may
+    /// @notice Calculates the greatest tick value such that getSqrtPriceAtTick(tick) <= sqrtPriceX96
+    /// @dev Throws in case sqrtPriceX96 < MIN_SQRT_PRICE, as MIN_SQRT_PRICE is the lowest value getSqrtPriceAtTick may
     /// ever return.
     /// @param sqrtPriceX96 The sqrt price for which to compute the tick as a Q64.96
     /// @return tick The greatest tick for which the price is less than or equal to the input price
@@ -217,10 +217,10 @@ library TickMath {
                 log_2 := or(log_2, shl(50, f))
             }
 
-            int256 log_sqrt10001 = log_2 * 255738958999603826347141; // 128.128 number
+            int256 log_sqrt10001 = log_2 * 255738958999603826347141; // Q22.128 number
 
-            int24 tickLow = int24((log_sqrt10001 - 3402992956809132418596140100660247210) >> 128);
-            int24 tickHi = int24((log_sqrt10001 + 291339464771989622907027621153398088495) >> 128);
+            int24 tickLow = int24((log_sqrt10001 - 3402992956809132418596140100660247209) >> 128);
+            int24 tickHi = int24((log_sqrt10001 + 291339464771989623025533689748046440464) >> 128);
 
             tick = tickLow == tickHi ? tickLow : getSqrtPriceAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
         }
