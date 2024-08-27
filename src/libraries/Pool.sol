@@ -310,7 +310,7 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (swapFee >= LPFeeLibrary.MAX_LP_FEE) {
+        if (swapFee >= SwapMath.MAX_SWAP_FEE) {
             if (!exactInput) {
                 InvalidFeeForExactOut.selector.revertWith();
             }
@@ -552,18 +552,18 @@ library Pool {
     /// @return result The max liquidity per tick
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128 result) {
         // Equivalent to:
-        // int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
-        // int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
-        // uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
+        // int24 minTick = (TickMath.MIN_TICK / tickSpacing);
+        // int24 maxTick = (TickMath.MAX_TICK / tickSpacing);
+        // uint24 numTicks = maxTick - minTick + 1;
         // return type(uint128).max / numTicks;
         int24 MAX_TICK = TickMath.MAX_TICK;
         int24 MIN_TICK = TickMath.MIN_TICK;
         // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
         assembly ("memory-safe") {
             tickSpacing := signextend(2, tickSpacing)
-            let minTick := mul(sdiv(MIN_TICK, tickSpacing), tickSpacing)
-            let maxTick := mul(sdiv(MAX_TICK, tickSpacing), tickSpacing)
-            let numTicks := add(sdiv(sub(maxTick, minTick), tickSpacing), 1)
+            let minTick := sdiv(MIN_TICK, tickSpacing)
+            let maxTick := sdiv(MAX_TICK, tickSpacing)
+            let numTicks := add(sub(maxTick, minTick), 1)
             result := div(sub(shl(128, 1), 1), numTicks)
         }
     }
