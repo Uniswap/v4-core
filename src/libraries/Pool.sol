@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {SafeCast} from "./SafeCast.sol";
 import {TickBitmap} from "./TickBitmap.sol";
 import {Position} from "./Position.sol";
-import {FullMath} from "./FullMath.sol";
+import {UnsafeMath} from "./UnsafeMath.sol";
 import {FixedPoint128} from "./FixedPoint128.sol";
 import {TickMath} from "./TickMath.sol";
 import {SqrtPriceMath} from "./SqrtPriceMath.sol";
@@ -237,18 +237,12 @@ library Pool {
         }
     }
 
-    // the top level state of the swap, the results of which are recorded in storage at the end
-    struct SwapState {
-        // the amount remaining to be swapped in/out of the input/output asset
-        int256 amountSpecifiedRemaining;
-        // the amount already swapped out/in of the output/input asset
-        int256 amountCalculated;
-        // current sqrt(price)
+    // the results after a swap, written to storage and returned
+    struct SwapResult {
+        // the final current sqrt(price)
         uint160 sqrtPriceX96;
         // the tick associated with the current price
         int24 tick;
-        // the global fee growth of the input token
-        uint256 feeGrowthGlobalX128;
         // the current liquidity in range
         uint128 liquidity;
     }
@@ -282,7 +276,7 @@ library Pool {
     /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
         internal
-        returns (BalanceDelta result, uint256 amountToProtocol, uint24 swapFee, SwapState memory state)
+        returns (BalanceDelta swapDelta, uint256 amountToProtocol, uint24 swapFee, SwapResult memory result)
     {
         Slot0 slot0Start = self.slot0;
         bool zeroForOne = params.zeroForOne;
@@ -291,14 +285,21 @@ library Pool {
         uint256 protocolFee =
             zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee();
 
-        state.amountSpecifiedRemaining = params.amountSpecified;
-        state.amountCalculated = 0;
-        state.sqrtPriceX96 = slot0Start.sqrtPriceX96();
-        state.tick = slot0Start.tick();
-        state.feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
-        state.liquidity = liquidityStart;
+        // the amount remaining to be swapped in/out of the input/output asset. initially set to the amountSpecified
+        int256 amountSpecifiedRemaining = params.amountSpecified;
+        // the amount swapped out/in of the output/input asset. initially set to 0
+        int256 amountCalculated = 0;
+        // the global fee growth of the input token. updated in storage at the end of swap
+        uint256 feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
+        // initialize to the current sqrt(price)
+        result.sqrtPriceX96 = slot0Start.sqrtPriceX96();
+        // initialize to the current tick
+        result.tick = slot0Start.tick();
+        // initialize to the current liquidity
+        result.liquidity = liquidityStart;
 
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
+        // lpFee, swapFee, and protocolFee are all in pips
         {
             uint24 lpFee = params.lpFeeOverride.isOverride()
                 ? params.lpFeeOverride.removeOverrideFlagAndValidate()
@@ -309,13 +310,15 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
-        if (swapFee == LPFeeLibrary.MAX_LP_FEE) {
+        if (swapFee >= SwapMath.MAX_SWAP_FEE) {
             if (!exactInput) {
                 InvalidFeeForExactOut.selector.revertWith();
             }
         }
 
-        if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, state);
+        // 0 is the fee amount that should be paid to the protocol
+        // swapFee is the pool's fee in pips (LP fee + protocol fee)
+        if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, result);
 
         if (zeroForOne) {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96()) {
@@ -336,11 +339,11 @@ library Pool {
         StepComputations memory step;
 
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
-        while (!(state.amountSpecifiedRemaining == 0 || state.sqrtPriceX96 == params.sqrtPriceLimitX96)) {
-            step.sqrtPriceStartX96 = state.sqrtPriceX96;
+        while (!(amountSpecifiedRemaining == 0 || result.sqrtPriceX96 == params.sqrtPriceLimitX96)) {
+            step.sqrtPriceStartX96 = result.sqrtPriceX96;
 
             (step.tickNext, step.initialized) =
-                self.tickBitmap.nextInitializedTickWithinOneWord(state.tick, params.tickSpacing, zeroForOne);
+                self.tickBitmap.nextInitializedTickWithinOneWord(result.tick, params.tickSpacing, zeroForOne);
 
             // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
             if (step.tickNext <= TickMath.MIN_TICK) {
@@ -354,25 +357,25 @@ library Pool {
             step.sqrtPriceNextX96 = TickMath.getSqrtPriceAtTick(step.tickNext);
 
             // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
-            (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
-                state.sqrtPriceX96,
+            (result.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
+                result.sqrtPriceX96,
                 SwapMath.getSqrtPriceTarget(zeroForOne, step.sqrtPriceNextX96, params.sqrtPriceLimitX96),
-                state.liquidity,
-                state.amountSpecifiedRemaining,
+                result.liquidity,
+                amountSpecifiedRemaining,
                 swapFee
             );
 
             if (!exactInput) {
                 unchecked {
-                    state.amountSpecifiedRemaining -= step.amountOut.toInt256();
+                    amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
-                state.amountCalculated -= (step.amountIn + step.feeAmount).toInt256();
+                amountCalculated -= (step.amountIn + step.feeAmount).toInt256();
             } else {
                 // safe because we test that amountSpecified > amountIn + feeAmount in SwapMath
                 unchecked {
-                    state.amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
+                    amountSpecifiedRemaining += (step.amountIn + step.feeAmount).toInt256();
                 }
-                state.amountCalculated += step.amountOut.toInt256();
+                amountCalculated += step.amountOut.toInt256();
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
@@ -389,19 +392,20 @@ library Pool {
             }
 
             // update global fee tracker
-            if (state.liquidity > 0) {
+            if (result.liquidity > 0) {
                 unchecked {
-                    state.feeGrowthGlobalX128 += FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
+                    // FullMath.mulDiv isn't needed as the numerator can't overflow uint256 since tokens have a max supply of type(uint128).max
+                    feeGrowthGlobalX128 += UnsafeMath.simpleMulDiv(step.feeAmount, FixedPoint128.Q128, result.liquidity);
                 }
             }
 
             // shift tick if we reached the next price
-            if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
+            if (result.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
                     (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = zeroForOne
-                        ? (state.feeGrowthGlobalX128, self.feeGrowthGlobal1X128)
-                        : (self.feeGrowthGlobal0X128, state.feeGrowthGlobalX128);
+                        ? (feeGrowthGlobalX128, self.feeGrowthGlobal1X128)
+                        : (self.feeGrowthGlobal0X128, feeGrowthGlobalX128);
                     int128 liquidityNet =
                         Pool.crossTick(self, step.tickNext, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
@@ -410,40 +414,38 @@ library Pool {
                         if (zeroForOne) liquidityNet = -liquidityNet;
                     }
 
-                    state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
+                    result.liquidity = LiquidityMath.addDelta(result.liquidity, liquidityNet);
                 }
 
                 unchecked {
-                    state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
+                    result.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
                 }
-            } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
+            } else if (result.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
-                state.tick = TickMath.getTickAtSqrtPrice(state.sqrtPriceX96);
+                result.tick = TickMath.getTickAtSqrtPrice(result.sqrtPriceX96);
             }
         }
 
-        self.slot0 = slot0Start.setTick(state.tick).setSqrtPriceX96(state.sqrtPriceX96);
+        self.slot0 = slot0Start.setTick(result.tick).setSqrtPriceX96(result.sqrtPriceX96);
 
         // update liquidity if it changed
-        if (liquidityStart != state.liquidity) self.liquidity = state.liquidity;
+        if (liquidityStart != result.liquidity) self.liquidity = result.liquidity;
 
         // update fee growth global
         if (!zeroForOne) {
-            self.feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
+            self.feeGrowthGlobal1X128 = feeGrowthGlobalX128;
         } else {
-            self.feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
+            self.feeGrowthGlobal0X128 = feeGrowthGlobalX128;
         }
 
         unchecked {
             if (zeroForOne != exactInput) {
-                result = toBalanceDelta(
-                    state.amountCalculated.toInt128(),
-                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128()
+                swapDelta = toBalanceDelta(
+                    amountCalculated.toInt128(), (params.amountSpecified - amountSpecifiedRemaining).toInt128()
                 );
             } else {
-                result = toBalanceDelta(
-                    (params.amountSpecified - state.amountSpecifiedRemaining).toInt128(),
-                    state.amountCalculated.toInt128()
+                swapDelta = toBalanceDelta(
+                    (params.amountSpecified - amountSpecifiedRemaining).toInt128(), amountCalculated.toInt128()
                 );
             }
         }
@@ -456,11 +458,12 @@ library Pool {
         unchecked {
             // negation safe as amount0 and amount1 are always positive
             delta = toBalanceDelta(-(amount0.toInt128()), -(amount1.toInt128()));
+            // FullMath.mulDiv is unnecessary because the numerator is bounded by type(int128).max * Q128, which is less than type(uint256).max
             if (amount0 > 0) {
-                state.feeGrowthGlobal0X128 += FullMath.mulDiv(amount0, FixedPoint128.Q128, liquidity);
+                state.feeGrowthGlobal0X128 += UnsafeMath.simpleMulDiv(amount0, FixedPoint128.Q128, liquidity);
             }
             if (amount1 > 0) {
-                state.feeGrowthGlobal1X128 += FullMath.mulDiv(amount1, FixedPoint128.Q128, liquidity);
+                state.feeGrowthGlobal1X128 += UnsafeMath.simpleMulDiv(amount1, FixedPoint128.Q128, liquidity);
             }
         }
     }
@@ -549,18 +552,18 @@ library Pool {
     /// @return result The max liquidity per tick
     function tickSpacingToMaxLiquidityPerTick(int24 tickSpacing) internal pure returns (uint128 result) {
         // Equivalent to:
-        // int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
-        // int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
-        // uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
+        // int24 minTick = (TickMath.MIN_TICK / tickSpacing);
+        // int24 maxTick = (TickMath.MAX_TICK / tickSpacing);
+        // uint24 numTicks = maxTick - minTick + 1;
         // return type(uint128).max / numTicks;
         int24 MAX_TICK = TickMath.MAX_TICK;
         int24 MIN_TICK = TickMath.MIN_TICK;
         // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
         assembly ("memory-safe") {
             tickSpacing := signextend(2, tickSpacing)
-            let minTick := mul(sdiv(MIN_TICK, tickSpacing), tickSpacing)
-            let maxTick := mul(sdiv(MAX_TICK, tickSpacing), tickSpacing)
-            let numTicks := add(sdiv(sub(maxTick, minTick), tickSpacing), 1)
+            let minTick := sdiv(MIN_TICK, tickSpacing)
+            let maxTick := sdiv(MAX_TICK, tickSpacing)
+            let numTicks := add(sub(maxTick, minTick), 1)
             result := div(sub(shl(128, 1), 1), numTicks)
         }
     }

@@ -39,14 +39,14 @@ library CurrencyLibrary {
     error Wrap__ERC20TransferFailed(address token, bytes reason);
 
     /// @notice A constant to represent the native currency
-    Currency public constant NATIVE = Currency.wrap(address(0));
+    Currency public constant ADDRESS_ZERO = Currency.wrap(address(0));
 
     function transfer(Currency currency, address to, uint256 amount) internal {
         // altered from https://github.com/transmissions11/solmate/blob/44a9963d4c78111f77caa0e65d677b8b46d6f2e6/src/utils/SafeTransferLib.sol
         // modified custom error selectors
 
         bool success;
-        if (currency.isNative()) {
+        if (currency.isAddressZero()) {
             assembly ("memory-safe") {
                 // Transfer the ETH and revert if it fails.
                 success := call(gas(), to, amount, 0, 0, 0, 0)
@@ -86,7 +86,7 @@ library CurrencyLibrary {
     }
 
     function balanceOfSelf(Currency currency) internal view returns (uint256) {
-        if (currency.isNative()) {
+        if (currency.isAddressZero()) {
             return address(this).balance;
         } else {
             return IERC20Minimal(Currency.unwrap(currency)).balanceOf(address(this));
@@ -94,19 +94,15 @@ library CurrencyLibrary {
     }
 
     function balanceOf(Currency currency, address owner) internal view returns (uint256) {
-        if (currency.isNative()) {
+        if (currency.isAddressZero()) {
             return owner.balance;
         } else {
             return IERC20Minimal(Currency.unwrap(currency)).balanceOf(owner);
         }
     }
 
-    function isNative(Currency currency) internal pure returns (bool) {
-        return Currency.unwrap(currency) == Currency.unwrap(NATIVE);
-    }
-
-    function isZero(Currency currency) internal pure returns (bool) {
-        return isNative(currency);
+    function isAddressZero(Currency currency) internal pure returns (bool) {
+        return Currency.unwrap(currency) == Currency.unwrap(ADDRESS_ZERO);
     }
 
     function toId(Currency currency) internal pure returns (uint256) {

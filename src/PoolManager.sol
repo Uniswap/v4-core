@@ -233,14 +233,22 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         internal
         returns (BalanceDelta)
     {
-        (BalanceDelta delta, uint256 amountToProtocol, uint24 swapFee, Pool.SwapState memory state) = pool.swap(params);
+        (BalanceDelta delta, uint256 amountToProtocol, uint24 swapFee, Pool.SwapResult memory result) =
+            pool.swap(params);
 
         // the fee is on the input currency
         if (amountToProtocol > 0) _updateProtocolFees(inputCurrency, amountToProtocol);
 
         // event is emitted before the afterSwap call to ensure events are always emitted in order
         emit Swap(
-            id, msg.sender, delta.amount0(), delta.amount1(), state.sqrtPriceX96, state.liquidity, state.tick, swapFee
+            id,
+            msg.sender,
+            delta.amount0(),
+            delta.amount1(),
+            result.sqrtPriceX96,
+            result.liquidity,
+            result.tick,
+            swapFee
         );
 
         return delta;
@@ -272,7 +280,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @inheritdoc IPoolManager
     function sync(Currency currency) external {
         CurrencyReserves.requireNotSynced();
-        if (currency.isNative()) return;
+        // address(0) is used for the native currency
+        if (currency.isAddressZero()) return;
         uint256 balance = currency.balanceOfSelf();
         CurrencyReserves.syncCurrencyAndReserves(currency, balance);
     }
@@ -337,8 +346,8 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function _settle(address recipient) internal returns (uint256 paid) {
         Currency currency = CurrencyReserves.getSyncedCurrency();
-        // If not previously synced, expects native currency to be settled because CurrencyLibrary.NATIVE == address(0)
-        if (currency.isNative()) {
+        // if not previously synced, expects native currency to be settled
+        if (currency.isAddressZero()) {
             paid = msg.value;
         } else {
             if (msg.value > 0) NonzeroNativeValue.selector.revertWith();
