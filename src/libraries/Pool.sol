@@ -502,7 +502,7 @@ library Pool {
     /// @param liquidityDelta A new amount of liquidity to be added (subtracted) when tick is crossed from left to right (right to left)
     /// @param upper true for updating a position's upper tick, or false for updating a position's lower tick
     /// @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
-    /// @return liquidityGrossAfter The total amount of  liquidity for all positions that references the tick after the update
+    /// @return liquidityGrossAfter The total amount of liquidity for all positions that references the tick after the update
     function updateTick(State storage self, int24 tick, int128 liquidityDelta, bool upper)
         internal
         returns (bool flipped, uint128 liquidityGrossAfter)
@@ -533,10 +533,10 @@ library Pool {
                 info.slot,
                 // bitwise OR to pack liquidityGrossAfter and liquidityNet
                 or(
-                    // liquidityGross is in the low bits, upper bits are already 0
+                    // Put liquidityGrossAfter in the lower bits, clearing out the upper bits
                     and(liquidityGrossAfter, 0xffffffffffffffffffffffffffffffff),
-                    // shift liquidityNet to take the upper bits and lower bits get filled with 0
-                    shl(128, signextend(15, liquidityNet))
+                    // Shift liquidityNet to put it in the upper bits (no need for signextend since we're shifting left)
+                    shl(128, liquidityNet)
                 )
             )
         }
