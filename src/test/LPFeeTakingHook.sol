@@ -36,10 +36,6 @@ contract LPFeeTakingHook is BaseTestHooks {
         BalanceDelta feeDelta,
         bytes calldata /* hookData **/
     ) external override onlyPoolManager returns (bytes4, BalanceDelta) {
-        if (feeDelta.amount0() == 0 && feeDelta.amount1() == 0) {
-            return (IHooks.afterRemoveLiquidity.selector, feeDelta);
-        }
-
         uint128 feeAmount0 = uint128(feeDelta.amount0());
         uint128 feeAmount1 = uint128(feeDelta.amount1());
 

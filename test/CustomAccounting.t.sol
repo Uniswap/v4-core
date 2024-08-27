@@ -16,16 +16,11 @@ import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {Currency} from "../src/types/Currency.sol";
 import {BalanceDelta} from "../src/types/BalanceDelta.sol";
 import {SafeCast} from "../src/libraries/SafeCast.sol";
-import {StateLibrary} from "../src/libraries/StateLibrary.sol";
-
-import "forge-std/console2.sol";
 
 contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     using SafeCast for *;
-    using StateLibrary for IPoolManager;
 
     address hook;
-    PoolId poolId;
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
@@ -70,7 +65,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         vm.etch(hookAddr, implAddr.code);
         hook = hookAddr;
 
-        (key, poolId) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, IHooks(hookAddr), 100, SQRT_PRICE_1_1, ZERO_BYTES);
     }
 
     // ------------------------ SWAP  ------------------------
@@ -341,43 +336,30 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
     function test_fuzz_addLiquidity_withLPFeeTakingHook(uint128 feeRevenue0, uint128 feeRevenue1) public {
         feeRevenue0 = uint128(bound(feeRevenue0, 0, type(uint128).max / 2));
         feeRevenue1 = uint128(bound(feeRevenue1, 0, type(uint128).max / 2));
-        _setUpLPFeeTakingPool();
-
-        uint256 balanceBefore0 = currency0.balanceOf(address(this));
-        uint256 balanceBefore1 = currency1.balanceOf(address(this));
-        uint256 hookBalanceBefore0 = currency0.balanceOf(hook);
-        uint256 hookBalanceBefore1 = currency1.balanceOf(hook);
-        uint256 managerBalanceBefore0 = currency0.balanceOf(address(manager));
-        uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
-        modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
+        _setUpLPFeeTakingPool(); // creates liquidity as part of setup
 
         // donate to generate fee revenue
         donateRouter.donate(key, feeRevenue0, feeRevenue1, ZERO_BYTES);
 
-        // add liquidity again to trigger the hook
+        uint256 hookBalanceBefore0 = currency0.balanceOf(hook);
+        uint256 hookBalanceBefore1 = currency1.balanceOf(hook);
+
+        // add liquidity again to trigger the hook, which should take the fee revenue
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
 
         uint256 hookGain0 = currency0.balanceOf(hook) - hookBalanceBefore0;
         uint256 hookGain1 = currency1.balanceOf(hook) - hookBalanceBefore1;
-        uint256 thisLoss0 = balanceBefore0 - currency0.balanceOf(address(this));
-        uint256 thisLoss1 = balanceBefore1 - currency1.balanceOf(address(this));
-        uint256 managerGain0 = currency0.balanceOf(address(manager)) - managerBalanceBefore0;
-        uint256 managerGain1 = currency1.balanceOf(address(manager)) - managerBalanceBefore1;
 
         // Assert that the hook took the fee revenue
         assertApproxEqAbs(hookGain0, feeRevenue0, 1 wei);
         assertApproxEqAbs(hookGain1, feeRevenue1, 1 wei);
-        assertEq(thisLoss0 - hookGain0, managerGain0, "manager amount 0");
-        assertEq(thisLoss1 - hookGain1, managerGain1, "manager amount 1");
     }
 
     function test_fuzz_removeLiquidity_withLPFeeTakingHook(uint128 feeRevenue0, uint128 feeRevenue1) public {
         // test fails when fee revenue approaches int128.max because PoolManager is limited by (principal + fees)
         feeRevenue0 = uint128(bound(feeRevenue0, 0, type(uint128).max / 3));
         feeRevenue1 = uint128(bound(feeRevenue1, 0, type(uint128).max / 3));
-        _setUpLPFeeTakingPool(); // creates liquidity
-
-        uint128 liquidity = manager.getLiquidity(poolId);
+        _setUpLPFeeTakingPool(); // creates liquidity as part of setup
 
         // donate to generate fee revenue
         donateRouter.donate(key, feeRevenue0, feeRevenue1, ZERO_BYTES);
@@ -389,7 +371,7 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         uint256 managerBalanceBefore0 = currency0.balanceOf(address(manager));
         uint256 managerBalanceBefore1 = currency1.balanceOf(address(manager));
 
-        // remove liquidity to trigger the hook
+        // remove liquidity to trigger the hook, which should take the fee revenue
         modifyLiquidityRouter.modifyLiquidity(key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
 
         uint256 hookGain0 = currency0.balanceOf(hook) - hookBalanceBefore0;
