@@ -39,4 +39,31 @@ contract UnsafeMathTest is Test {
             assertEq(diff, 1);
         }
     }
+
+    function test_simpleMulDiv_zeroDoesNotRevert(uint256 a, uint256 b) public pure {
+        a.simpleMulDiv(b, 0);
+    }
+
+    function test_simpleMulDiv_succeeds() public pure {
+        assertEq(Q128.simpleMulDiv(3, 2), Q128 * 3 / 2);
+    }
+
+    function test_simpleMulDiv_noOverflow() public pure {
+        assertLe(uint256(int256(type(int128).max)) * Q128, type(uint256).max);
+    }
+
+    function test_fuzz_simpleMulDiv_succeeds(uint256 a, uint256 b, uint256 denominator) public pure {
+        vm.assume(denominator != 0);
+        uint256 result = a.simpleMulDiv(b, denominator);
+        unchecked {
+            assertTrue(result == a * b / denominator);
+        }
+    }
+
+    function test_fuzz_simpleMulDiv_bounded(uint256 a, uint256 denominator) public pure {
+        a = bound(a, 0, uint256(int256(type(int128).max)));
+        denominator = bound(denominator, 1, uint256(type(uint128).max));
+        uint256 result = a.simpleMulDiv(Q128, denominator);
+        assertTrue(result == a * Q128 / denominator);
+    }
 }

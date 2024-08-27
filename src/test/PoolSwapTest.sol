@@ -42,7 +42,7 @@ contract PoolSwapTest is PoolTestBase {
         );
 
         uint256 ethBalance = address(this).balance;
-        if (ethBalance > 0) CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+        if (ethBalance > 0) CurrencyLibrary.ADDRESS_ZERO.transfer(msg.sender, ethBalance);
     }
 
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
