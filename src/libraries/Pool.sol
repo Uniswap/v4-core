@@ -398,10 +398,10 @@ library Pool {
                 }
             }
 
-            // Shift tick if we reached the next price, and preemptively decrement the tick for zeroForOne swaps to tickNext - 1. If
-            // amountSpecifiedRemaining == 0 or if params.sqrtPriceLimitX96 == result.sqrtPriceX96 == step.sqrtPriceNextX96, the swap won't
-            // continue swapping, and the preemptive subtraction will mean the slot0.tick is 1 less than getTickAtSqrtPrice(slot0.sqrtPrice).
-            // This is no issue for swapping, but calls to donate should check both price and tick to be sure the correct LPs are being rewarded.
+            // Shift tick if we reached the next price, and preemptively decrement for zeroForOne swaps to tickNext - 1.
+            // If the swap doesnt continue (if amountRemaining == 0 or sqrtPriceLimit is met), slot0.tick will be 1 less
+            // than getTickAtSqrtPrice(slot0.sqrtPrice). This doesn't affect swaps, but donation calls should verify both
+            // price and tick to reward the correct LPs.
             if (result.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
