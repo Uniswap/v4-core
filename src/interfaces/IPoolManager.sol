@@ -164,11 +164,11 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         returns (BalanceDelta swapDelta);
 
     /// @notice Donate the given currency amounts to the pool with the given pool key
-    /// @dev Calls to donate can be frontrun by people adding just-in-time liquidity, with the aim of receiving a portion of
-    /// the donated funds. Donating contracts should keep this in mind when designing donation mechanisms.
-    /// @dev In certain edge-cases of the swap algorithm, the `sqrtPrice` of a pool can be at the bottom of tick `n`, but the `tick` of
-    /// the pool have already been crossed into tick `n - 1`. In this case a call to `donate` would donate to tick `n - 1` not `n`.
-    /// Read the comments throughout Pool.swap() for more detailed information about this scenario.
+    /// @dev Calls to donate can be frontrun adding just-in-time liquidity, with the aim of receiving a portion donated funds.
+    /// Donors should keep this in mind when designing donation mechanisms.
+    /// @dev In certain edge-cases of the swap algorithm, the `sqrtPrice` of a pool can be at the lower boundary of tick `n`, but
+    /// the `tick` of the pool is already `n - 1`. In this case a call to `donate` would donate to tick `n - 1` not `n`.
+    /// Read the comments in `Pool.swap()` for more information about this.
     /// @param key The key of the pool to donate to
     /// @param amount0 The amount of currency0 to donate
     /// @param amount1 The amount of currency1 to donate
