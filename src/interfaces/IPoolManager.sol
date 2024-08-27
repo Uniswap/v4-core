@@ -113,6 +113,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     function unlock(bytes calldata data) external returns (bytes memory);
 
     /// @notice Initialize the state for a given pool ID
+    /// @dev A swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
     /// @param key The pool key for the pool to initialize
     /// @param sqrtPriceX96 The initial square root price
     /// @param hookData The data to pass through to the initialize hooks
@@ -219,6 +220,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     function burn(address from, uint256 id, uint256 amount) external;
 
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
+    /// @dev A swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
     /// @param key The key of the pool to update dynamic LP fees for
     /// @param newDynamicLPFee The new dynamic pool LP fee
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external;
