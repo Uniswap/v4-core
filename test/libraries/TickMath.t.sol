@@ -205,7 +205,7 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
         }
     }
 
-    function test_fuzz_getTickAtSqrtPrice_getSqrtPriceAtTick_relation(int24 tick) public view {
+    function test_fuzz_getTickAtSqrtPrice_getSqrtPriceAtTick_relation(int24 tick) public pure {
         tick = int24(bound(tick, TickMath.MIN_TICK, TickMath.MAX_TICK - 1));
         int24 nextTick = tick + 1;
         uint160 priceAtTick = TickMath.getSqrtPriceAtTick(tick);
