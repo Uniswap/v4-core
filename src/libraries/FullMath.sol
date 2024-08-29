@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 /// @title Contains 512-bit math functions
 /// @notice Facilitates multiplication and division that can have overflow of an intermediate value without any loss of precision
@@ -20,7 +20,7 @@ library FullMath {
             // variables such that product = prod1 * 2**256 + prod0
             uint256 prod0 = a * b; // Least significant 256 bits of the product
             uint256 prod1; // Most significant 256 bits of the product
-            assembly {
+            assembly ("memory-safe") {
                 let mm := mulmod(a, b, not(0))
                 prod1 := sub(sub(mm, prod0), lt(mm, prod0))
             }
@@ -31,7 +31,7 @@ library FullMath {
 
             // Handle non-overflow cases, 256 by 256 division
             if (prod1 == 0) {
-                assembly {
+                assembly ("memory-safe") {
                     result := div(prod0, denominator)
                 }
                 return result;
@@ -44,11 +44,11 @@ library FullMath {
             // Make division exact by subtracting the remainder from [prod1 prod0]
             // Compute remainder using mulmod
             uint256 remainder;
-            assembly {
+            assembly ("memory-safe") {
                 remainder := mulmod(a, b, denominator)
             }
             // Subtract 256 bit number from 512 bit number
-            assembly {
+            assembly ("memory-safe") {
                 prod1 := sub(prod1, gt(remainder, prod0))
                 prod0 := sub(prod0, remainder)
             }
@@ -58,18 +58,18 @@ library FullMath {
             // Always >= 1.
             uint256 twos = (0 - denominator) & denominator;
             // Divide denominator by power of two
-            assembly {
+            assembly ("memory-safe") {
                 denominator := div(denominator, twos)
             }
 
             // Divide [prod1 prod0] by the factors of two
-            assembly {
+            assembly ("memory-safe") {
                 prod0 := div(prod0, twos)
             }
             // Shift in bits from prod1 into prod0. For this we need
             // to flip `twos` such that it is 2**256 / twos.
             // If twos is zero, then it becomes one
-            assembly {
+            assembly ("memory-safe") {
                 twos := add(div(sub(0, twos), twos), 1)
             }
             prod0 |= prod1 * twos;

@@ -21,8 +21,8 @@ library CurrencySettler {
         // short circuit for ERC-6909 burns to support ERC-6909-wrapped native tokens
         if (burn) {
             manager.burn(payer, currency.toId(), amount);
-        } else if (currency.isNative()) {
-            manager.settle{value: amount}(currency);
+        } else if (currency.isAddressZero()) {
+            manager.settle{value: amount}();
         } else {
             manager.sync(currency);
             if (payer != address(this)) {
@@ -30,7 +30,7 @@ library CurrencySettler {
             } else {
                 IERC20Minimal(Currency.unwrap(currency)).transfer(address(manager), amount);
             }
-            manager.settle(currency);
+            manager.settle();
         }
     }
 

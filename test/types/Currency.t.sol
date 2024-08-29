@@ -2,9 +2,11 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {stdError} from "forge-std/StdError.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {CurrencyTest} from "../../src/test/CurrencyTest.sol";
+import {EmptyRevertContract} from "../../src/test/EmptyRevertContract.sol";
 
 contract TestCurrency is Test {
     uint256 constant initialERC20Balance = 1000 ether;
@@ -78,16 +80,16 @@ contract TestCurrency is Test {
         );
     }
 
-    function test_isNative_native_returnsTrue() public view {
-        assertEq(currencyTest.isNative(nativeCurrency), true);
+    function test_isAddressZero_native_returnsTrue() public view {
+        assertEq(currencyTest.isAddressZero(nativeCurrency), true);
     }
 
-    function test_isNative_token_returnsFalse() public view {
-        assertEq(currencyTest.isNative(erc20Currency), false);
+    function test_isAddressZero_token_returnsFalse() public view {
+        assertEq(currencyTest.isAddressZero(erc20Currency), false);
     }
 
-    function test_fuzz_isNative(Currency currency) public view {
-        assertEq(currencyTest.isNative(currency), (Currency.unwrap(currency) == address(0)));
+    function test_fuzz_isAddressZero(Currency currency) public view {
+        assertEq(currencyTest.isAddressZero(currency), (Currency.unwrap(currency) == address(0)));
     }
 
     function test_toId_nativeReturns0() public view {
@@ -111,6 +113,24 @@ contract TestCurrency is Test {
         assertEq(Currency.unwrap(currency), Currency.unwrap(currencyTest.fromId(currencyTest.toId(currency))));
     }
 
+    function test_fuzz_toId_fromId_opposites(uint256 id) public view {
+        assertEq(id & 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, currencyTest.toId(currencyTest.fromId(id)));
+    }
+
+    function test_transfer_noReturnData() public {
+        // This contract reverts with no data
+        EmptyRevertContract emptyRevertingToken = new EmptyRevertContract();
+        // the token reverts with no data, so our custom error will be emitted instead
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CurrencyLibrary.Wrap__ERC20TransferFailed.selector,
+                Currency.unwrap(Currency.wrap(address(emptyRevertingToken))),
+                new bytes(0)
+            )
+        );
+        currencyTest.transfer(Currency.wrap(address(emptyRevertingToken)), otherAddress, 100);
+    }
+
     function test_fuzz_transfer_native(uint256 amount) public {
         uint256 balanceBefore = otherAddress.balance;
         uint256 contractBalanceBefore = address(currencyTest).balance;
@@ -120,7 +140,9 @@ contract TestCurrency is Test {
             assertEq(otherAddress.balance, balanceBefore + amount);
             assertEq(address(currencyTest).balance, contractBalanceBefore - amount);
         } else {
-            vm.expectRevert(CurrencyLibrary.NativeTransferFailed.selector);
+            vm.expectRevert(
+                abi.encodeWithSelector(CurrencyLibrary.Wrap__NativeTransferFailed.selector, otherAddress, new bytes(0))
+            );
             currencyTest.transfer(nativeCurrency, otherAddress, amount);
             assertEq(otherAddress.balance, balanceBefore);
         }
@@ -136,7 +158,14 @@ contract TestCurrency is Test {
                 MockERC20(Currency.unwrap(erc20Currency)).balanceOf(address(currencyTest)), initialERC20Balance - amount
             );
         } else {
-            vm.expectRevert(CurrencyLibrary.ERC20TransferFailed.selector);
+            // the token reverts with an overflow error message, so this is bubbled up
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    CurrencyLibrary.Wrap__ERC20TransferFailed.selector,
+                    Currency.unwrap(erc20Currency),
+                    stdError.arithmeticError
+                )
+            );
             currencyTest.transfer(erc20Currency, otherAddress, amount);
             assertEq(currencyTest.balanceOf(erc20Currency, otherAddress), balanceBefore);
         }

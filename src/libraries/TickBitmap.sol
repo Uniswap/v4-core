@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 import {BitMath} from "./BitMath.sol";
 
@@ -16,7 +16,9 @@ library TickBitmap {
     function compress(int24 tick, int24 tickSpacing) internal pure returns (int24 compressed) {
         // compressed = tick / tickSpacing;
         // if (tick < 0 && tick % tickSpacing != 0) compressed--;
-        assembly {
+        assembly ("memory-safe") {
+            tick := signextend(2, tick)
+            tickSpacing := signextend(2, tickSpacing)
             compressed :=
                 sub(
                     sdiv(tick, tickSpacing),
@@ -31,9 +33,9 @@ library TickBitmap {
     /// @return wordPos The key in the mapping containing the word in which the bit is stored
     /// @return bitPos The bit position in the word where the flag is stored
     function position(int24 tick) internal pure returns (int16 wordPos, uint8 bitPos) {
-        assembly {
+        assembly ("memory-safe") {
             // signed arithmetic shift right
-            wordPos := sar(8, tick)
+            wordPos := sar(8, signextend(2, tick))
             bitPos := and(tick, 0xff)
         }
     }
@@ -43,20 +45,21 @@ library TickBitmap {
     /// @param tick The tick to flip
     /// @param tickSpacing The spacing between usable ticks
     function flipTick(mapping(int16 => uint256) storage self, int24 tick, int24 tickSpacing) internal {
-        /**
-         * Equivalent to the following Solidity:
-         *     if (tick % tickSpacing != 0) revert TickMisaligned(tick, tickSpacing);
-         *     (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
-         *     uint256 mask = 1 << bitPos;
-         *     self[wordPos] ^= mask;
-         */
+        // Equivalent to the following Solidity:
+        //     if (tick % tickSpacing != 0) revert TickMisaligned(tick, tickSpacing);
+        //     (int16 wordPos, uint8 bitPos) = position(tick / tickSpacing);
+        //     uint256 mask = 1 << bitPos;
+        //     self[wordPos] ^= mask;
         assembly ("memory-safe") {
+            tick := signextend(2, tick)
+            tickSpacing := signextend(2, tickSpacing)
             // ensure that the tick is spaced
             if smod(tick, tickSpacing) {
-                mstore(0, 0xd4d8f3e6) // selector for TickMisaligned(int24,int24)
-                mstore(0x20, tick)
-                mstore(0x40, tickSpacing)
-                revert(0x1c, 0x44)
+                let fmp := mload(0x40)
+                mstore(fmp, 0xd4d8f3e6) // selector for TickMisaligned(int24,int24)
+                mstore(add(fmp, 0x20), tick)
+                mstore(add(fmp, 0x40), tickSpacing)
+                revert(add(fmp, 0x1c), 0x44)
             }
             tick := sdiv(tick, tickSpacing)
             // calculate the storage slot corresponding to the tick
@@ -91,7 +94,7 @@ library TickBitmap {
             if (lte) {
                 (int16 wordPos, uint8 bitPos) = position(compressed);
                 // all the 1s at or to the right of the current bitPos
-                uint256 mask = (1 << bitPos) - 1 + (1 << bitPos);
+                uint256 mask = type(uint256).max >> (uint256(type(uint8).max) - bitPos);
                 uint256 masked = self[wordPos] & mask;
 
                 // if there are no initialized ticks to the right of or at the current tick, return rightmost in the word

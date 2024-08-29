@@ -91,8 +91,8 @@ contract DeltaReturningHook is BaseTestHooks {
             currency.take(manager, address(this), uint128(delta), false);
         } else {
             uint256 amount = uint256(-int256(delta));
-            if (currency.isNative()) {
-                manager.settle{value: amount}(currency);
+            if (currency.isAddressZero()) {
+                manager.settle{value: amount}();
             } else {
                 currency.settle(manager, address(this), amount, false);
             }

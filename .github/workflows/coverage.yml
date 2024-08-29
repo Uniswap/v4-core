@@ -25,14 +25,14 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build --sizes
+          forge build --sizes --via-ir
         id: build
       - name: Run forge coverage
         id: coverage
         run: |
           {
           echo 'COVERAGE<<EOF'
-          forge coverage | grep '^|' | grep -v 'test/'
+          forge coverage --ir-minimum | grep '^|' | grep -v 'test/'
           echo EOF
           } >> "$GITHUB_OUTPUT"
         env:

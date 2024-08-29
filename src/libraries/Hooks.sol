@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.0;
 
 import {PoolKey} from "../types/PoolKey.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
@@ -11,8 +11,8 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {ParseBytes} from "./ParseBytes.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
-/// @notice V4 decides whether to invoke specific hooks by inspecting the lowest significant bits of the address that
-/// the hooks contract is deployed to.
+/// @notice V4 decides whether to invoke specific hooks by inspecting the least significant bits
+/// of the address that the hooks contract is deployed to.
 /// For example, a hooks contract deployed to address: 0x0000000000000000000000000000000000002400
 /// has the lowest bits '10 0100 0000 0000' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
 library Hooks {
@@ -70,7 +70,8 @@ library Hooks {
     error InvalidHookResponse();
 
     /// @notice thrown when a hook call fails
-    error FailedHookCall();
+    /// @param revertReason bubbled up revert reason
+    error Wrap__FailedHookCall(address hook, bytes revertReason);
 
     /// @notice The hook's delta changed the swap from exactIn to exactOut or vice versa
     error HookDeltaExceedsSwapAmount();
@@ -103,6 +104,7 @@ library Hooks {
 
     /// @notice Ensures that the hook address includes at least one hook flag or dynamic fees, or is the 0 address
     /// @param self The hook to verify
+    /// @param fee The fee of the pool the hook is used with
     /// @return bool True if the hook address is valid
     function isValidHookAddress(IHooks self, uint24 fee) internal pure returns (bool) {
         // The hook can only have a flag to return a hook delta on an action if it also has the corresponding action flag
@@ -127,17 +129,15 @@ library Hooks {
     /// @notice performs a hook call using the given calldata on the given hook that doesnt return a delta
     /// @return result The complete data returned by the hook
     function callHook(IHooks self, bytes memory data) internal returns (bytes memory result) {
+        bool success;
         assembly ("memory-safe") {
-            if iszero(call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)) {
-                if iszero(returndatasize()) {
-                    // if the call failed without a revert reason, revert with `FailedHookCall()`
-                    mstore(0, 0x36bc48c5)
-                    revert(0x1c, 0x04)
-                }
-                // bubble up revert
-                returndatacopy(0, 0, returndatasize())
-                revert(0, returndatasize())
-            }
+            success := call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)
+        }
+        // Revert with FailedHookCall, containing any error message to bubble up
+        if (!success) Wrap__FailedHookCall.selector.bubbleUpAndRevertWith(address(self));
+
+        // The call was successful, fetch the returned data
+        assembly ("memory-safe") {
             // allocate result byte array from the free memory pointer
             result := mload(0x40)
             // store new free memory pointer at the end of the array padded to 32 bytes
@@ -148,20 +148,22 @@ library Hooks {
             returndatacopy(add(result, 0x20), 0, returndatasize())
         }
 
-        // Check expected selector and returned selector match.
-        if (result.parseSelector() != data.parseSelector()) InvalidHookResponse.selector.revertWith();
+        // Length must be at least 32 to contain the selector. Check expected selector and returned selector match.
+        if (result.length < 32 || result.parseSelector() != data.parseSelector()) {
+            InvalidHookResponse.selector.revertWith();
+        }
     }
 
     /// @notice performs a hook call using the given calldata on the given hook
-    /// @return delta The delta returned by the hook
-    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn)
-        internal
-        returns (int256 delta)
-    {
+    /// @return int256 The delta returned by the hook
+    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn) internal returns (int256) {
         bytes memory result = callHook(self, data);
 
         // If this hook wasnt meant to return something, default to 0 delta
         if (!parseReturn) return 0;
+
+        // A length of 64 bytes is required to return a bytes4, and a 32 byte delta
+        if (result.length != 64) InvalidHookResponse.selector.revertWith();
         return result.parseReturnDelta();
     }
 
@@ -178,9 +180,7 @@ library Hooks {
         noSelfCall(self)
     {
         if (self.hasPermission(BEFORE_INITIALIZE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.beforeInitialize.selector, msg.sender, key, sqrtPriceX96, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.beforeInitialize, (msg.sender, key, sqrtPriceX96, hookData)));
         }
     }
 
@@ -190,9 +190,7 @@ library Hooks {
         noSelfCall(self)
     {
         if (self.hasPermission(AFTER_INITIALIZE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.afterInitialize.selector, msg.sender, key, sqrtPriceX96, tick, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.afterInitialize, (msg.sender, key, sqrtPriceX96, tick, hookData)));
         }
     }
 
@@ -204,11 +202,9 @@ library Hooks {
         bytes calldata hookData
     ) internal noSelfCall(self) {
         if (params.liquidityDelta > 0 && self.hasPermission(BEFORE_ADD_LIQUIDITY_FLAG)) {
-            self.callHook(abi.encodeWithSelector(IHooks.beforeAddLiquidity.selector, msg.sender, key, params, hookData));
+            self.callHook(abi.encodeCall(IHooks.beforeAddLiquidity, (msg.sender, key, params, hookData)));
         } else if (params.liquidityDelta <= 0 && self.hasPermission(BEFORE_REMOVE_LIQUIDITY_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.beforeRemoveLiquidity.selector, msg.sender, key, params, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.beforeRemoveLiquidity, (msg.sender, key, params, hookData)));
         }
     }
 
@@ -256,6 +252,9 @@ library Hooks {
 
         if (self.hasPermission(BEFORE_SWAP_FLAG)) {
             bytes memory result = callHook(self, abi.encodeCall(IHooks.beforeSwap, (msg.sender, key, params, hookData)));
+
+            // A length of 96 bytes is required to return a bytes4, a 32 byte delta, and an LP fee
+            if (result.length != 96) InvalidHookResponse.selector.revertWith();
 
             // dynamic fee pools that do not want to override the cache fee, return 0 otherwise they return a valid fee with the override flag
             if (key.fee.isDynamicFee()) lpFeeOverride = result.parseFee();
@@ -318,9 +317,7 @@ library Hooks {
         noSelfCall(self)
     {
         if (self.hasPermission(BEFORE_DONATE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.beforeDonate.selector, msg.sender, key, amount0, amount1, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.beforeDonate, (msg.sender, key, amount0, amount1, hookData)));
         }
     }
 
@@ -330,9 +327,7 @@ library Hooks {
         noSelfCall(self)
     {
         if (self.hasPermission(AFTER_DONATE_FLAG)) {
-            self.callHook(
-                abi.encodeWithSelector(IHooks.afterDonate.selector, msg.sender, key, amount0, amount1, hookData)
-            );
+            self.callHook(abi.encodeCall(IHooks.afterDonate, (msg.sender, key, amount0, amount1, hookData)));
         }
     }
 

@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.0;
 
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {IPoolManager} from "./IPoolManager.sol";
 import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
 
-/// @notice The PoolManager contract decides whether to invoke specific hooks by inspecting the leading bits
-/// of the hooks contract address. For example, a 1 bit in the first bit of the address will
-/// cause the 'before swap' hook to be invoked. See the Hooks library for the full spec.
+/// @notice V4 decides whether to invoke specific hooks by inspecting the least significant bits
+/// of the address that the hooks contract is deployed to.
+/// For example, a hooks contract deployed to address: 0x0000000000000000000000000000000000002400
+/// has the lowest bits '10 0100 0000 0000' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
+/// See the Hooks library for the full spec.
 /// @dev Should only be callable by the v4 PoolManager.
 interface IHooks {
     /// @notice The hook called before the state of a pool is initialized
@@ -53,6 +55,7 @@ interface IHooks {
     /// @param sender The initial msg.sender for the add liquidity call
     /// @param key The key for the pool
     /// @param params The parameters for adding liquidity
+    /// @param delta The caller's balance delta after adding liquidity
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidity provider to be passed on to the hook
     /// @return bytes4 The function selector for the hook
     /// @return BalanceDelta The hook's delta in token0 and token1. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
@@ -68,7 +71,7 @@ interface IHooks {
     /// @param sender The initial msg.sender for the remove liquidity call
     /// @param key The key for the pool
     /// @param params The parameters for removing liquidity
-    /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the liquidity provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function beforeRemoveLiquidity(
         address sender,
@@ -81,7 +84,8 @@ interface IHooks {
     /// @param sender The initial msg.sender for the remove liquidity call
     /// @param key The key for the pool
     /// @param params The parameters for removing liquidity
-    /// @param hookData Arbitrary data handed into the PoolManager by the liquidty provider to be be passed on to the hook
+    /// @param delta The caller's balance delta after removing liquidity
+    /// @param hookData Arbitrary data handed into the PoolManager by the liquidity provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     /// @return BalanceDelta The hook's delta in token0 and token1. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
     function afterRemoveLiquidity(
@@ -99,7 +103,7 @@ interface IHooks {
     /// @param hookData Arbitrary data handed into the PoolManager by the swapper to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
     /// @return BeforeSwapDelta The hook's delta in specified and unspecified currencies. Positive: the hook is owed/took currency, negative: the hook owes/sent currency
-    /// @return uint24 Optionally override the lp fee, only used if three conditions are met: 1) the Pool has a dynamic fee, 2) the value's leading bit is set to 1 (24th bit, 0x800000), 3) the value is less than or equal to the maximum fee (1 million)
+    /// @return uint24 Optionally override the lp fee, only used if three conditions are met: 1. the Pool has a dynamic fee, 2. the value's 2nd highest bit is set (23rd bit, 0x400000), and 3. the value is less than or equal to the maximum fee (1 million)
     function beforeSwap(
         address sender,
         PoolKey calldata key,

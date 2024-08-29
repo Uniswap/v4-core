@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
 import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
@@ -23,6 +23,9 @@ import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
 import {PoolSettleTest} from "../../src/test/PoolSettleTest.sol";
 import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
+import {ActionsRouter} from "../../src/test/ActionsRouter.sol";
+import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
+import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {
     ProtocolFeeControllerTest,
     OutOfBoundsProtocolFeeControllerTest,
@@ -34,6 +37,7 @@ import {
 contract Deployers {
     using LPFeeLibrary for uint24;
     using PoolIdLibrary for PoolKey;
+    using StateLibrary for IPoolManager;
 
     // Helpful test constants
     bytes constant ZERO_BYTES = Constants.ZERO_BYTES;
@@ -64,6 +68,7 @@ contract Deployers {
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
     PoolSettleTest settleRouter;
+    ActionsRouter actionsRouter;
 
     PoolClaimsTest claimsRouter;
     PoolNestedActionsTest nestedActionRouter;
@@ -91,7 +96,7 @@ contract Deployers {
         }
     }
 
-    function deployFreshManager() internal {
+    function deployFreshManager() internal virtual {
         manager = new PoolManager(500000);
     }
 
@@ -111,6 +116,7 @@ contract Deployers {
         outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
         overflowFeeController = new OverflowProtocolFeeControllerTest();
         invalidReturnSizeFeeController = new InvalidReturnSizeProtocolFeeControllerTest();
+        actionsRouter = new ActionsRouter(manager);
 
         manager.setProtocolFeeController(feeController);
     }
@@ -129,7 +135,7 @@ contract Deployers {
     function deployMintAndApproveCurrency() internal returns (Currency currency) {
         MockERC20 token = deployTokens(1, 2 ** 255)[0];
 
-        address[8] memory toApprove = [
+        address[9] memory toApprove = [
             address(swapRouter),
             address(swapRouterNoChecks),
             address(modifyLiquidityRouter),
@@ -137,7 +143,8 @@ contract Deployers {
             address(donateRouter),
             address(takeRouter),
             address(claimsRouter),
-            address(nestedActionRouter.executor())
+            address(nestedActionRouter.executor()),
+            address(actionsRouter)
         ];
 
         for (uint256 i = 0; i < toApprove.length; i++) {
@@ -220,7 +227,7 @@ contract Deployers {
         (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
         nestedActionRouter.executor().setKey(key);
         (nativeKey,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
+            CurrencyLibrary.ADDRESS_ZERO, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
         );
         uninitializedKey = key;
         uninitializedNativeKey = nativeKey;
@@ -234,7 +241,7 @@ contract Deployers {
         returns (BalanceDelta)
     {
         // allow native input for exact-input, guide users to the `swapNativeInput` function
-        bool isNativeInput = zeroForOne && _key.currency0.isNative();
+        bool isNativeInput = zeroForOne && _key.currency0.isAddressZero();
         if (isNativeInput) require(0 > amountSpecified, "Use swapNativeInput() for native-token exact-output swaps");
 
         uint256 value = isNativeInput ? uint256(-amountSpecified) : 0;
@@ -251,6 +258,28 @@ contract Deployers {
         );
     }
 
+    /// @notice Helper function to increase balance of pool manager.
+    /// Uses default LIQUIDITY_PARAMS range.
+    function seedMoreLiquidity(PoolKey memory _key, uint256 amount0, uint256 amount1) internal {
+        (uint160 sqrtPriceX96,,,) = manager.getSlot0(_key.toId());
+        uint128 liquidityDelta = LiquidityAmounts.getLiquidityForAmounts(
+            sqrtPriceX96,
+            TickMath.getSqrtPriceAtTick(LIQUIDITY_PARAMS.tickLower),
+            TickMath.getSqrtPriceAtTick(LIQUIDITY_PARAMS.tickUpper),
+            amount0,
+            amount1
+        );
+
+        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
+            tickLower: LIQUIDITY_PARAMS.tickLower,
+            tickUpper: LIQUIDITY_PARAMS.tickUpper,
+            liquidityDelta: int128(liquidityDelta),
+            salt: 0
+        });
+
+        modifyLiquidityRouter.modifyLiquidity(_key, params, ZERO_BYTES);
+    }
+
     /// @notice Helper function for a simple Native-token swap that allows for unlimited price impact
     function swapNativeInput(
         PoolKey memory _key,
@@ -259,7 +288,7 @@ contract Deployers {
         bytes memory hookData,
         uint256 msgValue
     ) internal returns (BalanceDelta) {
-        require(_key.currency0.isNative(), "currency0 is not native. Use swap() instead");
+        require(_key.currency0.isAddressZero(), "currency0 is not native. Use swap() instead");
         if (zeroForOne == false) require(msgValue == 0, "msgValue must be 0 for oneForZero swaps");
 
         return swapRouter.swap{value: msgValue}(
