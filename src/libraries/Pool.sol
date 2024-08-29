@@ -325,8 +325,8 @@ library Pool {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96()) {
                 PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
-            // The pool can never read MIN_TICK except at initialization; after that, it only goes as low as MIN_TICK+1
-            // Allowing MIN_TICK could potentially lead to the pool incorrectly saying it's at MIN_TICK-1, so we prevent it from reaching MIN_TICK again
+            // Swaps can never occur at MIN_TICK, only at MIN_TICK + 1, except at initialization of a pool
+            // Under certain circumstances outlined below, the tick will preemptively reach MIN_TICK without swapping there
             if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
                 PriceLimitOutOfBounds.selector.revertWith(params.sqrtPriceLimitX96);
             }
