@@ -350,9 +350,11 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         uint256 hookGain0 = currency0.balanceOf(hook) - hookBalanceBefore0;
         uint256 hookGain1 = currency1.balanceOf(hook) - hookBalanceBefore1;
 
-        // Assert that the hook took the fee revenue
+        // Assert that the hook took ALL of the fee revenue, minus 1 wei of imprecision
         assertApproxEqAbs(hookGain0, feeRevenue0, 1 wei);
         assertApproxEqAbs(hookGain1, feeRevenue1, 1 wei);
+        assertTrue(hookGain0 <= feeRevenue0);
+        assertTrue(hookGain1 <= feeRevenue1);
     }
 
     function test_fuzz_removeLiquidity_withLPFeeTakingHook(uint128 feeRevenue0, uint128 feeRevenue1) public {
@@ -381,9 +383,11 @@ contract CustomAccountingTest is Test, Deployers, GasSnapshot {
         uint256 managerLoss0 = managerBalanceBefore0 - currency0.balanceOf(address(manager));
         uint256 managerLoss1 = managerBalanceBefore1 - currency1.balanceOf(address(manager));
 
-        // Assert that the hook took the fee revenue
+        // Assert that the hook took ALL of the fee revenue, minus 1 wei of imprecision
         assertApproxEqAbs(hookGain0, feeRevenue0, 1 wei);
         assertApproxEqAbs(hookGain1, feeRevenue1, 1 wei);
+        assertTrue(hookGain0 <= feeRevenue0);
+        assertTrue(hookGain1 <= feeRevenue1);
         assertEq(thisGain0 + hookGain0, managerLoss0, "manager amount 0");
         assertEq(thisGain1 + hookGain1, managerLoss1, "manager amount 1");
     }
