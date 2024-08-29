@@ -19,7 +19,6 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
-import {PoolSettleTest} from "../src/test/PoolSettleTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolEmptyUnlockTest} from "../src/test/PoolEmptyUnlockTest.sol";
@@ -949,10 +948,9 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.settle();
     }
 
-    function test_settle_revertsSendingNativeWithToken() public noIsolate {
-        manager.sync(key.currency0);
+    function test_settle_revertsSendingNativeWithToken() public {
         vm.expectRevert(IPoolManager.NonzeroNativeValue.selector);
-        settleRouter.settle{value: 1}();
+        settleRouter.settle{value: 1}(key.currency0);
     }
 
     function test_mint_failsIfLocked() public {

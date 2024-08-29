@@ -111,6 +111,16 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         protocolFees.collectProtocolFees(address(1), currency0, 0);
     }
 
+    function test_collectProtocolFees_revertsWithContractUnlocked() public {
+        protocolFees.setIsUnlocked(true);
+
+        protocolFees.setProtocolFeeController(feeController);
+        vm.prank(address(feeController));
+
+        vm.expectRevert(IProtocolFees.ContractUnlocked.selector);
+        protocolFees.collectProtocolFees(address(1), currency0, 0);
+    }
+
     function test_collectProtocolFees_succeeds() public {
         // set a balance of protocol fees that can be collected
         protocolFees.updateProtocolFees(currency0, 100);

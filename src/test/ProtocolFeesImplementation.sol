@@ -13,6 +13,7 @@ contract ProtocolFeesImplementation is ProtocolFees {
     using PoolIdLibrary for PoolKey;
 
     mapping(PoolId id => Pool.State) internal _pools;
+    bool internal isUnlocked;
 
     constructor(uint256 _controllerGasLimit) ProtocolFees(_controllerGasLimit) {}
 
@@ -24,6 +25,14 @@ contract ProtocolFeesImplementation is ProtocolFees {
 
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
         return _pools[id];
+    }
+
+    function setIsUnlocked(bool newValue) public {
+        isUnlocked = newValue;
+    }
+
+    function _isUnlocked() internal view override returns (bool) {
+        return isUnlocked;
     }
 
     function fetchProtocolFee(PoolKey memory key) public returns (uint24) {

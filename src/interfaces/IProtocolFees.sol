@@ -12,6 +12,8 @@ interface IProtocolFees {
     error ProtocolFeeCannotBeFetched();
     /// @notice Thrown when protocol fee is set too high
     error ProtocolFeeTooLarge(uint24 fee);
+    /// @notice Thrown when the contract is unlocked
+    error ContractUnlocked();
 
     /// @notice Thrown when collectProtocolFees or setProtocolFee is not called by the controller.
     error InvalidCaller();
