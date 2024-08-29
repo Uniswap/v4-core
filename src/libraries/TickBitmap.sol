@@ -94,7 +94,7 @@ library TickBitmap {
             if (lte) {
                 (int16 wordPos, uint8 bitPos) = position(compressed);
                 // all the 1s at or to the right of the current bitPos
-                uint256 mask = (1 << (uint256(bitPos) + 1)) - 1;
+                uint256 mask = type(uint256).max >> (uint256(type(uint8).max) - bitPos);
                 uint256 masked = self[wordPos] & mask;
 
                 // if there are no initialized ticks to the right of or at the current tick, return rightmost in the word

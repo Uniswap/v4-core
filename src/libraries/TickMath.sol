@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
+import {BitMath} from "./BitMath.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
 /// @title Math library for computing sqrt prices from ticks and vice versa
@@ -125,47 +126,7 @@ library TickMath {
             uint256 price = uint256(sqrtPriceX96) << 32;
 
             uint256 r = price;
-            uint256 msb = 0;
-
-            assembly ("memory-safe") {
-                let f := shl(7, gt(r, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(6, gt(r, 0xFFFFFFFFFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(5, gt(r, 0xFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(4, gt(r, 0xFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(3, gt(r, 0xFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(2, gt(r, 0xF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(1, gt(r, 0x3))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := gt(r, 0x1)
-                msb := or(msb, f)
-            }
+            uint256 msb = BitMath.mostSignificantBit(r);
 
             if (msb >= 128) r = price >> (msb - 127);
             else r = price << (127 - msb);

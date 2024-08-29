@@ -227,7 +227,7 @@ contract Deployers {
         (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
         nestedActionRouter.executor().setKey(key);
         (nativeKey,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
+            CurrencyLibrary.ADDRESS_ZERO, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
         );
         uninitializedKey = key;
         uninitializedNativeKey = nativeKey;
@@ -241,7 +241,7 @@ contract Deployers {
         returns (BalanceDelta)
     {
         // allow native input for exact-input, guide users to the `swapNativeInput` function
-        bool isNativeInput = zeroForOne && _key.currency0.isNative();
+        bool isNativeInput = zeroForOne && _key.currency0.isAddressZero();
         if (isNativeInput) require(0 > amountSpecified, "Use swapNativeInput() for native-token exact-output swaps");
 
         uint256 value = isNativeInput ? uint256(-amountSpecified) : 0;
@@ -288,7 +288,7 @@ contract Deployers {
         bytes memory hookData,
         uint256 msgValue
     ) internal returns (BalanceDelta) {
-        require(_key.currency0.isNative(), "currency0 is not native. Use swap() instead");
+        require(_key.currency0.isAddressZero(), "currency0 is not native. Use swap() instead");
         if (zeroForOne == false) require(msgValue == 0, "msgValue must be 0 for oneForZero swaps");
 
         return swapRouter.swap{value: msgValue}(
