@@ -310,14 +310,15 @@ library Pool {
 
         bool exactInput = params.amountSpecified < 0;
 
+        // a swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
         if (swapFee >= SwapMath.MAX_SWAP_FEE) {
             if (!exactInput) {
                 InvalidFeeForExactOut.selector.revertWith();
             }
         }
 
-        // 0 is the fee amount that should be paid to the protocol
         // swapFee is the pool's fee in pips (LP fee + protocol fee)
+        // when the amount swapped is 0, there is no protocolFee applied and the fee amount paid to the protocol is set to 0
         if (params.amountSpecified == 0) return (BalanceDeltaLibrary.ZERO_DELTA, 0, swapFee, result);
 
         if (zeroForOne) {
@@ -508,7 +509,7 @@ library Pool {
     /// @param liquidityDelta A new amount of liquidity to be added (subtracted) when tick is crossed from left to right (right to left)
     /// @param upper true for updating a position's upper tick, or false for updating a position's lower tick
     /// @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
-    /// @return liquidityGrossAfter The total amount of  liquidity for all positions that references the tick after the update
+    /// @return liquidityGrossAfter The total amount of liquidity for all positions that references the tick after the update
     function updateTick(State storage self, int24 tick, int128 liquidityDelta, bool upper)
         internal
         returns (bool flipped, uint128 liquidityGrossAfter)
@@ -539,9 +540,9 @@ library Pool {
                 info.slot,
                 // bitwise OR to pack liquidityGrossAfter and liquidityNet
                 or(
-                    // liquidityGross is in the low bits, upper bits are already 0
+                    // Put liquidityGrossAfter in the lower bits, clearing out the upper bits
                     and(liquidityGrossAfter, 0xffffffffffffffffffffffffffffffff),
-                    // shift liquidityNet to take the upper bits and lower bits get filled with 0
+                    // Shift liquidityNet to put it in the upper bits (no need for signextend since we're shifting left)
                     shl(128, liquidityNet)
                 )
             )
