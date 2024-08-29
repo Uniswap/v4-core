@@ -12,8 +12,6 @@ library StateLibrary {
 
     /// @notice index of feeGrowthGlobal0X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL0_OFFSET = 1;
-    /// @notice index of feeGrowthGlobal1X128 in Pool.State
-    uint256 public constant FEE_GROWTH_GLOBAL1_OFFSET = 2;
 
     /// @notice index of liquidity in Pool.State
     uint256 public constant LIQUIDITY_OFFSET = 3;

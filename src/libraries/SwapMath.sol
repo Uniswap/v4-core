@@ -70,7 +70,7 @@ library SwapMath {
                     // `amountIn` is capped by the target price
                     sqrtPriceNextX96 = sqrtPriceTargetX96;
                     feeAmount = _feePips == MAX_SWAP_FEE
-                        ? amountIn
+                        ? 0 // 0 as amountRemainingLessFee == 0
                         : FullMath.mulDivRoundingUp(amountIn, _feePips, MAX_SWAP_FEE - _feePips);
                 } else {
                     sqrtPriceNextX96 = SqrtPriceMath.getNextSqrtPriceFromInput(
