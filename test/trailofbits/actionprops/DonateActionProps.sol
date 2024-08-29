@@ -95,9 +95,6 @@ contract DonateActionProps is ActionFuzzBase {
 
         /* Update virtual pool reserves  */
 
-        emit LogInt256("virtual pool amount0 updated to", PoolLiquidities[_donatePoolKey.toId()].amount0);
-        emit LogInt256("virtual pool amount1 updated to", PoolLiquidities[_donatePoolKey.toId()].amount1);
-
         _updateCurrencyDelta(address(actionsRouter), _donatePoolKey.currency0, delta.amount0());
         _updateCurrencyDelta(address(actionsRouter), _donatePoolKey.currency1, delta.amount1());
 

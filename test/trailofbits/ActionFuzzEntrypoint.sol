@@ -266,7 +266,7 @@ contract ActionFuzzEntrypoint is
                     c.transfer( address(manager), amountOwed);
                     manager.settleFor(actor);
                 }
-                emit LogString("resetting remiittance settleForshortcut");
+                emit LogString("resetting remittance settleForshortcut");
                 RemittanceCurrency = CurrencyLibrary.NATIVE;
                 RemittanceAmount = 0;
                 

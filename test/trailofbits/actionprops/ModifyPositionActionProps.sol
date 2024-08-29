@@ -108,11 +108,17 @@ contract ModifyPositionActionProps is ActionFuzzBase {
         assertGte(feesAccrued.amount0(), 0, "The amount0 of fees accrued from modifyPosition() must be non-negative");
         // UNI-MODLIQ-5
         assertGte(feesAccrued.amount1(), 0, "The amount1 of fees accrued from modifyPosition() must be non-negative");
-        
+
+
+        int256 principalDelta0 = callerDelta.amount0() - feesAccrued.amount0();
+        int256 principalDelta1 = callerDelta.amount1() - feesAccrued.amount1();
+        emit LogInt256("Change in amount0 principal", principalDelta0);
+        emit LogInt256("Change in amount1 principal", principalDelta1);
+
         // UNI-MODLIQ-8
-        assertGte(PoolLiquidities[_modifyPoolKey.toId()].amount0, callerDelta.amount0(), "The pool must have enough currency0 to return the LP's liquidity balance plus fees.");
+        assertGte(PoolLiquidities[_modifyPoolKey.toId()].amount0, principalDelta0, "The pool must have enough currency0 to return the LP's liquidity balance");
         // UNI-MODLIQ-9
-        assertGte(PoolLiquidities[_modifyPoolKey.toId()].amount1, callerDelta.amount1(), "The pool must have enough currency1 to return the LP's liquidity balance plus fees.");
+        assertGte(PoolLiquidities[_modifyPoolKey.toId()].amount1, principalDelta1, "The pool must have enough currency1 to return the LP's liquidity balance");
 
         // assert fees == fees expected
         assertEq(uint128(feesAccrued.amount0()), _modifyFeesExpectedDelta0X128, "The amount0 of fees accrued from modifyPosition() must match the expected fee.");
@@ -122,20 +128,16 @@ contract ModifyPositionActionProps is ActionFuzzBase {
         assertGte(SingletonLPFees[_modifyPoolKey.currency0],  uint128(feesAccrued.amount0()), "The singleton must be able to credit the user for the amount of feeGrowth they are owed (amount0)");
         // UNI-MODLIQ-7
         assertGte(SingletonLPFees[_modifyPoolKey.currency1],  uint128(feesAccrued.amount1()), "The singleton must be able to credit the user for the amount of feeGrowth they are owed (amount1)");
-        
+        emit LogInt256("hiiisddddi", 5);
 
-        if(callerDelta.amount0() > 0) {
+        if(principalDelta0 > 0) {
             // UNI-MODLIQ-10
-            assertGte(SingletonLiquidity[_modifyPoolKey.currency0], uint256(uint128(callerDelta.amount0())) - uint256(uint128(feesAccrued.amount0())), "The singleton must have enough currency0 to return the LP's liquidity balance");
+            assertGte(SingletonLiquidity[_modifyPoolKey.currency0], uint256(principalDelta0), "The singleton must have enough currency0 to return the LP's liquidity balance");
         }
-        if(callerDelta.amount1() > 0){
+        if(principalDelta1 > 0){
             // UNI-MOQLIQ-11
-            assertGte(SingletonLiquidity[_modifyPoolKey.currency1], uint256(uint128(callerDelta.amount1())) - uint256(uint128(feesAccrued.amount1())), "The singleton must have enough currency1 to return the LP's liquidity balance");
+            assertGte(SingletonLiquidity[_modifyPoolKey.currency1], uint256(principalDelta1), "The singleton must have enough currency1 to return the LP's liquidity balance");
         }
-
-        int256 principalDelta0 = callerDelta.amount0() - feesAccrued.amount0();
-        int256 principalDelta1 = callerDelta.amount1() - feesAccrued.amount1();
-
 
         /* Update virtual pool reserves  */
         PoolLiquidities[_modifyPoolKey.toId()].amount0 -= principalDelta0;

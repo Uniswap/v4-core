@@ -25,8 +25,8 @@ contract ActionsHarness_Test is Test {
 
     function setUp() public {
         target = new ActionFuzzEntrypoint();
-        payable(address(target)).transfer(address(this).balance - 10 ether);
-        payable(address(target.getActionRouter())).transfer(10 ether);
+        payable(address(target)).transfer(address(this).balance - 20 ether);
+        payable(address(target.getActionRouter())).transfer(20 ether);
     }
 
     function test_sync_test() public {
@@ -310,9 +310,15 @@ contract ActionsHarness_Test is Test {
         target.addSwap(0,-3,false);
         target.addShortcutSettle();
         target.runActions();
-
-
     }
+
+    function test_poolliquidity_regression_1() public {
+        target.addTargetedPoolReadyToOverflow(247, 0, 6909592);
+        target.addModifyPositionAndRunActions(0, -14, 2530466, 2812, 115792089237316195423570985008687907853269984665640564039457584007913129638913);
+        target.addSwapAndRunActions(0, 92274097787679228392889020467702269147, false);
+        target.addModifyPositionAndRunActions(0, -14, 2530466, 793, 115792089237316195423570985008687907853269984665640564039457584007913129638913);
+    }
+
 }
 
     
