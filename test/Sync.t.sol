@@ -180,6 +180,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
     /// @notice When there is a balance, no delta should be applied.
     function test_settle_balanceInPool_shouldNotApplyDelta() public {
         uint256 currency0Balance = currency0.balanceOf(address(manager));
+        assertGt(currency0Balance, uint256(0));
 
         Actions[] memory actions = new Actions[](5);
         bytes[] memory params = new bytes[](5);
