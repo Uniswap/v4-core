@@ -19,7 +19,7 @@ library TickMath {
     /// @dev If ever MIN_TICK and MAX_TICK are not centered around 0, the absTick logic in getSqrtPriceAtTick cannot be used
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**128
-    /// @dev If ever MIN_TICK and MAX_TICK are not centred around 0, the absTick logic in getSqrtPriceAtTick cannot be used
+    /// @dev If ever MIN_TICK and MAX_TICK are not centered around 0, the absTick logic in getSqrtPriceAtTick cannot be used
     int24 internal constant MAX_TICK = 887272;
 
     /// @dev The minimum tick spacing value drawn from the range of type int16 that is greater than 0, i.e. min from the range [1, 32767]
