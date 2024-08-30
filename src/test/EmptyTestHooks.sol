@@ -64,6 +64,7 @@ contract EmptyTestHooks is IHooks {
         PoolKey calldata,
         IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
+        BalanceDelta,
         bytes calldata
     ) external pure override returns (bytes4, BalanceDelta) {
         return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
@@ -82,6 +83,7 @@ contract EmptyTestHooks is IHooks {
         address,
         PoolKey calldata,
         IPoolManager.ModifyLiquidityParams calldata,
+        BalanceDelta,
         BalanceDelta,
         bytes calldata
     ) external pure override returns (bytes4, BalanceDelta) {
