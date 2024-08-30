@@ -19,7 +19,6 @@ import {Constants} from "../test/utils/Constants.sol";
 import {SkipCallsTestHook} from "../src/test/SkipCallsTestHook.sol";
 
 contract SkipCallsTest is Test, Deployers, GasSnapshot {
-
     PoolSwapTest.TestSettings testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
     function deploy(SkipCallsTestHook skipCallsTestHook) private {

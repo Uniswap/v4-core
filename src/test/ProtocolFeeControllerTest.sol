@@ -7,7 +7,6 @@ import {PoolId} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 
 contract ProtocolFeeControllerTest is IProtocolFeeController {
-
     mapping(PoolId => uint24) public protocolFee;
 
     function protocolFeeForPool(PoolKey memory key) external view returns (uint24) {

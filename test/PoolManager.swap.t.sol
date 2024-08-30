@@ -17,7 +17,6 @@ import {SafeCast} from "../src/libraries/SafeCast.sol";
 import {LiquidityAmounts} from "./utils/LiquidityAmounts.sol";
 
 abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallback, IUniswapV3SwapCallback {
-
     function setUp() public virtual override {
         super.setUp();
         deployFreshManagerAndRouters();
