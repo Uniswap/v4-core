@@ -63,6 +63,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta,
+        BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {
         counter++;
@@ -85,6 +86,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         address,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
+        BalanceDelta,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {

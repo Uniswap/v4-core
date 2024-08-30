@@ -63,6 +63,7 @@ contract MockHooks is IHooks {
         PoolKey calldata,
         IPoolManager.ModifyLiquidityParams calldata,
         BalanceDelta,
+        BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {
         afterAddLiquidityData = hookData;
@@ -85,6 +86,7 @@ contract MockHooks is IHooks {
         address,
         PoolKey calldata,
         IPoolManager.ModifyLiquidityParams calldata,
+        BalanceDelta,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {

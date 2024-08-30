@@ -20,8 +20,8 @@ import {CustomRevert} from "./CustomRevert.sol";
 library Pool {
     using SafeCast for *;
     using TickBitmap for mapping(int16 => uint256);
-    using Position for mapping(bytes32 => Position.Info);
-    using Position for Position.Info;
+    using Position for mapping(bytes32 => Position.State);
+    using Position for Position.State;
     using Pool for State;
     using ProtocolFeeLibrary for *;
     using LPFeeLibrary for uint24;
@@ -84,7 +84,7 @@ library Pool {
         uint128 liquidity;
         mapping(int24 tick => TickInfo) ticks;
         mapping(int16 wordPos => uint256) tickBitmap;
-        mapping(bytes32 positionKey => Position.Info) positions;
+        mapping(bytes32 positionKey => Position.State) positions;
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -184,7 +184,7 @@ library Pool {
                 (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
                     getFeeGrowthInside(self, tickLower, tickUpper);
 
-                Position.Info storage position = self.positions.get(params.owner, tickLower, tickUpper, params.salt);
+                Position.State storage position = self.positions.get(params.owner, tickLower, tickUpper, params.salt);
                 (uint256 feesOwed0, uint256 feesOwed1) =
                     position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
 
@@ -237,9 +237,9 @@ library Pool {
         }
     }
 
-    // the results after a swap, written to storage and returned
+    // Tracks the state of a pool throughout a swap, and returns these values at the end of the swap
     struct SwapResult {
-        // the final current sqrt(price)
+        // the current sqrt(price)
         uint160 sqrtPriceX96;
         // the tick associated with the current price
         int24 tick;

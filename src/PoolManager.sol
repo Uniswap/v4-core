@@ -80,7 +80,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
-    using Position for mapping(bytes32 => Position.Info);
+    using Position for mapping(bytes32 => Position.State);
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
     using CurrencyReserves for Currency;
@@ -176,7 +176,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta, params.salt);
 
         BalanceDelta hookDelta;
-        (callerDelta, hookDelta) = key.hooks.afterModifyLiquidity(key, params, callerDelta, hookData);
+        (callerDelta, hookDelta) = key.hooks.afterModifyLiquidity(key, params, callerDelta, feesAccrued, hookData);
 
         // if the hook doesnt have the flag to be able to return deltas, hookDelta will always be 0
         if (hookDelta != BalanceDeltaLibrary.ZERO_DELTA) _accountPoolBalanceDelta(key, hookDelta, address(key.hooks));

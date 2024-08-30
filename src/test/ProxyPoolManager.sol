@@ -30,7 +30,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
-    using Position for mapping(bytes32 => Position.Info);
+    using Position for mapping(bytes32 => Position.State);
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
     using CurrencyReserves for Currency;
