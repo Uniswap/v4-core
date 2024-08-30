@@ -97,7 +97,7 @@ contract Deployers {
     }
 
     function deployFreshManager() internal virtual {
-        manager = new PoolManager(500000);
+        manager = new PoolManager();
     }
 
     function deployFreshManagerAndRouters() internal {

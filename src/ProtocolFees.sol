@@ -6,6 +6,7 @@ import {IProtocolFeeController} from "./interfaces/IProtocolFeeController.sol";
 import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
+import {BipsLibrary} from "./libraries/BipsLibrary.sol";
 import {Owned} from "solmate/src/auth/Owned.sol";
 import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
 import {Pool} from "./libraries/Pool.sol";
@@ -17,6 +18,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     using PoolIdLibrary for PoolKey;
     using Pool for Pool.State;
     using CustomRevert for bytes4;
+    using BipsLibrary for uint256;
 
     /// @inheritdoc IProtocolFees
     mapping(Currency currency => uint256 amount) public protocolFeesAccrued;
@@ -24,11 +26,11 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// @inheritdoc IProtocolFees
     IProtocolFeeController public protocolFeeController;
 
-    uint256 private immutable controllerGasLimit;
+    // a percentage of the block.gaslimit denoted in basis points, used as the gas limit for fee controller calls
+    // 100 bps is 1%, at 30M gas, the limit is 300K
+    uint256 private constant BLOCK_LIMIT_BPS = 100;
 
-    constructor(uint256 _controllerGasLimit) Owned(msg.sender) {
-        controllerGasLimit = _controllerGasLimit;
-    }
+    constructor() Owned(msg.sender) {}
 
     /// @inheritdoc IProtocolFees
     function setProtocolFeeController(IProtocolFeeController controller) external onlyOwner {
@@ -67,12 +69,13 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     /// the success of this function is NOT checked on initialize and if the call fails, the protocol fees are set to 0.
     function _fetchProtocolFee(PoolKey memory key) internal returns (uint24 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
+            uint256 controllerGasLimit = block.gaslimit.calculatePortion(BLOCK_LIMIT_BPS);
+
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
             // in mind.
             if (gasleft() < controllerGasLimit) ProtocolFeeCannotBeFetched.selector.revertWith();
 
-            uint256 gasLimit = controllerGasLimit;
             address toAddress = address(protocolFeeController);
 
             bytes memory data = abi.encodeCall(IProtocolFeeController.protocolFeeForPool, (key));
@@ -81,7 +84,7 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
             uint256 returnData;
             assembly ("memory-safe") {
                 // only load the first 32 bytes of the return data to prevent gas griefing
-                success := call(gasLimit, toAddress, 0, add(data, 0x20), mload(data), 0, 32)
+                success := call(controllerGasLimit, toAddress, 0, add(data, 0x20), mload(data), 0, 32)
                 // if success is false this wont actually be returned, instead 0 will be returned
                 returnData := mload(0)
 

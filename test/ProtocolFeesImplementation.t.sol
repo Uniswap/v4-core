@@ -34,7 +34,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     ProtocolFeesImplementation protocolFees;
 
     function setUp() public {
-        protocolFees = new ProtocolFeesImplementation(5000);
+        protocolFees = new ProtocolFeesImplementation();
         feeController = new ProtocolFeeControllerTest();
         (currency0, currency1) = deployAndMint2Currencies();
         MockERC20(Currency.unwrap(currency0)).transfer(address(protocolFees), 2 ** 255);

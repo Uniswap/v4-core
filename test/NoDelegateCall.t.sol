@@ -14,8 +14,8 @@ import {Deployers} from "./utils/Deployers.sol";
 contract TestDelegateCall is Test, Deployers, GasSnapshot {
     // override to use ProxyPoolManager
     function deployFreshManager() internal virtual override {
-        IPoolManager delegateManager = new PoolManager(500000);
-        manager = new ProxyPoolManager(address(delegateManager), 500000);
+        IPoolManager delegateManager = new PoolManager();
+        manager = new ProxyPoolManager(address(delegateManager));
     }
 
     NoDelegateCallTest noDelegateCallTest;
