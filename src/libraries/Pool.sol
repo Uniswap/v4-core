@@ -237,9 +237,9 @@ library Pool {
         }
     }
 
-    // Tracks the state of a pool throughout a swap, and bubbles these values up at the end of the swap
+    // Tracks the state of a pool throughout a swap, and returns these values at the end of the swap
     struct SwapResult {
-        // the final sqrt(price)
+        // the current sqrt(price)
         uint160 sqrtPriceX96;
         // the tick associated with the current price
         int24 tick;
