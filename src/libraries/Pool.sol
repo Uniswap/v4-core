@@ -82,9 +82,9 @@ library Pool {
         uint256 feeGrowthGlobal0X128;
         uint256 feeGrowthGlobal1X128;
         uint128 liquidity;
-        mapping(int24 => TickInfo) ticks;
-        mapping(int16 => uint256) tickBitmap;
-        mapping(bytes32 => Position.Info) positions;
+        mapping(int24 tick => TickInfo) ticks;
+        mapping(int16 wordPos => uint256) tickBitmap;
+        mapping(bytes32 positionKey => Position.Info) positions;
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -325,7 +325,9 @@ library Pool {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96()) {
                 PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
-            if (params.sqrtPriceLimitX96 < TickMath.MIN_SQRT_PRICE) {
+            // Swaps can never occur at MIN_TICK, only at MIN_TICK + 1, except at initialization of a pool
+            // Under certain circumstances outlined below, the tick will preemptively reach MIN_TICK without swapping there
+            if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
                 PriceLimitOutOfBounds.selector.revertWith(params.sqrtPriceLimitX96);
             }
         } else {

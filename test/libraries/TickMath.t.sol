@@ -205,6 +205,26 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
         }
     }
 
+    function test_fuzz_getTickAtSqrtPrice_getSqrtPriceAtTick_relation(int24 tick) public pure {
+        tick = int24(bound(tick, TickMath.MIN_TICK, TickMath.MAX_TICK - 1));
+        int24 nextTick = tick + 1;
+        uint160 priceAtTick = TickMath.getSqrtPriceAtTick(tick);
+        uint160 priceAtNextTick = TickMath.getSqrtPriceAtTick(nextTick);
+
+        // check lowest price of tick
+        assertEq(TickMath.getTickAtSqrtPrice(priceAtTick), tick, "lower price");
+        // check mid price of tick
+        assertEq(
+            TickMath.getTickAtSqrtPrice(uint160((uint256(priceAtTick) + uint256(priceAtNextTick)) / 2)),
+            tick,
+            "mid price"
+        );
+        // check upper price of tick
+        assertEq(TickMath.getTickAtSqrtPrice(priceAtNextTick - 1), tick, "upper price");
+        // check lower price of next tick
+        assertEq(TickMath.getTickAtSqrtPrice(priceAtNextTick), nextTick, "lower price next tick");
+    }
+
     /// @notice Benchmark the gas cost of `getSqrtPriceAtTick`
     function test_getSqrtPriceAtTick_gasCost() public {
         snapStart("TickMathGetSqrtPriceAtTick");
