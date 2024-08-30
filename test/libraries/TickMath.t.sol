@@ -15,8 +15,6 @@ contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
     uint160 constant MIN_SQRT_PRICE = 4295128739;
     uint160 constant MAX_SQRT_PRICE = 1461446703485210103287273052203988822378723970342;
 
-    uint160 constant SQRT_PRICE_1_1 = 79228162514264337593543950336;
-
     uint256 constant ONE_PIP = 1e6;
 
     uint160[] getSqrtPriceAtTickFuzzResults;
