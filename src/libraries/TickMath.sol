@@ -16,7 +16,7 @@ library TickMath {
     error InvalidSqrtPrice(uint160 sqrtPriceX96);
 
     /// @dev The minimum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**-128
-    /// @dev If ever MIN_TICK and MAX_TICK are not centred around 0, the absTick logic in getSqrtPriceAtTick cannot be used
+    /// @dev If ever MIN_TICK and MAX_TICK are not centered around 0, the absTick logic in getSqrtPriceAtTick cannot be used
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**128
     /// @dev If ever MIN_TICK and MAX_TICK are not centred around 0, the absTick logic in getSqrtPriceAtTick cannot be used
