@@ -214,6 +214,7 @@ library Hooks {
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         BalanceDelta delta,
+        BalanceDelta feesAccrued,
         bytes calldata hookData
     ) internal returns (BalanceDelta callerDelta, BalanceDelta hookDelta) {
         if (msg.sender == address(self)) return (delta, BalanceDeltaLibrary.ZERO_DELTA);
@@ -223,7 +224,9 @@ library Hooks {
             if (self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
                     self.callHookWithReturnDelta(
-                        abi.encodeCall(IHooks.afterAddLiquidity, (msg.sender, key, params, delta, hookData)),
+                        abi.encodeCall(
+                            IHooks.afterAddLiquidity, (msg.sender, key, params, delta, feesAccrued, hookData)
+                        ),
                         self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
@@ -233,7 +236,9 @@ library Hooks {
             if (self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
                     self.callHookWithReturnDelta(
-                        abi.encodeCall(IHooks.afterRemoveLiquidity, (msg.sender, key, params, delta, hookData)),
+                        abi.encodeCall(
+                            IHooks.afterRemoveLiquidity, (msg.sender, key, params, delta, feesAccrued, hookData)
+                        ),
                         self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );

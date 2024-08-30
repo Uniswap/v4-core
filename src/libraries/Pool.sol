@@ -82,9 +82,9 @@ library Pool {
         uint256 feeGrowthGlobal0X128;
         uint256 feeGrowthGlobal1X128;
         uint128 liquidity;
-        mapping(int24 => TickInfo) ticks;
-        mapping(int16 => uint256) tickBitmap;
-        mapping(bytes32 => Position.State) positions;
+        mapping(int24 tick => TickInfo) ticks;
+        mapping(int16 wordPos => uint256) tickBitmap;
+        mapping(bytes32 positionKey => Position.State) positions;
     }
 
     /// @dev Common checks for valid tick inputs.
@@ -325,7 +325,9 @@ library Pool {
             if (params.sqrtPriceLimitX96 >= slot0Start.sqrtPriceX96()) {
                 PriceLimitAlreadyExceeded.selector.revertWith(slot0Start.sqrtPriceX96(), params.sqrtPriceLimitX96);
             }
-            if (params.sqrtPriceLimitX96 < TickMath.MIN_SQRT_PRICE) {
+            // Swaps can never occur at MIN_TICK, only at MIN_TICK + 1, except at initialization of a pool
+            // Under certain circumstances outlined below, the tick will preemptively reach MIN_TICK without swapping there
+            if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
                 PriceLimitOutOfBounds.selector.revertWith(params.sqrtPriceLimitX96);
             }
         } else {
@@ -400,7 +402,10 @@ library Pool {
                 }
             }
 
-            // shift tick if we reached the next price
+            // Shift tick if we reached the next price, and preemptively decrement for zeroForOne swaps to tickNext - 1.
+            // If the swap doesnt continue (if amountRemaining == 0 or sqrtPriceLimit is met), slot0.tick will be 1 less
+            // than getTickAtSqrtPrice(slot0.sqrtPrice). This doesn't affect swaps, but donation calls should verify both
+            // price and tick to reward the correct LPs.
             if (result.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {

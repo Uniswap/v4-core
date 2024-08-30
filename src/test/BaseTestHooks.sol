@@ -43,6 +43,7 @@ contract BaseTestHooks is IHooks {
         PoolKey calldata, /* key **/
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta, /* delta **/
+        BalanceDelta, /* feeDelta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4, BalanceDelta) {
         revert HookNotImplemented();
@@ -62,6 +63,7 @@ contract BaseTestHooks is IHooks {
         PoolKey calldata, /* key **/
         IPoolManager.ModifyLiquidityParams calldata, /* params **/
         BalanceDelta, /* delta **/
+        BalanceDelta, /* feeDelta **/
         bytes calldata /* hookData **/
     ) external virtual returns (bytes4, BalanceDelta) {
         revert HookNotImplemented();
