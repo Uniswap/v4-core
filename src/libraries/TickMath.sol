@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
+import {BitMath} from "./BitMath.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
 /// @title Math library for computing sqrt prices from ticks and vice versa
@@ -15,8 +16,10 @@ library TickMath {
     error InvalidSqrtPrice(uint160 sqrtPriceX96);
 
     /// @dev The minimum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**-128
+    /// @dev If ever MIN_TICK and MAX_TICK are not centered around 0, the absTick logic in getSqrtPriceAtTick cannot be used
     int24 internal constant MIN_TICK = -887272;
     /// @dev The maximum tick that may be passed to #getSqrtPriceAtTick computed from log base 1.0001 of 2**128
+    /// @dev If ever MIN_TICK and MAX_TICK are not centered around 0, the absTick logic in getSqrtPriceAtTick cannot be used
     int24 internal constant MAX_TICK = 887272;
 
     /// @dev The minimum tick spacing value drawn from the range of type int16 that is greater than 0, i.e. min from the range [1, 32767]
@@ -125,47 +128,7 @@ library TickMath {
             uint256 price = uint256(sqrtPriceX96) << 32;
 
             uint256 r = price;
-            uint256 msb = 0;
-
-            assembly ("memory-safe") {
-                let f := shl(7, gt(r, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(6, gt(r, 0xFFFFFFFFFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(5, gt(r, 0xFFFFFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(4, gt(r, 0xFFFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(3, gt(r, 0xFF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(2, gt(r, 0xF))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := shl(1, gt(r, 0x3))
-                msb := or(msb, f)
-                r := shr(f, r)
-            }
-            assembly ("memory-safe") {
-                let f := gt(r, 0x1)
-                msb := or(msb, f)
-            }
+            uint256 msb = BitMath.mostSignificantBit(r);
 
             if (msb >= 128) r = price >> (msb - 127);
             else r = price << (127 - msb);

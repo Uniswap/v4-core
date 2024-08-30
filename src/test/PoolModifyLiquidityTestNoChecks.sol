@@ -10,7 +10,6 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
-import {Constants} from "../../test/utils/Constants.sol";
 
 contract PoolModifyLiquidityTestNoChecks is PoolTestBase {
     using CurrencySettler for Currency;
@@ -50,7 +49,7 @@ contract PoolModifyLiquidityTestNoChecks is PoolTestBase {
 
         uint256 ethBalance = address(this).balance;
         if (ethBalance > 0) {
-            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+            CurrencyLibrary.ADDRESS_ZERO.transfer(msg.sender, ethBalance);
         }
     }
 

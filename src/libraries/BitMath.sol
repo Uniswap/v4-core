@@ -13,14 +13,14 @@ library BitMath {
         require(x > 0);
 
         assembly ("memory-safe") {
-            r := or(shl(8, iszero(x)), shl(7, lt(0xffffffffffffffffffffffffffffffff, x)))
+            r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
             r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
             r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
             r := or(r, shl(4, lt(0xffff, shr(r, x))))
             r := or(r, shl(3, lt(0xff, shr(r, x))))
             // forgefmt: disable-next-item
             r := or(r, byte(and(0x1f, shr(shr(r, x), 0x8421084210842108cc6318c6db6d54be)),
-                0x0706060506020504060203020504030106050205030304010505030400000000))
+                0x0706060506020500060203020504000106050205030304010505030400000000))
         }
     }
 
@@ -33,7 +33,7 @@ library BitMath {
 
         assembly ("memory-safe") {
             // Isolate the least significant bit.
-            x := and(x, add(not(x), 1))
+            x := and(x, sub(0, x))
             // For the upper 3 bits of the result, use a De Bruijn-like lookup.
             // Credit to adhusson: https://blog.adhusson.com/cheap-find-first-set-evm/
             // forgefmt: disable-next-item

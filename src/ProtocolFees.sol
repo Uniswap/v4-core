@@ -57,14 +57,14 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     }
 
     /// @dev abstract internal function to allow the ProtocolFees contract to access pool state
-    /// @dev this is overriden in PoolManager.sol to give access to the _pools mapping
+    /// @dev this is overridden in PoolManager.sol to give access to the _pools mapping
     function _getPool(PoolId id) internal virtual returns (Pool.State storage);
 
-    /// @notice Fetch the protocol fees for a given pool, returning false if the call fails or the returned fees are invalid.
+    /// @notice Fetch the protocol fees for a given pool
+    /// @dev the success of this function is false if the call fails or the returned fees are invalid
     /// @dev to prevent an invalid protocol fee controller from blocking pools from being initialized
-    ///      the success of this function is NOT checked on initialize and if the call fails, the protocol fees are set to 0.
-    /// @dev the success of this function must be checked when called in setProtocolFee
-    function _fetchProtocolFee(PoolKey memory key) internal returns (bool success, uint24 protocolFee) {
+    /// the success of this function is NOT checked on initialize and if the call fails, the protocol fees are set to 0.
+    function _fetchProtocolFee(PoolKey memory key) internal returns (uint24 protocolFee) {
         if (address(protocolFeeController) != address(0)) {
             // note that EIP-150 mandates that calls requesting more than 63/64ths of remaining gas
             // will be allotted no more than this amount, so controllerGasLimit must be set with this
@@ -75,26 +75,23 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
             address toAddress = address(protocolFeeController);
 
             bytes memory data = abi.encodeCall(IProtocolFeeController.protocolFeeForPool, (key));
+
+            bool success;
             uint256 returnData;
             assembly ("memory-safe") {
-                success := call(gasLimit, toAddress, 0, add(data, 0x20), mload(data), 0, 0)
+                // only load the first 32 bytes of the return data to prevent gas griefing
+                success := call(gasLimit, toAddress, 0, add(data, 0x20), mload(data), 0, 32)
+                // if success is false this wont actually be returned, instead 0 will be returned
+                returnData := mload(0)
 
                 // success if return data size is 32 bytes
-                // only load the return value if it is 32 bytes to prevent gas griefing
                 success := and(success, eq(returndatasize(), 32))
-
-                // load the return data if success is true
-                if success {
-                    let fmp := mload(0x40)
-                    returndatacopy(fmp, 0, returndatasize())
-                    returnData := mload(fmp)
-                    mstore(fmp, 0)
-                }
             }
 
             // Ensure return data does not overflow a uint24 and that the underlying fees are within bounds.
-            (success, protocolFee) = success && (returnData == uint24(returnData))
-                && uint24(returnData).isValidProtocolFee() ? (true, uint24(returnData)) : (false, 0);
+            protocolFee = success && (returnData == uint24(returnData)) && uint24(returnData).isValidProtocolFee()
+                ? uint24(returnData)
+                : 0;
         }
     }
 

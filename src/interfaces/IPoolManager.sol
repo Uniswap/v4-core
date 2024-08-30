@@ -42,7 +42,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     error SwapAmountCannotBeZero();
 
     ///@notice Thrown when native currency is passed to a non native settlement
-    error NonZeroNativeValue();
+    error NonzeroNativeValue();
 
     /// @notice Thrown when `clear` is called with an amount that is not exactly equal to the open currency delta.
     error MustClearExactPositiveDelta();
@@ -98,6 +98,13 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         uint24 fee
     );
 
+    /// @notice Emitted for donations
+    /// @param id The abi encoded hash of the pool key struct for the pool that was donated to
+    /// @param sender The address that initiated the donate call
+    /// @param amount0 The amount donated in currency0
+    /// @param amount1 The amount donated in currency1
+    event Donate(PoolId indexed id, address indexed sender, uint256 amount0, uint256 amount1);
+
     /// @notice All interactions on the contract that account deltas require unlocking. A caller that calls `unlock` must implement
     /// `IUnlockCallback(msg.sender).unlockCallback(data)`, where they interact with the remaining functions on this contract.
     /// @dev The only functions callable without an unlocking are `initialize` and `updateDynamicLPFee`
@@ -106,6 +113,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     function unlock(bytes calldata data) external returns (bytes memory);
 
     /// @notice Initialize the state for a given pool ID
+    /// @dev A swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
     /// @param key The pool key for the pool to initialize
     /// @param sqrtPriceX96 The initial square root price
     /// @param hookData The data to pass through to the initialize hooks
@@ -129,15 +137,18 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @param key The pool to modify liquidity in
     /// @param params The parameters for modifying the liquidity
     /// @param hookData The data to pass through to the add/removeLiquidity hooks
-    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal and fee deltas.
-    /// @return feeDelta The balance delta of the fees generated in the liquidity range. Returned for informational purposes.
+    /// @return callerDelta The balance delta of the caller of modifyLiquidity. This is the total of both principal, fee deltas, and hook deltas if applicable
+    /// @return feesAccrued The balance delta of the fees generated in the liquidity range. Returned for informational purposes
     function modifyLiquidity(PoolKey memory key, ModifyLiquidityParams memory params, bytes calldata hookData)
         external
-        returns (BalanceDelta callerDelta, BalanceDelta feeDelta);
+        returns (BalanceDelta callerDelta, BalanceDelta feesAccrued);
 
     struct SwapParams {
+        /// Whether to swap token0 for token1 or vice versa
         bool zeroForOne;
+        /// The desired input amount if negative (exactIn), or the desired output amount if positive (exactOut)
         int256 amountSpecified;
+        /// The sqrt price at which, if reached, the swap will stop executing
         uint160 sqrtPriceLimitX96;
     }
 
@@ -153,7 +164,13 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         external
         returns (BalanceDelta swapDelta);
 
-    /// @notice Donate the given currency amounts to the pool with the given pool key
+    /// @notice Donate the given currency amounts to the in-range liquidity providers of a pool
+    /// @dev Calls to donate can be frontrun adding just-in-time liquidity, with the aim of receiving a portion donated funds.
+    /// Donors should keep this in mind when designing donation mechanisms.
+    /// @dev This function donates to in-range LPs at slot0.tick. In certain edge-cases of the swap algorithm, the `sqrtPrice` of
+    /// a pool can be at the lower boundary of tick `n`, but the `slot0.tick` of the pool is already `n - 1`. In this case a call to
+    /// `donate` would donate to tick `n - 1` (slot0.tick) not tick `n` (getTickAtSqrtPrice(slot0.sqrtPriceX96)).
+    /// Read the comments in `Pool.swap()` for more information about this.
     /// @param key The key of the pool to donate to
     /// @param amount0 The amount of currency0 to donate
     /// @param amount1 The amount of currency1 to donate
@@ -186,7 +203,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @return paid The amount of currency settled
     function settleFor(address recipient) external payable returns (uint256 paid);
 
-    /// @notice WARNING - Any currency that is cleared, will be non-retreivable, and locked in the contract permanently.
+    /// @notice WARNING - Any currency that is cleared, will be non-retrievable, and locked in the contract permanently.
     /// A call to clear will zero out a positive balance WITHOUT a corresponding transfer.
     /// @dev This could be used to clear a balance that is considered dust.
     /// Additionally, the amount must be the exact positive balance. This is to enforce that the caller is aware of the amount being cleared.
@@ -209,6 +226,7 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     function burn(address from, uint256 id, uint256 amount) external;
 
     /// @notice Updates the pools lp fees for the a pool that has enabled dynamic lp fees.
+    /// @dev A swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
     /// @param key The key of the pool to update dynamic LP fees for
     /// @param newDynamicLPFee The new dynamic pool LP fee
     function updateDynamicLPFee(PoolKey memory key, uint24 newDynamicLPFee) external;

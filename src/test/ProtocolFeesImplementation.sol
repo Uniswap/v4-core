@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import {ProtocolFees} from "../ProtocolFees.sol";
-import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Currency} from "../types/Currency.sol";
 import {PoolId} from "../types/PoolId.sol";
@@ -24,7 +23,7 @@ contract ProtocolFeesImplementation is ProtocolFees {
         return _pools[id];
     }
 
-    function fetchProtocolFee(PoolKey memory key) public returns (bool, uint24) {
+    function fetchProtocolFee(PoolKey memory key) public returns (uint24) {
         return ProtocolFees._fetchProtocolFee(key);
     }
 

@@ -134,7 +134,7 @@ contract ClearTest is Test, Deployers {
         actionsRouter.executeActions(actions, params);
     }
 
-    function test_clear_reverts_zeroDelta_inputNonZero() external {
+    function test_clear_reverts_zeroDelta_inputNonzero() external {
         uint256 amount = 1e18;
         Actions[] memory actions = new Actions[](3);
         bytes[] memory params = new bytes[](3);
@@ -145,7 +145,7 @@ contract ClearTest is Test, Deployers {
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
         params[1] = abi.encode(currency0, address(actionsRouter), 0);
 
-        // Clear with nonZero.
+        // Clear with nonzero.
         actions[2] = Actions.CLEAR;
         params[2] = abi.encode(currency0, amount, false, "");
 

@@ -180,8 +180,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     function test_fetchProtocolFee_succeeds() public {
         protocolFees.setProtocolFeeController(feeController);
         vm.prank(address(feeController));
-        (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
-        assertTrue(success);
+        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
         assertEq(protocolFee, 0);
     }
 
@@ -189,8 +188,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
         protocolFees.setProtocolFeeController(outOfBoundsFeeController);
         vm.prank(address(outOfBoundsFeeController));
-        (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
-        assertFalse(success);
+        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
         assertEq(protocolFee, 0);
     }
 
@@ -198,8 +196,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         overflowFeeController = new OverflowProtocolFeeControllerTest();
         protocolFees.setProtocolFeeController(overflowFeeController);
         vm.prank(address(overflowFeeController));
-        (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
-        assertFalse(success);
+        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
         assertEq(protocolFee, 0);
     }
 
@@ -207,8 +204,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         invalidReturnSizeFeeController = new InvalidReturnSizeProtocolFeeControllerTest();
         protocolFees.setProtocolFeeController(invalidReturnSizeFeeController);
         vm.prank(address(invalidReturnSizeFeeController));
-        (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
-        assertFalse(success);
+        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
         assertEq(protocolFee, 0);
     }
 
@@ -216,8 +212,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         revertingFeeController = new RevertingProtocolFeeControllerTest();
         protocolFees.setProtocolFeeController(revertingFeeController);
         vm.prank(address(revertingFeeController));
-        (bool success, uint24 protocolFee) = protocolFees.fetchProtocolFee(key);
-        assertFalse(success);
+        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
         assertEq(protocolFee, 0);
     }
 }

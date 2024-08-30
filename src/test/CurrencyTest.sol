@@ -16,8 +16,8 @@ contract CurrencyTest {
         return currency.balanceOf(owner);
     }
 
-    function isNative(Currency currency) external pure returns (bool) {
-        return currency.isNative();
+    function isAddressZero(Currency currency) external pure returns (bool) {
+        return currency.isAddressZero();
     }
 
     function toId(Currency currency) external pure returns (uint256) {

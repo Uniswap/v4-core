@@ -62,6 +62,8 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         uint24 fee
     );
 
+    event Donate(PoolId indexed id, address indexed sender, uint256 amount0, uint256 amount1);
+
     event Transfer(
         address caller, address indexed sender, address indexed receiver, uint256 indexed id, uint256 amount
     );
@@ -652,11 +654,13 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
 
         vm.expectEmit();
-        emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 98);
+        emit Transfer(
+            address(swapRouter), address(0), address(this), CurrencyLibrary.toId(CurrencyLibrary.ADDRESS_ZERO), 98
+        );
         swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
         snapLastCall("swap mint native output as 6909");
 
-        uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE));
+        uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(CurrencyLibrary.ADDRESS_ZERO));
         assertEq(erc6909Balance, 98);
     }
 
@@ -696,10 +700,12 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({takeClaims: true, settleUsingBurn: false});
 
         vm.expectEmit();
-        emit Transfer(address(swapRouter), address(0), address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 98);
+        emit Transfer(
+            address(swapRouter), address(0), address(this), CurrencyLibrary.toId(CurrencyLibrary.ADDRESS_ZERO), 98
+        );
         swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
 
-        uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE));
+        uint256 erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(CurrencyLibrary.ADDRESS_ZERO));
         assertEq(erc6909Balance, 98);
 
         // give permission for swapRouter to burn the 6909s
@@ -710,12 +716,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         testSettings = PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: true});
 
         vm.expectEmit();
-        emit Transfer(address(swapRouter), address(this), address(0), CurrencyLibrary.toId(CurrencyLibrary.NATIVE), 27);
+        emit Transfer(
+            address(swapRouter), address(this), address(0), CurrencyLibrary.toId(CurrencyLibrary.ADDRESS_ZERO), 27
+        );
         // don't have to send in native currency since burning 6909 for input
         swapRouter.swap(nativeKey, params, testSettings, ZERO_BYTES);
         snapLastCall("swap burn native 6909 for input");
 
-        erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(CurrencyLibrary.NATIVE));
+        erc6909Balance = manager.balanceOf(address(this), CurrencyLibrary.toId(CurrencyLibrary.ADDRESS_ZERO));
         assertEq(erc6909Balance, 71);
     }
 
@@ -875,6 +883,15 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         snapLastCall("donate gas with 1 token");
     }
 
+    function test_fuzz_donate_emits_event(uint256 amount0, uint256 amount1) public {
+        amount0 = bound(amount0, 0, uint256(int256(type(int128).max)));
+        amount1 = bound(amount1, 0, uint256(int256(type(int128).max)));
+
+        vm.expectEmit(true, true, false, true, address(manager));
+        emit Donate(key.toId(), address(donateRouter), uint256(amount0), uint256(amount1));
+        donateRouter.donate(key, amount0, amount1, ZERO_BYTES);
+    }
+
     function test_take_failsWithNoLiquidity() public {
         deployFreshManagerAndRouters();
 
@@ -933,7 +950,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_settle_revertsSendingNativeWithToken() public noIsolate {
         manager.sync(key.currency0);
-        vm.expectRevert(IPoolManager.NonZeroNativeValue.selector);
+        vm.expectRevert(IPoolManager.NonzeroNativeValue.selector);
         settleRouter.settle{value: 1}();
     }
 
@@ -1034,7 +1051,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_collectProtocolFees_nativeToken_accumulateFees_gas() public {
         uint256 expectedFees = 10;
-        Currency nativeCurrency = CurrencyLibrary.NATIVE;
+        Currency nativeCurrency = CurrencyLibrary.ADDRESS_ZERO;
 
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
         assertEq(slot0ProtocolFee, 0);
@@ -1064,7 +1081,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
 
     function test_collectProtocolFees_nativeToken_returnsAllFeesIf0IsProvidedAsParameter() public {
         uint256 expectedFees = 10;
-        Currency nativeCurrency = CurrencyLibrary.NATIVE;
+        Currency nativeCurrency = CurrencyLibrary.ADDRESS_ZERO;
 
         (,, uint24 slot0ProtocolFee,) = manager.getSlot0(nativeKey.toId());
         assertEq(slot0ProtocolFee, 0);
