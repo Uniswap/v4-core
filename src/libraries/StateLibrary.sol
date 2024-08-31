@@ -12,8 +12,8 @@ library StateLibrary {
 
     /// @notice index of feeGrowthGlobal0X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL0_OFFSET = 1;
-    /// @notice index of feeGrowthGlobal1X128 in Pool.State
-    uint256 public constant FEE_GROWTH_GLOBAL1_OFFSET = 2;
+
+    // feeGrowthGlobal1X128 offset in Pool.State = 2
 
     /// @notice index of liquidity in Pool.State
     uint256 public constant LIQUIDITY_OFFSET = 3;
@@ -24,7 +24,7 @@ library StateLibrary {
     /// @notice index of tickBitmap mapping in Pool.State
     uint256 public constant TICK_BITMAP_OFFSET = 5;
 
-    /// @notice index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
+    /// @notice index of Position.State mapping in Pool.State: mapping(bytes32 => Position.State) positions;
     uint256 public constant POSITIONS_OFFSET = 6;
 
     /**
@@ -255,7 +255,7 @@ library StateLibrary {
     {
         bytes32 slot = _getPositionInfoSlot(poolId, positionId);
 
-        // read all 3 words of the Position.Info struct
+        // read all 3 words of the Position.State struct
         bytes32[] memory data = manager.extsload(slot, 3);
 
         assembly ("memory-safe") {
@@ -284,7 +284,7 @@ library StateLibrary {
 
     /**
      * @notice Calculate the fee growth inside a tick range of a pool
-     * @dev pools[poolId].feeGrowthInside0LastX128 in Position.Info is cached and can become stale. This function will calculate the up to date feeGrowthInside
+     * @dev pools[poolId].feeGrowthInside0LastX128 in Position.State is cached and can become stale. This function will calculate the up to date feeGrowthInside
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
      * @param tickLower The lower tick of the range.
@@ -337,7 +337,7 @@ library StateLibrary {
         // slot key of Pool.State value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
-        // Pool.State: `mapping(bytes32 => Position.Info) positions;`
+        // Pool.State: `mapping(bytes32 => Position.State) positions;`
         bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITIONS_OFFSET);
 
         // slot of the mapping key: `pools[poolId].positions[positionId]

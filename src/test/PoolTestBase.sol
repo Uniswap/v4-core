@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import {Currency} from "../types/Currency.sol";
-import {IERC20Minimal} from "../interfaces/external/IERC20Minimal.sol";
 
 import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
