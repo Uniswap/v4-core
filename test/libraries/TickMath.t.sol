@@ -9,11 +9,11 @@ import {TickMath} from "src/libraries/TickMath.sol";
 import {JavascriptFfi} from "test/utils/JavascriptFfi.sol";
 
 contract TickMathTestTest is Test, JavascriptFfi, GasSnapshot {
-    int24 constant MIN_TICK = -887272;
-    int24 constant MAX_TICK = -MIN_TICK;
+    int24 constant MIN_TICK = TickMath.MIN_TICK;
+    int24 constant MAX_TICK = TickMath.MAX_TICK;
 
-    uint160 constant MIN_SQRT_PRICE = 4295128739;
-    uint160 constant MAX_SQRT_PRICE = 1461446703485210103287273052203988822378723970342;
+    uint160 constant MIN_SQRT_PRICE = TickMath.MIN_SQRT_PRICE;
+    uint160 constant MAX_SQRT_PRICE = TickMath.MAX_SQRT_PRICE;
 
     uint256 constant ONE_PIP = 1e6;
 
