@@ -23,7 +23,7 @@ import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolEmptyUnlockTest} from "../src/test/PoolEmptyUnlockTest.sol";
 import {Action} from "../src/test/PoolNestedActionsTest.sol";
-import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {Position} from "../src/libraries/Position.sol";
 import {Constants} from "./utils/Constants.sol";
@@ -35,7 +35,6 @@ import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
-    using PoolIdLibrary for PoolKey;
     using LPFeeLibrary for uint24;
     using SafeCast for *;
     using ProtocolFeeLibrary for uint24;
@@ -186,8 +185,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         bytes32 beforeSelector = MockHooks.beforeAddLiquidity.selector;
         bytes memory beforeParams = abi.encode(address(modifyLiquidityRouter), key, LIQUIDITY_PARAMS, ZERO_BYTES);
         bytes32 afterSelector = MockHooks.afterAddLiquidity.selector;
-        bytes memory afterParams =
-            abi.encode(address(modifyLiquidityRouter), key, LIQUIDITY_PARAMS, balanceDelta, ZERO_BYTES);
+        bytes memory afterParams = abi.encode(
+            address(modifyLiquidityRouter),
+            key,
+            LIQUIDITY_PARAMS,
+            balanceDelta,
+            BalanceDeltaLibrary.ZERO_DELTA,
+            ZERO_BYTES
+        );
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));
@@ -215,8 +220,14 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         bytes32 beforeSelector = MockHooks.beforeRemoveLiquidity.selector;
         bytes memory beforeParams = abi.encode(address(modifyLiquidityRouter), key, REMOVE_LIQUIDITY_PARAMS, ZERO_BYTES);
         bytes32 afterSelector = MockHooks.afterRemoveLiquidity.selector;
-        bytes memory afterParams =
-            abi.encode(address(modifyLiquidityRouter), key, REMOVE_LIQUIDITY_PARAMS, balanceDelta, ZERO_BYTES);
+        bytes memory afterParams = abi.encode(
+            address(modifyLiquidityRouter),
+            key,
+            REMOVE_LIQUIDITY_PARAMS,
+            balanceDelta,
+            BalanceDeltaLibrary.ZERO_DELTA,
+            ZERO_BYTES
+        );
 
         assertEq(MockContract(mockAddr).timesCalledSelector(beforeSelector), 1);
         assertTrue(MockContract(mockAddr).calledWithSelector(beforeSelector, beforeParams));

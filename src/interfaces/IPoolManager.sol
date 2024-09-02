@@ -164,7 +164,13 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
         external
         returns (BalanceDelta swapDelta);
 
-    /// @notice Donate the given currency amounts to the pool with the given pool key
+    /// @notice Donate the given currency amounts to the in-range liquidity providers of a pool
+    /// @dev Calls to donate can be frontrun adding just-in-time liquidity, with the aim of receiving a portion donated funds.
+    /// Donors should keep this in mind when designing donation mechanisms.
+    /// @dev This function donates to in-range LPs at slot0.tick. In certain edge-cases of the swap algorithm, the `sqrtPrice` of
+    /// a pool can be at the lower boundary of tick `n`, but the `slot0.tick` of the pool is already `n - 1`. In this case a call to
+    /// `donate` would donate to tick `n - 1` (slot0.tick) not tick `n` (getTickAtSqrtPrice(slot0.sqrtPriceX96)).
+    /// Read the comments in `Pool.swap()` for more information about this.
     /// @param key The key of the pool to donate to
     /// @param amount0 The amount of currency0 to donate
     /// @param amount1 The amount of currency1 to donate

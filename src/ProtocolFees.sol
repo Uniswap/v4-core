@@ -7,14 +7,13 @@ import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {PoolKey} from "./types/PoolKey.sol";
 import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
 import {Owned} from "solmate/src/auth/Owned.sol";
-import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
+import {PoolId} from "./types/PoolId.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {CustomRevert} from "./libraries/CustomRevert.sol";
 
 /// @notice Contract handling the setting and accrual of protocol fees
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using ProtocolFeeLibrary for uint24;
-    using PoolIdLibrary for PoolKey;
     using Pool for Pool.State;
     using CustomRevert for bytes4;
 

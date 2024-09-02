@@ -7,7 +7,6 @@ import {IHooks} from "../interfaces/IHooks.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../types/BalanceDelta.sol";
-import {PoolIdLibrary} from "../types/PoolId.sol";
 import {Currency} from "../types/Currency.sol";
 import {Test} from "forge-std/Test.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
@@ -17,7 +16,6 @@ import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "../types/BeforeSwapDelta.
 
 contract SkipCallsTestHook is BaseTestHooks, Test {
     using CurrencySettler for Currency;
-    using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
@@ -65,6 +63,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
         BalanceDelta,
+        BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {
         counter++;
@@ -87,6 +86,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         address,
         PoolKey calldata key,
         IPoolManager.ModifyLiquidityParams calldata params,
+        BalanceDelta,
         BalanceDelta,
         bytes calldata hookData
     ) external override returns (bytes4, BalanceDelta) {

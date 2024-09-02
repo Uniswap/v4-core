@@ -2,12 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {PoolId} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 
 contract ProtocolFeeControllerTest is IProtocolFeeController {
-    using PoolIdLibrary for PoolKey;
-
     mapping(PoolId => uint24) public protocolFee;
 
     function protocolFeeForPool(PoolKey memory key) external view returns (uint24) {
