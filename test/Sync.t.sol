@@ -26,12 +26,10 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
     // PoolManager has no balance of currency2.
     Currency currency2;
-    ActionsRouter router;
 
     function setUp() public {
         initializeManagerRoutersAndPoolsWithLiq(IHooks(address(0)));
         currency2 = deployMintAndApproveCurrency();
-        router = new ActionsRouter(manager);
     }
 
     function test_settle_failsIfLocked() public {
@@ -51,7 +49,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[1] = Actions.ASSERT_RESERVES_EQUALS;
         params[1] = abi.encode(0);
 
-        router.executeActions(actions, params);
+        actionsRouter.executeActions(actions, params);
 
         assertEq(currency2.balanceOf(address(manager)), uint256(0));
     }
@@ -72,7 +70,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[2] = Actions.ASSERT_RESERVES_EQUALS;
         params[2] = abi.encode(currency0Balance);
 
-        router.executeActions(actions, params);
+        actionsRouter.executeActions(actions, params);
 
         uint256 balance = currency0.balanceOf(address(manager));
         assertEq(balance, currency0Balance, "balance not equal");
@@ -99,7 +97,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[1] = Actions.ASSERT_RESERVES_EQUALS;
         params[1] = abi.encode(balanceCurrency0);
 
-        router.executeActions(actions, params);
+        actionsRouter.executeActions(actions, params);
     }
 
     function test_settle_withNoStartingBalance() public {
@@ -123,13 +121,13 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[1] = Actions.ASSERT_RESERVES_EQUALS;
         params[1] = abi.encode(balanceCurrency2);
 
-        router.executeActions(actions, params);
+        actionsRouter.executeActions(actions, params);
     }
 
     function test_settle_payOnBehalf(address taker, uint256 amount) public {
-        vm.assume(taker != address(router));
+        vm.assume(taker != address(actionsRouter));
         amount = bound(amount, 1, uint256(int256(type(int128).max)));
-        MockERC20(Currency.unwrap(currency2)).approve(address(router), type(uint256).max);
+        MockERC20(Currency.unwrap(currency2)).approve(address(actionsRouter), type(uint256).max);
         MockERC20(Currency.unwrap(currency2)).mint(address(manager), amount);
 
         Actions[] memory actions = new Actions[](6);
@@ -153,7 +151,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[5] = Actions.ASSERT_DELTA_EQUALS;
         params[5] = abi.encode(currency2, taker, 0);
 
-        router.executeActions(actions, params);
+        actionsRouter.executeActions(actions, params);
     }
 
     /// @notice When there is no balance and reserves are set to 0, no delta should be applied.
@@ -172,9 +170,9 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[2] = Actions.SETTLE;
 
         actions[3] = Actions.ASSERT_DELTA_EQUALS;
-        params[3] = abi.encode(currency2, address(router), 0);
+        params[3] = abi.encode(currency2, address(actionsRouter), 0);
 
-        router.executeActions(actions, params);
+        actionsRouter.executeActions(actions, params);
     }
 
     /// @notice When there is a balance, no delta should be applied.
@@ -197,14 +195,14 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[3] = Actions.SETTLE;
 
         actions[4] = Actions.ASSERT_DELTA_EQUALS;
-        params[4] = abi.encode(currency0, address(router), 0);
+        params[4] = abi.encode(currency0, address(actionsRouter), 0);
 
-        router.executeActions(actions, params);
+        actionsRouter.executeActions(actions, params);
     }
 
     // @notice This tests expected behavior if you DO NOT call sync before a non native settle. (ie. Do not interact with the pool manager properly. You can lose funds.)
     function test_settle_nonNative_withoutSync_loseFunds() public {
-        MockERC20(Currency.unwrap(currency0)).approve(address(router), type(uint256).max);
+        MockERC20(Currency.unwrap(currency0)).approve(address(actionsRouter), type(uint256).max);
         uint256 managerCurrency0BalanceBefore = currency0.balanceOf(address(manager));
         uint256 userCurrency0BalanceBefore = currency0.balanceOf(address(this));
 
@@ -219,9 +217,9 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[0] = Actions.TAKE;
         params[0] = abi.encode(currency0, address(this), 10);
 
-        // Assert that the delta open on the router is -10. (The user owes 10 to the pool).
+        // Assert that the delta open on the actionsRouter is -10. (The user owes 10 to the pool).
         actions[1] = Actions.ASSERT_DELTA_EQUALS;
-        params[1] = abi.encode(currency0, address(router), -10);
+        params[1] = abi.encode(currency0, address(actionsRouter), -10);
 
         actions[2] = Actions.TRANSFER_FROM; // NOT syned before sending tokens
         params[2] = abi.encode(currency0, address(this), manager, 10);
@@ -229,7 +227,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[3] = Actions.SETTLE; // calling settle without sync is expecting a native token, but msg.value == 0 so it settles for 0.
 
         actions[4] = Actions.ASSERT_DELTA_EQUALS;
-        params[4] = abi.encode(currency0, address(router), -10);
+        params[4] = abi.encode(currency0, address(actionsRouter), -10);
 
         actions[5] = Actions.SYNC;
         params[5] = abi.encode(currency0);
@@ -241,9 +239,9 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[7] = Actions.SETTLE;
 
         actions[8] = Actions.ASSERT_DELTA_EQUALS;
-        params[8] = abi.encode(currency0, address(router), 0);
+        params[8] = abi.encode(currency0, address(actionsRouter), 0);
 
-        router.executeActions(actions, params);
+        actionsRouter.executeActions(actions, params);
 
         // The manager gained 10 currency0.
         assertEq(currency0.balanceOf(address(manager)), managerCurrency0BalanceBefore + 10);
@@ -268,7 +266,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         params[1] = abi.encode(value);
 
         vm.expectRevert(IPoolManager.NonzeroNativeValue.selector);
-        router.executeActions{value: value}(actions, params);
+        actionsRouter.executeActions{value: value}(actions, params);
 
         // Reference only - see OZ C01 report - previous test confirming vulnerability
         // uint256 balanceBefore = address(this).balance;
@@ -277,10 +275,10 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         // params[1] = abi.encode(Currency.wrap(address(nativeERC20)));
 
         // actions[2] = Actions.ASSERT_DELTA_EQUALS;
-        // params[2] = abi.encode(Currency.wrap(address(0)), address(router), value);
+        // params[2] = abi.encode(Currency.wrap(address(0)), address(actionsRouter), value);
 
         // actions[3] = Actions.ASSERT_DELTA_EQUALS;
-        // params[3] = abi.encode(Currency.wrap(address(nativeERC20)), address(router), value);
+        // params[3] = abi.encode(Currency.wrap(address(nativeERC20)), address(actionsRouter), value);
 
         // actions[4] = Actions.TAKE;
         // params[4] = abi.encode(Currency.wrap(address(0)), address(this), value);
