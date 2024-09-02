@@ -19,7 +19,6 @@ import {PoolKey} from "../src/types/PoolKey.sol";
 import {PoolModifyLiquidityTest} from "../src/test/PoolModifyLiquidityTest.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {PoolSwapTest} from "../src/test/PoolSwapTest.sol";
-import {PoolSettleTest} from "../src/test/PoolSettleTest.sol";
 import {TestInvalidERC20} from "../src/test/TestInvalidERC20.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {PoolEmptyUnlockTest} from "../src/test/PoolEmptyUnlockTest.sol";
@@ -33,6 +32,7 @@ import {AmountHelpers} from "./utils/AmountHelpers.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
+import {Actions} from "../src/test/ActionsRouter.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -960,10 +960,19 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.settle();
     }
 
-    function test_settle_revertsSendingNativeWithToken() public noIsolate {
-        manager.sync(key.currency0);
+    function test_settle_revertsSendingNative_withTokenSynced() public {
+        Actions[] memory actions = new Actions[](2);
+        bytes[] memory params = new bytes[](2);
+
+        actions[0] = Actions.SYNC;
+        params[0] = abi.encode(key.currency0);
+
+        // Revert with NonzeroNativeValue
+        actions[1] = Actions.SETTLE_NATIVE;
+        params[1] = abi.encode(1);
+
         vm.expectRevert(IPoolManager.NonzeroNativeValue.selector);
-        settleRouter.settle{value: 1}();
+        actionsRouter.executeActions{value: 1}(actions, params);
     }
 
     function test_mint_failsIfLocked() public {
