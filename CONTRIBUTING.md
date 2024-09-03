@@ -48,7 +48,9 @@ All contributions must follow the below standards. Maintainers will close out PR
 
 `forge build` to get contract artifacts and dependencies for forge
 
-`forge test --isolate` to run forge tests and update snapshots
+## Tests
+
+`forge test --isolate` to run forge tests and update snapshots 
 
 ## Code of Conduct
 
