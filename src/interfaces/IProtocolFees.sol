@@ -12,6 +12,8 @@ interface IProtocolFees {
     error ProtocolFeeCannotBeFetched();
     /// @notice Thrown when protocol fee is set too high
     error ProtocolFeeTooLarge(uint24 fee);
+    /// @notice Thrown when the contract is unlocked
+    error ContractUnlocked();
 
     /// @notice Thrown when collectProtocolFees or setProtocolFee is not called by the controller.
     error InvalidCaller();
@@ -37,6 +39,7 @@ interface IProtocolFees {
     function setProtocolFeeController(IProtocolFeeController controller) external;
 
     /// @notice Collects the protocol fees for a given recipient and currency, returning the amount collected
+    /// @dev This will revert if the contract is unlocked
     /// @param recipient The address to receive the protocol fees
     /// @param currency The currency to withdraw
     /// @param amount The amount of currency to withdraw

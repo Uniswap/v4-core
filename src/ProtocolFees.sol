@@ -50,11 +50,15 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
         returns (uint256 amountCollected)
     {
         if (msg.sender != address(protocolFeeController)) InvalidCaller.selector.revertWith();
+        if (_isUnlocked()) ContractUnlocked.selector.revertWith();
 
         amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
         protocolFeesAccrued[currency] -= amountCollected;
         currency.transfer(recipient, amountCollected);
     }
+
+    /// @dev abstract internal function to allow the ProtocolFees contract to access the lock
+    function _isUnlocked() internal virtual returns (bool);
 
     /// @dev abstract internal function to allow the ProtocolFees contract to access pool state
     /// @dev this is overridden in PoolManager.sol to give access to the _pools mapping

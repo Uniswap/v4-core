@@ -277,12 +277,15 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function sync(Currency currency) external {
-        CurrencyReserves.requireNotSynced();
+    function sync(Currency currency) external onlyWhenUnlocked {
         // address(0) is used for the native currency
-        if (currency.isAddressZero()) return;
-        uint256 balance = currency.balanceOfSelf();
-        CurrencyReserves.syncCurrencyAndReserves(currency, balance);
+        if (currency.isAddressZero()) {
+            // The reserves balance is not used for native settling, so we only need to reset the currency.
+            CurrencyReserves.resetCurrency();
+        } else {
+            uint256 balance = currency.balanceOfSelf();
+            CurrencyReserves.syncCurrencyAndReserves(currency, balance);
+        }
     }
 
     /// @inheritdoc IPoolManager
@@ -345,17 +348,19 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function _settle(address recipient) internal returns (uint256 paid) {
         Currency currency = CurrencyReserves.getSyncedCurrency();
-        // if not previously synced, expects native currency to be settled
+
+        // if not previously synced, or the syncedCurrency slot has been reset, expects native currency to be settled
         if (currency.isAddressZero()) {
             paid = msg.value;
         } else {
             if (msg.value > 0) NonzeroNativeValue.selector.revertWith();
-            // Reserves are guaranteed to be set, because currency and reserves are always set together
+            // Reserves are guaranteed to be set because currency and reserves are always set together
             uint256 reservesBefore = CurrencyReserves.getSyncedReserves();
             uint256 reservesNow = currency.balanceOfSelf();
             paid = reservesNow - reservesBefore;
             CurrencyReserves.resetCurrency();
         }
+
         _accountDelta(currency, paid.toInt128(), recipient);
     }
 
@@ -381,5 +386,10 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     /// @notice Implementation of the _getPool function defined in ProtocolFees
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
         return _pools[id];
+    }
+
+    /// @notice Implementation of the _isUnlocked function defined in ProtocolFees
+    function _isUnlocked() internal view override returns (bool) {
+        return Lock.isUnlocked();
     }
 }
