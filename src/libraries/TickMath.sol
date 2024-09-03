@@ -69,6 +69,9 @@ library TickMath {
 
             if (absTick > uint256(int256(MAX_TICK))) InvalidTick.selector.revertWith(tick);
 
+            // The tick is decomposed into bits, and for each bit with index i that is set, the product of 1/sqrt(1.0001^(2^i))
+            // is calculated. The constants used for this calculation are rounded to the nearest integer
+
             // Equivalent to:
             //     price = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
             //     or price = int(2**128 / sqrt(1.0001)) if (absTick & 0x1) else 1 << 128
@@ -110,11 +113,11 @@ library TickMath {
         }
     }
 
-    /// @notice Calculates the greatest tick value such that getPriceAtTick(tick) <= price
-    /// @dev Throws in case sqrtPriceX96 < MIN_SQRT_PRICE, as MIN_SQRT_PRICE is the lowest value getPriceAtTick may
+    /// @notice Calculates the greatest tick value such that getSqrtPriceAtTick(tick) <= sqrtPriceX96
+    /// @dev Throws in case sqrtPriceX96 < MIN_SQRT_PRICE, as MIN_SQRT_PRICE is the lowest value getSqrtPriceAtTick may
     /// ever return.
     /// @param sqrtPriceX96 The sqrt price for which to compute the tick as a Q64.96
-    /// @return tick The greatest tick for which the price is less than or equal to the input price
+    /// @return tick The greatest tick for which the getSqrtPriceAtTick(tick) is less than or equal to the input sqrtPriceX96
     function getTickAtSqrtPrice(uint160 sqrtPriceX96) internal pure returns (int24 tick) {
         unchecked {
             // Equivalent: if (sqrtPriceX96 < MIN_SQRT_PRICE || sqrtPriceX96 >= MAX_SQRT_PRICE) revert InvalidSqrtPrice();
@@ -219,9 +222,14 @@ library TickMath {
                 log_2 := or(log_2, shl(50, f))
             }
 
-            int256 log_sqrt10001 = log_2 * 255738958999603826347141; // 128.128 number
+            int256 log_sqrt10001 = log_2 * 255738958999603826347141; // Q22.128 number
 
+            // Magic number represents the ceiling of the maximum value of the error when approximating log_sqrt10001(x)
             int24 tickLow = int24((log_sqrt10001 - 3402992956809132418596140100660247210) >> 128);
+
+            // Magic number represents the minimum value of the error when approximating log_sqrt10001(x), when
+            // sqrtPrice is from the range (2^-64, 2^64). This is safe as MIN_SQRT_PRICE is more than 2^-64. If MIN_SQRT_PRICE
+            // is changed, this may need to be changed too
             int24 tickHi = int24((log_sqrt10001 + 291339464771989622907027621153398088495) >> 128);
 
             tick = tickLow == tickHi ? tickLow : getSqrtPriceAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
