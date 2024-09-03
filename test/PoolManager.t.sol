@@ -1135,16 +1135,16 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         emptyUnlockRouter.unlock();
     }
 
-    Action[] actions;
+    Action[] _actions;
 
     function test_unlock_cannotBeCalledTwiceByCaller() public {
-        actions = [Action.NESTED_SELF_UNLOCK];
-        nestedActionRouter.unlock(abi.encode(actions));
+        _actions = [Action.NESTED_SELF_UNLOCK];
+        nestedActionRouter.unlock(abi.encode(_actions));
     }
 
     function test_unlock_cannotBeCalledTwiceByDifferentCallers() public {
-        actions = [Action.NESTED_EXECUTOR_UNLOCK];
-        nestedActionRouter.unlock(abi.encode(actions));
+        _actions = [Action.NESTED_EXECUTOR_UNLOCK];
+        nestedActionRouter.unlock(abi.encode(_actions));
     }
 
     // function testExtsloadForPoolPrice() public {
