@@ -50,7 +50,7 @@ All contributions must follow the below standards. Maintainers will close out PR
 
 ## Tests
 
-`forge test --isolate` to run forge tests and update snapshots
+`forge test --isolate` to run forge tests and update snapshots 
 
 ## Code of Conduct
 
