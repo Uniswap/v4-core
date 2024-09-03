@@ -960,6 +960,21 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         manager.settle();
     }
 
+    function test_settle_revertsSendingNative_withTokenSynced() public {
+        Actions[] memory actions = new Actions[](2);
+        bytes[] memory params = new bytes[](2);
+
+        actions[0] = Actions.SYNC;
+        params[0] = abi.encode(key.currency0);
+
+        // Revert with NonzeroNativeValue
+        actions[1] = Actions.SETTLE_NATIVE;
+        params[1] = abi.encode(1);
+
+        vm.expectRevert(IPoolManager.NonzeroNativeValue.selector);
+        actionsRouter.executeActions{value: 1}(actions, params);
+    }
+
     function test_mint_failsIfLocked() public {
         vm.expectRevert(IPoolManager.ManagerLocked.selector);
         manager.mint(address(this), key.currency0.toId(), 1);

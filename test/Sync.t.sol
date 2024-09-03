@@ -21,8 +21,6 @@ import {NativeERC20} from "../src/test/NativeERC20.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
 import {CurrencyLibrary} from "../src/types/Currency.sol";
 
-import "forge-std/console2.sol";
-
 contract SyncTest is Test, Deployers, GasSnapshot {
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
@@ -260,8 +258,8 @@ contract SyncTest is Test, Deployers, GasSnapshot {
 
         uint256 nativeERC20Balance = nativeERC20.balanceOf(address(manager));
 
-        Actions[] memory actions = new Actions[](6);
-        bytes[] memory params = new bytes[](6);
+        Actions[] memory actions = new Actions[](3);
+        bytes[] memory params = new bytes[](3);
 
         actions[0] = Actions.SYNC;
         params[0] = abi.encode(nativeERC20);
@@ -296,6 +294,4 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         // uint256 balanceAfter = address(this).balance;
         // assertEq(balanceAfter - balanceBefore, value);
     }
-
-    // test sync with native does nothing.
 }
