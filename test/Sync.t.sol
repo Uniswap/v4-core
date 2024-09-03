@@ -294,4 +294,77 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         // uint256 balanceAfter = address(this).balance;
         // assertEq(balanceAfter - balanceBefore, value);
     }
+
+    function test_settle_native_afterERC20Sync_succeeds(uint256 currency2Balance, uint256 ethBalance) public {
+        currency2Balance = bound(currency2Balance, 1, uint256(int256(type(int128).max / 2)));
+        ethBalance = bound(ethBalance, 1, uint256(int256(type(int128).max / 2)));
+
+        vm.deal(address(this), ethBalance);
+        // ensure the reserves balance is non 0
+        currency2.transfer(address(manager), currency2Balance);
+
+        Actions[] memory actions = new Actions[](8);
+        bytes[] memory params = new bytes[](8);
+
+        actions[0] = Actions.ASSERT_RESERVES_EQUALS;
+        params[0] = abi.encode(0);
+
+        actions[1] = Actions.SYNC;
+        params[1] = abi.encode(currency2);
+
+        actions[2] = Actions.ASSERT_RESERVES_EQUALS;
+        params[2] = abi.encode(currency2Balance);
+
+        actions[3] = Actions.SYNC;
+        params[3] = abi.encode(CurrencyLibrary.ADDRESS_ZERO);
+
+        // Under the hood this is non-zero but our transient state library overrides the value if the currency is address(0)
+        actions[4] = Actions.ASSERT_RESERVES_EQUALS;
+        params[4] = abi.encode(0);
+
+        actions[5] = Actions.SETTLE_NATIVE;
+        params[5] = abi.encode(ethBalance);
+
+        actions[6] = Actions.ASSERT_DELTA_EQUALS;
+        params[6] = abi.encode(CurrencyLibrary.ADDRESS_ZERO, address(actionsRouter), ethBalance);
+
+        // take the eth to close the deltas
+        actions[7] = Actions.TAKE;
+        params[7] = abi.encode(CurrencyLibrary.ADDRESS_ZERO, address(this), ethBalance);
+
+        actionsRouter.executeActions{value: ethBalance}(actions, params);
+    }
+
+    function test_settle_twice_doesNotApplyDelta(uint256 value) public {
+        value = bound(value, 1, uint256(int256(type(int128).max / 2)));
+        currency2.transfer(address(manager), value);
+
+        Actions[] memory actions = new Actions[](8);
+        bytes[] memory params = new bytes[](8);
+
+        actions[0] = Actions.SYNC;
+        params[0] = abi.encode(currency2);
+
+        actions[1] = Actions.ASSERT_RESERVES_EQUALS;
+        params[1] = abi.encode(value);
+
+        actions[2] = Actions.TRANSFER_FROM;
+        params[2] = abi.encode(currency2, address(this), address(manager), value);
+
+        actions[3] = Actions.SETTLE;
+
+        actions[4] = Actions.ASSERT_DELTA_EQUALS;
+        params[4] = abi.encode(currency2, address(actionsRouter), value);
+
+        actions[5] = Actions.TAKE;
+        params[5] = abi.encode(currency2, address(this), value);
+
+        actions[6] = Actions.SETTLE;
+
+        // Calling settle on address(0) does not apply a delta when called with no value.
+        actions[7] = Actions.ASSERT_DELTA_EQUALS;
+        params[7] = abi.encode(CurrencyLibrary.ADDRESS_ZERO, address(actionsRouter), 0);
+
+        actionsRouter.executeActions(actions, params);
+    }
 }
