@@ -85,7 +85,7 @@ contract Deployers {
     uint160 clearAllHookPermissionsMask = ~uint160(0) << (hookPermissionCount);
 
     function deployFreshManager() internal virtual {
-        manager = new PoolManager(500000);
+        manager = new PoolManager();
     }
 
     function deployFreshManagerAndRouters() internal {
