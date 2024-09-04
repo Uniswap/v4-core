@@ -184,7 +184,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// This is used to checkpoint balances for the manager and derive deltas for the caller.
     /// @dev This MUST be called before any ERC20 tokens are sent into the contract, but can be skipped
     /// for native tokens because the amount to settle is determined by the sent value.
-    /// @param currency The currency whose balance to sync
+    /// However, if an ERC20 token has been synced and not settled, and the caller instead wants to settle
+    /// native funds, this function can be called with the native currency to then be able to settle the native currency
     function sync(Currency currency) external;
 
     /// @notice Called by the user to net out some value owed to the user
