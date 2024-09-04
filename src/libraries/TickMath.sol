@@ -70,7 +70,7 @@ library TickMath {
             if (absTick > uint256(int256(MAX_TICK))) InvalidTick.selector.revertWith(tick);
 
             // The tick is decomposed into bits, and for each bit with index i that is set, the product of 1/sqrt(1.0001^(2^i))
-            // is calculated. The constants used for this calculation are rounded to the nearest integer
+            // is calculated (using Q128.128). The constants used for this calculation are rounded to the nearest integer
 
             // Equivalent to:
             //     price = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
