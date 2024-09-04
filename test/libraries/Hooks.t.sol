@@ -16,7 +16,7 @@ import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {Deployers} from "test/utils/Deployers.sol";
 import {ProtocolFees} from "../../src/ProtocolFees.sol";
-import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
+import {PoolId} from "../../src/types/PoolId.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {IERC20Minimal} from "../../src/interfaces/external/IERC20Minimal.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
@@ -26,7 +26,6 @@ import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Constants} from "../utils/Constants.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
-    using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;
 

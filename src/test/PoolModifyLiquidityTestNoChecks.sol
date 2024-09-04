@@ -5,19 +5,16 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {PoolKey} from "../types/PoolKey.sol";
-import {PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolTestBase} from "./PoolTestBase.sol";
 import {IHooks} from "../interfaces/IHooks.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
 import {CurrencySettler} from "../../test/utils/CurrencySettler.sol";
-import {Constants} from "../../test/utils/Constants.sol";
 
 contract PoolModifyLiquidityTestNoChecks is PoolTestBase {
     using CurrencySettler for Currency;
     using Hooks for IHooks;
     using LPFeeLibrary for uint24;
-    using PoolIdLibrary for PoolKey;
 
     constructor(IPoolManager _manager) PoolTestBase(_manager) {}
 

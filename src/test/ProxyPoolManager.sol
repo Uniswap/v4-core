@@ -6,7 +6,7 @@ import {Pool} from "../libraries/Pool.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 import {Position} from "../libraries/Position.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
-import {Currency, CurrencyLibrary} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {NoDelegateCall} from "../NoDelegateCall.sol";
@@ -15,9 +15,8 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {ProtocolFees} from "../ProtocolFees.sol";
 import {ERC6909Claims} from "../ERC6909Claims.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
-import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../types/BalanceDelta.sol";
-import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
+import {PoolId} from "../types/PoolId.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Lock} from "../libraries/Lock.sol";
 import {CurrencyDelta} from "../libraries/CurrencyDelta.sol";
 import {NonzeroDeltaCount} from "../libraries/NonzeroDeltaCount.sol";
@@ -28,11 +27,10 @@ import {CustomRevert} from "../libraries/CustomRevert.sol";
 
 /// @notice A proxy pool manager that delegates calls to the real/delegate pool manager
 contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload, Exttload {
-    using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
-    using Position for mapping(bytes32 => Position.Info);
+    using Position for mapping(bytes32 => Position.State);
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
     using CurrencyReserves for Currency;
@@ -215,5 +213,10 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     /// @notice Implementation of the _getPool function defined in ProtocolFees
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
         return _pools[id];
+    }
+
+    /// @notice Implementation of the _isUnlocked function defined in ProtocolFees
+    function _isUnlocked() internal view override returns (bool) {
+        return Lock.isUnlocked();
     }
 }
