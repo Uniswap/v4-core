@@ -7,7 +7,7 @@ import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
-import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
+import {PoolId} from "../../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
@@ -21,7 +21,6 @@ import {SwapRouterNoChecks} from "../../src/test/SwapRouterNoChecks.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
-import {PoolSettleTest} from "../../src/test/PoolSettleTest.sol";
 import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
 import {ActionsRouter} from "../../src/test/ActionsRouter.sol";
 import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
@@ -36,7 +35,6 @@ import {
 
 contract Deployers {
     using LPFeeLibrary for uint24;
-    using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
 
     // Helpful test constants
@@ -67,7 +65,6 @@ contract Deployers {
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
-    PoolSettleTest settleRouter;
     ActionsRouter actionsRouter;
 
     PoolClaimsTest claimsRouter;
@@ -87,15 +84,6 @@ contract Deployers {
     uint160 hookPermissionCount = 14;
     uint160 clearAllHookPermissionsMask = ~uint160(0) << (hookPermissionCount);
 
-    modifier noIsolate() {
-        if (msg.sender != address(this)) {
-            (bool success,) = address(this).call(msg.data);
-            require(success);
-        } else {
-            _;
-        }
-    }
-
     function deployFreshManager() internal virtual {
         manager = new PoolManager();
     }
@@ -108,7 +96,6 @@ contract Deployers {
         modifyLiquidityNoChecks = new PoolModifyLiquidityTestNoChecks(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
-        settleRouter = new PoolSettleTest(manager);
         claimsRouter = new PoolClaimsTest(manager);
         nestedActionRouter = new PoolNestedActionsTest(manager);
         feeController = new ProtocolFeeControllerTest();

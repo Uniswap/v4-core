@@ -9,8 +9,8 @@ import {TickMath} from "../../src/libraries/TickMath.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
-import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
-import {CurrencyLibrary, Currency} from "../../src/types/Currency.sol";
+import {PoolId} from "../../src/types/PoolId.sol";
+import {Currency} from "../../src/types/Currency.sol";
 import {Deployers} from "../utils/Deployers.sol";
 import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 import {Pool} from "../../src/libraries/Pool.sol";
@@ -22,7 +22,6 @@ import {Fuzzers} from "../../src/test/Fuzzers.sol";
 
 contract StateLibraryTest is Test, Deployers, Fuzzers, GasSnapshot {
     using FixedPointMathLib for uint256;
-    using PoolIdLibrary for PoolKey;
 
     PoolId poolId;
 

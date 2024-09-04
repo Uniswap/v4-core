@@ -8,14 +8,13 @@ import {PoolKey} from "./types/PoolKey.sol";
 import {ProtocolFeeLibrary} from "./libraries/ProtocolFeeLibrary.sol";
 import {BipsLibrary} from "./libraries/BipsLibrary.sol";
 import {Owned} from "solmate/src/auth/Owned.sol";
-import {PoolId, PoolIdLibrary} from "./types/PoolId.sol";
+import {PoolId} from "./types/PoolId.sol";
 import {Pool} from "./libraries/Pool.sol";
 import {CustomRevert} from "./libraries/CustomRevert.sol";
 
 /// @notice Contract handling the setting and accrual of protocol fees
 abstract contract ProtocolFees is IProtocolFees, Owned {
     using ProtocolFeeLibrary for uint24;
-    using PoolIdLibrary for PoolKey;
     using Pool for Pool.State;
     using CustomRevert for bytes4;
     using BipsLibrary for uint256;
@@ -53,11 +52,15 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
         returns (uint256 amountCollected)
     {
         if (msg.sender != address(protocolFeeController)) InvalidCaller.selector.revertWith();
+        if (_isUnlocked()) ContractUnlocked.selector.revertWith();
 
         amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
         protocolFeesAccrued[currency] -= amountCollected;
         currency.transfer(recipient, amountCollected);
     }
+
+    /// @dev abstract internal function to allow the ProtocolFees contract to access the lock
+    function _isUnlocked() internal virtual returns (bool);
 
     /// @dev abstract internal function to allow the ProtocolFees contract to access pool state
     /// @dev this is overridden in PoolManager.sol to give access to the _pools mapping
