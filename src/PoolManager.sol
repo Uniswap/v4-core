@@ -92,8 +92,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     mapping(PoolId id => Pool.State) internal _pools;
 
-    constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
-
     /// @notice This will revert if the contract is locked
     modifier onlyWhenUnlocked() {
         if (!Lock.isUnlocked()) ManagerLocked.selector.revertWith();
