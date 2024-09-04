@@ -322,6 +322,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[4] = Actions.ASSERT_RESERVES_EQUALS;
         params[4] = abi.encode(0);
 
+        // This calls settle with a value, of ethBalance. Since the synedCurrency slot is address(0), the call should successfully apply a positive delta on the native currency.
         actions[5] = Actions.SETTLE_NATIVE;
         params[5] = abi.encode(ethBalance);
 
@@ -351,6 +352,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[2] = Actions.TRANSFER_FROM;
         params[2] = abi.encode(currency2, address(this), address(manager), value);
 
+        // This settles the syncedCurrency, currency2.
         actions[3] = Actions.SETTLE;
 
         actions[4] = Actions.ASSERT_DELTA_EQUALS;
@@ -359,6 +361,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         actions[5] = Actions.TAKE;
         params[5] = abi.encode(currency2, address(this), value);
 
+        // This settles the syncedCurrency, which has been cleared to address(0).
         actions[6] = Actions.SETTLE;
 
         // Calling settle on address(0) does not apply a delta when called with no value.
