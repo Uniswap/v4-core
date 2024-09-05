@@ -1,1 +1,102 @@
-{"title":"Uniswap v4 Hooks: Customizing Pool Behavior","id":"hSRtTkVtlkAPAvYIYbI9dSZSCNl0FSmnOwqeX2u5I/A=","steps":[{"type":"textOnly","description":"Welcome to the deep dive into Uniswap v4's Hooks system! Hooks are a powerful new feature that allows for customizable pool functionality. They enable developers to implement advanced features like oracles, time-weighted average price orders, volatility oracles, limit orders, dynamic fees, and custom fee management. Let's explore how this system works and its key components.","title":"","id":"2522"},{"type":"textOnly","description":"Uniswap v4 uses a clever system of bit flags to determine which hooks a contract implements. Each hook function is associated with a specific bit in the contract's address. This allows for efficient permission checking and ensures that hooks only implement the functions they claim to.","title":"","id":"2540"},{"type":"highlight","description":"The least significant bits of a hook contract's address encode its permissions. For example, consider this comment from the IHooks interface:","file":"src/interfaces/IHooks.sol","highlight":[{"start":9,"end":13}],"title":"","id":"2541"},{"type":"highlight","description":"The validateHookPermissions function in the Hooks library uses these bit flags to ensure that a hook contract only implements the permissions it claims. It checks each flag against the contract's address:","file":"src/libraries/Hooks.sol","highlight":[{"start":83,"end":103}],"title":"","id":"2542"},{"type":"highlight","description":"The validateHookPermissions function is crucial for ensuring that a hook contract only implements the permissions it claims. It checks each flag against the contract's address, which encodes the permissions in its least significant bits.","file":"src/libraries/Hooks.sol","highlight":[{"start":83,"end":103}],"title":"","id":"2524"},{"type":"highlight","description":"The isValidHookAddress function checks if a hook address is valid based on its permissions and the pool's fee. This ensures that hooks can only be used with compatible pools and prevents unauthorized hook usage.","file":"src/libraries/Hooks.sol","highlight":[{"start":109,"end":127}],"title":"","id":"2525"},{"type":"highlight","description":"The callHook function is responsible for actually invoking a hook. It uses low-level assembly to make the call and handle the response, ensuring that the correct selector is returned and reverting if the call fails.","file":"src/libraries/Hooks.sol","highlight":[{"start":131,"end":155}],"title":"","id":"2526"},{"type":"highlight","description":"The swap function in PoolManager demonstrates the seamless integration of hooks into core pool operations. Let's break it down:\n\n1. Before the swap (line 203): The beforeSwap hook is called, allowing for custom logic such as access control, fee adjustment, or trade validation.\n\n2. Executing the swap (lines 207-218): The actual swap occurs, using any modifications from the beforeSwap hook.\n\n3. After the swap (line 222): The afterSwap hook is called, enabling post-swap actions like logging, analytics, or additional balance adjustments.\n\n4. Hook delta accounting (lines 224-225): Any balance changes from the hooks are accounted for, ensuring the pool's state remains consistent.\n\nThis structure allows developers to inject custom behavior at critical points in the swap process, enabling advanced features like dynamic fees, conditional execution, or complex trading strategies. The hooks system's flexibility is a key innovation in Uniswap v4, opening up new possibilities for DeFi applications.","file":"src/PoolManager.sol","highlight":[{"start":188,"end":228}],"title":"","id":"2527"},{"type":"revealFiles","files":["src/test/MockHooks.sol"],"description":"The MockHooks contract demonstrates how to implement custom hooks. Each hook function can be overridden to add custom logic. Importantly, this contract uses bit flags in its address to indicate which hooks it implements, tying back to the permission system we discussed earlier. For example, if the contract's address ends with '...01', it implements the 'beforeInitialize' hook. This mechanism allows the PoolManager to efficiently determine which hooks to call for a given pool operation. When developing real hooks, you'll use a similar pattern to declare and implement your custom functionality.","title":"","id":"2528"},{"type":"textOnly","description":"The Hooks system in Uniswap v4 revolutionizes pool customization. By injecting custom logic at key points, developers can create:\n\n1. Dynamic fee structures that adapt to market conditions\n2. Time-weighted average price (TWAP) oracles for precise pricing\n3. Just-in-time (JIT) liquidity provision to optimize capital efficiency\n4. Limit orders directly within the pool\n\nThese features lead to more efficient trading, improved price discovery, and novel DeFi primitives. For example, a dynamic fee hook could lower fees during low volatility and increase them during high volatility, optimizing liquidity provider returns and trader costs.\n\nAs you develop with v4, consider how Hooks can enhance your projects. Whether it's implementing advanced order types or creating innovative liquidity management strategies, the Hooks system opens up a new realm of possibilities in decentralized finance.","title":"","id":"2529"}]}
+{
+  "title": "Uniswap v4 Hooks: Customizing Pool Behavior",
+  "id": "hSRtTkVtlkAPAvYIYbI9dSZSCNl0FSmnOwqeX2u5I/A=",
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Welcome to the deep dive into Uniswap v4's Hooks system, a powerful new feature that allows for customizable pool functionality like limit orders and dynamic fee management.",
+      "title": "",
+      "id": "2522"
+    },
+    {
+      "type": "textOnly",
+      "description": "Uniswap v4 uses a clever system of bit flags to determine which hooks a contract implements. Each hook function is associated with a specific bit in the contract's address. This allows for efficient permission checking and ensures that hooks only implement the functions they claim to.",
+      "title": "",
+      "id": "2540"
+    },
+    {
+      "type": "highlight",
+      "description": "The least significant bits of a hook contract's address encode its permissions. For example, consider this comment from the IHooks interface:",
+      "file": "src/interfaces/IHooks.sol",
+      "highlight": [
+        {
+          "start": 9,
+          "end": 13
+        }
+      ],
+      "title": "",
+      "id": "2541"
+    },
+    {
+      "type": "highlight",
+      "description": "The validateHookPermissions function in the Hooks library uses these bit flags to ensure that a hook contract only implements the permissions it claims. It checks each flag against the contract's address:",
+      "file": "src/libraries/Hooks.sol",
+      "highlight": [
+        {
+          "start": 83,
+          "end": 103
+        }
+      ],
+      "title": "",
+      "id": "2542"
+    },
+    {
+      "type": "highlight",
+      "description": "The validateHookPermissions function is crucial for ensuring that a hook contract only implements the permissions it claims. It checks each flag against the contract's address, which encodes the permissions in its least significant bits.",
+      "file": "src/libraries/Hooks.sol",
+      "highlight": [
+        {
+          "start": 83,
+          "end": 103
+        }
+      ],
+      "title": "",
+      "id": "2524"
+    },
+    {
+      "type": "highlight",
+      "description": "The isValidHookAddress function checks if a hook address is valid based on its permissions and the pool's fee. This ensures that hooks can only be used with compatible pools and prevents unauthorized hook usage.",
+      "file": "src/libraries/Hooks.sol",
+      "highlight": [
+        {
+          "start": 109,
+          "end": 127
+        }
+      ],
+      "title": "",
+      "id": "2525"
+    },
+    {
+      "type": "highlight",
+      "description": "The callHook function is responsible for actually invoking a hook. It uses low-level assembly to make the call and handle the response, ensuring that the correct selector is returned and reverting if the call fails.",
+      "file": "src/libraries/Hooks.sol",
+      "highlight": [
+        {
+          "start": 131,
+          "end": 155
+        }
+      ],
+      "title": "",
+      "id": "2526"
+    },
+    {
+      "type": "highlight",
+      "description": "The swap function in PoolManager demonstrates the seamless integration of hooks into core pool operations. Let's break it down:\n\n1. Before the swap (line 203): The beforeSwap hook is called, allowing for custom logic such as access control, fee adjustment, or trade validation.\n\n2. Executing the swap (lines 207-218): The actual swap occurs, using any modifications from the beforeSwap hook.\n\n3. After the swap (line 222): The afterSwap hook is called, enabling post-swap actions like logging, analytics, or additional balance adjustments.\n\n4. Hook delta accounting (lines 224-225): Any balance changes from the hooks are accounted for, ensuring the pool's state remains consistent.\n\nThis structure allows developers to inject custom behavior at critical points in the swap process, enabling advanced features like dynamic fees, conditional execution, or complex trading strategies. The hooks system's flexibility is a key innovation in Uniswap v4, opening up new possibilities for DeFi applications.",
+      "file": "src/PoolManager.sol",
+      "highlight": [
+        {
+          "start": 188,
+          "end": 228
+        }
+      ],
+      "title": "",
+      "id": "2527"
+    },
+    {
+      "type": "textOnly",
+      "description": "You've now seen the Uniswap v4 Hooks system, which enables many ways of customizing pools!",
+      "title": "",
+      "id": "2529"
+    }
+  ]
+}
