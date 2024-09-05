@@ -4,13 +4,13 @@
     "steps": [
         {
             "type": "textOnly",
-            "description": "Welcome to our exploration of the Currency type and CurrencyLibrary functions in Uniswap v4. This abstraction is a fundamental innovation that simplifies the handling of both native ETH and ERC20 tokens throughout the protocol. We'll dive deep into its implementation and usage, focusing on edge cases and niche aspects that are crucial for auditors and developers to understand.",
+            "description": "Welcome to our exploration of the Currency type and CurrencyLibrary functions in Uniswap v4. This abstraction simplifies the handling of both native ETH and ERC20 tokens throughout the protocol.",
             "title": "",
             "id": "2488"
         },
         {
             "type": "highlight",
-            "description": "Let's begin by looking at the Currency type definition. This is a key innovation in Uniswap v4, using the 'type' keyword to create a custom type that's an alias for 'address'.",
+            "description": "Cetral is the Currency type, an alias for 'address'.",
             "file": "src/types/Currency.sol",
             "highlight": [
                 {
@@ -23,7 +23,7 @@
         },
         {
             "type": "highlight",
-            "description": "Here we see the global operators defined for the Currency type. These allow for direct comparisons between Currency instances, which is essential for sorting and other operations in the protocol.",
+            "description": "Read the global operators defined for the Currency type.",
             "file": "src/types/Currency.sol",
             "highlight": [
                 {
@@ -36,7 +36,7 @@
         },
         {
             "type": "highlight",
-            "description": "The CurrencyLibrary contains essential functions for working with the Currency type. Let's examine the transfer function, which handles both native ETH and ERC20 transfers. This function is a critical part of the Currency abstraction, allowing for unified transfer logic regardless of the token type.",
+            "description": "Note how the transfer function handles both native ETH and ERC20 transfers.",
             "file": "src/types/Currency.sol",
             "highlight": [
                 {
@@ -88,7 +88,7 @@
         },
         {
             "type": "highlight",
-            "description": "After the transfer attempt, the function cleans up the memory used for the call data. This is a gas optimization technique. Finally, if the transfer was unsuccessful, it reverts with a custom error, bubbling up any error data from the failed call. This provides detailed error information while maintaining the abstraction.",
+            "description": "After the transfer attempt, the function cleans up the memory used for the call data. If the transfer was unsuccessful, it reverts with a custom error, bubbling up any error data from the failed call. This provides detailed error information while maintaining the abstraction.",
             "file": "src/types/Currency.sol",
             "highlight": [
                 {
@@ -101,7 +101,7 @@
         },
         {
             "type": "highlight",
-            "description": "The isAddressZero function is a critical component in Uniswap v4's currency abstraction. It determines whether a Currency instance represents native ETH (address(0)) or an ERC20 token. This distinction is fundamental for:\n\n1. Transfer handling: The protocol uses different logic for ETH and ERC20 transfers.\n2. Fee calculations: Native ETH might have different fee structures than ERC20 tokens.\n3. Pool creation and management: Affects how liquidity is added or removed.\n\nFor example, in the transfer function we saw earlier, this check determines the transfer method used. Edge case: Be cautious when dealing with tokens that have a zero address as their contract address, as they might be misidentified as native ETH.",
+            "description": "The isAddressZero function is used to check if a Currency is actually the native token",
             "file": "src/types/Currency.sol",
             "highlight": [
                 {
@@ -114,7 +114,7 @@
         },
         {
             "type": "highlight",
-            "description": "The toId and fromId functions convert between Currency and uint256 representations. These functions play a crucial role in Uniswap v4's token handling:\n\ntoId: Converts a Currency to a uint256 id by casting to uint160.\nfromId: Converts a uint256 id back to Currency, but zeroes out the upper 12 bytes.\n\nImportantly, fromId is not an exact inverse of toId due to this zeroing. This design choice has several implications:\n\n1. It ensures consistency in token representation, preventing potential exploits or errors from manipulated upper bytes.\n2. However, it means that any data stored in those upper bytes is lost during conversion.\n3. This could affect systems interacting with Uniswap v4 if they rely on full 256-bit token identifiers.\n\nWhen auditing or developing with these functions, consider how this behavior might impact token identification, pool keys, or any system using these ids for lookups or comparisons.",
+            "description": "Note how toId and fromId functions, which convert between Currency and uint256 representations, are not inverses. `fromId` zeroes out the high bits.",
             "file": "src/types/Currency.sol",
             "highlight": [
                 {
@@ -137,19 +137,6 @@
             ],
             "title": "",
             "id": "2494"
-        },
-        {
-            "type": "highlight",
-            "description": "These test cases are crucial for verifying the robustness of the toId and fromId functions, especially in handling edge cases. Let's break them down:\n\n1. The first two tests ensure that toId correctly converts Currency to uint256, with a special case for native currency (address(0)).\n\n2. The next two tests verify that fromId correctly converts uint256 to Currency, including the critical edge case where the upper 12 bytes are non-zero.\n\n3. The last two tests check the round-trip conversion between Currency and uint256. Note the use of a bitmask in the last test to handle the upper 12 bytes being zeroed out.\n\nThese tests are vital for auditors to ensure the Currency abstraction behaves correctly in all scenarios, particularly when dealing with non-standard inputs or potential overflow situations.",
-            "file": "test/types/Currency.t.sol",
-            "highlight": [
-                {
-                    "start": 95,
-                    "end": 118
-                }
-            ],
-            "title": "",
-            "id": "2495"
         },
         {
             "type": "textOnly",
