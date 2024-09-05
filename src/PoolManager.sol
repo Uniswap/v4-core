@@ -150,25 +150,27 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         bytes calldata hookData
     ) external onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         PoolId id = key.toId();
-        Pool.State storage pool = _getPool(id);
-        pool.checkPoolInitialized();
+        {
+            Pool.State storage pool = _getPool(id);
+            pool.checkPoolInitialized();
 
-        key.hooks.beforeModifyLiquidity(key, params, hookData);
+            key.hooks.beforeModifyLiquidity(key, params, hookData);
 
-        BalanceDelta principalDelta;
-        (principalDelta, feesAccrued) = pool.modifyLiquidity(
-            Pool.ModifyLiquidityParams({
-                owner: msg.sender,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                liquidityDelta: params.liquidityDelta.toInt128(),
-                tickSpacing: key.tickSpacing,
-                salt: params.salt
-            })
-        );
+            BalanceDelta principalDelta;
+            (principalDelta, feesAccrued) = pool.modifyLiquidity(
+                Pool.ModifyLiquidityParams({
+                    owner: msg.sender,
+                    tickLower: params.tickLower,
+                    tickUpper: params.tickUpper,
+                    liquidityDelta: params.liquidityDelta.toInt128(),
+                    tickSpacing: key.tickSpacing,
+                    salt: params.salt
+                })
+            );
 
-        // fee delta and principal delta are both accrued to the caller
-        callerDelta = principalDelta + feesAccrued;
+            // fee delta and principal delta are both accrued to the caller
+            callerDelta = principalDelta + feesAccrued;
+        }
 
         // event is emitted before the afterModifyLiquidity call to ensure events are always emitted in order
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta, params.salt);
