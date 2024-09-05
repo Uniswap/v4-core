@@ -45,7 +45,7 @@
         },
         {
             "type": "highlight",
-            "description": "The PoolManager also includes functions for donating to pools, syncing balances, and settling transactions. Let's examine these additional features:",
+            "description": "The PoolManager also includes functions for donating to pools, syncing balances, and settling transactions.",
             "file": "src/PoolManager.sol",
             "highlight": [
                 {
@@ -103,22 +103,9 @@
         },
         {
             "type": "textOnly",
-            "description": "These hooks allow for a wide range of customizations and advanced features, such as:\n\n1. Dynamic fees: Adjust fees based on market conditions or custom logic.\n2. Oracles: Implement price oracles directly within the pool.\n3. Custom liquidity distributions: Create unique liquidity provision strategies.\n4. Access control: Implement permissioned pools or trading restrictions.\n5. Integration with external protocols: Allow pools to interact with other DeFi protocols.\n\nBy leveraging these hooks, developers can create highly specialized and efficient liquidity pools tailored to specific use cases, significantly expanding the capabilities of the Uniswap v4 protocol.",
+            "description": "These hooks allow for a wide range of customizations and advanced features, such as dynamic fees, orales, and integration with external protocols.",
             "title": "",
             "id": "2537"
-        },
-        {
-            "type": "highlight",
-            "description": "The Pool library is the heart of Uniswap v4's liquidity management. It implements critical functions:\n\n1. initialize: Sets up a new pool with initial price and fee parameters.\n2. modifyLiquidity: Handles adding or removing liquidity, updating positions and fees.\n3. swap: Executes trades, calculates price impact, and updates pool state.\n4. take: Allows for fee collection and position management.\n\nThese functions work together to enable efficient, flexible, and secure pool operations, forming the foundation of Uniswap v4's improved AMM mechanism.",
-            "file": "src/libraries/Pool.sol",
-            "highlight": [
-                {
-                    "start": 97,
-                    "end": 107
-                }
-            ],
-            "title": "",
-            "id": "2506"
         },
         {
             "type": "highlight",
@@ -148,7 +135,7 @@
         },
         {
             "type": "textOnly",
-            "description": "We've explored the core components of Uniswap v4's revolutionary architecture:\n\n1. The singleton PoolManager centralizes pool management, reducing deployment costs.\n2. The flexible hook system enables customizable pool behavior and advanced features.\n3. Native ETH support simplifies transactions and improves gas efficiency.\n4. Enhanced fee management allows for dynamic protocol and LP fees.\n\nUnlike previous versions, v4's modular design allows for easier upgrades and customizations. The singleton architecture and hook system represent a significant departure from v3's individual pool contracts, enabling more complex trading strategies and improved capital efficiency.\n\nThese innovations collectively contribute to a more extensible, gas-efficient, and feature-rich AMM protocol. Consider how these changes might impact liquidity provision, trading strategies, and the broader DeFi ecosystem. How might developers and users leverage these new capabilities?",
+            "description": "That concludes the tour! You've now seen a quick overview of architectural improvements such as the singleton PoolManager, hooks, and currency abstraction.",
             "title": "",
             "id": "2509"
         }
