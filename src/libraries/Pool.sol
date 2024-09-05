@@ -567,7 +567,7 @@ library Pool {
         // tick spacing will never be 0 since TickMath.MIN_TICK_SPACING is 1
         assembly ("memory-safe") {
             tickSpacing := signextend(2, tickSpacing)
-            let minTick := sdiv(MIN_TICK, tickSpacing)
+            let minTick := sub(sdiv(MIN_TICK, tickSpacing), slt(smod(MIN_TICK, tickSpacing), 0))
             let maxTick := sdiv(MAX_TICK, tickSpacing)
             let numTicks := add(sub(maxTick, minTick), 1)
             result := div(sub(shl(128, 1), 1), numTicks)
