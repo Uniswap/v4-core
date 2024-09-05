@@ -1,0 +1,320 @@
+[
+    {
+        "file": "src/libraries/FullMath.sol",
+        "formulas": [
+            {
+                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "lineRange": {
+                    "end": 86,
+                    "start": 86
+                }
+            },
+            {
+                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "lineRange": {
+                    "end": 87,
+                    "start": 87
+                }
+            },
+            {
+                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "lineRange": {
+                    "end": 88,
+                    "start": 88
+                }
+            },
+            {
+                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "lineRange": {
+                    "end": 89,
+                    "start": 89
+                }
+            },
+            {
+                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "lineRange": {
+                    "end": 90,
+                    "start": 90
+                }
+            },
+            {
+                "formula": "inv \\cdot 2.0 - denominator\\cdot inv",
+                "lineRange": {
+                    "end": 91,
+                    "start": 91
+                }
+            },
+            {
+                "formula": "\\frac{a \\cdot b}{denominator}",
+                "lineRange": {
+                    "end": 111,
+                    "start": 111
+                }
+            }
+        ]
+    },
+    {
+        "file": "src/libraries/Hooks.sol",
+        "formulas": [
+            {
+                "formula": "\\mathsf{wrap}(\\mathsf{parseReturnDelta}(result))",
+                "lineRange": {
+                    "end": 264,
+                    "start": 264
+                }
+            }
+        ]
+    },
+    {
+        "file": "src/libraries/Pool.sol",
+        "formulas": [
+            {
+                "formula": "\\mathsf{setLpFee}(\\mathsf{setProtocolFee}(\\mathsf{setTick}(\\mathsf{setSqrtPriceX96}(\\mathsf{wrap}(0.0), sqrtPriceX96), tick), protocolFee), lpFee)",
+                "lineRange": {
+                    "end": 106,
+                    "start": 105
+                }
+            },
+            {
+                "formula": "\\mathsf{toBalanceDelta}(\\mathsf{getAmount0Delta}(\\mathsf{getSqrtPriceAtTick}(tickLower), \\mathsf{getSqrtPriceAtTick}(tickUpper), liquidityDelta), 0.0)",
+                "lineRange": {
+                    "end": 217,
+                    "start": 212
+                }
+            },
+            {
+                "formula": "\\mathsf{toBalanceDelta}(\\mathsf{getAmount0Delta}(sqrtPriceX96, \\mathsf{getSqrtPriceAtTick}(tickUpper), liquidityDelta), \\mathsf{getAmount1Delta}(\\mathsf{getSqrtPriceAtTick}(tickLower), sqrtPriceX96, liquidityDelta))",
+                "lineRange": {
+                    "end": 224,
+                    "start": 219
+                }
+            },
+            {
+                "formula": "\\mathsf{toBalanceDelta}(0.0, \\mathsf{getAmount1Delta}(\\mathsf{getSqrtPriceAtTick}(tickLower), \\mathsf{getSqrtPriceAtTick}(tickUpper), liquidityDelta))",
+                "lineRange": {
+                    "end": 235,
+                    "start": 230
+                }
+            },
+            {
+                "formula": "\\mathsf{computeSwapStep}(sqrtPriceX96, \\mathsf{getSqrtPriceTarget}(zeroForOne, sqrtPriceNextX96, sqrtPriceLimitX96), liquidity, amountSpecifiedRemaining, swapFee)",
+                "lineRange": {
+                    "end": 367,
+                    "start": 361
+                }
+            },
+            {
+                "formula": "amountCalculated - amountIn + feeAmount",
+                "lineRange": {
+                    "end": 373,
+                    "start": 373
+                }
+            },
+            {
+                "formula": "amountSpecifiedRemaining + amountIn + feeAmount",
+                "lineRange": {
+                    "end": 377,
+                    "start": 377
+                }
+            },
+            {
+                "formula": "\\frac{amountIn + feeAmount \\cdot protocolFee}{PIPS\\_DENOMINATOR}",
+                "lineRange": {
+                    "end": 388,
+                    "start": 388
+                }
+            },
+            {
+                "formula": "feeGrowthGlobalX128 + \\mathsf{simpleMulDiv}(feeAmount, Q128, liquidity)",
+                "lineRange": {
+                    "end": 399,
+                    "start": 399
+                }
+            },
+            {
+                "formula": "\\mathsf{setSqrtPriceX96}(\\mathsf{setTick}(slot0Start, tick), sqrtPriceX96)",
+                "lineRange": {
+                    "end": 430,
+                    "start": 430
+                }
+            },
+            {
+                "formula": "\\mathsf{toBalanceDelta}(amountCalculated, amountSpecified - amountSpecifiedRemaining)",
+                "lineRange": {
+                    "end": 446,
+                    "start": 445
+                }
+            },
+            {
+                "formula": "\\mathsf{toBalanceDelta}(amountSpecified - amountSpecifiedRemaining, amountCalculated)",
+                "lineRange": {
+                    "end": 450,
+                    "start": 449
+                }
+            },
+            {
+                "formula": "feeGrowthGlobal0X128 + \\mathsf{simpleMulDiv}(amount0, Q128, liquidity)",
+                "lineRange": {
+                    "end": 464,
+                    "start": 464
+                }
+            },
+            {
+                "formula": "feeGrowthGlobal1X128 + \\mathsf{simpleMulDiv}(amount1, Q128, liquidity)",
+                "lineRange": {
+                    "end": 467,
+                    "start": 467
+                }
+            },
+            {
+                "formula": "feeGrowthGlobal0X128 - feeGrowthOutside0X128 - feeGrowthOutside0X128",
+                "lineRange": {
+                    "end": 496,
+                    "start": 495
+                }
+            },
+            {
+                "formula": "feeGrowthGlobal1X128 - feeGrowthOutside1X128 - feeGrowthOutside1X128",
+                "lineRange": {
+                    "end": 498,
+                    "start": 497
+                }
+            }
+        ]
+    },
+    {
+        "file": "src/libraries/Position.sol",
+        "formulas": [
+            {
+                "formula": "\\frac{feeGrowthInside0X128 - feeGrowthInside0LastX128 \\cdot liquidity}{Q128}",
+                "lineRange": {
+                    "end": 94,
+                    "start": 94
+                }
+            },
+            {
+                "formula": "\\frac{feeGrowthInside1X128 - feeGrowthInside1LastX128 \\cdot liquidity}{Q128}",
+                "lineRange": {
+                    "end": 96,
+                    "start": 96
+                }
+            }
+        ]
+    },
+    {
+        "file": "src/libraries/SqrtPriceMath.sol",
+        "formulas": [
+            {
+                "formula": "\\mathsf{divRoundingUp}(numerator1, \\frac{numerator1}{sqrtPX96} + amount)",
+                "lineRange": {
+                    "end": 52,
+                    "start": 52
+                }
+            },
+            {
+                "formula": "\\frac{_liquidity \\cdot numerator}{denominator}",
+                "lineRange": {
+                    "end": 253,
+                    "start": 253
+                }
+            }
+        ]
+    },
+    {
+        "file": "src/libraries/StateLibrary.sol",
+        "formulas": [
+            {
+                "formula": "\\mathsf{extsload}(manager, slot + 1.0)",
+                "lineRange": {
+                    "end": 139,
+                    "start": 139
+                }
+            },
+            {
+                "formula": "\\mathsf{keccak256}(\\mathsf{encodePacked}(abi, tick, tickBitmapMapping))",
+                "lineRange": {
+                    "end": 210,
+                    "start": 210
+                }
+            },
+            {
+                "formula": "feeGrowthGlobal0X128 - lowerFeeGrowthOutside0X128 - upperFeeGrowthOutside0X128",
+                "lineRange": {
+                    "end": 315,
+                    "start": 315
+                }
+            },
+            {
+                "formula": "feeGrowthGlobal1X128 - lowerFeeGrowthOutside1X128 - upperFeeGrowthOutside1X128",
+                "lineRange": {
+                    "end": 316,
+                    "start": 316
+                }
+            },
+            {
+                "formula": "\\mathsf{keccak256}(\\mathsf{encodePacked}(abi, \\mathsf{unwrap}(poolId), POOLS_SLOT))",
+                "lineRange": {
+                    "end": 322,
+                    "start": 322
+                }
+            },
+            {
+                "formula": "\\mathsf{keccak256}(\\mathsf{encodePacked}(abi, tick, ticksMappingSlot))",
+                "lineRange": {
+                    "end": 333,
+                    "start": 333
+                }
+            },
+            {
+                "formula": "\\mathsf{keccak256}(\\mathsf{encodePacked}(abi, positionId, positionMapping))",
+                "lineRange": {
+                    "end": 344,
+                    "start": 344
+                }
+            }
+        ]
+    },
+    {
+        "file": "src/libraries/SwapMath.sol",
+        "formulas": [
+            {
+                "formula": "\\mathsf{mulDivRoundingUp}(amountIn, _feePips, MAX_SWAP_FEE - _feePips)",
+                "lineRange": {
+                    "end": 105,
+                    "start": 105
+                }
+            }
+        ]
+    },
+    {
+        "file": "src/libraries/TickMath.sol",
+        "formulas": [
+            {
+                "formula": "\\frac{MAX_TICK}{tickSpacing} \\cdot tickSpacing",
+                "lineRange": {
+                    "end": 39,
+                    "start": 39
+                }
+            },
+            {
+                "formula": "\\frac{MIN_TICK}{tickSpacing} \\cdot tickSpacing",
+                "lineRange": {
+                    "end": 46,
+                    "start": 46
+                }
+            }
+        ]
+    },
+    {
+        "file": "src/libraries/TransientStateLibrary.sol",
+        "formulas": [
+            {
+                "formula": "\\mathsf{wrap}(\\mathsf{exttload}(manager, CURRENCY_SLOT))",
+                "lineRange": {
+                    "end": 24,
+                    "start": 24
+                }
+            }
+        ]
+    }
+]
