@@ -274,12 +274,6 @@ library Pool {
         uint24 lpFeeOverride;
     }
 
-    /// @dev caching some swap state to avoid stack too deep errors
-    struct SwapStart {
-        uint256 protocolFee;
-        uint128 liquidityStart;
-    }
-
     /// @notice Executes a swap against the state, and returns the amount deltas of the pool
     /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
@@ -289,12 +283,8 @@ library Pool {
         Slot0 slot0Start = self.slot0;
         bool zeroForOne = params.zeroForOne;
 
-        SwapStart memory start = SwapStart({
-            protocolFee: zeroForOne
-                ? slot0Start.protocolFee().getZeroForOneFee()
-                : slot0Start.protocolFee().getOneForZeroFee(),
-            liquidityStart: self.liquidity
-        });
+        uint256 protocolFee =
+            zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee();
 
         // the amount remaining to be swapped in/out of the input/output asset. initially set to the amountSpecified
         int256 amountSpecifiedRemaining = params.amountSpecified;
@@ -314,7 +304,7 @@ library Pool {
                 ? params.lpFeeOverride.removeOverrideFlagAndValidate()
                 : slot0Start.lpFee();
 
-            swapFee = start.protocolFee == 0 ? lpFee : uint16(start.protocolFee).calculateSwapFee(lpFee);
+            swapFee = protocolFee == 0 ? lpFee : uint16(protocolFee).calculateSwapFee(lpFee);
         }
 
         // a swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
@@ -392,13 +382,12 @@ library Pool {
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
-            if (start.protocolFee > 0) {
+            if (protocolFee > 0) {
                 unchecked {
                     // step.amountIn does not include the swap fee, as it's already been taken from it,
                     // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
                     // this line cannot overflow due to limits on the size of protocolFee and params.amountSpecified
-                    uint256 delta =
-                        (step.amountIn + step.feeAmount) * start.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+                    uint256 delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     amountToProtocol += delta;
@@ -447,7 +436,7 @@ library Pool {
         self.slot0 = slot0Start.setTick(result.tick).setSqrtPriceX96(result.sqrtPriceX96);
 
         // update liquidity if it changed
-        if (start.liquidityStart != result.liquidity) self.liquidity = result.liquidity;
+        if (self.liquidity != result.liquidity) self.liquidity = result.liquidity;
 
         // update fee growth global
         if (!zeroForOne) {
