@@ -276,7 +276,6 @@ library Pool {
         uint256 feeGrowthGlobalX128;
         uint256 protocolFee;
         uint128 liquidityStart;
-        bool exactInput;
     }
 
     /// @notice Executes a swap against the state, and returns the amount deltas of the pool
@@ -291,8 +290,7 @@ library Pool {
         SwapStart memory start = SwapStart({
             protocolFee: zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee(),
             feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
-            liquidityStart: self.liquidity,
-            exactInput: params.amountSpecified < 0
+            liquidityStart: self.liquidity
         });
 
         // uint128 liquidityStart = self.liquidity;
@@ -326,7 +324,7 @@ library Pool {
 
         // a swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
         if (swapFee >= SwapMath.MAX_SWAP_FEE) {
-            if (!start.exactInput) {
+            if (!(params.amountSpecified < 0)) { // if not exactInput
                 InvalidFeeForExactOut.selector.revertWith();
             }
         }
@@ -382,7 +380,7 @@ library Pool {
                 swapFee
             );
 
-            if (!start.exactInput) {
+            if (!(params.amountSpecified < 0)) { // if not exact-input
                 unchecked {
                     amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
@@ -459,7 +457,7 @@ library Pool {
         }
 
         unchecked {
-            if (zeroForOne != start.exactInput) {
+            if (zeroForOne != (params.amountSpecified < 0)) { // "if currency1 is specified"
                 swapDelta = toBalanceDelta(
                     amountCalculated.toInt128(), (params.amountSpecified - amountSpecifiedRemaining).toInt128()
                 );
