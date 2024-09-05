@@ -319,8 +319,8 @@ library Pool {
 
         // a swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
         if (swapFee >= SwapMath.MAX_SWAP_FEE) {
+            // if not exactInput
             if (!(params.amountSpecified < 0)) {
-                // if not exactInput
                 InvalidFeeForExactOut.selector.revertWith();
             }
         }
@@ -376,8 +376,8 @@ library Pool {
                 swapFee
             );
 
+            // if not exactInput
             if (!(params.amountSpecified < 0)) {
-                // if not exact-input
                 unchecked {
                     amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
@@ -456,8 +456,8 @@ library Pool {
         }
 
         unchecked {
+            // "if currency1 is specified"
             if (zeroForOne != (params.amountSpecified < 0)) {
-                // "if currency1 is specified"
                 swapDelta = toBalanceDelta(
                     amountCalculated.toInt128(), (params.amountSpecified - amountSpecifiedRemaining).toInt128()
                 );
