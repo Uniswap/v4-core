@@ -272,8 +272,9 @@ library Pool {
         uint24 lpFeeOverride;
     }
 
+    /// @dev caching some swap state to avoid stack too deep errors
     struct SwapStart {
-        uint256 feeGrowthGlobalX128;
+        uint256 feeGrowthGlobalX128; // the global fee growth of the input token. updated in storage at the end of swap
         uint256 protocolFee;
         uint128 liquidityStart;
     }
@@ -288,21 +289,17 @@ library Pool {
         bool zeroForOne = params.zeroForOne;
 
         SwapStart memory start = SwapStart({
-            protocolFee: zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee(),
+            protocolFee: zeroForOne
+                ? slot0Start.protocolFee().getZeroForOneFee()
+                : slot0Start.protocolFee().getOneForZeroFee(),
             feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
             liquidityStart: self.liquidity
         });
-
-        // uint128 liquidityStart = self.liquidity;
-        // uint256 protocolFee =
-        //     zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee();
 
         // the amount remaining to be swapped in/out of the input/output asset. initially set to the amountSpecified
         int256 amountSpecifiedRemaining = params.amountSpecified;
         // the amount swapped out/in of the output/input asset. initially set to 0
         int256 amountCalculated = 0;
-        // the global fee growth of the input token. updated in storage at the end of swap
-        // uint256 feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
         // initialize to the current sqrt(price)
         result.sqrtPriceX96 = slot0Start.sqrtPriceX96();
         // initialize to the current tick
@@ -320,11 +317,10 @@ library Pool {
             swapFee = start.protocolFee == 0 ? lpFee : uint16(start.protocolFee).calculateSwapFee(lpFee);
         }
 
-        // bool exactInput = params.amountSpecified < 0;
-
         // a swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
         if (swapFee >= SwapMath.MAX_SWAP_FEE) {
-            if (!(params.amountSpecified < 0)) { // if not exactInput
+            if (!(params.amountSpecified < 0)) {
+                // if not exactInput
                 InvalidFeeForExactOut.selector.revertWith();
             }
         }
@@ -380,7 +376,8 @@ library Pool {
                 swapFee
             );
 
-            if (!(params.amountSpecified < 0)) { // if not exact-input
+            if (!(params.amountSpecified < 0)) {
+                // if not exact-input
                 unchecked {
                     amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
@@ -399,7 +396,8 @@ library Pool {
                     // step.amountIn does not include the swap fee, as it's already been taken from it,
                     // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
                     // this line cannot overflow due to limits on the size of protocolFee and params.amountSpecified
-                    uint256 delta = (step.amountIn + step.feeAmount) * start.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+                    uint256 delta =
+                        (step.amountIn + step.feeAmount) * start.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     amountToProtocol += delta;
@@ -410,7 +408,8 @@ library Pool {
             if (result.liquidity > 0) {
                 unchecked {
                     // FullMath.mulDiv isn't needed as the numerator can't overflow uint256 since tokens have a max supply of type(uint128).max
-                    start.feeGrowthGlobalX128 += UnsafeMath.simpleMulDiv(step.feeAmount, FixedPoint128.Q128, result.liquidity);
+                    start.feeGrowthGlobalX128 +=
+                        UnsafeMath.simpleMulDiv(step.feeAmount, FixedPoint128.Q128, result.liquidity);
                 }
             }
 
@@ -457,7 +456,8 @@ library Pool {
         }
 
         unchecked {
-            if (zeroForOne != (params.amountSpecified < 0)) { // "if currency1 is specified"
+            if (zeroForOne != (params.amountSpecified < 0)) {
+                // "if currency1 is specified"
                 swapDelta = toBalanceDelta(
                     amountCalculated.toInt128(), (params.amountSpecified - amountSpecifiedRemaining).toInt128()
                 );
