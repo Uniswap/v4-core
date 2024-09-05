@@ -310,7 +310,7 @@ library Pool {
         // initialize to the current tick
         result.tick = slot0Start.tick();
         // initialize to the current liquidity
-        result.liquidity = start.liquidityStart;
+        result.liquidity = self.liquidity;
 
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
         // lpFee, swapFee, and protocolFee are all in pips
