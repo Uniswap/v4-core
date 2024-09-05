@@ -16,7 +16,7 @@
             "description": "The Lock library demonstrates the use of transient storage. This is a temporary, gas-efficient storage mechanism that uses `tstore` and `tload` operations. These operations are implemented using inline assembly for direct interaction with the Ethereum Virtual Machine (EVM).",
             "title": "",
             "id": "2407"
-        }.,
+        },
         {
             "type": "highlight",
             "description": "Transient storage is a gas-efficient storage mechanism introduced in Ethereum's EIP-1153. It provides temporary storage that only persists for the duration of a transaction. This makes it significantly cheaper than regular storage operations, as the data doesn't need to be persisted in the blockchain state. Transient storage is particularly useful for temporary values that are only needed within a single transaction, such as lock states or intermediate calculation results.",
