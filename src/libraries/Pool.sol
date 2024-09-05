@@ -273,8 +273,8 @@ library Pool {
     }
 
     struct SwapStart {
-        uint256 protocolFee;
         uint256 feeGrowthGlobalX128;
+        uint256 protocolFee;
         uint128 liquidityStart;
         bool exactInput;
     }
