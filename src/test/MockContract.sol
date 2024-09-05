@@ -41,7 +41,7 @@ contract MockContract is Proxy {
     }
 
     /// @notice Captures calls by selector
-    function _beforeFallback() internal {
+    function _beforeFallback() internal override {
         bytes32 selector = bytes32(msg.data[:5]);
         bytes memory params = msg.data[5:];
         calls[selector]++;
@@ -53,5 +53,5 @@ contract MockContract is Proxy {
         super._fallback();
     }
 
-    receive() external payable {}
+    receive() external payable override {}
 }
