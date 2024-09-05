@@ -265,9 +265,9 @@ library Pool {
     }
 
     struct SwapParams {
+        int256 amountSpecified;
         int24 tickSpacing;
         bool zeroForOne;
-        int256 amountSpecified;
         uint160 sqrtPriceLimitX96;
         uint24 lpFeeOverride;
     }
