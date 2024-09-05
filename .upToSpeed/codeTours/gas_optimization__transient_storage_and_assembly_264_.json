@@ -1,1 +1,90 @@
-{"title":"Gas Optimization: Transient Storage and Assembly","id":"/6zj32++yBGOwlUGVqr/0+jfGVITG3J4AF81tMJZznI=","steps":[{"type":"textOnly","description":"Welcome to this tour on gas optimization techniques in Uniswap v4. We'll explore two key strategies: transient storage and inline assembly. These techniques are crucial for improving the efficiency and reducing the gas costs of smart contract operations.","title":"","id":"2406"},{"type":"revealFiles","files":["src/libraries/Lock.sol"],"description":"The Lock library demonstrates the use of transient storage. This is a temporary, gas-efficient storage mechanism that uses `tstore` and `tload` operations. These operations are implemented using inline assembly for direct interaction with the Ethereum Virtual Machine (EVM).","title":"","id":"2407"},{"type":"textOnly","description":"Transient storage is a gas-efficient storage mechanism introduced in Ethereum's EIP-1153. It provides temporary storage that only persists for the duration of a transaction. This makes it significantly cheaper than regular storage operations, as the data doesn't need to be persisted in the blockchain state. Transient storage is particularly useful for temporary values that are only needed within a single transaction, such as lock states or intermediate calculation results.","title":"","id":"2424"},{"type":"highlight","description":"Here we see the implementation of transient storage in the `unlock()`, `lock()`, and `isUnlocked()` functions. They use inline assembly with `tstore` and `tload` operations to manipulate a transient storage slot. The `IS_UNLOCKED_SLOT` is a constant representing the storage slot used for the lock state. The `tstore` operation in `unlock()` and `lock()` sets the state, while `tload` in `isUnlocked()` retrieves it. This approach is more gas-efficient than using regular storage operations because the data doesn't persist beyond the current transaction.","file":"src/libraries/Lock.sol","highlight":[{"start":10,"end":27}],"title":"","id":"2425"},{"type":"revealFiles","files":["src/libraries/CustomRevert.sol"],"description":"The CustomRevert library showcases the use of inline assembly for efficient custom error handling. This library provides methods to revert with custom errors using different argument types, optimizing gas usage for error reporting.","title":"","id":"2409"},{"type":"highlight","description":"This `revertWith` function uses inline assembly to efficiently revert with a custom error selector. Let's compare it to a standard Solidity revert:\n\n1. Standard Solidity: `revert CustomError()`\n2. Optimized version: `CustomError.selector.revertWith()`\n\nThe inline assembly version is significantly more gas-efficient as it:\n- Directly manipulates memory\n- Uses the `revert` opcode\n- Bypasses Solidity's standard error handling\n\nIn Uniswap v4, where many transactions occur, this optimization can lead to substantial gas savings. However, it's crucial to balance gas efficiency with code readability and maintainability. Always ensure proper testing and auditing when using such low-level optimizations.","file":"src/libraries/CustomRevert.sol","highlight":[{"start":11,"end":16}],"title":"","id":"2410"},{"type":"revealFiles","files":["src/libraries/UnsafeMath.sol"],"description":"The UnsafeMath library provides low-level mathematical operations without overflow or underflow checks. This is another gas optimization technique, used when input validation is performed elsewhere in the code.","title":"","id":"2411"},{"type":"highlight","description":"The `divRoundingUp` function performs division with rounding up, without any overflow checks. This is more gas-efficient but requires careful use to ensure mathematical safety.","file":"src/libraries/UnsafeMath.sol","highlight":[{"start":1,"end":15}],"title":"","id":"2412"},{"type":"textOnly","description":"These gas optimization techniques are fundamental to Uniswap v4's efficiency and scalability. Transient storage, inline assembly, and unchecked math operations significantly reduce transaction costs and increase throughput, crucial for a high-volume DEX like Uniswap. In the broader ecosystem, these optimizations enable more complex operations within gas limits, facilitating advanced features like hooks and dynamic fees. However, their implementation requires a delicate balance between efficiency and security. Developers must carefully audit and test contracts using these techniques to prevent vulnerabilities. When properly implemented, these optimizations contribute to Uniswap v4's competitive edge in the DeFi landscape, offering users faster, cheaper transactions while maintaining robust security measures.","title":"","id":"2413"}]}
+{
+    "title": "Gas Optimization: Transient Storage and Assembly",
+    "id": "/6zj32++yBGOwlUGVqr/0+jfGVITG3J4AF81tMJZznI=",
+    "steps": [
+        {
+            "type": "textOnly",
+            "description": "Welcome to this tour on gas optimization techniques in Uniswap v4. We'll explore two key strategies: transient storage and inline assembly. These techniques are crucial for improving the efficiency and reducing the gas costs of smart contract operations.",
+            "title": "",
+            "id": "2406"
+        },
+        {
+            "type": "revealFiles",
+            "files": [
+                "src/libraries/Lock.sol"
+            ],
+            "description": "The Lock library demonstrates the use of transient storage. This is a temporary, gas-efficient storage mechanism that uses `tstore` and `tload` operations. These operations are implemented using inline assembly for direct interaction with the Ethereum Virtual Machine (EVM).",
+            "title": "",
+            "id": "2407"
+        },
+        {
+            "type": "textOnly",
+            "description": "Transient storage is a gas-efficient storage mechanism introduced in Ethereum's EIP-1153. It provides temporary storage that only persists for the duration of a transaction. This makes it significantly cheaper than regular storage operations, as the data doesn't need to be persisted in the blockchain state. Transient storage is particularly useful for temporary values that are only needed within a single transaction, such as lock states or intermediate calculation results.",
+            "title": "",
+            "id": "2424"
+        },
+        {
+            "type": "highlight",
+            "description": "Here we see the implementation of transient storage in the `unlock()`, `lock()`, and `isUnlocked()` functions. They use inline assembly with `tstore` and `tload` operations to manipulate a transient storage slot. The `IS_UNLOCKED_SLOT` is a constant representing the storage slot used for the lock state. The `tstore` operation in `unlock()` and `lock()` sets the state, while `tload` in `isUnlocked()` retrieves it. This approach is more gas-efficient than using regular storage operations because the data doesn't persist beyond the current transaction.",
+            "file": "src/libraries/Lock.sol",
+            "highlight": [
+                {
+                    "start": 10,
+                    "end": 27
+                }
+            ],
+            "title": "",
+            "id": "2425"
+        },
+        {
+            "type": "revealFiles",
+            "files": [
+                "src/libraries/CustomRevert.sol"
+            ],
+            "description": "The CustomRevert library showcases the use of inline assembly for efficient custom error handling. This library provides methods to revert with custom errors using different argument types, optimizing gas usage for error reporting.",
+            "title": "",
+            "id": "2409"
+        },
+        {
+            "type": "highlight",
+            "description": "This `revertWith` function uses inline assembly to efficiently revert with a custom error selector. Let's compare it to a standard Solidity revert:\n\n1. Standard Solidity: `revert CustomError()`\n2. Optimized version: `CustomError.selector.revertWith()`\n\nThe inline assembly version is significantly more gas-efficient as it:\n- Directly manipulates memory\n- Uses the `revert` opcode\n- Bypasses Solidity's standard error handling\n\nIn Uniswap v4, where many transactions occur, this optimization can lead to substantial gas savings. However, it's crucial to balance gas efficiency with code readability and maintainability. Always ensure proper testing and auditing when using such low-level optimizations.",
+            "file": "src/libraries/CustomRevert.sol",
+            "highlight": [
+                {
+                    "start": 11,
+                    "end": 16
+                }
+            ],
+            "title": "",
+            "id": "2410"
+        },
+        {
+            "type": "revealFiles",
+            "files": [
+                "src/libraries/UnsafeMath.sol"
+            ],
+            "description": "The UnsafeMath library provides low-level mathematical operations without overflow or underflow checks. This is another gas optimization technique, used when input validation is performed elsewhere in the code.",
+            "title": "",
+            "id": "2411"
+        },
+        {
+            "type": "highlight",
+            "description": "The `divRoundingUp` function performs division with rounding up, without any overflow checks. This is more gas-efficient but requires careful use to ensure mathematical safety.",
+            "file": "src/libraries/UnsafeMath.sol",
+            "highlight": [
+                {
+                    "start": 12,
+                    "end": 16
+                }
+            ],
+            "title": "",
+            "id": "2412"
+        },
+        {
+            "type": "textOnly",
+            "description": "These gas optimization techniques are fundamental to Uniswap v4's efficiency and scalability. Transient storage, inline assembly, and unchecked math operations significantly reduce transaction costs and increase throughput, crucial for a high-volume DEX like Uniswap. In the broader ecosystem, these optimizations enable more complex operations within gas limits, facilitating advanced features like hooks and dynamic fees. However, their implementation requires a delicate balance between efficiency and security. Developers must carefully audit and test contracts using these techniques to prevent vulnerabilities. When properly implemented, these optimizations contribute to Uniswap v4's competitive edge in the DeFi landscape, offering users faster, cheaper transactions while maintaining robust security measures.",
+            "title": "",
+            "id": "2413"
+        }
+    ]
+}
