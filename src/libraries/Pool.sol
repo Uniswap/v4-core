@@ -272,6 +272,13 @@ library Pool {
         uint24 lpFeeOverride;
     }
 
+    struct SwapStart {
+        uint256 protocolFee;
+        uint256 feeGrowthGlobalX128;
+        uint128 liquidityStart;
+        bool exactInput;
+    }
+
     /// @notice Executes a swap against the state, and returns the amount deltas of the pool
     /// @dev PoolManager checks that the pool is initialized before calling
     function swap(State storage self, SwapParams memory params)
@@ -281,22 +288,29 @@ library Pool {
         Slot0 slot0Start = self.slot0;
         bool zeroForOne = params.zeroForOne;
 
-        uint128 liquidityStart = self.liquidity;
-        uint256 protocolFee =
-            zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee();
+        SwapStart memory start = SwapStart({
+            protocolFee: zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee(),
+            feeGrowthGlobalX128: zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128,
+            liquidityStart: self.liquidity,
+            exactInput: params.amountSpecified < 0
+        });
+
+        // uint128 liquidityStart = self.liquidity;
+        // uint256 protocolFee =
+        //     zeroForOne ? slot0Start.protocolFee().getZeroForOneFee() : slot0Start.protocolFee().getOneForZeroFee();
 
         // the amount remaining to be swapped in/out of the input/output asset. initially set to the amountSpecified
         int256 amountSpecifiedRemaining = params.amountSpecified;
         // the amount swapped out/in of the output/input asset. initially set to 0
         int256 amountCalculated = 0;
         // the global fee growth of the input token. updated in storage at the end of swap
-        uint256 feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
+        // uint256 feeGrowthGlobalX128 = zeroForOne ? self.feeGrowthGlobal0X128 : self.feeGrowthGlobal1X128;
         // initialize to the current sqrt(price)
         result.sqrtPriceX96 = slot0Start.sqrtPriceX96();
         // initialize to the current tick
         result.tick = slot0Start.tick();
         // initialize to the current liquidity
-        result.liquidity = liquidityStart;
+        result.liquidity = start.liquidityStart;
 
         // if the beforeSwap hook returned a valid fee override, use that as the LP fee, otherwise load from storage
         // lpFee, swapFee, and protocolFee are all in pips
@@ -305,14 +319,14 @@ library Pool {
                 ? params.lpFeeOverride.removeOverrideFlagAndValidate()
                 : slot0Start.lpFee();
 
-            swapFee = protocolFee == 0 ? lpFee : uint16(protocolFee).calculateSwapFee(lpFee);
+            swapFee = start.protocolFee == 0 ? lpFee : uint16(start.protocolFee).calculateSwapFee(lpFee);
         }
 
-        bool exactInput = params.amountSpecified < 0;
+        // bool exactInput = params.amountSpecified < 0;
 
         // a swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
         if (swapFee >= SwapMath.MAX_SWAP_FEE) {
-            if (!exactInput) {
+            if (!start.exactInput) {
                 InvalidFeeForExactOut.selector.revertWith();
             }
         }
@@ -368,7 +382,7 @@ library Pool {
                 swapFee
             );
 
-            if (!exactInput) {
+            if (!start.exactInput) {
                 unchecked {
                     amountSpecifiedRemaining -= step.amountOut.toInt256();
                 }
@@ -382,12 +396,12 @@ library Pool {
             }
 
             // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
-            if (protocolFee > 0) {
+            if (start.protocolFee > 0) {
                 unchecked {
                     // step.amountIn does not include the swap fee, as it's already been taken from it,
                     // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
                     // this line cannot overflow due to limits on the size of protocolFee and params.amountSpecified
-                    uint256 delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+                    uint256 delta = (step.amountIn + step.feeAmount) * start.protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
                     amountToProtocol += delta;
@@ -398,7 +412,7 @@ library Pool {
             if (result.liquidity > 0) {
                 unchecked {
                     // FullMath.mulDiv isn't needed as the numerator can't overflow uint256 since tokens have a max supply of type(uint128).max
-                    feeGrowthGlobalX128 += UnsafeMath.simpleMulDiv(step.feeAmount, FixedPoint128.Q128, result.liquidity);
+                    start.feeGrowthGlobalX128 += UnsafeMath.simpleMulDiv(step.feeAmount, FixedPoint128.Q128, result.liquidity);
                 }
             }
 
@@ -410,8 +424,8 @@ library Pool {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
                     (uint256 feeGrowthGlobal0X128, uint256 feeGrowthGlobal1X128) = zeroForOne
-                        ? (feeGrowthGlobalX128, self.feeGrowthGlobal1X128)
-                        : (self.feeGrowthGlobal0X128, feeGrowthGlobalX128);
+                        ? (start.feeGrowthGlobalX128, self.feeGrowthGlobal1X128)
+                        : (self.feeGrowthGlobal0X128, start.feeGrowthGlobalX128);
                     int128 liquidityNet =
                         Pool.crossTick(self, step.tickNext, feeGrowthGlobal0X128, feeGrowthGlobal1X128);
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
@@ -435,17 +449,17 @@ library Pool {
         self.slot0 = slot0Start.setTick(result.tick).setSqrtPriceX96(result.sqrtPriceX96);
 
         // update liquidity if it changed
-        if (liquidityStart != result.liquidity) self.liquidity = result.liquidity;
+        if (start.liquidityStart != result.liquidity) self.liquidity = result.liquidity;
 
         // update fee growth global
         if (!zeroForOne) {
-            self.feeGrowthGlobal1X128 = feeGrowthGlobalX128;
+            self.feeGrowthGlobal1X128 = start.feeGrowthGlobalX128;
         } else {
-            self.feeGrowthGlobal0X128 = feeGrowthGlobalX128;
+            self.feeGrowthGlobal0X128 = start.feeGrowthGlobalX128;
         }
 
         unchecked {
-            if (zeroForOne != exactInput) {
+            if (zeroForOne != start.exactInput) {
                 swapDelta = toBalanceDelta(
                     amountCalculated.toInt128(), (params.amountSpecified - amountSpecifiedRemaining).toInt128()
                 );
