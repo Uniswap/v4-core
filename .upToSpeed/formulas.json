@@ -73,8 +73,8 @@
             {
                 "formula": "\\frac{amountIn + feeAmount \\cdot protocolFee}{PIPS\\_DENOMINATOR}",
                 "lineRange": {
-                    "start": 388,
-                    "end": 388
+                    "start": 390,
+                    "end": 390
                 }
             },
             {
