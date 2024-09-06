@@ -1,3 +1,6 @@
 {
-  "recommendations": ["downfromslow.downfromslow", "juanblanco.solidity"]
+    "recommendations": [
+        "tintinweb.vscode-solidity-language",
+        "downfromslow.downfromslow"
+    ]
 }
