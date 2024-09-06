@@ -42,7 +42,7 @@
         },
         {
             "type": "highlight",
-            "description": "The CurrencyDelta library is a crucial component in Uniswap v4's balance management system. It efficiently tracks and updates token balance changes using transient storage, a gas-optimized alternative to regular storage.\n\nKey functions:\n1. getDelta: Retrieves the current balance delta for a given currency and address.\n2. applyDelta: Updates the balance delta, returning both previous and new values.\n\nThese functions enable precise tracking of balance changes across multiple operations, ensuring accurate token accounting. The use of transient storage significantly reduces gas costs, a critical factor in Uniswap's efficiency.\n\nUnderstanding this library is essential for grasping how Uniswap v4 maintains up-to-date balance information throughout complex trading operations.",
+            "description": "The CurrencyDelta library efficiently tracks and updates token balance changes using transient storage.\n\nKey functions:\n1. getDelta: Retrieves the current balance delta for a given currency and address.\n2. applyDelta: Updates the balance delta, returning both previous and new values.",
             "file": "src/libraries/CurrencyDelta.sol",
             "highlight": [
                 {
@@ -55,7 +55,7 @@
         },
         {
             "type": "highlight",
-            "description": "The NonzeroDeltaCount library is a crucial component in Uniswap v4's balance management system. It keeps track of the number of addresses with non-zero balance deltas, which is essential for ensuring all balances are properly settled before finalizing transactions or locking the contract.\n\nThis library uses transient storage for gas efficiency, a key optimization in Ethereum smart contracts. The increment and decrement functions update the count of non-zero balances:\n\n- increment(): Called when an address goes from zero to non-zero balance.\n- decrement(): Called when an address goes from non-zero to zero balance.\n\nBy maintaining this count, the protocol can quickly check if all balances are settled, preventing scenarios where unsettled balances could lead to inconsistencies or locked funds. This mechanism is integral to Uniswap v4's robust token accounting system, ensuring financial integrity across complex DeFi operations.",
+            "description": "The NonzeroDeltaCount library keeps track of the number of addresses with non-zero balance deltas, which is essential for ensuring all balances are properly settled before finalizing transactions or locking the contract.\n\nThis library uses transient storage for gas efficiency, a key optimization in Ethereum smart contracts. The increment and decrement functions update the count of non-zero balances:\n\n- increment(): Called when an address goes from zero to non-zero balance.\n- decrement(): Called when an address goes from non-zero to zero balance.\n\nBy maintaining this count, the protocol can quickly check if all balances are settled, preventing scenarios where unsettled balances could lead to inconsistencies or locked funds. This mechanism is integral to Uniswap v4's robust token accounting system, ensuring financial integrity across complex DeFi operations.",
             "file": "src/libraries/NonzeroDeltaCount.sol",
             "highlight": [
                 {
@@ -68,7 +68,7 @@
         },
         {
             "type": "highlight",
-            "description": "The CurrencyReserves library is a crucial component in Uniswap v4's balance management system. It maintains a synchronized state of currency and reserves, which is essential for accurate token accounting across various operations.\n\nKey functions include:\n- syncCurrencyAndReserves: Atomically updates both currency and its reserves.\n- getSyncedCurrency and getSyncedReserves: Retrieve the current synced state.\n- resetCurrency: Clears the synced currency, often used after settling balances.\n\nThis library ensures that the protocol always has an up-to-date view of its token balances, critical for functions like swaps, liquidity provision, and fee collection. By using transient storage, it optimizes gas usage while maintaining data integrity throughout complex transactions.",
+            "description": "The CurrencyReserves library maintains a synchronized state of currency and reserves, which is essential for accurate token accounting across various operations.\n\nKey functions include:\n- syncCurrencyAndReserves: Atomically updates both currency and its reserves.\n- getSyncedCurrency and getSyncedReserves: Retrieve the current synced state.\n- resetCurrency: Clears the synced currency, often used after settling balances.",
             "file": "src/libraries/CurrencyReserves.sol",
             "highlight": [
                 {
