@@ -116,21 +116,21 @@ contract TickTest is Test, GasSnapshot {
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForLowFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(LOW_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 1917569901783203986719870431555990);
+        assertEq(maxLiquidityPerTick, 1917559095893846719543856547154045);
         checkCantOverflow(LOW_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMediumFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(MEDIUM_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 11505743598341114571880798222544994);
+        assertEq(maxLiquidityPerTick, 11505354575363080317263139282924270);
         checkCantOverflow(MEDIUM_TICK_SPACING, maxLiquidityPerTick);
     }
 
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForHighFee() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(HIGH_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 38350317471085141830651933667504588);
+        assertEq(maxLiquidityPerTick, 38345995821606768476828330790147420);
         checkCantOverflow(HIGH_TICK_SPACING, maxLiquidityPerTick);
     }
 
@@ -144,7 +144,7 @@ contract TickTest is Test, GasSnapshot {
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueForMaxTickSpacing() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(TickMath.MAX_TICK_SPACING);
 
-        assertEq(maxLiquidityPerTick, 6186952125835244790243174680577603844);
+        assertEq(maxLiquidityPerTick, 6076470837873901133274546561281575204);
         checkCantOverflow(TickMath.MAX_TICK_SPACING, maxLiquidityPerTick);
     }
 
@@ -158,7 +158,7 @@ contract TickTest is Test, GasSnapshot {
     function testTick_tickSpacingToMaxLiquidityPerTick_returnsTheCorrectValueFor2302() public pure {
         uint128 maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(2302);
 
-        assertEq(maxLiquidityPerTick, 441351967472034323558203122479595605);
+        assertEq(maxLiquidityPerTick, 440780268032303709149448973357212709);
         checkCantOverflow(2302, maxLiquidityPerTick);
     }
 

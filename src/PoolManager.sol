@@ -92,8 +92,6 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     mapping(PoolId id => Pool.State) internal _pools;
 
-    constructor(uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {}
-
     /// @notice This will revert if the contract is locked
     modifier onlyWhenUnlocked() {
         if (!Lock.isUnlocked()) ManagerLocked.selector.revertWith();
@@ -152,25 +150,27 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
         bytes calldata hookData
     ) external onlyWhenUnlocked noDelegateCall returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
         PoolId id = key.toId();
-        Pool.State storage pool = _getPool(id);
-        pool.checkPoolInitialized();
+        {
+            Pool.State storage pool = _getPool(id);
+            pool.checkPoolInitialized();
 
-        key.hooks.beforeModifyLiquidity(key, params, hookData);
+            key.hooks.beforeModifyLiquidity(key, params, hookData);
 
-        BalanceDelta principalDelta;
-        (principalDelta, feesAccrued) = pool.modifyLiquidity(
-            Pool.ModifyLiquidityParams({
-                owner: msg.sender,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                liquidityDelta: params.liquidityDelta.toInt128(),
-                tickSpacing: key.tickSpacing,
-                salt: params.salt
-            })
-        );
+            BalanceDelta principalDelta;
+            (principalDelta, feesAccrued) = pool.modifyLiquidity(
+                Pool.ModifyLiquidityParams({
+                    owner: msg.sender,
+                    tickLower: params.tickLower,
+                    tickUpper: params.tickUpper,
+                    liquidityDelta: params.liquidityDelta.toInt128(),
+                    tickSpacing: key.tickSpacing,
+                    salt: params.salt
+                })
+            );
 
-        // fee delta and principal delta are both accrued to the caller
-        callerDelta = principalDelta + feesAccrued;
+            // fee delta and principal delta are both accrued to the caller
+            callerDelta = principalDelta + feesAccrued;
+        }
 
         // event is emitted before the afterModifyLiquidity call to ensure events are always emitted in order
         emit ModifyLiquidity(id, msg.sender, params.tickLower, params.tickUpper, params.liquidityDelta, params.salt);
@@ -278,11 +278,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     /// @inheritdoc IPoolManager
     function sync(Currency currency) external onlyWhenUnlocked {
-        CurrencyReserves.requireNotSynced();
         // address(0) is used for the native currency
-        if (currency.isAddressZero()) return;
-        uint256 balance = currency.balanceOfSelf();
-        CurrencyReserves.syncCurrencyAndReserves(currency, balance);
+        if (currency.isAddressZero()) {
+            // The reserves balance is not used for native settling, so we only need to reset the currency.
+            CurrencyReserves.resetCurrency();
+        } else {
+            uint256 balance = currency.balanceOfSelf();
+            CurrencyReserves.syncCurrencyAndReserves(currency, balance);
+        }
     }
 
     /// @inheritdoc IPoolManager
@@ -345,17 +348,19 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
     function _settle(address recipient) internal returns (uint256 paid) {
         Currency currency = CurrencyReserves.getSyncedCurrency();
-        // if not previously synced, expects native currency to be settled
+
+        // if not previously synced, or the syncedCurrency slot has been reset, expects native currency to be settled
         if (currency.isAddressZero()) {
             paid = msg.value;
         } else {
             if (msg.value > 0) NonzeroNativeValue.selector.revertWith();
-            // Reserves are guaranteed to be set, because currency and reserves are always set together
+            // Reserves are guaranteed to be set because currency and reserves are always set together
             uint256 reservesBefore = CurrencyReserves.getSyncedReserves();
             uint256 reservesNow = currency.balanceOfSelf();
             paid = reservesNow - reservesBefore;
             CurrencyReserves.resetCurrency();
         }
+
         _accountDelta(currency, paid.toInt128(), recipient);
     }
 

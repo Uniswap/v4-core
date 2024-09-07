@@ -44,7 +44,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
 
     address internal immutable _delegateManager;
 
-    constructor(address delegateManager, uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {
+    constructor(address delegateManager) {
         _delegateManager = delegateManager;
     }
 
@@ -141,10 +141,14 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
 
     /// @inheritdoc IPoolManager
     function sync(Currency currency) public {
-        CurrencyReserves.requireNotSynced();
-        if (currency.isAddressZero()) return;
-        uint256 balance = currency.balanceOfSelf();
-        CurrencyReserves.syncCurrencyAndReserves(currency, balance);
+        // address(0) is used for the native currency
+        if (currency.isAddressZero()) {
+            // The reserves balance is not used for native settling, so we only need to reset the currency.
+            CurrencyReserves.resetCurrency();
+        } else {
+            uint256 balance = currency.balanceOfSelf();
+            CurrencyReserves.syncCurrencyAndReserves(currency, balance);
+        }
     }
 
     /// @inheritdoc IPoolManager
