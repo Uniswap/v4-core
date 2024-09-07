@@ -55,7 +55,7 @@
     },
     {
       "type": "highlight",
-      "description": "The isValidHookAddress function checks if a hook address is valid based on its permissions and the pool's fee. This ensures that hooks can only be used with compatible pools and prevents unauthorized hook usage.",
+      "description": "The `isValidHookAddress` function checks if a hook address is valid based on its permissions and the pool's fee. This ensures that hooks can only be used with compatible pools and prevents unauthorized hook usage.",
       "file": "src/libraries/Hooks.sol",
       "highlight": [
         {
@@ -68,7 +68,7 @@
     },
     {
       "type": "highlight",
-      "description": "The callHook function is responsible for actually invoking a hook. It uses low-level assembly to make the call and handle the response, ensuring that the correct selector is returned and reverting if the call fails.",
+      "description": "The `callHook` function is responsible for actually invoking a hook. It uses low-level assembly to make the call and handle the response, ensuring that the correct selector is returned and reverting if the call fails.",
       "file": "src/libraries/Hooks.sol",
       "highlight": [
         {
