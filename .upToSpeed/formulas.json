@@ -3,49 +3,49 @@
         "file": "src/libraries/FullMath.sol",
         "formulas": [
             {
-                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "formula": "inv \\cdot 2.0 - d \\cdot inv",
                 "lineRange": {
                     "start": 86,
                     "end": 86
                 }
             },
             {
-                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "formula": "inv \\cdot 2.0 - d \\cdot inv",
                 "lineRange": {
                     "start": 87,
                     "end": 87
                 }
             },
             {
-                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "formula": "inv \\cdot 2.0 - d \\cdot inv",
                 "lineRange": {
                     "start": 88,
                     "end": 88
                 }
             },
             {
-                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "formula": "inv \\cdot 2.0 - d \\cdot inv",
                 "lineRange": {
                     "start": 89,
                     "end": 89
                 }
             },
             {
-                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "formula": "inv \\cdot 2.0 - d \\cdot inv",
                 "lineRange": {
                     "start": 90,
                     "end": 90
                 }
             },
             {
-                "formula": "inv \\cdot 2.0 - denominator \\cdot inv",
+                "formula": "inv \\cdot 2.0 - d \\cdot inv",
                 "lineRange": {
                     "start": 91,
                     "end": 91
                 }
             },
             {
-                "formula": "\\frac{a \\cdot b}{denominator}",
+                "formula": "\\frac{a \\cdot b}{d}",
                 "lineRange": {
                     "start": 111,
                     "end": 111
@@ -57,56 +57,56 @@
         "file": "src/libraries/Pool.sol",
         "formulas": [
             {
-                "formula": "amountCalculated - amountIn + feeAmount",
+                "formula": "A_c - amountIn + feeAmount",
                 "lineRange": {
                     "start": 373,
                     "end": 373
                 }
             },
             {
-                "formula": "amountSpecifiedRemaining + amountIn + feeAmount",
+                "formula": "A_{s,r} + amountIn + feeAmount",
                 "lineRange": {
                     "start": 377,
                     "end": 377
                 }
             },
             {
-                "formula": "\\frac{amountIn + feeAmount \\cdot protocolFee}{PIPS\\_DENOMINATOR}",
+                "formula": "\\frac{amountIn + feeAmount \\cdot f_{\\text{protocol}}}{PIPS\\_DENOMINATOR}",
                 "lineRange": {
-                    "start": 390,
-                    "end": 390
+                    "start": 388,
+                    "end": 388
                 }
             },
             {
-                "formula": "feeGrowthGlobalX128 + \\mathsf{simpleMulDiv}(feeAmount, Q128, liquidity)",
+                "formula": "feeGrowthGlobalX128 + \\frac{feeAmount \\cdot Q128}{liquidity}",
                 "lineRange": {
                     "start": 399,
                     "end": 399
                 }
             },
             {
-                "formula": "\\mathsf{toBalanceDelta}(amountCalculated, amountSpecified - amountSpecifiedRemaining)",
+                "formula": "\\mathsf{toBalanceDelta}(A_c, amountSpecified - A_{s,r})",
                 "lineRange": {
                     "start": 445,
                     "end": 446
                 }
             },
             {
-                "formula": "\\mathsf{toBalanceDelta}(amountSpecified - amountSpecifiedRemaining, amountCalculated)",
+                "formula": "\\mathsf{toBalanceDelta}(amountSpecified - A_{s,r}, A_c)",
                 "lineRange": {
                     "start": 449,
                     "end": 450
                 }
             },
             {
-                "formula": "feeGrowthGlobal0X128 + \\mathsf{simpleMulDiv}(amount0, Q128, liquidity)",
+                "formula": "feeGrowthGlobal0X128 + \\frac{A\\_0 \\cdot Q128}{L}",
                 "lineRange": {
                     "start": 464,
                     "end": 464
                 }
             },
             {
-                "formula": "feeGrowthGlobal1X128 + \\mathsf{simpleMulDiv}(amount1, Q128, liquidity)",
+                "formula": "feeGrowthGlobal1X128 + \\frac{A\\_1 \\cdot Q128}{L}",
                 "lineRange": {
                     "start": 467,
                     "end": 467
@@ -132,14 +132,14 @@
         "file": "src/libraries/Position.sol",
         "formulas": [
             {
-                "formula": "\\frac{feeGrowthInside0X128 - feeGrowthInside0LastX128 \\cdot liquidity}{Q128}",
+                "formula": "\\frac{feeGrowthInside0X128 - feeGrowthInside0LastX128 \\cdot L}{Q128}",
                 "lineRange": {
                     "start": 94,
                     "end": 94
                 }
             },
             {
-                "formula": "\\frac{feeGrowthInside1X128 - feeGrowthInside1LastX128 \\cdot liquidity}{Q128}",
+                "formula": "\\frac{feeGrowthInside1X128 - feeGrowthInside1LastX128 \\cdot L}{Q128}",
                 "lineRange": {
                     "start": 96,
                     "end": 96
@@ -151,14 +151,28 @@
         "file": "src/libraries/SqrtPriceMath.sol",
         "formulas": [
             {
-                "formula": "\\mathsf{divRoundingUp}(numerator1, \\frac{numerator1}{sqrtPX96} + amount)",
+                "formula": "\\left\\lceil\\frac{n\\_1 \\cdot sqrtPX96}{d}\\right\\rceil",
+                "lineRange": {
+                    "start": 47,
+                    "end": 47
+                }
+            },
+            {
+                "formula": "\\left\\lceil\\frac{n\\_1}{\\frac{n\\_1}{sqrtPX96} + A}\\right\\rceil",
                 "lineRange": {
                     "start": 52,
                     "end": 52
                 }
             },
             {
-                "formula": "\\frac{\\_liquidity \\cdot numerator}{denominator}",
+                "formula": "\\left\\lceil\\frac{n\\_1 \\cdot sqrtPX96}{d}\\right\\rceil",
+                "lineRange": {
+                    "start": 71,
+                    "end": 71
+                }
+            },
+            {
+                "formula": "\\frac{L \\cdot n}{d}",
                 "lineRange": {
                     "start": 253,
                     "end": 253
@@ -170,7 +184,7 @@
         "file": "src/libraries/StateLibrary.sol",
         "formulas": [
             {
-                "formula": "\\mathsf{extsload}(manager, slot + 1.0)",
+                "formula": "\\mathsf{extsload}(M, slot + 1.0)",
                 "lineRange": {
                     "start": 139,
                     "end": 139
@@ -196,7 +210,7 @@
         "file": "src/libraries/SwapMath.sol",
         "formulas": [
             {
-                "formula": "\\mathsf{mulDivRoundingUp}(amountIn, \\_feePips, MAX\\_SWAP\\_FEE - \\_feePips)",
+                "formula": "\\left\\lceil\\frac{A\\_\\text{in} \\cdot \\_feePips}{f\\_\\text{max} - \\_feePips}\\right\\rceil",
                 "lineRange": {
                     "start": 105,
                     "end": 105
@@ -208,14 +222,14 @@
         "file": "src/libraries/TickMath.sol",
         "formulas": [
             {
-                "formula": "\\frac{MAX\\_TICK}{tickSpacing} \\cdot tickSpacing",
+                "formula": "\\frac{k_{\\text{max}}}{\\Delta k} \\cdot \\Delta k",
                 "lineRange": {
                     "start": 39,
                     "end": 39
                 }
             },
             {
-                "formula": "\\frac{MIN\\_TICK}{tickSpacing} \\cdot tickSpacing",
+                "formula": "\\frac{k_{\\text{min}}}{\\Delta k} \\cdot \\Delta k",
                 "lineRange": {
                     "start": 46,
                     "end": 46
