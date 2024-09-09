@@ -10,7 +10,7 @@
     },
     {
       "type": "highlight",
-      "description": "Cetral is the Currency type, an alias for 'address'.",
+      "description": "Central is the Currency type, an alias for 'address'.",
       "file": "src/types/Currency.sol",
       "highlight": [
         {
