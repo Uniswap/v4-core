@@ -525,8 +525,10 @@ library Pool {
 
         liquidityGrossAfter = LiquidityMath.addDelta(liquidityGrossBefore, liquidityDelta);
 
-        flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
-
+        assembly ("memory-safe") {
+            flipped := xor(gt(liquidityGrossBefore, 0), gt(liquidityGrossAfter, 0))
+        }
+        
         if (liquidityGrossBefore == 0) {
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
             if (tick <= self.slot0.tick()) {
