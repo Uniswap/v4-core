@@ -156,7 +156,7 @@ library Hooks {
 
     /// @notice performs a hook call using the given calldata on the given hook
     /// @return int256 The delta returned by the hook
-    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn) internal returns (int256) {
+    function callHookWithReturnDelta(IHooks self, bytes memory data, bool parseReturn) internal returns (bytes32) {
         bytes memory result = callHook(self, data);
 
         // If this hook wasnt meant to return something, default to 0 delta
@@ -298,10 +298,12 @@ library Hooks {
         int128 hookDeltaUnspecified = beforeSwapHookReturn.getUnspecifiedDelta();
 
         if (self.hasPermission(AFTER_SWAP_FLAG)) {
-            hookDeltaUnspecified += self.callHookWithReturnDelta(
-                abi.encodeCall(IHooks.afterSwap, (msg.sender, key, params, swapDelta, hookData)),
-                self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)
-            ).toInt128();
+            hookDeltaUnspecified += BalanceDelta.wrap(
+                self.callHookWithReturnDelta(
+                    abi.encodeCall(IHooks.afterSwap, (msg.sender, key, params, swapDelta, hookData)),
+                    self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)
+                )
+            ).amount1();
         }
 
         BalanceDelta hookDelta;

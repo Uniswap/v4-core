@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 // Return type of the beforeSwap hook.
 // Upper 128 bits is the delta in specified tokens. Lower 128 bits is delta in unspecified tokens (to match the afterSwap hook)
-type BeforeSwapDelta is int256;
+type BeforeSwapDelta is bytes32;
 
 // Creates a BeforeSwapDelta from specified and unspecified
 function toBeforeSwapDelta(int128 deltaSpecified, int128 deltaUnspecified)

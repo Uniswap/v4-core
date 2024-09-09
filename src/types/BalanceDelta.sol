@@ -5,7 +5,7 @@ import {SafeCast} from "../libraries/SafeCast.sol";
 
 /// @dev Two `int128` values packed into a single `int256` where the upper 128 bits represent the amount0
 /// and the lower 128 bits represent the amount1.
-type BalanceDelta is int256;
+type BalanceDelta is bytes32;
 
 using {add as +, sub as -, eq as ==, neq as !=} for BalanceDelta global;
 using BalanceDeltaLibrary for BalanceDelta global;

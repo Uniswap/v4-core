@@ -29,7 +29,7 @@ contract TestBalanceDelta is Test {
 
     function test_fuzz_toBalanceDelta(int128 x, int128 y) public pure {
         BalanceDelta balanceDelta = toBalanceDelta(x, y);
-        int256 expectedBD = int256(uint256(bytes32(abi.encodePacked(x, y))));
+        bytes32 expectedBD = bytes32(abi.encodePacked(x, y));
         assertEq(BalanceDelta.unwrap(balanceDelta), expectedBD);
     }
 
