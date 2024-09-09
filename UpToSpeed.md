@@ -6,7 +6,7 @@ A tool that helps you onboard and learn codebases up to 100% faster.
 # Getting started
 
 ### 0. Accept "Do you want to install the recommended 'UpToSpeed' extension..."
-*(if you accidentally closed, refresh window or manually install the extension 'downfromslow')*
+*(if you accidentally closed, refresh window or manually install the extension 'uptospeed')*
 
 ### 1. Open the Plugin
 Click the UpToSpeed logo ⏩ (fastforward button) in the top right corner of this window(active editor).
