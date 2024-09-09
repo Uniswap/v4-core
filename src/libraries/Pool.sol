@@ -152,6 +152,19 @@ library Pool {
         int24 tickUpper = params.tickUpper;
         checkTicks(tickLower, tickUpper);
 
+        // accrue fee growth and bring position data up to date
+        {
+            (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
+                getFeeGrowthInside(self, tickLower, tickUpper);
+
+            Position.State storage position = self.positions.get(params.owner, tickLower, tickUpper, params.salt);
+            (uint256 feesOwed0, uint256 feesOwed1) =
+                position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
+
+            // Fees earned from LPing are calculated, and returned
+            feeDelta = toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
+        }
+
         {
             ModifyLiquidityState memory state;
 
@@ -177,28 +190,6 @@ library Pool {
                 }
                 if (state.flippedUpper) {
                     self.tickBitmap.flipTick(tickUpper, params.tickSpacing);
-                }
-            }
-
-            {
-                (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) =
-                    getFeeGrowthInside(self, tickLower, tickUpper);
-
-                Position.State storage position = self.positions.get(params.owner, tickLower, tickUpper, params.salt);
-                (uint256 feesOwed0, uint256 feesOwed1) =
-                    position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
-
-                // Fees earned from LPing are calculated, and returned
-                feeDelta = toBalanceDelta(feesOwed0.toInt128(), feesOwed1.toInt128());
-            }
-
-            // clear any tick data that is no longer needed
-            if (liquidityDelta < 0) {
-                if (state.flippedLower) {
-                    clearTick(self, tickLower);
-                }
-                if (state.flippedUpper) {
-                    clearTick(self, tickUpper);
                 }
             }
         }
@@ -527,29 +518,25 @@ library Pool {
 
         flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
 
-        if (liquidityGrossBefore == 0) {
-            // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
-            if (tick <= self.slot0.tick()) {
-                info.feeGrowthOutside0X128 = self.feeGrowthGlobal0X128;
-                info.feeGrowthOutside1X128 = self.feeGrowthGlobal1X128;
-            }
-        }
-
-        // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
-        int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
-        assembly ("memory-safe") {
-            // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
-            // So we can store them with a single sstore by packing them ourselves first
-            sstore(
-                info.slot,
-                // bitwise OR to pack liquidityGrossAfter and liquidityNet
-                or(
-                    // Put liquidityGrossAfter in the lower bits, clearing out the upper bits
-                    and(liquidityGrossAfter, 0xffffffffffffffffffffffffffffffff),
-                    // Shift liquidityNet to put it in the upper bits (no need for signextend since we're shifting left)
-                    shl(128, liquidityNet)
+        if (liquidityGrossAfter == 0) {
+            clearTick(self, tick);
+        } else {
+            // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
+            int128 liquidityNet = upper ? liquidityNetBefore - liquidityDelta : liquidityNetBefore + liquidityDelta;
+            assembly ("memory-safe") {
+                // liquidityGrossAfter and liquidityNet are packed in the first slot of `info`
+                // So we can store them with a single sstore by packing them ourselves first
+                sstore(
+                    info.slot,
+                    // bitwise OR to pack liquidityGrossAfter and liquidityNet
+                    or(
+                        // Put liquidityGrossAfter in the lower bits, clearing out the upper bits
+                        and(liquidityGrossAfter, 0xffffffffffffffffffffffffffffffff),
+                        // Shift liquidityNet to put it in the upper bits (no need for signextend since we're shifting left)
+                        shl(128, liquidityNet)
+                    )
                 )
-            )
+            }
         }
     }
 

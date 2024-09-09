@@ -330,14 +330,14 @@ contract TickTest is Test, GasSnapshot {
         update(0, 0, int128(Constants.MAX_UINT128 / 2 - 1), 0, 0, false);
     }
 
-    function testTick_update_assumesAllGrowthHappensBelowTicksLteCurrentTick() public {
+    function testTick_update_doesNotSetAnyGrowthFieldsIfTickIsNotInitialized() public {
         Pool.TickInfo memory tickInfo;
 
         update(1, 1, 1, 1, 2, false);
         tickInfo = ticks(1);
 
-        assertEq(tickInfo.feeGrowthOutside0X128, 1);
-        assertEq(tickInfo.feeGrowthOutside1X128, 2);
+        assertEq(tickInfo.feeGrowthOutside0X128, 0);
+        assertEq(tickInfo.feeGrowthOutside1X128, 0);
     }
 
     function testTick_update_doesNotSetAnyGrowthFieldsIfTickIsAlreadyInitialized() public {
@@ -347,8 +347,8 @@ contract TickTest is Test, GasSnapshot {
         update(1, 1, 1, 6, 7, false);
         tickInfo = ticks(1);
 
-        assertEq(tickInfo.feeGrowthOutside0X128, 1);
-        assertEq(tickInfo.feeGrowthOutside1X128, 2);
+        assertEq(tickInfo.feeGrowthOutside0X128, 0);
+        assertEq(tickInfo.feeGrowthOutside1X128, 0);
     }
 
     function testTick_update_doesNotSetAnyGrowthFieldsForTicksGtCurrentTick() public {
@@ -401,7 +401,7 @@ contract TickTest is Test, GasSnapshot {
 
         info.feeGrowthOutside0X128 = 0;
         info.feeGrowthOutside1X128 = 0;
-        info.liquidityGross = 1;
+        info.liquidityGross = uint128(Constants.MAX_UINT128 / 2);
         info.liquidityNet = int128(Constants.MAX_UINT128 / 2);
 
         setTick(2, info);
@@ -409,7 +409,7 @@ contract TickTest is Test, GasSnapshot {
 
         info = ticks(2);
 
-        assertEq(info.liquidityGross, 0);
+        assertEq(info.liquidityGross, uint128(Constants.MAX_UINT128 / 2 - 1));
         assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2 - 1));
     }
 
@@ -418,7 +418,7 @@ contract TickTest is Test, GasSnapshot {
 
         info.feeGrowthOutside0X128 = 0;
         info.feeGrowthOutside1X128 = 0;
-        info.liquidityGross = 0;
+        info.liquidityGross = uint128(Constants.MAX_UINT128 / 2 - 1);
         info.liquidityNet = int128(Constants.MAX_UINT128 / 2 - 1);
 
         setTick(2, info);
@@ -427,7 +427,7 @@ contract TickTest is Test, GasSnapshot {
 
         info = ticks(2);
 
-        assertEq(info.liquidityGross, 1);
+        assertEq(info.liquidityGross, uint128(Constants.MAX_UINT128 / 2));
         assertEq(info.liquidityNet, int128(Constants.MAX_UINT128 / 2));
     }
 
