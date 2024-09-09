@@ -264,7 +264,7 @@ library Hooks {
             // dynamic fee pools that do not want to override the cache fee, return 0 otherwise they return a valid fee with the override flag
             if (key.fee.isDynamicFee()) lpFeeOverride = result.parseFee();
 
-            // skip this logic for the case where the hook return is 0
+            // skip this logic for the case where the hook is forbidden to return a delta
             if (self.hasPermission(BEFORE_SWAP_RETURNS_DELTA_FLAG)) {
                 hookReturn = BeforeSwapDelta.wrap(result.parseReturnDelta());
 
@@ -298,12 +298,16 @@ library Hooks {
         int128 hookDeltaUnspecified = beforeSwapHookReturn.getUnspecifiedDelta();
 
         if (self.hasPermission(AFTER_SWAP_FLAG)) {
-            hookDeltaUnspecified += BalanceDelta.wrap(
-                self.callHookWithReturnDelta(
-                    abi.encodeCall(IHooks.afterSwap, (msg.sender, key, params, swapDelta, hookData)),
-                    self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)
-                )
-            ).amount1();
+            bytes memory result =
+                callHook(self, abi.encodeCall(IHooks.afterSwap, (msg.sender, key, params, swapDelta, hookData)));
+
+            // A length of 64 bytes is required to return a bytes4, and a 32 byte delta
+            if (result.length != 64) InvalidHookResponse.selector.revertWith();
+
+            // skip this logic for the case where the hook is forbidden to return a delta
+            if (self.hasPermission(AFTER_SWAP_RETURNS_DELTA_FLAG)) {
+                hookDeltaUnspecified += BeforeSwapDelta.wrap(result.parseReturnDelta()).getUnspecifiedDelta();
+            }
         }
 
         BalanceDelta hookDelta;
