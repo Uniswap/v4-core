@@ -3,42 +3,42 @@
     "file": "src/libraries/FullMath.sol",
     "formulas": [
       {
-        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "formula": "inv \\cdot (2.0 - d \\cdot inv)",
         "lineRange": {
           "start": 86,
           "end": 86
         }
       },
       {
-        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "formula": "inv \\cdot (2.0 - d \\cdot inv)",
         "lineRange": {
           "start": 87,
           "end": 87
         }
       },
       {
-        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "formula": "inv \\cdot (2.0 - d \\cdot inv)",
         "lineRange": {
           "start": 88,
           "end": 88
         }
       },
       {
-        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "formula": "inv \\cdot (2.0 - d \\cdot inv)",
         "lineRange": {
           "start": 89,
           "end": 89
         }
       },
       {
-        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "formula": "inv \\cdot (2.0 - d \\cdot inv)",
         "lineRange": {
           "start": 90,
           "end": 90
         }
       },
       {
-        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "formula": "inv \\cdot (2.0 - d \\cdot inv)",
         "lineRange": {
           "start": 91,
           "end": 91
@@ -57,16 +57,16 @@
     "file": "src/libraries/Position.sol",
     "formulas": [
       {
-        "formula": "\\frac{feeGrowthInside0X128 - feeGrowthInside0LastX128 \\cdot L}{Q128}",
+        "formula": "\\frac{(feeGrowthInside0X128 - feeGrowthInside0LastX128) \\cdot L}{Q128}",
         "lineRange": {
-          "start": 94,
+          "start": 93,
           "end": 94
         }
       },
       {
-        "formula": "\\frac{feeGrowthInside1X128 - feeGrowthInside1LastX128 \\cdot L}{Q128}",
+        "formula": "\\frac{(feeGrowthInside1X128 - feeGrowthInside1LastX128) \\cdot L}{Q128}",
         "lineRange": {
-          "start": 96,
+          "start": 95,
           "end": 96
         }
       }
@@ -83,7 +83,7 @@
         }
       },
       {
-        "formula": "\\left\\lceil\\frac{n\\_1}{\\frac{n\\_1}{sqrtPX96} + A}\\right\\rceil",
+        "formula": "\\left\\lceil\\frac{n\\_1}{(\\frac{n\\_1}{sqrtPX96} + A)}\\right\\rceil",
         "lineRange": {
           "start": 52,
           "end": 52
@@ -135,7 +135,7 @@
     "file": "src/libraries/SwapMath.sol",
     "formulas": [
       {
-        "formula": "\\left\\lceil\\frac{A\\_\\text{in} \\cdot \\_feePips}{f\\_\\text{max} - \\_feePips}\\right\\rceil",
+        "formula": "\\left\\lceil\\frac{A\\_\\text{in} \\cdot \\_feePips}{(f\\_\\text{max} - \\_feePips)}\\right\\rceil",
         "lineRange": {
           "start": 104,
           "end": 104
@@ -180,7 +180,7 @@
         }
       },
       {
-        "formula": "\\frac{amountIn + feeAmount \\cdot f_{\\text{protocol}}}{PIPS\\_DENOMINATOR}",
+        "formula": "\\frac{(amountIn + feeAmount) \\cdot f_{\\text{protocol}}}{PIPS\\_DENOMINATOR}",
         "lineRange": {
           "start": 390,
           "end": 390
