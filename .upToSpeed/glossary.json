@@ -96,7 +96,11 @@
     "definition": "In the context of Uniswap and decentralized exchanges, APR refers to the annualized rate of return that liquidity providers can expect to earn from trading fees generated within a liquidity pool. It is typically calculated by dividing the total fees earned over a specific period by the total value locked (TVL) in the pool, then annualizing this rate. While not directly implemented in the smart contract code, APR serves as a key metric for liquidity providers to assess the potential returns on their capital contributions to various pools."
   },
   {
-    "terms": ["APY (Annual Percentage Yield)", "APY", "Annual Percentage Yield"],
+    "terms": [
+      "APY (Annual Percentage Yield)",
+      "APY",
+      "Annual Percentage Yield"
+    ],
     "definition": "The annual rate of return for liquidity providers in Uniswap, primarily derived from trading fees. APY is calculated based on the fees earned from trades within a liquidity pool, distributed proportionally to liquidity providers. While potentially lucrative, APY can be affected by factors such as trading volume, pool size, and impermanent loss. In Uniswap v4, the introduction of hooks and customizable fee structures may impact APY calculations, potentially offering more dynamic and tailored returns for liquidity providers."
   },
   {
@@ -218,5 +222,17 @@
   {
     "terms": ["Time-Weighted Average Market Maker (TWAMM)", "TWAMM"],
     "definition": "A mechanism in Uniswap v4 that enables the execution of large orders over an extended period using customizable hooks. TWAMM spreads trades across multiple blocks, calculating a time-weighted average price to minimize price impact and slippage. This feature allows traders to execute significant orders more efficiently by reducing market disruption and potentially capturing better overall execution prices. TWAMM leverages Uniswap v4's flexible hook system, allowing developers to implement sophisticated trading strategies directly within the protocol's liquidity pools."
+  },
+  {
+    "terms": ["Permit2"],
+    "definition": "Permit2 is an advanced token approval and transfer system developed by Uniswap for Ethereum-based smart contracts. It enhances the standard ERC20 token approval process by allowing users to grant permissions through off-chain signatures, reducing gas costs and improving security. Permit2 combines two main components:\n\n1. SignatureTransfer: Enables one-time signature-based transfers without setting on-chain allowances.\n2. AllowanceTransfer: Manages time-bound token allowances with customizable amounts and expirations.\n\nKey features include:\n\n- Gas-free approvals using off-chain signatures\n- Automatic expiration of allowances\n- Batch approvals and transfers\n- Universal compatibility with all ERC20 tokens\n- Enhanced security through limited-time, limited-amount approvals\n\nPermit2 simplifies dApp interactions, reduces transaction costs, and mitigates risks associated with unlimited token approvals.\n\n```solidity\n// Example usage from docs/contracts/permit2/overview.md\nUSDC.approve(permit2Address, type(uint256).max);\n```\n\nThis system represents a significant improvement in token approval mechanisms, offering a more efficient and secure alternative to traditional `approve()` functions."
+  },
+  {
+    "terms": ["Seaport v1.4", "Seaport"],
+    "definition": "Seaport v1.4 is a specific version of the Seaport protocol, an open-source marketplace protocol for safely and efficiently trading NFTs. This version introduces improvements and features over previous iterations, but also contains known limitations, particularly with restricted or contract orders. Seaport v1.4 supports complex trades involving multiple items and recipients, and has specific deployment addresses on various Ethereum Virtual Machine (EVM) chains. Users are advised to exercise caution when interacting with this version due to its documented limitations."
+  },
+  {
+    "terms": ["sub-plan execution"],
+    "definition": "In Uniswap v4, sub-plan execution refers to the ability to perform multiple, related pool actions within a single transaction context during an `unlock` period. This mechanism allows for efficient execution of complex trading strategies by chaining together operations like swaps, liquidity modifications, and donations without the need to re-lock and re-unlock the pool for each action. Sub-plan execution leverages the protocol's unlock-and-call architecture, custom hooks, and net balance tracking to enable flexible, gas-efficient, and atomic multi-step operations on liquidity pools.\n\nKey components of sub-plan execution include:\n\n1. The `unlock` function in `PoolManager.sol`\n2. The `unlockCallback` interface for implementing custom logic\n3. Pool actions such as `swap`, `modifyLiquidity`, and `donate`\n4. Hook contracts for customizing behavior at various execution points\n\nThis feature enhances the protocol's composability and allows for sophisticated trading strategies to be implemented directly within the core contract interactions."
   }
 ]
