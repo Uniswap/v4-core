@@ -1,240 +1,240 @@
 [
-    {
-        "file": "src/libraries/FullMath.sol",
-        "formulas": [
-            {
-                "formula": "inv \\cdot 2.0 - d \\cdot inv",
-                "lineRange": {
-                    "start": 86,
-                    "end": 86
-                }
-            },
-            {
-                "formula": "inv \\cdot 2.0 - d \\cdot inv",
-                "lineRange": {
-                    "start": 87,
-                    "end": 87
-                }
-            },
-            {
-                "formula": "inv \\cdot 2.0 - d \\cdot inv",
-                "lineRange": {
-                    "start": 88,
-                    "end": 88
-                }
-            },
-            {
-                "formula": "inv \\cdot 2.0 - d \\cdot inv",
-                "lineRange": {
-                    "start": 89,
-                    "end": 89
-                }
-            },
-            {
-                "formula": "inv \\cdot 2.0 - d \\cdot inv",
-                "lineRange": {
-                    "start": 90,
-                    "end": 90
-                }
-            },
-            {
-                "formula": "inv \\cdot 2.0 - d \\cdot inv",
-                "lineRange": {
-                    "start": 91,
-                    "end": 91
-                }
-            },
-            {
-                "formula": "\\frac{a \\cdot b}{d}",
-                "lineRange": {
-                    "start": 111,
-                    "end": 111
-                }
-            }
-        ]
-    },
-    {
-        "file": "src/libraries/Pool.sol",
-        "formulas": [
-            {
-                "formula": "A_c - amountIn + feeAmount",
-                "lineRange": {
-                    "start": 373,
-                    "end": 373
-                }
-            },
-            {
-                "formula": "A_{s,r} + amountIn + feeAmount",
-                "lineRange": {
-                    "start": 377,
-                    "end": 377
-                }
-            },
-            {
-                "formula": "\\frac{amountIn + feeAmount \\cdot f_{\\text{protocol}}}{PIPS\\_DENOMINATOR}",
-                "lineRange": {
-                    "start": 388,
-                    "end": 388
-                }
-            },
-            {
-                "formula": "feeGrowthGlobalX128 + \\frac{feeAmount \\cdot Q128}{liquidity}",
-                "lineRange": {
-                    "start": 399,
-                    "end": 399
-                }
-            },
-            {
-                "formula": "\\mathsf{toBalanceDelta}(A_c, amountSpecified - A_{s,r})",
-                "lineRange": {
-                    "start": 445,
-                    "end": 446
-                }
-            },
-            {
-                "formula": "\\mathsf{toBalanceDelta}(amountSpecified - A_{s,r}, A_c)",
-                "lineRange": {
-                    "start": 449,
-                    "end": 450
-                }
-            },
-            {
-                "formula": "feeGrowthGlobal0X128 + \\frac{A\\_0 \\cdot Q128}{L}",
-                "lineRange": {
-                    "start": 464,
-                    "end": 464
-                }
-            },
-            {
-                "formula": "feeGrowthGlobal1X128 + \\frac{A\\_1 \\cdot Q128}{L}",
-                "lineRange": {
-                    "start": 467,
-                    "end": 467
-                }
-            },
-            {
-                "formula": "feeGrowthGlobal0X128 - feeGrowthOutside0X128 - feeGrowthOutside0X128",
-                "lineRange": {
-                    "start": 495,
-                    "end": 496
-                }
-            },
-            {
-                "formula": "feeGrowthGlobal1X128 - feeGrowthOutside1X128 - feeGrowthOutside1X128",
-                "lineRange": {
-                    "start": 497,
-                    "end": 498
-                }
-            }
-        ]
-    },
-    {
-        "file": "src/libraries/Position.sol",
-        "formulas": [
-            {
-                "formula": "\\frac{feeGrowthInside0X128 - feeGrowthInside0LastX128 \\cdot L}{Q128}",
-                "lineRange": {
-                    "start": 94,
-                    "end": 94
-                }
-            },
-            {
-                "formula": "\\frac{feeGrowthInside1X128 - feeGrowthInside1LastX128 \\cdot L}{Q128}",
-                "lineRange": {
-                    "start": 96,
-                    "end": 96
-                }
-            }
-        ]
-    },
-    {
-        "file": "src/libraries/SqrtPriceMath.sol",
-        "formulas": [
-            {
-                "formula": "\\left\\lceil\\frac{n\\_1 \\cdot sqrtPX96}{d}\\right\\rceil",
-                "lineRange": {
-                    "start": 47,
-                    "end": 47
-                }
-            },
-            {
-                "formula": "\\left\\lceil\\frac{n\\_1}{\\frac{n\\_1}{sqrtPX96} + A}\\right\\rceil",
-                "lineRange": {
-                    "start": 52,
-                    "end": 52
-                }
-            },
-            {
-                "formula": "\\left\\lceil\\frac{n\\_1 \\cdot sqrtPX96}{d}\\right\\rceil",
-                "lineRange": {
-                    "start": 71,
-                    "end": 71
-                }
-            },
-            {
-                "formula": "\\frac{L \\cdot n}{d}",
-                "lineRange": {
-                    "start": 253,
-                    "end": 253
-                }
-            }
-        ]
-    },
-    {
-        "file": "src/libraries/StateLibrary.sol",
-        "formulas": [
-            {
-                "formula": "\\mathsf{extsload}(M, slot + 1.0)",
-                "lineRange": {
-                    "start": 139,
-                    "end": 139
-                }
-            },
-            {
-                "formula": "feeGrowthGlobal0X128 - lowerFeeGrowthOutside0X128 - upperFeeGrowthOutside0X128",
-                "lineRange": {
-                    "start": 315,
-                    "end": 315
-                }
-            },
-            {
-                "formula": "feeGrowthGlobal1X128 - lowerFeeGrowthOutside1X128 - upperFeeGrowthOutside1X128",
-                "lineRange": {
-                    "start": 316,
-                    "end": 316
-                }
-            }
-        ]
-    },
-    {
-        "file": "src/libraries/SwapMath.sol",
-        "formulas": [
-            {
-                "formula": "\\left\\lceil\\frac{A\\_\\text{in} \\cdot \\_feePips}{f\\_\\text{max} - \\_feePips}\\right\\rceil",
-                "lineRange": {
-                    "start": 105,
-                    "end": 105
-                }
-            }
-        ]
-    },
-    {
-        "file": "src/libraries/TickMath.sol",
-        "formulas": [
-            {
-                "formula": "\\frac{k_{\\text{max}}}{\\Delta k} \\cdot \\Delta k",
-                "lineRange": {
-                    "start": 39,
-                    "end": 39
-                }
-            },
-            {
-                "formula": "\\frac{k_{\\text{min}}}{\\Delta k} \\cdot \\Delta k",
-                "lineRange": {
-                    "start": 46,
-                    "end": 46
-                }
-            }
-        ]
-    }
+  {
+    "file": "src/libraries/FullMath.sol",
+    "formulas": [
+      {
+        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "lineRange": {
+          "start": 86,
+          "end": 86
+        }
+      },
+      {
+        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "lineRange": {
+          "start": 87,
+          "end": 87
+        }
+      },
+      {
+        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "lineRange": {
+          "start": 88,
+          "end": 88
+        }
+      },
+      {
+        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "lineRange": {
+          "start": 89,
+          "end": 89
+        }
+      },
+      {
+        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "lineRange": {
+          "start": 90,
+          "end": 90
+        }
+      },
+      {
+        "formula": "inv \\cdot 2.0 - d \\cdot inv",
+        "lineRange": {
+          "start": 91,
+          "end": 91
+        }
+      },
+      {
+        "formula": "\\frac{a \\cdot b}{d}",
+        "lineRange": {
+          "start": 111,
+          "end": 111
+        }
+      }
+    ]
+  },
+  {
+    "file": "src/libraries/Position.sol",
+    "formulas": [
+      {
+        "formula": "\\frac{feeGrowthInside0X128 - feeGrowthInside0LastX128 \\cdot L}{Q128}",
+        "lineRange": {
+          "start": 94,
+          "end": 94
+        }
+      },
+      {
+        "formula": "\\frac{feeGrowthInside1X128 - feeGrowthInside1LastX128 \\cdot L}{Q128}",
+        "lineRange": {
+          "start": 96,
+          "end": 96
+        }
+      }
+    ]
+  },
+  {
+    "file": "src/libraries/SqrtPriceMath.sol",
+    "formulas": [
+      {
+        "formula": "\\left\\lceil\\frac{n\\_1 \\cdot sqrtPX96}{d}\\right\\rceil",
+        "lineRange": {
+          "start": 47,
+          "end": 47
+        }
+      },
+      {
+        "formula": "\\left\\lceil\\frac{n\\_1}{\\frac{n\\_1}{sqrtPX96} + A}\\right\\rceil",
+        "lineRange": {
+          "start": 52,
+          "end": 52
+        }
+      },
+      {
+        "formula": "\\left\\lceil\\frac{n\\_1 \\cdot sqrtPX96}{d}\\right\\rceil",
+        "lineRange": {
+          "start": 71,
+          "end": 71
+        }
+      },
+      {
+        "formula": "\\frac{L \\cdot n}{d}",
+        "lineRange": {
+          "start": 250,
+          "end": 250
+        }
+      }
+    ]
+  },
+  {
+    "file": "src/libraries/StateLibrary.sol",
+    "formulas": [
+      {
+        "formula": "\\mathsf{extsload}(M, slot + 1.0)",
+        "lineRange": {
+          "start": 139,
+          "end": 139
+        }
+      },
+      {
+        "formula": "feeGrowthGlobal0X128 - lowerFeeGrowthOutside0X128 - upperFeeGrowthOutside0X128",
+        "lineRange": {
+          "start": 315,
+          "end": 315
+        }
+      },
+      {
+        "formula": "feeGrowthGlobal1X128 - lowerFeeGrowthOutside1X128 - upperFeeGrowthOutside1X128",
+        "lineRange": {
+          "start": 316,
+          "end": 316
+        }
+      }
+    ]
+  },
+  {
+    "file": "src/libraries/SwapMath.sol",
+    "formulas": [
+      {
+        "formula": "\\left\\lceil\\frac{A\\_\\text{in} \\cdot \\_feePips}{f\\_\\text{max} - \\_feePips}\\right\\rceil",
+        "lineRange": {
+          "start": 104,
+          "end": 104
+        }
+      }
+    ]
+  },
+  {
+    "file": "src/libraries/TickMath.sol",
+    "formulas": [
+      {
+        "formula": "\\frac{k_{\\text{max}}}{\\Delta k} \\cdot \\Delta k",
+        "lineRange": {
+          "start": 41,
+          "end": 41
+        }
+      },
+      {
+        "formula": "\\frac{k_{\\text{min}}}{\\Delta k} \\cdot \\Delta k",
+        "lineRange": {
+          "start": 48,
+          "end": 48
+        }
+      }
+    ]
+  },
+  {
+    "file": "src/libraries/Pool.sol",
+    "formulas": [
+      {
+        "formula": "A_c - amountIn + feeAmount",
+        "lineRange": {
+          "start": 375,
+          "end": 375
+        }
+      },
+      {
+        "formula": "A_{s,r} + amountIn + feeAmount",
+        "lineRange": {
+          "start": 379,
+          "end": 380
+        }
+      },
+      {
+        "formula": "\\frac{amountIn + feeAmount \\cdot f_{\\text{protocol}}}{PIPS\\_DENOMINATOR}",
+        "lineRange": {
+          "start": 390,
+          "end": 390
+        }
+      },
+      {
+        "formula": "feeGrowthGlobalX128 + \\frac{feeAmount \\cdot Q128}{liquidity}",
+        "lineRange": {
+          "start": 401,
+          "end": 402
+        }
+      },
+      {
+        "formula": "\\mathsf{toBalanceDelta}(A_c, amountSpecified - A_{s,r})",
+        "lineRange": {
+          "start": 452,
+          "end": 453
+        }
+      },
+      {
+        "formula": "\\mathsf{toBalanceDelta}(amountSpecified - A_{s,r}, A_c)",
+        "lineRange": {
+          "start": 456,
+          "end": 457
+        }
+      },
+      {
+        "formula": "feeGrowthGlobal0X128 + \\frac{A\\_0 \\cdot Q128}{L}",
+        "lineRange": {
+          "start": 471,
+          "end": 471
+        }
+      },
+      {
+        "formula": "feeGrowthGlobal1X128 + \\frac{A\\_1 \\cdot Q128}{L}",
+        "lineRange": {
+          "start": 474,
+          "end": 474
+        }
+      },
+      {
+        "formula": "feeGrowthGlobal0X128 - feeGrowthOutside0X128 - feeGrowthOutside0X128",
+        "lineRange": {
+          "start": 502,
+          "end": 503
+        }
+      },
+      {
+        "formula": "feeGrowthGlobal1X128 - feeGrowthOutside1X128 - feeGrowthOutside1X128",
+        "lineRange": {
+          "start": 504,
+          "end": 505
+        }
+      }
+    ]
+  }
 ]
