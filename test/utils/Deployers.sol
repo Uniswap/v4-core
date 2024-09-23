@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Hooks} from "../../src/libraries/Hooks.sol";
 import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
-import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
+import {PoolId} from "../../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
@@ -21,7 +21,6 @@ import {SwapRouterNoChecks} from "../../src/test/SwapRouterNoChecks.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {PoolNestedActionsTest} from "../../src/test/PoolNestedActionsTest.sol";
 import {PoolTakeTest} from "../../src/test/PoolTakeTest.sol";
-import {PoolSettleTest} from "../../src/test/PoolSettleTest.sol";
 import {PoolClaimsTest} from "../../src/test/PoolClaimsTest.sol";
 import {ActionsRouter} from "../../src/test/ActionsRouter.sol";
 import {LiquidityAmounts} from "../../test/utils/LiquidityAmounts.sol";
@@ -36,7 +35,6 @@ import {
 
 contract Deployers {
     using LPFeeLibrary for uint24;
-    using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
 
     // Helpful test constants
@@ -67,7 +65,6 @@ contract Deployers {
     PoolSwapTest swapRouter;
     PoolDonateTest donateRouter;
     PoolTakeTest takeRouter;
-    PoolSettleTest settleRouter;
     ActionsRouter actionsRouter;
 
     PoolClaimsTest claimsRouter;
@@ -87,17 +84,8 @@ contract Deployers {
     uint160 hookPermissionCount = 14;
     uint160 clearAllHookPermissionsMask = ~uint160(0) << (hookPermissionCount);
 
-    modifier noIsolate() {
-        if (msg.sender != address(this)) {
-            (bool success,) = address(this).call(msg.data);
-            require(success);
-        } else {
-            _;
-        }
-    }
-
     function deployFreshManager() internal virtual {
-        manager = new PoolManager(500000);
+        manager = new PoolManager();
     }
 
     function deployFreshManagerAndRouters() internal {
@@ -108,7 +96,6 @@ contract Deployers {
         modifyLiquidityNoChecks = new PoolModifyLiquidityTestNoChecks(manager);
         donateRouter = new PoolDonateTest(manager);
         takeRouter = new PoolTakeTest(manager);
-        settleRouter = new PoolSettleTest(manager);
         claimsRouter = new PoolClaimsTest(manager);
         nestedActionRouter = new PoolNestedActionsTest(manager);
         feeController = new ProtocolFeeControllerTest();
@@ -227,7 +214,7 @@ contract Deployers {
         (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
         nestedActionRouter.executor().setKey(key);
         (nativeKey,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.NATIVE, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
+            CurrencyLibrary.ADDRESS_ZERO, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
         );
         uninitializedKey = key;
         uninitializedNativeKey = nativeKey;
@@ -241,7 +228,7 @@ contract Deployers {
         returns (BalanceDelta)
     {
         // allow native input for exact-input, guide users to the `swapNativeInput` function
-        bool isNativeInput = zeroForOne && _key.currency0.isNative();
+        bool isNativeInput = zeroForOne && _key.currency0.isAddressZero();
         if (isNativeInput) require(0 > amountSpecified, "Use swapNativeInput() for native-token exact-output swaps");
 
         uint256 value = isNativeInput ? uint256(-amountSpecified) : 0;
@@ -288,7 +275,7 @@ contract Deployers {
         bytes memory hookData,
         uint256 msgValue
     ) internal returns (BalanceDelta) {
-        require(_key.currency0.isNative(), "currency0 is not native. Use swap() instead");
+        require(_key.currency0.isAddressZero(), "currency0 is not native. Use swap() instead");
         if (zeroForOne == false) require(msgValue == 0, "msgValue must be 0 for oneForZero swaps");
 
         return swapRouter.swap{value: msgValue}(

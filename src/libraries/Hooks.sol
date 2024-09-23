@@ -11,8 +11,8 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {ParseBytes} from "./ParseBytes.sol";
 import {CustomRevert} from "./CustomRevert.sol";
 
-/// @notice V4 decides whether to invoke specific hooks by inspecting the lowest significant bits of the address that
-/// the hooks contract is deployed to.
+/// @notice V4 decides whether to invoke specific hooks by inspecting the least significant bits
+/// of the address that the hooks contract is deployed to.
 /// For example, a hooks contract deployed to address: 0x0000000000000000000000000000000000002400
 /// has the lowest bits '10 0100 0000 0000' which would cause the 'before initialize' and 'after add liquidity' hooks to be used.
 library Hooks {
@@ -71,7 +71,7 @@ library Hooks {
 
     /// @notice thrown when a hook call fails
     /// @param revertReason bubbled up revert reason
-    error FailedHookCall(bytes revertReason);
+    error Wrap__FailedHookCall(address hook, bytes revertReason);
 
     /// @notice The hook's delta changed the swap from exactIn to exactOut or vice versa
     error HookDeltaExceedsSwapAmount();
@@ -134,7 +134,7 @@ library Hooks {
             success := call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)
         }
         // Revert with FailedHookCall, containing any error message to bubble up
-        if (!success) FailedHookCall.selector.bubbleUpAndRevertWith();
+        if (!success) Wrap__FailedHookCall.selector.bubbleUpAndRevertWith(address(self));
 
         // The call was successful, fetch the returned data
         assembly ("memory-safe") {
@@ -214,6 +214,7 @@ library Hooks {
         PoolKey memory key,
         IPoolManager.ModifyLiquidityParams memory params,
         BalanceDelta delta,
+        BalanceDelta feesAccrued,
         bytes calldata hookData
     ) internal returns (BalanceDelta callerDelta, BalanceDelta hookDelta) {
         if (msg.sender == address(self)) return (delta, BalanceDeltaLibrary.ZERO_DELTA);
@@ -223,7 +224,9 @@ library Hooks {
             if (self.hasPermission(AFTER_ADD_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
                     self.callHookWithReturnDelta(
-                        abi.encodeCall(IHooks.afterAddLiquidity, (msg.sender, key, params, delta, hookData)),
+                        abi.encodeCall(
+                            IHooks.afterAddLiquidity, (msg.sender, key, params, delta, feesAccrued, hookData)
+                        ),
                         self.hasPermission(AFTER_ADD_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );
@@ -233,7 +236,9 @@ library Hooks {
             if (self.hasPermission(AFTER_REMOVE_LIQUIDITY_FLAG)) {
                 hookDelta = BalanceDelta.wrap(
                     self.callHookWithReturnDelta(
-                        abi.encodeCall(IHooks.afterRemoveLiquidity, (msg.sender, key, params, delta, hookData)),
+                        abi.encodeCall(
+                            IHooks.afterRemoveLiquidity, (msg.sender, key, params, delta, feesAccrued, hookData)
+                        ),
                         self.hasPermission(AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA_FLAG)
                     )
                 );

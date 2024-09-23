@@ -47,4 +47,11 @@ contract MockContract is Proxy {
         calls[selector]++;
         callParams[selector][params]++;
     }
+
+    function _fallback() internal override {
+        _beforeFallback();
+        super._fallback();
+    }
+
+    receive() external payable {}
 }

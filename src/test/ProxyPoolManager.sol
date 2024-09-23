@@ -6,7 +6,7 @@ import {Pool} from "../libraries/Pool.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
 import {Position} from "../libraries/Position.sol";
 import {LPFeeLibrary} from "../libraries/LPFeeLibrary.sol";
-import {Currency, CurrencyLibrary} from "../types/Currency.sol";
+import {Currency} from "../types/Currency.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {TickMath} from "../libraries/TickMath.sol";
 import {NoDelegateCall} from "../NoDelegateCall.sol";
@@ -15,12 +15,11 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 import {IUnlockCallback} from "../interfaces/callback/IUnlockCallback.sol";
 import {ProtocolFees} from "../ProtocolFees.sol";
 import {ERC6909Claims} from "../ERC6909Claims.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
-import {BalanceDelta, BalanceDeltaLibrary, toBalanceDelta} from "../types/BalanceDelta.sol";
-import {BeforeSwapDelta} from "../types/BeforeSwapDelta.sol";
+import {PoolId} from "../types/PoolId.sol";
+import {BalanceDelta} from "../types/BalanceDelta.sol";
 import {Lock} from "../libraries/Lock.sol";
 import {CurrencyDelta} from "../libraries/CurrencyDelta.sol";
-import {NonZeroDeltaCount} from "../libraries/NonZeroDeltaCount.sol";
+import {NonzeroDeltaCount} from "../libraries/NonzeroDeltaCount.sol";
 import {CurrencyReserves} from "../libraries/CurrencyReserves.sol";
 import {Extsload} from "../Extsload.sol";
 import {Exttload} from "../Exttload.sol";
@@ -28,27 +27,24 @@ import {CustomRevert} from "../libraries/CustomRevert.sol";
 
 /// @notice A proxy pool manager that delegates calls to the real/delegate pool manager
 contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claims, Extsload, Exttload {
-    using PoolIdLibrary for PoolKey;
     using SafeCast for *;
     using Pool for *;
     using Hooks for IHooks;
-    using Position for mapping(bytes32 => Position.Info);
+    using Position for mapping(bytes32 => Position.State);
     using CurrencyDelta for Currency;
     using LPFeeLibrary for uint24;
     using CurrencyReserves for Currency;
     using CustomRevert for bytes4;
 
-    /// @inheritdoc IPoolManager
-    int24 public constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
+    int24 private constant MAX_TICK_SPACING = TickMath.MAX_TICK_SPACING;
 
-    /// @inheritdoc IPoolManager
-    int24 public constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
+    int24 private constant MIN_TICK_SPACING = TickMath.MIN_TICK_SPACING;
 
     mapping(PoolId id => Pool.State) internal _pools;
 
     address internal immutable _delegateManager;
 
-    constructor(address delegateManager, uint256 controllerGasLimit) ProtocolFees(controllerGasLimit) {
+    constructor(address delegateManager) {
         _delegateManager = delegateManager;
     }
 
@@ -67,7 +63,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = IUnlockCallback(msg.sender).unlockCallback(data);
 
-        if (NonZeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
+        if (NonzeroDeltaCount.read() != 0) CurrencyNotSettled.selector.revertWith();
         Lock.lock();
     }
 
@@ -92,7 +88,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
         key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
 
         PoolId id = key.toId();
-        (, uint24 protocolFee) = _fetchProtocolFee(key);
+        uint24 protocolFee = _fetchProtocolFee(key);
 
         tick = _pools[id].initialize(sqrtPriceX96, protocolFee, lpFee);
 
@@ -100,7 +96,7 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
 
         // emit all details of a pool key. poolkeys are not saved in storage and must always be provided by the caller
         // the key's fee may be a static fee or a sentinel to denote a dynamic fee.
-        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks);
+        emit Initialize(id, key.currency0, key.currency1, key.fee, key.tickSpacing, key.hooks, sqrtPriceX96, tick);
     }
 
     /// @inheritdoc IPoolManager
@@ -145,10 +141,14 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
 
     /// @inheritdoc IPoolManager
     function sync(Currency currency) public {
-        CurrencyReserves.requireNotSynced();
-        if (currency.isNative()) return;
-        uint256 balance = currency.balanceOfSelf();
-        CurrencyReserves.syncCurrencyAndReserves(currency, balance);
+        // address(0) is used for the native currency
+        if (currency.isAddressZero()) {
+            // The reserves balance is not used for native settling, so we only need to reset the currency.
+            CurrencyReserves.resetCurrency();
+        } else {
+            uint256 balance = currency.balanceOfSelf();
+            CurrencyReserves.syncCurrencyAndReserves(currency, balance);
+        }
     }
 
     /// @inheritdoc IPoolManager
@@ -217,5 +217,10 @@ contract ProxyPoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909
     /// @notice Implementation of the _getPool function defined in ProtocolFees
     function _getPool(PoolId id) internal view override returns (Pool.State storage) {
         return _pools[id];
+    }
+
+    /// @notice Implementation of the _isUnlocked function defined in ProtocolFees
+    function _isUnlocked() internal view override returns (bool) {
+        return Lock.isUnlocked();
     }
 }

@@ -2,19 +2,15 @@
 pragma solidity ^0.8.20;
 
 import {ProtocolFees} from "../ProtocolFees.sol";
-import {IProtocolFeeController} from "../interfaces/IProtocolFeeController.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 import {Currency} from "../types/Currency.sol";
-import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
+import {PoolId} from "../types/PoolId.sol";
 import {Pool} from "../libraries/Pool.sol";
 import {Slot0} from "../types/Slot0.sol";
 
 contract ProtocolFeesImplementation is ProtocolFees {
-    using PoolIdLibrary for PoolKey;
-
     mapping(PoolId id => Pool.State) internal _pools;
-
-    constructor(uint256 _controllerGasLimit) ProtocolFees(_controllerGasLimit) {}
+    bool internal isUnlocked;
 
     // Used to set the price of a pool to pretend that the pool has been initialized in order to successfully set a protocol fee
     function setPrice(PoolKey memory key, uint160 sqrtPriceX96) public {
@@ -26,7 +22,15 @@ contract ProtocolFeesImplementation is ProtocolFees {
         return _pools[id];
     }
 
-    function fetchProtocolFee(PoolKey memory key) public returns (bool, uint24) {
+    function setIsUnlocked(bool newValue) public {
+        isUnlocked = newValue;
+    }
+
+    function _isUnlocked() internal view override returns (bool) {
+        return isUnlocked;
+    }
+
+    function fetchProtocolFee(PoolKey memory key) public returns (uint24) {
         return ProtocolFees._fetchProtocolFee(key);
     }
 

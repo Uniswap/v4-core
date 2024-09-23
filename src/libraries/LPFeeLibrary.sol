@@ -31,7 +31,7 @@ library LPFeeLibrary {
         return self == DYNAMIC_FEE_FLAG;
     }
 
-    /// @notice returns true if an LP fee is valid, aka not above the maxmimum permitted fee
+    /// @notice returns true if an LP fee is valid, aka not above the maximum permitted fee
     /// @param self The fee to check
     /// @return bool True of the fee is valid
     function isValid(uint24 self) internal pure returns (bool) {

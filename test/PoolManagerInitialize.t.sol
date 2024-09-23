@@ -17,7 +17,7 @@ import {MockContract} from "../src/test/MockContract.sol";
 import {EmptyTestHooks} from "../src/test/EmptyTestHooks.sol";
 import {PoolKey} from "../src/types/PoolKey.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
-import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
 import {IProtocolFeeController} from "../src/interfaces/IProtocolFeeController.sol";
@@ -26,7 +26,6 @@ import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
-    using PoolIdLibrary for PoolKey;
     using LPFeeLibrary for uint24;
     using ProtocolFeeLibrary for uint24;
     using StateLibrary for IPoolManager;
@@ -37,7 +36,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         Currency indexed currency1,
         uint24 fee,
         int24 tickSpacing,
-        IHooks hooks
+        IHooks hooks,
+        uint160 sqrtPriceX96,
+        int24 tick
     );
 
     function setUp() public {
@@ -60,10 +61,10 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // tested in Hooks.t.sol
         key0.hooks = IHooks(Constants.ADDRESS_ZERO);
 
-        if (key0.tickSpacing > manager.MAX_TICK_SPACING()) {
+        if (key0.tickSpacing > TickMath.MAX_TICK_SPACING) {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector, key0.tickSpacing));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
-        } else if (key0.tickSpacing < manager.MIN_TICK_SPACING()) {
+        } else if (key0.tickSpacing < TickMath.MIN_TICK_SPACING) {
             vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, key0.tickSpacing));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else if (key0.currency0 >= key0.currency1) {
@@ -80,8 +81,11 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             vm.expectRevert(abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, key0.fee));
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
         } else {
+            int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
             vm.expectEmit(true, true, true, true);
-            emit Initialize(key0.toId(), key0.currency0, key0.currency1, key0.fee, key0.tickSpacing, key0.hooks);
+            emit Initialize(
+                key0.toId(), key0.currency0, key0.currency1, key0.fee, key0.tickSpacing, key0.hooks, sqrtPriceX96, tick
+            );
             manager.initialize(key0, sqrtPriceX96, ZERO_BYTES);
 
             (uint160 slot0SqrtPriceX96,, uint24 slot0ProtocolFee,) = manager.getSlot0(key0.toId());
@@ -93,7 +97,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
     function test_initialize_forNativeTokens(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-        uninitializedKey.currency0 = CurrencyLibrary.NATIVE;
+        uninitializedKey.currency0 = CurrencyLibrary.ADDRESS_ZERO;
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
         vm.expectEmit(true, true, true, true);
         emit Initialize(
@@ -102,7 +108,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            sqrtPriceX96,
+            tick
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
 
@@ -148,7 +156,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        uninitializedKey.tickSpacing = manager.MAX_TICK_SPACING();
+        uninitializedKey.tickSpacing = TickMath.MAX_TICK_SPACING;
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
         vm.expectEmit(true, true, true, true);
         emit Initialize(
@@ -157,7 +167,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            sqrtPriceX96,
+            tick
         );
 
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
@@ -275,6 +287,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         mockHooks.setReturnValue(mockHooks.beforeInitialize.selector, mockHooks.beforeInitialize.selector);
         mockHooks.setReturnValue(mockHooks.afterInitialize.selector, mockHooks.afterInitialize.selector);
 
+        int24 tick = TickMath.getTickAtSqrtPrice(SQRT_PRICE_1_1);
+
         vm.expectEmit(true, true, true, true);
         emit Initialize(
             uninitializedKey.toId(),
@@ -282,7 +296,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            SQRT_PRICE_1_1,
+            tick
         );
 
         manager.initialize(uninitializedKey, SQRT_PRICE_1_1, ZERO_BYTES);
@@ -292,7 +308,7 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
-        uninitializedKey.tickSpacing = manager.MAX_TICK_SPACING() + 1;
+        uninitializedKey.tickSpacing = TickMath.MAX_TICK_SPACING + 1;
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooLarge.selector, uninitializedKey.tickSpacing));
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
@@ -323,6 +339,8 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         manager.setProtocolFeeController(outOfBoundsFeeController);
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
         // expect initialize to succeed even though the controller reverts
         vm.expectEmit(true, true, true, true);
         emit Initialize(
@@ -331,7 +349,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            sqrtPriceX96,
+            tick
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
@@ -344,6 +364,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         manager.setProtocolFeeController(revertingFeeController);
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+
         // expect initialize to succeed even though the controller reverts
         vm.expectEmit(true, true, true, true);
         emit Initialize(
@@ -352,7 +375,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            sqrtPriceX96,
+            tick
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
@@ -365,6 +390,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         manager.setProtocolFeeController(overflowFeeController);
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+
         // expect initialize to succeed
         vm.expectEmit(true, true, true, true);
         emit Initialize(
@@ -373,7 +401,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            sqrtPriceX96,
+            tick
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0
@@ -386,6 +416,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
 
         manager.setProtocolFeeController(invalidReturnSizeFeeController);
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+
         // expect initialize to succeed
         vm.expectEmit(true, true, true, true);
         emit Initialize(
@@ -394,7 +427,9 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
             uninitializedKey.currency1,
             uninitializedKey.fee,
             uninitializedKey.tickSpacing,
-            uninitializedKey.hooks
+            uninitializedKey.hooks,
+            sqrtPriceX96,
+            tick
         );
         manager.initialize(uninitializedKey, sqrtPriceX96, ZERO_BYTES);
         // protocol fees should default to 0

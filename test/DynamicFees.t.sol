@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {PoolId, PoolIdLibrary} from "../src/types/PoolId.sol";
+import {PoolId} from "../src/types/PoolId.sol";
 import {Hooks} from "../src/libraries/Hooks.sol";
 import {LPFeeLibrary} from "../src/libraries/LPFeeLibrary.sol";
 import {IPoolManager} from "../src/interfaces/IPoolManager.sol";
@@ -16,14 +16,13 @@ import {Deployers} from "./utils/Deployers.sol";
 import {GasSnapshot} from "forge-gas-snapshot/GasSnapshot.sol";
 import {DynamicFeesTestHook} from "../src/test/DynamicFeesTestHook.sol";
 import {Currency} from "../src/types/Currency.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Pool} from "../src/libraries/Pool.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 
 contract TestDynamicFees is Test, Deployers, GasSnapshot {
     using StateLibrary for IPoolManager;
-    using PoolIdLibrary for PoolKey;
 
     DynamicFeesTestHook dynamicFeesHooks = DynamicFeesTestHook(
         address(
@@ -75,7 +74,9 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.FailedHookCall.selector, abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+                Hooks.Wrap__FailedHookCall.selector,
+                address(dynamicFeesHooks),
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
             )
         );
         manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
@@ -111,7 +112,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         // afterInitialize will try to update the fee, and fail
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.FailedHookCall.selector,
+                Hooks.Wrap__FailedHookCall.selector,
+                address(dynamicFeesHooks),
                 abi.encodeWithSelector(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector)
             )
         );
@@ -129,7 +131,9 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.FailedHookCall.selector, abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
+                Hooks.Wrap__FailedHookCall.selector,
+                address(dynamicFeesHooks),
+                abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
             )
         );
         swapRouter.swap(key, SWAP_PARAMS, testSettings, ZERO_BYTES);

@@ -67,28 +67,30 @@ library CustomRevert {
     /// @dev Reverts with a custom error with two address arguments
     function revertWith(bytes4 selector, address value1, address value2) internal pure {
         assembly ("memory-safe") {
-            mstore(0, selector)
-            mstore(0x04, and(value1, 0xffffffffffffffffffffffffffffffffffffffff))
-            mstore(0x24, and(value2, 0xffffffffffffffffffffffffffffffffffffffff))
-            revert(0, 0x44)
+            let fmp := mload(0x40)
+            mstore(fmp, selector)
+            mstore(add(fmp, 0x04), and(value1, 0xffffffffffffffffffffffffffffffffffffffff))
+            mstore(add(fmp, 0x24), and(value2, 0xffffffffffffffffffffffffffffffffffffffff))
+            revert(fmp, 0x44)
         }
     }
 
     /// @notice bubble up the revert message returned by a call and revert with the selector provided
-    /// @dev this function should only be used with custom errors of the type `CustomError(bytes revertReason)`
-    function bubbleUpAndRevertWith(bytes4 selector) internal pure {
+    /// @dev this function should only be used with custom errors of the type `CustomError(address target, bytes revertReason)`
+    function bubbleUpAndRevertWith(bytes4 selector, address addr) internal pure {
         assembly ("memory-safe") {
             let size := returndatasize()
             let fmp := mload(0x40)
 
-            // Encode selector, offset, size, data
+            // Encode selector, address, offset, size, data
             mstore(fmp, selector)
-            mstore(add(fmp, 0x04), 0x20)
-            mstore(add(fmp, 0x24), size)
-            returndatacopy(add(fmp, 0x44), 0, size)
+            mstore(add(fmp, 0x04), addr)
+            mstore(add(fmp, 0x24), 0x40)
+            mstore(add(fmp, 0x44), size)
+            returndatacopy(add(fmp, 0x64), 0, size)
 
             // Ensure the size is a multiple of 32 bytes
-            let encodedSize := add(0x44, mul(div(add(size, 31), 32), 32))
+            let encodedSize := add(0x64, mul(div(add(size, 31), 32), 32))
             revert(fmp, encodedSize)
         }
     }

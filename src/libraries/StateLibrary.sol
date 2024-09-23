@@ -12,8 +12,8 @@ library StateLibrary {
 
     /// @notice index of feeGrowthGlobal0X128 in Pool.State
     uint256 public constant FEE_GROWTH_GLOBAL0_OFFSET = 1;
-    /// @notice index of feeGrowthGlobal1X128 in Pool.State
-    uint256 public constant FEE_GROWTH_GLOBAL1_OFFSET = 2;
+
+    // feeGrowthGlobal1X128 offset in Pool.State = 2
 
     /// @notice index of liquidity in Pool.State
     uint256 public constant LIQUIDITY_OFFSET = 3;
@@ -24,7 +24,7 @@ library StateLibrary {
     /// @notice index of tickBitmap mapping in Pool.State
     uint256 public constant TICK_BITMAP_OFFSET = 5;
 
-    /// @notice index of Position.Info mapping in Pool.State: mapping(bytes32 => Position.Info) positions;
+    /// @notice index of Position.State mapping in Pool.State: mapping(bytes32 => Position.State) positions;
     uint256 public constant POSITIONS_OFFSET = 6;
 
     /**
@@ -213,6 +213,32 @@ library StateLibrary {
     }
 
     /**
+     * @notice Retrieves the position information of a pool without needing to calculate the `positionId`.
+     * @dev Corresponds to pools[poolId].positions[positionId]
+     * @param poolId The ID of the pool.
+     * @param owner The owner of the liquidity position.
+     * @param tickLower The lower tick of the liquidity range.
+     * @param tickUpper The upper tick of the liquidity range.
+     * @param salt The bytes32 randomness to further distinguish position state.
+     * @return liquidity The liquidity of the position.
+     * @return feeGrowthInside0LastX128 The fee growth inside the position for token0.
+     * @return feeGrowthInside1LastX128 The fee growth inside the position for token1.
+     */
+    function getPositionInfo(
+        IPoolManager manager,
+        PoolId poolId,
+        address owner,
+        int24 tickLower,
+        int24 tickUpper,
+        bytes32 salt
+    ) internal view returns (uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128) {
+        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
+        bytes32 positionKey = Position.calculatePositionKey(owner, tickLower, tickUpper, salt);
+
+        (liquidity, feeGrowthInside0LastX128, feeGrowthInside1LastX128) = getPositionInfo(manager, poolId, positionKey);
+    }
+
+    /**
      * @notice Retrieves the position information of a pool at a specific position ID.
      * @dev Corresponds to pools[poolId].positions[positionId]
      * @param manager The pool manager contract.
@@ -229,7 +255,7 @@ library StateLibrary {
     {
         bytes32 slot = _getPositionInfoSlot(poolId, positionId);
 
-        // read all 3 words of the Position.Info struct
+        // read all 3 words of the Position.State struct
         bytes32[] memory data = manager.extsload(slot, 3);
 
         assembly ("memory-safe") {
@@ -239,42 +265,9 @@ library StateLibrary {
         }
     }
 
-    function getPosition(
-        IPoolManager manager,
-        PoolId poolId,
-        address owner,
-        int24 tickLower,
-        int24 tickUpper,
-        bytes32 salt
-    ) internal view returns (Position.Info memory) {
-        // positionKey = keccak256(abi.encodePacked(owner, tickLower, tickUpper, salt))
-        bytes32 positionKey;
-
-        assembly ("memory-safe") {
-            let fmp := mload(0x40)
-            mstore(add(fmp, 0x26), salt) // [0x26, 0x46)
-            mstore(add(fmp, 0x06), tickUpper) // [0x23, 0x26)
-            mstore(add(fmp, 0x03), tickLower) // [0x20, 0x23)
-            mstore(fmp, owner) // [0x0c, 0x20)
-            positionKey := keccak256(add(fmp, 0x0c), 0x3a) // len is 58 bytes
-
-            // now clean the memory we used
-            mstore(add(fmp, 0x40), 0) // fmp+0x40 held salt
-            mstore(add(fmp, 0x20), 0) // fmp+0x20 held tickLower, tickUpper, salt
-            mstore(fmp, 0) // fmp held owner
-        }
-        (uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128) =
-            getPositionInfo(manager, poolId, positionKey);
-        return Position.Info({
-            liquidity: liquidity,
-            feeGrowthInside0LastX128: feeGrowthInside0LastX128,
-            feeGrowthInside1LastX128: feeGrowthInside1LastX128
-        });
-    }
-
     /**
      * @notice Retrieves the liquidity of a position.
-     * @dev Corresponds to pools[poolId].positions[positionId].liquidity. A more gas efficient version of getPositionInfo
+     * @dev Corresponds to pools[poolId].positions[positionId].liquidity. More gas efficient for just retrieiving liquidity as compared to getPositionInfo
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
      * @param positionId The ID of the position.
@@ -290,8 +283,8 @@ library StateLibrary {
     }
 
     /**
-     * @notice Live calculate the fee growth inside a tick range of a pool
-     * @dev pools[poolId].feeGrowthInside0LastX128 in Position.Info is cached and can become stale. This function will live calculate the feeGrowthInside
+     * @notice Calculate the fee growth inside a tick range of a pool
+     * @dev pools[poolId].feeGrowthInside0LastX128 in Position.State is cached and can become stale. This function will calculate the up to date feeGrowthInside
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
      * @param tickLower The lower tick of the range.
@@ -344,7 +337,7 @@ library StateLibrary {
         // slot key of Pool.State value: `pools[poolId]`
         bytes32 stateSlot = _getPoolStateSlot(poolId);
 
-        // Pool.State: `mapping(bytes32 => Position.Info) positions;`
+        // Pool.State: `mapping(bytes32 => Position.State) positions;`
         bytes32 positionMapping = bytes32(uint256(stateSlot) + POSITIONS_OFFSET);
 
         // slot of the mapping key: `pools[poolId].positions[positionId]

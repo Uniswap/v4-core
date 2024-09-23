@@ -8,7 +8,7 @@ import {Hooks} from "../../src/libraries/Hooks.sol";
 import {LPFeeLibrary} from "../../src/libraries/LPFeeLibrary.sol";
 import {MockHooks} from "../../src/test/MockHooks.sol";
 import {IPoolManager} from "../../src/interfaces/IPoolManager.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {IHooks} from "../../src/interfaces/IHooks.sol";
 import {Currency} from "../../src/types/Currency.sol";
 import {PoolManager} from "../../src/PoolManager.sol";
@@ -16,7 +16,7 @@ import {PoolSwapTest} from "../../src/test/PoolSwapTest.sol";
 import {PoolDonateTest} from "../../src/test/PoolDonateTest.sol";
 import {Deployers} from "test/utils/Deployers.sol";
 import {ProtocolFees} from "../../src/ProtocolFees.sol";
-import {PoolId, PoolIdLibrary} from "../../src/types/PoolId.sol";
+import {PoolId} from "../../src/types/PoolId.sol";
 import {PoolKey} from "../../src/types/PoolKey.sol";
 import {IERC20Minimal} from "../../src/interfaces/external/IERC20Minimal.sol";
 import {BalanceDelta} from "../../src/types/BalanceDelta.sol";
@@ -26,7 +26,6 @@ import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Constants} from "../utils/Constants.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
-    using PoolIdLibrary for PoolKey;
     using Hooks for IHooks;
     using StateLibrary for IPoolManager;
 
@@ -1012,7 +1011,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.FailedHookCall.selector, abi.encodeWithSelector(BaseTestHooks.HookNotImplemented.selector)
+                Hooks.Wrap__FailedHookCall.selector,
+                address(revertingHook),
+                abi.encodeWithSelector(BaseTestHooks.HookNotImplemented.selector)
             )
         );
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
@@ -1034,7 +1035,9 @@ contract HooksTest is Test, Deployers, GasSnapshot {
         PoolSwapTest.TestSettings memory testSettings =
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
-        vm.expectRevert(abi.encodeWithSelector(Hooks.FailedHookCall.selector, new bytes(0)));
+        vm.expectRevert(
+            abi.encodeWithSelector(Hooks.Wrap__FailedHookCall.selector, address(revertingHook), new bytes(0))
+        );
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
     }
 }

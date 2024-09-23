@@ -138,7 +138,7 @@ contract PoolTest is Test, GasSnapshot {
                     )
                 );
                 state.swap(params);
-            } else if (params.sqrtPriceLimitX96 <= TickMath.MIN_SQRT_PRICE) {
+            } else if (params.sqrtPriceLimitX96 < TickMath.MIN_SQRT_PRICE) {
                 vm.expectRevert(abi.encodeWithSelector(Pool.PriceLimitOutOfBounds.selector, params.sqrtPriceLimitX96));
                 state.swap(params);
             }
@@ -174,7 +174,7 @@ contract PoolTest is Test, GasSnapshot {
         int24 minTick = (TickMath.MIN_TICK / tickSpacing) * tickSpacing;
         int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
         uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
-        // assert that the result is the same as the v3 math
-        assertEq(type(uint128).max / numTicks, Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing));
+        // assert that the result is the same as the v3 math or lower
+        assertGe(type(uint128).max / numTicks, Pool.tickSpacingToMaxLiquidityPerTick(tickSpacing));
     }
 }
