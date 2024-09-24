@@ -41,7 +41,7 @@ enum Actions {
 
 /// @notice A router that handles an arbitrary input of actions.
 /// TODO: Can continue to add functions per action.
-contract ActionsRouter is IUnlockCallback, Test {
+contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
     using StateLibrary for IPoolManager;
     using TransientStateLibrary for IPoolManager;
     using PoolIdLibrary for PoolKey;
@@ -218,13 +218,11 @@ contract ActionsRouter is IUnlockCallback, Test {
         }
     }
 
-    function _clear(bytes memory params) internal {
-        (Currency currency, uint256 amount, bool measureGas, string memory gasSnapName) =
+    function _clear(bytes memory params) internal virtual {
+        (Currency currency, uint256 amount, ,) =
             abi.decode(params, (Currency, uint256, bool, string));
         try manager.clear(currency, amount) {
             lastReturnData = new bytes(0);
-            // Disable gas snapshotting b/c echidna/medusa's engines can't handle the cheatcodes.
-            // if (measureGas) snapLastCall(gasSnapName);
         } catch Error(string memory reason) {
             emit log_named_string("revert reason", reason);
             assertFalse(assertOnException, "_clear reverted, but should not have");
@@ -343,4 +341,22 @@ contract ActionsRouter is IUnlockCallback, Test {
 
     fallback() external payable { }
     receive() external payable { }
+}
+
+contract ActionsRouter is ActionsRouterNoGasMeasurement, GasSnapshot {
+
+    constructor(IPoolManager _manager) ActionsRouterNoGasMeasurement(_manager) {}
+
+    function _clear(bytes memory params) internal override {
+        (Currency currency, uint256 amount, bool measureGas, string memory gasSnapName) =
+            abi.decode(params, (Currency, uint256, bool, string));
+        try manager.clear(currency, amount) {
+            lastReturnData = new bytes(0);
+            if (measureGas) snapLastCall(gasSnapName);
+        } catch Error(string memory reason) {
+            emit log_named_string("revert reason", reason);
+            assertFalse(assertOnException, "_clear reverted, but should not have");
+            revert(reason);
+        }
+    }
 }
