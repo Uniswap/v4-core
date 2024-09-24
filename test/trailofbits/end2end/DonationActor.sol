@@ -23,7 +23,6 @@ import {IActor} from "./IActor.sol";
 import {PropertiesAsserts} from "../PropertiesHelper.sol";
 import {SwapInfo, SwapInfoLibrary} from "./Lib.sol";
 
-
 contract DonationActor is PropertiesAsserts, PoolTestBase, IActor {
     using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
@@ -36,7 +35,7 @@ contract DonationActor is PropertiesAsserts, PoolTestBase, IActor {
     constructor(IPoolManager _manager) PoolTestBase(_manager) {
         Harness = msg.sender;
     }
-    
+
     struct CallbackData {
         address sender;
         PoolKey key;
@@ -60,8 +59,6 @@ contract DonationActor is PropertiesAsserts, PoolTestBase, IActor {
         }
     }
 
-
-
     function unlockCallback(bytes calldata rawData) external returns (bytes memory) {
         require(msg.sender == address(manager));
 
@@ -81,13 +78,12 @@ contract DonationActor is PropertiesAsserts, PoolTestBase, IActor {
         require(deltaAfter0 == -int256(data.amount0), "deltaAfter0 is not equal to -int256(data.amount0)");
         require(deltaAfter1 == -int256(data.amount1), "deltaAfter1 is not equal to -int256(data.amount1)");
 
-
         if (deltaAfter0 < 0) {
             // obtain tokens from harness
             MockERC20(Currency.unwrap(data.key.currency0)).transferFrom(Harness, address(this), uint256(-deltaAfter0));
             CurrencySettler.settle(data.key.currency0, manager, data.sender, uint256(-deltaAfter0), false);
-        } 
-        if (deltaAfter1 < 0){ 
+        }
+        if (deltaAfter1 < 0) {
             // obtain tokens from harness
             MockERC20(Currency.unwrap(data.key.currency1)).transferFrom(Harness, address(this), uint256(-deltaAfter1));
             CurrencySettler.settle(data.key.currency1, manager, data.sender, uint256(-deltaAfter1), false);
@@ -99,12 +95,12 @@ contract DonationActor is PropertiesAsserts, PoolTestBase, IActor {
             // send tokens back to harness
             data.key.currency0.transfer(Harness, uint256(deltaAfter0));
         }
-        if (deltaAfter1 > 0){ 
+        if (deltaAfter1 > 0) {
             // unhittable?
             assert(false);
             CurrencySettler.take(data.key.currency1, manager, data.sender, uint256(deltaAfter1), false);
             // send tokens back to harness
-            data.key.currency1.transfer( Harness, uint256(deltaAfter1));
+            data.key.currency1.transfer(Harness, uint256(deltaAfter1));
         }
 
         return abi.encode(delta);
@@ -113,5 +109,4 @@ contract DonationActor is PropertiesAsserts, PoolTestBase, IActor {
     function proxyApprove(Currency token, address spender) public {
         MockERC20(Currency.unwrap(token)).approve(spender, type(uint256).max);
     }
-
 }

@@ -14,7 +14,6 @@ import {CurrencyLibrary, Currency} from "src/types/Currency.sol";
 
 import {PropertiesAsserts} from "../PropertiesHelper.sol";
 
-
 struct SwapInfo {
     Currency fromCurrency;
     Currency toCurrency;
@@ -28,7 +27,11 @@ struct SwapInfo {
 }
 
 library SwapInfoLibrary {
-   function initialize(Currency fromCurrency, Currency toCurrency, address user) internal view returns (SwapInfo memory) {
+    function initialize(Currency fromCurrency, Currency toCurrency, address user)
+        internal
+        view
+        returns (SwapInfo memory)
+    {
         return SwapInfo({
             User: user,
             fromCurrency: fromCurrency,
@@ -40,13 +43,14 @@ library SwapInfoLibrary {
             fromDelta: 0,
             toDelta: 0
         });
-   }
+    }
 
-   function captureSwapResults(SwapInfo memory s) internal view {
+    function captureSwapResults(SwapInfo memory s) internal view {
         s.fromBalanceAfter = int256(s.fromCurrency.balanceOf(s.User));
         s.toBalanceAfter = int256(s.toCurrency.balanceOf(s.User));
         s.fromDelta = int256(s.fromBalanceAfter) - int256(s.fromBalanceBefore);
         s.toDelta = int256(s.toBalanceAfter) - int256(s.toBalanceBefore);
-   }
+    }
 }
+
 using SwapInfoLibrary for SwapInfo global;

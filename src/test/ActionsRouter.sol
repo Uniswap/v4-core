@@ -131,7 +131,6 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
         lastReturnData = new bytes(0); // todo: we might need some data smuggled here if harness_callback is the last item in the actions list.
     }
 
-
     function _settle() internal {
         try manager.settle() returns (uint256 paid) {
             lastReturnData = abi.encode(paid);
@@ -172,11 +171,11 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
             emit log_named_string("revert reason", reason);
             assertFalse(assertOnException, "_take reverted, but should not have");
             revert(reason);
-        }        
+        }
     }
 
     function _prankTakeFrom(bytes memory params) internal {
-        if(assertOnException) {
+        if (assertOnException) {
             revert AssertOnExceptionNotSupported();
         }
         (Currency currency, address from, address recipient, uint256 amount) =
@@ -209,7 +208,7 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
 
     function _burn(bytes memory params) internal {
         (address sender, Currency currency, uint256 amount) = abi.decode(params, (address, Currency, uint256));
-        try manager.burn(sender, currency.toId(), amount){ 
+        try manager.burn(sender, currency.toId(), amount) {
             lastReturnData = new bytes(0);
         } catch Error(string memory reason) {
             emit log_named_string("revert reason", reason);
@@ -219,8 +218,7 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
     }
 
     function _clear(bytes memory params) internal virtual {
-        (Currency currency, uint256 amount, ,) =
-            abi.decode(params, (Currency, uint256, bool, string));
+        (Currency currency, uint256 amount,,) = abi.decode(params, (Currency, uint256, bool, string));
         try manager.clear(currency, amount) {
             lastReturnData = new bytes(0);
         } catch Error(string memory reason) {
@@ -231,7 +229,7 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
     }
 
     function _assertBalanceEquals(bytes memory params) internal view {
-        if(assertOnException) {
+        if (assertOnException) {
             revert AssertOnExceptionNotSupported();
         }
         (Currency currency, address user, uint256 expectedBalance) = abi.decode(params, (Currency, address, uint256));
@@ -239,7 +237,7 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
     }
 
     function _assertReservesEquals(bytes memory params) internal view {
-        if(assertOnException) {
+        if (assertOnException) {
             revert AssertOnExceptionNotSupported();
         }
         uint256 expectedReserves = abi.decode(params, (uint256));
@@ -247,16 +245,16 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
     }
 
     function _assertDeltaEquals(bytes memory params) internal view {
-        if(assertOnException) {
+        if (assertOnException) {
             revert AssertOnExceptionNotSupported();
         }
         (Currency currency, address caller, int256 expectedDelta) = abi.decode(params, (Currency, address, int256));
 
         assertEq(manager.currencyDelta(caller, currency), expectedDelta, "delta value incorrect");
-     }
+    }
 
     function _assertNonzeroDeltaCountEquals(bytes memory params) internal view {
-        if(assertOnException) {
+        if (assertOnException) {
             revert AssertOnExceptionNotSupported();
         }
         (uint256 expectedCount) = abi.decode(params, (uint256));
@@ -264,7 +262,7 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
     }
 
     function _transferFrom(bytes memory params) internal {
-        if(assertOnException) {
+        if (assertOnException) {
             revert AssertOnExceptionNotSupported();
         }
         (Currency currency, address from, address recipient, uint256 amount) =
@@ -274,12 +272,13 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
     }
 
     function _initialize(bytes memory params) internal {
-        (address token0, address token1, int24 tickSpacing, uint160 initialPrice, uint24 initialFee) = 
+        (address token0, address token1, int24 tickSpacing, uint160 initialPrice, uint24 initialFee) =
             abi.decode(params, (address, address, int24, uint160, uint24));
 
-        PoolKey memory k = PoolKey(Currency.wrap(token0), Currency.wrap(token1), initialFee, tickSpacing, IHooks(address(0)));
-        
-        try manager.initialize(k, initialPrice, new bytes(0)) returns (int24 tick ){
+        PoolKey memory k =
+            PoolKey(Currency.wrap(token0), Currency.wrap(token1), initialFee, tickSpacing, IHooks(address(0)));
+
+        try manager.initialize(k, initialPrice, new bytes(0)) returns (int24 tick) {
             lastReturnData = abi.encode(tick);
             return;
         } catch Error(string memory reason) {
@@ -292,7 +291,7 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
     function _donate(bytes memory params) internal {
         (PoolKey memory key, uint256 amount0, uint256 amount1) = abi.decode(params, (PoolKey, uint256, uint256));
 
-        try manager.donate(key, amount0, amount1, new bytes(0)) returns (BalanceDelta delta) { 
+        try manager.donate(key, amount0, amount1, new bytes(0)) returns (BalanceDelta delta) {
             lastReturnData = abi.encode(delta);
         } catch Error(string memory reason) {
             emit log_named_string("revert reason", reason);
@@ -305,30 +304,25 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
         (PoolKey memory key, int24 tickLower, int24 tickUpper, int128 liquidity, uint256 salt) =
             abi.decode(params, (PoolKey, int24, int24, int128, uint256));
 
-        IPoolManager.ModifyLiquidityParams memory modLiqParams = IPoolManager.ModifyLiquidityParams(
-            tickLower, 
-            tickUpper, 
-            liquidity, 
-            bytes32(salt));
+        IPoolManager.ModifyLiquidityParams memory modLiqParams =
+            IPoolManager.ModifyLiquidityParams(tickLower, tickUpper, liquidity, bytes32(salt));
 
-        try manager.modifyLiquidity(key, modLiqParams, new bytes(0)) returns (BalanceDelta callerDelta, BalanceDelta feesAccrued) {
+        try manager.modifyLiquidity(key, modLiqParams, new bytes(0)) returns (
+            BalanceDelta callerDelta, BalanceDelta feesAccrued
+        ) {
             lastReturnData = abi.encode(callerDelta, feesAccrued);
         } catch Error(string memory reason) {
             emit log_named_string("revert reason", reason);
             assertFalse(assertOnException, "_modify_position reverted, but should not have");
             revert(reason);
         }
-
     }
 
     function _swap(bytes memory params) internal {
-        (bool zeroForOne, int256 amount, PoolKey memory poolKey, uint160 priceLimit) = abi.decode(params, (bool, int256, PoolKey, uint160));
+        (bool zeroForOne, int256 amount, PoolKey memory poolKey, uint160 priceLimit) =
+            abi.decode(params, (bool, int256, PoolKey, uint160));
 
-        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(
-            zeroForOne, 
-            amount, 
-            priceLimit
-        );
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(zeroForOne, amount, priceLimit);
 
         try manager.swap(poolKey, swapParams, new bytes(0)) returns (BalanceDelta swapDelta) {
             lastReturnData = abi.encode(swapDelta);
@@ -339,12 +333,11 @@ contract ActionsRouterNoGasMeasurement is IUnlockCallback, Test {
         }
     }
 
-    fallback() external payable { }
-    receive() external payable { }
+    fallback() external payable {}
+    receive() external payable {}
 }
 
 contract ActionsRouter is ActionsRouterNoGasMeasurement, GasSnapshot {
-
     constructor(IPoolManager _manager) ActionsRouterNoGasMeasurement(_manager) {}
 
     function _clear(bytes memory params) internal override {

@@ -21,7 +21,6 @@ import {LPFeeLibrary} from "src/libraries/LPFeeLibrary.sol";
 import {SwapInfo, SwapInfoLibrary} from "./Lib.sol";
 
 contract SwapActor is PropertiesAsserts, PoolTestBase, IActor {
-
     using PoolIdLibrary for PoolKey;
     using StateLibrary for IPoolManager;
     using CurrencyLibrary for Currency;
@@ -48,21 +47,25 @@ contract SwapActor is PropertiesAsserts, PoolTestBase, IActor {
 
     /// @custom:property After a swap, the actor's fromFunds should decrease or not change, and their toFunds should increase or not change.
     /// @custom:precondition PoolKey is an initialized pool.
-    /// @custom:notes 
-    function swapOneDirection(bool zeroForOne, int256 amount, PoolKey memory poolKey) public returns (SwapInfo memory) {
+    /// @custom:notes
+    function swapOneDirection(bool zeroForOne, int256 amount, PoolKey memory poolKey)
+        public
+        returns (SwapInfo memory)
+    {
         Currency fromCurrency = zeroForOne ? poolKey.currency0 : poolKey.currency1;
         Currency toCurrency = zeroForOne ? poolKey.currency1 : poolKey.currency0;
         SwapInfo memory swap1Results = SwapInfoLibrary.initialize(fromCurrency, toCurrency, address(Harness));
 
         IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
-                zeroForOne: zeroForOne,
-                amountSpecified: amount,
-                sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
-            });
+            zeroForOne: zeroForOne,
+            amountSpecified: amount,
+            sqrtPriceLimitX96: zeroForOne ? MIN_PRICE_LIMIT : MAX_PRICE_LIMIT
+        });
         TestSettings memory settings = TestSettings({takeClaims: false, settleUsingBurn: false});
 
         abi.decode(
-            manager.unlock(abi.encode(CallbackData(address(this), settings, poolKey, params, new bytes(0)))), (BalanceDelta)
+            manager.unlock(abi.encode(CallbackData(address(this), settings, poolKey, params, new bytes(0)))),
+            (BalanceDelta)
         );
 
         swap1Results.captureSwapResults();
@@ -78,9 +81,9 @@ contract SwapActor is PropertiesAsserts, PoolTestBase, IActor {
 
     /// @custom:property After a bi-directional swap, the actor's fromFunds should decrease and their toFunds should decrease or not change.
     /// @custom:precondition PoolKey is an initialized pool.
-    /// @custom:notes 
+    /// @custom:notes
     function swapBiDirectional(bool zeroForOne, int256 amount, PoolKey memory poolKey) public {
-        if(amount < 0){
+        if (amount < 0) {
             amount = amount * -1;
         }
         SwapInfo memory swap1Results = swapOneDirection(zeroForOne, amount, poolKey);
@@ -100,7 +103,7 @@ contract SwapActor is PropertiesAsserts, PoolTestBase, IActor {
         assertLt(fromBalanceDifference, 0, "Must not have more tokens than started with (from)");
         assertLte(toBalanceDifference, 0, "Must not have more tokens than started with (to)");
     }
-    
+
     struct CallbackData {
         address sender;
         TestSettings testSettings;
@@ -162,7 +165,6 @@ contract SwapActor is PropertiesAsserts, PoolTestBase, IActor {
             }
         }
 
-
         if (deltaAfter0 < 0) {
             // obtain tokens from harness
             MockERC20(Currency.unwrap(data.key.currency0)).transferFrom(Harness, address(this), uint256(-deltaAfter0));
@@ -181,7 +183,7 @@ contract SwapActor is PropertiesAsserts, PoolTestBase, IActor {
         if (deltaAfter1 > 0) {
             CurrencySettler.take(data.key.currency1, manager, data.sender, uint256(deltaAfter1), false);
             // send tokens back to harness
-            data.key.currency1.transfer( Harness, uint256(deltaAfter1));
+            data.key.currency1.transfer(Harness, uint256(deltaAfter1));
         }
 
         return abi.encode(delta);

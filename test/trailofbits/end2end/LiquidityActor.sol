@@ -38,7 +38,7 @@ contract LiquidityActor is PropertiesAsserts, PoolTestBase, IActor {
     mapping(PoolId => mapping(uint256 => LpPosition)) lpPositions;
     mapping(PoolId => uint256) lpPositionCount;
     address Harness;
-    
+
     constructor(IPoolManager _manager) PoolTestBase(_manager) {
         Harness = msg.sender;
     }
@@ -49,20 +49,19 @@ contract LiquidityActor is PropertiesAsserts, PoolTestBase, IActor {
         return nextSalt;
     }
 
-    function ProvideLiquidity(PoolKey memory poolKey, int24 minTick, int24 maxTick, int256 liqDelta) public returns (uint256 delta0,uint256 delta1) {
+    function ProvideLiquidity(PoolKey memory poolKey, int24 minTick, int24 maxTick, int256 liqDelta)
+        public
+        returns (uint256 delta0, uint256 delta1)
+    {
         PoolId poolId = poolKey.toId();
         uint256 salt = _getLatestSalt(poolId);
 
         uint256 cur0Before = poolKey.currency0.balanceOf(msg.sender);
         uint256 cur1Before = poolKey.currency1.balanceOf(msg.sender);
 
-
-        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams(
-            minTick, 
-            maxTick, 
-            liqDelta, 
-            bytes32(salt));
-        try manager.unlock(abi.encode(CallbackData(address(this), poolKey, params, new bytes(0), false, false))){}
+        IPoolManager.ModifyLiquidityParams memory params =
+            IPoolManager.ModifyLiquidityParams(minTick, maxTick, liqDelta, bytes32(salt));
+        try manager.unlock(abi.encode(CallbackData(address(this), poolKey, params, new bytes(0), false, false))) {}
         catch Error(string memory reason) {
             emit LogString("Error in unlock");
             emit LogString(reason);
@@ -80,9 +79,7 @@ contract LiquidityActor is PropertiesAsserts, PoolTestBase, IActor {
         assertGte(liqDelta + int256(lpPosition.liquidity), 0, "Removed more liquidity than was in the position");
 
         uint128 liquidity;
-        (liquidity, , ) = manager.getPositionInfo(
-            poolId, address(this), minTick, maxTick, bytes32(salt)
-        );
+        (liquidity,,) = manager.getPositionInfo(poolId, address(this), minTick, maxTick, bytes32(salt));
 
         lpPositions[poolId][salt] = LpPosition(poolKey, minTick, maxTick, liquidity, bytes32(salt));
     }
@@ -113,7 +110,7 @@ contract LiquidityActor is PropertiesAsserts, PoolTestBase, IActor {
         (BalanceDelta delta,) = manager.modifyLiquidity(data.key, data.params, data.hookData);
 
         uint128 liquidityAfter;
-        (liquidityAfter,,)=manager.getPositionInfo(
+        (liquidityAfter,,) = manager.getPositionInfo(
             data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper, data.params.salt
         );
 
@@ -136,8 +133,8 @@ contract LiquidityActor is PropertiesAsserts, PoolTestBase, IActor {
             // obtain tokens from harness
             MockERC20(Currency.unwrap(data.key.currency0)).transferFrom(Harness, address(this), uint256(-delta0));
             CurrencySettler.settle(data.key.currency0, manager, data.sender, uint256(-delta0), data.settleUsingBurn);
-        } 
-        if (delta1 < 0){ 
+        }
+        if (delta1 < 0) {
             // obtain tokens from harness
             MockERC20(Currency.unwrap(data.key.currency1)).transferFrom(Harness, address(this), uint256(-delta1));
             CurrencySettler.settle(data.key.currency1, manager, data.sender, uint256(-delta1), data.settleUsingBurn);
@@ -147,13 +144,12 @@ contract LiquidityActor is PropertiesAsserts, PoolTestBase, IActor {
             // send tokens back to harness
             data.key.currency0.transfer(Harness, uint256(delta0));
         }
-        if (delta1 > 0){ 
+        if (delta1 > 0) {
             CurrencySettler.take(data.key.currency1, manager, data.sender, uint256(delta1), data.takeClaims);
             // send tokens back to harness
-            data.key.currency1.transfer( Harness, uint256(delta1));
+            data.key.currency1.transfer(Harness, uint256(delta1));
         }
 
         return abi.encode(delta);
     }
-
 }

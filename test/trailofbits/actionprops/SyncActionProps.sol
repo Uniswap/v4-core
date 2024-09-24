@@ -26,8 +26,7 @@ contract SyncActionProps is ActionFuzzBase {
     Currency _syncCurrency;
 
     function addSync(uint8 curIdx) public {
-        Currency currency = Currencies[clampBetween(curIdx, 0, NUMBER_CURRENCIES-1)];
-
+        Currency currency = Currencies[clampBetween(curIdx, 0, NUMBER_CURRENCIES - 1)];
 
         bytes memory syncParams = abi.encode(currency);
         bytes memory beforeSyncCbParams = _encodeHarnessCallback(ActionCallbacks.BEFORE_SYNC, syncParams);
@@ -48,13 +47,9 @@ contract SyncActionProps is ActionFuzzBase {
     }
 
     function _afterSync() internal {
-        if(!(_syncCurrency == CurrencyLibrary.ADDRESS_ZERO)){
+        if (!(_syncCurrency == CurrencyLibrary.ADDRESS_ZERO)) {
             RemittanceCurrency = _syncCurrency;
             RemittanceAmount = 0;
         }
-
-    }      
-
-
+    }
 }
-

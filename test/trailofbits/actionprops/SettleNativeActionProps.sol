@@ -23,14 +23,12 @@ contract SettleNativeActionProps is ActionFuzzBase {
     using TransientStateLibrary for IPoolManager;
     using ProtocolFeeLibrary for uint16;
 
-
     address _settleNativeActor;
     uint256 _settleNativeAmount;
 
-
     function addSettleNative(uint256 amount) public {
-
-        bytes memory beforeSettleCbParams = _encodeHarnessCallback(ActionCallbacks.BEFORE_SETTLE_NATIVE, abi.encode(address(actionsRouter), amount));
+        bytes memory beforeSettleCbParams =
+            _encodeHarnessCallback(ActionCallbacks.BEFORE_SETTLE_NATIVE, abi.encode(address(actionsRouter), amount));
 
         actions.push(Actions.HARNESS_CALLBACK);
         params.push(beforeSettleCbParams);
@@ -43,7 +41,6 @@ contract SettleNativeActionProps is ActionFuzzBase {
         params.push(afterSettleCbParam);
     }
 
-
     function _beforeSettleNative(bytes memory preSettleParams) internal {
         (_settleNativeActor, _settleNativeAmount) = abi.decode(preSettleParams, (address, uint256));
         // transfer currency to actionsRouter
@@ -55,10 +52,5 @@ contract SettleNativeActionProps is ActionFuzzBase {
     function _afterSettleNative(uint256 paid) internal {
         _verifyGlobalProperties(_settleNativeActor, CurrencyLibrary.ADDRESS_ZERO);
         _addToActorsCredits(_settleNativeActor, CurrencyLibrary.ADDRESS_ZERO, paid);
-        
-
-    }      
-
-
+    }
 }
-

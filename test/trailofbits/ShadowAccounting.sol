@@ -14,7 +14,6 @@ import {Deployers} from "test/utils/Deployers.sol";
 
 import {PropertiesAsserts} from "test/trailofbits/PropertiesHelper.sol";
 
-
 /// @notice This contract provides a way for the harness to perform "shadow accounting", a technique where
 /// the harness maintains its own copy of the system's balances, deltas, and remittances. Gas-optimized
 /// protocols like v4 often need to perform indirect accounting to save gas, but this opens the possibility
@@ -35,14 +34,14 @@ contract ShadowAccounting is PropertiesAsserts, Deployers {
     // Tracks the tokens available in each pool for trading.
     mapping(PoolId => PoolBalance) PoolLiquidities;
 
-    // Tracks the currency deltas for each actor. 
+    // Tracks the currency deltas for each actor.
     mapping(address => mapping(Currency => int256)) CurrencyDeltas;
 
     // Tracks the liquidity available for swapping within the entire system.
     mapping(Currency => uint256) SingletonLiquidity;
 
     // Tracks the amount of LP fees available for LPers to withdraw for each currency
-    mapping(Currency => uint256) SingletonLPFees; 
+    mapping(Currency => uint256) SingletonLPFees;
 
     // Our own counter for outstanding deltas, based on CurrencyDeltas.
     int256 OutstandingDeltas;
@@ -56,20 +55,28 @@ contract ShadowAccounting is PropertiesAsserts, Deployers {
     function _clearTransientRemittances() internal {
         RemittanceCurrency = CurrencyLibrary.ADDRESS_ZERO;
         RemittanceAmount = 0;
-    }  
+    }
 
     function _addToActorsDebts(address actor, Currency currency, uint256 amount) internal {
         // UNI-ACTION-4
-        assertLte(amount, uint256(type(int256).max), "Shadow Accounting: An actor's debited delta must not exceed int256.max for any single action.");
+        assertLte(
+            amount,
+            uint256(type(int256).max),
+            "Shadow Accounting: An actor's debited delta must not exceed int256.max for any single action."
+        );
         _updateCurrencyDelta(actor, currency, -int256(amount));
     }
 
     function _addToActorsCredits(address actor, Currency currency, uint256 amount) internal {
         // UNI-ACTION-5
-        assertLte(amount, uint256(type(int256).max), "Shadow Accounting: An actor's credited delta must not exceed int256.max for any single action.");
+        assertLte(
+            amount,
+            uint256(type(int256).max),
+            "Shadow Accounting: An actor's credited delta must not exceed int256.max for any single action."
+        );
         _updateCurrencyDelta(actor, currency, int256(amount));
     }
-    
+
     function _updateCurrencyDelta(address actor, Currency currency, int256 delta) internal {
         int256 prev = CurrencyDeltas[actor][currency];
         int256 newD = prev + delta;
@@ -80,7 +87,9 @@ contract ShadowAccounting is PropertiesAsserts, Deployers {
 
         if (prev == 0 && newD != 0) {
             // add to array
-            emit LogAddress("Shadow Accounting: Adding currency to actor's deltas: ", address(Currency.unwrap(currency)));
+            emit LogAddress(
+                "Shadow Accounting: Adding currency to actor's deltas: ", address(Currency.unwrap(currency))
+            );
             OutstandingDeltas += 1;
         } else if (prev != 0 && newD == 0) {
             emit LogString("Shadow Accounting: Removing currency from actor's deltas");
@@ -94,8 +103,10 @@ contract ShadowAccounting is PropertiesAsserts, Deployers {
     function _sanityCheckCurrencyDelta(address actor, Currency currency) private {
         int256 uniswapCurrencyDelta = manager.currencyDelta(actor, currency);
         int256 harnessCurrencyDelta = CurrencyDeltas[actor][currency];
-        assertEq(uniswapCurrencyDelta, harnessCurrencyDelta, "BUG: Harness currency delta does not match uniswap currency delta");
+        assertEq(
+            uniswapCurrencyDelta,
+            harnessCurrencyDelta,
+            "BUG: Harness currency delta does not match uniswap currency delta"
+        );
     }
-
-
 }

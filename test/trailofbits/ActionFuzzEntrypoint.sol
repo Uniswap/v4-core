@@ -18,8 +18,6 @@ import {IActionsHarness} from "./IActionsHarness.sol";
 import {BalanceDelta, BalanceDeltaLibrary} from "src/types/BalanceDelta.sol";
 import {ActionFuzzBase, ActionCallbacks} from "./ActionFuzzBase.sol";
 
-
-
 import {DonateActionProps} from "./actionprops/DonateActionProps.sol";
 import {InitializeActionProps} from "./actionprops/InitializeActionProps.sol";
 import {ModifyPositionActionProps} from "./actionprops/ModifyPositionActionProps.sol";
@@ -33,11 +31,11 @@ import {SyncActionProps} from "./actionprops/SyncActionProps.sol";
 import {ClearActionProps} from "./actionprops/ClearActionProps.sol";
 import {ProtocolFeeActionProps} from "./actionprops/ProtocolFeeActionProps.sol";
 
-contract ActionFuzzEntrypoint is 
-    ActionFuzzBase, 
-    IActionsHarness, 
-    DonateActionProps, 
-    InitializeActionProps, 
+contract ActionFuzzEntrypoint is
+    ActionFuzzBase,
+    IActionsHarness,
+    DonateActionProps,
+    InitializeActionProps,
     ModifyPositionActionProps,
     SwapActionProps,
     TakeActionProps,
@@ -46,18 +44,19 @@ contract ActionFuzzEntrypoint is
     MintActionProps,
     BurnActionProps,
     SyncActionProps,
-    ClearActionProps {
+    ClearActionProps
+{
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
     using TransientStateLibrary for IPoolManager;
 
     // configure harness in ActionFuzzBase.sol
-    constructor() payable { }
+    constructor() payable {}
 
     function routerCallback(bytes memory data, bytes memory lastReturnData) external override {
         (ActionCallbacks cbType, bytes memory cbData) = abi.decode(data, (ActionCallbacks, bytes));
 
-        if( cbType == ActionCallbacks.BEFORE_DONATE) {
+        if (cbType == ActionCallbacks.BEFORE_DONATE) {
             emit LogString("before donate");
             _beforeDonate(cbData);
         } else if (cbType == ActionCallbacks.AFTER_DONATE) {
@@ -75,7 +74,7 @@ contract ActionFuzzEntrypoint is
             _beforeModifyPosition(cbData);
         } else if (cbType == ActionCallbacks.AFTER_MODIFY_POSITION) {
             emit LogString("after modify position");
-            (BalanceDelta b1, BalanceDelta b2) = abi.decode(lastReturnData, (BalanceDelta,BalanceDelta));
+            (BalanceDelta b1, BalanceDelta b2) = abi.decode(lastReturnData, (BalanceDelta, BalanceDelta));
             _afterModifyPosition(b1, b2);
         } else if (cbType == ActionCallbacks.BEFORE_TAKE) {
             emit LogString("before take");
@@ -132,14 +131,14 @@ contract ActionFuzzEntrypoint is
             emit LogString("collect protocol fees");
             _collectProtocolFees(cbData);
         }*/ else if (cbType == ActionCallbacks.AFTER_TRANSFER_FROM) {
-            (Currency c, uint256 amount, address from, address to) = abi.decode(cbData, (Currency, uint256, address, address));
+            (Currency c, uint256 amount, address from, address to) =
+                abi.decode(cbData, (Currency, uint256, address, address));
             emit LogString("after transfer from");
             _afterTransferFrom(c, amount, from, to);
         } else {
             assertWithMsg(false, "unknown callback action");
         }
     }
-
 
     function updatePoolDynamicLpFee(uint8 poolIdx, uint24 fee) public {
         PoolKey memory poolKey = _clampToValidPool(poolIdx);
@@ -150,22 +149,44 @@ contract ActionFuzzEntrypoint is
     /* The following functions act as "shortcuts" and give the fuzzer a better chance of creating a valid runActions sequence. */
 
     /// @notice This function eases coverage generation by adding a new pool and initializing it
-    function addInitializeAndAddLiquidity(uint8 currency1I, uint8 currency2I, int24 tickSpacing, uint160 startPrice, uint24 fee, int24 minTick, int24 maxTick, int128 liqDelta, uint256 salt) public {
+    function addInitializeAndAddLiquidity(
+        uint8 currency1I,
+        uint8 currency2I,
+        int24 tickSpacing,
+        uint160 startPrice,
+        uint24 fee,
+        int24 minTick,
+        int24 maxTick,
+        int128 liqDelta,
+        uint256 salt
+    ) public {
         addInitialize(currency1I, currency2I, tickSpacing, startPrice, fee);
-        uint poolIdx = DeployedPools.length-1;
+        uint256 poolIdx = DeployedPools.length - 1;
         emit LogUint256("poolidx", poolIdx);
         addModifyPosition(uint8(poolIdx), minTick, maxTick, liqDelta, salt);
     }
 
     /// @notice Doing everything addInitializeAndAddLiquidity does & settle the deltas.
-    function addInitializeAndAddLiquidityAndSettle(uint8 currency1I, uint8 currency2I, int24 tickSpacing, uint160 startPrice, uint24 fee, int24 minTick, int24 maxTick, int128 liqDelta, uint256 salt) public {
-        addInitializeAndAddLiquidity(currency1I, currency2I, tickSpacing, startPrice, fee, minTick, maxTick, liqDelta, salt);
+    function addInitializeAndAddLiquidityAndSettle(
+        uint8 currency1I,
+        uint8 currency2I,
+        int24 tickSpacing,
+        uint160 startPrice,
+        uint24 fee,
+        int24 minTick,
+        int24 maxTick,
+        int128 liqDelta,
+        uint256 salt
+    ) public {
+        addInitializeAndAddLiquidity(
+            currency1I, currency2I, tickSpacing, startPrice, fee, minTick, maxTick, liqDelta, salt
+        );
         runActionsWithShortcutSettle();
     }
 
     /// @notice Swap into and out of a pair, then settling the deltas.
     function addSwapInSwapOut(uint8 poolIdx, bool zeroForOne, int256 amount) public {
-        if(amount < 0) {
+        if (amount < 0) {
             amount = amount * -1;
         }
         // exact amount out
@@ -178,18 +199,20 @@ contract ActionFuzzEntrypoint is
 
     /// @notice Creates a pool of highly concentrated liquidity.
     function addTargetedPool(uint8 currency1I, uint8 currency2I, uint24 fee, int128 liqDelta) public {
-        if (liqDelta < 0){
+        if (liqDelta < 0) {
             liqDelta = -liqDelta;
         }
         // concentrate the liquidity on 0,1
-        addInitializeAndAddLiquidityAndSettle(currency1I, currency2I, 1, 79228162514264337593543950336, fee, 0, 1, liqDelta, 0);
+        addInitializeAndAddLiquidityAndSettle(
+            currency1I, currency2I, 1, 79228162514264337593543950336, fee, 0, 1, liqDelta, 0
+        );
     }
 
     /// @notice Creates a pool of highly concentrated liquidity with feeGrowthGlobal values that are close to overflowing
     function addTargetedPoolReadyToOverflow(uint8 currency1I, uint8 currency2I, uint24 fee) public {
         addTargetedPool(currency1I, currency2I, fee, 1);
         runActionsWithShortcutSettle();
-        uint8 poolIdx = uint8(DeployedPools.length-1);
+        uint8 poolIdx = uint8(DeployedPools.length - 1);
 
         addDonate(poolIdx, uint128(type(int128).max), uint128(type(int128).max));
         runActionsWithShortcutSettle();
@@ -200,7 +223,7 @@ contract ActionFuzzEntrypoint is
 
     /// @notice Performs a donation, then settles and runs the action sequence.
     function addDonateAndSettle(uint256 amount0, uint256 amount1) public {
-        uint8 poolIdx = uint8(DeployedPools.length-1);
+        uint8 poolIdx = uint8(DeployedPools.length - 1);
         addDonate(poolIdx, amount0, amount1);
         runActionsWithShortcutSettle();
     }
@@ -209,10 +232,10 @@ contract ActionFuzzEntrypoint is
     function addShortcutSettle() public {
         address actor = address(actionsRouter);
 
-        bytes memory shortcutSettleCBParam = abi.encode(address(this), abi.encode(ActionCallbacks.SHORTCUT_SETTLE, abi.encode(actor)));
+        bytes memory shortcutSettleCBParam =
+            abi.encode(address(this), abi.encode(ActionCallbacks.SHORTCUT_SETTLE, abi.encode(actor)));
         actions.push(Actions.HARNESS_CALLBACK);
         params.push(shortcutSettleCBParam);
-
     }
 
     /// @notice Settles the actor's outstanding deltas and runs the actions sequence.
@@ -224,52 +247,52 @@ contract ActionFuzzEntrypoint is
     /// @notice Performs a swap, settles the actor's balances, and runs the actions.
     function addSwapAndRunActions(uint8 poolIdx, int256 amountSpecified, bool zeroForOne) public {
         addSwap(poolIdx, amountSpecified, zeroForOne);
-	    addShortcutSettle();
+        addShortcutSettle();
         runActions();
     }
 
     /// @notice Performs a burn, settles the actor's balances, and runs the actions.
     function addBurnAndRunActions(address from, uint8 curIdx, uint256 amount) public {
         addBurn(from, curIdx, amount);
- 	    addShortcutSettle();
+        addShortcutSettle();
         runActions();
-    } 
+    }
 
     /// @notice Performs a liquidity modification, settles the actor's balances, and runs the actions.
-    function addModifyPositionAndRunActions(uint8 poolIdx, int24 lowTick, int24 highTick, int128 liqDelta, uint256 salt) public {
+    function addModifyPositionAndRunActions(uint8 poolIdx, int24 lowTick, int24 highTick, int128 liqDelta, uint256 salt)
+        public
+    {
         addModifyPosition(poolIdx, lowTick, highTick, liqDelta, salt);
-  	    addShortcutSettle();
+        addShortcutSettle();
         runActions();
-    } 
+    }
 
-    
     function _shortcutSettle(address actor) internal {
-        for( uint i=0; i<Currencies.length; i++) {
+        for (uint256 i = 0; i < Currencies.length; i++) {
             Currency c = Currencies[i];
             int256 delta = manager.currencyDelta(actor, c);
 
-            if(delta < 0) {
+            if (delta < 0) {
                 manager.sync(c);
-                
+
                 // manually reset remittances
-                if(!(c == CurrencyLibrary.ADDRESS_ZERO)){
+                if (!(c == CurrencyLibrary.ADDRESS_ZERO)) {
                     RemittanceCurrency = c;
                     RemittanceAmount = 0;
                 }
 
                 uint256 amountOwed = uint256(-delta);
-                if( c == CurrencyLibrary.ADDRESS_ZERO) {
+                if (c == CurrencyLibrary.ADDRESS_ZERO) {
                     emit LogUint256("sending native tokens to manager:", amountOwed);
                     manager.settleFor{value: amountOwed}(actor);
                 } else {
                     emit LogUint256("sending tokens to manager:", amountOwed);
-                    c.transfer( address(manager), amountOwed);
+                    c.transfer(address(manager), amountOwed);
                     manager.settleFor(actor);
                 }
                 emit LogString("resetting remittance settleForshortcut");
                 RemittanceCurrency = CurrencyLibrary.ADDRESS_ZERO;
                 RemittanceAmount = 0;
-                
 
                 _addToActorsCredits(actor, c, amountOwed);
             } else if (delta > 0) {

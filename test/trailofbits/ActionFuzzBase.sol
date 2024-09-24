@@ -22,7 +22,6 @@ import {PropertiesAsserts} from "test/trailofbits/PropertiesHelper.sol";
 import {V4StateMachine} from "test/trailofbits/V4StateMachine.sol";
 import {ShadowAccounting} from "test/trailofbits/ShadowAccounting.sol";
 
-
 enum ActionCallbacks {
     BEFORE_DONATE,
     AFTER_DONATE,
@@ -52,7 +51,6 @@ enum ActionCallbacks {
     AFTER_TRANSFER_FROM
 }
 
-
 contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
     using TransientStateLibrary for IPoolManager;
     using PoolIdLibrary for PoolKey;
@@ -60,7 +58,6 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
     PoolKey[] public DeployedPools;
     mapping(PoolId => bool) PoolInitialized;
     Currency[] public Currencies;
-
 
     // The fuzzer calls add<X> functions to add actions to the sequence with their corresponding parameters.
     Actions[] actions;
@@ -71,7 +68,7 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
     Actions[][] actionSequences;
     bytes[][] paramSequences;
 
-    uint public NUMBER_CURRENCIES = 6;
+    uint256 public NUMBER_CURRENCIES = 6;
 
     constructor() payable {
         deployFreshManager();
@@ -81,9 +78,9 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
         manager.setProtocolFeeController(feeController);
 
         // Initialize currencies
-        for (uint i = 0; i < NUMBER_CURRENCIES; i++) {
+        for (uint256 i = 0; i < NUMBER_CURRENCIES; i++) {
             // we place the native currency at the end of our currencies array to protect the existing corpus.
-            if (i == NUMBER_CURRENCIES-1) {
+            if (i == NUMBER_CURRENCIES - 1) {
                 Currencies.push(CurrencyLibrary.ADDRESS_ZERO);
             } else {
                 MockERC20 token = deployTokens(1, 2 ** 255)[0];
@@ -103,22 +100,21 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
         return address(manager);
     }
 
-
     function runActions() public {
         // start running actions from our stored sequences
-        for(uint i=0; i<actionSequences.length; i++) {
+        for (uint256 i = 0; i < actionSequences.length; i++) {
             Actions[] memory a = actionSequences[i];
             bytes[] memory p = paramSequences[i];
             actionsRouter.executeActions(a, p);
-   
-            // UNI-E2E-1    
+
+            // UNI-E2E-1
             assertEq(OutstandingDeltas, 0, "Outstanding deltas must be zero after the singleton is re-locked.");
         }
 
         // run whatever's in the current sequence
         actionsRouter.executeActions(actions, params);
 
-        // UNI-E2E-1      
+        // UNI-E2E-1
         assertEq(OutstandingDeltas, 0, "Outstanding deltas must be zero after the singleton is re-locked.");
         _coverageNudge();
         delete actions;
@@ -127,7 +123,7 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
         delete paramSequences;
         _clearTransientRemittances();
         emit LogString("pool key");
-        if(DeployedPools.length > 0) {
+        if (DeployedPools.length > 0) {
             emit LogBytes(abi.encode(DeployedPools[0].toId()));
         }
     }
@@ -140,55 +136,55 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
         delete params;
     }
 
-
     function _coverageNudge() internal {
-        for(uint i=0; i<actions.length; i++){
-            if(actions[i] == Actions.SETTLE){
+        for (uint256 i = 0; i < actions.length; i++) {
+            if (actions[i] == Actions.SETTLE) {
                 emit LogString("We did a SETTLE and it worked!");
-            } else if (actions[i] == Actions.SETTLE_NATIVE){
-                emit LogString("We did a SETTLE_NATIVE and it worked!");    
-            } else if (actions[i] == Actions.SETTLE_FOR){
-                emit LogString("We did a SETTLE_FOR and it worked!");    
-            } else if (actions[i] == Actions.TAKE){
-                emit LogString("We did a TAKE and it worked!");    
-            } else if (actions[i] == Actions.SYNC){
-                emit LogString("We did a SYNC and it worked!");    
-            } else if (actions[i] == Actions.MINT){
-                emit LogString("We did a MINT and it worked!");    
-            } else if (actions[i] == Actions.BURN){
-                emit LogString("We did a BURN and it worked!");    
-            } else if (actions[i] == Actions.CLEAR){
-                emit LogString("We did a CLEAR and it worked!");    
-            } else if (actions[i] == Actions.TRANSFER_FROM){
-                emit LogString("We did a TRANSFER_FROM and it worked!");    
-            } else if (actions[i] == Actions.INITIALIZE){
-                emit LogString("We did a INITIALIZE and it worked!");    
-            } else if (actions[i] == Actions.DONATE){
-                emit LogString("We did a DONATE and it worked!");    
-            } else if (actions[i] == Actions.MODIFY_POSITION){
-                emit LogString("We did a MODIFY_POSITION and it worked!");    
-            } else if (actions[i] == Actions.SWAP){
-                emit LogString("We did a SWAP and it worked!");    
-            } else if (actions[i] == Actions.HARNESS_CALLBACK){
-                emit LogString("We did a HARNESS_CALLBACK and it worked!");    
+            } else if (actions[i] == Actions.SETTLE_NATIVE) {
+                emit LogString("We did a SETTLE_NATIVE and it worked!");
+            } else if (actions[i] == Actions.SETTLE_FOR) {
+                emit LogString("We did a SETTLE_FOR and it worked!");
+            } else if (actions[i] == Actions.TAKE) {
+                emit LogString("We did a TAKE and it worked!");
+            } else if (actions[i] == Actions.SYNC) {
+                emit LogString("We did a SYNC and it worked!");
+            } else if (actions[i] == Actions.MINT) {
+                emit LogString("We did a MINT and it worked!");
+            } else if (actions[i] == Actions.BURN) {
+                emit LogString("We did a BURN and it worked!");
+            } else if (actions[i] == Actions.CLEAR) {
+                emit LogString("We did a CLEAR and it worked!");
+            } else if (actions[i] == Actions.TRANSFER_FROM) {
+                emit LogString("We did a TRANSFER_FROM and it worked!");
+            } else if (actions[i] == Actions.INITIALIZE) {
+                emit LogString("We did a INITIALIZE and it worked!");
+            } else if (actions[i] == Actions.DONATE) {
+                emit LogString("We did a DONATE and it worked!");
+            } else if (actions[i] == Actions.MODIFY_POSITION) {
+                emit LogString("We did a MODIFY_POSITION and it worked!");
+            } else if (actions[i] == Actions.SWAP) {
+                emit LogString("We did a SWAP and it worked!");
+            } else if (actions[i] == Actions.HARNESS_CALLBACK) {
+                emit LogString("We did a HARNESS_CALLBACK and it worked!");
             }
         }
     }
 
-    function _encodeHarnessCallback(ActionCallbacks cbType, bytes memory cbParams) internal view returns (bytes memory) {
-        bytes memory harnessCbParamEncoded = abi.encode(
-            cbType,
-            cbParams
-        );
-        
-        return abi.encode(
-            address(this),
-            harnessCbParamEncoded
-        );
+    function _encodeHarnessCallback(ActionCallbacks cbType, bytes memory cbParams)
+        internal
+        view
+        returns (bytes memory)
+    {
+        bytes memory harnessCbParamEncoded = abi.encode(cbType, cbParams);
+
+        return abi.encode(address(this), harnessCbParamEncoded);
     }
 
     /// @notice While this function calls it a "clamp", we're technically using modulo so our input space is evenly distributed.
-    function _clampToUsableTicks(int24 minTick, int24 maxTick, PoolKey memory poolKey) internal returns (int24, int24) {
+    function _clampToUsableTicks(int24 minTick, int24 maxTick, PoolKey memory poolKey)
+        internal
+        returns (int24, int24)
+    {
         int24 minUsableTick = TickMath.minUsableTick(poolKey.tickSpacing);
         int24 maxUsableTick = TickMath.maxUsableTick(poolKey.tickSpacing);
 
@@ -211,8 +207,8 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
 
     /// @notice While this function calls it a "clamp", we're technically using modulo so our input space is evenly distributed.
     function _clampToValidCurrencies(uint8 currency1I, uint8 currency2I) internal returns (Currency, Currency) {
-        uint c1 = clampBetween(currency1I, 0, NUMBER_CURRENCIES-1);
-        uint c2 = clampBetween(currency2I, 0, NUMBER_CURRENCIES-1);
+        uint256 c1 = clampBetween(currency1I, 0, NUMBER_CURRENCIES - 1);
+        uint256 c2 = clampBetween(currency2I, 0, NUMBER_CURRENCIES - 1);
         require(c1 != c2);
 
         Currency cur1 = Currencies[c1];
@@ -229,16 +225,15 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
     }
 
     /// @notice While this function calls it a "clamp", we're technically using modulo so our input space is evenly distributed.
-    function _clampToValidPool(uint poolIndex) internal returns ( PoolKey memory) {
-        poolIndex = clampBetween(poolIndex, 0, DeployedPools.length-1);
+    function _clampToValidPool(uint256 poolIndex) internal returns (PoolKey memory) {
+        poolIndex = clampBetween(poolIndex, 0, DeployedPools.length - 1);
         emit LogUint256("Pool index", poolIndex);
         return DeployedPools[poolIndex];
     }
 
-
     /* Functions we want as an entrypoint for fuzzing, but do not verify properties for. */
     function addTransferFrom(uint8 currency1I, uint256 amount, address from, address to) public {
-        Currency c1 = Currencies[clampBetween(currency1I, 0, NUMBER_CURRENCIES-1)];
+        Currency c1 = Currencies[clampBetween(currency1I, 0, NUMBER_CURRENCIES - 1)];
         bytes memory param = abi.encode(c1, from, to, amount);
         actions.push(Actions.TRANSFER_FROM);
         params.push(param);
@@ -249,7 +244,7 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
     }
 
     function _afterTransferFrom(Currency c, uint256 amount, address, address to) internal {
-        if(c == RemittanceCurrency && to == address(manager)) {
+        if (c == RemittanceCurrency && to == address(manager)) {
             RemittanceAmount += int256(amount);
         }
     }
@@ -267,7 +262,7 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
         emit LogUint256("Global: singleton balance", singletonBalance);
 
         uint256 singletonBalanceInclDelta;
-        if(delta > 0) {
+        if (delta > 0) {
             singletonBalanceInclDelta = singletonBalance - uint256(delta);
         } else {
             singletonBalanceInclDelta = singletonBalance + uint256(-delta);
@@ -277,31 +272,49 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
         emit LogUint256("Global: singleton lp fees (in fee growth)", SingletonLPFees[currency]);
         emit LogInt256("Global: currencyDelta for actor", delta);
 
-        assertGte(singletonBalanceInclDelta, SingletonLiquidity[currency], "Bug in harness? Probably turn this into a property.");
-        
+        assertGte(
+            singletonBalanceInclDelta,
+            SingletonLiquidity[currency],
+            "Bug in harness? Probably turn this into a property."
+        );
+
         if (delta >= 0) {
             // UNI-ACTION-1 (weak, no protocol fees)
-            assertGte(singletonBalance - SingletonLiquidity[currency], uint256(delta), "The amount owed to an actor must always be less than or equal the balance of the singleton.");
-        }     
+            assertGte(
+                singletonBalance - SingletonLiquidity[currency],
+                uint256(delta),
+                "The amount owed to an actor must always be less than or equal the balance of the singleton."
+            );
+        }
         uint256 singletonBalanceAfterRelocking = _deltaAdd(singletonBalance, -delta);
 
         // This amount represents the amount of currency that would be remaining in the singleton if every LPer withdrew their liquidity and fees.
-        uint256 balanceAvailableForProtocolFees = singletonBalanceAfterRelocking - SingletonLiquidity[currency] - SingletonLPFees[currency];
+        uint256 balanceAvailableForProtocolFees =
+            singletonBalanceAfterRelocking - SingletonLiquidity[currency] - SingletonLPFees[currency];
         uint256 protocolFees = manager.protocolFeesAccrued(currency);
-        
-        // UNI-ACTION-3 
-        assertLte(protocolFees, balanceAvailableForProtocolFees, "The amount of protocol fees owed may not exceed the singleton's balance (less its deployed liquidity) while the currency has a positive or zero delta.");
+
+        // UNI-ACTION-3
+        assertLte(
+            protocolFees,
+            balanceAvailableForProtocolFees,
+            "The amount of protocol fees owed may not exceed the singleton's balance (less its deployed liquidity) while the currency has a positive or zero delta."
+        );
 
         if (delta >= 0) {
-            uint256 balanceAvailableForCreditors = singletonBalance - protocolFees - SingletonLiquidity[currency]- SingletonLPFees[currency];
-            // UNI-ACTION-2 
-            assertLte(delta, int256(balanceAvailableForCreditors), "The amount owed to an actor must always be less than or equal the balance of the singleton, less protocol fees and LP fees.");
+            uint256 balanceAvailableForCreditors =
+                singletonBalance - protocolFees - SingletonLiquidity[currency] - SingletonLPFees[currency];
+            // UNI-ACTION-2
+            assertLte(
+                delta,
+                int256(balanceAvailableForCreditors),
+                "The amount owed to an actor must always be less than or equal the balance of the singleton, less protocol fees and LP fees."
+            );
         }
     }
 
-    function _deltaAdd(uint256 a, int256 delta) internal returns (uint256 sum)  {
+    function _deltaAdd(uint256 a, int256 delta) internal returns (uint256 sum) {
         unchecked {
-            if(delta >= 0){
+            if (delta >= 0) {
                 sum = a + uint256(delta);
                 assertGte(sum, a, "Sum overflow. This may be a bug in the harness, or an issue in v4.");
             } else {

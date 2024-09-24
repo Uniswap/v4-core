@@ -15,7 +15,6 @@ import {CurrencyLibrary, Currency} from "src/types/Currency.sol";
 import {PropertiesAsserts} from "../PropertiesHelper.sol";
 import {SwapInfo, SwapInfoLibrary} from "./Lib.sol";
 
-
 contract Harness is Deployers, PropertiesAsserts {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
@@ -30,15 +29,13 @@ contract Harness is Deployers, PropertiesAsserts {
         Deployers.deployFreshManagerAndRouters();
     }
 
-    
-
     function prop_CreatePool(int16 tickSpacing, uint256 startPrice, uint256 fee) public {
         if (address(Currency.unwrap(currency0)) != address(0)) {
             return;
         }
 
-        int24 tickSpacingClamped = int24(clampBetween(tickSpacing,1, type(int16).max));
-        uint256 initialPrice = clampBetween(startPrice, TickMath.MIN_SQRT_PRICE,TickMath.MAX_SQRT_PRICE);
+        int24 tickSpacingClamped = int24(clampBetween(tickSpacing, 1, type(int16).max));
+        uint256 initialPrice = clampBetween(startPrice, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE);
         uint256 initialFee = clampBetween(fee, 0, 1_000_000);
 
         Deployers.deployMintAndApprove2Currencies();
@@ -49,13 +46,13 @@ contract Harness is Deployers, PropertiesAsserts {
         modifyLiquidityRouter.modifyLiquidity(
             key,
             IPoolManager.ModifyLiquidityParams(
-                TickMath.minUsableTick(tickSpacingClamped),
-                TickMath.maxUsableTick(tickSpacingClamped), 10_000 ether, 0),
+                TickMath.minUsableTick(tickSpacingClamped), TickMath.maxUsableTick(tickSpacingClamped), 10_000 ether, 0
+            ),
             ZERO_BYTES
         );
 
         // make sure the corpus contains some more extreme conditions
-        uint leeway = 10;
+        uint256 leeway = 10;
         if (int256(tickSpacingClamped) < int256(leeway)) {
             emit LogInt256("tickSpacingClamped", tickSpacingClamped);
         } else if (int256(tickSpacingClamped) > int256(type(uint16).max - leeway)) {
@@ -91,7 +88,7 @@ contract Harness is Deployers, PropertiesAsserts {
         Currency toCurrency = zeroForOne ? currency1 : currency0;
 
         SwapInfo memory swap1Results = SwapInfoLibrary.initialize(fromCurrency, toCurrency, address(this));
-        
+
         swap(key, zeroForOne, amount, ZERO_BYTES);
 
         swap1Results.captureSwapResults();
@@ -135,7 +132,7 @@ contract Harness is Deployers, PropertiesAsserts {
         Currency toCurrency = zeroForOne ? currency1 : currency0;
 
         SwapInfo memory swap1Results = SwapInfoLibrary.initialize(fromCurrency, toCurrency, address(this));
-        
+
         swap(key, zeroForOne, amount, ZERO_BYTES);
 
         swap1Results.captureSwapResults();

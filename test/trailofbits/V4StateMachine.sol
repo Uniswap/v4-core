@@ -22,14 +22,14 @@ import {Deployers} from "test/utils/Deployers.sol";
 import {PropertiesAsserts} from "test/trailofbits/PropertiesHelper.sol";
 
 /// @notice This contract contains a limited reproduction of the v4 state machine.
-/// Context: Some information in the v4 architecture is not directly accessible from any kind of 
+/// Context: Some information in the v4 architecture is not directly accessible from any kind of
 /// solidity-based getter (example: the amount of LP fees collected for a given swap).
 /// Since our harness is the only entrypoint for the system, we can cache every single liquidity
 /// position, then reconstruct the internal tickInfo and tickBitmap for each pool
 /// immediately before swapping.
 /// We can then "simulate" the swap against our reconstructed tickInfo/tickBitmap, extracting
-/// the values we need for verifying properties. 
-/// In the future, this technique can be extended for modifyLiquidity and be used to verify 
+/// the values we need for verifying properties.
+/// In the future, this technique can be extended for modifyLiquidity and be used to verify
 /// reversion properties.
 contract V4StateMachine is PropertiesAsserts, Deployers {
     using PoolIdLibrary for PoolKey;
@@ -44,7 +44,7 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
         int128 liquidityNet;
     }
 
-    struct TickDescr{
+    struct TickDescr {
         int24 tick;
         int24 tickSpacing;
     }
@@ -55,7 +55,7 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
         int24 tickUpper;
     }
 
-    struct SwapState{
+    struct SwapState {
         int256 amountSpecifiedRemaining;
         int256 amountCalculated;
         uint160 sqrtPriceX96;
@@ -71,14 +71,13 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
         uint160 sqrtPriceLimitX96;
         uint24 lpFeeOverride;
     }
- 
 
     // This is used for storing the tickBitmap for all pools. It is deleted and rebuilt before every simulation.
     mapping(int16 => uint256) private TickBitmapProxy;
     // Used for deleting the TickBitmapProxy mapping
     TickDescr[] TickBitmapIndexes;
 
-    // Used for reconstructing the tickInfo for all pools. It is deleted and rebuilt before every simulation.   
+    // Used for reconstructing the tickInfo for all pools. It is deleted and rebuilt before every simulation.
     mapping(int24 => TickInfoUnpacked) private TickInfos;
     mapping(int24 => bool) private TickInfoInitialized;
     // Used for deleting the TickInfos mapping
@@ -92,10 +91,15 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
 
     // key is keccak(poolId, positionKey)
     // The LiquidityActionProps contract handles adding/updating liquidity positions.
-    mapping(bytes32 => int) PositionInfoIndex;
+    mapping(bytes32 => int256) PositionInfoIndex;
 
     /// @notice This function is the main entrypoint for the simulated state machine.
-   function _calculateExpectedLPAndProtocolFees(PoolKey memory pool, bool zeroForOne, int256 amount, uint256 priceLimit) internal returns (uint256, uint256) {
+    function _calculateExpectedLPAndProtocolFees(
+        PoolKey memory pool,
+        bool zeroForOne,
+        int256 amount,
+        uint256 priceLimit
+    ) internal returns (uint256, uint256) {
         _updateTickBitmapProxy(pool);
 
         // Most of following code is a near 1:1 reproduction of Pool.swap()
@@ -121,13 +125,13 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
             state.feeGrowthGlobalX128 = feeGrowthGlobalX128;
             state.liquidity = manager.getLiquidity(pool.toId());
 
-            if(zeroForOne){
+            if (zeroForOne) {
                 protocolFee = protocolFeeRaw.getZeroForOneFee();
             } else {
                 protocolFee = protocolFeeRaw.getOneForZeroFee();
             }
 
-            if(protocolFee == 0) {
+            if (protocolFee == 0) {
                 swapFee = lpFee;
             } else {
                 swapFee = uint16(protocolFee).calculateSwapFee(lpFee);
@@ -136,46 +140,45 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
 
         {
             bool exactInput = amount < 0;
-            if((swapFee == LPFeeLibrary.MAX_LP_FEE && !exactInput) || amount == 0) {
-                return (0,0);
+            if ((swapFee == LPFeeLibrary.MAX_LP_FEE && !exactInput) || amount == 0) {
+                return (0, 0);
             }
         }
 
         if (zeroForOne) {
             if (priceLimit >= curPrice) {
-                return (0,0);
+                return (0, 0);
             }
             if (priceLimit < TickMath.MIN_SQRT_PRICE) {
-                return (0,0);
+                return (0, 0);
             }
         } else {
             if (priceLimit <= curPrice) {
-                return (0,0);
+                return (0, 0);
             }
             if (priceLimit >= TickMath.MAX_SQRT_PRICE) {
-                return (0,0);
+                return (0, 0);
             }
         }
 
         // pack into a swapinfo to save stack
-        SwapParams memory swapInfo = SwapParams(
-            pool.tickSpacing,
-            zeroForOne,
-            amount,
-            uint160(priceLimit),
-            0
-        );
+        SwapParams memory swapInfo = SwapParams(pool.tickSpacing, zeroForOne, amount, uint160(priceLimit), 0);
         return _calculateSteps(swapInfo, state, swapFee, pool.tickSpacing, protocolFee);
     }
 
-
     /// @notice Continuation of _calculateExpectedLPAndProtocolFees. Needed to save stack space.
-    function _calculateSteps( SwapParams memory params, SwapState memory state, uint24 swapFee, int24 tickSpacing, uint24 protocolFee) private view returns (uint256, uint256) {
-       Pool.StepComputations memory step;
-       bool exactInput = params.amountSpecified < 0;
-       uint256 feeForProtocol;
-       uint256 feeForLp;
-       while (!(state.amountSpecifiedRemaining == 0 || state.sqrtPriceX96 == params.sqrtPriceLimitX96)) {
+    function _calculateSteps(
+        SwapParams memory params,
+        SwapState memory state,
+        uint24 swapFee,
+        int24 tickSpacing,
+        uint24 protocolFee
+    ) private view returns (uint256, uint256) {
+        Pool.StepComputations memory step;
+        bool exactInput = params.amountSpecified < 0;
+        uint256 feeForProtocol;
+        uint256 feeForLp;
+        while (!(state.amountSpecifiedRemaining == 0 || state.sqrtPriceX96 == params.sqrtPriceLimitX96)) {
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
             (step.tickNext, step.initialized) =
@@ -227,7 +230,6 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 // if the tick is initialized, run the tick transition
                 if (step.initialized) {
-
                     int128 liquidityNet = TickInfos[step.tickNext].liquidityNet;
                     // if we're moving leftward, we interpret liquidityNet as the opposite sign
                     // safe because liquidityNet cannot be type(int128).min
@@ -237,61 +239,55 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
                     state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
                 }
                 state.tick = params.zeroForOne ? step.tickNext - 1 : step.tickNext;
-                
             } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
                 // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
                 state.tick = TickMath.getTickAtSqrtPrice(state.sqrtPriceX96);
             }
         }
 
-        return (protocolFee,feeForLp);
+        return (protocolFee, feeForLp);
     }
 
     /// @notice This code reproduces parts of Pool.modifyLiquidity and Pool.updateTick.
     /// Some of the logic is rewritten because we don't have to concern ourselves with
     /// liquidity removal. Every time this function is called, we're fully reconstructing the state.
-    function _updateTickBitmapProxy(PoolKey memory pool) private  {
+    function _updateTickBitmapProxy(PoolKey memory pool) private {
         _deleteTickBitmapProxy();
         _deleteTickInfos();
 
         PositionInfo[] storage positions = PoolPositions[pool.toId()];
-        for(uint i=0; i<positions.length; i++) {
+        for (uint256 i = 0; i < positions.length; i++) {
             PositionInfo memory position = positions[i];
             if (position.liquidity == 0) {
                 continue;
             }
-            if( !TickInfoInitialized[position.tickLower]) {
+            if (!TickInfoInitialized[position.tickLower]) {
                 TickInfoIndexes.push(position.tickLower);
                 TickInfoInitialized[position.tickLower] = true;
                 TickBitmapProxy.flipTick(position.tickLower, pool.tickSpacing);
-                TickBitmapIndexes.push(TickDescr(position.tickLower,pool.tickSpacing));
-                TickInfos[position.tickLower] = TickInfoUnpacked({
-                    liquidityGross: 0,
-                    liquidityNet: 0
-                });
+                TickBitmapIndexes.push(TickDescr(position.tickLower, pool.tickSpacing));
+                TickInfos[position.tickLower] = TickInfoUnpacked({liquidityGross: 0, liquidityNet: 0});
             }
-            
+
             TickInfos[position.tickLower].liquidityGross += position.liquidity;
-            TickInfos[position.tickLower].liquidityNet =  TickInfos[position.tickLower].liquidityNet + int128(position.liquidity);
-   
-            if( !TickInfoInitialized[position.tickUpper]) {
+            TickInfos[position.tickLower].liquidityNet =
+                TickInfos[position.tickLower].liquidityNet + int128(position.liquidity);
+
+            if (!TickInfoInitialized[position.tickUpper]) {
                 TickInfoIndexes.push(position.tickUpper);
                 TickInfoInitialized[position.tickUpper] = true;
                 TickBitmapProxy.flipTick(position.tickUpper, pool.tickSpacing);
-                TickBitmapIndexes.push(TickDescr(position.tickUpper,pool.tickSpacing));
-                TickInfos[position.tickUpper] = TickInfoUnpacked({
-                    liquidityGross: 0,
-                    liquidityNet: 0
-                });
+                TickBitmapIndexes.push(TickDescr(position.tickUpper, pool.tickSpacing));
+                TickInfos[position.tickUpper] = TickInfoUnpacked({liquidityGross: 0, liquidityNet: 0});
             }
             TickInfos[position.tickUpper].liquidityGross += position.liquidity;
-            TickInfos[position.tickUpper].liquidityNet =  TickInfos[position.tickUpper].liquidityNet - int128(position.liquidity);
+            TickInfos[position.tickUpper].liquidityNet =
+                TickInfos[position.tickUpper].liquidityNet - int128(position.liquidity);
         }
     }
 
-
     function _deleteTickBitmapProxy() private {
-        for(uint i=0; i<TickBitmapIndexes.length; i++) {
+        for (uint256 i = 0; i < TickBitmapIndexes.length; i++) {
             TickDescr memory tickDescr = TickBitmapIndexes[i];
             TickBitmapProxy.flipTick(tickDescr.tick, tickDescr.tickSpacing);
         }
@@ -299,7 +295,7 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
     }
 
     function _deleteTickInfos() private {
-        for(uint i=0; i<TickInfoIndexes.length; i++) {
+        for (uint256 i = 0; i < TickInfoIndexes.length; i++) {
             delete TickInfos[TickInfoIndexes[i]];
             delete TickInfoInitialized[TickInfoIndexes[i]];
         }
@@ -308,14 +304,17 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
 
     /// @notice calculate the expected fee growth delta, accounting for overflow.
     /// This doesn't actually touch the state machine, but it makes more sense to have it herer than in ActionFuzzBase.
-    function _calculateExpectedFeeGrowth(uint256 feeGrowthDeltaX128, uint256 prevFeeGrowthX128) internal returns (uint256) {
+    function _calculateExpectedFeeGrowth(uint256 feeGrowthDeltaX128, uint256 prevFeeGrowthX128)
+        internal
+        returns (uint256)
+    {
         // we could just do this as unchecked math, but it's nice to verify our assumptions.
         uint256 growthOverheadX128 = type(uint256).max - prevFeeGrowthX128;
         emit LogUint256("prev fee growth", prevFeeGrowthX128);
         emit LogUint256("growth overhead", growthOverheadX128);
         emit LogUint256("fee growth delta", feeGrowthDeltaX128);
         uint256 feeGrowthExpectedX128;
-        if( feeGrowthDeltaX128 > growthOverheadX128){
+        if (feeGrowthDeltaX128 > growthOverheadX128) {
             emit LogString("Fee growth is going to overflow");
             // overflow case
             feeGrowthExpectedX128 = feeGrowthDeltaX128 - growthOverheadX128 - 1;
@@ -326,5 +325,4 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
         }
         return feeGrowthExpectedX128;
     }
-
 }

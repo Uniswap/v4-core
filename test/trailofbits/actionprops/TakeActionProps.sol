@@ -33,7 +33,7 @@ contract TakeActionProps is ActionFuzzBase {
     int256 _takeActorCurrencyDeltaBefore;
 
     function addTake(uint8 currency1I, uint256 amount) public {
-        Currency c1 = Currencies[clampBetween(currency1I, 0, NUMBER_CURRENCIES-1)];
+        Currency c1 = Currencies[clampBetween(currency1I, 0, NUMBER_CURRENCIES - 1)];
 
         bytes memory takeParams = abi.encode(c1, address(actionsRouter), amount);
 
@@ -48,7 +48,6 @@ contract TakeActionProps is ActionFuzzBase {
         bytes memory afterTakeCbParam = _encodeHarnessCallback(ActionCallbacks.AFTER_TAKE, new bytes(0));
         actions.push(Actions.HARNESS_CALLBACK);
         params.push(afterTakeCbParam);
-
     }
 
     function _beforeTake(bytes memory preTakeParams) internal {
@@ -69,15 +68,25 @@ contract TakeActionProps is ActionFuzzBase {
         int256 expectedDelta = _takeActorCurrencyDeltaBefore - int256(_takeAmount);
         int256 actualDelta = manager.currencyDelta(_takeActor, _takeCurrency);
         // UNI-TAKE-1
-        assertEq(expectedDelta, actualDelta, "After executing take(), the user's currencyDelta should be the difference between their previous delta and the amount taken");
+        assertEq(
+            expectedDelta,
+            actualDelta,
+            "After executing take(), the user's currencyDelta should be the difference between their previous delta and the amount taken"
+        );
         // UNI-TAKE-2
-        assertEq(_takeActorBalanceBefore + _takeAmount, actorBalanceAfter, "After executing take(), the user's balance should increase by the amount taken.");
+        assertEq(
+            _takeActorBalanceBefore + _takeAmount,
+            actorBalanceAfter,
+            "After executing take(), the user's balance should increase by the amount taken."
+        );
         // UNI-TAKE-3
-        assertEq(_takeSingletonBalanceBefore - _takeAmount, singletonBalanceAfter, "After executing take(), the singleton's balance should decrease by the amount taken.");
+        assertEq(
+            _takeSingletonBalanceBefore - _takeAmount,
+            singletonBalanceAfter,
+            "After executing take(), the singleton's balance should decrease by the amount taken."
+        );
 
         _verifyGlobalProperties(_takeActor, _takeCurrency);
         _addToActorsDebts(address(_takeActor), _takeCurrency, _takeAmount);
-    }      
-
-
+    }
 }

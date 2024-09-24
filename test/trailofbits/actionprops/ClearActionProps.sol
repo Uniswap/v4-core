@@ -23,13 +23,12 @@ contract ClearActionProps is ActionFuzzBase {
     using TransientStateLibrary for IPoolManager;
     using ProtocolFeeLibrary for uint16;
 
-
     Currency _clearCurrency;
     uint256 _clearAmount;
     int256 _clearActorCurrencyDeltaBefore;
 
     function addClear(uint8 curIdx, uint256 amount) public {
-        Currency currency = Currencies[clampBetween(curIdx, 0, NUMBER_CURRENCIES-1)];
+        Currency currency = Currencies[clampBetween(curIdx, 0, NUMBER_CURRENCIES - 1)];
 
         bytes memory clearParams = abi.encode(currency, amount, false, "");
         bytes memory beforeClearCbParams = _encodeHarnessCallback(ActionCallbacks.BEFORE_CLEAR, clearParams);
@@ -37,7 +36,6 @@ contract ClearActionProps is ActionFuzzBase {
         actions.push(Actions.HARNESS_CALLBACK);
         params.push(beforeClearCbParams);
 
-        
         actions.push(Actions.CLEAR);
         params.push(clearParams);
         bytes memory afterClearCbParam = _encodeHarnessCallback(ActionCallbacks.AFTER_CLEAR, new bytes(0));
@@ -45,12 +43,11 @@ contract ClearActionProps is ActionFuzzBase {
         params.push(afterClearCbParam);
     }
 
-
     function _beforeClear(bytes memory preClearParams) internal {
         (_clearCurrency, _clearAmount,,) = abi.decode(preClearParams, (Currency, uint256, bool, string));
         _clearActorCurrencyDeltaBefore = manager.currencyDelta(address(actionsRouter), _clearCurrency);
 
-        _verifyGlobalProperties(address(actionsRouter),_clearCurrency);
+        _verifyGlobalProperties(address(actionsRouter), _clearCurrency);
     }
 
     function _afterClear() internal {
@@ -58,15 +55,17 @@ contract ClearActionProps is ActionFuzzBase {
 
         int256 actorCurrencyDelta = _clearActorCurrencyDeltaBefore - actorCurrencyDeltaAfter;
         // UNI-SETTLE-12
-        assertGte(actorCurrencyDelta, 0, "After a clear, the actor's currency delta should go down or be equal to zero.");
+        assertGte(
+            actorCurrencyDelta, 0, "After a clear, the actor's currency delta should go down or be equal to zero."
+        );
         // UNI-SETTLE-13
-        assertEq(uint256(actorCurrencyDelta), _clearAmount, "After a clear, the actor's currency delta should be equal to the amount cleared.");
-
+        assertEq(
+            uint256(actorCurrencyDelta),
+            _clearAmount,
+            "After a clear, the actor's currency delta should be equal to the amount cleared."
+        );
 
         _addToActorsDebts(address(actionsRouter), _clearCurrency, _clearAmount);
-        _verifyGlobalProperties(address(actionsRouter),_clearCurrency);
-    }      
-
-
+        _verifyGlobalProperties(address(actionsRouter), _clearCurrency);
+    }
 }
-

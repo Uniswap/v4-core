@@ -23,14 +23,13 @@ contract SettleActionProps is ActionFuzzBase {
     using TransientStateLibrary for IPoolManager;
     using ProtocolFeeLibrary for uint16;
 
-
     address _settleActor;
     Currency _settleReserveCurrency;
     int256 _currencyDeltaBefore;
 
-
     function addSettle() public {
-        bytes memory beforeSettleCbParams = _encodeHarnessCallback(ActionCallbacks.BEFORE_SETTLE, abi.encode(address(actionsRouter)));
+        bytes memory beforeSettleCbParams =
+            _encodeHarnessCallback(ActionCallbacks.BEFORE_SETTLE, abi.encode(address(actionsRouter)));
 
         actions.push(Actions.HARNESS_CALLBACK);
         params.push(beforeSettleCbParams);
@@ -60,10 +59,10 @@ contract SettleActionProps is ActionFuzzBase {
     }
 
     function _beforeSettle(bytes memory preSettleParams) internal {
-        _settleActor = abi.decode(preSettleParams, (address));     
+        _settleActor = abi.decode(preSettleParams, (address));
         _settleReserveCurrency = manager.getSyncedCurrency();
 
-        // The only reason we keep track of remittance currency separately like this is to validate our assumptions about how 
+        // The only reason we keep track of remittance currency separately like this is to validate our assumptions about how
         // transient storage works during runtime.
         emit LogAddress("synced currency", address(Currency.unwrap(_settleReserveCurrency)));
         emit LogAddress("Remittance currency", address(Currency.unwrap(RemittanceCurrency)));
@@ -78,16 +77,26 @@ contract SettleActionProps is ActionFuzzBase {
         int256 currencyDeltaDifference = currencyDeltaAfterSettle - _currencyDeltaBefore;
 
         // UNI-SETTLE-1
-        assertGte(currencyDeltaDifference, 0, "The user must not be owed more tokens after a settle than they were owed before a settle.");
+        assertGte(
+            currencyDeltaDifference,
+            0,
+            "The user must not be owed more tokens after a settle than they were owed before a settle."
+        );
         // UNI-SETTLE-2
-        assertEq(currencyDeltaDifference, int256(paid), "The amount paid during a settle must be equal to the difference in the user's currency deltas before and after the settle call.");
+        assertEq(
+            currencyDeltaDifference,
+            int256(paid),
+            "The amount paid during a settle must be equal to the difference in the user's currency deltas before and after the settle call."
+        );
         // UNI-SETTLE-3
-        assertEq(int256(paid), RemittanceAmount, "The amount paid during a settle must be equal to the amount of remittances paid to the singleton.");
+        assertEq(
+            int256(paid),
+            RemittanceAmount,
+            "The amount paid during a settle must be equal to the amount of remittances paid to the singleton."
+        );
 
         _addToActorsCredits(_settleActor, _settleReserveCurrency, paid);
         _verifyGlobalProperties(_settleActor, _settleReserveCurrency);
         RemittanceCurrency = CurrencyLibrary.ADDRESS_ZERO;
-    }      
-
-
+    }
 }

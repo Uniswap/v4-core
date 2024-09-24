@@ -56,36 +56,59 @@ contract DonateActionProps is ActionFuzzBase {
         assertLte(delta.amount1(), 0, "A donate() call must not return a positive BalanceDelta for currency1");
 
         // UNI-DONATE-8
-        assertEq(_donateAmount0, uint128(-delta.amount0()), "The donate() call BalanceDelta must match the amount donated for amount0");
+        assertEq(
+            _donateAmount0,
+            uint128(-delta.amount0()),
+            "The donate() call BalanceDelta must match the amount donated for amount0"
+        );
         // UNI-DONATE-9
-        assertEq(_donateAmount1, uint128(-delta.amount1()), "The donate() call BalanceDelta must match the amount donated for amount1");
+        assertEq(
+            _donateAmount1,
+            uint128(-delta.amount1()),
+            "The donate() call BalanceDelta must match the amount donated for amount1"
+        );
 
         PoolId donatePoolId = _donatePoolKey.toId();
         uint128 liquidity = manager.getLiquidity(donatePoolId);
-        
+
         uint256 feeGrowthDelta0X128 = FullMath.mulDiv(uint256(uint128(-delta.amount0())), FixedPoint128.Q128, liquidity);
         uint256 feeGrowthDelta1X128 = FullMath.mulDiv(uint256(uint128(-delta.amount1())), FixedPoint128.Q128, liquidity);
 
         uint256 feeGrowth0X128Expected = _calculateExpectedFeeGrowth(feeGrowthDelta0X128, _feeGrowthGlobal0X128Before);
         uint256 feeGrowth1X128Expected = _calculateExpectedFeeGrowth(feeGrowthDelta1X128, _feeGrowthGlobal1X128Before);
-        
 
         (uint256 feeGrowth0AfterX128, uint256 feeGrowth1AfterX128) = manager.getFeeGrowthGlobals(donatePoolId);
-        if (liquidity > 0 ) {
-            if(_donateAmount0 > 0) {
+        if (liquidity > 0) {
+            if (_donateAmount0 > 0) {
                 // UNI-DONATE-1
-                assertEq(feeGrowth0X128Expected, feeGrowth0AfterX128 , "After a donation with a non-zero amount0, the pool's feeGrowthGlobal0X128 be equal to the amount0 BalanceDelta, accounting for overflows.");
+                assertEq(
+                    feeGrowth0X128Expected,
+                    feeGrowth0AfterX128,
+                    "After a donation with a non-zero amount0, the pool's feeGrowthGlobal0X128 be equal to the amount0 BalanceDelta, accounting for overflows."
+                );
             } else {
                 // UNI-DONATE-3
-                assertEq(_feeGrowthGlobal0X128Before, feeGrowth0AfterX128, "After a donation with a zero amount0, the pool's feeGrowthGlobal0X128 should not change.");
+                assertEq(
+                    _feeGrowthGlobal0X128Before,
+                    feeGrowth0AfterX128,
+                    "After a donation with a zero amount0, the pool's feeGrowthGlobal0X128 should not change."
+                );
             }
 
-            if(_donateAmount1 > 0) {
+            if (_donateAmount1 > 0) {
                 // UNI-DONATE-2
-                assertEq(feeGrowth1X128Expected, feeGrowth1AfterX128, "After a donation with a non-zero amount1, the pool's feeGrowthGlobal0X128 be equal to the amount1 BalanceDelta, accounting for overflows.");
+                assertEq(
+                    feeGrowth1X128Expected,
+                    feeGrowth1AfterX128,
+                    "After a donation with a non-zero amount1, the pool's feeGrowthGlobal0X128 be equal to the amount1 BalanceDelta, accounting for overflows."
+                );
             } else {
                 // UNI-DONATE-4
-                assertEq(_feeGrowthGlobal1X128Before, feeGrowth1AfterX128, "After a donation with a zero amount1, the pool's feeGrowthGlobal1X128 should not change.");
+                assertEq(
+                    _feeGrowthGlobal1X128Before,
+                    feeGrowth1AfterX128,
+                    "After a donation with a zero amount1, the pool's feeGrowthGlobal1X128 should not change."
+                );
             }
         } else {
             // fee growth should not have changed
@@ -98,9 +121,10 @@ contract DonateActionProps is ActionFuzzBase {
         _updateCurrencyDelta(address(actionsRouter), _donatePoolKey.currency0, delta.amount0());
         _updateCurrencyDelta(address(actionsRouter), _donatePoolKey.currency1, delta.amount1());
 
-        SingletonLPFees[_donatePoolKey.currency0] = _deltaAdd(SingletonLPFees[_donatePoolKey.currency0], int256(_donateAmount0));
-        SingletonLPFees[_donatePoolKey.currency1] = _deltaAdd(SingletonLPFees[_donatePoolKey.currency1], int256(_donateAmount1));
-
+        SingletonLPFees[_donatePoolKey.currency0] =
+            _deltaAdd(SingletonLPFees[_donatePoolKey.currency0], int256(_donateAmount0));
+        SingletonLPFees[_donatePoolKey.currency1] =
+            _deltaAdd(SingletonLPFees[_donatePoolKey.currency1], int256(_donateAmount1));
 
         _verifyGlobalProperties(address(actionsRouter), _donatePoolKey.currency0);
         _verifyGlobalProperties(address(actionsRouter), _donatePoolKey.currency1);
