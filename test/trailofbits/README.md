@@ -1,6 +1,6 @@
 # Stateful Property Test Suite
 
-TODO: Add link to the audit report appendix.
+More information about the stateful property test suite can be found in the [Trail of Bits Audit Report](https://github.com/trailofbits/publications/blob/master/reviews/2024-07-uniswap-v4-core-securityreview.pdf)
 
 `export FOUNDRY_PROFILE=statefulfuzz`
 
