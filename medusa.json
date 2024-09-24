@@ -1,87 +1,73 @@
 {
-    "fuzzing": {
-      "workers": 16,
-      "workerResetLimit": 50,
-      "timeout": 0,
-      "testLimit": 200000000,
-      "callSequenceLength": 150,
-      "corpusDirectory": "medusa",
-      "coverageEnabled": true,
-      "shrinkLimit": 10000,
-      "deploymentOrder": [
-        "ActionFuzzEntrypoint"
-      ],
-      "targetContracts": [
-        "ActionFuzzEntrypoint"
-      ],
-      "targetContractsBalances": [
-        "0x27b46536c66c8e3000000"
-      ],
-      "constructorArgs": {},
-      "deployerAddress": "0x30000",
-      "senderAddresses": [
-        "0x10000"
-      ],
-      "blockNumberDelayMax": 60480,
-      "blockTimestampDelayMax": 604800,
-      "blockGasLimit": 125000000,
-      "transactionGasLimit": 12500000,
-      "testing": {
-        "stopOnFailedTest": true,
-        "stopOnFailedContractMatching": false,
-        "stopOnNoTests": true,
-        "testAllContracts": false,
-        "traceAll": false,
-        "assertionTesting": {
-          "enabled": true,
-          "testViewMethods": false,
-          "panicCodeConfig": {
-            "failOnCompilerInsertedPanic": true,
-            "failOnAssertion": true,
-            "failOnArithmeticUnderflow": false,
-            "failOnDivideByZero": false,
-            "failOnEnumTypeConversionOutOfBounds": true,
-            "failOnIncorrectStorageAccess": true,
-            "failOnPopEmptyArray": true,
-            "failOnOutOfBoundsArrayAccess": true,
-            "failOnAllocateTooMuchMemory": true,
-            "failOnCallUninitializedVariable": true
-          }
-        },
-        "propertyTesting": {
-          "enabled": true,
-          "testPrefixes": [
-            "crytic_"
-          ]
-        },
-        "optimizationTesting": {
-          "enabled": false,
-          "testPrefixes": [
-            "optimize_"
-          ]
+  "fuzzing": {
+    "workers": 16,
+    "workerResetLimit": 50,
+    "timeout": 0,
+    "testLimit": 200000000,
+    "callSequenceLength": 150,
+    "corpusDirectory": "medusa",
+    "coverageEnabled": true,
+    "shrinkLimit": 10000,
+    "deploymentOrder": ["ActionFuzzEntrypoint"],
+    "targetContracts": ["ActionFuzzEntrypoint"],
+    "targetContractsBalances": ["0x27b46536c66c8e3000000"],
+    "constructorArgs": {},
+    "deployerAddress": "0x30000",
+    "senderAddresses": ["0x10000"],
+    "blockNumberDelayMax": 60480,
+    "blockTimestampDelayMax": 604800,
+    "blockGasLimit": 125000000,
+    "transactionGasLimit": 12500000,
+    "testing": {
+      "stopOnFailedTest": true,
+      "stopOnFailedContractMatching": false,
+      "stopOnNoTests": true,
+      "testAllContracts": false,
+      "traceAll": false,
+      "assertionTesting": {
+        "enabled": true,
+        "testViewMethods": false,
+        "panicCodeConfig": {
+          "failOnCompilerInsertedPanic": true,
+          "failOnAssertion": true,
+          "failOnArithmeticUnderflow": false,
+          "failOnDivideByZero": false,
+          "failOnEnumTypeConversionOutOfBounds": true,
+          "failOnIncorrectStorageAccess": true,
+          "failOnPopEmptyArray": true,
+          "failOnOutOfBoundsArrayAccess": true,
+          "failOnAllocateTooMuchMemory": true,
+          "failOnCallUninitializedVariable": true
         }
       },
-      "chainConfig": {
-        "codeSizeCheckDisabled": true,
-        "cheatCodes": {
-          "cheatCodesEnabled": true,
-          "enableFFI": true
-        }
+      "propertyTesting": {
+        "enabled": true,
+        "testPrefixes": ["crytic_"]
+      },
+      "optimizationTesting": {
+        "enabled": false,
+        "testPrefixes": ["optimize_"]
       }
     },
-    "compilation": {
-      "platform": "crytic-compile",
-      "platformConfig": {
-        "target": ".",
-        "solcVersion": "",
-        "exportDirectory": "",
-        "args": [
-          "--foundry-ignore-compile"
-        ]
+    "chainConfig": {
+      "codeSizeCheckDisabled": true,
+      "cheatCodes": {
+        "cheatCodesEnabled": true,
+        "enableFFI": true
       }
-    },
-    "logging": {
-      "level": "info",
-      "logDirectory": ""
     }
+  },
+  "compilation": {
+    "platform": "crytic-compile",
+    "platformConfig": {
+      "target": ".",
+      "solcVersion": "",
+      "exportDirectory": "",
+      "args": ["--foundry-ignore-compile"]
+    }
+  },
+  "logging": {
+    "level": "info",
+    "logDirectory": ""
   }
+}

@@ -2,11 +2,11 @@ testMode: "assertion"
 prefix: "crytic_"
 coverage: true
 corpusDir: "echidna"
-balanceAddr: 0x1043561a8829300000 
+balanceAddr: 0x1043561a8829300000
 balanceContract: 0x1043561a8829300000
 cryticArgs: ["--ignore-compile"]
 testLimit: 5000000000
 allContracts: false
 workers: 14
-seqLen:  10
+seqLen: 10
 allowFFI: true
