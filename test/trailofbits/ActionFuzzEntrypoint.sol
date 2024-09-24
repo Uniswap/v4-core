@@ -46,8 +46,7 @@ contract ActionFuzzEntrypoint is
     MintActionProps,
     BurnActionProps,
     SyncActionProps,
-    ClearActionProps,
-    ProtocolFeeActionProps {
+    ClearActionProps {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
     using TransientStateLibrary for IPoolManager;
@@ -125,13 +124,14 @@ contract ActionFuzzEntrypoint is
         } else if (cbType == ActionCallbacks.AFTER_CLEAR) {
             emit LogString("after clear");
             _afterClear();
-        } else if (cbType == ActionCallbacks.SET_NEW_PROTOCOL_FEE) {
+        } /* Protocol fee collection properties are disabled due to the fixes from TOB-UNI4-3
+        else if (cbType == ActionCallbacks.SET_NEW_PROTOCOL_FEE) {
             emit LogString("set new protocol fee");
             _setNewProtocolFee(cbData);
         } else if (cbType == ActionCallbacks.COLLECT_PROTOCOL_FEES) {
             emit LogString("collect protocol fees");
             _collectProtocolFees(cbData);
-        } else if (cbType == ActionCallbacks.AFTER_TRANSFER_FROM) {
+        }*/ else if (cbType == ActionCallbacks.AFTER_TRANSFER_FROM) {
             (Currency c, uint256 amount, address from, address to) = abi.decode(cbData, (Currency, uint256, address, address));
             emit LogString("after transfer from");
             _afterTransferFrom(c, amount, from, to);
@@ -252,13 +252,13 @@ contract ActionFuzzEntrypoint is
                 manager.sync(c);
                 
                 // manually reset remittances
-                if(!(c == CurrencyLibrary.NATIVE)){
+                if(!(c == CurrencyLibrary.ADDRESS_ZERO)){
                     RemittanceCurrency = c;
                     RemittanceAmount = 0;
                 }
 
                 uint256 amountOwed = uint256(-delta);
-                if( c == CurrencyLibrary.NATIVE) {
+                if( c == CurrencyLibrary.ADDRESS_ZERO) {
                     emit LogUint256("sending native tokens to manager:", amountOwed);
                     manager.settleFor{value: amountOwed}(actor);
                 } else {
@@ -267,7 +267,7 @@ contract ActionFuzzEntrypoint is
                     manager.settleFor(actor);
                 }
                 emit LogString("resetting remittance settleForshortcut");
-                RemittanceCurrency = CurrencyLibrary.NATIVE;
+                RemittanceCurrency = CurrencyLibrary.ADDRESS_ZERO;
                 RemittanceAmount = 0;
                 
 

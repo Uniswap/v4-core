@@ -13,7 +13,7 @@ import {CurrencyLibrary, Currency} from "src/types/Currency.sol";
 import {PropertiesAsserts} from "../PropertiesHelper.sol";
 import {SwapInfo, SwapInfoLibrary} from "./Lib.sol";
 import {PoolModifyLiquidityTest} from "src/test/PoolModifyLiquidityTest.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {IActor} from "./IActor.sol";
 import {BalanceDelta} from "src/types/BalanceDelta.sol";
 import {CurrencySettler} from "test/utils/CurrencySettler.sol";
@@ -79,9 +79,12 @@ contract LiquidityActor is PropertiesAsserts, PoolTestBase, IActor {
         // technically an invariant null-op since this function always creates new positions. Should also be verified in unlockCallback.
         assertGte(liqDelta + int256(lpPosition.liquidity), 0, "Removed more liquidity than was in the position");
 
-        lpPositions[poolId][salt] = LpPosition(poolKey, minTick, maxTick, manager.getPosition(
+        uint128 liquidity;
+        (liquidity, , ) = manager.getPositionInfo(
             poolId, address(this), minTick, maxTick, bytes32(salt)
-        ).liquidity, bytes32(salt));
+        );
+
+        lpPositions[poolId][salt] = LpPosition(poolKey, minTick, maxTick, liquidity, bytes32(salt));
     }
 
     function proxyApprove(Currency token, address spender) public {
@@ -102,14 +105,17 @@ contract LiquidityActor is PropertiesAsserts, PoolTestBase, IActor {
 
         CallbackData memory data = abi.decode(rawData, (CallbackData));
 
-        uint128 liquidityBefore = manager.getPosition(
+        uint128 liquidityBefore;
+        (liquidityBefore,,) = manager.getPositionInfo(
             data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper, data.params.salt
-        ).liquidity;
+        );
+
         (BalanceDelta delta,) = manager.modifyLiquidity(data.key, data.params, data.hookData);
 
-        uint128 liquidityAfter = manager.getPosition(
+        uint128 liquidityAfter;
+        (liquidityAfter,,)=manager.getPositionInfo(
             data.key.toId(), address(this), data.params.tickLower, data.params.tickUpper, data.params.salt
-        ).liquidity;
+        );
 
         (,, int256 delta0) = _fetchBalances(data.key.currency0, data.sender, address(this));
         (,, int256 delta1) = _fetchBalances(data.key.currency1, data.sender, address(this));

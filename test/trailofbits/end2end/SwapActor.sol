@@ -12,7 +12,7 @@ import {PoolKey} from "src/types/PoolKey.sol";
 import {CurrencyLibrary, Currency} from "src/types/Currency.sol";
 import {PropertiesAsserts} from "../PropertiesHelper.sol";
 import {PoolModifyLiquidityTest} from "src/test/PoolModifyLiquidityTest.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {IActor} from "./IActor.sol";
 import {BalanceDelta} from "src/types/BalanceDelta.sol";
 import {CurrencySettler} from "test/utils/CurrencySettler.sol";

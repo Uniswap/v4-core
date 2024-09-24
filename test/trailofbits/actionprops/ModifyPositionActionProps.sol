@@ -23,7 +23,7 @@ contract ModifyPositionActionProps is ActionFuzzBase {
     using StateLibrary for IPoolManager;
 
     struct ExistingPosition {
-        Position.Info positionInfo;
+        Position.State positionInfo;
     }
 
     PoolKey _modifyPoolKey;
@@ -42,27 +42,7 @@ contract ModifyPositionActionProps is ActionFuzzBase {
     uint256 _modifyFeesExpectedDelta1X128;
     uint128 _modifyLiquidityExpected;
 
-    Position.Info _modifyPositionInfoBefore;
-
-
-
     function addModifyPosition(uint8 poolIdx, int24 lowTick, int24 highTick, int128 liqDelta, uint256 salt) public {
-        // potential props: StateLibrary.getTickLiquidity
-        // StateLibrary.getLiquidity
-        // getPositionLiquidity
-
-
-        // getModifyPositionBefore
-        // snapshot liquidity of position
-        // snapshot liquidity of pool
-        // snapshot fees
-        // snapshot price
-        // snapshot tick
-
-
-
-        // getModifyPositionAfter
-        
         PoolKey memory pk = _clampToValidPool(poolIdx);
         
         (lowTick, highTick) = _clampToUsableTicks(lowTick, highTick, pk);
@@ -90,7 +70,7 @@ contract ModifyPositionActionProps is ActionFuzzBase {
             _modifyPoolKey.toId(),
             _modifySalt
         );
-        _modifyPositionInfoBefore = manager.getPosition(_modifyPoolKey.toId(), address(actionsRouter), _modifyLowTick, _modifyHighTick, _modifySalt);
+
         (_modifyFeesExpectedDelta0X128, _modifyFeesExpectedDelta1X128, _modifyLiquidityExpected) = _calculateExpectedFeeDelta(_modifyPoolKey.toId(), _modifyLiqDelta, _modifyLowTick, _modifyHighTick, address(actionsRouter), _modifySalt);
 
         _verifyGlobalProperties(address(actionsRouter), _modifyPoolKey.currency0);
@@ -170,26 +150,34 @@ contract ModifyPositionActionProps is ActionFuzzBase {
     }
 
     function _verifyStateLibraryGetterEquivalence() internal {
-        Position.Info memory positionInfo = manager.getPosition(_modifyPoolKey.toId(), address(actionsRouter), _modifyLowTick, _modifyHighTick, _modifySalt);
+        uint128 liquidityAfter;
+        uint256 feeGrowthInside0X128After;
+        uint256 feeGrowthInside1X128After;
 
+        (liquidityAfter, feeGrowthInside0X128After, feeGrowthInside1X128After) = manager.getPositionInfo(_modifyPoolKey.toId(), address(actionsRouter), _modifyLowTick, _modifyHighTick, _modifySalt);
+        
         bytes32 positionId = keccak256(abi.encodePacked(address(actionsRouter), _modifyLowTick, _modifyHighTick, _modifySalt));
         (uint128 positionLiq, uint256 positionFeeGrowth0, uint256 positionFeeGrowth1) = manager.getPositionInfo(
             _modifyPoolKey.toId(),
             positionId
         );
         // UNI-MODLIQ-1
-        assertEq(positionInfo.liquidity, positionLiq, "For a specific position, getPositionInfo must return the same liquidity as getPosition");
+        assertEq(liquidityAfter, positionLiq, "For a specific position, getPositionInfo must return the same liquidity as getPosition");
         // UNI-MODLIQ-2
-        assertEq(positionInfo.feeGrowthInside0LastX128, positionFeeGrowth0, "For a specific position, getPositionInfo must return the same feeGrowthInside0 as getPosition");
+        assertEq(feeGrowthInside0X128After, positionFeeGrowth0, "For a specific position, getPositionInfo must return the same feeGrowthInside0 as getPosition");
         // UNI-MODLIQ-3
-        assertEq(positionInfo.feeGrowthInside1LastX128, positionFeeGrowth1, "For a specific position, getPositionInfo must return the same feeGrowthInside1 as getPosition");
+        assertEq(feeGrowthInside1X128After, positionFeeGrowth1, "For a specific position, getPositionInfo must return the same feeGrowthInside1 as getPosition");
     }
 
-    function _calculateExpectedFeeDelta(PoolId poolId, int128 liqDelta, int24 lowTick, int24 highTick, address owner, bytes32 salt) internal view returns (uint256, uint256,uint128) {
+    function _calculateExpectedFeeDelta(PoolId poolId, int128 liqDelta, int24 lowTick, int24 highTick, address, bytes32) internal view returns (uint256, uint256,uint128) {
         (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) = manager.getFeeGrowthInside(poolId, lowTick, highTick);
-        Position.Info memory positionInfo = manager.getPosition(poolId, owner, lowTick, highTick, salt);
 
-        if (liqDelta == 0 && positionInfo.liquidity == 0) {
+        uint128 liquidityAfter;
+        uint256 feeGrowthInside0X128After;
+        uint256 feeGrowthInside1X128After;
+        (liquidityAfter, feeGrowthInside0X128After, feeGrowthInside1X128After) = manager.getPositionInfo(_modifyPoolKey.toId(), address(actionsRouter), _modifyLowTick, _modifyHighTick, _modifySalt);
+
+        if (liqDelta == 0 && liquidityAfter == 0) {
             // this isn't the place for checking properties
             return (0,0,0);
         }
@@ -197,9 +185,9 @@ contract ModifyPositionActionProps is ActionFuzzBase {
         // doing this outside yul will let us indirectly check their LiquidityMath.addDelta
         uint128 liquidityExpected;
         if(liqDelta > 0) {
-            liquidityExpected = positionInfo.liquidity + uint128(liqDelta);
+            liquidityExpected = liquidityAfter+ uint128(liqDelta);
         } else {
-            liquidityExpected = positionInfo.liquidity - uint128(-liqDelta);
+            liquidityExpected = liquidityAfter- uint128(-liqDelta);
         }
 
         uint256 feesOwed0;
@@ -207,9 +195,9 @@ contract ModifyPositionActionProps is ActionFuzzBase {
 
         unchecked {
             feesOwed0 =
-                FullMath.mulDiv(feeGrowthInside0X128 - positionInfo.feeGrowthInside0LastX128, positionInfo.liquidity, FixedPoint128.Q128);
+                FullMath.mulDiv(feeGrowthInside0X128 - feeGrowthInside0X128After, liquidityAfter, FixedPoint128.Q128);
             feesOwed1 =
-                FullMath.mulDiv(feeGrowthInside1X128 - positionInfo.feeGrowthInside1LastX128, positionInfo.liquidity, FixedPoint128.Q128);
+                FullMath.mulDiv(feeGrowthInside1X128 - feeGrowthInside1X128After, liquidityAfter, FixedPoint128.Q128);
         }
 
         return (feesOwed0, feesOwed1, liquidityExpected);

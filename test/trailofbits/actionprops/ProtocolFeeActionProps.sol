@@ -17,6 +17,10 @@ import {FullMath} from "src/libraries//FullMath.sol";
 import {IProtocolFeeController} from "src/interfaces/IProtocolFeeController.sol";
 import {ProtocolFeeLibrary} from "src/libraries/ProtocolFeeLibrary.sol";
 
+
+/// @notice This set of properties was written before protocol fee collection was modified to only work while the
+// singleton is locked, addressing TOB-UNI4-3. To re-enable these properties, this contract needs to be refactored to only run fee collection
+// while the singleton is locked.
 contract ProtocolFeeActionProps is ActionFuzzBase {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;

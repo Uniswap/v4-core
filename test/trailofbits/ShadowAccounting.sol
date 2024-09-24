@@ -48,13 +48,13 @@ contract ShadowAccounting is PropertiesAsserts, Deployers {
     int256 OutstandingDeltas;
 
     // Used to track remittances for settle() properties.
-    Currency RemittanceCurrency = CurrencyLibrary.NATIVE;
+    Currency RemittanceCurrency = CurrencyLibrary.ADDRESS_ZERO;
     // Any code that transfers currency between the actor and the pool manager should update this.
     int256 RemittanceAmount;
 
     // This should only be called when we expect transient storage to be cleared, ex: after a transaction terminates.
     function _clearTransientRemittances() internal {
-        RemittanceCurrency = CurrencyLibrary.NATIVE;
+        RemittanceCurrency = CurrencyLibrary.ADDRESS_ZERO;
         RemittanceAmount = 0;
     }  
 

@@ -55,6 +55,24 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
         int24 tickUpper;
     }
 
+    struct SwapState{
+        int256 amountSpecifiedRemaining;
+        int256 amountCalculated;
+        uint160 sqrtPriceX96;
+        int24 tick;
+        uint256 feeGrowthGlobalX128;
+        uint128 liquidity;
+    }
+
+    struct SwapParams {
+        int24 tickSpacing;
+        bool zeroForOne;
+        int256 amountSpecified;
+        uint160 sqrtPriceLimitX96;
+        uint24 lpFeeOverride;
+    }
+ 
+
     // This is used for storing the tickBitmap for all pools. It is deleted and rebuilt before every simulation.
     mapping(int16 => uint256) private TickBitmapProxy;
     // Used for deleting the TickBitmapProxy mapping
@@ -87,7 +105,7 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
             feeGrowthGlobalX128 = zeroForOne ? feeGrowthGlobal0X128 : feeGrowthGlobal1X128;
         }
 
-        Pool.SwapState memory state;
+        SwapState memory state;
         uint160 curPrice;
         uint24 swapFee;
         uint24 protocolFee;
@@ -140,7 +158,7 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
         }
 
         // pack into a swapinfo to save stack
-        Pool.SwapParams memory swapInfo = Pool.SwapParams(
+        SwapParams memory swapInfo = SwapParams(
             pool.tickSpacing,
             zeroForOne,
             amount,
@@ -152,7 +170,7 @@ contract V4StateMachine is PropertiesAsserts, Deployers {
 
 
     /// @notice Continuation of _calculateExpectedLPAndProtocolFees. Needed to save stack space.
-    function _calculateSteps( Pool.SwapParams memory params, Pool.SwapState memory state, uint24 swapFee, int24 tickSpacing, uint24 protocolFee) private view returns (uint256, uint256) {
+    function _calculateSteps( SwapParams memory params, SwapState memory state, uint24 swapFee, int24 tickSpacing, uint24 protocolFee) private view returns (uint256, uint256) {
        Pool.StepComputations memory step;
        bool exactInput = params.amountSpecified < 0;
        uint256 feeForProtocol;

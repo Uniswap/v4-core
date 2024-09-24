@@ -86,7 +86,7 @@ contract SettleActionProps is ActionFuzzBase {
 
         _addToActorsCredits(_settleActor, _settleReserveCurrency, paid);
         _verifyGlobalProperties(_settleActor, _settleReserveCurrency);
-        RemittanceCurrency = CurrencyLibrary.NATIVE;
+        RemittanceCurrency = CurrencyLibrary.ADDRESS_ZERO;
     }      
 
 

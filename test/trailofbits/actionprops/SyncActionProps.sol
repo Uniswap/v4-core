@@ -48,7 +48,7 @@ contract SyncActionProps is ActionFuzzBase {
     }
 
     function _afterSync() internal {
-        if(!(_syncCurrency == CurrencyLibrary.NATIVE)){
+        if(!(_syncCurrency == CurrencyLibrary.ADDRESS_ZERO)){
             RemittanceCurrency = _syncCurrency;
             RemittanceAmount = 0;
         }

@@ -49,12 +49,12 @@ contract SettleNativeActionProps is ActionFuzzBase {
         // transfer currency to actionsRouter
         payable(address(actionsRouter)).transfer(_settleNativeAmount);
 
-        _verifyGlobalProperties(_settleNativeActor, CurrencyLibrary.NATIVE);
+        _verifyGlobalProperties(_settleNativeActor, CurrencyLibrary.ADDRESS_ZERO);
     }
 
     function _afterSettleNative(uint256 paid) internal {
-        _verifyGlobalProperties(_settleNativeActor, CurrencyLibrary.NATIVE);
-        _addToActorsCredits(_settleNativeActor, CurrencyLibrary.NATIVE, paid);
+        _verifyGlobalProperties(_settleNativeActor, CurrencyLibrary.ADDRESS_ZERO);
+        _addToActorsCredits(_settleNativeActor, CurrencyLibrary.ADDRESS_ZERO, paid);
         
 
     }      

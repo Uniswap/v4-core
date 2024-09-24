@@ -255,6 +255,8 @@ contract ActionsHarness_Test is Test {
 
     }
 
+    /*
+    Protocol fee collection properties are disabled due to the fixes from TOB-UNI4-3
     function test_fee_miscalculation_regression() public {
         target.addTargetedPool(1,0,0,99);
         target.addModifyPositionAndRunActions(0,0,-1,934735867213017,13541478287070347540639706863682772478921284014365313132303827141936693186);
@@ -268,7 +270,8 @@ contract ActionsHarness_Test is Test {
         target.addSetNewProtocolFee(0,1);
         target.addSwapAndRunActions(0,33216723,true);
     }
-
+    */
+    
     function test_shadowaccounting_regression_2() public {
         target.addTargetedPool(1,0,0,1);
         target.addModifyPositionAndRunActions(0,-1001,-161,1478484426,115792089237316195423570985008687907853269984665640564039457584007913129637888);

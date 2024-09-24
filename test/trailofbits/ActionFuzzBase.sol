@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Base.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 
 import {IPoolManager} from "src/interfaces/IPoolManager.sol";
 
@@ -14,8 +15,9 @@ import {StateLibrary} from "src/libraries/StateLibrary.sol";
 import {TickMath} from "src/libraries/TickMath.sol";
 import {TransientStateLibrary} from "src/libraries/TransientStateLibrary.sol";
 
-import {Actions, ActionsRouter} from "src/test/ActionsRouter.sol";
+import {Actions, ActionsRouter, ActionsRouterNoGasMeasurement} from "src/test/ActionsRouter.sol";
 import {Deployers} from "test/utils/Deployers.sol";
+import {ProtocolFeeControllerTest} from "src/test/ProtocolFeeControllerTest.sol";
 import {PropertiesAsserts} from "test/trailofbits/PropertiesHelper.sol";
 import {V4StateMachine} from "test/trailofbits/V4StateMachine.sol";
 import {ShadowAccounting} from "test/trailofbits/ShadowAccounting.sol";
@@ -72,14 +74,22 @@ contract ActionFuzzBase is V4StateMachine, ShadowAccounting, ScriptBase {
     uint public NUMBER_CURRENCIES = 6;
 
     constructor() payable {
-        Deployers.deployFreshManagerAndRouters();
+        deployFreshManager();
+        // manually instantiate actionsRouter with the one that doesn't measure gas.
+        actionsRouter = ActionsRouter(payable(address(new ActionsRouterNoGasMeasurement(manager))));
+        feeController = new ProtocolFeeControllerTest();
+        manager.setProtocolFeeController(feeController);
+
         // Initialize currencies
         for (uint i = 0; i < NUMBER_CURRENCIES; i++) {
             // we place the native currency at the end of our currencies array to protect the existing corpus.
             if (i == NUMBER_CURRENCIES-1) {
-                Currencies.push(CurrencyLibrary.NATIVE);
+                Currencies.push(CurrencyLibrary.ADDRESS_ZERO);
             } else {
-                Currency c = deployMintAndApproveCurrency();
+                MockERC20 token = deployTokens(1, 2 ** 255)[0];
+                token.approve(address(actionsRouter), type(uint256).max);
+
+                Currency c = Currency.wrap(address(token));
                 Currencies.push(c);
             }
         }
