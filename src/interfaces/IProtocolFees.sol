@@ -18,6 +18,8 @@ interface IProtocolFees {
     /// @notice Thrown when collectProtocolFees or setProtocolFee is not called by the controller.
     error InvalidCaller();
 
+    error ProtocolFeeCurrencySynced();
+
     /// @notice Emitted when the protocol fee controller address is updated in setProtocolFeeController.
     event ProtocolFeeControllerUpdated(address indexed protocolFeeController);
 
