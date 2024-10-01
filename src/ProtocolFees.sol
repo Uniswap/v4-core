@@ -54,7 +54,9 @@ abstract contract ProtocolFees is IProtocolFees, Owned {
     {
         if (msg.sender != address(protocolFeeController)) InvalidCaller.selector.revertWith();
         if (_isUnlocked()) ContractUnlocked.selector.revertWith();
-        if (!currency.isAddressZero() && CurrencyReserves.getSyncedCurrency() == currency) ProtocolFeeCurrencySynced.selector.revertWith();
+        if (!currency.isAddressZero() && CurrencyReserves.getSyncedCurrency() == currency) {
+            ProtocolFeeCurrencySynced.selector.revertWith();
+        }
 
         amountCollected = (amount == 0) ? protocolFeesAccrued[currency] : amount;
         protocolFeesAccrued[currency] -= amountCollected;
