@@ -7,6 +7,9 @@ pragma solidity ^0.8.0;
 /// `CustomError.selector.revertWith()`
 /// @dev The functions may tamper with the free memory pointer but it is fine since the call context is exited immediately
 library CustomRevert {
+    /// @dev ERC-7751 error for wrapping bubbled up reverts
+    error WrappedError(address target, bytes4 selector, bytes reason, bytes details);
+
     /// @dev Reverts with the selector of a custom error in the scratch space
     function revertWith(bytes4 selector) internal pure {
         assembly ("memory-safe") {
@@ -75,23 +78,33 @@ library CustomRevert {
         }
     }
 
-    /// @notice bubble up the revert message returned by a call and revert with the selector provided
-    /// @dev this function should only be used with custom errors of the type `CustomError(address target, bytes revertReason)`
-    function bubbleUpAndRevertWith(bytes4 selector, address addr) internal pure {
+    /// @notice bubble up the revert message returned by a call and revert with a wrapped ERC-7751 error
+    function bubbleUpAndRevertWith(address target, bytes4 functionSelector, bytes4 additionalContext) internal pure {
+        bytes4 wrappedErrorSelector = WrappedError.selector;
         assembly ("memory-safe") {
             let size := returndatasize()
+            // Ensure the size of the revert data is a multiple of 32 bytes
+            let encodedDataSize := mul(div(add(size, 31), 32), 32)
+
             let fmp := mload(0x40)
 
-            // Encode selector, address, offset, size, data
-            mstore(fmp, selector)
-            mstore(add(fmp, 0x04), addr)
-            mstore(add(fmp, 0x24), 0x40)
-            mstore(add(fmp, 0x44), size)
-            returndatacopy(add(fmp, 0x64), 0, size)
-
-            // Ensure the size is a multiple of 32 bytes
-            let encodedSize := add(0x64, mul(div(add(size, 31), 32), 32))
-            revert(fmp, encodedSize)
+            // Encode wrapped error selector, address, function selector, offset, additional context, size, revert reason
+            mstore(fmp, wrappedErrorSelector)
+            mstore(add(fmp, 0x04), target)
+            mstore(add(fmp, 0x24), functionSelector)
+            // offset revert reason
+            mstore(add(fmp, 0x44), 0x80)
+            // offset additional context
+            mstore(add(fmp, 0x64), add(0xa0, encodedDataSize))
+            // size revert reason
+            mstore(add(fmp, 0x84), size)
+            // revert reason
+            returndatacopy(add(fmp, 0xa4), 0, size)
+            // size additional context
+            mstore(add(fmp, add(0xa4, encodedDataSize)), 0x04)
+            // additional context
+            mstore(add(fmp, add(0xc4, encodedDataSize)), additionalContext)
+            revert(fmp, add(0xe4, encodedDataSize))
         }
     }
 }

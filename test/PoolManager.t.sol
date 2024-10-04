@@ -33,6 +33,7 @@ import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {Actions} from "../src/test/ActionsRouter.sol";
+import {CustomRevert} from "../src/libraries/CustomRevert.sol";
 
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -931,7 +932,11 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         (uint256 amount0, uint256 amount1) = currency0Invalid ? (1, 0) : (0, 1);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CurrencyLibrary.Wrap__ERC20TransferFailed.selector, invalidToken, abi.encode(bytes32(0))
+                CustomRevert.WrappedError.selector,
+                address(invalidToken),
+                TestInvalidERC20.transfer.selector,
+                abi.encode(bytes32(0)),
+                abi.encodeWithSelector(CurrencyLibrary.ERC20TransferFailed.selector)
             )
         );
         takeRouter.take(key, amount0, amount1);

@@ -7,6 +7,7 @@ import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 import {Currency, CurrencyLibrary} from "../../src/types/Currency.sol";
 import {CurrencyTest} from "../../src/test/CurrencyTest.sol";
 import {EmptyRevertContract} from "../../src/test/EmptyRevertContract.sol";
+import {CustomRevert} from "../../src/libraries/CustomRevert.sol";
 
 contract TestCurrency is Test {
     uint256 constant initialERC20Balance = 1000 ether;
@@ -123,9 +124,11 @@ contract TestCurrency is Test {
         // the token reverts with no data, so our custom error will be emitted instead
         vm.expectRevert(
             abi.encodeWithSelector(
-                CurrencyLibrary.Wrap__ERC20TransferFailed.selector,
-                Currency.unwrap(Currency.wrap(address(emptyRevertingToken))),
-                new bytes(0)
+                CustomRevert.WrappedError.selector,
+                address(emptyRevertingToken),
+                bytes4(0xa9059cbb),
+                "",
+                abi.encodeWithSelector(CurrencyLibrary.ERC20TransferFailed.selector)
             )
         );
         currencyTest.transfer(Currency.wrap(address(emptyRevertingToken)), otherAddress, 100);
@@ -141,7 +144,13 @@ contract TestCurrency is Test {
             assertEq(address(currencyTest).balance, contractBalanceBefore - amount);
         } else {
             vm.expectRevert(
-                abi.encodeWithSelector(CurrencyLibrary.Wrap__NativeTransferFailed.selector, otherAddress, new bytes(0))
+                abi.encodeWithSelector(
+                    CustomRevert.WrappedError.selector,
+                    otherAddress,
+                    bytes4(0),
+                    new bytes(0),
+                    abi.encodeWithSelector(CurrencyLibrary.NativeTransferFailed.selector)
+                )
             );
             currencyTest.transfer(nativeCurrency, otherAddress, amount);
             assertEq(otherAddress.balance, balanceBefore);
@@ -161,9 +170,11 @@ contract TestCurrency is Test {
             // the token reverts with an overflow error message, so this is bubbled up
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    CurrencyLibrary.Wrap__ERC20TransferFailed.selector,
+                    CustomRevert.WrappedError.selector,
                     Currency.unwrap(erc20Currency),
-                    stdError.arithmeticError
+                    bytes4(0xa9059cbb),
+                    stdError.arithmeticError,
+                    abi.encodeWithSelector(CurrencyLibrary.ERC20TransferFailed.selector)
                 )
             );
             currencyTest.transfer(erc20Currency, otherAddress, amount);

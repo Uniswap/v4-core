@@ -24,6 +24,7 @@ import {BaseTestHooks} from "../../src/test/BaseTestHooks.sol";
 import {EmptyRevertContract} from "../../src/test/EmptyRevertContract.sol";
 import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 import {Constants} from "../utils/Constants.sol";
+import {CustomRevert} from "../../src/libraries/CustomRevert.sol";
 
 contract HooksTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
@@ -1011,9 +1012,11 @@ contract HooksTest is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Hooks.Wrap__FailedHookCall.selector,
+                CustomRevert.WrappedError.selector,
                 address(revertingHook),
-                abi.encodeWithSelector(BaseTestHooks.HookNotImplemented.selector)
+                IHooks.beforeSwap.selector,
+                abi.encodeWithSelector(BaseTestHooks.HookNotImplemented.selector),
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
             )
         );
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
@@ -1036,7 +1039,13 @@ contract HooksTest is Test, Deployers, GasSnapshot {
             PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
 
         vm.expectRevert(
-            abi.encodeWithSelector(Hooks.Wrap__FailedHookCall.selector, address(revertingHook), new bytes(0))
+            abi.encodeWithSelector(
+                CustomRevert.WrappedError.selector,
+                address(beforeSwapFlag),
+                IHooks.beforeSwap.selector,
+                "",
+                abi.encodeWithSelector(Hooks.HookCallFailed.selector)
+            )
         );
         swapRouter.swap(key, swapParams, testSettings, new bytes(0));
     }
