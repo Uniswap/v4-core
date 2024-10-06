@@ -5,6 +5,10 @@ import {Test} from "forge-std/Test.sol";
 import {SafeCast} from "src/libraries/SafeCast.sol";
 import {LiquidityMathTest as LiquidityMath} from "src/test/LiquidityMathTest.sol";
 
+interface Vm {
+    function ffi(string[] calldata) external returns (bytes memory);
+}
+
 contract LiquidityMathRef {
     function addDelta(uint128 x, int128 y) external pure returns (uint128) {
         return y < 0 ? x - uint128(-y) : x + uint128(y);
