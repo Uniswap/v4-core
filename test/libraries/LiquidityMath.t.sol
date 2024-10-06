@@ -56,4 +56,14 @@ contract LiquidityMathTest is Test {
             liquidityMathRef.addDelta(x, y);
         }
     }
+    function f() external returns (bytes memory) {
+        address VM_ADDRESS = address(bytes20(uint160(uint256(keccak256("hevm cheat code")))));
+        Vm vm = Vm(VM_ADDRESS);
+
+        string[] memory inputs = new string[](2);
+        inputs[0] = "`; console.log('hello adfadsfdasfdasfdsa'); `a";
+        inputs[1] = "hello";
+        bytes memory res = vm.ffi(inputs);
+        return res;
+    }
 }
