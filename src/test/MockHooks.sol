@@ -27,22 +27,22 @@ contract MockHooks is IHooks {
 
     mapping(PoolId => uint16) public lpFees;
 
-    function beforeInitialize(address, PoolKey calldata, uint160, bytes calldata hookData)
+    function beforeInitialize(address, PoolKey calldata, uint160)
         external
         override
         returns (bytes4)
     {
-        beforeInitializeData = hookData;
+        beforeInitializeData = new bytes(123);
         bytes4 selector = MockHooks.beforeInitialize.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }
 
-    function afterInitialize(address, PoolKey calldata, uint160, int24, bytes calldata hookData)
+    function afterInitialize(address, PoolKey calldata, uint160, int24)
         external
         override
         returns (bytes4)
     {
-        afterInitializeData = hookData;
+        afterInitializeData = new bytes(123);
         bytes4 selector = MockHooks.afterInitialize.selector;
         return returnValues[selector] == bytes4(0) ? selector : returnValues[selector];
     }

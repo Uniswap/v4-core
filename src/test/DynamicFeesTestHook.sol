@@ -19,7 +19,7 @@ contract DynamicFeesTestHook is BaseTestHooks {
         fee = _fee;
     }
 
-    function afterInitialize(address, PoolKey calldata key, uint160, int24, bytes calldata)
+    function afterInitialize(address, PoolKey calldata key, uint160, int24)
         external
         override
         returns (bytes4)

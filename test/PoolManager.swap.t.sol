@@ -41,7 +41,7 @@ abstract contract V3Fuzzer is V3Helper, Deployers, Fuzzers, IUniswapV3MintCallba
         v3Pool.initialize(sqrtPriceX96);
 
         key_ = PoolKey(currency0, currency1, fee, tickSpacing, IHooks(address(0)));
-        manager.initialize(key_, sqrtPriceX96, "");
+        manager.initialize(key_, sqrtPriceX96);
     }
 
     function addLiquidity(

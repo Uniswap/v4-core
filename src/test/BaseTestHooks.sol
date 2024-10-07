@@ -13,8 +13,7 @@ contract BaseTestHooks is IHooks {
     function beforeInitialize(
         address, /* sender **/
         PoolKey calldata, /* key **/
-        uint160, /* sqrtPriceX96 **/
-        bytes calldata /* hookData **/
+        uint160 /* sqrtPriceX96 **/
     ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }
@@ -23,8 +22,7 @@ contract BaseTestHooks is IHooks {
         address, /* sender **/
         PoolKey calldata, /* key **/
         uint160, /* sqrtPriceX96 **/
-        int24, /* tick **/
-        bytes calldata /* hookData **/
+        int24 /* tick **/
     ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }

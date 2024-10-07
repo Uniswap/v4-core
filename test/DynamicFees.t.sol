@@ -62,8 +62,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             currency1,
             IHooks(address(dynamicFeesHooks)),
             LPFeeLibrary.DYNAMIC_FEE_FLAG,
-            SQRT_PRICE_1_1,
-            ZERO_BYTES
+            SQRT_PRICE_1_1
         );
     }
 
@@ -79,7 +78,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
                 abi.encodeWithSelector(LPFeeLibrary.LPFeeTooLarge.selector, fee)
             )
         );
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
     }
 
     function test_initialize_initializesFeeTo0() public {
@@ -88,7 +87,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         // this fee is not fetched as theres no afterInitialize hook
         dynamicFeesNoHooks.setFee(1000000);
 
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
         assertEq(_fetchPoolLPFee(key), 0);
     }
 
@@ -96,7 +95,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
         key.tickSpacing = 30;
         dynamicFeesHooks.setFee(123);
 
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
         assertEq(_fetchPoolLPFee(key), 123);
     }
 
@@ -117,7 +116,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
                 abi.encodeWithSelector(IPoolManager.UnauthorizedDynamicLPFeeUpdate.selector)
             )
         );
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
     }
 
     function test_updateDynamicLPFee_beforeSwap_failsWithTooLargeFee() public {
@@ -318,7 +317,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
     function test_swap_withDynamicFee_gas() public {
         (key,) = initPoolAndAddLiquidity(
-            currency0, currency1, dynamicFeesNoHooks, LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1, ZERO_BYTES
+            currency0, currency1, dynamicFeesNoHooks, LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1
         );
 
         assertEq(_fetchPoolLPFee(key), 0);
