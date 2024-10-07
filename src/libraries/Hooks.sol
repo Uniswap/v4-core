@@ -69,9 +69,8 @@ library Hooks {
     /// @notice Hook did not return its selector
     error InvalidHookResponse();
 
-    /// @notice thrown when a hook call fails
-    /// @param revertReason bubbled up revert reason
-    error Wrap__FailedHookCall(address hook, bytes revertReason);
+    /// @notice Additional context for ERC-7751 wrapped error when a hook call fails
+    error HookCallFailed();
 
     /// @notice The hook's delta changed the swap from exactIn to exactOut or vice versa
     error HookDeltaExceedsSwapAmount();
@@ -134,7 +133,7 @@ library Hooks {
             success := call(gas(), self, 0, add(data, 0x20), mload(data), 0, 0)
         }
         // Revert with FailedHookCall, containing any error message to bubble up
-        if (!success) Wrap__FailedHookCall.selector.bubbleUpAndRevertWith(address(self));
+        if (!success) CustomRevert.bubbleUpAndRevertWith(address(self), bytes4(data), HookCallFailed.selector);
 
         // The call was successful, fetch the returned data
         assembly ("memory-safe") {
