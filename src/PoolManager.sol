@@ -112,11 +112,7 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
     }
 
     /// @inheritdoc IPoolManager
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
-        external
-        noDelegateCall
-        returns (int24 tick)
-    {
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external noDelegateCall returns (int24 tick) {
         // see TickBitmap.sol for overflow conditions that can arise from tick spacing being too large
         if (key.tickSpacing > MAX_TICK_SPACING) TickSpacingTooLarge.selector.revertWith(key.tickSpacing);
         if (key.tickSpacing < MIN_TICK_SPACING) TickSpacingTooSmall.selector.revertWith(key.tickSpacing);
@@ -129,14 +125,14 @@ contract PoolManager is IPoolManager, ProtocolFees, NoDelegateCall, ERC6909Claim
 
         uint24 lpFee = key.fee.getInitialLPFee();
 
-        key.hooks.beforeInitialize(key, sqrtPriceX96, hookData);
+        key.hooks.beforeInitialize(key, sqrtPriceX96);
 
         PoolId id = key.toId();
         uint24 protocolFee = _fetchProtocolFee(key);
 
         tick = _pools[id].initialize(sqrtPriceX96, protocolFee, lpFee);
 
-        key.hooks.afterInitialize(key, sqrtPriceX96, tick, hookData);
+        key.hooks.afterInitialize(key, sqrtPriceX96, tick);
 
         // emit all details of a pool key. poolkeys are not saved in storage and must always be provided by the caller
         // the key's fee may be a static fee or a sentinel to denote a dynamic fee.

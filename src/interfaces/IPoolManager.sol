@@ -116,11 +116,8 @@ interface IPoolManager is IProtocolFees, IERC6909Claims, IExtsload, IExttload {
     /// @dev A swap fee totaling MAX_SWAP_FEE (100%) makes exact output swaps impossible since the input is entirely consumed by the fee
     /// @param key The pool key for the pool to initialize
     /// @param sqrtPriceX96 The initial square root price
-    /// @param hookData The data to pass through to the initialize hooks
     /// @return tick The initial tick of the pool
-    function initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
-        external
-        returns (int24 tick);
+    function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
 
     struct ModifyLiquidityParams {
         // the lower and upper tick of the position
