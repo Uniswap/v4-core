@@ -154,13 +154,10 @@ contract Deployers {
         }
     }
 
-    function initPool(
-        Currency _currency0,
-        Currency _currency1,
-        IHooks hooks,
-        uint24 fee,
-        uint160 sqrtPriceX96
-    ) internal returns (PoolKey memory _key, PoolId id) {
+    function initPool(Currency _currency0, Currency _currency1, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
+        internal
+        returns (PoolKey memory _key, PoolId id)
+    {
         _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = _key.toId();
         manager.initialize(_key, sqrtPriceX96);
@@ -209,9 +206,8 @@ contract Deployers {
         deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1);
         nestedActionRouter.executor().setKey(key);
-        (nativeKey,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.ADDRESS_ZERO, currency1, hooks, 3000, SQRT_PRICE_1_1, 1 ether
-        );
+        (nativeKey,) =
+            initPoolAndAddLiquidityETH(CurrencyLibrary.ADDRESS_ZERO, currency1, hooks, 3000, SQRT_PRICE_1_1, 1 ether);
         uninitializedKey = key;
         uninitializedNativeKey = nativeKey;
         uninitializedKey.fee = 100;

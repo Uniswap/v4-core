@@ -58,11 +58,7 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(
-            currency0,
-            currency1,
-            IHooks(address(dynamicFeesHooks)),
-            LPFeeLibrary.DYNAMIC_FEE_FLAG,
-            SQRT_PRICE_1_1
+            currency0, currency1, IHooks(address(dynamicFeesHooks)), LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1
         );
     }
 

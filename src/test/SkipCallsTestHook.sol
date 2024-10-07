@@ -27,11 +27,7 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         manager = _manager;
     }
 
-    function beforeInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96)
-        external
-        override
-        returns (bytes4)
-    {
+    function beforeInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96) external override returns (bytes4) {
         counter++;
         _initialize(key, sqrtPriceX96);
         return IHooks.beforeInitialize.selector;

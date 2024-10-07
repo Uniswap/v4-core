@@ -72,9 +72,8 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     // Static edge case, no fuzz test, to make sure we test max tickspacing.
     function test_ffi_addLiqudity_weirdPool_0_returnsCorrectLiquidityDelta() public {
         // Use a pool with TickSpacing of MAX_TICK_SPACING
-        (PoolKey memory wp0, PoolId wpId0) = initPool(
-            currency0, currency1, IHooks(address(0)), 500, TickMath.MAX_TICK_SPACING, SQRT_PRICE_1_1
-        );
+        (PoolKey memory wp0, PoolId wpId0) =
+            initPool(currency0, currency1, IHooks(address(0)), 500, TickMath.MAX_TICK_SPACING, SQRT_PRICE_1_1);
 
         // Set the params to add random amount of liquidity to random tick boundary.
         int24 tickUpper = TickMath.MAX_TICK_SPACING * 4;
@@ -97,9 +96,8 @@ contract ModifyLiquidityTest is Test, Logger, Deployers, JavascriptFfi, Fuzzers,
     // Static edge case, no fuzz test, to make sure we test min tick spacing.
     function test_ffi_addLiqudity_weirdPool_1_returnsCorrectLiquidityDelta() public {
         // Use a pool with TickSpacing of MIN_TICK_SPACING
-        (PoolKey memory wp0, PoolId wpId0) = initPool(
-            currency0, currency1, IHooks(address(0)), 551, TickMath.MIN_TICK_SPACING, SQRT_PRICE_1_1
-        );
+        (PoolKey memory wp0, PoolId wpId0) =
+            initPool(currency0, currency1, IHooks(address(0)), 551, TickMath.MIN_TICK_SPACING, SQRT_PRICE_1_1);
 
         // Set the params to add random amount of liquidity to random tick boundary.
         int24 tickUpper = TickMath.MIN_TICK_SPACING * 17;

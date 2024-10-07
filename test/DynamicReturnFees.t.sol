@@ -49,11 +49,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
         deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(
-            currency0,
-            currency1,
-            IHooks(address(dynamicReturnFeesHook)),
-            LPFeeLibrary.DYNAMIC_FEE_FLAG,
-            SQRT_PRICE_1_1
+            currency0, currency1, IHooks(address(dynamicReturnFeesHook)), LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1
         );
     }
 
@@ -114,9 +110,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         key.fee = 3000; // static fee
         dynamicReturnFeesHook.setFee(1000); // 0.10% fee is NOT used because the pool has a static fee
 
-        initPoolAndAddLiquidity(
-            currency0, currency1, IHooks(address(dynamicReturnFeesHook)), 3000, SQRT_PRICE_1_1
-        );
+        initPoolAndAddLiquidity(currency0, currency1, IHooks(address(dynamicReturnFeesHook)), 3000, SQRT_PRICE_1_1);
         assertEq(_fetchPoolSwapFee(key), 3000);
 
         // despite returning a valid swap fee (1000), the static fee is used
