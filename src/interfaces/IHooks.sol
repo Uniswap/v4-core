@@ -17,7 +17,7 @@ interface IHooks {
     /// @param sender The initial msg.sender for the initialize call
     /// @param key The key for the pool being initialized
     /// @param sqrtPriceX96 The sqrt(price) of the pool as a Q64.96
-    /// @param hookData Arbitrary data handed into the PoolManager by the initializer to be be passed on to the hook
+    /// @param hookData Arbitrary data handed into the PoolManager by the initializer to be passed on to the hook
     /// @return bytes4 The function selector for the hook
     function beforeInitialize(address sender, PoolKey calldata key, uint160 sqrtPriceX96, bytes calldata hookData)
         external
