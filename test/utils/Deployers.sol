@@ -140,17 +140,13 @@ contract Deployers {
         }
     }
 
-    function initPool(
-        Currency _currency0,
-        Currency _currency1,
-        IHooks hooks,
-        uint24 fee,
-        uint160 sqrtPriceX96,
-        bytes memory initData
-    ) internal returns (PoolKey memory _key, PoolId id) {
+    function initPool(Currency _currency0, Currency _currency1, IHooks hooks, uint24 fee, uint160 sqrtPriceX96)
+        internal
+        returns (PoolKey memory _key, PoolId id)
+    {
         _key = PoolKey(_currency0, _currency1, fee, fee.isDynamicFee() ? int24(60) : int24(fee / 100 * 2), hooks);
         id = _key.toId();
-        manager.initialize(_key, sqrtPriceX96, initData);
+        manager.initialize(_key, sqrtPriceX96);
     }
 
     function initPool(
@@ -159,12 +155,11 @@ contract Deployers {
         IHooks hooks,
         uint24 fee,
         int24 tickSpacing,
-        uint160 sqrtPriceX96,
-        bytes memory initData
+        uint160 sqrtPriceX96
     ) internal returns (PoolKey memory _key, PoolId id) {
         _key = PoolKey(_currency0, _currency1, fee, tickSpacing, hooks);
         id = _key.toId();
-        manager.initialize(_key, sqrtPriceX96, initData);
+        manager.initialize(_key, sqrtPriceX96);
     }
 
     function initPoolAndAddLiquidity(
@@ -172,10 +167,9 @@ contract Deployers {
         Currency _currency1,
         IHooks hooks,
         uint24 fee,
-        uint160 sqrtPriceX96,
-        bytes memory initData
+        uint160 sqrtPriceX96
     ) internal returns (PoolKey memory _key, PoolId id) {
-        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
+        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96);
         modifyLiquidityRouter.modifyLiquidity{value: msg.value}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
@@ -185,10 +179,9 @@ contract Deployers {
         IHooks hooks,
         uint24 fee,
         uint160 sqrtPriceX96,
-        bytes memory initData,
         uint256 msgValue
     ) internal returns (PoolKey memory _key, PoolId id) {
-        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96, initData);
+        (_key, id) = initPool(_currency0, _currency1, hooks, fee, sqrtPriceX96);
         modifyLiquidityRouter.modifyLiquidity{value: msgValue}(_key, LIQUIDITY_PARAMS, ZERO_BYTES);
     }
 
@@ -197,11 +190,10 @@ contract Deployers {
         deployFreshManagerAndRouters();
         // sets the global currencies and key
         deployMintAndApprove2Currencies();
-        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES);
+        (key,) = initPoolAndAddLiquidity(currency0, currency1, hooks, 3000, SQRT_PRICE_1_1);
         nestedActionRouter.executor().setKey(key);
-        (nativeKey,) = initPoolAndAddLiquidityETH(
-            CurrencyLibrary.ADDRESS_ZERO, currency1, hooks, 3000, SQRT_PRICE_1_1, ZERO_BYTES, 1 ether
-        );
+        (nativeKey,) =
+            initPoolAndAddLiquidityETH(CurrencyLibrary.ADDRESS_ZERO, currency1, hooks, 3000, SQRT_PRICE_1_1, 1 ether);
         uninitializedKey = key;
         uninitializedNativeKey = nativeKey;
         uninitializedKey.fee = 100;

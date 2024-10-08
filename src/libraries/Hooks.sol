@@ -175,22 +175,19 @@ library Hooks {
     }
 
     /// @notice calls beforeInitialize hook if permissioned and validates return value
-    function beforeInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
-        internal
-        noSelfCall(self)
-    {
+    function beforeInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96) internal noSelfCall(self) {
         if (self.hasPermission(BEFORE_INITIALIZE_FLAG)) {
-            self.callHook(abi.encodeCall(IHooks.beforeInitialize, (msg.sender, key, sqrtPriceX96, hookData)));
+            self.callHook(abi.encodeCall(IHooks.beforeInitialize, (msg.sender, key, sqrtPriceX96)));
         }
     }
 
     /// @notice calls afterInitialize hook if permissioned and validates return value
-    function afterInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, int24 tick, bytes calldata hookData)
+    function afterInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, int24 tick)
         internal
         noSelfCall(self)
     {
         if (self.hasPermission(AFTER_INITIALIZE_FLAG)) {
-            self.callHook(abi.encodeCall(IHooks.afterInitialize, (msg.sender, key, sqrtPriceX96, tick, hookData)));
+            self.callHook(abi.encodeCall(IHooks.afterInitialize, (msg.sender, key, sqrtPriceX96, tick)));
         }
     }
 
