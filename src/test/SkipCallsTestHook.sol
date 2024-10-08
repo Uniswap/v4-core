@@ -27,23 +27,19 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         manager = _manager;
     }
 
-    function beforeInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96, bytes calldata hookData)
-        external
-        override
-        returns (bytes4)
-    {
+    function beforeInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96) external override returns (bytes4) {
         counter++;
-        _initialize(key, sqrtPriceX96, hookData);
+        _initialize(key, sqrtPriceX96);
         return IHooks.beforeInitialize.selector;
     }
 
-    function afterInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96, int24, bytes calldata hookData)
+    function afterInitialize(address, PoolKey calldata key, uint160 sqrtPriceX96, int24)
         external
         override
         returns (bytes4)
     {
         counter++;
-        _initialize(key, sqrtPriceX96, hookData);
+        _initialize(key, sqrtPriceX96);
         return IHooks.afterInitialize.selector;
     }
 
@@ -137,10 +133,10 @@ contract SkipCallsTestHook is BaseTestHooks, Test {
         return IHooks.afterDonate.selector;
     }
 
-    function _initialize(PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData) public {
+    function _initialize(PoolKey memory key, uint160 sqrtPriceX96) public {
         // initialize a new pool with different fee
         key.fee = 2000;
-        IPoolManager(manager).initialize(key, sqrtPriceX96, hookData);
+        IPoolManager(manager).initialize(key, sqrtPriceX96);
     }
 
     function _swap(PoolKey calldata key, IPoolManager.SwapParams memory params, bytes calldata hookData) public {
