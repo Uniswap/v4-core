@@ -40,7 +40,7 @@ jobs:
 
       - name: Check coverage is updated
         uses: actions/github-script@v5
-        env: 
+        env:
           OUTPUT: ${{ steps.coverage.outputs.COVERAGE }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -61,7 +61,7 @@ jobs:
       - name: Comment on PR
         id: comment
         uses: actions/github-script@v5
-        env: 
+        env:
           OUTPUT: ${{ steps.coverage.outputs.COVERAGE }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
