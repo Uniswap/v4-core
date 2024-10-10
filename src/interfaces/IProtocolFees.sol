@@ -8,8 +8,6 @@ import {PoolKey} from "../types/PoolKey.sol";
 
 /// @notice Interface for all protocol-fee related functions in the pool manager
 interface IProtocolFees {
-    /// @notice Thrown when not enough gas is provided to look up the protocol fee
-    error ProtocolFeeCannotBeFetched();
     /// @notice Thrown when protocol fee is set too high
     error ProtocolFeeTooLarge(uint24 fee);
 

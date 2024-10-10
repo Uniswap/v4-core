@@ -14,13 +14,7 @@ import {Deployers} from "../test/utils/Deployers.sol";
 import {PoolId} from "../src/types/PoolId.sol";
 import {IHooks} from "../src/interfaces/IHooks.sol";
 import {Constants} from "../test/utils/Constants.sol";
-import {
-    ProtocolFeeControllerTest,
-    OutOfBoundsProtocolFeeControllerTest,
-    RevertingProtocolFeeControllerTest,
-    OverflowProtocolFeeControllerTest,
-    InvalidReturnSizeProtocolFeeControllerTest
-} from "../src/test/ProtocolFeeControllerTest.sol";
+import {ProtocolFeeControllerTest} from "../src/test/ProtocolFeeControllerTest.sol";
 
 contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     using ProtocolFeeLibrary for uint24;
@@ -175,44 +169,5 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
 
         protocolFees.updateProtocolFees(currency0, amount);
         assertEq(protocolFees.protocolFeesAccrued(currency0), newAmount);
-    }
-
-    function test_fetchProtocolFee_succeeds() public {
-        protocolFees.setProtocolFeeController(feeController);
-        vm.prank(address(feeController));
-        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
-        assertEq(protocolFee, 0);
-    }
-
-    function test_fetchProtocolFee_outOfBounds() public {
-        outOfBoundsFeeController = new OutOfBoundsProtocolFeeControllerTest();
-        protocolFees.setProtocolFeeController(outOfBoundsFeeController);
-        vm.prank(address(outOfBoundsFeeController));
-        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
-        assertEq(protocolFee, 0);
-    }
-
-    function test_fetchProtocolFee_overflowFee() public {
-        overflowFeeController = new OverflowProtocolFeeControllerTest();
-        protocolFees.setProtocolFeeController(overflowFeeController);
-        vm.prank(address(overflowFeeController));
-        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
-        assertEq(protocolFee, 0);
-    }
-
-    function test_fetchProtocolFee_invalidReturnSize() public {
-        invalidReturnSizeFeeController = new InvalidReturnSizeProtocolFeeControllerTest();
-        protocolFees.setProtocolFeeController(invalidReturnSizeFeeController);
-        vm.prank(address(invalidReturnSizeFeeController));
-        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
-        assertEq(protocolFee, 0);
-    }
-
-    function test_fetchProtocolFee_revert() public {
-        revertingFeeController = new RevertingProtocolFeeControllerTest();
-        protocolFees.setProtocolFeeController(revertingFeeController);
-        vm.prank(address(revertingFeeController));
-        uint24 protocolFee = protocolFees.fetchProtocolFee(key);
-        assertEq(protocolFee, 0);
     }
 }

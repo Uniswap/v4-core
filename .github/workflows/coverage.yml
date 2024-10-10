@@ -32,7 +32,7 @@ jobs:
         run: |
           {
           echo 'COVERAGE<<EOF'
-          forge coverage --ir-minimum | grep '^|' | grep -v 'test/' | tr -d \`
+          forge coverage --ir-minimum | grep '^|' | grep -v 'test/' | tr -d \` | tr -d $ | tr -d { | tr -d }
           echo EOF
           } >> "$GITHUB_OUTPUT"
         env:
@@ -40,9 +40,12 @@ jobs:
 
       - name: Check coverage is updated
         uses: actions/github-script@v5
+        env:
+          OUTPUT: ${{ steps.coverage.outputs.COVERAGE }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const { OUTPUT } = process.env;
             const fs = require('fs');
             const file = "coverage.txt"
             if(!fs.existsSync(file)) {
@@ -50,7 +53,7 @@ jobs:
               return
             }
             const currentCoverage = fs.readFileSync(file, "utf8").trim();
-            const newCoverage = (`${{ steps.coverage.outputs.COVERAGE }}`).trim();
+            const newCoverage = (`${ OUTPUT }`).trim();
             if (newCoverage != currentCoverage) {
               core.setFailed(`Code coverage not updated. Run : forge coverage | grep '^|' | grep -v 'test/'  > coverage.txt`);
             }
@@ -58,9 +61,12 @@ jobs:
       - name: Comment on PR
         id: comment
         uses: actions/github-script@v5
+        env:
+          OUTPUT: ${{ steps.coverage.outputs.COVERAGE }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const { OUTPUT } = process.env;
             const {data: comments} = await github.rest.issues.listComments({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -69,8 +75,7 @@ jobs:
 
             const botComment = comments.find(comment => comment.user.id === 41898282)
 
-            const output = `${{ steps.coverage.outputs.COVERAGE }}`;
-            const commentBody = `Forge code coverage:\n${output}\n`;
+            const commentBody = `Forge code coverage:\n${ OUTPUT }\n`;
 
             if (botComment) {
               github.rest.issues.updateComment({

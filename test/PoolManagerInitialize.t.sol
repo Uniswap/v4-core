@@ -226,24 +226,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
         manager.initialize(uninitializedKey, sqrtPriceX96);
     }
 
-    function test_initialize_fetchFeeWhenController(uint24 protocolFee) public {
-        manager.setProtocolFeeController(feeController);
-        feeController.setProtocolFeeForPool(uninitializedKey.toId(), protocolFee);
-
-        uint16 fee0 = protocolFee.getZeroForOneFee();
-        uint16 fee1 = protocolFee.getOneForZeroFee();
-
-        manager.initialize(uninitializedKey, SQRT_PRICE_1_1);
-
-        (uint160 slot0SqrtPriceX96,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0SqrtPriceX96, SQRT_PRICE_1_1);
-        if ((fee0 > 1000) || (fee1 > 1000)) {
-            assertEq(slot0ProtocolFee, 0);
-        } else {
-            assertEq(slot0ProtocolFee, protocolFee);
-        }
-    }
-
     function test_initialize_revertsWhenPoolAlreadyInitialized(uint160 sqrtPriceX96) public {
         // Assumptions tested in Pool.t.sol
         sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
@@ -332,109 +314,6 @@ contract PoolManagerInitializeTest is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(abi.encodeWithSelector(IPoolManager.TickSpacingTooSmall.selector, uninitializedKey.tickSpacing));
         manager.initialize(uninitializedKey, sqrtPriceX96);
-    }
-
-    function test_initialize_succeedsWithOutOfBoundsFeeController(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-
-        manager.setProtocolFeeController(outOfBoundsFeeController);
-
-        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
-        // expect initialize to succeed even though the controller reverts
-        vm.expectEmit(true, true, true, true);
-        emit Initialize(
-            uninitializedKey.toId(),
-            uninitializedKey.currency0,
-            uninitializedKey.currency1,
-            uninitializedKey.fee,
-            uninitializedKey.tickSpacing,
-            uninitializedKey.hooks,
-            sqrtPriceX96,
-            tick
-        );
-        manager.initialize(uninitializedKey, sqrtPriceX96);
-        // protocol fees should default to 0
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0ProtocolFee, 0);
-    }
-
-    function test_initialize_succeedsWithRevertingFeeController(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-
-        manager.setProtocolFeeController(revertingFeeController);
-
-        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
-
-        // expect initialize to succeed even though the controller reverts
-        vm.expectEmit(true, true, true, true);
-        emit Initialize(
-            uninitializedKey.toId(),
-            uninitializedKey.currency0,
-            uninitializedKey.currency1,
-            uninitializedKey.fee,
-            uninitializedKey.tickSpacing,
-            uninitializedKey.hooks,
-            sqrtPriceX96,
-            tick
-        );
-        manager.initialize(uninitializedKey, sqrtPriceX96);
-        // protocol fees should default to 0
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0ProtocolFee, 0);
-    }
-
-    function test_initialize_succeedsWithOverflowFeeController(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-
-        manager.setProtocolFeeController(overflowFeeController);
-
-        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
-
-        // expect initialize to succeed
-        vm.expectEmit(true, true, true, true);
-        emit Initialize(
-            uninitializedKey.toId(),
-            uninitializedKey.currency0,
-            uninitializedKey.currency1,
-            uninitializedKey.fee,
-            uninitializedKey.tickSpacing,
-            uninitializedKey.hooks,
-            sqrtPriceX96,
-            tick
-        );
-        manager.initialize(uninitializedKey, sqrtPriceX96);
-        // protocol fees should default to 0
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0ProtocolFee, 0);
-    }
-
-    function test_initialize_succeedsWithWrongReturnSizeFeeController(uint160 sqrtPriceX96) public {
-        // Assumptions tested in Pool.t.sol
-        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
-
-        manager.setProtocolFeeController(invalidReturnSizeFeeController);
-
-        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
-
-        // expect initialize to succeed
-        vm.expectEmit(true, true, true, true);
-        emit Initialize(
-            uninitializedKey.toId(),
-            uninitializedKey.currency0,
-            uninitializedKey.currency1,
-            uninitializedKey.fee,
-            uninitializedKey.tickSpacing,
-            uninitializedKey.hooks,
-            sqrtPriceX96,
-            tick
-        );
-        manager.initialize(uninitializedKey, sqrtPriceX96);
-        // protocol fees should default to 0
-        (,, uint24 slot0ProtocolFee,) = manager.getSlot0(uninitializedKey.toId());
-        assertEq(slot0ProtocolFee, 0);
     }
 
     function test_initialize_gas() public {
