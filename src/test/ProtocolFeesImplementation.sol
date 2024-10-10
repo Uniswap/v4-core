@@ -30,10 +30,6 @@ contract ProtocolFeesImplementation is ProtocolFees {
         return isUnlocked;
     }
 
-    function fetchProtocolFee(PoolKey memory key) public returns (uint24) {
-        return ProtocolFees._fetchProtocolFee(key);
-    }
-
     function updateProtocolFees(Currency currency, uint256 amount) public {
         ProtocolFees._updateProtocolFees(currency, amount);
     }
