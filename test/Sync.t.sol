@@ -33,8 +33,7 @@ contract SyncTest is Test, Deployers, GasSnapshot {
         currency2 = deployMintAndApproveCurrency();
     }
 
-    function test_settle_failsIfLocked() public {
-        vm.expectRevert(IPoolManager.ManagerLocked.selector);
+    function test_settle_worksInIsolation() public {
         manager.sync(currency0);
     }
 
