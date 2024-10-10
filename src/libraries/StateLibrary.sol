@@ -192,10 +192,10 @@ library StateLibrary {
      * @dev Corresponds to pools[poolId].tickBitmap[tick]
      * @param manager The pool manager contract.
      * @param poolId The ID of the pool.
-     * @param tick The tick to retrieve the bitmap for.
+     * @param wordPos The key in the mapping to retrieve the bitmap for.
      * @return tickBitmap The bitmap of the tick.
      */
-    function getTickBitmap(IPoolManager manager, PoolId poolId, int16 tick)
+    function getTickBitmap(IPoolManager manager, PoolId poolId, int16 wordPos)
         internal
         view
         returns (uint256 tickBitmap)
@@ -207,7 +207,7 @@ library StateLibrary {
         bytes32 tickBitmapMapping = bytes32(uint256(stateSlot) + TICK_BITMAP_OFFSET);
 
         // slot id of the mapping key: `pools[poolId].tickBitmap[tick]
-        bytes32 slot = keccak256(abi.encodePacked(int256(tick), tickBitmapMapping));
+        bytes32 slot = keccak256(abi.encodePacked(int256(wordPos), tickBitmapMapping));
 
         tickBitmap = uint256(manager.extsload(slot));
     }
