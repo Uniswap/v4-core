@@ -10,6 +10,7 @@ import {StateLibrary} from "../../src/libraries/StateLibrary.sol";
 
 /// @title Calculate token<>liquidity
 /// @notice Helps calculate amounts for bounding fuzz tests
+/*
 library AmountHelpers {
     function getMaxAmountInForPool(
         IPoolManager manager,
@@ -27,3 +28,4 @@ library AmountHelpers {
         amount1 = LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceX96Upper, sqrtPriceX96, liquidity);
     }
 }
+*/
