@@ -1,7 +1,6 @@
 name: Tests
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -9,8 +8,7 @@ on:
 jobs:
   forge-tests:
     name: Forge Tests
-    runs-on:
-      group: forge-testing
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
