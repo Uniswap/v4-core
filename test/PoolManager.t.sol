@@ -808,6 +808,47 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }
 
+    function test_swap_toLiquidity_fromMinPrice() public {
+        PoolKey memory _key = PoolKey(currency0, currency1, 500, 10, IHooks(address(0)));
+        manager.initialize(_key, TickMath.MIN_SQRT_PRICE);
+
+        IPoolManager.ModifyLiquidityParams memory params =
+            IPoolManager.ModifyLiquidityParams({tickLower: -10, tickUpper: 10, liquidityDelta: 100e18, salt: 0});
+        modifyLiquidityRouter.modifyLiquidity(_key, params, ZERO_BYTES);
+
+        // zeroForOne=false to swap higher
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(false, 1, TickMath.MAX_SQRT_PRICE - 1);
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+
+        (uint160 sqrtPriceX96,,,) = manager.getSlot0(_key.toId());
+
+        swapRouter.swap(_key, swapParams, testSettings, ZERO_BYTES);
+
+        (sqrtPriceX96,,,) = manager.getSlot0(_key.toId());
+
+        // The swap pushes the price to the start of liquidity.
+        assertEq(TickMath.getTickAtSqrtPrice(sqrtPriceX96), -10);
+    }
+
+    function test_swap_toPrice_fromMaxPrice() public {
+        PoolKey memory _key = PoolKey(currency0, currency1, 500, 10, IHooks(address(0)));
+        manager.initialize(_key, TickMath.MAX_SQRT_PRICE - 1);
+
+        // zeroForOne=true to swap lower
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(true, 1, SQRT_PRICE_1_4);
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+
+        (uint160 sqrtPriceX96,,,) = manager.getSlot0(_key.toId());
+        swapRouter.swap(_key, swapParams, testSettings, ZERO_BYTES);
+
+        (sqrtPriceX96,,,) = manager.getSlot0(_key.toId());
+
+        // The swap pushes the price to the sqrtPriceLimit.
+        assertEq(TickMath.getTickAtSqrtPrice(SQRT_PRICE_1_4), TickMath.getTickAtSqrtPrice(sqrtPriceX96));
+    }
+
     function test_donate_failsIfNotInitialized() public {
         vm.expectRevert(Pool.PoolNotInitialized.selector);
         donateRouter.donate(uninitializedKey, 100, 100, ZERO_BYTES);
