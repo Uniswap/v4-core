@@ -22,8 +22,6 @@ import {BalanceDelta, BalanceDeltaLibrary} from "../src/types/BalanceDelta.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {ProtocolFeeLibrary} from "../src/libraries/ProtocolFeeLibrary.sol";
 
-import "forge-std/console2.sol";
-
 contract TestDynamicFees is Test, Deployers, GasSnapshot {
     using StateLibrary for IPoolManager;
     using ProtocolFeeLibrary for uint16;
