@@ -150,6 +150,9 @@ library StateLibrary {
      * @param poolId The ID of the pool.
      * @return feeGrowthGlobal0 The global fee growth for token0.
      * @return feeGrowthGlobal1 The global fee growth for token1.
+     * @dev Note that feeGrowthGlobal can be artificially inflated
+     * For pools with a single liquidity position, actors can donate to themselves to freely inflate feeGrowthGlobal
+     * atomically donating and collecting fees in the same unlockCallback may make the inflated value more extreme
      */
     function getFeeGrowthGlobals(IPoolManager manager, PoolId poolId)
         internal
