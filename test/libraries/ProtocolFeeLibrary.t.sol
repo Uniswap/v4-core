@@ -81,7 +81,14 @@ contract ProtocolFeeLibraryTest is Test, GasSnapshot {
         uint256 expectedSwapFee;
         // protocolFee + lpFee(1_000_000 - protocolFee) / 1_000_000 (rounded up)
         assembly ("memory-safe") {
-            expectedSwapFee := add(protocolFee, add(div(mul(sub(1000000, protocolFee), lpFee), 1000000), gt(mod(mul(sub(1000000, protocolFee), lpFee), 1000000), 0)))
+            expectedSwapFee :=
+                add(
+                    protocolFee,
+                    add(
+                        div(mul(sub(1000000, protocolFee), lpFee), 1000000),
+                        gt(mod(mul(sub(1000000, protocolFee), lpFee), 1000000), 0)
+                    )
+                )
         }
 
         assertGe(swapFee, lpFee);

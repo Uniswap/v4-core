@@ -390,7 +390,8 @@ library Pool {
                         // so add it back to get the total amountIn and use that to calculate the amount of fees owed to the protocol
                         // this line cannot overflow due to limits on the size of protocolFee and params.amountSpecified
                         // this rounds down to favor LPs over the protocol
-                        uint256 delta = (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
+                        uint256 delta =
+                            (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                         // subtract it from the total fee and add it to the protocol fee
                         step.feeAmount -= delta;
                         amountToProtocol += delta;

@@ -234,7 +234,6 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         vm.expectRevert(Pool.InvalidFeeForExactOut.selector);
         swapRouter.swap(key, params, testSettings, ZERO_BYTES);
-
     }
 
     function test_swap_100PercentFee_AmountIn_WithProtocol() public {
@@ -313,7 +312,8 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
             assertEq(protocolFee0, swapFee);
             assembly {
                 // round up instead of down
-                expectedProtocolFee := add(div(mul(delta0, protocolFee0), 1000000), gt(mod(mul(delta0, protocolFee0), 1000000), 0))
+                expectedProtocolFee :=
+                    add(div(mul(delta0, protocolFee0), 1000000), gt(mod(mul(delta0, protocolFee0), 1000000), 0))
             }
         } else {
             expectedProtocolFee = uint256(uint128(delta0)) * protocolFee0 / 1e6;
