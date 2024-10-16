@@ -10,12 +10,11 @@ import {IPoolManager} from "../interfaces/IPoolManager.sol";
 contract BaseTestHooks is IHooks {
     error HookNotImplemented();
 
-    function beforeInitialize(
-        address, /* sender **/
-        PoolKey calldata, /* key **/
-        uint160, /* sqrtPriceX96 **/
-        bytes calldata /* hookData **/
-    ) external virtual returns (bytes4) {
+    function beforeInitialize(address, /* sender **/ PoolKey calldata, /* key **/ uint160 /* sqrtPriceX96 **/ )
+        external
+        virtual
+        returns (bytes4)
+    {
         revert HookNotImplemented();
     }
 
@@ -23,8 +22,7 @@ contract BaseTestHooks is IHooks {
         address, /* sender **/
         PoolKey calldata, /* key **/
         uint160, /* sqrtPriceX96 **/
-        int24, /* tick **/
-        bytes calldata /* hookData **/
+        int24 /* tick **/
     ) external virtual returns (bytes4) {
         revert HookNotImplemented();
     }

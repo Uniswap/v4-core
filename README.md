@@ -13,7 +13,7 @@ If you’re interested in contributing please see our [contribution guidelines](
 
 ## Whitepaper
 
-A more detailed description of Uniswap v4 Core can be found in the draft of the [Uniswap v4 Core Whitepaper](./docs/whitepaper-v4.pdf).
+A more detailed description of Uniswap v4 Core can be found in the draft of the [Uniswap v4 Core Whitepaper](./docs/whitepaper/whitepaper-v4.pdf).
 
 ## Architecture
 

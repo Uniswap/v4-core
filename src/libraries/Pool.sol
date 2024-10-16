@@ -94,16 +94,13 @@ library Pool {
         if (tickUpper > TickMath.MAX_TICK) TickUpperOutOfBounds.selector.revertWith(tickUpper);
     }
 
-    function initialize(State storage self, uint160 sqrtPriceX96, uint24 protocolFee, uint24 lpFee)
-        internal
-        returns (int24 tick)
-    {
+    function initialize(State storage self, uint160 sqrtPriceX96, uint24 lpFee) internal returns (int24 tick) {
         if (self.slot0.sqrtPriceX96() != 0) PoolAlreadyInitialized.selector.revertWith();
 
         tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
 
-        self.slot0 = Slot0.wrap(bytes32(0)).setSqrtPriceX96(sqrtPriceX96).setTick(tick).setProtocolFee(protocolFee)
-            .setLpFee(lpFee);
+        // the initial protocolFee is 0 so doesn't need to be set
+        self.slot0 = Slot0.wrap(bytes32(0)).setSqrtPriceX96(sqrtPriceX96).setTick(tick).setLpFee(lpFee);
     }
 
     function setProtocolFee(State storage self, uint24 protocolFee) internal {
@@ -411,7 +408,7 @@ library Pool {
             }
 
             // Shift tick if we reached the next price, and preemptively decrement for zeroForOne swaps to tickNext - 1.
-            // If the swap doesnt continue (if amountRemaining == 0 or sqrtPriceLimit is met), slot0.tick will be 1 less
+            // If the swap doesn't continue (if amountRemaining == 0 or sqrtPriceLimit is met), slot0.tick will be 1 less
             // than getTickAtSqrtPrice(slot0.sqrtPrice). This doesn't affect swaps, but donation calls should verify both
             // price and tick to reward the correct LPs.
             if (result.sqrtPriceX96 == step.sqrtPriceNextX96) {

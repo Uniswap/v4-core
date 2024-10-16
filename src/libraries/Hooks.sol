@@ -126,7 +126,7 @@ library Hooks {
             : (uint160(address(self)) & ALL_HOOK_MASK > 0 || fee.isDynamicFee());
     }
 
-    /// @notice performs a hook call using the given calldata on the given hook that doesnt return a delta
+    /// @notice performs a hook call using the given calldata on the given hook that doesn't return a delta
     /// @return result The complete data returned by the hook
     function callHook(IHooks self, bytes memory data) internal returns (bytes memory result) {
         bool success;
@@ -175,22 +175,19 @@ library Hooks {
     }
 
     /// @notice calls beforeInitialize hook if permissioned and validates return value
-    function beforeInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, bytes calldata hookData)
-        internal
-        noSelfCall(self)
-    {
+    function beforeInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96) internal noSelfCall(self) {
         if (self.hasPermission(BEFORE_INITIALIZE_FLAG)) {
-            self.callHook(abi.encodeCall(IHooks.beforeInitialize, (msg.sender, key, sqrtPriceX96, hookData)));
+            self.callHook(abi.encodeCall(IHooks.beforeInitialize, (msg.sender, key, sqrtPriceX96)));
         }
     }
 
     /// @notice calls afterInitialize hook if permissioned and validates return value
-    function afterInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, int24 tick, bytes calldata hookData)
+    function afterInitialize(IHooks self, PoolKey memory key, uint160 sqrtPriceX96, int24 tick)
         internal
         noSelfCall(self)
     {
         if (self.hasPermission(AFTER_INITIALIZE_FLAG)) {
-            self.callHook(abi.encodeCall(IHooks.afterInitialize, (msg.sender, key, sqrtPriceX96, tick, hookData)));
+            self.callHook(abi.encodeCall(IHooks.afterInitialize, (msg.sender, key, sqrtPriceX96, tick)));
         }
     }
 
@@ -271,7 +268,7 @@ library Hooks {
                 // any return in unspecified is passed to the afterSwap hook for handling
                 int128 hookDeltaSpecified = hookReturn.getSpecifiedDelta();
 
-                // Update the swap amount according to the hook's return, and check that the swap type doesnt change (exact input/output)
+                // Update the swap amount according to the hook's return, and check that the swap type doesn't change (exact input/output)
                 if (hookDeltaSpecified != 0) {
                     bool exactInput = amountToSwap < 0;
                     amountToSwap += hookDeltaSpecified;

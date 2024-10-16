@@ -49,12 +49,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
         deployMintAndApprove2Currencies();
         (key,) = initPoolAndAddLiquidity(
-            currency0,
-            currency1,
-            IHooks(address(dynamicReturnFeesHook)),
-            LPFeeLibrary.DYNAMIC_FEE_FLAG,
-            SQRT_PRICE_1_1,
-            ZERO_BYTES
+            currency0, currency1, IHooks(address(dynamicReturnFeesHook)), LPFeeLibrary.DYNAMIC_FEE_FLAG, SQRT_PRICE_1_1
         );
     }
 
@@ -107,7 +102,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
     function test_dynamicReturnSwapFee_initializeZeroSwapFee() public {
         key.tickSpacing = 30;
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
         assertEq(_fetchPoolSwapFee(key), 0);
     }
 
@@ -115,9 +110,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
         key.fee = 3000; // static fee
         dynamicReturnFeesHook.setFee(1000); // 0.10% fee is NOT used because the pool has a static fee
 
-        initPoolAndAddLiquidity(
-            currency0, currency1, IHooks(address(dynamicReturnFeesHook)), 3000, SQRT_PRICE_1_1, ZERO_BYTES
-        );
+        initPoolAndAddLiquidity(currency0, currency1, IHooks(address(dynamicReturnFeesHook)), 3000, SQRT_PRICE_1_1);
         assertEq(_fetchPoolSwapFee(key), 3000);
 
         // despite returning a valid swap fee (1000), the static fee is used
@@ -136,7 +129,7 @@ contract TestDynamicReturnFees is Test, Deployers, GasSnapshot {
 
         // create a new pool with an initial fee of 123
         key.tickSpacing = 30;
-        manager.initialize(key, SQRT_PRICE_1_1, ZERO_BYTES);
+        manager.initialize(key, SQRT_PRICE_1_1);
         modifyLiquidityRouter.modifyLiquidity(key, LIQUIDITY_PARAMS, ZERO_BYTES);
         uint24 initialFee = 123;
         dynamicReturnFeesHook.forcePoolFeeUpdate(key, initialFee);
