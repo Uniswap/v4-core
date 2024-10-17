@@ -34,6 +34,8 @@ import {IProtocolFees} from "../src/interfaces/IProtocolFees.sol";
 import {StateLibrary} from "../src/libraries/StateLibrary.sol";
 import {Actions} from "../src/test/ActionsRouter.sol";
 
+import "forge-std/console2.sol";
+
 contract PoolManagerTest is Test, Deployers, GasSnapshot {
     using Hooks for IHooks;
     using LPFeeLibrary for uint24;
@@ -808,7 +810,7 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(manager.protocolFeesAccrued(currency1), expectedProtocolFee);
     }
 
-    function test_swap_toLiquidity_fromMinPrice() public {
+    function test_swap_toLiquidity_fromMinPrice_withLiquidity() public {
         PoolKey memory _key = PoolKey(currency0, currency1, 500, 10, IHooks(address(0)));
         manager.initialize(_key, TickMath.MIN_SQRT_PRICE);
 
@@ -831,7 +833,59 @@ contract PoolManagerTest is Test, Deployers, GasSnapshot {
         assertEq(TickMath.getTickAtSqrtPrice(sqrtPriceX96), -10);
     }
 
-    function test_swap_toPrice_fromMaxPrice() public {
+    function test_fuzz_swap_toLiquidity(uint160 sqrtPriceX96) public {
+        PoolKey memory _key = PoolKey(currency0, currency1, 500, 10, IHooks(address(0)));
+        sqrtPriceX96 = uint160(bound(sqrtPriceX96, TickMath.MIN_SQRT_PRICE, TickMath.MAX_SQRT_PRICE - 1));
+        vm.assume(sqrtPriceX96 != 0);
+        manager.initialize(_key, sqrtPriceX96);
+
+        int24 tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+
+        bool zeroForOne;
+        uint160 sqrtPriceX96Limit;
+        int24 tickBoundary;
+        if (tick <= -10) {
+            // zeroForOne=false to swap higher
+            zeroForOne = false;
+            sqrtPriceX96Limit = TickMath.MAX_SQRT_PRICE - 1;
+            tickBoundary = -10;
+        } else if (tick > 10) {
+            // zeroForOne=true to swap lower
+            zeroForOne = true;
+            sqrtPriceX96Limit = TickMath.MIN_SQRT_PRICE + 1;
+            tickBoundary = 9;
+        } else {
+            // the price is between the position, so let's just swap down
+            zeroForOne = true;
+            sqrtPriceX96Limit = TickMath.MIN_SQRT_PRICE + 1;
+            // the tick will just stay the same, we're only swapping 1 wei
+            tickBoundary = TickMath.getTickAtSqrtPrice(sqrtPriceX96);
+        }
+
+        // deeeeeep liquidity so that swapping 1 wei doesn't change the price too much if the price is within the tick range
+        IPoolManager.ModifyLiquidityParams memory params = IPoolManager.ModifyLiquidityParams({
+            tickLower: -10,
+            tickUpper: 10,
+            liquidityDelta: 100000000000e18,
+            salt: 0
+        });
+
+        modifyLiquidityRouter.modifyLiquidity(_key, params, ZERO_BYTES);
+
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams(zeroForOne, 1, sqrtPriceX96Limit);
+        PoolSwapTest.TestSettings memory testSettings =
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false});
+
+        swapRouter.swap(_key, swapParams, testSettings, ZERO_BYTES);
+
+        int24 _tick;
+        (sqrtPriceX96, _tick,,) = manager.getSlot0(_key.toId());
+
+        // The swap pushes the price to one of the tick boundaries.
+        assertEq(TickMath.getTickAtSqrtPrice(sqrtPriceX96), tickBoundary);
+    }
+
+    function test_swap_toPrice_fromMaxPrice_withoutLiquidity() public {
         PoolKey memory _key = PoolKey(currency0, currency1, 500, 10, IHooks(address(0)));
         manager.initialize(_key, TickMath.MAX_SQRT_PRICE - 1);
 
