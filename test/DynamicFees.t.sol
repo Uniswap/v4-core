@@ -303,18 +303,10 @@ contract TestDynamicFees is Test, Deployers, GasSnapshot {
 
         uint24 swapFee = uint16(protocolFee).calculateSwapFee(lpFee);
 
-        uint256 expectedProtocolFee;
-        int128 delta0 = -delta.amount0();
-
+        uint256 expectedProtocolFee = uint256(uint128(-delta.amount0())) * protocolFee0 / 1e6;
         if (lpFee == 0) {
             assertEq(protocolFee0, swapFee);
-            assembly {
-                // round up instead of down
-                expectedProtocolFee :=
-                    add(div(mul(delta0, protocolFee0), 1000000), gt(mod(mul(delta0, protocolFee0), 1000000), 0))
-            }
-        } else {
-            expectedProtocolFee = uint256(uint128(delta0)) * protocolFee0 / 1e6;
+            if (((uint256(uint128(-delta.amount0())) * protocolFee0) % 1e6) != 0) expectedProtocolFee++;
         }
 
         assertEq(manager.protocolFeesAccrued(currency0), expectedProtocolFee);

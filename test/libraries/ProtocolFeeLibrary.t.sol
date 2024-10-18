@@ -78,18 +78,9 @@ contract ProtocolFeeLibraryTest is Test, GasSnapshot {
             assertEq(swapFee, LPFeeLibrary.MAX_LP_FEE);
         }
 
-        uint256 expectedSwapFee;
         // protocolFee + lpFee(1_000_000 - protocolFee) / 1_000_000 (rounded up)
-        assembly ("memory-safe") {
-            expectedSwapFee :=
-                add(
-                    protocolFee,
-                    add(
-                        div(mul(sub(1000000, protocolFee), lpFee), 1000000),
-                        gt(mod(mul(sub(1000000, protocolFee), lpFee), 1000000), 0)
-                    )
-                )
-        }
+        uint256 expectedSwapFee = protocolFee + (1e6 - protocolFee) * uint256(lpFee) / 1e6;
+        if (((1e6 - protocolFee) * uint256(lpFee)) % 1e6 != 0) expectedSwapFee++;
 
         assertGe(swapFee, lpFee);
         assertEq(swapFee, uint24(expectedSwapFee));

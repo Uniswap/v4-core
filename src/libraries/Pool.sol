@@ -386,7 +386,7 @@ library Pool {
                     // cannot overflow due to limits on the size of protocolFee and params.amountSpecified
                     // this rounds down to favor LPs over the protocol
                     uint256 delta = (swapFee == protocolFee)
-                        ? step.feeAmount // if there is no lp fee, the entire fee is owed to the protocol instead
+                        ? step.feeAmount // lp fee is 0, so the entire fee is owed to the protocol instead
                         : (step.amountIn + step.feeAmount) * protocolFee / ProtocolFeeLibrary.PIPS_DENOMINATOR;
                     // subtract it from the total fee and add it to the protocol fee
                     step.feeAmount -= delta;
