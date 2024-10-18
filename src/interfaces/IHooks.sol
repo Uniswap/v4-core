@@ -78,7 +78,7 @@ interface IHooks {
     /// @param sender The initial msg.sender for the remove liquidity call
     /// @param key The key for the pool
     /// @param params The parameters for removing liquidity
-    /// @param delta The caller's balance delta after adding liquidity; the sum of principal delta, fees accrued, and hook delta
+    /// @param delta The caller's balance delta after removing liquidity; the sum of principal delta, fees accrued, and hook delta
     /// @param feesAccrued The fees accrued since the last time fees were collected from this position
     /// @param hookData Arbitrary data handed into the PoolManager by the liquidity provider to be be passed on to the hook
     /// @return bytes4 The function selector for the hook
