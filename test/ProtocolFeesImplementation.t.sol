@@ -35,9 +35,9 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
     function test_setProtocolFeeController_succeedsNoRevert() public {
         assertEq(address(protocolFees.protocolFeeController()), address(0));
         vm.expectEmit(true, false, false, false, address(protocolFees));
-        emit ProtocolFeeControllerUpdated(address(feeController));
+        emit ProtocolFeeControllerUpdated(feeController);
         protocolFees.setProtocolFeeController(feeController);
-        assertEq(address(protocolFees.protocolFeeController()), address(feeController));
+        assertEq(address(protocolFees.protocolFeeController()), feeController);
     }
 
     function test_setProtocolFeeController_revertsWithNotAuthorized() public {
@@ -54,7 +54,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         protocolFees.setProtocolFeeController(feeController);
         // Set price to pretend that the pool is initialized
         protocolFees.setPrice(key, Constants.SQRT_PRICE_1_1);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         vm.expectEmit(true, false, false, true, address(protocolFees));
         emit ProtocolFeeUpdated(key.toId(), MAX_PROTOCOL_FEE_BOTH_TOKENS);
         protocolFees.setProtocolFee(key, MAX_PROTOCOL_FEE_BOTH_TOKENS);
@@ -71,12 +71,12 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         uint24 protocolFee = MAX_PROTOCOL_FEE_BOTH_TOKENS + 1;
 
         protocolFees.setProtocolFeeController(feeController);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         vm.expectRevert(abi.encodeWithSelector(IProtocolFees.ProtocolFeeTooLarge.selector, protocolFee));
         protocolFees.setProtocolFee(key, protocolFee);
 
         protocolFee = MAX_PROTOCOL_FEE_BOTH_TOKENS + (1 << 12);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         vm.expectRevert(abi.encodeWithSelector(IProtocolFees.ProtocolFeeTooLarge.selector, protocolFee));
         protocolFees.setProtocolFee(key, protocolFee);
     }
@@ -87,7 +87,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         protocolFees.setPrice(key, Constants.SQRT_PRICE_1_1);
         uint16 fee0 = protocolFee.getZeroForOneFee();
         uint16 fee1 = protocolFee.getOneForZeroFee();
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         if ((fee0 > 1000) || (fee1 > 1000)) {
             vm.expectRevert(abi.encodeWithSelector(IProtocolFees.ProtocolFeeTooLarge.selector, protocolFee));
             protocolFees.setProtocolFee(key, protocolFee);
@@ -107,7 +107,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         protocolFees.setIsUnlocked(true);
 
         protocolFees.setProtocolFeeController(feeController);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
 
         vm.expectRevert(IProtocolFees.ContractUnlocked.selector);
         protocolFees.collectProtocolFees(address(1), currency0, 0);
@@ -119,7 +119,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         assertEq(protocolFees.protocolFeesAccrued(currency0), 100);
 
         protocolFees.setProtocolFeeController(feeController);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         protocolFees.collectProtocolFees(address(this), currency0, 100);
         assertEq(protocolFees.protocolFeesAccrued(currency0), 0);
         assertEq(currency0.balanceOf(address(this)), 100);
@@ -139,7 +139,7 @@ contract ProtocolFeesTest is Test, GasSnapshot, Deployers {
         }
 
         protocolFees.setProtocolFeeController(feeController);
-        vm.prank(address(feeController));
+        vm.prank(feeController);
         if (amount > feesAccrued) {
             vm.expectRevert();
         }
